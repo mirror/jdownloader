@@ -63,6 +63,24 @@ public class UpdateRequiredHostPlugin extends PluginForHost {
     }
 
     @Override
+    public boolean assignPlugin(DownloadLink link) {
+        if (link != null) {
+            link.setDefaultPlugin(this);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean assignPlugin(Account account) {
+        if (account != null) {
+            account.setPlugin(this);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     public void reset() {
     }
 

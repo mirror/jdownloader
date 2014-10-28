@@ -58,8 +58,8 @@ public class Freaksharenet extends PluginForHost {
 
     public Freaksharenet(final PluginWrapper wrapper) {
         super(wrapper);
-        setStartIntervall(1000l);
         if ("freakshare.com".equals(getHost())) {
+            setStartIntervall(1000l);
             this.enablePremium("http://freakshare.com/shop.html");
             setConfigElements();
         }
@@ -70,42 +70,20 @@ public class Freaksharenet extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("freakshare.net", "freakshare.com"));
     }
 
+    @Override
     public String rewriteHost(String host) {
         if ("freakshare.net".equals(getHost())) {
             if (host == null || "freakshare.net".equals(host)) {
                 return "freakshare.com";
             }
         }
-        return null;
-    }
-
-    public Boolean rewriteHost(Account acc) {
-        if (isPremiumEnabled()) {
-            if (acc != null && "freakshare.net".equals(acc.getHoster())) {
-                acc.setHoster("freakshare.com");
-                return true;
-            }
-            return false;
-        }
-        return null;
-    }
-
-    @Override
-    public Boolean rewriteHost(DownloadLink link) {
-        if (isPremiumEnabled()) {
-            if (link != null && "freakshare.net".equals(link.getHost())) {
-                link.setHost("freakshare.com");
-                correctDownloadLink(link);
-                return true;
-            }
-            return false;
-        }
-        return null;
+        return super.rewriteHost(host);
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         setBrowserExclusive();
+        correctDownloadLink(downloadLink);
         br.setFollowRedirects(false);
         // br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:28.0) Gecko/20100101 Firefox/28.0");

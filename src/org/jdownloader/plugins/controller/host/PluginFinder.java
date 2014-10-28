@@ -1,6 +1,5 @@
 package org.jdownloader.plugins.controller.host;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 import jd.plugins.Account;
@@ -13,16 +12,8 @@ import org.jdownloader.logging.LogController;
 
 public class PluginFinder {
 
-    private final HashMap<String, PluginForHost> pluginCache           = new HashMap<String, PluginForHost>();
-
-    private final HashMap<String, PluginForHost> rewriteLinkCache      = new HashMap<String, PluginForHost>();
-    private volatile ArrayList<PluginForHost>    rewriteLinkPlugins    = null;
-
-    private final HashMap<String, PluginForHost> rewriteAccountCache   = new HashMap<String, PluginForHost>();
-    private volatile ArrayList<PluginForHost>    rewriteAccountPlugins = null;
-
-    private final HashMap<String, String>        rewriteHostCache      = new HashMap<String, String>();
-    private final HashMap<String, PluginForHost> rewriteHostPlugins    = new HashMap<String, PluginForHost>();
+    private final HashMap<String, String>        hostMappings = new HashMap<String, String>();
+    private final HashMap<String, PluginForHost> pluginCaches = new HashMap<String, PluginForHost>();
 
     private final LogSource                      logger;
 
@@ -39,231 +30,152 @@ public class PluginFinder {
     }
 
     public synchronized String assignHost(String host) {
-        if (!rewriteHostCache.containsKey(host)) {
-            final LazyHostPlugin lazyPlugin = HostPluginController.getInstance().get(host);
-            if (lazyPlugin != null) {
-                if (!lazyPlugin.isHasRewrite()) {
-                    rewriteHostCache.put(host, lazyPlugin.getHost());
-                    return lazyPlugin.getHost();
-                } else {
-                    try {
-                        PluginForHost plugin = rewriteHostPlugins.get(lazyPlugin.getHost());
-                        if (plugin == null) {
-                            plugin = lazyPlugin.getPrototype(null);
-                            rewriteHostPlugins.put(lazyPlugin.getHost(), plugin);
-                        }
-                        final String assignHost = plugin.rewriteHost(host);
-                        if (StringUtils.isNotEmpty(assignHost)) {
-                            rewriteHostCache.put(host, assignHost);
-                            return assignHost;
-                        }
-                    } catch (final Throwable e) {
-                        logger.log(e);
-                    }
-                }
-            }
-            for (final LazyHostPlugin lazyHostPlugin : HostPluginController.getInstance().list()) {
-                if (lazyHostPlugin.isHasRewrite()) {
-                    try {
-                        PluginForHost plugin = rewriteHostPlugins.get(lazyHostPlugin.getHost());
-                        if (plugin == null) {
-                            plugin = lazyHostPlugin.getPrototype(null);
-                            rewriteHostPlugins.put(lazyHostPlugin.getHost(), plugin);
-                        }
-                        final String assignHost = plugin.rewriteHost(host);
-                        if (StringUtils.isNotEmpty(assignHost)) {
-                            rewriteHostCache.put(host, assignHost);
-                            return assignHost;
-                        }
-                    } catch (final Throwable e) {
-                        logger.log(e);
-                    }
-                }
-            }
-            rewriteHostCache.put(host, null);
-            return null;
-        }
-        return rewriteHostCache.get(host);
-    }
-
-    public synchronized PluginForHost assignPlugin(DownloadLink link, boolean allowRewrite) {
-        PluginForHost pluginForHost = null;
-        /* check if we already have a cached plugin for given host */
-        if (pluginCache.containsKey(link.getHost())) {
-            pluginForHost = pluginCache.get(link.getHost());
-            if (pluginForHost != null) {
-                /* plugin in cache found */
-                link.setDefaultPlugin(pluginForHost);
-                return pluginForHost;
-            }
-        } else {
-            /* no cached plugin found, first lets try to find a valid plugin for given host */
-            try {
-                final LazyHostPlugin hPlugin = HostPluginController.getInstance().get(link.getHost());
-                if (hPlugin != null) {
-                    pluginForHost = hPlugin.getPrototype(null);
-                }
-            } catch (final Throwable e) {
-                logger.log(e);
-            }
-            pluginCache.put(link.getHost(), pluginForHost);
-            if (pluginForHost != null) {
-                /* plugin found, let's put it into cache */
-                link.setDefaultPlugin(pluginForHost);
-                return pluginForHost;
-            }
-        }
-        if (allowRewrite && pluginForHost == null) {
-            if (rewriteLinkPlugins == null) {
-                /* rewrite cache not initialized yet, let's create it */
-                rewriteLinkPlugins = new ArrayList<PluginForHost>();
-                for (LazyHostPlugin lazyPlugin : HostPluginController.getInstance().list()) {
-                    if (lazyPlugin.isHasLinkRewrite()) {
+        if (host != null) {
+            if (!hostMappings.containsKey(host)) {
+                final LazyHostPlugin lazyPlugin = HostPluginController.getInstance().get(host);
+                if (lazyPlugin != null) {
+                    if (!lazyPlugin.isHasRewrite()) {
+                        /* lazyPlugin has no customized rewriteHost */
+                        hostMappings.put(host, lazyPlugin.getHost());
+                        return lazyPlugin.getHost();
+                    } else {
                         try {
-                            final PluginForHost protoType = lazyPlugin.getPrototype(null);
-                            if (protoType.rewriteHost((DownloadLink) null) != null) {
-                                rewriteLinkPlugins.add(protoType);
+                            PluginForHost plugin = pluginCaches.get(lazyPlugin.getHost());
+                            if (plugin == null) {
+                                plugin = lazyPlugin.getPrototype(null);
+                                pluginCaches.put(lazyPlugin.getHost(), plugin);
+                            }
+                            final String rewriteHost = plugin.rewriteHost(host);
+                            if (StringUtils.equalsIgnoreCase(rewriteHost, host)) {
+                                /* host equals rewriteHost */
+                                hostMappings.put(host, rewriteHost);
+                                return rewriteHost;
+                            } else if (StringUtils.isNotEmpty(rewriteHost)) {
+                                /* different rewriteHost, we need to call assignHost(rewriteHost) to check for further changes */
+                                return assignHost(rewriteHost);
                             }
                         } catch (final Throwable e) {
                             logger.log(e);
                         }
                     }
                 }
+                for (final LazyHostPlugin lazyHostPlugin : HostPluginController.getInstance().list()) {
+                    if (lazyHostPlugin.isHasRewrite()) {
+                        try {
+                            PluginForHost plugin = pluginCaches.get(lazyHostPlugin.getHost());
+                            if (plugin == null) {
+                                plugin = lazyHostPlugin.getPrototype(null);
+                                pluginCaches.put(lazyHostPlugin.getHost(), plugin);
+                            }
+                            final String rewriteHost = plugin.rewriteHost(host);
+                            if (StringUtils.equalsIgnoreCase(rewriteHost, host)) {
+                                /* host equals rewriteHost */
+                                hostMappings.put(host, rewriteHost);
+                                return rewriteHost;
+                            } else if (StringUtils.isNotEmpty(rewriteHost)) {
+                                /* different rewriteHost, we need to call assignHost(rewriteHost) to check for further changes */
+                                return assignHost(rewriteHost);
+                            }
+                        } catch (final Throwable e) {
+                            logger.log(e);
+                        }
+                    }
+                }
+                hostMappings.put(host, null);
+                logger.severe("Could not assign any host for: " + host);
+                return null;
             }
-            final String originalHost = link.getHost();
-            if (rewriteLinkCache.containsKey(originalHost)) {
-                pluginForHost = rewriteLinkCache.get(originalHost);
-            } else {
-                /* rewrite cache available, let's check for a valid rewriting plugin */
-                for (PluginForHost p : rewriteLinkPlugins) {
+            return hostMappings.get(host);
+        }
+        return null;
+    }
+
+    public synchronized PluginForHost assignPlugin(final DownloadLink link, final boolean assignPlugin) {
+        final String host = assignHost(link.getHost());
+        if (host != null) {
+            if (pluginCaches.containsKey(host)) {
+                final PluginForHost pluginForHost = pluginCaches.get(host);
+                if (pluginForHost != null) {
                     try {
-                        if (Boolean.TRUE.equals(p.rewriteHost(link))) {
-                            pluginForHost = p;
-                            break;
+                        if (!assignPlugin || pluginForHost.assignPlugin(link)) {
+                            return pluginForHost;
                         }
                     } catch (final Throwable e) {
                         logger.log(e);
                     }
                 }
-                rewriteLinkCache.put(originalHost, pluginForHost);
-                if (pluginForHost != null) {
-                    logger.info("Plugin " + pluginForHost.getHost() + " now handles " + link.getView().getDisplayName());
-                    link.setDefaultPlugin(pluginForHost);
-                    return pluginForHost;
-                }
             }
-            if (pluginForHost != null) {
+            try {
+                final LazyHostPlugin lazyHostPlugin = HostPluginController.getInstance().get(host);
+                if (lazyHostPlugin != null) {
+                    final PluginForHost pluginForHost = lazyHostPlugin.getPrototype(null);
+                    pluginCaches.put(host, pluginForHost);
+                    try {
+                        if (!assignPlugin || pluginForHost.assignPlugin(link)) {
+                            return pluginForHost;
+                        }
+                    } catch (final Throwable e) {
+                        logger.log(e);
+                    }
+                }
+            } catch (final Throwable e) {
+                logger.log(e);
+            }
+        }
+        try {
+            final LazyHostPlugin fallBackPlugin = HostPluginController.getInstance().getFallBackPlugin();
+            if (fallBackPlugin != null) {
+                logger.severe("Assign fallBackPlugin for: " + link.getHost() + ">" + host + "=" + link.getName());
+                final PluginForHost pluginForHost = fallBackPlugin.getPrototype(null);
+                pluginCaches.put(host, pluginForHost);
                 try {
-                    if (Boolean.TRUE.equals(pluginForHost.rewriteHost(link))) {
-                        logger.info("Plugin " + pluginForHost.getHost() + " now handles " + link.getView().getDisplayName());
-                        link.setDefaultPlugin(pluginForHost);
+                    if (!assignPlugin || pluginForHost.assignPlugin(link)) {
                         return pluginForHost;
                     }
                 } catch (final Throwable e) {
                     logger.log(e);
                 }
-            }
-        }
-        try {
-            /* assign UpdateRequiredPlugin */
-            LazyHostPlugin fallBackPlugin = HostPluginController.getInstance().getFallBackPlugin();
-            if (fallBackPlugin != null) {
-                pluginForHost = fallBackPlugin.getPrototype(null);
             }
         } catch (final Throwable e) {
             logger.log(e);
         }
-        if (pluginForHost != null) {
-            logger.severe("Use fallBackPlugin for: " + link.getHost() + "|" + link.getView().getDisplayName());
-            pluginCache.put(link.getHost(), pluginForHost);
-            if (pluginForHost != null) {
-                /* plugin found, let's put it into cache */
-                link.setDefaultPlugin(pluginForHost);
-                return pluginForHost;
-            }
-        }
-        logger.severe("Could not find plugin: " + link.getHost() + " for " + link.getView().getDisplayName());
+        logger.severe("Could not assign any plugin for link: " + link.getHost() + ">" + host + "=" + link.getName());
         return null;
     }
 
-    public synchronized PluginForHost assignPlugin(Account acc, boolean allowRewrite) {
-        if (acc.getHoster() == null) {
-            return null;
-        }
-        PluginForHost pluginForHost = null;
-        /* check if we already have a cached plugin for given host */
-        if (pluginCache.containsKey(acc.getHoster())) {
-            pluginForHost = pluginCache.get(acc.getHoster());
-            if (pluginForHost != null) {
-                /* plugin in cache found */
-                return pluginForHost;
-            }
-        } else {
-            /* no cached plugin found, first lets try to find a valid plugin for given host */
-            try {
-                LazyHostPlugin hPlugin = HostPluginController.getInstance().get(acc.getHoster());
-                if (hPlugin != null && (hPlugin.isPremium() || hPlugin.getClassName().endsWith("r.Offline"))) {
-                    pluginForHost = hPlugin.getPrototype(null);
-                }
-            } catch (final Throwable e) {
-                logger.log(e);
-            }
-            pluginCache.put(acc.getHoster(), pluginForHost);
-            if (pluginForHost != null) {
-                /* plugin found, let's put it into cache */
-                return pluginForHost;
-            }
-        }
-        if (allowRewrite && pluginForHost == null) {
-            if (rewriteAccountPlugins == null) {
-                /* rewrite cache not initialized yet, let's create it */
-                rewriteAccountPlugins = new ArrayList<PluginForHost>();
-                for (LazyHostPlugin lazyPlugin : HostPluginController.getInstance().list()) {
-                    if (lazyPlugin.isHasAccountRewrite()) {
-                        try {
-                            final PluginForHost protoType = lazyPlugin.getPrototype(null);
-                            if (protoType.rewriteHost((Account) null) != null) {
-                                rewriteAccountPlugins.add(protoType);
-                            }
-                        } catch (final Throwable e) {
-                            logger.log(e);
-                        }
-                    }
-                }
-            }
-            String originalHost = acc.getHoster();
-            if (rewriteAccountCache.containsKey(originalHost)) {
-                pluginForHost = rewriteAccountCache.get(originalHost);
-            } else {
-                /* rewrite cache available, let's check for a valid rewriting plugin */
-                for (PluginForHost p : rewriteAccountPlugins) {
+    public synchronized PluginForHost assignPlugin(final Account acc, final boolean assignPlugin) {
+        final String host = assignHost(acc.getHoster());
+        if (host != null) {
+            if (pluginCaches.containsKey(host)) {
+                final PluginForHost pluginForHost = pluginCaches.get(host);
+                if (pluginForHost != null && (pluginForHost.isPremiumEnabled() || pluginForHost.getLazyP().getClassName().endsWith("r.Offline"))) {
                     try {
-                        if (Boolean.TRUE.equals(p.rewriteHost(acc))) {
-                            pluginForHost = p;
-                            break;
+                        if (!assignPlugin || pluginForHost.assignPlugin(acc)) {
+                            return pluginForHost;
                         }
                     } catch (final Throwable e) {
                         logger.log(e);
                     }
                 }
-                rewriteAccountCache.put(originalHost, pluginForHost);
-                if (pluginForHost != null) {
-                    logger.info("Plugin " + pluginForHost.getHost() + " has been renamed, now 'known as/handled by' " + acc.getHoster());
-                    return pluginForHost;
-                }
             }
-            if (pluginForHost != null) {
-                try {
-                    if (Boolean.TRUE.equals(pluginForHost.rewriteHost(acc))) {
-                        logger.info("Plugin " + pluginForHost.getHost() + " has been renamed, now 'known as/handled by' " + acc.getHoster());
-                        return pluginForHost;
+            try {
+                final LazyHostPlugin lazyHostPlugin = HostPluginController.getInstance().get(host);
+                if (lazyHostPlugin != null && (lazyHostPlugin.isPremium() || lazyHostPlugin.getClassName().endsWith("r.Offline"))) {
+                    final PluginForHost pluginForHost = lazyHostPlugin.getPrototype(null);
+                    pluginCaches.put(host, pluginForHost);
+                    try {
+                        if (!assignPlugin || pluginForHost.assignPlugin(acc)) {
+                            return pluginForHost;
+                        }
+                    } catch (final Throwable e) {
+                        logger.log(e);
                     }
-                } catch (final Throwable e) {
-                    logger.log(e);
                 }
+            } catch (final Throwable e) {
+                logger.log(e);
             }
         }
-        logger.severe("Could not find plugin: " + acc.getHoster());
+        logger.severe("Could not assign any plugin for account: " + acc.getHoster() + ">" + host + "=" + acc.getUser());
         return null;
     }
 }

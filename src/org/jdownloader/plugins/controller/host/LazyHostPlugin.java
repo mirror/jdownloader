@@ -12,8 +12,6 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
     private static enum PROPERTY {
         CONFIG,
         PREMIUM,
-        ACCOUNTREWRITE,
-        LINKREWRITE,
         REWRITE,
         ALLOW
     }
@@ -107,28 +105,12 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
         this.configInterface = configInterface;
     }
 
-    public boolean isHasAccountRewrite() {
-        return getProperty(PROPERTY.ACCOUNTREWRITE);
-    }
-
-    public void setHasAccountRewrite(boolean hasAccountRewrite) {
-        setProperty(hasAccountRewrite, PROPERTY.ACCOUNTREWRITE);
-    }
-
     public void setHasAllowHandle(boolean hasAllowHandle) {
         setProperty(hasAllowHandle, PROPERTY.ALLOW);
     }
 
     public boolean isHasAllowHandle() {
         return getProperty(PROPERTY.ALLOW);
-    }
-
-    public boolean isHasLinkRewrite() {
-        return getProperty(PROPERTY.LINKREWRITE);
-    }
-
-    public void setHasLinkRewrite(boolean hasLinkRewrite) {
-        setProperty(hasLinkRewrite, PROPERTY.LINKREWRITE);
     }
 
     public void setHasRewrite(boolean hasRewrite) {

@@ -57,12 +57,12 @@ public class ShareRapidCz extends PluginForHost {
         this.enablePremium("http://sharerapid.cz/dobiti/?zeme=1");
     }
 
+    @Override
     public String rewriteHost(String host) {
         if (host == null || "share-rapid.cz".equals(host) || "sharerapid.cz".equals(host) || "sharerapid.sk".equals(host) || "megarapid.cz".equals(host)) {
             return "share-rapid.cz";
-        } else {
-            return null;
         }
+        return super.rewriteHost(host);
     }
 
     @Override

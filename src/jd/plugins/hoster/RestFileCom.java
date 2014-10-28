@@ -31,7 +31,6 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
-import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -63,37 +62,14 @@ public class RestFileCom extends PluginForHost {
     // captchatype: recaptcha
     // other: redirects
 
+    @Override
     public String rewriteHost(String host) {
         if ("restfile.ws".equals(getHost()) || "restfile.com".equals(getHost())) {
-            if ("restfile.ws".equals(host) || "restfile.com".equals(host)) {
+            if (host == null || "restfile.ws".equals(host) || "restfile.com".equals(host)) {
                 return "restfilee.com";
             }
         }
         return super.rewriteHost(host);
-    }
-
-    public Boolean rewriteHost(Account acc) {
-        if (isPremiumEnabled()) {
-            if ("restfile.ws".equals(getHost()) || "restfile.com".equals(getHost())) {
-                acc.setHoster("restfilee.com");
-                return true;
-            }
-            return false;
-        }
-        return null;
-    }
-
-    @Override
-    public Boolean rewriteHost(DownloadLink link) {
-        if (isPremiumEnabled()) {
-            if ("restfile.ws".equals(getHost()) || "restfile.com".equals(getHost())) {
-                link.setHost("restfilee.com");
-                correctDownloadLink(link);
-                return true;
-            }
-            return false;
-        }
-        return null;
     }
 
     @Override

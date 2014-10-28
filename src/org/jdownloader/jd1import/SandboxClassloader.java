@@ -38,7 +38,6 @@ public final class SandboxClassloader extends ClassLoader {
 
             @Override
             public void onFile(File f) throws RuntimeException {
-
                 for (Pattern p : allowed) {
                     if (p.matcher(Files.getRelativePath(root, f)).matches()) {
                         System.out.println("Add JD09 Jar " + f);
@@ -46,7 +45,6 @@ public final class SandboxClassloader extends ClassLoader {
                         return;
                     }
                 }
-
             }
 
             @Override

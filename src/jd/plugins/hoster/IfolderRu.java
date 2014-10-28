@@ -26,7 +26,6 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -40,46 +39,19 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rusfolder.com", "rusfolder.ru", "ifolder.ru" }, urls = { "http://([a-z0-9\\.\\-]*?\\.)?((daoifolder|yapapka|rusfolder|ifolder)\\.(net|ru|com)|files\\.metalarea\\.org)/(files/)?\\d+", "IFOLDERISNOWRUSFOLDER", "IFOLDERISNOWRUSFOLDER" }, flags = { 0, 0, 0 })
 public class IfolderRu extends PluginForHost {
 
-    private String                ua             = RandomUserAgent.generate();
+    private String       ua          = RandomUserAgent.generate();
 
-    private final String          passWarning    = ">Владелец файла установил пароль для скачивания\\.<";
-    private final String          PWTEXT         = "Введите пароль:<br";
+    private final String passWarning = ">Владелец файла установил пароль для скачивания\\.<";
+    private final String PWTEXT      = "Введите пароль:<br";
 
-    private final String          CAPTEXT        = "/random/images/";
+    private final String CAPTEXT     = "/random/images/";
 
     /**
      * sets primary domain to be used throughout JDownloader!
-     *
+     * 
      * @author raztoki
      */
-    private static final String   primaryHost    = "rusfolder.com";
-
-    /**
-     * For renaming previous 'names' annotation, AND for multihoster supported host array.<br />
-     * With multihoster supported host array use, we need to include all aliased domains 'urls' annotation! <b>NOTE:</b> This should not
-     * cause halm to rewriteHost(Account acc) or rewriteHost(DownloadLink link). since those hosts have never been used.
-     *
-     * @author raztoki
-     */
-    private static final String[] secondaryHosts = { "rusfolder.ru", "ifolder.ru" };
-
-    /**
-     * used to compare input against secondaryHosts String array.
-     *
-     * @param input
-     * @return
-     * @author raztoki
-     */
-    private boolean containsSecondaryHost(final String input) {
-        if (input != null || secondaryHosts != null) {
-            for (final String secondaryHost : secondaryHosts) {
-                if (input.equals(secondaryHost)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
+    private final String primaryHost = "rusfolder.com";
 
     public IfolderRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -103,39 +75,14 @@ public class IfolderRu extends PluginForHost {
         return 10;
     }
 
-    public String rewriteHost(String host) {
-        if (containsSecondaryHost(getHost())) {
-            if (host == null || containsSecondaryHost(host)) {
-                return primaryHost;
-            }
-        }
-        return null;
-    }
-
-    public Boolean rewriteHost(Account acc) {
-        // if (isPremiumEnabled()) {
-        if (containsSecondaryHost(getHost())) {
-            if (acc != null && containsSecondaryHost(acc.getHoster())) {
-                acc.setHoster(primaryHost);
-                return true;
-            }
-            return false;
-        }
-        return null;
-    }
-
     @Override
-    public Boolean rewriteHost(DownloadLink link) {
-        // if (isPremiumEnabled()) {
-        if (containsSecondaryHost(getHost())) {
-            if (link != null && containsSecondaryHost(link.getHost())) {
-                link.setHost(primaryHost);
-                correctDownloadLink(link);
-                return true;
+    public String rewriteHost(String host) {
+        if (!"rusfolder.com".equals(getHost())) {
+            if (host == null || "rusfolder.ru".equals(host) || "ifolder.ru".equals(host)) {
+                return "rusfolder.com";
             }
-            return false;
         }
-        return null;
+        return super.rewriteHost(host);
     }
 
     @Override

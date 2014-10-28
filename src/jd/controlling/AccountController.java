@@ -610,7 +610,7 @@ public class AccountController implements AccountControllerListener, AccountProp
     public void addAccount(final Account account, boolean forceCheck) {
         if (account != null) {
             if (account.getPlugin() == null) {
-                account.setPlugin(new PluginFinder().assignPlugin(account, true));
+                new PluginFinder().assignPlugin(account, true);
             }
             synchronized (AccountController.this) {
                 final String host = account.getHoster().toLowerCase(Locale.ENGLISH);

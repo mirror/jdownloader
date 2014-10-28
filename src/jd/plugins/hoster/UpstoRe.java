@@ -49,7 +49,9 @@ public class UpstoRe extends PluginForHost {
 
     public UpstoRe(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://upstore.net/premium/");
+        if ("upstore.net".equals(getHost())) {
+            this.enablePremium("http://upstore.net/premium/");
+        }
     }
 
     @Override
@@ -57,20 +59,14 @@ public class UpstoRe extends PluginForHost {
         return "http://upstore.net/terms/";
     }
 
-    public boolean isPremiumEnabled() {
-        return "upstore.net".equals(getHost());
-    }
-
     @Override
-    public Boolean rewriteHost(Account acc) {
-        if ("upstore.net".equals(getHost())) {
-            if (acc != null && "upsto.re".equals(acc.getHoster())) {
-                acc.setHoster("upstore.net");
-                return true;
+    public String rewriteHost(String host) {
+        if ("upsto.re".equals(getHost())) {
+            if (host == null || "upsto.re".equals(host)) {
+                return "upstore.net";
             }
-            return false;
         }
-        return null;
+        return super.rewriteHost(host);
     }
 
     private static Object LOCK         = new Object();
@@ -86,7 +82,7 @@ public class UpstoRe extends PluginForHost {
 
     /**
      * defines custom browser requirements
-     *
+     * 
      * @author raztoki
      * */
     private Browser prepBrowser(final Browser prepBr) {
@@ -106,6 +102,7 @@ public class UpstoRe extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        correctDownloadLink(link);
         prepBrowser(br);
         br.setFollowRedirects(true);
         if (link.getDownloadURL().matches(INVALIDLINKS)) {
@@ -291,7 +288,7 @@ public class UpstoRe extends PluginForHost {
 
     /**
      * saves cookies to HashMap from provided browser
-     *
+     * 
      * @author raztoki
      * @param br
      * @return
@@ -309,7 +306,7 @@ public class UpstoRe extends PluginForHost {
 
     /**
      * returns true if provided Cookie contains keyname is contained within getLoginCookies()
-     *
+     * 
      * @author raztoki
      * @param c
      * @return
@@ -373,7 +370,7 @@ public class UpstoRe extends PluginForHost {
 
     /**
      * Method to determine if current cookie session is still valid.
-     *
+     * 
      * @author raztoki
      * @param account
      * @return
@@ -412,7 +409,7 @@ public class UpstoRe extends PluginForHost {
 
     /**
      * Array containing all required premium cookies!
-     *
+     * 
      * @return
      */
     private String[] getLoginCookies() {
@@ -423,7 +420,7 @@ public class UpstoRe extends PluginForHost {
      * If default browser contains ALL cookies within 'loginCookies' array, it will return true<br />
      * <br />
      * NOTE: loginCookies[] can only contain true names! Remove all dead names from array!
-     *
+     * 
      * @author raztoki
      * */
     private boolean browserCookiesMatchLoginCookies(final Browser br) {

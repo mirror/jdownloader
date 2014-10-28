@@ -73,35 +73,14 @@ public class PutLockerCom extends PluginForHost {
         }
     }
 
-    public Boolean rewriteHost(Account acc) {
-        if (isPremiumEnabled()) {
-            if (acc != null && "putlocker.com".equals(acc.getHoster())) {
-                acc.setHoster("firedrive.com");
-                return true;
-            }
-            return false;
-        }
-        return null;
-    }
-
+    @Override
     public String rewriteHost(String host) {
         if ("putlocker.com".equals(getHost())) {
             if (host == null || "putlocker.com".equals(host)) {
                 return "firedrive.com";
             }
         }
-        return null;
-    }
-
-    public Boolean rewriteHost(DownloadLink link) {
-        if (isPremiumEnabled()) {
-            if (link != null && "putlocker.com".equals(link.getHost())) {
-                link.setHost("firedrive.com");
-                return true;
-            }
-            return false;
-        }
-        return null;
+        return super.rewriteHost(host);
     }
 
     public void correctDownloadLink(DownloadLink link) throws PluginException {

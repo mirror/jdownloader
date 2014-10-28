@@ -74,35 +74,14 @@ public class UltraMegaBitCom extends PluginForHost {
         link.setUrlDownload("https://uploadto.us/file/details/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9\\-_]+)$").getMatch(0));
     }
 
-    public Boolean rewriteHost(DownloadLink link) {
-        if (isPremiumEnabled()) {
-            if (link != null && "ultramegabit.com".equals(link.getHost())) {
-                link.setHost("uploadto.us");
-                return true;
-            }
-            return false;
-        }
-        return null;
-    }
-
+    @Override
     public String rewriteHost(String host) {
         if ("ultramegabit.com".equals(getHost())) {
             if (host == null || "ultramegabit.com".equals(host)) {
                 return "uploadto.us";
             }
         }
-        return null;
-    }
-
-    public Boolean rewriteHost(Account acc) {
-        if (isPremiumEnabled()) {
-            if (acc != null && "ultramegabit.com".equals(acc.getHoster())) {
-                acc.setHoster("uploadto.us");
-                return true;
-            }
-            return false;
-        }
-        return null;
+        return super.rewriteHost(host);
     }
 
     private static AtomicReference<String> agent   = new AtomicReference<String>(null);

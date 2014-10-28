@@ -161,7 +161,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
         ProgressDialog pd = new ProgressDialog(new ProgressGetter() {
 
             public void run() throws Exception {
-                PluginForHost hostPlugin = new PluginFinder().assignPlugin(ac, true);
+                final PluginForHost hostPlugin = new PluginFinder().assignPlugin(ac, true);
                 if (hostPlugin != null) {
                     ac.setPlugin(hostPlugin);
                 }

@@ -60,36 +60,14 @@ public class NowVideoEu extends PluginForHost {
         return MAINPAGE.get() + "/terms.php";
     }
 
-    public Boolean rewriteHost(final DownloadLink link) {
-        if (isPremiumEnabled()) {
-            if (link != null && ("nowvideo.ch".equals(link.getHost()) || "nowvideo.co".equals(link.getHost()) || "nowvideo.sx".equals(link.getHost()) || "nowvideo.ag".equals(link.getHost()) || "nowvideo.at".equals(link.getHost()))) {
-                link.setHost("nowvideo.eu");
-                return true;
-            }
-            return false;
-        }
-        return null;
-    }
-
-    public Boolean rewriteHost(final Account acc) {
-        if (isPremiumEnabled()) {
-            if (acc != null && ("nowvideo.ch".equals(acc.getHoster()) || "nowvideo.co".equals(acc.getHoster()) || "nowvideo.sx".equals(acc.getHoster()) || "nowvideo.ag".equals(acc.getHoster()) || "nowvideo.at".equals(acc.getHoster()))) {
-                acc.setHoster("nowvideo.eu");
-                return true;
-            }
-            return false;
-        }
-        return null;
-    }
-
     @Override
     public String rewriteHost(String host) {
-        if (!isPremiumEnabled()) {
+        if ("nowvideo.co".equals(getHost())) {
             if (host == null || host.startsWith("nowvideo.")) {
                 return "nowvideo.eu";
             }
         }
-        return null;
+        return super.rewriteHost(host);
     }
 
     public void correctDownloadLink(DownloadLink link) {
