@@ -44,6 +44,7 @@ public class ParameterHandler implements InstanceMessageListener, CommandSwitchL
         addCommand(new AddContainerCommand());
         addCommand(new AddExtractionPasswordsCommand());
         addCommand(new AddLinkCommand());
+        //
         addCommand(new GuiFocusCommand());
         addCommand(new GuiMinimizeCommand());
         addCommand(new HelpCommand(this));

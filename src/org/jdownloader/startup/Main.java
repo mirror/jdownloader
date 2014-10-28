@@ -17,12 +17,12 @@
 
 package org.jdownloader.startup;
 
-import java.awt.Dialog.ModalityType;
 import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.net.URL;
 import java.util.Enumeration;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -30,23 +30,19 @@ import java.util.logging.Logger;
 import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
 import jd.gui.swing.laf.LookAndFeelController;
 
-import org.appwork.shutdown.ShutdownController;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.JsonSerializer;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.txtresource.TranslationFactory;
-import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.appwork.utils.IO.SYNC;
 import org.appwork.utils.IOErrorHandler;
 import org.appwork.utils.Regex;
 import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.processes.ProcessBuilderFactory;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.logging.ExtLogManager;
 import org.jdownloader.logging.LogController;
@@ -90,7 +86,12 @@ public class Main {
         }
         org.appwork.utils.Application.setApplication(".jd_home");
         org.appwork.utils.Application.getRoot(jd.SecondLevelLaunch.class);
+        try {
+            copySVNtoHome();
 
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
         Dialog.getInstance().setLafManager(LookAndFeelController.getInstance());
         try {
             // the logmanager should not be initialized here. so setting the
@@ -217,6 +218,74 @@ public class Main {
         }
     }
 
+    private static void copySVNtoHome() {
+        try {
+            if (!Application.isJared(null) && Application.getRessourceURL("org/jdownloader/update/JDUpdateClient.class") == null) {
+
+                File workspace = new File(Main.class.getResource("/").toURI()).getParentFile();
+                File svnEntriesFile = new File(workspace, ".svn/entries");
+                if (svnEntriesFile.exists()) {
+                    long lastMod = svnEntriesFile.lastModified();
+                    try {
+                        lastMod = Long.parseLong(Regex.getLines(IO.readFileToString(svnEntriesFile))[3].trim());
+                    } catch (Throwable e) {
+
+                    }
+
+                    long lastUpdate = -1;
+                    File lastSvnUpdateFile = Application.getResource("dev/lastSvnUpdate");
+                    if (lastSvnUpdateFile.exists()) {
+                        try {
+                            lastUpdate = Long.parseLong(IO.readFileToString(lastSvnUpdateFile));
+                        } catch (Throwable e) {
+
+                        }
+                    }
+                    if (lastMod > lastUpdate) {
+                        copyResource(workspace, "themes/themes", "themes");
+                        copyResource(workspace, "ressourcen/jd", "jd");
+                        copyResource(workspace, "ressourcen/tools", "tools");
+                        copyResource(workspace, "translations/translations", "translations");
+                        File jdJar = Application.getResource("JDownloader.jar");
+                        jdJar.delete();
+                        IO.copyFile(new File(workspace, "dev/JDownloader.jar"), jdJar);
+                        lastSvnUpdateFile.delete();
+                        lastSvnUpdateFile.getParentFile().mkdirs();
+                        IO.writeStringToFile(lastSvnUpdateFile, lastMod + "");
+                    }
+                }
+                // URL mainClass = Application.getRessourceURL("org", true);
+                //
+                // File svnJar = new File(new File(mainClass.toURI()).getParentFile().getParentFile(), "dev/JDownloader.jar");
+                // FileCreationManager.getInstance().delete(jdjar, null);
+                // IO.copyFile(svnJar, jdjar);
+                //
+                // }
+
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void copyResource(File workspace, String from, String to) throws IOException {
+        System.out.println("Copy SVN Resources " + new File(workspace, from) + " to " + Application.getResource(to));
+        IO.copyFolderRecursive(new File(workspace, from), Application.getResource(to), true, new FileFilter() {
+
+            @Override
+            public boolean accept(File pathname) {
+                if (pathname.getAbsolutePath().contains(".svn")) {
+                    return false;
+                } else {
+                    System.out.println("Copy " + pathname);
+                    return true;
+                }
+
+            }
+
+        }, SYNC.NONE);
+    }
+
     public static void main(String[] args) {
         final boolean nativeSwing = !CrossSystem.isRaspberryPi() && System.getProperty("nativeswing") != null && !Application.isHeadless();
         if (nativeSwing) {
@@ -296,67 +365,6 @@ public class Main {
         ExtensionController.getInstance().invalidateCacheIfRequired();
         HostPluginController.getInstance().invalidateCacheIfRequired();
         CrawlerPluginController.invalidateCacheIfRequired();
-        try {
-
-            // ensure that there is a Jdownloader.jar and call it to keep jd_home up2date
-            if (!Application.isJared(Main.class) && Application.getRessourceURL("org/jdownloader/update/JDUpdateClient.class") == null) {
-                // Developer Mode. Let's call JDownloader.jar Updater in .jd_home
-
-                File jdjar = Application.getResource("JDownloader.jar");
-                if (!jdjar.exists()) {
-                    //
-                    URL mainClass = Application.getRessourceURL("org", true);
-
-                    File svnJar = new File(new File(mainClass.toURI()).getParentFile().getParentFile(), "dev/JDownloader.jar");
-                    FileCreationManager.getInstance().delete(jdjar, null);
-                    IO.copyFile(svnJar, jdjar);
-
-                }
-
-                final ProcessBuilder processBuilder = ProcessBuilderFactory.create(CrossSystem.getJavaBinary(), "-Djava.awt.headless=false", "-jar", jdjar.getName(), "-forceupdate", "guiless", "-exitafterupdate").directory(jdjar.getParentFile());
-                new Thread("Updater") {
-                    public void run() {
-
-                        try {
-                            processBuilder.redirectErrorStream(true);
-                            final Process process = processBuilder.start();
-
-                            final StringBuilder sbs = new StringBuilder();
-                            try {
-                                sbs.append(IO.readInputStreamToString(process.getInputStream()));
-                            } catch (Throwable e) {
-                                e.printStackTrace();
-                            }
-
-                            process.exitValue();
-
-                            if (sbs.toString().contains("Write Revision:")) {
-                                ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, "Update Installed to Revision " + new Regex(sbs.toString(), "Write Revision:\\s*(\\d+)").getMatch(0), "Update Installed. Please restart to access new resources like images, translations, ... ", null, "Exit JDownloader", null) {
-                                    public java.awt.Dialog.ModalityType getModalityType() {
-                                        return ModalityType.MODELESS;
-                                    };
-                                };
-                                d.setTimeout(5000);
-                                UIOManager.I().show(null, d);
-                                d.throwCloseExceptions();
-
-                                System.out.println("Updates Installed to .jd_home");
-                                ShutdownController.getInstance().requestShutdown();
-                            }
-                            System.out.println("Done");
-                            return;
-
-                        } catch (Exception e1) {
-                            e1.printStackTrace();
-
-                        }
-                    }
-                }.start();
-
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
 
         jd.SecondLevelLaunch.mainStart(args);
         if (nativeSwing) {
@@ -375,7 +383,7 @@ public class Main {
                     }
                 });
             } catch (Throwable e1) {
-                e1.printStackTrace();
+
                 try {
                     chrriis.dj.nativeswing.swtimpl.NativeInterface.runEventPump();
                 } catch (Throwable e) {
