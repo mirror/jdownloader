@@ -27,6 +27,7 @@ public final class SandboxClassloader extends ClassLoader {
 
         final HashSet<Pattern> allowed = new HashSet<Pattern>();
         allowed.add(Pattern.compile("jdownloader\\.jar", Pattern.CASE_INSENSITIVE));
+        allowed.add(Pattern.compile("jdownloader\\.jar.backup_\\d+", Pattern.CASE_INSENSITIVE));
         allowed.add(Pattern.compile("libs[/\\\\].*\\.jar", Pattern.CASE_INSENSITIVE));
         allowed.add(Pattern.compile("plugins[/\\\\].*\\.jar", Pattern.CASE_INSENSITIVE));
         Files.walkThroughStructure(new Handler<RuntimeException>() {
@@ -37,16 +38,15 @@ public final class SandboxClassloader extends ClassLoader {
 
             @Override
             public void onFile(File f) throws RuntimeException {
-                if (f.getName().endsWith(".jar")) {
-                    for (Pattern p : allowed) {
-                        if (p.matcher(Files.getRelativePath(root, f)).matches()) {
-                            System.out.println("Add JD09 Jar " + f);
-                            jars.add(f);
-                            return;
-                        }
-                    }
 
+                for (Pattern p : allowed) {
+                    if (p.matcher(Files.getRelativePath(root, f)).matches()) {
+                        System.out.println("Add JD09 Jar " + f);
+                        jars.add(f);
+                        return;
+                    }
                 }
+
             }
 
             @Override
