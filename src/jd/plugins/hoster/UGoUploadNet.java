@@ -111,6 +111,8 @@ public class UGoUploadNet extends PluginForHost {
         }
         if (br.getURL().contains("ugoupload.net/index.html") || br.containsHTML("<title>Index of") || br.containsHTML(">File has been removed due to inactivity")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getURL().contains("/error." + "html") || br.getURL().contains("/index." + "html") || (!br.containsHTML("class=\"downloadPageTable(V2)?\"") && !br.containsHTML("class=\"download\\-timer\""))) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String[] fileInfo = br.getRegex("<strong>\\s*([^\r\n]+)\\(([\\d\\.]+ (?:KB|MB|GB))\\)<\\s*(?:/br|br\\s*/)\\s*>").getRow(0);
         if (fileInfo == null || fileInfo.length == 0) {
