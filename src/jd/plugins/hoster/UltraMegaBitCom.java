@@ -55,14 +55,11 @@ public class UltraMegaBitCom extends PluginForHost {
 
     public UltraMegaBitCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(MAINPAGE);
-        /* Needed for premium, servers are a bit slow */
-        this.setStartIntervall(20 * 1000l);
-    }
-
-    @Override
-    public boolean isPremiumEnabled() {
-        return "uploadto.us".equals(getHost());
+        if ("uploadto.us".equals(getHost())) {
+            this.enablePremium(MAINPAGE);
+            /* Needed for premium, servers are a bit slow */
+            this.setStartIntervall(20 * 1000l);
+        }
     }
 
     @Override
