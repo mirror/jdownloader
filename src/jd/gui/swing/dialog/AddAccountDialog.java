@@ -400,6 +400,11 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
         }
     }
 
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        super.actionPerformed(e);
+    }
+
     private JComponent header(String buyAndAddPremiumAccount_layoutDialogContent_get) {
         JLabel ret = SwingUtils.toBold(new JLabel(buyAndAddPremiumAccount_layoutDialogContent_get));
         ret.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, ret.getForeground()));
