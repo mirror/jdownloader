@@ -57,7 +57,9 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public boolean onRenameClick(MouseEvent e, AbstractNode obj) {
-        new SetDownloadFolderInLinkgrabberAction(new SelectionInfo<CrawledPackage, CrawledLink>(obj, null, false)).actionPerformed(null);
+        SetDownloadFolderInLinkgrabberAction r = new SetDownloadFolderInLinkgrabberAction(new SelectionInfo<CrawledPackage, CrawledLink>(obj, null, false));
+        r.requestUpdate(this);
+        r.actionPerformed(null);
         return true;
     }
 
