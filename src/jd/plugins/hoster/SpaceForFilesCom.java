@@ -105,6 +105,14 @@ public class SpaceForFilesCom extends PluginForHost {
     // other:
 
     @Override
+    public String rewriteHost(String host) {
+        if (host == null || "filespace.com".equals(host)) {
+            return "spaceforfiles.com";
+        }
+        return super.rewriteHost(host);
+    }
+
+    @Override
     public void correctDownloadLink(final DownloadLink link) {
         // link cleanup, but respect users protocol choosing.
         if (!SUPPORTSHTTPS) {
