@@ -620,6 +620,7 @@ public class DirectHTTP extends PluginForHost {
                         urlConnection.disconnect();
                         urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
                     } else if (urlConnection.getResponseCode() != 404 && urlConnection.getResponseCode() >= 300) {
+                        // no head support?
                         urlConnection.disconnect();
                         urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
                     }
