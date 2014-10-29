@@ -50,7 +50,9 @@ public class AnimePremiumTv extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink downloadLink) {
         String fuid = new Regex(downloadLink.getDownloadURL(), "/share\\.php\\?id=(\\d+)").getMatch(0);
-        if (fuid != null) downloadLink.setUrlDownload("http://s1000.animepremium.tv/download/" + fuid);
+        if (fuid != null) {
+            downloadLink.setUrlDownload("http://s1000.animepremium.tv/download/" + fuid);
+        }
     }
 
     @Override
@@ -58,18 +60,31 @@ public class AnimePremiumTv extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("<title>404 Not Found</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<title>404 Not Found</title>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>Download (.*?)  \\|").getMatch(0);
-        if (filename == null) filename = br.getRegex("<h2>Download File: (.*?)</h2>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>Download ([^<>\"]*?)</title>").getMatch(0);
-        DLLINK = br.getRegex("\\'file\\'([\t\n\r ]+)?:([\t\n\r ]+)?\\'(http[^<>\"]*?)\\'").getMatch(2);
-        if (DLLINK == null) DLLINK = br.getRegex("(https?://\\w+\\.tinyvid\\.net[^<>\"]*?\\.mp4)").getMatch(0);
-        if (filename == null && DLLINK == null)
+        if (filename == null) {
+            filename = br.getRegex("<h2>Download File: (.*?)</h2>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("<title>Download ([^<>\"]*?)</title>").getMatch(0);
+        }
+        DLLINK = br.getRegex("\\'file\\'([\t\n\r ]+)?:([\t\n\r ]+)?\\'([^<>\"]*?)\\'").getMatch(2);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("(https?://\\w+\\.tinyvid\\.net[^<>\"]*?\\.mp4)").getMatch(0);
+        }
+        if (filename == null && DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        else if (filename == null || filename.equals("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (filename == null || filename.equals("")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         filename = Encoding.htmlDecode(filename.trim());
         downloadLink.setName(filename);
         DLLINK = Encoding.htmlDecode(DLLINK);
+        if (!DLLINK.startsWith("http://")) {
+            DLLINK = "http://s1000.animepremium.tv/download/" + DLLINK;
+        }
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -78,11 +93,14 @@ public class AnimePremiumTv extends PluginForHost {
             con = br2.openGetConnection(DLLINK);
             if (!con.getContentType().contains("html")) {
                 String ext = br2.getURL().substring(br2.getURL().lastIndexOf("."));
-                if (ext == null || ext.length() > 5) ext = ".mp4";
+                if (ext == null || ext.length() > 5) {
+                    ext = ".mp4";
+                }
                 downloadLink.setFinalFileName(filename + ext);
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            } else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

@@ -88,7 +88,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         synchronized (LOCK) {
             String parameter = param.toString().replace("#!/", "");
             PARAMETER = parameter;
-            if (PARAMETER.matches(TYPE_SINGLE_VIDEO_ALL) || PARAMETER.matches(TYPE_SINGLE_PHOTO)) {
+            if (PARAMETER.matches(TYPE_SINGLE_VIDEO_ALL) || PARAMETER.contains("/video.php?v") || PARAMETER.matches(TYPE_SINGLE_PHOTO)) {
                 final DownloadLink fina = createDownloadlink(PARAMETER.replace("facebook.com/", "facebookdecrypted.com/"));
                 decryptedLinks.add(fina);
                 return decryptedLinks;
