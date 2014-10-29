@@ -378,6 +378,8 @@ public class OldRAFDownload extends DownloadInterface {
     public boolean handleErrors() throws PluginException {
         final boolean isExternalStop = externalDownloadStop();
         final long verifiedFileSize = getVerifiedFileSize();
+        final long fileSize = getFileSize();
+        logger.severe("ExternalStop: " + isExternalStop + "|VerifiedFilesize: " + verifiedFileSize + "|FileSize: " + fileSize + "|Loaded: " + totalLinkBytesLoaded);
         if (verifiedFileSize >= 0) {
             if (totalLinkBytesLoaded >= verifiedFileSize) {
                 logger.severe("VerifiedFilesize: " + verifiedFileSize + " Loaded: " + totalLinkBytesLoaded);
@@ -392,7 +394,6 @@ public class OldRAFDownload extends DownloadInterface {
             }
             throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_incomplete());
         }
-        final long fileSize = getFileSize();
         if (fileSize >= 0) {
             if (totalLinkBytesLoaded >= fileSize || isExternalStop == false && caughtPluginException == null) {
                 logger.severe("Filesize: " + fileSize + " Loaded: " + totalLinkBytesLoaded);
