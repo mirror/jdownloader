@@ -234,7 +234,7 @@ public class DebridLinkFr extends PluginForHost {
     /**
      * getPage sends get request with a new browser instance with each request! <br/>
      * error handling after page is returned.
-     * 
+     *
      * @param account
      * @param downloadLink
      * @param r
@@ -244,18 +244,21 @@ public class DebridLinkFr extends PluginForHost {
      * @param other
      *            :: additional http request arguments
      * @throws Exception
-     * 
+     *
      */
-    private synchronized void getPage(final Account account, final DownloadLink downloadLink, final String r, final boolean sign, final String other) throws Exception {
-        br = new Browser();
-        prepBrowser(br);
-        if (account != null && r != null) {
-            br.getPage(apiHost + "?r=" + r + (sign ? "&token=" + getValue(account, "token") + "&sign=" + getSign(account, r) : "") + (other != null ? (!other.startsWith("&") ? "&" : "") + other : ""));
-            if (errChk()) {
-                errHandling(account, downloadLink, false);
+    private void getPage(final Account account, final DownloadLink downloadLink, final String r, final boolean sign, final String other) throws Exception {
+        synchronized (accountInfo) {
+            if (account != null && r != null) {
+                final String getThis = apiHost + "?r=" + r + (sign ? "&token=" + getValue(account, "token") + "&sign=" + getSign(account, r) : "") + (other != null ? (!other.startsWith("&") ? "&" : "") + other : "");
+                br = new Browser();
+                prepBrowser(br);
+                br.getPage(getThis);
+                if (errChk()) {
+                    errHandling(account, downloadLink, false);
+                }
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 
@@ -407,7 +410,7 @@ public class DebridLinkFr extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from String source.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -423,7 +426,7 @@ public class DebridLinkFr extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -432,7 +435,7 @@ public class DebridLinkFr extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from provided Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
