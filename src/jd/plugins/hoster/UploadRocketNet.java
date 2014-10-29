@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -72,6 +73,7 @@ public class UploadRocketNet extends PluginForHost {
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean VIDEOHOSTER                  = false;
     private static final boolean SUPPORTSHTTPS                = false;
+    private static final boolean SUPPORTS_ALT_AVAILABLECHECK  = true;
     // Connection stuff
     private static final boolean FREE_RESUME                  = true;
     private static final int     FREE_MAXCHUNKS               = -2;
@@ -92,7 +94,7 @@ public class UploadRocketNet extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.4.4
-    // mods:
+    // mods: implemented requestFileInfo method of XFS 2.6.6.6
     // limit-info: premium untested
     // protocol: no https
     // captchatype: 4dignum
@@ -142,24 +144,68 @@ public class UploadRocketNet extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final String[] fileInfo = new String[3];
+        final Browser altbr = br.cloneBrowser();
         br.setFollowRedirects(true);
+        correctDownloadLink(link);
         prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) {
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
+            fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
+            if (fileInfo[0] != null) {
+                link.setName(Encoding.htmlDecode(fileInfo[0]).trim());
+                return AvailableStatus.TRUE;
+            }
             link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.UNCHECKABLE;
         }
         if (br.getURL().contains("/?op=login&redirect=")) {
+            logger.info("PREMIUMONLY handling: Trying alternative linkcheck");
             link.getLinkStatus().setStatusText(PREMIUMONLY2);
+            try {
+                fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
+                if (br.containsHTML(">No such file<")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                altbr.getPage("http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
+                if (altbr.containsHTML(">No such file<")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                fileInfo[0] = altbr.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
+                if (SUPPORTS_ALT_AVAILABLECHECK) {
+                    altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
+                    fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
+                }
+                /* 2nd offline check */
+                if ((SUPPORTS_ALT_AVAILABLECHECK && altbr.containsHTML("(>" + link.getDownloadURL() + "</td><td style=\"color:red;\">Not found\\!</td>|" + this.fuid + " not found\\!</font>)")) && fileInfo[0] == null) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (fileInfo[0] != null || fileInfo[1] != null) {
+                    /* We know the link is online, set all information we got */
+                    link.setAvailable(true);
+                    if (fileInfo[0] != null) {
+                        link.setName(Encoding.htmlDecode(fileInfo[0].trim()));
+                    } else {
+                        link.setName(fuid);
+                    }
+                    if (fileInfo[1] != null) {
+                        link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
+                    }
+                    return AvailableStatus.TRUE;
+                }
+            } catch (final Throwable e) {
+                logger.info("Unknown error occured in alternative linkcheck:");
+                e.printStackTrace();
+            }
+            logger.warning("Alternative linkcheck failed!");
             return AvailableStatus.UNCHECKABLE;
         }
-        final String[] fileInfo = new String[3];
         scanInfo(fileInfo);
         if (fileInfo[0] == null || fileInfo[0].equals("")) {
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
@@ -174,6 +220,15 @@ public class UploadRocketNet extends PluginForHost {
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
         link.setName(fileInfo[0].trim());
+        if (fileInfo[1] == null && SUPPORTS_ALT_AVAILABLECHECK) {
+            /* Do alt availablecheck here but don't check availibility because we already know that the file must be online! */
+            logger.info("Filesize not available, trying altAvailablecheck");
+            try {
+                altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
+                fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
+            } catch (final Throwable e) {
+            }
+        }
         if (fileInfo[1] != null && !fileInfo[1].equals("")) {
             link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         }
@@ -219,6 +274,11 @@ public class UploadRocketNet extends PluginForHost {
             fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         }
         return fileInfo;
+    }
+
+    private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws IOException, PluginException {
+        br.getPage("http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
+        return br.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
 
     @Override
@@ -460,13 +520,13 @@ public class UploadRocketNet extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlFree
      *            (+1|-1)
      */
@@ -605,7 +665,7 @@ public class UploadRocketNet extends PluginForHost {
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
-     * 
+     *
      * @param key
      * @param value
      * @return
@@ -631,7 +691,7 @@ public class UploadRocketNet extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
@@ -648,7 +708,7 @@ public class UploadRocketNet extends PluginForHost {
     /**
      * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
      * which is based on fuid.
-     * 
+     *
      * @version 0.2
      * @author raztoki
      * */
