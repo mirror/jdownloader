@@ -22,7 +22,7 @@ public class AdvancedConfigTableModel extends ExtTableModel<AdvancedConfigEntry>
     public void _fireTableStructureChanged(java.util.List<AdvancedConfigEntry> newtableData, boolean refreshSort) {
         final String ltext = text;
         if (ltext != null) {
-            final String finds[] = ltext.toLowerCase(Locale.ENGLISH).split("\\s");
+            final String finds[] = ltext.replaceAll("[^a-zA-Z0-9 ]+", "").toLowerCase(Locale.ENGLISH).split("\\s");
             for (final Iterator<AdvancedConfigEntry> it = newtableData.iterator(); it.hasNext();) {
                 final AdvancedConfigEntry next = it.next();
                 for (String find : finds) {
