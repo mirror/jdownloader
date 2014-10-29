@@ -134,7 +134,7 @@ public class TurboBitNet extends PluginForHost {
                 // without new, can cause issue every now and then
                 br.postPage("http://" + NICE_HOST + "/linkchecker/check", sb.toString());
                 for (final DownloadLink dllink : links) {
-                    final Regex fileInfo = br.getRegex("<td>" + getFUID(dllink) + "</td>[\t\n\r ]+<td>([^<]*)</td>[\t\n\r ]+<td style=\"text-align:center;\"><img src=\"[^\"]+/(done|error)\\.png\"");
+                    final Regex fileInfo = br.getRegex("<td>" + getFUID(dllink) + "</td>[\t\n\r ]+<td>([^<]*)</td>[\t\n\r ]+<td style=\"text-align:center;\">[\t\n\r ]+<img src=\"[^\"]+/(done|error)\\.png\"");
                     if (fileInfo.getMatches() == null || fileInfo.getMatches().length == 0) {
                         dllink.setAvailable(false);
                         logger.warning("Linkchecker broken for " + getHost() + " Example link: " + dllink.getDownloadURL());
@@ -566,7 +566,7 @@ public class TurboBitNet extends PluginForHost {
 
     /**
      * fuid = case sensitive.
-     *
+     * 
      * @param downloadLink
      * @return
      * @throws PluginException
@@ -798,9 +798,9 @@ public class TurboBitNet extends PluginForHost {
 
     /**
      * Defines custom browser requirements. Integrates with antiDDoS method
-     *
+     * 
      * @author raztoki
-     *
+     * 
      * */
     private Browser prepBrowser(final Browser prepBr, String UA) {
         synchronized (antiDDoSCookies) {
@@ -843,7 +843,7 @@ public class TurboBitNet extends PluginForHost {
      * Performs Cloudflare and Incapsula requirements.<br />
      * Auto fill out the required fields and updates antiDDoSCookies session.<br />
      * Always called after Browser Request!
-     *
+     * 
      * @version 0.02
      * @author raztoki
      **/
@@ -951,7 +951,7 @@ public class TurboBitNet extends PluginForHost {
     }
 
     /**
-     *
+     * 
      * @author raztoki
      * */
     @SuppressWarnings("unused")
@@ -966,7 +966,7 @@ public class TurboBitNet extends PluginForHost {
     }
 
     /**
-     *
+     * 
      * @author raztoki
      * */
     private boolean requestHeadersHasKeyNValueContains(final String k, final String v) {
