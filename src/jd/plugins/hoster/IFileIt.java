@@ -59,7 +59,7 @@ public class IFileIt extends PluginForHost {
     private static final String  ONLY4REGISTEREDUSERTEXT  = JDL.LF("plugins.hoster.ifileit.only4registered", "Wait or register to download the files");
     private static final String  NOCHUNKS                 = "NOCHUNKS";
     private static final String  NORESUME                 = "NORESUME";
-    private static final String  MAINPAGE                 = "https://filecloud.io";
+    public static final String   MAINPAGE                 = "https://filecloud.io";
     private static AtomicInteger maxPrem                  = new AtomicInteger(1);
     private static AtomicBoolean UNDERMAINTENANCE         = new AtomicBoolean(false);
     private static final String  UNDERMAINTENANCEUSERTEXT = "The site is under maintenance!";
@@ -534,7 +534,7 @@ public class IFileIt extends PluginForHost {
         return maxPrem.get();
     }
 
-    private void prepBrowser(final Browser br) {
+    public void prepBrowser(final Browser br) {
         if (br == null) {
             return;
         }
