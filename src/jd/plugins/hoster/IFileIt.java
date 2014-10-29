@@ -65,6 +65,8 @@ public class IFileIt extends PluginForHost {
     private static final String  UNDERMAINTENANCEUSERTEXT = "The site is under maintenance!";
 
     private static final String  NICE_HOST                = "filecloud.io";
+    private String               dllink                   = null;
+    private boolean              webMethod                = false;
 
     public IFileIt(final PluginWrapper wrapper) {
         super(wrapper);
@@ -87,6 +89,7 @@ public class IFileIt extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        prepBrowser(br);
         boolean failed = true;
         try {
             final String fid = getFid(downloadLink);
@@ -109,7 +112,7 @@ public class IFileIt extends PluginForHost {
                 this.getPluginConfig().setProperty("apikey", Property.NULL);
                 this.getPluginConfig().setProperty("username", Property.NULL);
                 this.getPluginConfig().setProperty("password", Property.NULL);
-                br.postPage("/api-check_file.api", "ukey=" + fid);
+                br.postPage((br.getHttpConnection() == null ? MAINPAGE : "") + "/api-check_file.api", "ukey=" + fid);
                 failed = false;
             }
 
@@ -122,16 +125,38 @@ public class IFileIt extends PluginForHost {
         // Check without API if everything fails
         if (br.containsHTML("\"message\":\"no such user\"") || failed) {
             logger.warning("API key is invalid, jumping in other handling...");
+            final boolean isfollowingRedirect = br.isFollowingRedirects();
+            // clear old browser
+            br = prepBrowser(new Browser());
+            // can be direct link!
             URLConnectionAdapter con = null;
+            br.setFollowRedirects(true);
             try {
                 con = br.openGetConnection(downloadLink.getDownloadURL());
-                if (con.getResponseCode() == 503) {
-                    downloadLink.getLinkStatus().setStatusText(UNDERMAINTENANCEUSERTEXT);
-                    UNDERMAINTENANCE.set(true);
-                    return AvailableStatus.UNCHECKABLE;
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    if (con.getResponseCode() == 503) {
+                        // they are using cloudflare these days!
+                        // downloadLink.getLinkStatus().setStatusText(UNDERMAINTENANCEUSERTEXT);
+                        // UNDERMAINTENANCE.set(true);
+                        return AvailableStatus.UNCHECKABLE;
+                    }
+                    br.followConnection();
+                } else {
+                    downloadLink.setName(getFileNameFromHeader(con));
+                    try {
+                        // @since JD2
+                        downloadLink.setVerifiedFileSize(con.getLongContentLength());
+                    } catch (final Throwable t) {
+                        downloadLink.setDownloadSize(con.getLongContentLength());
+                    }
+                    // lets also set dllink
+                    dllink = br.getURL();
+                    // set constants so we can save link, no point wasting this link!
+                    return AvailableStatus.TRUE;
                 }
-                br.followConnection();
             } finally {
+                webMethod = true;
+                br.setFollowRedirects(isfollowingRedirect);
                 try {
                     con.disconnect();
                 } catch (final Throwable e) {
@@ -167,24 +192,27 @@ public class IFileIt extends PluginForHost {
 
     public void doFree(final DownloadLink downloadLink, boolean viaAccount) throws Exception, PluginException {
         br.setFollowRedirects(true);
-        String dllink = null;
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openGetConnection(downloadLink.getDownloadURL());
-            if (!con.getContentType().contains("html")) {
-                logger.info("Link is a direct link");
-                dllink = downloadLink.getDownloadURL();
-            } else {
-                logger.info("Link is no direct link");
-                br.followConnection();
-            }
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
         if (dllink == null) {
+            // since linkcheck can be done via api-api or web-api or web-web. this is still needed here for when api linkchecking has
+            // happened! We don't need to do it again when webmethod isn't directlink!
+            if (!webMethod) {
+                URLConnectionAdapter con = null;
+                try {
+                    con = br.openGetConnection(downloadLink.getDownloadURL());
+                    if (!con.getContentType().contains("html")) {
+                        logger.info("Link is a direct link");
+                        dllink = downloadLink.getDownloadURL();
+                    } else {
+                        logger.info("Link is no direct link");
+                        br.followConnection();
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (Throwable e) {
+                    }
+                }
+            }
             final String ab1 = br.getRegex("if\\( __ab1 == \\'([^<>\"]*?)\\'").getMatch(0);
             if (ab1 == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -316,9 +344,10 @@ public class IFileIt extends PluginForHost {
         if (UNDERMAINTENANCE.get()) {
             throw new PluginException(LinkStatus.ERROR_FATAL, UNDERMAINTENANCEUSERTEXT);
         }
-        prepBrowser(br);
-        br.setRequestIntervalLimit(getHost(), 250);
-        simulateBrowser();
+        if (dllink == null) {
+            br.setRequestIntervalLimit(getHost(), 250);
+            simulateBrowser();
+        }
         doFree(downloadLink, false);
     }
 
@@ -534,13 +563,14 @@ public class IFileIt extends PluginForHost {
         return maxPrem.get();
     }
 
-    public void prepBrowser(final Browser br) {
+    public Browser prepBrowser(Browser br) {
         if (br == null) {
-            return;
+            br = new Browser();
         }
         br.getHeaders().put("User-Agent", useragent);
         br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
         br.setCookie("http://filecloud.io/", "lang", "en");
+        return br;
     }
 
     private String getFid(final DownloadLink downloadLink) {
