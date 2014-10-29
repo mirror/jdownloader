@@ -272,23 +272,27 @@ public class OldRAFDownload extends DownloadInterface {
         if (chunksP == null || chunksP.length == 0) {
             return false;
         }
-        long fileSize = getFileSize();
+        final long fileSize = getFileSize();
         int chunks = chunksP.length;
-        long part = fileSize / chunks;
+        final long part = fileSize / chunks;
         long dif;
         long last = -1;
-
+        logger.info("FileSize: " + fileSize + " Chunks: " + chunks + " PartSize: " + part);
         for (int i = 0; i < chunks; i++) {
             dif = chunksP[i] - i * part;
             if (dif < 0) {
+                logger.info("Invalid Chunk " + i + ": " + chunksP[i] + " dif= " + dif);
                 return false;
             }
             if (chunksP[i] <= last) {
+                logger.info("Invalid Chunk " + i + ": " + chunksP[i] + " <= " + last);
                 return false;
             }
-            if (chunksP[i] >= (i + 1) * part) {
-                logger.info("Correct Chunk " + i + " : " + chunksP[i] + " to " + (((i + 1) * part) - 1));
-                chunksP[i] = ((i + 1) * part) - 1;
+            if (chunksP[i] >= (i + 1) * part - 1) {
+                logger.info("Fix Chunk " + i + ": " + chunksP[i] + " to " + (((i + 1) * part) - 1));
+                chunksP[i] = Math.max(0, ((i + 1) * part) - 1024);
+            } else {
+                logger.info("Valid Chunk " + i + ": " + chunksP[i]);
             }
 
             last = chunksP[i];
