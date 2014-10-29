@@ -46,7 +46,8 @@ public class DiskSpaceManager {
             return DISKSPACERESERVATIONRESULT.OK;
         }
         final HashSet<File> reservationPaths = new HashSet<File>();
-        long requestedDiskSpace = Math.max(0, reservation.getSize()) + Math.max(0, config.getForcedFreeSpaceOnDisk() * 1024 * 1024);
+        int mb = config.getForcedFreeSpaceOnDisk();
+        long requestedDiskSpace = Math.max(0, reservation.getSize()) + Math.max(0l, mb * 1024l * 1024l);
         File destinationPath = reservation.getDestination();
         File checkPath = null;
         long freeSpace = -1;
