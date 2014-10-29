@@ -54,6 +54,7 @@ public class IFileItFldr extends PluginForDecrypt {
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost("filecloud.io");
         final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
         String fpName = null;
+        ((jd.plugins.hoster.IFileIt) hostPlugin).prepBrowser(br);
         try {
             /* Grab extremely big folderlinks */
             br.setLoadLimit(br.getLoadLimit() * 8);
@@ -62,7 +63,7 @@ public class IFileItFldr extends PluginForDecrypt {
         // Id we have an account we can use the API, if not we have to do it over the site
         if (aa != null) {
             final String akey = ((jd.plugins.hoster.IFileIt) hostPlugin).getUrlEncodedAPIkey(aa, hostPlugin, br);
-            br.postPage("http://api.filecloud.io/api-fetch_tag_details.api", "akey=" + akey + "&tkey=" + new Regex(parameter, "([a-z0-9]+)$").getMatch(0));
+            br.postPage(jd.plugins.hoster.IFileIt.MAINPAGE + "/api-fetch_tag_details.api", "akey=" + akey + "&tkey=" + new Regex(parameter, "([a-z0-9]+)$").getMatch(0));
             fpName = br.getRegex("\"name\":\"([^<>\"]*?)\"").getMatch(0);
             final String[][] linkinformation = br.getRegex("\"size\":\"(\\d+)\",\"name\":\"([^<>\"]*?)\",\"ukey\":\"([^<>\"]*?)\"").getMatches();
             if (linkinformation == null || linkinformation.length == 0) {
@@ -70,15 +71,13 @@ public class IFileItFldr extends PluginForDecrypt {
                 return null;
             }
             for (final String[] info : linkinformation) {
-                final DownloadLink dl = createDownloadlink("http://filecloud.io/" + info[2]);
+                final DownloadLink dl = createDownloadlink(jd.plugins.hoster.IFileIt.MAINPAGE + "/" + info[2]);
                 dl.setAvailable(true);
                 dl.setDownloadSize(SizeFormatter.getSize(info[0].trim()));
                 dl.setName(info[1].trim());
                 decryptedLinks.add(dl);
             }
         } else {
-            br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
-            br.setCookie("http://filecloud.io/", "lang", "en");
             br.getPage(parameter);
             if (br.containsHTML(">no such tag")) {
                 logger.info("Invalid/Offline folderlink: " + parameter);
@@ -101,9 +100,9 @@ public class IFileItFldr extends PluginForDecrypt {
             }
             for (final String[] info : linkinformation) {
                 if (fail) {
-                    decryptedLinks.add(createDownloadlink("http://filecloud.io/" + info[0]));
+                    decryptedLinks.add(createDownloadlink(jd.plugins.hoster.IFileIt.MAINPAGE + "/" + info[0]));
                 } else {
-                    final DownloadLink dl = createDownloadlink("http://filecloud.io/" + info[2]);
+                    final DownloadLink dl = createDownloadlink(jd.plugins.hoster.IFileIt.MAINPAGE + "/" + info[2]);
                     dl.setAvailable(true);
                     dl.setDownloadSize(SizeFormatter.getSize(info[0].trim()));
                     dl.setName(info[1].trim());
