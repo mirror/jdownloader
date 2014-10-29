@@ -182,8 +182,16 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
                 }
                 return format(prgs);
             }
+            if (total < 0) {
+                if (dLink.getView().getBytesLoaded() <= 0) {
+                    return format(0d);
+                } else {
+                    return "~";
+                }
+            }
         }
         if (total < 0) {
+
             return "~";
         }
         return format(getPercentString(current, total));

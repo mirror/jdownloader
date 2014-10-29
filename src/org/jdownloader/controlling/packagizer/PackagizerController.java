@@ -368,8 +368,11 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             private Pattern pat = Pattern.compile("<jd:orgfiletype/?>");
 
             public String replace(String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
-                String fileType = new Regex(link.getName(), "\\.([0-9a-zA-Z]+)$").getMatch(0);
-
+                String name = link.getName();
+                String fileType = new Regex(name, "\\.([0-9a-zA-Z]+)$").getMatch(0);
+                if (fileType == null) {
+                    fileType = "";
+                }
                 if (modifiers != null) {
                     return Pattern.compile("<jd:orgfiletype:" + modifiers + "/?>").matcher(input).replaceAll(Matcher.quoteReplacement(new Regex(fileType, lgr.getFileNameRule().getPattern()).getRow(0)[Integer.parseInt(modifiers) - 1]));
                 }
