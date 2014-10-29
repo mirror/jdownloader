@@ -47,7 +47,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecloud.io", "ifile.it" }, urls = { "http://(www\\.)?(ifile\\.it|filecloud\\.io)/[a-z0-9]+", "fhrfzjnerhfDELETEMEdhzrnfdgvfcas4378zhb" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecloud.io", "ifile.it" }, urls = { "https?://(www\\.)?(ifile\\.it|filecloud\\.io)/[a-z0-9]+", "fhrfzjnerhfDELETEMEdhzrnfdgvfcas4378zhb" }, flags = { 2, 0 })
 public class IFileIt extends PluginForHost {
 
     private final String         useragent                = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:12.0) Gecko/20100101 Firefox/12.0";
@@ -59,7 +59,7 @@ public class IFileIt extends PluginForHost {
     private static final String  ONLY4REGISTEREDUSERTEXT  = JDL.LF("plugins.hoster.ifileit.only4registered", "Wait or register to download the files");
     private static final String  NOCHUNKS                 = "NOCHUNKS";
     private static final String  NORESUME                 = "NORESUME";
-    private static final String  MAINPAGE                 = "http://filecloud.io/";
+    private static final String  MAINPAGE                 = "https://filecloud.io";
     private static AtomicInteger maxPrem                  = new AtomicInteger(1);
     private static AtomicBoolean UNDERMAINTENANCE         = new AtomicBoolean(false);
     private static final String  UNDERMAINTENANCEUSERTEXT = "The site is under maintenance!";
@@ -68,7 +68,7 @@ public class IFileIt extends PluginForHost {
 
     public IFileIt(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://filecloud.io/user-register.html");
+        this.enablePremium(MAINPAGE + "/user-register.html");
         this.setStartIntervall(5 * 1000l);
     }
 
@@ -96,7 +96,7 @@ public class IFileIt extends PluginForHost {
             if (aa != null) {
                 try {
                     apikey = getUrlEncodedAPIkey(aa, this, br);
-                    br.postPage("http://api.filecloud.io/api-fetch_file_details.api", "akey=" + apikey + "&ukey=" + fid);
+                    br.postPage((br.getHttpConnection() == null ? MAINPAGE : "") + "/api-fetch_file_details.api", "akey=" + apikey + "&ukey=" + fid);
                     failed = false;
                 } catch (final BrowserException e) {
                 } catch (final ConnectException e) {
@@ -109,7 +109,7 @@ public class IFileIt extends PluginForHost {
                 this.getPluginConfig().setProperty("apikey", Property.NULL);
                 this.getPluginConfig().setProperty("username", Property.NULL);
                 this.getPluginConfig().setProperty("password", Property.NULL);
-                br.postPage("http://api.filecloud.io/api-check_file.api", "ukey=" + fid);
+                br.postPage("/api-check_file.api", "ukey=" + fid);
                 failed = false;
             }
 
@@ -194,7 +194,7 @@ public class IFileIt extends PluginForHost {
             final Browser br2 = br.cloneBrowser();
             br2.setReadTimeout(40 * 1000);
             final String ukey = new Regex(downloadLink.getDownloadURL(), "filecloud\\.io/(.+)").getMatch(0);
-            xmlrequest(br2, "http://filecloud.io/download-request.json", "ukey=" + ukey + "&__ab1=" + Encoding.urlEncode(ab1));
+            xmlrequest(br2, "/download-request.json", "ukey=" + ukey + "&__ab1=" + Encoding.urlEncode(ab1));
             if (br.containsHTML("message\":\"invalid request\"")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
             }
@@ -217,7 +217,7 @@ public class IFileIt extends PluginForHost {
                 for (int i = 0; i <= 5; i++) {
                     File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     String c = getCaptchaCode(cf, downloadLink);
-                    xmlrequest(br2, "http://filecloud.io/download-request.json", "ukey=" + ukey + "&__ab1=" + ab1 + "&ctype=recaptcha&recaptcha_response=" + Encoding.urlEncode_light(c) + "&recaptcha_challenge=" + rc.getChallenge());
+                    xmlrequest(br2, "/download-request.json", "ukey=" + ukey + "&__ab1=" + ab1 + "&ctype=recaptcha&recaptcha_response=" + Encoding.urlEncode_light(c) + "&recaptcha_challenge=" + rc.getChallenge());
                     if (br2.containsHTML("(\"retry\":1|\"captcha\":1)")) {
                         rc.reload();
                         continue;
@@ -231,7 +231,7 @@ public class IFileIt extends PluginForHost {
             if (br2.containsHTML("\"message\":\"signup\"")) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, ONLY4REGISTEREDUSERTEXT, 30 * 60 * 1000l);
             }
-            br.getPage("http://filecloud.io/download.html");
+            br.getPage("/download.html");
             dllink = br.getRegex("id=\"requestBtnHolder\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br2.getRegex("\"(http://s\\d+\\.filecloud\\.io/[a-z0-9]+/\\d+/[^<>\"/]*?)\"").getMatch(0);
@@ -301,7 +301,7 @@ public class IFileIt extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://filecloud.io/misc-tos.html";
+        return MAINPAGE + "/misc-tos.html";
     }
 
     @Override
@@ -357,7 +357,7 @@ public class IFileIt extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 prepBrowser(br);
-                br.getPage("https://secure.filecloud.io/user-login.html");
+                br.getPage(MAINPAGE + "/user-login.html");
                 // We don't know if a captcha is needed so first we try without,
                 // if we get an errormessage we know a captcha is needed
                 boolean accountValid = false;
@@ -376,9 +376,9 @@ public class IFileIt extends PluginForHost {
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                         final DownloadLink dummyLink = new DownloadLink(this, "Account", "filecloud.io", "http://filecloud.io", true);
                         final String c = getCaptchaCode(cf, dummyLink);
-                        br.postPage("https://secure.filecloud.io/user-login_p.html", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
+                        br.postPage("/user-login_p.html", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
                     } else {
-                        br.postPage("https://secure.filecloud.io/user-login_p.html", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                        br.postPage("/user-login_p.html", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                     }
                     if (br.getURL().contains("\\$\\(\\'#alertFld\\'\\)\\.empty\\(\\)\\.append\\( \\'incorrect reCaptcha entered, try again\\'") || br.getURL().contains("error=RECAPTCHA__INCORRECT")) {
                         captchaNeeded = true;
@@ -418,7 +418,7 @@ public class IFileIt extends PluginForHost {
         try {
             // Use cookies, check and refresh if needed
             login(account);
-            br.postPage("http://api.filecloud.io/api-fetch_account_details.api", "akey=" + getUrlEncodedAPIkey(account, this, br));
+            br.postPage((br.getHttpConnection() == null ? MAINPAGE : "") + "/api-fetch_account_details.api", "akey=" + getUrlEncodedAPIkey(account, this, br));
         } catch (final PluginException e) {
             account.setValid(false);
             return ai;
@@ -463,7 +463,7 @@ public class IFileIt extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             try {
-                br.postPage("http://api.filecloud.io/api-fetch_download_url.api", "akey=" + apikey + "&ukey=" + fid);
+                br.postPage((br.getHttpConnection() == null ? MAINPAGE : "") + "/api-fetch_download_url.api", "akey=" + apikey + "&ukey=" + fid);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             }
@@ -510,15 +510,15 @@ public class IFileIt extends PluginForHost {
     }
 
     public static String getUrlEncodedAPIkey(final Account aa, final PluginForHost plu, final Browser br) throws IOException {
-        String apikey = plu.getPluginConfig().getStringProperty("apikey");
-        final String username = plu.getPluginConfig().getStringProperty("username");
-        final String password = plu.getPluginConfig().getStringProperty("password");
+        String apikey = plu.getPluginConfig().getStringProperty("apikey", null);
+        final String username = plu.getPluginConfig().getStringProperty("username", null);
+        final String password = plu.getPluginConfig().getStringProperty("password", null);
         // Check if we already have an apikey and if it's the correct one
         if (apikey == null || username == null || password == null || !aa.getUser().equals(username) || !aa.getPass().equals(password)) {
             plu.getPluginConfig().setProperty("apikey", Property.NULL);
             plu.getPluginConfig().setProperty("username", Property.NULL);
             plu.getPluginConfig().setProperty("password", Property.NULL);
-            br.postPage("https://secure.filecloud.io/api-fetch_apikey.api", "username=" + Encoding.urlEncode(aa.getUser()) + "&password=" + Encoding.urlEncode(aa.getPass()));
+            br.postPage((br.getHttpConnection() == null ? MAINPAGE : "") + "/api-fetch_apikey.api", "username=" + Encoding.urlEncode(aa.getUser()) + "&password=" + Encoding.urlEncode(aa.getPass()));
             apikey = getJson("akey", br);
             if (apikey != null) {
                 plu.getPluginConfig().setProperty("apikey", apikey);
@@ -548,7 +548,7 @@ public class IFileIt extends PluginForHost {
     }
 
     private void simulateBrowser() throws IOException {
-        br.cloneBrowser().getPage("http://filecloud.io/ads/adframe.js");
+        br.cloneBrowser().getPage("/ads/adframe.js");
     }
 
     private void xmlrequest(final Browser br, final String url, final String postData) throws IOException {
