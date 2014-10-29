@@ -379,7 +379,7 @@ public class OldRAFDownload extends DownloadInterface {
         final boolean isExternalStop = externalDownloadStop();
         final long verifiedFileSize = getVerifiedFileSize();
         if (verifiedFileSize >= 0) {
-            if (totalLinkBytesLoaded == verifiedFileSize) {
+            if (totalLinkBytesLoaded >= verifiedFileSize) {
                 logger.severe("VerifiedFilesize: " + verifiedFileSize + " Loaded: " + totalLinkBytesLoaded);
                 downloadable.setLinkStatus(LinkStatus.FINISHED);
                 return true;
@@ -394,7 +394,7 @@ public class OldRAFDownload extends DownloadInterface {
         }
         final long fileSize = getFileSize();
         if (fileSize >= 0) {
-            if (totalLinkBytesLoaded == fileSize || isExternalStop == false && caughtPluginException == null) {
+            if (totalLinkBytesLoaded >= fileSize || isExternalStop == false && caughtPluginException == null) {
                 logger.severe("Filesize: " + fileSize + " Loaded: " + totalLinkBytesLoaded);
                 downloadable.setLinkStatus(LinkStatus.FINISHED);
                 return true;
