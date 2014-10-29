@@ -619,6 +619,9 @@ public class DirectHTTP extends PluginForHost {
                     if (urlConnection.getResponseCode() == 404 && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"), "must-revalidate") && urlConnection.getHeaderField("Via") != null) {
                         urlConnection.disconnect();
                         urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+                    } else if (urlConnection.getResponseCode() != 404 && urlConnection.getResponseCode() >= 300) {
+                        urlConnection.disconnect();
+                        urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
                     }
                 } else {
                     urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
