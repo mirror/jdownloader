@@ -12,8 +12,10 @@ import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
+import org.jdownloader.controlling.Priority;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPath;
 import org.jdownloader.gui.packagehistorycontroller.PackageHistoryEntry;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.AutoStartOptions;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.OnOfflineLinksAction;
 
 public interface LinkgrabberSettings extends ConfigInterface {
@@ -219,5 +221,41 @@ public interface LinkgrabberSettings extends ConfigInterface {
     int getPackageNameHistoryLength();
 
     void setPackageNameHistoryLength(int i);
+
+    @AboutConfig
+    @DefaultEnumValue("AUTO")
+    void setAutoConfirmManagerAutoStart(AutoStartOptions selectedItem);
+
+    AutoStartOptions getAutoConfirmManagerAutoStart();
+
+    @AboutConfig
+    @DefaultEnumValue("GLOBAL")
+    void setAutoConfirmManagerHandleOffline(OnOfflineLinksAction selectedItem);
+
+    OnOfflineLinksAction getAutoConfirmManagerHandleOffline();
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    void setAutoConfirmManagerForceDownloads(boolean selected);
+
+    boolean isAutoConfirmManagerForceDownloads();
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    void setAutoConfirmManagerAssignPriorityEnabled(boolean selected);
+
+    boolean isAutoConfirmManagerAssignPriorityEnabled();
+
+    @AboutConfig
+    @DefaultEnumValue("DEFAULT")
+    void setAutoConfirmManagerPiority(Priority selectedItem);
+
+    Priority getAutoConfirmManagerPiority();
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    void setAutoConfirmManagerClearListAfterConfirm(boolean selected);
+
+    boolean isAutoConfirmManagerClearListAfterConfirm();
 
 }
