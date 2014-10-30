@@ -2,6 +2,7 @@ package org.jdownloader.captcha.v2.solver.myjd;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.Icon;
@@ -9,6 +10,7 @@ import javax.swing.Icon;
 import jd.SecondLevelLaunch;
 import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
 import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
+import jd.plugins.Plugin;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.tooltips.ExtTooltip;
@@ -27,6 +29,7 @@ import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.SolverStatus;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
+import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
@@ -43,7 +46,9 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
     private MyJDownloaderSettings          config;
 
     private LogSource                      logger;
-    private final boolean                  enabled  = !Application.isJared(SecondLevelLaunch.class);
+    private final boolean                  enabled  = true;
+
+    private ArrayList<Request>             lastChallenge;
 
     private static final CaptchaMyJDSolver INSTANCE = new CaptchaMyJDSolver();
 
@@ -54,6 +59,18 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
     @Override
     public Class<String> getResultType() {
         return String.class;
+    }
+
+    private class Request {
+
+        public Request(String id2) {
+            this.id = id2;
+            timestamp = System.currentTimeMillis();
+        }
+
+        public long   timestamp;
+        public String id;
+
     }
 
     private CaptchaMyJDSolver() {
@@ -76,10 +93,38 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
         if (!Application.isHeadless()) {
             ServicePanel.getInstance().requestUpdate(true);
         }
+
+        lastChallenge = new ArrayList<Request>();
     }
 
     @Override
     public boolean canHandle(Challenge<?> c) {
+        if (c instanceof ImageCaptchaChallenge) {
+            Plugin plg = ((ImageCaptchaChallenge) c).getPlugin();
+            if (plg != null) {
+                String id = plg.getHost();
+                int counter = 0;
+                synchronized (lastChallenge) {
+
+                    ArrayList<Request> remove = new ArrayList<Request>();
+                    for (int i = lastChallenge.size() - 1; i >= 0; i--) {
+                        Request r = lastChallenge.get(i);
+                        if (System.currentTimeMillis() > r.timestamp + 30 * 60 * 1000l) {
+                            remove.add(r);
+                            continue;
+                        }
+                        if (r.id.equals(id)) {
+                            counter++;
+                        }
+                    }
+                    lastChallenge.removeAll(remove);
+                }
+                // max 2 captchas per plugin and 30 minutes.
+                if (counter >= 2) {
+                    return false;
+                }
+            }
+        }
         return enabled && c instanceof BasicCaptchaChallenge && CFG_CAPTCHA.CAPTCHA_EXCHANGE_SERVICES_ENABLED.isEnabled() && config.isCESEnabled() && super.canHandle(c);
     }
 
@@ -142,6 +187,15 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
             // br.setAllowedResponseCodes(new int[] { 500 });
             job.showBubble(this, 0);
             String ret = "";
+            synchronized (lastChallenge) {
+                if (job.getChallenge() instanceof ImageCaptchaChallenge) {
+                    Plugin plg = ((ImageCaptchaChallenge) job.getChallenge()).getPlugin();
+                    if (plg != null) {
+                        String id = plg.getHost();
+                        lastChallenge.add(new Request(id));
+                    }
+                }
+            }
             job.setStatus(SolverStatus.UPLOADING);
             MyCaptchaChallenge ch = new MyCaptchaChallenge();
             final ByteArrayOutputStream bos = new ByteArrayOutputStream(16384);
