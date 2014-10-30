@@ -61,10 +61,14 @@ public class SuperUploadCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCookie("http://superupload.com/", "lang", "en");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("File not found\\!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("File not found\\!|>This file has been removed")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("title=\"Download ([^<>\"]*?)\"").getMatch(0);
         String filesize = br.getRegex("<div class=\"vmid_c\">([^<>\"]*?)</div>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -74,7 +78,9 @@ public class SuperUploadCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         final String rcID = br.getRegex("Recaptcha\\.create\\([\t\n\r ]+\"([^<>\"]*?)\"").getMatch(0);
-        if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (rcID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getPage(downloadLink.getDownloadURL() + "&act=r&rnd=" + System.currentTimeMillis());
         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
@@ -91,11 +97,15 @@ public class SuperUploadCom extends PluginForHost {
             }
             break;
         }
-        if (br.containsHTML(">Incorrect captcha<")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML(">Incorrect captcha<")) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         br.getPage(downloadLink.getDownloadURL() + "&act=t&rnd=" + System.currentTimeMillis());
         final String waittime = br.getRegex("var iEnd = new Date\\(\\)\\.setTime\\(new Date\\(\\)\\.getTime\\(\\) \\+ (\\d+) \\* 1000\\)").getMatch(0);
         int wait = 30;
-        if (waittime != null) wait = Integer.parseInt(waittime);
+        if (waittime != null) {
+            wait = Integer.parseInt(waittime);
+        }
         sleep(wait * 1001l, downloadLink);
         br.getPage(downloadLink.getDownloadURL() + "&act=t&rnd=" + System.currentTimeMillis());
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL() + "&act=start", false, 1);
@@ -114,7 +124,9 @@ public class SuperUploadCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
