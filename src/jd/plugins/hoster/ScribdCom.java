@@ -67,8 +67,9 @@ public class ScribdCom extends PluginForHost {
         link.setUrlDownload("https://www." + linkPart.toLowerCase());
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         try {
@@ -85,7 +86,7 @@ public class ScribdCom extends PluginForHost {
                 }
                 break;
             }
-            for (int i = 0; i <= 3; i++) {
+            for (int i = 0; i <= 5; i++) {
                 String newurl = br.getRedirectLocation();
                 if (newurl != null) {
                     if (newurl.contains("/removal/") || newurl.contains("/deleted/")) {

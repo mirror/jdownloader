@@ -39,8 +39,12 @@ public class GigaBaseComFolder extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (!br.getURL().contains("/folder/")) {
+        if (!br.getURL().contains("/folder/") || br.containsHTML("File not found") || !br.containsHTML("class=\"gigaArea\"")) {
             logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         final String[] links = br.getRegex("<li><a href=\"(http://(www\\.)?gigabase\\.com/getfile/[^<>\"]*?)\"").getColumn(0);
@@ -48,8 +52,9 @@ public class GigaBaseComFolder extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String singleLink : links)
+        for (String singleLink : links) {
             decryptedLinks.add(createDownloadlink(singleLink));
+        }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(new Regex(parameter, "http://(www\\.)?gigabase\\.com/folder/[A-Za-z0-9]+/([^<>\"/]*?)\\.html").getMatch(1));
         fp.addLinks(decryptedLinks);
