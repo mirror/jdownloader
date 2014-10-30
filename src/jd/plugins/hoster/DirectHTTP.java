@@ -35,6 +35,7 @@ import jd.controlling.HTACCESSController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
 import jd.http.requests.HeadRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -51,6 +52,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.StringUtils;
 
 /**
@@ -614,7 +616,9 @@ public class DirectHTTP extends PluginForHost {
             urlConnection = br.openPostConnection(downloadLink.getDownloadURL(), downloadLink.getStringProperty("post", null));
         } else {
             try {
-                if (preferHeadRequest) {
+                if (!preferHeadRequest || "GET".equals(downloadLink.getStringProperty("requestType", null))) {
+                    urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+                } else if (preferHeadRequest || "HEAD".equals(downloadLink.getStringProperty("requestType", null))) {
                     urlConnection = br.openHeadConnection(downloadLink.getDownloadURL());
                     if (urlConnection.getResponseCode() == 404 && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"), "must-revalidate") && urlConnection.getHeaderField("Via") != null) {
                         urlConnection.disconnect();
@@ -839,6 +843,15 @@ public class DirectHTTP extends PluginForHost {
                     downloadLink.setProperty("VERIFIEDFILESIZE", length);
                 }
             }
+            final String referer = urlConnection.getRequestProperty(HTTPConstants.HEADER_REQUEST_REFERER);
+            downloadLink.setProperty("lastRefURL", referer);
+            if (urlConnection.getRequest() instanceof HeadRequest) {
+                downloadLink.setProperty("requestType", "HEAD");
+            } else if (urlConnection.getRequest() instanceof GetRequest) {
+                downloadLink.setProperty("requestType", "GET");
+            } else {
+                downloadLink.setProperty("requestType", Property.NULL);
+            }
             return AvailableStatus.TRUE;
         } catch (final PluginException e2) {
             /* try referer set by flashgot and check if it works then */
@@ -846,9 +859,11 @@ public class DirectHTTP extends PluginForHost {
                 downloadLink.setProperty("tryoldref", true);
                 return this.requestFileInformation(downloadLink);
             } else {
+                resetDownloadlink(downloadLink);
                 throw e2;
             }
         } catch (IOException e) {
+            resetDownloadlink(downloadLink);
             if (e instanceof java.net.ConnectException || e.getCause() instanceof java.net.ConnectException) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -928,6 +943,8 @@ public class DirectHTTP extends PluginForHost {
     public void resetDownloadlink(final DownloadLink link) {
         link.setProperty(DirectHTTP.NORESUME, Property.NULL);
         link.setProperty(DirectHTTP.NOCHUNKS, Property.NULL);
+        link.setProperty("lastRefURL", Property.NULL);
+        link.setProperty("requestType", Property.NULL);
         if (link.getStringProperty("fixName", null) != null) {
             link.setFinalFileName(link.getStringProperty("fixName", null));
         }
@@ -978,6 +995,10 @@ public class DirectHTTP extends PluginForHost {
         if (downloadLink.getStringProperty("Referer", null) != null) {
             // used in MANY plugins!
             br.getHeaders().put("Referer", downloadLink.getStringProperty("Referer", null));
+        }
+        if (downloadLink.getStringProperty("lastRefURL", null) != null) {
+            // used in MANY plugins!
+            br.getHeaders().put("Referer", downloadLink.getStringProperty("lastRefURL", null));
         }
         this.downloadWorkaround(br, downloadLink);
     }
