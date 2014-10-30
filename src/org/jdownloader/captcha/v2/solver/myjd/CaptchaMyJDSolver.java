@@ -99,33 +99,36 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
 
     @Override
     public boolean canHandle(Challenge<?> c) {
-        if (c instanceof ImageCaptchaChallenge) {
-            Plugin plg = ((ImageCaptchaChallenge) c).getPlugin();
-            if (plg != null) {
-                String id = plg.getHost();
-                int counter = 0;
-                synchronized (lastChallenge) {
+        if (enabled && c instanceof BasicCaptchaChallenge && CFG_CAPTCHA.CAPTCHA_EXCHANGE_SERVICES_ENABLED.isEnabled() && config.isCESEnabled() && super.canHandle(c)) {
+            if (c instanceof ImageCaptchaChallenge) {
+                Plugin plg = ((ImageCaptchaChallenge) c).getPlugin();
+                if (plg != null) {
+                    final String id = plg.getHost();
+                    int counter = 0;
+                    synchronized (lastChallenge) {
 
-                    ArrayList<Request> remove = new ArrayList<Request>();
-                    for (int i = lastChallenge.size() - 1; i >= 0; i--) {
-                        Request r = lastChallenge.get(i);
-                        if (System.currentTimeMillis() > r.timestamp + 30 * 60 * 1000l) {
-                            remove.add(r);
-                            continue;
+                        final ArrayList<Request> remove = new ArrayList<Request>();
+                        for (int i = lastChallenge.size() - 1; i >= 0; i--) {
+                            final Request r = lastChallenge.get(i);
+                            if (System.currentTimeMillis() > r.timestamp + 30 * 60 * 1000l) {
+                                remove.add(r);
+                                continue;
+                            }
+                            if (r.id.equals(id)) {
+                                counter++;
+                            }
                         }
-                        if (r.id.equals(id)) {
-                            counter++;
-                        }
+                        lastChallenge.removeAll(remove);
                     }
-                    lastChallenge.removeAll(remove);
-                }
-                // max 2 captchas per plugin and 30 minutes.
-                if (counter >= 2) {
-                    return false;
+                    // max 2 captchas per plugin and 30 minutes.
+                    if (counter >= 10) {
+                        return false;
+                    }
                 }
             }
+            return true;
         }
-        return enabled && c instanceof BasicCaptchaChallenge && CFG_CAPTCHA.CAPTCHA_EXCHANGE_SERVICES_ENABLED.isEnabled() && config.isCESEnabled() && super.canHandle(c);
+        return false;
     }
 
     @Override
@@ -189,7 +192,7 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
             String ret = "";
             synchronized (lastChallenge) {
                 if (job.getChallenge() instanceof ImageCaptchaChallenge) {
-                    Plugin plg = ((ImageCaptchaChallenge) job.getChallenge()).getPlugin();
+                    final Plugin plg = ((ImageCaptchaChallenge) job.getChallenge()).getPlugin();
                     if (plg != null) {
                         String id = plg.getHost();
                         lastChallenge.add(new Request(id));
