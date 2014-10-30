@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -41,7 +42,15 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        try {
+            br.getPage(parameter);
+        } catch (final BrowserException e) {
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
+        }
         final String username = new Regex(parameter, "freedisc\\.pl/([A-Za-z0-9\\-_]+),d\\-\\d+").getMatch(0);
         final String fpName = br.getRegex("<title>([^<>\"]*?)\\-  Freedisc\\.pl</title>").getMatch(0);
         // style='float: left; overflow: auto;'><a href="

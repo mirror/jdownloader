@@ -66,7 +66,7 @@ public class MediafireCom extends PluginForHost {
     /**
      * Returns a random User-Agent String (common browsers) of specified array. This array contains current user agents gathered from httpd
      * access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
-     * 
+     *
      * @return eg. "Opera/9.80 (X11; Linux i686; U; en) Presto/2.6.30 Version/10.63"
      */
     public static String stringUserAgent() {
@@ -163,7 +163,7 @@ public class MediafireCom extends PluginForHost {
     /**
      * Returns a random User-Agent String (from a portable device) of specified array. This array contains current user agents gathered from
      * httpd access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
-     * 
+     *
      * @return eg. "Opera/9.80 (Android 4.0.3; Linux; Opera Mobi/ADR-1205181138; U; en) Presto/2.10.254 Version/12.00"
      */
     public static String portableUserAgent() {
@@ -961,8 +961,9 @@ public class MediafireCom extends PluginForHost {
         }
 
         // error checking below!
-        if (eBr.getURL().matches(".+/error\\.php\\?errno=3(20|80|88).*?")) {
+        if (eBr.getURL().matches(".+/error\\.php\\?errno=3(20|78|80|88).*?")) {
             // 320 = file is removed by the originating user or MediaFire.
+            // 378 = File Removed for Violation (of TOS)
             // 380 = claimed by a copyright holder through a valid DMCA request
             // 388 = identified as copyrighted work
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

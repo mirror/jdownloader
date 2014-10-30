@@ -74,7 +74,7 @@ public class ScribdCom extends PluginForHost {
         br.setFollowRedirects(false);
         try {
             br.setAllowedResponseCodes(new int[] { 400, 410 });
-            br.setLoadLimit(br.getLoadLimit() * 2);
+            br.setLoadLimit(br.getLoadLimit() * 3);
         } catch (Throwable e) {
         }
         try {
