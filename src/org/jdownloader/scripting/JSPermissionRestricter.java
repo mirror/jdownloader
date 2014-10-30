@@ -116,9 +116,10 @@ public class JSPermissionRestricter {
                         return true;
                     } else if (className.startsWith("org.mozilla.javascript.ConsString")) {
                         return true;
-                    } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.EcmaError")) {
+                    } else if (className.equals("org.mozilla.javascript.EcmaError")) {
                         Log.L.severe("Javascript error occured");
                         return true;
+
                     } else {
                         throw new RuntimeException("Security Violation " + className);
                     }
