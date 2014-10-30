@@ -37,7 +37,7 @@ public class CESBubbleSupport extends AbstractBubbleSupport {
     }
 
     public CESBubble show(final CESChallengeSolver<?> solver, final CESSolverJob<?> cesSolverJob, final int timeoutms) throws InterruptedException {
-        if (isEnabled() && timeoutms > 0) {
+        if (isEnabled()) {
             final CESBubble ret = new EDTHelper<CESBubble>() {
 
                 @Override
