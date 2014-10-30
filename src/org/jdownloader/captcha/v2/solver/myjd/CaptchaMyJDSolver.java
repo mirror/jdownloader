@@ -46,7 +46,7 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
     private MyJDownloaderSettings          config;
 
     private LogSource                      logger;
-    private final boolean                  enabled  = true;
+    private final boolean                  enabled  = false;
 
     private ArrayList<Request>             lastChallenge;
 
