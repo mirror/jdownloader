@@ -309,6 +309,15 @@ public class ShareOnlineBiz extends PluginForHost {
                 logger.info("Using SharedIP workaround to avoid disabling the premium account!");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "SharedIPWorkaround", 2 * 60 * 1000l);
             }
+            if (acc != null) {
+                synchronized (LOCK) {
+                    HashMap<String, String> infos = ACCOUNTINFOS.get(acc);
+                    if (infos != null && usedPremiumInfos == infos) {
+                        logger.info("Force refresh of cookies");
+                        ACCOUNTINFOS.remove(acc);
+                    }
+                }
+            }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP Already loading", 15 * 60 * 1000l);
         }
         if (url.contains("failure/size")) {
