@@ -358,7 +358,14 @@ public class FourSharedCom extends PluginForHost {
         String cau2 = new Regex(br.getRequest().getUrl(), "cau2=([^\\&]+)").getMatch(0);
         logger.info("cau2=" + cau2);
         if (br.containsHTML("0759nousr")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "You should log in to download this file.");
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered/premium users");
         } else if (br.containsHTML("In order to download files bigger that \\d+MB you need to login at 4shared")) {
             // links too large!
             try {
