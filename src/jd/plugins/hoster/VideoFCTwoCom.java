@@ -46,9 +46,11 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.fc2.com" }, urls = { "http://video\\.fc2\\.com(/flv2\\.swf\\?i=|(/[a-z]{2})?(/a)?/content/)\\w+" }, flags = { 2 })
 public class VideoFCTwoCom extends PluginForHost {
 
-    private String        finalURL = null;
-    private String        MAINPAGE = "http://video.fc2.com/";
-    private static Object LOCK     = new Object();
+    private static final String MAINPAGE = "http://video.fc2.com/";
+
+    private static Object       LOCK     = new Object();
+    private String              finalURL = null;
+    private boolean             loggedin = false;
 
     public VideoFCTwoCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -100,7 +102,7 @@ public class VideoFCTwoCom extends PluginForHost {
                 br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
                 br.getHeaders().put("Referer", "http://fc2.com/en/login.php");
                 br.setCookie(br.getHost(), "language", "en");
-                br.postPage("https://secure.id.fc2.com/index.php?mode=login&switch_language=en", "email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&done=&image.x=" + (int) (200 * Math.random() + 1) + "&image.y=" + (int) (47 * Math.random() + 1) + "&keep_login=1&image=Log+in&done=");
+                br.postPage("https://secure.id.fc2.com/index.php?mode=login&switch_language=en", "email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&done=&image.x=" + (int) (200 * Math.random() + 1) + "&image.y=" + (int) (47 * Math.random() + 1) + "&keep_login=1&done=");
                 String loginDone = br.getRegex("(http://id\\.fc2\\.com/\\?.*?login=done.*?)").getMatch(0);
                 if (loginDone == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -110,9 +112,10 @@ public class VideoFCTwoCom extends PluginForHost {
                 HashMap<String, String> cookies = new HashMap<String, String>();
                 Cookies add = this.br.getCookies(MAINPAGE);
                 for (Cookie c : add.getCookies()) {
-                    if ("login_status".equals(c.getKey()) || "secure_check_fc2".equals(c.getKey()) || "Max-Age".equals(c.getKey()) || "glgd_val".equals(c.getKey())) {
-                        continue;
-                    }
+                    // if ("login_status".equals(c.getKey()) || "secure_check_fc2".equals(c.getKey()) || "Max-Age".equals(c.getKey()) ||
+                    // "glgd_val".equals(c.getKey())) {
+                    // continue;
+                    // }
                     cookies.put(c.getKey(), c.getValue());
                 }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
@@ -212,6 +215,7 @@ public class VideoFCTwoCom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         login(account, false);
+        loggedin = true;
         requestFileInformation(downloadLink);
         dofree(downloadLink);
     }
@@ -253,7 +257,18 @@ public class VideoFCTwoCom extends PluginForHost {
 
         /* get url */
         downloadLink.setProperty("ONLYFORPREMIUM", false);
-        br.getPage("/ginfo.php?otag=0&tk=null&href=" + Encoding.urlEncode(dllink).replaceAll("\\.", "%2E") + "&upid=" + upid + "&gk=" + gk + "&fversion=" + Encoding.urlEncode("WIN 11,1,102,62").replaceAll("\\+", "%20") + "&playid=null&lang=en&playlistid=null&mimi=" + getMimi(upid) + "&v=" + upid);
+        final String from = br.getRegex("\\&from=(\\d+)\\&").getMatch(0);
+        final String tk = br.getRegex("\\&tk=([A-Za-z0-9]*?)\\&").getMatch(0);
+        final String version = "WIN%2015%2C0%2C0%2C189";
+        final String encodedlink = Encoding.urlEncode(dllink).replaceAll("\\.", "%2E");
+        if (loggedin) {
+            if (tk == null || from == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage("/ginfo_payment.php?mimi=" + getMimi(upid) + "&upid=" + upid + "&gk=" + gk + "&tk=" + tk + "&from=" + from + "&href=" + encodedlink + "&lang=en&v=" + upid + "&fversion=" + version + "&otag=0");
+        } else {
+            br.getPage("/ginfo.php?otag=0&tk=null&href=" + encodedlink + "&upid=" + upid + "&gk=" + gk + "&fversion=" + version + "&playid=null&lang=en&playlistid=null&mimi=" + getMimi(upid) + "&v=" + upid);
+        }
 
         if (br.containsHTML("err_code=403")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
