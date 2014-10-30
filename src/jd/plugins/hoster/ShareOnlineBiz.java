@@ -342,6 +342,15 @@ public class ShareOnlineBiz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
         }
         if (br.containsHTML("IP is temporary banned")) {
+            if (acc != null) {
+                synchronized (LOCK) {
+                    HashMap<String, String> infos = ACCOUNTINFOS.get(acc);
+                    if (infos != null && usedPremiumInfos == infos) {
+                        logger.info("Force refresh of cookies");
+                        ACCOUNTINFOS.remove(acc);
+                    }
+                }
+            }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP is temporary banned", 15 * 60 * 1000l);
         }
     }
