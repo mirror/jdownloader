@@ -73,6 +73,9 @@ public class DummyCNL extends PluginForDecrypt {
             return decryptedLinks;
         }
         String decrypted = decrypt(crypted, params.get("jk"), params.get("k"));
+        if (decrypted != null) {
+            decrypted.replaceAll(" http:", "\r\nhttp:");
+        }
         String source = params.get("source");
         String packageName = params.get("package");
         FilePackage fp = null;

@@ -1909,10 +1909,11 @@ public class LinkCrawler {
                     final String nextURL = cleanURL(next.getURL());
                     if (nextURL != null && !StringUtils.equals(pluginURL, nextURL)) {
                         final String[] hits = new Regex(nextURL, plugin.getSupportedLinks()).getColumn(-1);
-                        if (hits != null && hits.length > 0) {
-                            if (hits[0] != null && !StringUtils.equals(pluginURL, hits[0])) {
+                        if (hits != null) {
+                            if (hits.length == 1 && hits[0] != null && !StringUtils.equals(pluginURL, hits[0])) {
                                 return hits[0];
                             }
+                            return null;
                         }
                     }
                     if (next.getDownloadLink() != null) {
