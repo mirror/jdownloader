@@ -28,6 +28,8 @@ import javax.script.ScriptException;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -41,7 +43,7 @@ import jd.utils.JDUtilities;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "binbox.io" }, urls = { "https?://(www\\.)?binbox\\.io/\\w+#\\w+" }, flags = { 0 })
 public class BinBoxIo extends PluginForDecrypt {
 
-    private static String sjcl;
+    private String sjcl, uid, salt, token, paste;
 
     public BinBoxIo(PluginWrapper wrapper) {
         super(wrapper);
@@ -55,9 +57,10 @@ public class BinBoxIo extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        final String fpName = br.getRegex("<title>([^<>\"]*?)\\- Binbox</title>").getMatch(0);
-        final String salt = parameter.substring(parameter.lastIndexOf("#") + 1);
-        String paste = getPaste();
+        final String fpName = br.getRegex("<title>([^<>\"]*?)- Binbox</title>").getMatch(0);
+        uid = new Regex(parameter, "io/(\\w+)").getMatch(0);
+        salt = parameter.substring(parameter.lastIndexOf("#") + 1);
+        getPaste();
         if (paste == null) {
             if (br.containsHTML("solvemedia\\.com/papi/")) {
                 final String validate = br.getRegex("type=\"hidden\" name=\"validate\" value=\"([^<>\"]*?)\"").getMatch(0);
@@ -72,25 +75,33 @@ public class BinBoxIo extends PluginForDecrypt {
                     try {
                         cf = sm.downloadCaptcha(getLocalCaptchaFile());
                     } catch (final Exception e) {
-                        if (jd.plugins.decrypter.LnkCrptWs.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                        if (jd.plugins.decrypter.LnkCrptWs.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                            throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                        }
                         throw e;
                     }
                     final String code = getCaptchaCode(cf, param);
                     final String chid = sm.getChallenge(code);
                     br.postPage(br.getURL(), "validate=" + validate + "&adcopy_response=" + Encoding.urlEncode(code) + "&adcopy_challenge=" + chid);
-                    if (br.containsHTML("solvemedia\\.com/papi/")) continue;
+                    if (br.containsHTML("solvemedia\\.com/papi/")) {
+                        continue;
+                    }
                     break;
                 }
-                if (br.containsHTML("solvemedia\\.com/papi/")) throw new DecrypterException(DecrypterException.CAPTCHA);
-                paste = getPaste();
+                if (br.containsHTML("solvemedia\\.com/papi/")) {
+                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                }
+                getPaste();
             }
         }
-
+        doThis();
         if (salt != null && paste != null) {
             paste = paste.replace("&quot;", "\"");
             paste = Encoding.Base64Decode(paste);
-            if (isEmpty(sjcl)) sjcl = br.getPage("/public/js/sjcl.js");
-            final String[] links = decryptLinks(salt, paste);
+            if (isEmpty(sjcl)) {
+                sjcl = br.getPage("/public/js/sjcl.js");
+            }
+            final String[] links = decryptLinks();
             if (links == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -99,7 +110,9 @@ public class BinBoxIo extends PluginForDecrypt {
                 return decryptedLinks;
             }
             for (final String singleLink : links) {
-                if (!singleLink.startsWith("http")) continue;
+                if (!singleLink.startsWith("http")) {
+                    continue;
+                }
                 decryptedLinks.add(createDownloadlink(singleLink));
             }
         }
@@ -118,7 +131,7 @@ public class BinBoxIo extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private String[] decryptLinks(final String salt, final String paste) throws Exception {
+    private String[] decryptLinks() throws Exception {
         String result = null;
         final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
@@ -133,16 +146,29 @@ public class BinBoxIo extends PluginForDecrypt {
             logger.log(Level.SEVERE, e.getMessage(), e);
             return null;
         }
-        if (isEmpty(result)) return null;
+        if (isEmpty(result)) {
+            return null;
+        }
         return result.split("[\r\n]+");
+    }
+
+    private void doThis() throws Exception {
+        // 20141030
+        token = br.getRegex("\\?token=([a-f0-9]{40})").getMatch(0);
+        Form action = br.getFormbyProperty("id", "paste-form");
+        if (action != null) {
+            br.setFollowRedirects(true);
+            br.submitForm(action);
+            getPaste();
+        }
     }
 
     private boolean isEmpty(String ip) {
         return ip == null || ip.trim().length() == 0;
     }
 
-    private String getPaste() {
-        return br.getRegex("<div id=\"paste\\-json\" style=\"[^\"]+\">([^<]+)</div>").getMatch(0);
+    private void getPaste() {
+        paste = br.getRegex("<div id=\"paste\\-json\" style=\"[^\"]+\">([^<]+)</div>").getMatch(0);
     }
 
 }
