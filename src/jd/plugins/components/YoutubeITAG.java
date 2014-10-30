@@ -15,6 +15,7 @@ public enum YoutubeITAG {
     // fake id
     IMAGE_LQ(10004, "jpg", "120x90", null, null, 0.1),
     DASH_AUDIO_128K_AAC(140, null, null, "AAC", "128kbit", YoutubeITAG.AAC_128),
+    DASH_AUDIO_48K_OPUS(249, null, null, "Opus", "38kbit", YoutubeITAG.OPUS_48),
     DASH_AUDIO_128K_WEBM(171, null, null, "Vorbis", "128kbit", YoutubeITAG.VORBIS_128),
     DASH_AUDIO_192K_WEBM(172, null, null, "Vorbis", "192kbit", YoutubeITAG.VORBIS_192),
     DASH_AUDIO_256K_AAC(141, null, null, "AAC", "256kbit", YoutubeITAG.AAC_256),
@@ -29,10 +30,24 @@ public enum YoutubeITAG {
     DASH_VIDEO_360P_H264(134, "H264", "360p", null, null, 360.4),
     DASH_VIDEO_480P_H264(135, "H264", "480p", null, null, 480.4),
     DASH_VIDEO_720P_H264(136, "H264", "720p", null, null, 720.4),
+    DASH_VIDEO_1080_H264_FPS60(299, "H264", "1080p 60fps", null, null, 1080.4 + 0.05),
+    DASH_VIDEO_720_H264_FPS60(298, "H264", "720p 60fps", null, null, 720.4 + 0.05),
+    // https://www.youtube.com/watch?v=T3ny9zIckP0
+    // the 2610 stream on itag 266 is deklared as 60fps stream in the backend, but it is actually just 30fps. maybe 60fps will come soon on
+    // the same itag?
+
+    DASH_VIDEO_2160_H264_FPS_60(266, "H264", "2160p", null, null, 2160.4 - 0.05),
     DASH_VIDEO_ORIGINAL_H264(138, "H264", "Original", null, null, 2160.4),
+
+    // https://www.youtube.com/watch?v=T3ny9zIckP0
+    DASH_WEBM_VIDEO_720P_VP9_60FPS(302, "VP9", "720p 60fps", null, null, 720.3 + 0.05),
+    DASH_WEBM_VIDEO_1080P_VP9_60FPS(303, "VP9", "1080p 60fps", null, null, 1080.3 + 0.05),
+    // DASH_WEBM_VIDEO_720P_VP9(247, "VP9", "720p", null, null, 720.3),
     // https://www.youtube.com/watch?v=kdKgvII-pAg
     DASH_WEBM_VIDEO_2160P_VP9(272, "VP9", "2160p", null, null, 2160.3),
     DASH_WEBM_VIDEO_1440P_VP9(271, "VP9", "1440p", null, null, 1440.3),
+    // https://www.youtube.com/watch?v=ZSn3Tvc7jQU
+    // DASH_WEBM_VIDEO_1080P_VP9_60FPS(299, "VP9", "1080p", null, null, 1080.3),
     DASH_WEBM_VIDEO_1080P_VP9(248, "VP9", "1080p", null, null, 1080.3),
     DASH_WEBM_VIDEO_720P_VP9(247, "VP9", "720p", null, null, 720.3),
     DASH_WEBM_VIDEO_480P_VP9_3(246, "VP9", "480p", null, null, 482.3),
@@ -85,7 +100,7 @@ public enum YoutubeITAG {
     WEBM_VIDEO_480P_VP8_AUDIO_VORBIS(44, "VP8", "480p", "Vorbis", "128kbit", 480.3 + YoutubeITAG.VORBIS_128),
     WEBM_VIDEO_720P_VP8_AUDIO_192K_VORBIS_3D(102, "VP8", "720p", "Vorbis", "192kbit", 720.3 + YoutubeITAG.VORBIS_192),
     // not sure - did not find testvideos
-    WEBM_VIDEO_720P_VP8_AUDIO_VORBIS(45, "VP8", "720p", "Vorbis", "192kbit", 720.3 + YoutubeITAG.VORBIS_192);
+    WEBM_VIDEO_720P_VP8_AUDIO_VORBIS(45, "VP8", "720p", "Vorbis", "192kbit", 720.3 + YoutubeITAG.VORBIS_192), ;
     public static enum YoutubeITAGVersion {
         // http://www.h3xed.com/web-and-internet/youtube-audio-quality-bitrate-240p-360p-480p-720p-1080p
         // Before March 2011, YouTube used these audio qualities for several years:
@@ -224,7 +239,7 @@ public enum YoutubeITAG {
     private String             codecVideo;
 
     private String             qualityVideo;
-
+    public static final double OPUS_48         = 0.048;
     public static final double VORBIS_96       = 0.0963;
 
     public static final double VORBIS_192      = 0.1923;

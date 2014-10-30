@@ -5259,4 +5259,94 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Import all Menu Settings" })
     String ImportMenuItemsAction();
+
+    @Default(lngs = { "en" }, values = { "2160p 60fps MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_VIDEO_2160_H264_FPS_60_AAC128();
+
+    @Default(lngs = { "en" }, values = { "2160p 60fps" })
+    String YoutubeVariant_filenametag_MP4_DASH_VIDEO_2160_H264_FPS_60_AAC48();
+
+    @Default(lngs = { "en" }, values = { "2160p 60fps MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_VIDEO_2160_H264_FPS_60_AAC48();
+
+    @Default(lngs = { "en" }, values = { "2160p 60fps" })
+    String YoutubeVariant_filenametag_MP4_DASH_VIDEO_2160_H264_FPS_60_AAC256();
+
+    @Default(lngs = { "en" }, values = { "2160p 60fps MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_VIDEO_2160_H264_FPS_60_AAC256();
+
+    @Default(lngs = { "en" }, values = { "2160p 60fps" })
+    String YoutubeVariant_filenametag_MP4_DASH_VIDEO_2160_H264_FPS_60_AAC128();
+
+    @Default(lngs = { "en" }, values = { "1080p 60fps MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_VIDEO_1080_H264_FPS_60_AAC128();
+
+    @Default(lngs = { "en" }, values = { "1080p 60fps" })
+    String YoutubeVariant_filenametag_MP4_DASH_VIDEO_1080_H264_FPS_60_AAC128();
+
+    @Default(lngs = { "en" }, values = { "1080p 60fps MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_VIDEO_1080_H264_FPS_60_AAC256();
+
+    @Default(lngs = { "en" }, values = { "1080p 60fps" })
+    String YoutubeVariant_filenametag_MP4_DASH_VIDEO_1080_H264_FPS_60_AAC256();
+
+    @Default(lngs = { "en" }, values = { "1080p 60fps MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_VIDEO_1080_H264_FPS_60_AAC48();
+
+    @Default(lngs = { "en" }, values = { "1080p 60fps" })
+    String YoutubeVariant_filenametag_MP4_DASH_VIDEO_1080_H264_FPS_60_AAC48();
+
+    @Default(lngs = { "en" }, values = { "720p 60fps MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_VIDEO_720_H264_FPS_60_AAC128();
+
+    @Default(lngs = { "en" }, values = { "720p 60fps" })
+    String YoutubeVariant_filenametag_MP4_DASH_VIDEO_720_H264_FPS_60_AAC128();
+
+    @Default(lngs = { "en" }, values = { "720p 60fps MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_VIDEO_720_H264_FPS_60_AAC256();
+
+    @Default(lngs = { "en" }, values = { "720p 60fps" })
+    String YoutubeVariant_filenametag_MP4_DASH_VIDEO_720_H264_FPS_60_AAC256();
+
+    @Default(lngs = { "en" }, values = { "720p 60fps MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_VIDEO_720_H264_FPS_60_AAC48();
+
+    @Default(lngs = { "en" }, values = { "720p 60fps" })
+    String YoutubeVariant_filenametag_MP4_DASH_VIDEO_720_H264_FPS_60_AAC48();
+
+    @Default(lngs = { "en" }, values = { "144p WebM-Video" })
+    String YoutubeVariant_name_WEBM144();
+
+    @Default(lngs = { "en" }, values = { "144p" })
+    String YoutubeVariant_filenametag_WEBM_144();
+
+    @Default(lngs = { "en" }, values = { "240p WebM-Video" })
+    String YoutubeVariant_name_WEBM240();
+
+    @Default(lngs = { "en" }, values = { "240p" })
+    String YoutubeVariant_filenametag_WEBM_240();
+
+    @Default(lngs = { "en" }, values = { "1440p WebM-Video" })
+    String YoutubeVariant_name_WEBM_1440();
+
+    @Default(lngs = { "en" }, values = { "1440p" })
+    String YoutubeVariant_filenametag_WEBM_1440();
+
+    @Default(lngs = { "en" }, values = { "2160p WebM-Video" })
+    String YoutubeVariant_name_WEBM_2160();
+
+    @Default(lngs = { "en" }, values = { "2160p" })
+    String YoutubeVariant_filenametag_WEBM_2160();
+
+    @Default(lngs = { "en" }, values = { "1080p 60fps WebM-Video" })
+    String YoutubeVariant_name_WEBM_1080_60FPS();
+
+    @Default(lngs = { "en" }, values = { "1080p 60fps" })
+    String YoutubeVariant_filenametag_WEBM_1080_60FPS();
+
+    @Default(lngs = { "en" }, values = { "720p 60fps WebM-Video" })
+    String YoutubeVariant_name_WEBM_720_60FPS();
+
+    @Default(lngs = { "en" }, values = { "720p 60fps" })
+    String YoutubeVariant_filenametag_WEBM_720_60FPS();
 }
