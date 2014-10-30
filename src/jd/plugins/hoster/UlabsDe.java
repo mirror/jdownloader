@@ -27,6 +27,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -99,10 +100,36 @@ public class UlabsDe extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            // Dein Traffic reicht leider nicht aus, um diese Date
-            if (br.getURL().contains("code=3") || br.containsHTML("Dein Traffic reicht leider nicht aus, um diese Datei herunterladen")) {
-                logger.info("Not enough traffic to download file");
+            final String errorcode = new Regex(br.getURL(), "code=(\\d+)").getMatch(0);
+            if ("1".equals(errorcode)) {
+                logger.info("Your registration / account is invalid");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid registration/account", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if ("2".equals(errorcode)) {
+                logger.info("Invalid URL --> Temporarily remove current host from hostlist");
+                tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000);
+            } else if ("3".equals(errorcode)) {
+                logger.info("Not enough traffic to download file --> Temporarily remove current host from hostlist");
                 tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000);
+            } else if ("4".equals(errorcode)) {
+                logger.info("Downloadlink seems to be offline");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if ("5".equals(errorcode)) {
+                logger.info("An unknown error happened");
+                tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000);
+            } else if ("6".equals(errorcode)) {
+                logger.info("An 'API error' happened");
+                tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000);
+            } else if ("7".equals(errorcode)) {
+                logger.info("The host whose downloadlink you tried is not supported by this multihost  --> Temporarily remove current host from hostlist");
+                tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000);
+            } else if ("8".equals(errorcode)) {
+                logger.info("There are no available host-accounts at the moment  --> Temporarily remove current host from hostlist");
+                tempUnavailableHoster(acc, link, 15 * 60 * 60 * 1000);
+            } else if ("10".equals(errorcode)) {
+                logger.info("Your account is banned at the moment --> Disable it");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Banned account!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if (errorcode != null) {
+                logger.warning("Unhandled errorcode: " + errorcode);
             }
             logger.info("Unhandled download error on " + NICE_HOST + ": " + br.toString());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
