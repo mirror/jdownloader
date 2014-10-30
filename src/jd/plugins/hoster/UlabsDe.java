@@ -99,7 +99,8 @@ public class UlabsDe extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML(">Dein Traffic reicht leider nicht aus")) {
+            // Dein Traffic reicht leider nicht aus, um diese Date
+            if (br.getURL().contains("code=3") || br.containsHTML("Dein Traffic reicht leider nicht aus, um diese Datei herunterladen")) {
                 logger.info("Not enough traffic to download file");
                 tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000);
             }
@@ -138,7 +139,7 @@ public class UlabsDe extends PluginForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
      * from the host list.
-     * 
+     *
      * @param dl
      *            : The DownloadLink
      * @param error
