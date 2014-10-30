@@ -118,8 +118,18 @@ public class BinBoxIo extends PluginForDecrypt {
         }
 
         if (decryptedLinks.size() == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            if (br.containsHTML(/* DCMA */"<div id=\"paste-deleted\"" +
+            /* suspended or deactivated account */"|This link is unavailable because |" +
+            /* content deleted */"The content you have requested has been deleted\\.")) {
+                try {
+                    decryptedLinks.add(createOfflinelink(parameter, fpName != null ? Encoding.htmlDecode(fpName.trim()) : null, null));
+                } catch (final Throwable t) {
+                    logger.info("Link offline: " + parameter);
+                }
+            } else {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
         }
 
         if (fpName != null) {
