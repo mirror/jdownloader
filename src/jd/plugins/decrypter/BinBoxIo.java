@@ -99,7 +99,7 @@ public class BinBoxIo extends PluginForDecrypt {
             paste = paste.replace("&quot;", "\"");
             paste = Encoding.Base64Decode(paste);
             if (isEmpty(sjcl)) {
-                sjcl = br.getPage("/public/js/sjcl.js");
+                sjcl = br.cloneBrowser().getPage("/public/js/sjcl.js");
             }
             final String[] links = decryptLinks();
             if (links == null) {
@@ -118,7 +118,13 @@ public class BinBoxIo extends PluginForDecrypt {
         }
 
         if (decryptedLinks.size() == 0) {
-            if (br.containsHTML(/* DCMA */"<div id=\"paste-deleted\"" +
+            if (br.containsHTML(/* password content.. unsupported feature */">Password Required</h1>")) {
+                try {
+                    decryptedLinks.add(createOfflinelink(parameter, "password required, unsupported feature", null));
+                } catch (final Throwable t) {
+                    logger.info("Link offline: " + parameter);
+                }
+            } else if (br.containsHTML(/* DCMA */"<div id=\"paste-deleted\"" +
             /* suspended or deactivated account */"|This link is unavailable because |" +
             /* content deleted */"The content you have requested has been deleted\\.")) {
                 try {
