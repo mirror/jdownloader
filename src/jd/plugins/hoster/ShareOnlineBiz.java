@@ -38,6 +38,7 @@ import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.RandomUserAgent;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -51,8 +52,10 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.IO;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.net.NullOutputStream;
 import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "https?://(www\\.)?(share\\-online\\.biz|egoshare\\.com)/(download\\.php\\?id\\=|dl/)[\\w]+" }, flags = { 2 })
@@ -544,11 +547,15 @@ public class ShareOnlineBiz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Proxy error");
         }
         final Browser brc = br.cloneBrowser();
+        URLConnectionAdapter con = null;
         try {
-            brc.openGetConnection("/template/images/corp/uploadking.php?show=last");
+            con = brc.openGetConnection("/template/images/corp/uploadking.php?show=last");
+            IO.readStreamToOutputStream(-1, con.getInputStream(), new NullOutputStream(), true);
         } finally {
             try {
-                brc.getHttpConnection().disconnect();
+                if (con != null) {
+                    con.disconnect();
+                }
             } catch (final Throwable e) {
             }
         }
