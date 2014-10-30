@@ -713,12 +713,12 @@ public class YoutubeHelper {
 
     /**
      * *
-     *
+     * 
      * @param html5PlayerJs
      *            TODO
      * @param br
      * @param s
-     *
+     * 
      * @return
      * @throws IOException
      * @throws PluginException
@@ -1163,6 +1163,7 @@ public class YoutubeHelper {
                     } else {
 
                         this.logger.info("Unkown Line: " + r);
+                        this.logger.info(url + "");
                         this.logger.info(query + "");
                     }
 
@@ -1640,6 +1641,7 @@ public class YoutubeHelper {
             return new YoutubeStreamData(vid, url, itag);
         } else {
             this.logger.info("Unkown Line: " + line);
+            this.logger.info(url + "");
             this.logger.info(query + "");
         }
         return null;
