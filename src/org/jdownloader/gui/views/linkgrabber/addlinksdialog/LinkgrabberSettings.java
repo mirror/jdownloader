@@ -17,6 +17,7 @@ import org.jdownloader.gui.packagehistorycontroller.DownloadPath;
 import org.jdownloader.gui.packagehistorycontroller.PackageHistoryEntry;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.AutoStartOptions;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.OnOfflineLinksAction;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.ConfirmIncompleteArchiveAction;
 
 public interface LinkgrabberSettings extends ConfigInterface {
 
@@ -258,4 +259,13 @@ public interface LinkgrabberSettings extends ConfigInterface {
 
     boolean isAutoConfirmManagerClearListAfterConfirm();
 
+    @AboutConfig
+    void setHandleOfflineOnConfirmLatestSelection(OnOfflineLinksAction handleOfflineLoc);
+
+    OnOfflineLinksAction getHandleOfflineOnConfirmLatestSelection();
+
+    @AboutConfig
+    void setHandleIncompleteArchiveOnConfirmLatestSelection(ConfirmIncompleteArchiveAction handleOfflineLoc);
+
+    ConfirmIncompleteArchiveAction getHandleIncompleteArchiveOnConfirmLatestSelection();
 }

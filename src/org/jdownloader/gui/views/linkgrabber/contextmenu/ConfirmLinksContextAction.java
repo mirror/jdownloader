@@ -8,6 +8,7 @@ import java.util.HashSet;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
@@ -21,13 +22,13 @@ import jd.gui.swing.jdgui.interfaces.View;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.swing.MigPanel;
+import org.appwork.uio.CloseReason;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.ComboBoxDialog;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DefaultButtonPanel;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -56,6 +57,7 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkgrabberSearchField;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.ConfirmIncompleteArchiveAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
@@ -202,6 +204,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     private static final long  serialVersionUID = -3937346180905569896L;
 
     public static void confirmSelection(final SelectionInfo<CrawledPackage, CrawledLink> selection, final boolean autoStart, final boolean clearLinkgrabber, final boolean doTabSwitch, final Priority newPriority, final BooleanStatus forcedStart, final OnOfflineLinksAction handleOfflineLinks) {
+
         Thread thread = new Thread() {
 
             public void run() {
@@ -215,90 +218,141 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                     // this validation step also copies the passwords from the CRawledlinks in the archive settings
                     final ExtractionExtension extension = ExtractionExtension.getInstance();
                     if (extension != null) {
-                        switch (CFG_GUI.CFG.getConfirmIncompleteArchiveAction()) {
-                        case ASK:
-                            loop: for (Archive a : ArchiveValidator.validate(selection)) {
-                                final DummyArchive da = extension.createDummyArchive(a);
-                                if (!da.isComplete()) {
+                        ConfirmIncompleteArchiveAction doAction = CFG_GUI.CFG.getConfirmIncompleteArchiveAction();
 
-                                    ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ConfirmAction_run_incomplete_archive_title_(a.getName()), _GUI._.ConfirmAction_run_incomplete_archive_msg(), NewTheme.I().getIcon("stop", 32), _GUI._.ConfirmAction_run_incomplete_archive_continue(), null) {
-                                        public String getDontShowAgainKey() {
-                                            return null;
+                        loop: for (Archive a : ArchiveValidator.validate(selection)) {
+                            ConfirmIncompleteArchiveAction doActionForTheCurrentArchive = doAction;
+                            final DummyArchive da = extension.createDummyArchive(a);
+                            if (da.isComplete()) {
+                                continue;
+                            }
 
-                                        };
+                            if (doAction == ConfirmIncompleteArchiveAction.ASK) {
 
-                                        protected MigPanel createBottomPanel() {
-                                            // TODO Auto-generated method stub
-                                            return new MigPanel("ins 0", "[]20[grow,fill][]", "[]");
+                                ConfirmIncompleteArchiveAction[] options = new ConfirmIncompleteArchiveAction[] { ConfirmIncompleteArchiveAction.DELETE, ConfirmIncompleteArchiveAction.KEEP_IN_LINKGRABBER, ConfirmIncompleteArchiveAction.MOVE_TO_DOWNLOADLIST };
+                                ComboBoxDialog d = new ComboBoxDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ConfirmAction_run_incomplete_archive_title_(a.getName()), _GUI._.ConfirmAction_run_incomplete_archive_msg(), options, 0, NewTheme.I().getIcon("stop", 32), _GUI._.lit_continue(), null, null) {
+                                    protected javax.swing.JComboBox getComboBox(Object[] options2) {
+                                        ConfirmIncompleteArchiveAction s = CFG_LINKGRABBER.CFG.getHandleIncompleteArchiveOnConfirmLatestSelection();
+                                        JComboBox ret = super.getComboBox(options2);
+                                        if (s != null) {
+                                            ret.setSelectedItem(s);
                                         }
-
-                                        @Override
-                                        protected String getDontShowAgainLabelText() {
-                                            return _GUI._.ConfirmLinksContextAction_getDontShowAgainLabelText_object_();
-                                        }
-
-                                        @Override
-                                        protected DefaultButtonPanel createBottomButtonPanel() {
-
-                                            DefaultButtonPanel ret = new DefaultButtonPanel("ins 0", "[][][]", "0[]0");
-                                            ret.add(new JButton(new AppAction() {
-                                                {
-                                                    setName(_GUI._.ConfirmAction_run_incomplete_archive_details());
-                                                }
-
-                                                @Override
-                                                public void actionPerformed(ActionEvent e) {
-                                                    try {
-                                                        Dialog.getInstance().showDialog(new DummyArchiveDialog(da));
-                                                    } catch (DialogClosedException e1) {
-                                                        e1.printStackTrace();
-                                                    } catch (DialogCanceledException e1) {
-                                                        e1.printStackTrace();
-                                                    }
-                                                }
-
-                                            }), "");
-                                            return ret;
-                                        }
+                                        return ret;
 
                                     };
 
-                                    Dialog.getInstance().showDialog(d);
-                                    if (d.isDontShowAgainSelected()) {
-                                        break loop;
+                                    public String getDontShowAgainKey() {
+                                        return null;
+
+                                    };
+
+                                    protected MigPanel createBottomPanel() {
+                                        // TODO Auto-generated method stub
+                                        return new MigPanel("ins 0", "[]20[grow,fill][]", "[]");
                                     }
 
+                                    @Override
+                                    protected DefaultButtonPanel createBottomButtonPanel() {
+
+                                        DefaultButtonPanel ret = new DefaultButtonPanel("ins 0", "[][][]", "0[]0");
+                                        ret.add(new JButton(new AppAction() {
+                                            {
+                                                setName(_GUI._.ConfirmAction_run_incomplete_archive_details());
+                                            }
+
+                                            @Override
+                                            public void actionPerformed(ActionEvent e) {
+                                                try {
+                                                    Dialog.getInstance().showDialog(new DummyArchiveDialog(da));
+                                                } catch (DialogClosedException e1) {
+                                                    e1.printStackTrace();
+                                                } catch (DialogCanceledException e1) {
+                                                    e1.printStackTrace();
+                                                }
+                                            }
+
+                                        }), "");
+                                        return ret;
+                                    }
+
+                                    @Override
+                                    protected String getDontShowAgainLabelText() {
+                                        return _GUI._.ConfirmLinksContextAction_getDontShowAgainLabelText_object_();
+                                    }
+
+                                    protected ListCellRenderer getRenderer(final ListCellRenderer orgRenderer) {
+                                        // TODO Auto-generated method stub
+                                        return new ListCellRenderer() {
+
+                                            @Override
+                                            public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                                                if (value == null) {
+                                                    return orgRenderer.getListCellRendererComponent(list, _GUI._.AddActionAction_getListCellRendererComponent_no_action_(), index, isSelected, cellHasFocus);
+                                                }
+                                                switch (((ConfirmIncompleteArchiveAction) value)) {
+
+                                                // case EXCLUDE_OFFLINE:
+                                                // return orgRenderer.getListCellRendererComponent(list,
+                                                // _GUI._.ConfirmLinksContextAction_getListCellRendererComponent_EXCLUDE_OFFLINE(),
+                                                // index, isSelected, cellHasFocus);
+                                                //
+                                                // case EXCLUDE_OFFLINE_AND_REMOVE:
+                                                // return orgRenderer.getListCellRendererComponent(list,
+                                                // _GUI._.ConfirmLinksContextAction_getListCellRendererComponent_EXCLUDE_OFFLINE_AND_REMOVE(),
+                                                // index, isSelected, cellHasFocus);
+                                                //
+                                                // case INCLUDE_OFFLINE:
+                                                // return orgRenderer.getListCellRendererComponent(list,
+                                                // _GUI._.ConfirmLinksContextAction_getListCellRendererComponent_INCLUDE_OFFLINE(),
+                                                // index, isSelected, cellHasFocus);
+
+                                                }
+                                                JLabel ret = (JLabel) orgRenderer.getListCellRendererComponent(list, ((ConfirmIncompleteArchiveAction) value).getLabel(), index, isSelected, cellHasFocus);
+                                                return ret;
+                                            }
+                                        };
+                                    }
+
+                                };
+                                UIOManager.I().show(null, d);
+                                d.throwCloseExceptions();
+
+                                if (d.getCloseReason() != CloseReason.OK) {
+                                    return;
+                                }
+                                doActionForTheCurrentArchive = options[d.getSelectedIndex()];
+
+                                CFG_LINKGRABBER.CFG.setHandleIncompleteArchiveOnConfirmLatestSelection(doActionForTheCurrentArchive);
+                                if (d.isDontShowAgainSelected()) {
+                                    doAction = doActionForTheCurrentArchive;
+                                }
+                            }
+
+                            switch (doActionForTheCurrentArchive) {
+
+                            case DELETE:
+
+                                for (ArchiveFile af : a.getArchiveFiles()) {
+                                    if (af instanceof CrawledLinkArchiveFile) {
+                                        toDelete.addAll(((CrawledLinkArchiveFile) af).getLinks());
+                                    }
                                 }
 
-                            }
-                            break;
-                        case DELETE:
-                            loop: for (Archive a : ArchiveValidator.validate(selection)) {
-                                final DummyArchive da = extension.createDummyArchive(a);
-                                if (!da.isComplete()) {
-                                    for (ArchiveFile af : a.getArchiveFiles()) {
-                                        if (af instanceof CrawledLinkArchiveFile) {
-                                            toDelete.addAll(((CrawledLinkArchiveFile) af).getLinks());
-                                        }
+                                break;
+                            case KEEP_IN_LINKGRABBER:
+
+                                for (ArchiveFile af : a.getArchiveFiles()) {
+                                    if (af instanceof CrawledLinkArchiveFile) {
+                                        toKeepInLinkgrabber.addAll(((CrawledLinkArchiveFile) af).getLinks());
                                     }
                                 }
+
+                                break;
+                            case MOVE_TO_DOWNLOADLIST:
+                                // do nothing
+                                break;
                             }
-                            break;
-                        case KEEP_IN_LINKGRABBER:
-                            loop: for (Archive a : ArchiveValidator.validate(selection)) {
-                                final DummyArchive da = extension.createDummyArchive(a);
-                                if (!da.isComplete()) {
-                                    for (ArchiveFile af : a.getArchiveFiles()) {
-                                        if (af instanceof CrawledLinkArchiveFile) {
-                                            toKeepInLinkgrabber.addAll(((CrawledLinkArchiveFile) af).getLinks());
-                                        }
-                                    }
-                                }
-                            }
-                            break;
-                        case MOVE_TO_DOWNLOADLIST:
-                            // do nothing
-                            break;
+
                         }
                     }
                 } catch (DialogNoAnswerException e) {
@@ -311,11 +365,27 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                 if (handleOfflineLoc != OnOfflineLinksAction.INCLUDE_OFFLINE) {
 
                     for (CrawledLink cl : selection.getChildren()) {
+                        if (toKeepInLinkgrabber.contains(cl)) {
+                            continue;
+                        }
+                        if (toDelete.contains(cl)) {
+                            continue;
+                        }
                         if (cl.getDownloadLink().isAvailabilityStatusChecked() && !cl.getDownloadLink().isAvailable()) {
                             offline.add(cl);
                             if (handleOfflineLoc == OnOfflineLinksAction.ASK) {
                                 OnOfflineLinksAction[] options = new OnOfflineLinksAction[] { OnOfflineLinksAction.INCLUDE_OFFLINE, OnOfflineLinksAction.EXCLUDE_OFFLINE, OnOfflineLinksAction.EXCLUDE_OFFLINE_AND_REMOVE };
                                 ComboBoxDialog combo = new ComboBoxDialog(0, _GUI._.ConfirmLinksContextAction_run_offline_ask_title(), _GUI._.ConfirmLinksContextAction_run_offline_ask_question(), options, 0, null, null, null, null) {
+                                    protected javax.swing.JComboBox getComboBox(Object[] options2) {
+                                        OnOfflineLinksAction s = CFG_LINKGRABBER.CFG.getHandleOfflineOnConfirmLatestSelection();
+                                        JComboBox ret = super.getComboBox(options2);
+                                        if (s != null) {
+                                            ret.setSelectedItem(s);
+                                        }
+                                        return ret;
+
+                                    };
+
                                     protected ListCellRenderer getRenderer(final ListCellRenderer orgRenderer) {
                                         // TODO Auto-generated method stub
                                         return new ListCellRenderer() {
@@ -345,8 +415,13 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
 
                                 };
                                 UIOManager.I().show(null, combo);
-
+                                try {
+                                    combo.throwCloseExceptions();
+                                } catch (Exception e) {
+                                    return;
+                                }
                                 handleOfflineLoc = options[combo.getSelectedIndex()];
+                                CFG_LINKGRABBER.CFG.setHandleOfflineOnConfirmLatestSelection(handleOfflineLoc);
                             }
                             switch (handleOfflineLoc) {
 
