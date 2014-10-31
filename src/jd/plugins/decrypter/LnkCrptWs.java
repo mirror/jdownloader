@@ -1861,134 +1861,8 @@ public class LnkCrptWs extends PluginForDecrypt {
         prepareBrowser("Mozilla/5.0 (Windows NT 6.1; WOW64; rv:15.0) Gecko/20100101 Firefox/15.0.1");
         final String containerId = new Regex(parameter, "dir/([a-zA-Z0-9]+)").getMatch(0);
         parameter = "http://linkcrypt.ws/dir/" + containerId;
-        br.getPage(parameter);
-        for (int i = 0; i < 3; i++) {
-            if (br.containsHTML("TextX")) {
-                // since we are currently not able to auto solve TextX Captcha, we try to get another one
-                Thread.sleep(1500);
-                br.getPage(parameter);
-            }
-        }
-        if (br.containsHTML("<title>Linkcrypt\\.ws // Error 404</title>")) {
-            logger.info("This link might be offline: " + parameter);
-            final String additional = br.getRegex("<h2>\r?\n?(.*?)<").getMatch(0);
-            if (additional != null) {
-                logger.info(additional);
-            }
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            offline.setFinalFileName(new Regex(parameter, "([\\w]+)$").getMatch(0));
-            decryptedLinks.add(offline);
-            return decryptedLinks;
-        }
-
-        final String important[] = { "/js/jquery.js", "/dir/image/Warning.png" };
-        URLConnectionAdapter con = null;
-        for (final String template : important) {
-            final Browser br2 = br.cloneBrowser();
-            try {
-                con = br2.openGetConnection(template);
-            } catch (final Exception e) {
-                e.printStackTrace();
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        }
-
-        // Different captcha types
-        boolean valid = true;
-        boolean done = false;
-        if (br.containsHTML("<\\!\\-\\- KeyCAPTCHA code")) {
-            KeyCaptcha kc;
-
-            // START solve keycaptcha automatically
-            for (int i = 0; i < 3; i++) {
-                kc = new KeyCaptcha(br);
-                final String result = kc.autoSolve(parameter);
-
-                if ("CANCEL".equals(result)) {
-                    throw new DecrypterException(DecrypterException.CAPTCHA);
-                }
-
-                br.postPage(parameter, "capcode=" + Encoding.urlEncode(result));
-                if (!br.containsHTML("<\\!\\-\\- KeyCAPTCHA code")) {
-                    done = true;
-                    break;
-                }
-            }
-            // START solve keycaptcha automatically
-            if (!done) {
-                for (int i = 0; i <= 3; i++) {
-                    kc = new KeyCaptcha(br);
-                    final String result = kc.showDialog(parameter);
-                    if (result == null) {
-                        continue;
-                    }
-                    if ("CANCEL".equals(result)) {
-                        throw new DecrypterException(DecrypterException.CAPTCHA);
-                    }
-                    br.postPage(parameter, "capcode=" + Encoding.urlEncode(result));
-                    if (!br.containsHTML("<\\!\\-\\- KeyCAPTCHA code")) {
-                        break;
-                    }
-                }
-            }
-        }
-        if (br.containsHTML("<\\!\\-\\- KeyCAPTCHA code")) {
-            throw new DecrypterException(DecrypterException.CAPTCHA);
-        }
-        if (br.containsHTML("CaptX|TextX")) {
-            final int max_attempts = 4;
-            for (int attempts = 0; attempts < max_attempts; attempts++) {
-                if (valid && attempts > 0) {
-                    break;
-                }
-                final Form[] captchas = br.getForms();
-                String url = null;
-                for (final Form captcha : captchas) {
-                    if (captcha != null && br.containsHTML("CaptX|TextX")) {
-                        url = captcha.getRegex("src=\"(.*?secid.*?)\"").getMatch(0);
-                        if (url != null) {
-                            valid = false;
-                            final String capDescription = captcha.getRegex("<b>(.*?)</b>").getMatch(0);
-                            final File file = this.getLocalCaptchaFile();
-                            br.cloneBrowser().getDownload(file, url);
-                            // remove black bars
-                            Point p = null;
-                            final byte[] bytes = IO.readBytes(file);
-                            if (br.containsHTML("CaptX") && attempts < 2) {
-                                // try autosolve
-                                p = CaptXSolver.solveCaptXCaptcha(bytes);
-                            }
-                            if (p == null) {
-                                // solve by user
-                                BufferedImage image = toBufferedImage(new ByteArrayInputStream(bytes));
-                                ImageIO.write(image, "png", file);
-                                p = UserIO.getInstance().requestClickPositionDialog(file, "LinkCrypt.ws | " + String.valueOf(max_attempts - attempts), capDescription);
-                            }
-                            if (p == null) {
-                                throw new DecrypterException(DecrypterException.CAPTCHA);
-                            }
-                            captcha.put("x", p.x + "");
-                            captcha.put("y", p.y + "");
-                            br.submitForm(captcha);
-                            if (!br.containsHTML("(Our system could not identify you as human beings\\!|Your choice was wrong\\! Please wait some seconds and try it again\\.)")) {
-                                valid = true;
-                            } else {
-                                br.getPage("/dir/" + containerId);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if (!valid) {
-            throw new DecrypterException(DecrypterException.CAPTCHA);
-        }
+        URLConnectionAdapter con;
+        loadAndSolveCaptcha(param, progress, decryptedLinks, parameter, containerId);
         // check for a password. Store latest password in DB
         Form password = br.getForm(0);
         if (password != null && password.hasInputFieldByName("password")) {
@@ -2233,6 +2107,143 @@ public class LnkCrptWs extends PluginForDecrypt {
         } catch (final Throwable e) {
         }
         return decryptedLinks;
+    }
+
+    public void loadAndSolveCaptcha(final CryptedLink param, final ProgressController progress, final ArrayList<DownloadLink> decryptedLinks, String parameter, final String containerId) throws IOException, InterruptedException, Exception, DecrypterException {
+        br.clearCookies(parameter);
+        br.getPage(parameter);
+        for (int i = 0; i < 5; i++) {
+            if (br.containsHTML("TextX")) {
+                // since we are currently not able to auto solve TextX Captcha, we try to get another one
+                Thread.sleep(500);
+                br.clearCookies(parameter);
+                br.getPage(parameter);
+            }
+        }
+        System.out.println("TextX " + br.containsHTML("TextX"));
+        System.out.println("CaptX " + br.containsHTML("CaptX"));
+        System.out.println("KeyCAPTCHA " + br.containsHTML("KeyCAPTCHA"));
+        if (br.containsHTML("<title>Linkcrypt\\.ws // Error 404</title>")) {
+            logger.info("This link might be offline: " + parameter);
+            final String additional = br.getRegex("<h2>\r?\n?(.*?)<").getMatch(0);
+            if (additional != null) {
+                logger.info(additional);
+            }
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            offline.setFinalFileName(new Regex(parameter, "([\\w]+)$").getMatch(0));
+            decryptedLinks.add(offline);
+            throw new Exception("Cancel");
+        }
+
+        final String important[] = { "/js/jquery.js", "/dir/image/Warning.png" };
+        URLConnectionAdapter con = null;
+        for (final String template : important) {
+            final Browser br2 = br.cloneBrowser();
+            try {
+                con = br2.openGetConnection(template);
+            } catch (final Exception e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
+
+        // Different captcha types
+        boolean valid = true;
+        boolean done = false;
+        if (br.containsHTML("<\\!\\-\\- KeyCAPTCHA code")) {
+            KeyCaptcha kc;
+
+            // START solve keycaptcha automatically
+            for (int i = 0; i < 3; i++) {
+                kc = new KeyCaptcha(br);
+                final String result = kc.autoSolve(parameter);
+
+                if ("CANCEL".equals(result)) {
+                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                }
+
+                br.postPage(parameter, "capcode=" + Encoding.urlEncode(result));
+                if (!br.containsHTML("<\\!\\-\\- KeyCAPTCHA code")) {
+                    done = true;
+                    break;
+                }
+            }
+            // START solve keycaptcha automatically
+            if (!done) {
+                for (int i = 0; i <= 3; i++) {
+                    kc = new KeyCaptcha(br);
+                    final String result = kc.showDialog(parameter);
+                    if (result == null) {
+                        continue;
+                    }
+                    if ("CANCEL".equals(result)) {
+                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                    }
+                    br.postPage(parameter, "capcode=" + Encoding.urlEncode(result));
+                    if (!br.containsHTML("<\\!\\-\\- KeyCAPTCHA code")) {
+                        break;
+                    }
+                }
+            }
+        }
+        if (br.containsHTML("<\\!\\-\\- KeyCAPTCHA code")) {
+            throw new DecrypterException(DecrypterException.CAPTCHA);
+        }
+        if (br.containsHTML("CaptX|TextX")) {
+            final int max_attempts = 4;
+            for (int attempts = 0; attempts < max_attempts; attempts++) {
+                if (valid && attempts > 0) {
+                    break;
+                }
+                final Form[] captchas = br.getForms();
+                String url = null;
+                for (final Form captcha : captchas) {
+                    if (captcha != null && br.containsHTML("CaptX|TextX")) {
+                        url = captcha.getRegex("src=\"(.*?secid.*?)\"").getMatch(0);
+                        if (url != null) {
+                            valid = false;
+                            final String capDescription = captcha.getRegex("<b>(.*?)</b>").getMatch(0);
+                            final File file = this.getLocalCaptchaFile();
+                            br.cloneBrowser().getDownload(file, url);
+                            // remove black bars
+                            Point p = null;
+                            final byte[] bytes = IO.readBytes(file);
+                            if (br.containsHTML("CaptX") && attempts < 2) {
+                                // try autosolve
+                                p = CaptXSolver.solveCaptXCaptcha(bytes);
+                            }
+                            if (p == null) {
+
+                                // solve by user
+                                BufferedImage image = toBufferedImage(new ByteArrayInputStream(bytes));
+                                ImageIO.write(image, "png", file);
+                                p = UserIO.getInstance().requestClickPositionDialog(file, "LinkCrypt.ws | " + String.valueOf(max_attempts - attempts), capDescription);
+                            }
+                            if (p == null) {
+                                throw new DecrypterException(DecrypterException.CAPTCHA);
+                            }
+                            captcha.put("x", p.x + "");
+                            captcha.put("y", p.y + "");
+                            br.submitForm(captcha);
+                            if (!br.containsHTML("(Our system could not identify you as human beings\\!|Your choice was wrong\\! Please wait some seconds and try it again\\.)")) {
+                                valid = true;
+                            } else {
+                                br.getPage("/dir/" + containerId);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (!valid) {
+            throw new DecrypterException(DecrypterException.CAPTCHA);
+        }
     }
 
     @Override

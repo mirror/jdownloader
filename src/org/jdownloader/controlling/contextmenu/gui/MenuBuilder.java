@@ -64,7 +64,9 @@ public class MenuBuilder {
 
     protected boolean isMnemonicUsed(JComponent root, int mnem) {
         HashSet<Integer> set = mnemonics.get(root);
-        if (set == null) { return false; }
+        if (set == null) {
+            return false;
+        }
         return set.contains(mnem);
     }
 
@@ -73,47 +75,59 @@ public class MenuBuilder {
      * @param md
      */
     protected void createLayer(final JComponent root, MenuContainer md) {
-        if (root == null) return;
-
-        for (MenuItemData i : md.getItems()) {
-            try {
-                final MenuItemData inst = i;
-                if (inst._getValidateException() != null) continue;
-                //
-                int count = root.getComponentCount();
-                if (root instanceof JMenu) {
-                    count = ((JMenu) root).getMenuComponentCount() + root.getComponentCount();
-                }
-                if (count == 0 && inst instanceof SeparatorData) continue;
-
-                switch (inst.getType()) {
-                case ACTION:
-
-                    addAction(root, inst);
-
-                    break;
-                case CONTAINER:
-                    addContainer(root, inst);
-
-                }
-                ;
-
-            } catch (Throwable e) {
-                logger.warning("Could Not Build MenuItem: " + i);
-                logger.log(e);
-            }
-
+        if (root == null) {
+            return;
         }
-        ;
-        if (root instanceof ExtMenuInterface) {
-            ((ExtMenuInterface) root).cleanup();
+        long t = System.currentTimeMillis();
+        try {
+            for (MenuItemData i : md.getItems()) {
+                try {
+                    final MenuItemData inst = i;
+                    if (inst._getValidateException() != null) {
+                        continue;
+                    }
+                    //
+                    int count = root.getComponentCount();
+                    if (root instanceof JMenu) {
+                        count = ((JMenu) root).getMenuComponentCount() + root.getComponentCount();
+                    }
+                    if (count == 0 && inst instanceof SeparatorData) {
+                        continue;
+                    }
+
+                    switch (inst.getType()) {
+                    case ACTION:
+
+                        addAction(root, inst);
+
+                        break;
+                    case CONTAINER:
+                        addContainer(root, inst);
+
+                    }
+                    ;
+
+                } catch (Throwable e) {
+                    logger.warning("Could Not Build MenuItem: " + i);
+                    logger.log(e);
+                }
+
+            }
+            ;
+            if (root instanceof ExtMenuInterface) {
+                ((ExtMenuInterface) root).cleanup();
+            }
+        } finally {
+            System.out.println("Menu Creation Layer: " + md + " took " + (System.currentTimeMillis() - t));
         }
 
     }
 
     protected void addContainer(final JComponent root, final MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
         final JMenu submenu = (JMenu) inst.addTo(root);
-        if (submenu == null) return;
+        if (submenu == null) {
+            return;
+        }
         createLayer(submenu, (MenuContainer) inst);
 
         if (submenu.getMenuComponentCount() == 0) {
@@ -122,7 +136,12 @@ public class MenuBuilder {
     }
 
     protected void addAction(final JComponent root, final MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
-        inst.addTo(root);
+        long t = System.currentTimeMillis();
+        try {
+            inst.addTo(root);
+        } finally {
+            System.out.println("Action Creation " + inst + " took " + (System.currentTimeMillis() - t));
+        }
     }
 
     public void run() {
@@ -130,7 +149,9 @@ public class MenuBuilder {
 
             @Override
             protected void runInEDT() {
+
                 createLayer(root, menuData);
+
             }
         };
 
