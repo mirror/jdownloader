@@ -148,8 +148,12 @@ public class PanBaiduCom extends PluginForHost {
             /* Last revision without API & csflg handling: 26909 */
             final String postLink = "http://pan.baidu.com/api/sharedownload?sign=" + sign + "&timestamp=" + tsamp + "&bdstoken=&channel=chunlei&clienttype=0&web=1&app_id=" + APPID;
             String postData = "encrypt=0&product=share&uk=" + uk + "&primaryid=" + shareid + "&fid_list=%5B" + fsid + "%5D";
+            final String specialCookie = br.getCookie("http://pan.baidu.com/", "BDCLND");
             if (link_password_cookie != null) {
                 postData += "&extra=%7B%22sekey%22%3A%22" + link_password_cookie + "%22%7D";
+            } else if (specialCookie != null) {
+                logger.info("Special cookie is available --> Using it as 'sekey'");
+                postData += "&extra=%7B%22sekey%22%3A%22" + specialCookie + "%22%7D";
             }
             br2 = prepAjax(br.cloneBrowser());
             br2.postPage(postLink, postData);
@@ -202,6 +206,9 @@ public class PanBaiduCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else if (br2.containsHTML("\"errno\":112")) {
                 handlePluginBroken(downloadLink, "unknownerror112", 3);
+            } else if (br2.containsHTML("\"errno\":118")) {
+                logger.warning("It seems like one or multiple parameters are missing in the previous request(s)");
+                handlePluginBroken(downloadLink, "unknownerror118", 3);
             }
             DLLINK = getJson(br2, "dlink");
             if (DLLINK == null) {
@@ -213,10 +220,6 @@ public class PanBaiduCom extends PluginForHost {
         if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
             maxChunks = 1;
         }
-
-        // br.getCookies("http://baidu.com/").remove("max-age");
-        // br.getCookies("http://baidu.com/").remove("version");
-        // br.getCookies("http://baidu.com/").remove("PANWEB");
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getResponseCode() == 403) {

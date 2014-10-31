@@ -933,32 +933,33 @@ public class RapidGatorNet extends PluginForHost {
                         /* we are inside handlePremium */
                         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server says: 'Please wait ...'", 10 * 60 * 1000l);
                     }
-                }
-                if (errorMessage.contains("User is not PREMIUM") || errorMessage.contains("This file can be downloaded by premium only") || errorMessage.contains("You can download files up to")) {
+                } else if (errorMessage.contains("User is not PREMIUM") || errorMessage.contains("This file can be downloaded by premium only") || errorMessage.contains("You can download files up to")) {
                     if (sessionReset) {
                         account.setProperty("session_id", Property.NULL);
                         account.setProperty("session_type", Property.NULL);
                     }
                     throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-                if (errorMessage.contains("Login or password is wrong")) {
+                } else if (errorMessage.contains("Login or password is wrong")) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
-                }
-                if (errorMessage.contains("User is FROZEN")) {
+                } else if (errorMessage.contains("Password cannot be blank")) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDas Passwortfeld darf nicht leer sein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nThe password field cannot be blank!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                } else if (errorMessage.contains("User is FROZEN")) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAccount ist gesperrt!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAccount is banned!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
-                }
-                if (errorMessage.contains("Parameter login or password is missing")) {
+                } else if (errorMessage.contains("Parameter login or password is missing")) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                if (errorMessage.contains("Session not exist")) {
+                } else if (errorMessage.contains("Session not exist")) {
                     if (sessionReset) {
                         account.setProperty("session_id", Property.NULL);
                         account.setProperty("session_type", Property.NULL);
