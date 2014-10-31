@@ -649,35 +649,34 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     public static String DATETAG    = "<jd:" + PackagizerController.SIMPLEDATE + ":";
 
     public static String replaceDynamicTags(String input, String packageName) {
+        if (StringUtils.isEmpty(input)) {
+            return input;
+        }
         String ret = input;
-        if (StringUtils.isEmpty(ret)) {
-            return ret;
-        }
-        if (!ret.contains("<jd:")) {
-            return ret;
-        }
-        if (ret.contains(PACKAGETAG)) {
-            if (StringUtils.isEmpty(packageName)) {
-                ret = ret.replace(PACKAGETAG, "");
-            } else {
-                ret = ret.replace(PACKAGETAG, CrossSystem.alleviatePathParts(packageName));
+        if (ret.contains("<jd:")) {
+            if (ret.contains(PACKAGETAG)) {
+                if (StringUtils.isEmpty(packageName)) {
+                    ret = ret.replace(PACKAGETAG, "");
+                } else {
+                    ret = ret.replace(PACKAGETAG, CrossSystem.alleviatePathParts(packageName));
+                }
+                ret = CrossSystem.fixPathSeparators(ret);
             }
-            ret = CrossSystem.fixPathSeparators(ret);
-        }
-        if (ret.contains(DATETAG)) {
-            int start = ret.indexOf(DATETAG);
-            int end = start + DATETAG.length();
-            while (end < ret.length() && ret.charAt(end) != '>') {
-                end++;
-            }
-            try {
-                SimpleDateFormat format = new SimpleDateFormat(ret.substring(start + DATETAG.length(), end));
-                ret = ret.replace(ret.substring(start, end + 1), format.format(new Date()));
-            } catch (Throwable e) {
-                ret = ret.replace(ret.substring(start, end + 1), "");
+            if (ret.contains(DATETAG)) {
+                int start = ret.indexOf(DATETAG);
+                int end = start + DATETAG.length();
+                while (end < ret.length() && ret.charAt(end) != '>') {
+                    end++;
+                }
+                try {
+                    SimpleDateFormat format = new SimpleDateFormat(ret.substring(start + DATETAG.length(), end));
+                    ret = ret.replace(ret.substring(start, end + 1), format.format(new Date()));
+                } catch (Throwable e) {
+                    ret = ret.replace(ret.substring(start, end + 1), "");
+                }
             }
         }
-        return ret;
+        return ret.trim();
     }
 
     protected void set(CrawledLink link, PackagizerRuleWrapper lgr) {
