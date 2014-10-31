@@ -18,6 +18,7 @@ public class DownloadLinkCandidateResult {
         CONNECTION_ISSUES,
         FATAL_ERROR,
         RETRY,
+        ACCOUNT_ERROR,
         ACCOUNT_INVALID,
         ACCOUNT_REQUIRED,
         ACCOUNT_UNAVAILABLE,

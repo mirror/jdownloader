@@ -71,6 +71,7 @@ public class DownloadLinkCandidateHistory {
                 break;
             case CONDITIONAL_SKIPPED:
             case ACCOUNT_INVALID:
+            case ACCOUNT_ERROR:
             case ACCOUNT_UNAVAILABLE:
                 /* already handled in onDetach */
                 break;

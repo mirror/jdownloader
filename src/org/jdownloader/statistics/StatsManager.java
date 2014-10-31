@@ -289,6 +289,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             Throwable th = null;
             if (result.getResult() != null) {
                 switch (result.getResult()) {
+                case ACCOUNT_ERROR:
                 case ACCOUNT_INVALID:
                     dl.setResult(DownloadResult.ACCOUNT_INVALID);
                     break;
