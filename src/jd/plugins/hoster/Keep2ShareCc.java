@@ -501,9 +501,13 @@ public class Keep2ShareCc extends K2SApi {
                 ai.setStatus("Registered Free User");
             } else {
                 account.setProperty("free", false);
-                String availableTraffic = br.getRegex("Available traffic(.*?\\(today\\))?:.*?<a href=\"/user/statistic\\.html\">(.*?)</a>").getMatch(1);
-                if (availableTraffic != null) {
-                    ai.setTrafficLeft(SizeFormatter.getSize(availableTraffic));
+                final String usedTraffic = br.getRegex("Used traffic(.*?\\(today\\))?:.*?<a href=\"/user/statistic\\.html\">(.*?)</").getMatch(1);
+                final String availableTraffic = br.getRegex("Available traffic(.*?\\(today\\))?:.*?<a href=\"/user/statistic\\.html\">(.*?)</").getMatch(1);
+                if (availableTraffic != null && usedTraffic != null) {
+                    final long used = SizeFormatter.getSize(usedTraffic);
+                    final long available = SizeFormatter.getSize(availableTraffic);
+                    ai.setTrafficLeft(available);
+                    ai.setTrafficMax(used + available);
                 } else {
                     ai.setUnlimitedTraffic();
                 }
