@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -38,6 +39,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tenlua.vn" }, urls = { "http://tenluadecrypted\\.vn/\\d+" }, flags = { 2 })
 public class TenluaVn extends PluginForHost {
@@ -65,12 +68,12 @@ public class TenluaVn extends PluginForHost {
         if (fid == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        postPageRaw("http://api.tenlua.vn/?id=", "[{\"a\":\"filemanager_builddownload_getinfo\",\"n\":\"" + fid + "\",\"r\":0." + System.currentTimeMillis() + "}]");
-        if ("none".equals(getJson("type", br.toString()))) {
+        postPageRaw("http://api2.tenlua.vn/", "[{\"a\":\"filemanager_builddownload_getinfo\",\"n\":\"" + fid + "\",\"r\":0." + System.currentTimeMillis() + "}]");
+        if ("none".equals(getJson(br.toString(), "type"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = getJson("n", br.toString());
-        final String filesize = getJson("real_size", br.toString());
+        final String filename = getJson(br.toString(), "n");
+        final String filesize = getJson(br.toString(), "real_size");
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -86,20 +89,24 @@ public class TenluaVn extends PluginForHost {
     }
 
     private String get_fid(final DownloadLink dl) {
-        return new Regex(dl.getStringProperty("specified_link", null), "#download([a-z0-9]+)").getMatch(0);
+        return new Regex(getDownloadlink(dl), "(#|/)download/?([a-z0-9]+)").getMatch(1);
+    }
+
+    private String getDownloadlink(final DownloadLink dl) {
+        return dl.getStringProperty("specified_link", null);
     }
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            dllink = getJson("url", br.toString());
+            dllink = getJson(br.toString(), "url");
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dllink = dllink.replace("\\", "");
 
-            postPageRaw("http://api.tenlua.vn/?id=", "[{\"a\":\"filemanager_builddownload_getwaittime\"}]");
-            final String waittime = getJson("t", br.toString());
+            postPageRaw("http://api2.tenlua.vn/", "[{\"a\":\"filemanager_builddownload_getwaittime\"}]");
+            final String waittime = getJson(br.toString(), "t");
             int wait = 5;
             if (waittime != null) {
                 wait = Integer.parseInt(waittime);
@@ -110,6 +117,7 @@ public class TenluaVn extends PluginForHost {
         br.setFollowRedirects(false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("Finallink does not lead to a file...");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -163,7 +171,7 @@ public class TenluaVn extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                postPageRaw("http://api.tenlua.vn/?id=", "[{\"a\":\"user_login\",\"user\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\",\"permanent\":true}]");
+                postPageRaw("http://api2.tenlua.vn/", "[{\"a\":\"user_login\",\"user\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\",\"permanent\":true}]");
                 if ("-9".equals(br.toString())) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -179,9 +187,10 @@ public class TenluaVn extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                postPageRaw("http://api.tenlua.vn/?id=", "[{\"a\":\"user_getuser\"}]");
+                postPageRaw("http://api2.tenlua.vn/", "[{\"a\":\"user_info\",\"r\":0." + System.currentTimeMillis() + "}]");
                 /* So far, only free accounts are supported */
-                if (!br.containsHTML("\"type\":\"2\"")) {
+                final String type = br.getRegex("\"utype\":\"(\\d+)\"").getMatch(0);
+                if (type == null || !(type.equals("2") || type.equals("3"))) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -204,6 +213,7 @@ public class TenluaVn extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -213,16 +223,48 @@ public class TenluaVn extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        ai.setUnlimitedTraffic();
-        try {
-            account.setConcurrentUsePossible(false);
-            account.setType(AccountType.FREE);
-        } catch (final Throwable e) {
-            /* not available in old Stable 0.9.581 */
+        String accstatus;
+        final String acctype = this.getJson(br.toString(), "utype");
+        if (acctype.equals("1")) {
+            account.setProperty("free", true);
+            try {
+                account.setConcurrentUsePossible(false);
+                account.setType(AccountType.FREE);
+            } catch (final Throwable e) {
+                /* not available in old Stable 0.9.581 */
+            }
+            accstatus = "Registered (free) user";
+        } else if (acctype.equals("2")) {
+            account.setProperty("free", false);
+            accstatus = "Unknown / unsupported account type";
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        } else if (acctype.equals("3")) {
+            account.setProperty("free", false);
+            try {
+                account.setConcurrentUsePossible(false);
+                account.setType(AccountType.PREMIUM);
+            } catch (final Throwable e) {
+                /* not available in old Stable 0.9.581 */
+            }
+            final String expiredate = getJson(br.toString(), "endGold");
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate, "dd-MM-yyyy", Locale.ENGLISH));
+            accstatus = "Gold account";
+        } else {
+            account.setProperty("free", false);
+            accstatus = "Unknown / unsupported account type";
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         }
-        /* So far, only free accounts are supported */
-        ai.setStatus("Registered (free) user");
         account.setValid(true);
+        ai.setStatus(accstatus);
+        ai.setUnlimitedTraffic();
         return ai;
     }
 
@@ -232,11 +274,32 @@ public class TenluaVn extends PluginForHost {
         /* Always do a full login to get the sid value */
         login(account, true);
         br.setFollowRedirects(false);
-        postPageRaw("http://api.tenlua.vn/?id=", "[{\"a\":\"filemanager_builddownload_getinfo\",\"n\":\"" + get_fid(link) + "\",\"r\":0." + System.currentTimeMillis() + "}]");
-        doFree(link);
+        if (account.getBooleanProperty("free", false)) {
+            postPageRaw("http://api2.tenlua.vn/", "[{\"a\":\"filemanager_builddownload_getinfo\",\"n\":\"" + get_fid(link) + "\",\"r\":0." + System.currentTimeMillis() + "}]");
+            doFree(link);
+        } else {
+            String dllink = checkDirectLink(link, "account_premium_directlink");
+            if (dllink == null) {
+                br.getHeaders().put("Referer", getDownloadlink(link));
+                postPageRaw("http://api2.tenlua.vn/", "[{\"a\":\"filemanager_builddownload_getinfo\",\"n\":\"" + get_fid(link) + "\",\"r\":0." + System.currentTimeMillis() + "}]");
+                dllink = getJson(this.br.toString(), "dlink");
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dllink = dllink.replace("\\", "");
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("Finallink does not lead to a file...");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            link.setProperty("account_premium_directlink", dllink);
+            dl.startDownload();
+        }
     }
 
-    private String getJson(final String parameter, final String source) {
+    private String getJson(final String source, final String parameter) {
         String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.]+)").getMatch(1);
         if (result == null) {
             result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
@@ -250,11 +313,8 @@ public class TenluaVn extends PluginForHost {
         } else {
             req_num++;
         }
-        String action_data = Long.toString(req_num);
-        if (sid != null) {
-            action_data += "&sid=" + sid;
-        }
-        br.postPageRaw(url + action_data, postData);
+        br.getHeaders().put("TENLUA-Chrome-Antileak", "/?id=" + req_num + "&sid=" + sid);
+        br.postPageRaw(url, postData);
     }
 
     private String unescape(final String s) {

@@ -46,14 +46,14 @@ public class TenluaVnFolder extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
-        final String fid = new Regex(parameter, "#download([a-z0-9]+)").getMatch(0);
+        final String fid = new Regex(parameter, "(#|/)download/?([a-z0-9]+)").getMatch(1);
         if (fid == null) {
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setAvailable(false);
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        postPageRaw("http://api.tenlua.vn/?id=", "[{\"a\":\"filemanager_builddownload_getinfo\",\"n\":\"" + fid + "\",\"r\":0." + System.currentTimeMillis() + "}]");
+        postPageRaw("http://api2.tenlua.vn/", "[{\"a\":\"filemanager_builddownload_getinfo\",\"n\":\"" + fid + "\",\"r\":0." + System.currentTimeMillis() + "}]");
         final String type = getJson("type", br.toString());
         if ("none".equals(type)) {
             final DownloadLink dl = createDownloadlink("directhttp://" + parameter);
