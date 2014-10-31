@@ -575,6 +575,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     }
 
     public double getProgress() {
+
         double percent = (double) getProcessedBytes() * 100 / Math.max(1, getCompleteBytes());
         return percent;
     }
