@@ -31,6 +31,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
+import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -558,7 +559,8 @@ public class PremiumizeMe extends PluginForHost {
 
             public PremiumizeMePanel() {
                 super("ins 0, wrap 2", "[][grow,fill]", "");
-
+                add(new JLabel("Click here to find your ID/PIN"));
+                add(new JLink("https://www.premiumize.me/account"));
                 add(new JLabel("ID: (must be 9 digis)"));
                 add(this.name = new ExtTextField() {
 
