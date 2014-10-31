@@ -559,7 +559,7 @@ public class PremiumizeMe extends PluginForHost {
             public PremiumizeMePanel() {
                 super("ins 0, wrap 2", "[][grow,fill]", "");
 
-                add(new JLabel("ID:"));
+                add(new JLabel("ID: (must be 9 digis)"));
                 add(this.name = new ExtTextField() {
 
                     @Override
