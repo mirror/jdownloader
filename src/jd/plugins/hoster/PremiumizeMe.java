@@ -24,6 +24,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -41,9 +44,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.Base64OutputStream;
+import org.jdownloader.plugins.accounts.AccountFactory;
+import org.jdownloader.plugins.accounts.EditAccountPanel;
+import org.jdownloader.plugins.accounts.Notifier;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class PremiumizeMe extends PluginForHost {
@@ -80,6 +89,11 @@ public class PremiumizeMe extends PluginForHost {
         br.setReadTimeout(60 * 1000);
         br.setAllowedResponseCodes(new int[] { 400, 401, 402, 403, 404, 428, 502, 503, 509 });
         return br;
+    }
+
+    @Override
+    public AccountFactory getAccountFactory() {
+        return new PremiumizeMeAccountFactory();
     }
 
     @Override
@@ -331,7 +345,6 @@ public class PremiumizeMe extends PluginForHost {
             // ai.setTrafficLeft(AVERAGE(Integer.parseInt(fairUse.trim()) *
             // 100));
         }
-
         String trafficleft_bytes = br.getRegex("trafficleft_bytes\":(-?[\\d\\.]+)").getMatch(0);
         if (trafficleft_bytes != null) {
             ai.setTrafficMax(SizeFormatter.getSize("220 GByte", true, true));
@@ -358,7 +371,15 @@ public class PremiumizeMe extends PluginForHost {
 
     private void login(Account account) throws Exception {
         br = newBrowser();
-        br.getPage("https://api.premiumize.me/pm-api/v1.php?method=accountstatus&params[login]=" + Encoding.urlEncode(account.getUser()) + "&params[pass]=" + Encoding.urlEncode(account.getPass()));
+        final String username = Encoding.urlEncode(account.getUser());
+        if (username == null || !username.trim().matches("^\\d{9}$")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please use Customer ID and PIN for logging in (find in your account area on the website)", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        final String password = Encoding.urlEncode(account.getPass());
+        if (password == null) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please use Customer ID and PIN for logging in (find in your account area on the website)", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        br.getPage("https://api.premiumize.me/pm-api/v1.php?method=accountstatus&params[login]=" + username.trim() + "&params[pass]=" + password);
         handleAPIErrors(br, account, null);
         // if (br.containsHTML("type\":\"free\"")) { throw new
         // PluginException(LinkStatus.ERROR_PREMIUM,
@@ -500,4 +521,109 @@ public class PremiumizeMe extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    public static class PremiumizeMeAccountFactory extends AccountFactory {
+
+        public static class PremiumizeMePanel extends MigPanel implements EditAccountPanel {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
+            private final String      IDHELP           = "Enter your account id (9 digits)";
+            private final String      PINHELP          = "Enter your pin";
+
+            private String getPassword() {
+                if (this.pass == null) {
+                    return null;
+                }
+                if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
+                    return null;
+                }
+                return new String(this.pass.getPassword());
+            }
+
+            private String getUsername() {
+                if (IDHELP.equals(this.name.getText())) {
+                    return null;
+                }
+                return this.name.getText();
+            }
+
+            private ExtTextField  name;
+
+            ExtPasswordField      pass;
+
+            Notifier              notifier;
+            private static String EMPTYPW = "                 ";
+
+            public PremiumizeMePanel() {
+                super("ins 0, wrap 2", "[][grow,fill]", "");
+
+                add(new JLabel("ID:"));
+                add(this.name = new ExtTextField() {
+
+                    @Override
+                    public void onChanged() {
+                        if (notifier != null) {
+                            notifier.onNotify();
+                        }
+                    }
+
+                });
+
+                name.setHelpText(IDHELP);
+
+                add(new JLabel("PIN:"));
+                add(this.pass = new ExtPasswordField() {
+
+                    @Override
+                    public void onChanged() {
+                        if (notifier != null) {
+                            notifier.onNotify();
+                        }
+                    }
+
+                }, "");
+                pass.setHelpText(PINHELP);
+            }
+
+            @Override
+            public JComponent getComponent() {
+                return this;
+            }
+
+            @Override
+            public void setAccount(Account defaultAccount) {
+                if (defaultAccount != null) {
+                    name.setText(defaultAccount.getUser());
+                    pass.setText(defaultAccount.getPass());
+                }
+            }
+
+            @Override
+            public boolean validateInputs() {
+                final String userName = getUsername();
+                if (getPassword() != null && userName != null && userName.trim().matches("^\\d{9}$")) {
+                    return true;
+                }
+                return false;
+            }
+
+            @Override
+            public void setNotifyCallBack(Notifier notifier) {
+                this.notifier = notifier;
+            }
+
+            @Override
+            public Account getAccount() {
+                return new Account(getUsername(), getPassword());
+            }
+        }
+
+        @Override
+        public EditAccountPanel getPanel() {
+            return new PremiumizeMePanel();
+        }
+
+    }
 }
