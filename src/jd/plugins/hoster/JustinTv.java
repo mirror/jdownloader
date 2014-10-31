@@ -36,7 +36,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justin.tv" }, urls = { "http://twitchdecrypted\\.tv/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "http://twitchdecrypted\\.tv/\\d+" }, flags = { 2 })
 public class JustinTv extends PluginForHost {
 
     public JustinTv(PluginWrapper wrapper) {
@@ -46,7 +46,7 @@ public class JustinTv extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.justin.tv/user/terms_of_service";
+        return "http://www.twitch.tv/user/legal?page=terms_of_service";
     }
 
     @Override
@@ -54,11 +54,11 @@ public class JustinTv extends PluginForHost {
         return -1;
     }
 
-    private static final String FASTLINKCHECK     = "FASTLINKCHECK";
-    private static final String NOCHUNKS          = "NOCHUNKS";
-    private static final String CUSTOM_DATE_2     = "CUSTOM_DATE_2";
-    private static final String CUSTOM_FILENAME_3 = "CUSTOM_FILENAME_3";
-    private static final String PARTNUMBERFORMAT  = "PARTNUMBERFORMAT";
+    private final String        FASTLINKCHECK     = "FASTLINKCHECK";
+    private final String        NOCHUNKS          = "NOCHUNKS";
+    private final static String CUSTOM_DATE_2     = "CUSTOM_DATE_2";
+    private final static String CUSTOM_FILENAME_3 = "CUSTOM_FILENAME_3";
+    private final static String PARTNUMBERFORMAT  = "PARTNUMBERFORMAT";
 
     private String              dllink            = null;
 
@@ -95,7 +95,7 @@ public class JustinTv extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         int maxChunks = 0;
-        if (downloadLink.getBooleanProperty(JustinTv.NOCHUNKS, false)) {
+        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
             maxChunks = 1;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
@@ -103,8 +103,8 @@ public class JustinTv extends PluginForHost {
             br.followConnection();
             if (br.containsHTML(">416 Requested Range Not Satisfiable<")) {
                 /* unknown error, we disable multiple chunks */
-                if (downloadLink.getBooleanProperty(JustinTv.NOCHUNKS, false) == false) {
-                    downloadLink.setProperty(JustinTv.NOCHUNKS, Boolean.valueOf(true));
+                if (downloadLink.getBooleanProperty(NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
@@ -119,8 +119,8 @@ public class JustinTv extends PluginForHost {
             } catch (final Throwable e) {
             }
             /* unknown error, we disable multiple chunks */
-            if (downloadLink.getBooleanProperty(JustinTv.NOCHUNKS, false) == false) {
-                downloadLink.setProperty(JustinTv.NOCHUNKS, Boolean.valueOf(true));
+            if (downloadLink.getBooleanProperty(NOCHUNKS, false) == false) {
+                downloadLink.setProperty(NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
@@ -130,7 +130,7 @@ public class JustinTv extends PluginForHost {
     public static String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
         String videoName = downloadLink.getStringProperty("plainfilename", null);
 
-        final SubConfiguration cfg = SubConfiguration.getConfig("justin.tv");
+        final SubConfiguration cfg = SubConfiguration.getConfig("twitch.tv");
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME_3, defaultCustomFilename);
         if (formattedFilename == null || formattedFilename.equals("")) {
             formattedFilename = defaultCustomFilename;
