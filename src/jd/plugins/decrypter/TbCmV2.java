@@ -105,7 +105,10 @@ public class TbCmV2 extends PluginForDecrypt {
     private String getVideoIDByUrl(String URL) {
         String vuid = new Regex(URL, "v=([A-Za-z0-9\\-_]+)").getMatch(0);
         if (vuid == null) {
-            vuid = new Regex(URL, "(v|embed)/([A-Za-z0-9\\-_]+)").getMatch(1);
+            vuid = new Regex(URL, "v/([A-Za-z0-9\\-_]+)").getMatch(0);
+            if (vuid == null) {
+                vuid = new Regex(URL, "embed/(?!videoseries\\?)([A-Za-z0-9\\-_]+)").getMatch(0);
+            }
         }
         return vuid;
     }
@@ -180,7 +183,6 @@ public class TbCmV2 extends PluginForDecrypt {
         }
         cleanedurl = cleanedurl.replace("\\&variant=[a-z\\_0-9]+", "");
         String videoID = getVideoIDByUrl(cleanedurl);
-
         // for watch_videos, found within youtube.com music
         String watch_videos = new Regex(cleanedurl, "video_ids=([a-zA-Z0-9\\-_,]+)").getMatch(0);
         if (watch_videos != null) {
@@ -645,37 +647,37 @@ public class TbCmV2 extends PluginForDecrypt {
 
                 }
 
-                if (extra != null && extra.length > 0) {
-                    main: for (VariantInfo v : allVariants.values()) {
-                        for (String s : extra) {
-                            if (v.variant.getTypeId().equals(s)) {
+            if (extra != null && extra.length > 0) {
+                main: for (VariantInfo v : allVariants.values()) {
+                    for (String s : extra) {
+                        if (v.variant.getTypeId().equals(s)) {
 
-                                String groupID = getGroupID(v.variant);
+                            String groupID = getGroupID(v.variant);
 
-                                List<VariantInfo> fromGroup = groups.get(groupID);
+                            List<VariantInfo> fromGroup = groups.get(groupID);
 
-                                decryptedLinks.add(createLink(v, fromGroup));
-                                continue main;
+                            decryptedLinks.add(createLink(v, fromGroup));
+                            continue main;
 
-                            }
-                        }
-                    }
-
-                }
-
-                ArrayList<String> extraSubtitles = cfg.getExtraSubtitles();
-                if (extraSubtitles != null) {
-                    for (String v : extraSubtitles) {
-                        if (v != null) {
-                            for (VariantInfo vi : allSubtitles) {
-                                if (vi.getIdentifier().equalsIgnoreCase(v)) {
-                                    decryptedLinks.add(createLink(vi, allSubtitles));
-                                }
-
-                            }
                         }
                     }
                 }
+
+            }
+
+            ArrayList<String> extraSubtitles = cfg.getExtraSubtitles();
+            if (extraSubtitles != null) {
+                for (String v : extraSubtitles) {
+                    if (v != null) {
+                        for (VariantInfo vi : allSubtitles) {
+                            if (vi.getIdentifier().equalsIgnoreCase(v)) {
+                                decryptedLinks.add(createLink(vi, allSubtitles));
+                            }
+
+                        }
+                    }
+                }
+            }
 
             }
         }
