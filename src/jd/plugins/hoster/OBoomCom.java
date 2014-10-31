@@ -223,6 +223,7 @@ public class OBoomCom extends PluginForHost {
 
     private static String PBKDF2Key(String password) throws NoSuchAlgorithmException, InvalidKeySpecException, UnsupportedEncodingException {
         StringBuilder sb = new StringBuilder(password);
+        /* evtl muss hier UTF-16 ? */
         byte[] salt = sb.reverse().toString().getBytes("UTF-8");
         PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), salt, 1000, 16 * 8);
         SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");

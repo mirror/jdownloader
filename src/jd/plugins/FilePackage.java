@@ -495,11 +495,11 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
             Log.L.severe("FilePackage: setDownloadDirectory only allows absolute paths! Using default one!");
             folder = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
         }
-        String lFolder = getDownloadDirectory();
+        final String lFolder = getDownloadDirectory();
         if (lFolder != null && lFolder.equals(folder)) {
             return;
         }
-        downloadDirectory = folder;
+        downloadDirectory = folder.trim();
         if (hasNotificationListener()) {
             nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new FilePackageProperty(this, FilePackageProperty.Property.FOLDER, getDownloadDirectory()));
         }
@@ -511,7 +511,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      * @param name
      */
     public void setName(String name) {
-        String lName = getName();
+        final String lName = getName();
         if (StringUtils.isEmpty(name)) {
             name = _JDT._.controller_packages_defaultname();
         }

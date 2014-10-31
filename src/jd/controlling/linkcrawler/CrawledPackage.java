@@ -254,7 +254,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     public void setDownloadFolder(String downloadFolder) {
         if (!StringUtils.isEmpty(downloadFolder)) {
             downloadFolderSet = true;
-            this.downloadFolder = downloadFolder;
+            this.downloadFolder = downloadFolder.trim();
         } else {
             this.downloadFolder = GENERALSETTINGS.getDefaultDownloadFolder();
             this.downloadFolderSet = false;
