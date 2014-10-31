@@ -1222,10 +1222,29 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 return;
             }
             break;
+        case ACCOUNT_ERROR:
+            if (onDetach) {
+                /* there was an unknown account issue */
+                final String message;
+                if (value.getThrowable() != null) {
+                    message = value.getThrowable().getMessage();
+                } else {
+                    message = null;
+                }
+                candidate.getCachedAccount().getAccount().setError(AccountError.PLUGIN_ERROR, message);
+                return;
+            }
+            break;
         case ACCOUNT_INVALID:
             if (onDetach) {
                 /* account has been recognized as valid and/or premium but now throws invalid messages */
-                candidate.getCachedAccount().getAccount().setError(AccountError.PLUGIN_ERROR, null);
+                final String message;
+                if (value.getThrowable() != null) {
+                    message = value.getThrowable().getMessage();
+                } else {
+                    message = null;
+                }
+                candidate.getCachedAccount().getAccount().setError(AccountError.INVALID, message);
                 return;
             }
             break;
@@ -2629,7 +2648,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 } else if (pluginException.getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE) {
                     ret = new DownloadLinkCandidateResult(RESULT.ACCOUNT_UNAVAILABLE, throwable, pluginHost);
                 } else {
-                    ret = new DownloadLinkCandidateResult(RESULT.ACCOUNT_INVALID, throwable, pluginHost);
+                    ret = new DownloadLinkCandidateResult(RESULT.ACCOUNT_ERROR, throwable, pluginHost);
                 }
                 break;
             case LinkStatus.ERROR_DOWNLOAD_FAILED:
