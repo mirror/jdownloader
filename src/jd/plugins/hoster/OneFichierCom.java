@@ -49,7 +49,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "https?://(?!www\\.)[a-z0-9\\-]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/?" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "https?://(?!www\\.)[a-z0-9\\-]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/?|https?://1fichier\\.com/\\?[a-z0-9]+" }, flags = { 2 })
 public class OneFichierCom extends PluginForHost {
 
     private static AtomicInteger maxPrem          = new AtomicInteger(1);
@@ -57,7 +57,6 @@ public class OneFichierCom extends PluginForHost {
 
     private final String         FREELINK         = "freeLink";
     private final String         PREMLINK         = "premLink";
-    private final String         SSL_CONNECTION   = "SSL_CONNECTION";
     private final String         PREFER_RECONNECT = "PREFER_RECONNECT";
     private boolean              pwProtected      = false;
 
@@ -67,22 +66,29 @@ public class OneFichierCom extends PluginForHost {
         setConfigElements();
     }
 
-    private boolean preferHTTPS() {
-        return getPluginConfig().getBooleanProperty(SSL_CONNECTION, default_ssl_connection);
-    }
-
     private String correctProtocol(final String input) {
-        return input.replaceFirst("https?://", (preferHTTPS() ? "https://" : "http://"));
+        return input.replaceFirst("http://", "https://");
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         // link + protocol correction
         String url = correctProtocol(link.getDownloadURL());
         // Remove everything after the domain
-        String[] idhostandName = new Regex(url, "(https?://)(.*?\\.)(.*?)(/|$)").getRow(0);
-        if (idhostandName != null) {
-            link.setUrlDownload(idhostandName[0] + idhostandName[1] + idhostandName[2]);
-            final String linkID = getHost() + "://" + idhostandName[1];
+        String linkID;
+        if (link.getDownloadURL().matches("https?://[a-z0-9\\.]+(/|$)")) {
+            final String[] idhostandName = new Regex(url, "(https?://)(.*?\\.)(.*?)(/|$)").getRow(0);
+            if (idhostandName != null) {
+                link.setUrlDownload(idhostandName[0] + idhostandName[1] + idhostandName[2]);
+                linkID = getHost() + "://" + idhostandName[1];
+                try {
+                    link.setLinkID(linkID);
+                } catch (final Throwable t) {
+                    link.setProperty("LINKDUPEID", linkID);
+                }
+            }
+        } else {
+            linkID = getHost() + "://" + new Regex(url, "([a-z0-9]+)$").getMatch(0);
             try {
                 link.setLinkID(linkID);
             } catch (final Throwable t) {
@@ -300,14 +306,15 @@ public class OneFichierCom extends PluginForHost {
             } else {
                 // base > submit:Free Download > submit:Show the download link + t:35140198 == link
                 final Browser br2 = br.cloneBrowser();
-                final Form a1 = br2.getForm(0);
-                if (a1 == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                a1.remove(null);
+                // final Form a1 = br2.getForm(0);
+                // if (a1 == null) {
+                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                // }
+                // a1.remove(null);
                 br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
                 sleep(2000, downloadLink);
-                br2.submitForm(a1);
+                // br2.submitForm(a1);
+                br2.postPageRaw(br.getURL(), "");
                 errorHandling(downloadLink, br2, true);
                 dllink = br2.getRedirectLocation();
                 if (dllink == null) {
@@ -373,14 +380,9 @@ public class OneFichierCom extends PluginForHost {
     }
 
     private void errorIpBlockedHandling(Browser br) throws PluginException {
-
-        // <div style="text-align:center;margin:auto;color:red">Warning ! Without premium status, you must wait up to 15 minutes between
-        // each downloads<br/>Your last download finished 00 minutes ago</div>
         String waittime = br.getRegex("you must wait (at least|up to) (\\d+) minutes between each downloads").getMatch(1);
         if (waittime == null) {
-            // <div style="text-align:center;margin:auto;color:red">Warning ! Without premium status, you must wait 15 minutes between each
-            // downloads<br/>You must wait 15 minutes to download again or subscribe to a premium offer</div>
-            waittime = br.getRegex(">You must wait (\\d+) minutes to download again or").getMatch(0);
+            waittime = br.getRegex(">You must wait (\\d+) minutes<").getMatch(0);
         }
         boolean isBlocked = waittime != null;
         isBlocked |= br.containsHTML("/>Téléchargements en cours");
@@ -391,6 +393,7 @@ public class OneFichierCom extends PluginForHost {
         isBlocked |= br.containsHTML(">Please wait a few seconds before downloading new ones");
         isBlocked |= br.containsHTML(">You must wait for another download");
         isBlocked |= br.containsHTML("Without premium status, you can download only one file at a time");
+        isBlocked |= br.containsHTML("Without Premium, you must wait between downloads");
         // <div style="text-align:center;margin:auto;color:red">Warning ! Without premium status, you must wait between each
         // downloads<br/>Your last download finished 05 minutes ago</div>
         isBlocked |= br.containsHTML("you must wait between each downloads");
@@ -401,6 +404,9 @@ public class OneFichierCom extends PluginForHost {
             final boolean preferReconnect = this.getPluginConfig().getBooleanProperty("PREFER_RECONNECT", false);
 
             if (waittime != null && preferReconnect) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 60 * 1001l);
+            } else if (waittime != null && Integer.parseInt(waittime) >= 10) {
+                /* High waittime --> Reconnect */
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 60 * 1001l);
             } else if (preferReconnect) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
@@ -590,15 +596,8 @@ public class OneFichierCom extends PluginForHost {
         requestFileInformation(link);
         String passCode = null;
         String dllink = link.getStringProperty(PREMLINK, null);
-        boolean useSSL = preferHTTPS();
-        if (oldStyle() == true) {
-            useSSL = false;
-        }
         if (dllink != null) {
             /* try to resume existing file */
-            if (useSSL) {
-                dllink = dllink.replaceFirst("http://", "https://");
-            }
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
@@ -621,11 +620,8 @@ public class OneFichierCom extends PluginForHost {
         } else {
             br.setFollowRedirects(false);
             sleep(2 * 1000l, link);
-            String url = link.getDownloadURL().replace("en/index.html", "");
-            if (!url.endsWith("/")) {
-                url = url + "/";
-            }
-            url = url + "?u=" + Encoding.urlEncode(account.getUser()) + "&p=" + JDHash.getMD5(account.getPass());
+            /* TODO: Update linkstructure here whenever admin tells us new structure. */
+            final String url = "https://" + getFID(link) + ".1fichier.com/" + "?u=" + Encoding.urlEncode(account.getUser()) + "&p=" + JDHash.getMD5(account.getPass());
 
             URLConnectionAdapter con = br.openGetConnection(url);
             if (con.getResponseCode() == 401) {
@@ -656,9 +652,6 @@ public class OneFichierCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             String useDllink = dllink;
-            if (useSSL) {
-                useDllink = useDllink.replaceFirst("http://", "https://");
-            }
             for (int i = 0; i != 2; i++) {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, useDllink, true, 0);
                 if (dl.getConnection().getContentType().contains("html")) {
@@ -699,11 +692,13 @@ public class OneFichierCom extends PluginForHost {
         return false;
     }
 
-    private boolean default_ssl_connection   = true;
+    private String getFID(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+    }
+
     private boolean default_prefer_reconnect = false;
 
     private void setConfigElements() {
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.onefichiercom.com.ssl2", "Use Secure Communication over SSL")).setDefaultValue(default_ssl_connection));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), PREFER_RECONNECT, JDL.L("plugins.hoster.onefichiercom.com.preferreconnect", "Reconnect, even if the wait time is only short (1-6 minutes)")).setDefaultValue(default_prefer_reconnect));
     }
 
