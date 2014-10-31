@@ -133,7 +133,9 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
             @Override
             public String getStringValue(ExtractionController value) {
                 Type event = value.getLatestEvent();
-                if (event == null) return "";
+                if (event == null) {
+                    return "";
+                }
                 switch (event) {
                 case START:
                     return T._.plugins_optional_extraction_status_openingarchive2();
@@ -264,7 +266,7 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
                 super.resetRenderer();
 
                 determinatedRenderer.setForeground(textColor);
-                this.determinatedRenderer.setBorder(BorderFactory.createEmptyBorder(1, 6, 1, 1));
+                this.determinatedRenderer.setBorder(BorderFactory.createEmptyBorder(1, 5, 1, 1));
 
             }
 
