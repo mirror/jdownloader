@@ -13,11 +13,10 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.Icon;
-import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
 
 import org.appwork.swing.components.ExtButton;
-import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.swing.components.JScrollPopupMenu;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -44,7 +43,9 @@ public class PseudoMultiCombo<Type> extends ExtButton {
 
         this.setHorizontalAlignment(SwingConstants.LEFT);
         Insets m = getMargin();
-        if (m == null) m = new Insets(0, 0, 0, 0);
+        if (m == null) {
+            m = new Insets(0, 0, 0, 0);
+        }
         m.right = getPopIcon(true).getIconWidth() + 5;
         m.left = 1;
         setMargin(m);
@@ -114,11 +115,13 @@ public class PseudoMultiCombo<Type> extends ExtButton {
 
         }
 
-        JPopupMenu popup = new JPopupMenu() {
+        JScrollPopupMenu popup = new JScrollPopupMenu() {
 
             @Override
             public void setVisible(boolean b) {
-                if (!b) lastHide = System.currentTimeMillis();
+                if (!b) {
+                    lastHide = System.currentTimeMillis();
+                }
                 super.setVisible(b);
                 closed = true;
                 PseudoMultiCombo.this.repaint();
@@ -227,7 +230,7 @@ public class PseudoMultiCombo<Type> extends ExtButton {
         super.paintComponent(g);
         Icon icon = getPopIcon(closed);
         if (!isEnabled()) {
-            icon =   org.jdownloader.images.NewTheme.I().getDisabledIcon(icon);
+            icon = org.jdownloader.images.NewTheme.I().getDisabledIcon(icon);
         }
         icon.paintIcon(this, g, getWidth() - icon.getIconWidth() - 5, (getHeight() - icon.getIconHeight()) / 2);
 
@@ -285,7 +288,9 @@ public class PseudoMultiCombo<Type> extends ExtButton {
 
     @Override
     public String getText() {
-        if (orgText == null) return null;
+        if (orgText == null) {
+            return null;
+        }
         return SwingUtilities2.clipStringIfNecessary(this, this.getFontMetrics(this.getFont()), orgText, getWidth() - getMargin().left - getMargin().right - 10);
 
     }
@@ -301,10 +306,14 @@ public class PseudoMultiCombo<Type> extends ExtButton {
     }
 
     protected String getToolTip(List<Type> list) {
-        if (list.size() == 0) { return _GUI._.PseudoMultiCombo_nothing(); }
+        if (list.size() == 0) {
+            return _GUI._.PseudoMultiCombo_nothing();
+        }
         StringBuilder sb = new StringBuilder();
         for (Type t : list) {
-            if (sb.length() > 0) sb.append("\r\n");
+            if (sb.length() > 0) {
+                sb.append("\r\n");
+            }
             sb.append(getLabel(t));
         }
         return sb.toString();
@@ -315,10 +324,14 @@ public class PseudoMultiCombo<Type> extends ExtButton {
     }
 
     protected String getLabel(List<Type> list) {
-        if (list.size() == 0) { return _GUI._.PseudoMultiCombo_nothing(); }
+        if (list.size() == 0) {
+            return _GUI._.PseudoMultiCombo_nothing();
+        }
         StringBuilder sb = new StringBuilder();
         for (Type t : list) {
-            if (sb.length() > 0) sb.append(", ");
+            if (sb.length() > 0) {
+                sb.append(", ");
+            }
             sb.append(getLabel(t));
         }
         return sb.toString();

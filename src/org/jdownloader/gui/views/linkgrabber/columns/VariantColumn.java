@@ -26,6 +26,7 @@ import jd.plugins.DownloadLink;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.action.BasicAction;
+import org.appwork.swing.components.JScrollPopupMenu;
 import org.appwork.swing.exttable.ExtMenuItem;
 import org.appwork.swing.exttable.columns.ExtComboColumn;
 import org.appwork.utils.event.queue.QueueAction;
@@ -51,6 +52,28 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
     @Override
     protected Icon createDropDownIcon() {
         return new AbstractIcon(IconKey.ICON_POPDOWNLARGE, -1);
+    }
+
+    @Override
+    public JPopupMenu createPopupMenu() {
+        return new JScrollPopupMenu() {
+            {
+                setMaximumVisibleRows(20);
+            }
+
+            public void setVisible(final boolean b) {
+
+                super.setVisible(b);
+                if (!b) {
+                    lastHide = System.currentTimeMillis();
+                    // editing = null;
+                    // updateIcon(true);
+                } else {
+                    // updateIcon(false);
+                }
+
+            };
+        };
     }
 
     @Override
