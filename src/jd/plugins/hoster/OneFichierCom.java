@@ -517,7 +517,7 @@ public class OneFichierCom extends PluginForHost {
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                /** Load cookies */
+                /* Load cookies */
                 prepareBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
@@ -536,13 +536,13 @@ public class OneFichierCom extends PluginForHost {
                     }
                 }
                 logger.info("Using site login because API is either wrong or no free credits...");
-                br.postPage("https://www.1fichier.com/en/login.pl", "lt=on&Login=Login&secure=on&mail=" + Encoding.urlEncode(account.getUser()) + "&pass=" + account.getPass());
+                br.postPage("https://1fichier.com/login.pl", "lt=on&valider=Send&mail=" + Encoding.urlEncode(account.getUser()) + "&pass=" + account.getPass());
                 final String logincheck = br.getCookie("http://1fichier.com/", "SID");
                 if (logincheck == null || logincheck.equals("")) {
                     logger.info("Username/Password also invalid via site login!");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                /** Save cookies */
+                /* Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = br.getCookies(this.getHost());
                 for (final Cookie c : add.getCookies()) {

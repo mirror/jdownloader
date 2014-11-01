@@ -132,7 +132,7 @@ public class UlabsDe extends PluginForHost {
                 logger.warning("Unhandled errorcode: " + errorcode);
             }
             logger.info("Unhandled download error on " + NICE_HOST + ": " + br.toString());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            handlePluginBroken(acc, link, "unknown_server_error", 5);
         }
         link.setProperty(NICE_HOST + "directlink", dllink);
         try {
@@ -294,7 +294,7 @@ public class UlabsDe extends PluginForHost {
         final String authentificationToken = br.getRegex("\\'authentificationToken\\':[\t\n\r ]+\\'([^<>\"]*?)\\'").getMatch(0);
         final String externalBackendURL = br.getRegex("\\'externalBackendURL\\':[\t\n\r ]+\\'(http[^<>\"]*?)\\'").getMatch(0);
         if (userid == null || authentificationToken == null || externalBackendURL == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            handlePluginBroken(acc, link, "dllink_null", 3);
         }
         /* Assumption that they only have 2 supported hosts */
         if (link.getDownloadURL().contains("share-online")) {
