@@ -46,6 +46,7 @@ public class DebridLinkFr extends PluginForHost {
     private static AtomicInteger                           maxPrem            = new AtomicInteger(1);
     private static final String                            apiHost            = "https://api.debrid-link.fr/1.1/";
     private static final String                            publicApiKey       = "kMREtSnp61OgLvG8";
+    private long                                           ts                 = 0;
 
     /**
      * @author raztoki
@@ -106,7 +107,7 @@ public class DebridLinkFr extends PluginForHost {
         // end of account stats
 
         // multihoster array
-        getPage(account, null, "statusDownloader", true, null);
+        getPage(account, null, "statusDownloader", false, null);
         String[] status = br.getRegex("\\{\"status\":[\\d\\-]+.*?\\].*?\\}").getColumn(-1);
         ArrayList<String> supportedHosts = new ArrayList<String>();
         for (String stat : status) {
@@ -249,7 +250,7 @@ public class DebridLinkFr extends PluginForHost {
     private void getPage(final Account account, final DownloadLink downloadLink, final String r, final boolean sign, final String other) throws Exception {
         synchronized (accountInfo) {
             if (account != null && r != null) {
-                final String getThis = apiHost + "?r=" + r + (sign ? "&token=" + getValue(account, "token") + "&sign=" + getSign(account, r) : "") + (other != null ? (!other.startsWith("&") ? "&" : "") + other : "");
+                final String getThis = apiHost + "?r=" + r + (sign ? "&token=" + getValue(account, "token") + "&sign=" + getSign(account, r) + "&ts=" + ts : "") + (other != null ? (!other.startsWith("&") ? "&" : "") + other : "");
                 br = new Browser();
                 prepBrowser(br);
                 br.getPage(getThis);
@@ -372,7 +373,7 @@ public class DebridLinkFr extends PluginForHost {
         }
 
         // reflect time to server time
-        final long ts = (System.currentTimeMillis() / 1000) - Long.parseLong(to);
+        ts = (System.currentTimeMillis() / 1000) - Long.parseLong(to);
         return JDHash.getSHA1(ts + r + key);
     }
 
