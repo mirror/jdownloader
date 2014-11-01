@@ -256,7 +256,8 @@ public class OneFichierCom extends PluginForHost {
         // to prevent wasteful requests.
         int i = 0;
         // 20140920 - stable needs this, as it seems to behave differently! raztoki
-        String dllink = downloadLink.getStringProperty(FREELINK, downloadLink.getDownloadURL() + "/en/index.html");
+        // String dllink = downloadLink.getStringProperty(FREELINK, downloadLink.getDownloadURL() + "/en/index.html");
+        String dllink = downloadLink.getStringProperty(FREELINK, downloadLink.getDownloadURL());
         br.setFollowRedirects(true);
         // at times the second chunk creates 404 errors!
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
