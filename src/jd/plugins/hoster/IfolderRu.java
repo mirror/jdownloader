@@ -173,6 +173,12 @@ public class IfolderRu extends PluginForHost {
                     captchaurl = host + captchaurl;
                 }
                 /* Captcha */
+                try {
+                    // jd2
+                    org.jdownloader.captcha.v2.solver.jac.JACSolver.getInstance().setMethodTrustThreshold(this, "ifolder.ru", 70);
+                } catch (Throwable e) {
+
+                }
                 String captchaCode = getCaptchaCode("ifolder.ru", captchaurl, downloadLink);
                 captchaForm.put("confirmed_number", captchaCode);
                 /* this hoster checks content encoding */
