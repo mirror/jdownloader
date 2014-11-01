@@ -96,13 +96,12 @@ public class VideoFCTwoCom extends PluginForHost {
                         return;
                     }
                 }
+                br = new Browser();
                 br.setFollowRedirects(true);
-                br.getHeaders().put("Cache-Control", null);
-                br.getHeaders().put("Pragma", null);
-                br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-                br.getHeaders().put("Referer", "http://fc2.com/en/login.php");
                 br.setCookie(br.getHost(), "language", "en");
-                br.postPage("https://secure.id.fc2.com/index.php?mode=login&switch_language=en", "email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&done=&image.x=" + (int) (200 * Math.random() + 1) + "&image.y=" + (int) (47 * Math.random() + 1) + "&keep_login=1&done=");
+                br.getPage("http://fc2.com/en/login.php");
+                br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+                br.postPage("https://secure.id.fc2.com/index.php?mode=login&switch_language=en", "email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&image.x=" + (int) (200 * Math.random() + 1) + "&image.y=" + (int) (47 * Math.random() + 1) + "&image=Log+in&keep_login=1&done=video");
                 String loginDone = br.getRegex("(http://id\\.fc2\\.com/\\?.*?login=done.*?)").getMatch(0);
                 if (loginDone == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -224,6 +223,7 @@ public class VideoFCTwoCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
+        br.setCookie(br.getHost(), "language", "en");
         String dllink = downloadLink.getDownloadURL();
         br.getPage(dllink);
         String filename = br.getRegex("<title>.*?◎?(.*?) -").getMatch(0);
