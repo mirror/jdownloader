@@ -78,6 +78,7 @@ import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.swing.action.BasicAction;
+import org.appwork.swing.components.JScrollMenu;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
@@ -1973,11 +1974,11 @@ public class YoutubeDashV2 extends PluginForHost {
 
     @Override
     public void extendLinkgrabberContextMenu(final JComponent parent, final PluginView<CrawledLink> pv, List<PluginView<CrawledLink>> allPvs) {
-        final JMenu setVariants = new JMenu(_GUI._.YoutubeDashV2_extendLinkgrabberContextMenu_context_menu());
+        final JMenu setVariants = new JScrollMenu(_GUI._.YoutubeDashV2_extendLinkgrabberContextMenu_context_menu());
         setVariants.setIcon(DomainInfo.getInstance(getHost()).getFavIcon());
         setVariants.setEnabled(false);
 
-        final JMenu addVariants = new JMenu(_GUI._.YoutubeDashV2_extendLinkgrabberContextMenu_context_menu_add());
+        final JMenu addVariants = new JScrollMenu(_GUI._.YoutubeDashV2_extendLinkgrabberContextMenu_context_menu_add());
 
         addVariants.setIcon(new BadgeIcon(DomainInfo.getInstance(getHost()).getFavIcon(), new AbstractIcon(IconKey.ICON_ADD, 16), 4, 4));
         addVariants.setEnabled(false);
@@ -2040,7 +2041,7 @@ public class YoutubeDashV2 extends PluginForHost {
                     }
 
                     protected void addToAddMenu(JMenu addSubmenu, final PluginView<CrawledLink> pv, HashMap<String, ArrayList<YoutubeVariantInterface>> map, final VariantGroup group, ArrayList<YoutubeVariantInterface> list, final Comparator<YoutubeVariantInterface> comp) {
-                        JMenu groupMenu = new JMenu(group.getLabel());
+                        JMenu groupMenu = new JScrollMenu(group.getLabel());
                         if (map.size() == 1) {
                             groupMenu = addSubmenu;
                         } else {
@@ -2165,7 +2166,7 @@ public class YoutubeDashV2 extends PluginForHost {
                     }
 
                     protected void addToSetMenu(JMenu setVariants, final PluginView<CrawledLink> pv, HashMap<String, ArrayList<YoutubeVariantInterface>> map, final VariantGroup group, ArrayList<YoutubeVariantInterface> list, final Comparator<YoutubeVariantInterface> comp) {
-                        JMenu groupMenu = new JMenu(group.getLabel());
+                        JMenu groupMenu = new JScrollMenu(group.getLabel());
                         if (map.size() == 1) {
                             groupMenu = setVariants;
                         } else {
