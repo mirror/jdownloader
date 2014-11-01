@@ -18,22 +18,21 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bc.vc" }, urls = { "http://(www\\.)?bc\\.vc/(?!advertising)[A-Za-z0-9\\-]+" }, flags = { 0 })
-public class BcVc extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision: 27628 $", interfaceVersion = 2, names = { "link.tl" }, urls = { "http://(www\\.)?link\\.tl/(?!advertising)[A-Za-z0-9\\-]+" }, flags = { 0 })
+public class LnkTl extends PluginForDecrypt {
 
-    public BcVc(PluginWrapper wrapper) {
+    public LnkTl(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -51,7 +50,7 @@ public class BcVc extends PluginForDecrypt {
      * Important note: Via browser the videos are streamed via RTMP (maybe even in one part) but with this method we get HTTP links which is
      * fine.
      */
-    // NOTE: Similar plugins: BcVc, AdliPw, AdcrunCh
+    // NOTE: Similar plugins: BcVc, AdliPw, AdcrunCh,
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -63,12 +62,12 @@ public class BcVc extends PluginForDecrypt {
         if (redirect == null) {
             redirect = br.getRegex("top\\.location\\.href = \"(http[^<>\"]*?)\"").getMatch(0);
         }
-        if (redirect != null && !redirect.contains("bc.vc/")) {
+        if (redirect != null && !redirect.contains("link.tl/")) {
             decryptedLinks.add(createDownloadlink(redirect));
             return decryptedLinks;
         }
 
-        if (br.getURL().equals("http://bc.vc/") || br.containsHTML("top\\.location\\.href = \"http://bc\\.vc/\"") || br.containsHTML(">404 Not Found<") || br.containsHTML(">Sorry the page you are looking for does not exist")) {
+        if (br.getURL().equals("http://link.tl/") || br.containsHTML("top\\.location\\.href = \"http://link\\.tl/\"") || br.containsHTML(">404 Not Found<") || br.containsHTML(">Sorry the page you are looking for does not exist")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -76,55 +75,82 @@ public class BcVc extends PluginForDecrypt {
             logger.info("Link can't be decrypted because of server problems: " + parameter);
             return decryptedLinks;
         }
-        final String[] matches = br.getRegex("aid\\:(.*?)\\,lid\\:(.*?)\\,oid\\:(.*?)\\,ref\\: ?\\'(.*?)\\'\\}").getRow(0);
-        if (matches == null || matches.length == 0) {
+        String packed = null;
+        final String cryptedScripts[] = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+        if (cryptedScripts != null && cryptedScripts.length != 0) {
+            for (String crypted : cryptedScripts) {
+                packed = decodeDownloadLink(crypted);
+                if (packed != null) {
+                    break;
+                }
+            }
+            if (packed == null) {
+                packed = "";
+            }
+        }
+        final String[] matches = new Regex(packed, "aid\\:(.*?)\\,lid\\:(.*?)\\,oid\\:(.*?)\\}").getRow(0);
+        final String[] post = new Regex(packed, "\\$\\.post\\('(https?://link\\.tl/fly/.*?\\.php)',\\{opt").getColumn(0);
+        if (matches == null || matches.length == 0 || post == null || post.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         LinkedHashMap<String, String> data = new LinkedHashMap<String, String>();
-        // first
-        data.put("opt", "checks_log");
-        ajaxPostPage("/fly/ajax.fly.php", data);
-
-        // second repeated twice
+        // first repeated twice
         data.put("opt", "check_log");
-        data.put(Encoding.urlEncode("args[aid]"), matches[0]);
         data.put(Encoding.urlEncode("args[lid]"), matches[1]);
         data.put(Encoding.urlEncode("args[oid]"), matches[2]);
-        data.put(Encoding.urlEncode("args[ref]"), "");
-        ajaxPostPage("/fly/ajax.fly.php", data);
-        ajaxPostPage("/fly/ajax.fly.php", data);
+        ajaxPostPage(post[0], data);
+        ajaxPostPage(post[0], data);
 
         // waittime is 5 seconds. but somehow this often results in an error.
         // we use 5.5 seconds to avoid them
         Thread.sleep(5500);
 
-        // third
+        // second
         data.put("opt", "make_log");
-        data.put(Encoding.urlEncode("args[nok]"), "no");
-        ajaxPostPage("/fly/ajax.fly.php", data);
+        data.put(Encoding.urlEncode("args[aid]"), matches[0]);
+        ajaxPostPage(post[post.length - 1], data);
 
         String url = ajax.getRegex("\"url\"\\:\"(.*)\"").getMatch(0);
         if (url == null) {
             // maybe we have to wait even longer?
             Thread.sleep(2000);
-            ajaxPostPage("/fly/ajax.fly.php", data);
+            ajaxPostPage(post[post.length - 1], data);
             url = ajax.getRegex("\"url\"\\:\"(.*)\"").getMatch(0);
         }
 
-        url = url.replace("\\", "");
+        url = jd.plugins.hoster.K2SApi.JSonUtils.unescape(url);
         decryptedLinks.add(createDownloadlink(url));
         return decryptedLinks;
     }
 
-    private String decodeUnicode(final String s) {
-        final Pattern p = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
-        String res = s;
-        final Matcher m = p.matcher(res);
-        while (m.find()) {
-            res = res.replaceAll("\\" + m.group(0), Character.toString((char) Integer.parseInt(m.group(1), 16)));
+    /**
+     * @param source
+     *            String for decoder to process
+     * @return String result
+     * */
+    protected String decodeDownloadLink(final String s) {
+        String decoded = null;
+
+        try {
+            Regex params = new Regex(s, "'(.*?[^\\\\])',(\\d+),(\\d+),'(.*?)'");
+
+            String p = params.getMatch(0).replaceAll("\\\\", "");
+            int a = Integer.parseInt(params.getMatch(1));
+            int c = Integer.parseInt(params.getMatch(2));
+            String[] k = params.getMatch(3).split("\\|");
+
+            while (c != 0) {
+                c--;
+                if (k[c].length() != 0) {
+                    p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+                }
+            }
+
+            decoded = p;
+        } catch (Exception e) {
         }
-        return res;
+        return decoded;
     }
 
     /* NO OVERRIDE!! */
