@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -45,14 +46,14 @@ public class SimplyDebridCom extends PluginForHost {
 
     public SimplyDebridCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://simply-debrid.com/buy.php");
+        this.enablePremium("https://simply-debrid.com/buy.php");
     }
 
     private static final String NOCHUNKS = "NOCHUNKS";
 
     @Override
     public String getAGBLink() {
-        return "http://simply-debrid.com/privacy.php";
+        return "https://simply-debrid.com/privacy.php";
     }
 
     private void prepareBrowser(Browser br) {
@@ -67,7 +68,7 @@ public class SimplyDebridCom extends PluginForHost {
         String page = "";
         try {
             prepareBrowser(br);
-            page = br.getPage("http://simply-debrid.com/api.php?login=1&u=" + user + "&p=" + pw);
+            page = getPage("https://simply-debrid.com/api.php?login=1&u=" + user + "&p=" + pw);
         } catch (Exception e) {
             return false;
         }
@@ -97,7 +98,7 @@ public class SimplyDebridCom extends PluginForHost {
             return ac;
         }
         // account is valid, let's fetch account details:
-        page = br.getPage("http://simply-debrid.com/api.php?login=2&u=" + user + "&p=" + pw);
+        page = getPage("https://simply-debrid.com/api.php?login=2&u=" + user + "&p=" + pw);
         String[] accInfo = page.split(";");
         if (!accInfo[0].equalsIgnoreCase("1")) {
             // account is not a premium account
@@ -112,7 +113,7 @@ public class SimplyDebridCom extends PluginForHost {
         ac.setValidUntil(TimeFormatter.getMilliSeconds(accInfo[2], "dd/MM/yyyy", null));
 
         // now it's time to get all supported hosts
-        page = br.getPage("http://simply-debrid.com/api.php?list=1");
+        page = getPage("https://simply-debrid.com/api.php?list=1");
         hosts = new Regex(page, "([^;]+)").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>();
         if (hosts != null) {
@@ -149,7 +150,7 @@ public class SimplyDebridCom extends PluginForHost {
         showMessage(link, "Phase 2/3: Generate download link");
         String dllink = null;
         try {
-            dllink = br.getPage("http://simply-debrid.com/api.php?dl=" + url);
+            dllink = getPage("https://simply-debrid.com/api.php?dl=" + url);
         } catch (Throwable e) {
             showMessage(link, "Server überlastet!");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1 * 60 * 1000l);
@@ -176,7 +177,7 @@ public class SimplyDebridCom extends PluginForHost {
         if (dllink.contains("Erreur")) {
             dllink = new Regex(dllink, "(.*?)Erreur").getMatch(0);
         }
-        if (!(dllink.startsWith("http://") || dllink.startsWith("https://")) || dllink.endsWith("/Invalid link") || dllink.contains("php_network_getaddresses: getaddrinfo failed: Name or service not known")) {
+        if (!(dllink.startsWith("https://") || dllink.startsWith("https://")) || dllink.endsWith("/Invalid link") || dllink.contains("php_network_getaddresses: getaddrinfo failed: Name or service not known")) {
             if (dllink.contains("UNDER MAINTENANCE")) {
                 // disable host for 30min
                 logger.info("simply-debrid.com: 'UNDER MAINTENANCE' error, disabling current host...");
@@ -217,7 +218,7 @@ public class SimplyDebridCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (dl.getConnection().getContentType().contains("html")) {
-            br.getPage(dllink);
+            getPage(dllink);
             // This can only happen with share-online.biz links, their error is directly forwarded
             if (br.containsHTML("your IP is temporary banned")) {
                 logger.info("simply-debrid.com: IP banned error - probably caused because the SD share-online.biz accounts are all blocked!");
@@ -271,6 +272,18 @@ public class SimplyDebridCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
+    }
+
+    private String getPage(final String url) throws IOException, PluginException {
+        br.getPage(url);
+        if (br.containsHTML("04: API_BLOCKED")) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "API_blocked, bitte kontaktiere den simply-premium.com Support!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "API_blocked, please contact the simply-debrid support!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+        }
+        return br.toString();
     }
 
     @Override
