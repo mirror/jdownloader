@@ -1,3 +1,8 @@
+EXTRACTTOPATHLOGIC_ASK_FOR_EVERY_ARCHIVE=Frage für jedes Archiv
+EXTRACTTOPATHLOGIC_ASK_ONCE=Einmal fragen, für alle Archive
+EXTRACTTOPATHLOGIC_EXTRACT_TO_ARCHIVE_PARENT=Nicht fragen. Extrahiere in Archiv-Speicherort
+EXTRACTTOPATHLOGIC_USE_CUSTOMEXTRACTIONPATH=Verwende benutzerdefinierten Extraktionspfad
+ExtractAction_getTranslationForExtractToPathLogic=Extraktionspfad Logik
 IfFileExistsDialog_layoutDialogContent_archive=Archiv:
 IfFileExistsDialog_layoutDialogContent_newName=Neuer Name:
 ValidateArchiveAction_ValidateArchiveAction=%s1 überprüfen
