@@ -970,6 +970,9 @@ public class LineStorageCom extends PluginForHost {
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
+                    if (br.containsHTML(">Your IP is banned</font>")) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "IP BANNED", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
