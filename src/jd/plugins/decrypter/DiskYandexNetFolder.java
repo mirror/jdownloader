@@ -48,7 +48,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
 
     private final String        DOWNLOAD_ZIP      = "DOWNLOAD_ZIP_2";
 
-    private static final String OFFLINE_TEXT      = "<title>The file you are looking for could not be found\\.|>Nothing found</span>|<title>Nothing found \\— Yandex\\.Disk</title>|_file\\-blocked\"";
+    private static final String OFFLINE_TEXT      = "<title>The file you are looking for could not be found\\.|>Nothing found</span>|<title>Nothing found \\— Yandex\\.Disk</title>|_file\\-blocked\"|/_not\\-found.css\"";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
