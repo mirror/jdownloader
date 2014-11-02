@@ -177,7 +177,7 @@ public class SimplyDebridCom extends PluginForHost {
         if (dllink.contains("Erreur")) {
             dllink = new Regex(dllink, "(.*?)Erreur").getMatch(0);
         }
-        if (!(dllink.startsWith("https://") || dllink.startsWith("https://")) || dllink.endsWith("/Invalid link") || dllink.contains("php_network_getaddresses: getaddrinfo failed: Name or service not known")) {
+        if (!(dllink.startsWith("https://") || dllink.startsWith("http://")) || dllink.endsWith("/Invalid link") || dllink.contains("php_network_getaddresses: getaddrinfo failed: Name or service not known")) {
             if (dllink.contains("UNDER MAINTENANCE")) {
                 // disable host for 30min
                 logger.info("simply-debrid.com: 'UNDER MAINTENANCE' error, disabling current host...");
