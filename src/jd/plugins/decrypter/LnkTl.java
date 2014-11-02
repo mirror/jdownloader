@@ -67,7 +67,7 @@ public class LnkTl extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        if (br.getURL().equals("http://link.tl/") || br.containsHTML("top\\.location\\.href = \"http://link\\.tl/\"") || br.containsHTML(">404 Not Found<") || br.containsHTML(">Sorry the page you are looking for does not exist")) {
+        if (br.getURL().equals("http://link.tl/") || br.containsHTML("top\\.location\\.href = \"http://link\\.tl/\"") || br.containsHTML(">404 Not Found<") || br.containsHTML(">Sorry the page you are looking for does not exist|>Üzgünüz, ulaşmaya çalışmış olduğunuz kısaltma sistemde yer almamaktadır\\.<")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -91,8 +91,8 @@ public class LnkTl extends PluginForDecrypt {
         final String[] matches = new Regex(packed, "aid\\:(.*?)\\,lid\\:(.*?)\\,oid\\:(.*?)\\}").getRow(0);
         final String[] post = new Regex(packed, "\\$\\.post\\('(https?://link\\.tl/fly/.*?\\.php)',\\{opt").getColumn(0);
         if (matches == null || matches.length == 0 || post == null || post.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            logger.warning("Possible Decrypter broken for link: " + parameter);
+            return decryptedLinks;
         }
         LinkedHashMap<String, String> data = new LinkedHashMap<String, String>();
         // first repeated twice
