@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hoerbuch.in" }, urls = { "http://(www\\.)?hoerbuch\\.in/(protection/(folder_\\d+|[a-z0-9]+/[a-z0-9]+)\\.html|wp/goto/Download/\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hoerbuch.in" }, urls = { "http://(www\\.)?hoerbuch\\.(in|us)/(protection/(folder_\\d+|[a-z0-9]+/[a-z0-9]+)\\.html|wp/goto/Download/\\d+)" }, flags = { 0 })
 public class RsHrbchn extends PluginForDecrypt {
     private final String ua = RandomUserAgent.generate();
 
@@ -37,17 +37,19 @@ public class RsHrbchn extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final String FOLDERLINK          = "http://(www\\.)?hoerbuch\\.in/protection/folder_\\d+\\.html";
-    private final String FOLDER_REDIRECTLINK = "http://(www\\.)?hoerbuch\\.in/wp/goto/Download/\\d+";
+    private final String        FOLDERLINK          = "http://(www\\.)?hoerbuch\\.us/protection/folder_\\d+\\.html";
+    private final String        FOLDER_REDIRECTLINK = "http://(www\\.)?hoerbuch\\.us/wp/goto/Download/\\d+";
+    private static final String current_domain      = "hoerbuch.us";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final ArrayList<String> passwords = new ArrayList<String>();
         passwords.add("www.hoerbuch.in");
+        passwords.add("www.hoerbuch.us");
         br.setFollowRedirects(false);
         br.getHeaders().put("User-Agent", ua);
-        String parameter = param.toString();
-        br.getPage("http://hoerbuch.in/wp/");
+        String parameter = param.toString().replace("hoerbuch.in", "hoerbuch.us");
+        br.getPage("http://" + current_domain + "/wp/");
         br.getPage(parameter);
         if (parameter.matches(FOLDER_REDIRECTLINK)) {
             String newlink = br.getRedirectLocation();
@@ -55,7 +57,7 @@ public class RsHrbchn extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            newlink = new Regex(newlink, "(http://(www\\.)?hoerbuch\\.in/protection/folder_\\d+\\.html)").getMatch(0);
+            newlink = new Regex(newlink, "(http://(www\\.)?hoerbuch\\.us/protection/folder_\\d+\\.html)").getMatch(0);
             if (newlink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -72,7 +74,7 @@ public class RsHrbchn extends PluginForDecrypt {
             br.submitForm(form);
             final String links[] = br.getRegex("on\\.png.*?href=\"(http.*?)\"").getColumn(0);
             for (String link : links) {
-                if (link.contains("in/protection")) {
+                if (link.contains("us/protection")) {
                     final Browser brc = br.cloneBrowser();
                     brc.getPage(link);
                     if (brc.getRedirectLocation() != null) {

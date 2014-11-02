@@ -108,7 +108,7 @@ public class PornHubCom extends PluginForHost {
             downloadLink.setUrlDownload(newLink);
             br.getPage(downloadLink.getDownloadURL());
         }
-        if (br.getURL().equals("http://www.pornhub.com/") || !br.containsHTML("\\.swf")) {
+        if (br.getURL().equals("http://www.pornhub.com/") || !br.containsHTML("\\'embedSWF\\'")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
@@ -127,7 +127,7 @@ public class PornHubCom extends PluginForHost {
     }
 
     private void getVideoLink(String dllink) throws Exception {
-        String flashVars = br.getRegex("var flashvars = \\{([^\\}]+)").getMatch(0);
+        String flashVars = br.getRegex("\\'flashvars\\' :[\t\n\r ]+\\{([^\\}]+)").getMatch(0);
         if (flashVars == null) {
             return;
         }
@@ -181,7 +181,7 @@ public class PornHubCom extends PluginForHost {
 
     /**
      * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in JavaScript by Chris Veness
-     * 
+     *
      * @see <a
      *      href="http://csrc.nist.gov/publications/nistpubs/800-38a/sp800-38a.pdf">"Recommendation for Block Cipher Modes of Operation - Methods and Techniques"</a>
      */

@@ -240,7 +240,8 @@ public class FreeDiscPl extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                br.postPageRaw("http://freedisc.pl/account/signin_set", "{\"email_login\":\"" + Encoding.urlEncode(account.getUser()) + "\",\"password_login\":\"" + Encoding.urlEncode(account.getPass()) + "\",\"remember_login\":1,\"provider_login\":\"\"}");
+                br.getPage("http://freedisc.pl/start");
+                br.postPageRaw("http://freedisc.pl/account/signin_set", "{\"email_login\":\"" + account.getUser() + "\",\"password_login\":\"" + account.getPass() + "\",\"remember_login\":1,\"provider_login\":\"\"}");
                 if (br.getCookie(MAINPAGE, "login_remember") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);

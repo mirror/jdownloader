@@ -55,7 +55,8 @@ public class FourUploadedCom extends PluginForHost {
 
     // For sites which use this script: http://www.yetishare.com/
     // YetiShareBasic Version 0.3.5-psp
-    // mods: login[Added "www." to login post-URL
+    // mods: login[Added "www." to login post-URL, heavily modified, do not upgrade or upgrade to current yetisharescript V2 and modify
+    // whats needed for this host
     // limit-info:
     // protocol: no https
     // captchatype: null
@@ -68,6 +69,7 @@ public class FourUploadedCom extends PluginForHost {
 
     /* Basic constants */
     private final String         MAINPAGE                                     = "http://4uploaded.com";
+    private final String         domains                                      = "(4uploaded\\.com)";
     private final String         TYPE                                         = "html";
     private static final int     WAIT_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
     private static final int     ADDITIONAL_WAIT_SECONDS                      = 3;
@@ -107,12 +109,12 @@ public class FourUploadedCom extends PluginForHost {
             if (!br.getURL().contains("~i")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = br.getRegex("Filename:[\t\n\r ]+</td>[\t\n\r ]+<td>([^<>\"]*?)<").getMatch(0);
+            filename = br.getRegex("Filename:[\t\n\r ]+</td>[\t\n\r ]+<td class=\"responsiveInfoTable\">([^<>\"]*?\\&nbsp;\\&nbsp;)<").getMatch(0);
             if (filename == null || inValidate(Encoding.htmlDecode(filename).trim()) || Encoding.htmlDecode(filename).trim().equals("  ")) {
                 /* Filename might not be available here either */
                 filename = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
             }
-            filesize = br.getRegex("Filesize:[\t\n\r ]+</td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
+            filesize = br.getRegex("Filesize:[\t\n\r ]+</td>[\t\n\r ]+<td class=\"responsiveInfoTable\">([^<>\"]*?)</td>").getMatch(0);
         } else {
             br.getPage(link.getDownloadURL());
             handleErrors();
@@ -195,7 +197,10 @@ public class FourUploadedCom extends PluginForHost {
             /* Handle up to 3 pre-download pages before the (eventually existing) captcha */
             for (int i = 1; i <= 3; i++) {
                 logger.info("Handling pre-download page #" + i);
-                continue_link = br.getRegex("\\$\\(\\'\\.download\\-timer\\'\\)\\.html\\(\"<a href=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
+                continue_link = br.getRegex("\\$\\(\\'\\.download\\-timer\\'\\)\\.html\\(\"<a class=\\'btn [a-z0-9\\-_]+\\' href=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
+                if (continue_link == null) {
+                    continue_link = getDllink();
+                }
                 if (continue_link == null && i == 0) {
                     continue_link = downloadLink.getDownloadURL() + "?d=1";
                     logger.info("Could not find continue_link --> Using standard continue_link, continuing...");
@@ -260,6 +265,10 @@ public class FourUploadedCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getDllink() {
+        return br.getRegex("\"(https?://([A-Za-z0-9\\-\\.]+)?" + domains + "/[^<>\"\\?]*?\\?download_token=[A-Za-z0-9]+)\"").getMatch(0);
     }
 
     private void handleErrors() throws PluginException {
@@ -340,16 +349,19 @@ public class FourUploadedCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage("http://www." + this.getHost() + "/login." + TYPE, "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                br.postPage("http://www." + this.getHost() + "/ajax/_account_login.ajax.php", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 final String lang = System.getProperty("user.language");
-                if (!br.containsHTML("/logout\\." + TYPE + "\">logout")) {
+                if (!br.containsHTML("\"login_status\":\"success\"")) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if (br.containsHTML("/upgrade\\." + TYPE + "\">upgrade account</a>") || !br.containsHTML("/upgrade\\." + TYPE + "\">extend account</a>")) {
+                br.getPage("http://www." + this.getHost() + "/account_home." + TYPE);
+                if (!br.containsHTML("class=\"badge badge\\-success\">PAID USER</span>")) {
                     account.setProperty("free", true);
                 } else {
                     account.setProperty("free", false);
@@ -430,7 +442,8 @@ public class FourUploadedCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(account, false);
+        /* Forced login needed in this case */
+        login(account, true);
         if (account.getBooleanProperty("free", false)) {
             br.getPage(link.getDownloadURL());
             doFree(link, "free_acc_directlink", ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
