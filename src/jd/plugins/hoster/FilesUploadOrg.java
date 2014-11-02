@@ -245,6 +245,8 @@ public class FilesUploadOrg extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 3 * 60 * 1000l);
         } else if (br.getURL().contains(SIMULTANDLSLIMIT)) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, SIMULTANDLSLIMITUSERTEXT, 1 * 60 * 1000l);
+        } else if (br.containsHTML(">Failed connecting to the database with the supplied connection details")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server database error", 3 * 60 * 1000l);
         }
     }
 

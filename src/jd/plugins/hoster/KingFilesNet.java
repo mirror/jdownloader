@@ -678,6 +678,9 @@ public class KingFilesNet extends PluginForHost {
         if (cbr.containsHTML("(File Not Found|<h1>404 Not Found</h1>|<h1>The page cannot be found</h1>)")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
         }
+        if (br.getHttpConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 10 * 60 * 1000l);
+        }
     }
 
     @Override

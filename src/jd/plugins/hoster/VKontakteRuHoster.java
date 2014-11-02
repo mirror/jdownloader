@@ -433,6 +433,9 @@ public class VKontakteRuHoster extends PluginForHost {
                     } else {
                         this.br.getPage("http://vk.com/video_ext.php?oid=" + oid + "&id=" + id + "&hash=" + embedhash);
                     }
+                    if (br.containsHTML("This video has been removed from public access")) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
                     final LinkedHashMap<String, String> availableQualities = this.findAvailableVideoQualities();
                     if (availableQualities == null) {
                         this.logger.info("vk.com: Couldn't find any available qualities for videolink");

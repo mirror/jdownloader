@@ -104,7 +104,7 @@ public class UploadHeroCom extends PluginForHost {
         if (br.containsHTML("<p>You are currently using a dedicated server") || br.containsHTML("<title>UploadHero - VPN</title>")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "VPN forbidden", 10 * 60 * 1000l);
         }
-        if (br.containsHTML("(>The following download is not available on our server|>The file link is invalid|>The uploader has deleted the file|>The file was illegal and was deleted|<title>UploadHero \\- File Sharing made easy\\!</title>)")) {
+        if (br.getHttpConnection().getResponseCode() == 403 || br.containsHTML("(>The following download is not available on our server|>The file link is invalid|>The uploader has deleted the file|>The file was illegal and was deleted|<title>UploadHero \\- File Sharing made easy\\!</title>)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<div class=\"nom_de_fichier\">([^<>\"/]+)</div>").getMatch(0);
