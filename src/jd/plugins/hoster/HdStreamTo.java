@@ -72,6 +72,8 @@ public class HdStreamTo extends PluginForHost {
     /* don't touch the following! */
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
+    private Exception            checkjlinksexception         = null;
+
     /** Using API: http://hdstream.to/#!p=api */
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
@@ -123,6 +125,7 @@ public class HdStreamTo extends PluginForHost {
                 }
             }
         } catch (final Exception e) {
+            checkjlinksexception = e;
             return false;
         }
         return true;
@@ -143,6 +146,10 @@ public class HdStreamTo extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        /* If exception happens in availablecheck it will be caught --> Browser is empty --> Throw it here to prevent further errors. */
+        if (checkjlinksexception != null) {
+            throw checkjlinksexception;
+        }
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS);
     }
 
