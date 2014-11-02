@@ -41,7 +41,7 @@ public class OneFichierComFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        parameter = "http://www.1fichier.com/en/dir/" + new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
+        parameter = "https://www.1fichier.com/dir/" + new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
         prepareBrowser(br);
         br.getPage(parameter + "?e=1");
         if (br.toString().equals("bad") || br.containsHTML("No htmlCode read")) {
@@ -99,6 +99,10 @@ public class OneFichierComFolder extends PluginForDecrypt {
             br.getHeaders().put("Accept-Language", "en-us,en;q=0.5");
             br.getHeaders().put("Pragma", null);
             br.getHeaders().put("Cache-Control", null);
+            br.setCustomCharset("UTF-8");
+            br.setFollowRedirects(true);
+            // we want ENGLISH!
+            br.setCookie(this.getHost(), "LG", "en");
         } catch (Throwable e) {
             /* setCookie throws exception in 09580 */
         }
