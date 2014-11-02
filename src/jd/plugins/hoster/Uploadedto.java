@@ -895,8 +895,11 @@ public class Uploadedto extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
         }
-        if (br.containsHTML("<title>uploaded.net - Maintenance")) {
+        if (br.containsHTML("<title>uploaded\\.net \\- Maintenance")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance", 20 * 60 * 1000l);
+        }
+        if (br.containsHTML("\"err\":\"Internal error\"")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Internal error'", 5 * 60 * 1000l);
         }
 
     }

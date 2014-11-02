@@ -127,7 +127,10 @@ public class ZdfDeMediathek extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxChunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 3 * 60 * 1000l);
+                }
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
             }
             if (this.dl.startDownload()) {
                 this.postprocess(downloadLink);
@@ -147,7 +150,7 @@ public class ZdfDeMediathek extends PluginForHost {
 
     /**
      * Converts the ZDF/WDR(some of them) Closed Captions subtitles to SRT subtitles. It runs after the completed download.
-     * 
+     *
      * @return The success of the conversion.
      */
     public static boolean convertSubtitle(final DownloadLink downloadlink) {
@@ -230,7 +233,7 @@ public class ZdfDeMediathek extends PluginForHost {
 
     /**
      * Converts the the time of the ZDF format to the SRT format.
-     * 
+     *
      * @param time
      *            . The time from the ZDF XML.
      * @return The converted time as String.
