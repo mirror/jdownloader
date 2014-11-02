@@ -715,6 +715,8 @@ public class OneFichierCom extends PluginForHost {
             br.getHeaders().put("Accept-Language", "en-us,en;q=0.5");
             br.getHeaders().put("Pragma", null);
             br.getHeaders().put("Cache-Control", null);
+            // we want ENGLISH!
+            br.setCookie(this.getHost(), "LG", "en");
         } catch (Throwable e) {
             /* setCookie throws exception in 09580 */
         }
