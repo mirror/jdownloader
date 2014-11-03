@@ -21,6 +21,9 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.WeakHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
@@ -38,7 +41,6 @@ import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.RandomUserAgent;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -52,29 +54,28 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.IO;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.net.HTTPHeader;
-import org.appwork.utils.net.NullOutputStream;
 import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "https?://(www\\.)?(share\\-online\\.biz|egoshare\\.com)/(download\\.php\\?id\\=|dl/)[\\w]+" }, flags = { 2 })
 public class ShareOnlineBiz extends PluginForHost {
 
-    private static HashMap<Account, HashMap<String, String>> ACCOUNTINFOS         = new HashMap<Account, HashMap<String, String>>();
-    private static Object                                    LOCK                 = new Object();
-    private static HashMap<Long, Long>                       noFreeSlot           = new HashMap<Long, Long>();
-    private static HashMap<Long, Long>                       overloadedServer     = new HashMap<Long, Long>();
-    private long                                             server               = -1;
-    private long                                             waitNoFreeSlot       = 10 * 60 * 1000l;
-    private long                                             waitOverloadedServer = 5 * 60 * 1000l;
-    private static AtomicReference<String>                   UA                   = new AtomicReference<String>(RandomUserAgent.generate());
-    private boolean                                          hideID               = true;
-    private static AtomicInteger                             maxChunksnew         = new AtomicInteger(-2);
-    private char[]                                           FILENAMEREPLACES     = new char[] { '_', '&', 'ü' };
-    private final String                                     SHARED_IP_WORKAROUND = "SHARED_IP_WORKAROUND";
-    private final String                                     TRAFFIC_WORKAROUND   = "TRAFFIC_WORKAROUND";
-    private final String                                     PREFER_HTTPS         = "PREFER_HTTPS";
+    private static WeakHashMap<Account, HashMap<String, String>>    ACCOUNTINFOS         = new WeakHashMap<Account, HashMap<String, String>>();
+    private static WeakHashMap<Account, CopyOnWriteArrayList<Long>> THREADFAILURES       = new WeakHashMap<Account, CopyOnWriteArrayList<Long>>();
+    private static Object                                           LOCK                 = new Object();
+    private static HashMap<Long, Long>                              noFreeSlot           = new HashMap<Long, Long>();
+    private static HashMap<Long, Long>                              overloadedServer     = new HashMap<Long, Long>();
+    private long                                                    server               = -1;
+    private long                                                    waitNoFreeSlot       = 10 * 60 * 1000l;
+    private long                                                    waitOverloadedServer = 5 * 60 * 1000l;
+    private static AtomicReference<String>                          UA                   = new AtomicReference<String>(RandomUserAgent.generate());
+    private boolean                                                 hideID               = true;
+    private static AtomicInteger                                    maxChunksnew         = new AtomicInteger(-2);
+    private char[]                                                  FILENAMEREPLACES     = new char[] { '_', '&', 'ü' };
+    private final String                                            SHARED_IP_WORKAROUND = "SHARED_IP_WORKAROUND";
+    private final String                                            TRAFFIC_WORKAROUND   = "TRAFFIC_WORKAROUND";
+    private final String                                            PREFER_HTTPS         = "PREFER_HTTPS";
 
     public ShareOnlineBiz(PluginWrapper wrapper) {
         super(wrapper);
@@ -255,6 +256,17 @@ public class ShareOnlineBiz extends PluginForHost {
                         logger.info("Force refresh of cookies");
                         ACCOUNTINFOS.remove(acc);
                     }
+                    CopyOnWriteArrayList<Long> failureThreads = THREADFAILURES.get(acc);
+                    if (failureThreads == null) {
+                        failureThreads = new CopyOnWriteArrayList<Long>();
+                        THREADFAILURES.put(acc, failureThreads);
+                    }
+                    failureThreads.add(System.currentTimeMillis());
+                    final AccountInfo ai = acc.getAccountInfo();
+                    if (ai != null) {
+                        final int maxDownloads = getMaxSimultanDownload(null, acc);
+                        ai.setStatus(infos.get("group") + ":maxDownloads(current)=" + maxDownloads);
+                    }
                 }
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ThreadsError", 3 * 60 * 1000l);
@@ -381,7 +393,10 @@ public class ShareOnlineBiz extends PluginForHost {
             ai.setAccountBalance(infos.get("money"));
         }
         /* set account type */
-        ai.setStatus(infos.get("group"));
+        final String group = infos.get("group");
+        account.setProperty("group", group);
+        final int maxDownloads = getMaxSimultanDownload(null, account);
+        ai.setStatus(infos.get("group") + ":maxDownloads(current)=" + maxDownloads);
 
         if (userTrafficWorkaround()) {
             long max = 100 * 1024 * 1024 * 1024l;// 100 GB per day - 420 GB per week
@@ -437,6 +452,39 @@ public class ShareOnlineBiz extends PluginForHost {
          * because of You have got max allowed threads from same download session
          */
         return 10;
+    }
+
+    private final long THREADFAILURESTIMEOUT = 5 * 60 * 1000l;
+
+    @Override
+    public int getMaxSimultanDownload(DownloadLink link, Account account) {
+        if (account == null) {
+            return 1;
+        } else {
+            final int max;
+            if ("Penalty-Premium".equalsIgnoreCase(account.getStringProperty("group", null))) {
+                max = 2;
+            } else {
+                max = 10;
+            }
+            synchronized (LOCK) {
+                CopyOnWriteArrayList<Long> failureThreads = THREADFAILURES.get(account);
+                if (failureThreads != null) {
+                    Iterator<Long> it = failureThreads.iterator();
+                    while (it.hasNext()) {
+                        final long next = it.next();
+                        if (System.currentTimeMillis() - next > THREADFAILURESTIMEOUT) {
+                            it.remove();
+                        }
+                    }
+                    if (failureThreads.isEmpty()) {
+                        THREADFAILURES.remove(account);
+                    }
+                    return Math.max(1, max - failureThreads.size());
+                }
+            }
+            return max;
+        }
     }
 
     protected void showFreeDialog(final String domain) {
@@ -564,19 +612,6 @@ public class ShareOnlineBiz extends PluginForHost {
         if (br.getURL().contains("/failure/proxy/1")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Proxy error");
         }
-        final Browser brc = br.cloneBrowser();
-        URLConnectionAdapter con = null;
-        try {
-            con = brc.openGetConnection("/template/images/corp/uploadking.php?show=last");
-            IO.readStreamToOutputStream(-1, con.getInputStream(), new NullOutputStream(), true);
-        } finally {
-            try {
-                if (con != null) {
-                    con.disconnect();
-                }
-            } catch (final Throwable e) {
-            }
-        }
         errorHandling(br, downloadLink, null, null);
         if (!br.containsHTML(">>> continue for free <<<")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -646,6 +681,7 @@ public class ShareOnlineBiz extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
+        br.setCookie(url, "version", String.valueOf(getVersion()));
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url);
         if (dl.getConnection().isContentDisposition() || (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("octet-stream"))) {
             try {
@@ -742,6 +778,7 @@ public class ShareOnlineBiz extends PluginForHost {
         }
         logger.info("used url: " + dlURL);
         br.setDebug(true);
+        br.setCookie(dlURL, "version", String.valueOf(getVersion()));
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dlURL, true, maxChunksnew.get());
         if (dl.getConnection().isContentDisposition() || (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("octet-stream"))) {
             dl.startDownload();
@@ -760,51 +797,57 @@ public class ShareOnlineBiz extends PluginForHost {
     public HashMap<String, String> loginAPI(Account account, boolean forceLogin) throws IOException, PluginException {
         final String lang = System.getProperty("user.language");
         synchronized (LOCK) {
-            HashMap<String, String> infos = ACCOUNTINFOS.get(account);
-            if (infos == null || forceLogin) {
-                boolean follow = br.isFollowingRedirects();
-                br.setFollowRedirects(true);
-                String page = null;
-                try {
-                    page = apiGetPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=userdetails&aux=traffic&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                } finally {
-                    br.setFollowRedirects(follow);
+            try {
+                HashMap<String, String> infos = ACCOUNTINFOS.get(account);
+                if (infos == null || forceLogin) {
+                    final boolean follow = br.isFollowingRedirects();
+                    br.setFollowRedirects(true);
+                    final String page;
+                    try {
+                        page = apiGetPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=userdetails&aux=traffic&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    } finally {
+                        br.setFollowRedirects(follow);
+                    }
+                    infos = getInfos(page, "=");
+                    ACCOUNTINFOS.put(account, infos);
                 }
-                infos = getInfos(page, "=");
-                ACCOUNTINFOS.put(account, infos);
-            }
-            /* check dl cookie, must be available for premium accounts */
-            String dl = infos.get("dl");
-            String a = infos.get("a");
-            if ("Sammler".equals(infos.get("group"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nEs werden nur share-online Premiumaccounts akzeptiert, dies ist ein Sammleraccount!\r\nJDownloader only accepts premium accounts, this is a collectors account!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            if (dl == null && a == null) {
-                if ("de".equalsIgnoreCase(lang)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                /* check dl cookie, must be available for premium accounts */
+                final String dl = infos.get("dl");
+                final String a = infos.get("a");
+                if ("Sammler".equals(infos.get("group"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nEs werden nur share-online Premiumaccounts akzeptiert, dies ist ein Sammleraccount!\r\nJDownloader only accepts premium accounts, this is a collectors account!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-            }
-            boolean valid = dl != null && !"not_available".equalsIgnoreCase(dl);
-            if (valid == false) {
-                valid = a != null && !"not_available".equalsIgnoreCase(a);
-            }
-            if (valid == false) {
-                if ("de".equalsIgnoreCase(lang)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (dl == null && a == null) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
+                boolean valid = dl != null && !"not_available".equalsIgnoreCase(dl);
+                if (valid == false) {
+                    valid = a != null && !"not_available".equalsIgnoreCase(a);
+                }
+                if (valid == false) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                /*
+                 * check expire date, expire >0 (normal handling) expire<0 (never expire)
+                 */
+                final Long validUntil = Long.parseLong(infos.get("expire_date"));
+                if (validUntil > 0 && System.currentTimeMillis() / 1000 > validUntil) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account expired! || Account abgelaufen!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                return infos;
+            } catch (PluginException e) {
+                account.setProperty("group", Property.NULL);
+                ACCOUNTINFOS.remove(account);
+                throw e;
             }
-            /*
-             * check expire date, expire >0 (normal handling) expire<0 (never expire)
-             */
-            final Long validUntil = Long.parseLong(infos.get("expire_date"));
-            if (validUntil > 0 && System.currentTimeMillis() / 1000 > validUntil) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account expired! || Account abgelaufen!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            return infos;
         }
     }
 
