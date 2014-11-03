@@ -96,6 +96,7 @@ public class TenluaVnFolder extends PluginForDecrypt {
                 // dl.setProperty("LINKDUPEID", "tenluavn" + fid + "_" + name);
                 dl.setProperty("plain_size", filesize);
                 dl.setProperty("mainlink", parameter);
+                dl.setContentUrl(url);
                 dl.setProperty("specified_link", url);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
@@ -122,6 +123,7 @@ public class TenluaVnFolder extends PluginForDecrypt {
             dl.setProperty("LINKDUPEID", "tenluavn" + fid + "_" + name);
             dl.setProperty("plain_size", filesize);
             dl.setProperty("mainlink", parameter);
+            dl.setContentUrl(url);
             dl.setProperty("specified_link", url);
             dl.setAvailable(true);
             decryptedLinks.add(dl);
