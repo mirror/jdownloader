@@ -383,7 +383,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                         throw e;
                     }
                 }
-                SingleDownloadReturnState ret = new SingleDownloadReturnState(this, null, finalizeProcessingPlugin());
+                final SingleDownloadReturnState ret = new SingleDownloadReturnState(this, null, finalizeProcessingPlugin());
                 return ret;
             } catch (final BrowserException browserException) {
                 downloadLogger.log(browserException);

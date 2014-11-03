@@ -2481,12 +2481,12 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     }
 
     private DownloadLinkCandidateResult handleReturnState(LogSource logger, SingleDownloadController singleDownloadController, SingleDownloadReturnState result) {
-        Throwable throwable = result.getCaughtThrowable();
-        DownloadLinkCandidate candidate = singleDownloadController.getDownloadLinkCandidate();
-        DownloadLink link = candidate.getLink();
+        final Throwable throwable = result.getCaughtThrowable();
+        final DownloadLinkCandidate candidate = singleDownloadController.getDownloadLinkCandidate();
+        final DownloadLink link = candidate.getLink();
 
         long sizeChange = Math.max(0, link.getView().getBytesLoaded() - singleDownloadController.getSizeBefore());
-        Account account = singleDownloadController.getAccount();
+        final Account account = singleDownloadController.getAccount();
         if (account != null && sizeChange > 0) {
             /* updates traffic available for used account */
             final AccountInfo ai = account.getAccountInfo();
