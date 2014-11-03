@@ -311,6 +311,10 @@ public class MediafireCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
+        final String id = new Regex(link.getDownloadURL(), "mediafire\\.com/download/([a-z0-9]+)").getMatch(0);
+        if (id != null) {
+            link.setProperty("LINKDUPEID", "mediafirecom_" + id);
+        }
         link.setUrlDownload(link.getDownloadURL().replaceFirst("http://media", "http://www.media"));
     }
 

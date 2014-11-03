@@ -337,6 +337,10 @@ public class TusFilesNet extends PluginForHost {
                 }
             }
         }
+        /* For password protected links */
+        if (inValidate(fileInfo[0])) {
+            fileInfo[0] = cbr.getRegex("b>Password:</b></div>[\t\n\t ]+<h3>([^<>\"]*?)</h3>").getMatch(0);
+        }
         if (inValidate(fileInfo[1])) {
             fileInfo[1] = cbr.getRegex(">Size:</th>[\t\n\r ]+<th width=\"\\d+\" align=\"left\" valign=\"middle\">([^<>\"]*?)</th>").getMatch(0);
         }

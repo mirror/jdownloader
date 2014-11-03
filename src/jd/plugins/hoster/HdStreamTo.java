@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
@@ -39,6 +40,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -110,14 +112,30 @@ public class HdStreamTo extends PluginForHost {
                         dllink.setAvailable(false);
                     } else {
                         final String hash = this.getJson(thisjson, "hash");
-                        final String name = this.getJson(thisjson, "name");
+                        /*
+                         * file_title = user defined title (without extension) - prefer that --> name = original title/server-title (withz
+                         * extension, can contain encoding issues)
+                         */
+                        final String extension = "." + getJson(thisjson, "extension");
+                        String name = this.getJson(thisjson, "file_title");
+                        if ("null".equals(name)) {
+                            name = this.getJson(thisjson, "name");
+                        }
                         final String size = this.getJson(thisjson, "size");
-                        dllink.setAvailable(true);
-                        dllink.setFinalFileName(encodeUnicode(Encoding.htmlDecode(name)));
+                        name = Encoding.htmlDecode(name);
+                        name = name.trim();
+                        name = unescape(name);
+                        name = encodeUnicode(name);
+                        if (!name.endsWith(extension)) {
+                            name += extension;
+                        }
+                        /* Names via API are good --> Use as final filenames */
+                        dllink.setFinalFileName(name);
                         dllink.setDownloadSize(SizeFormatter.getSize(size));
                         if (hash != null) {
                             dllink.setMD5Hash(hash);
                         }
+                        dllink.setAvailable(true);
                     }
                 }
                 if (index == urls.length) {
@@ -227,6 +245,16 @@ public class HdStreamTo extends PluginForHost {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
+    }
+
+    private static AtomicBoolean yt_loaded = new AtomicBoolean(false);
+
+    private String unescape(final String s) {
+        /* we have to make sure the youtube plugin is loaded */
+        if (!yt_loaded.getAndSet(true)) {
+            JDUtilities.getPluginForHost("youtube.com");
+        }
+        return jd.plugins.hoster.Youtube.unescape(s);
     }
 
     /** Get fid of the link, no matter which linktype is added by the user. */
