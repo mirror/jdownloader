@@ -70,7 +70,6 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     public static final String                    ORGPACKAGENAME = "orgpackagename";
     private HashMap<String, PackagizerReplacer>   replacers      = new HashMap<String, PackagizerReplacer>();
     private boolean                               testInstance   = false;
-    private SubFolderByPackageRule                subFolderByPackgeRule;
 
     public static PackagizerController getInstance() {
         return INSTANCE;
@@ -171,6 +170,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
 
             boolean revFileRule = false;
 
+            SubFolderByPackageRule subFolderByPackgeRule = null;
             for (PackagizerRule rule : list) {
                 PackagizerRule clone = JSonStorage.restoreFromString(JSonStorage.serializeToJson(rule), new TypeRef<PackagizerRule>() {
                 });

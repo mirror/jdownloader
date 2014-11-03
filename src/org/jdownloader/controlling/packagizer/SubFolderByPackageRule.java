@@ -17,15 +17,9 @@ public class SubFolderByPackageRule extends PackagizerRule {
         setDownloadDestination("<jd:packagename>");
         setIconKey("folder");
         setName(_JDT._.PackagizerSettings_folderbypackage_rule_name());
-        setEnabled(false);
+        setEnabled(true);
         setId(ID);
         setStaticRule(true);
-    }
-
-    @Override
-    public void setEnabled(boolean enabled) {
-        super.setEnabled(enabled);
-
     }
 
 }
