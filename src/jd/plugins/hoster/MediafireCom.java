@@ -545,7 +545,7 @@ public class MediafireCom extends PluginForHost {
             }
         }
         if (url == null) {
-            if (captchaCorrect) {
+            if (!captchaCorrect) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             logger.info("PluginError 721");

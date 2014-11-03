@@ -111,7 +111,7 @@ public class HdStreamTo extends PluginForHost {
                     if (fid == null || thisjson == null || !"on".equals(this.getJson(thisjson, "state"))) {
                         dllink.setAvailable(false);
                     } else {
-                        final String hash = this.getJson(thisjson, "hash");
+                        final String sha1hash = this.getJson(thisjson, "hash");
                         /*
                          * file_title = user defined title (without extension) - prefer that --> name = original title/server-title (withz
                          * extension, can contain encoding issues)
@@ -126,14 +126,14 @@ public class HdStreamTo extends PluginForHost {
                         name = name.trim();
                         name = unescape(name);
                         name = encodeUnicode(name);
-                        if (!name.endsWith(extension)) {
+                        if (!".null".equals(extension) && !name.endsWith(extension)) {
                             name += extension;
                         }
                         /* Names via API are good --> Use as final filenames */
                         dllink.setFinalFileName(name);
                         dllink.setDownloadSize(SizeFormatter.getSize(size));
-                        if (hash != null) {
-                            dllink.setMD5Hash(hash);
+                        if (sha1hash != null && !"null".equals(sha1hash)) {
+                            dllink.setSha1Hash(sha1hash);
                         }
                         dllink.setAvailable(true);
                     }
