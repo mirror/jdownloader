@@ -35,7 +35,6 @@ public class DownloadLinkCandidateResult {
         FAILED,
         FAILED_INCOMPLETE,
         FAILED_EXISTS,
-        OFFLINE_UNTRUSTED,
         OFFLINE_TRUSTED,
         STOPPED;
     }

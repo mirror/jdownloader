@@ -1139,12 +1139,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 candidate.getLink().setFinalLinkState(FinalLinkState.PLUGIN_DEFECT);
             }
             return;
-        case OFFLINE_UNTRUSTED:
-            if (!onDetach) {
-                currentSession.removeHistory(link);
-                candidate.getLink().setFinalLinkState(FinalLinkState.OFFLINE);
-            }
-            return;
         case OFFLINE_TRUSTED:
             if (onDetach) {
                 currentSession.removeHistory(link);
@@ -2597,11 +2591,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 ret = new DownloadLinkCandidateResult(RESULT.FINISHED_EXISTS, throwable, pluginHost);
                 break;
             case LinkStatus.ERROR_FILE_NOT_FOUND:
-                if (link.getHost().equals(pluginHost)) {
-                    ret = new DownloadLinkCandidateResult(RESULT.OFFLINE_TRUSTED, throwable, pluginHost);
-                } else {
-                    ret = new DownloadLinkCandidateResult(RESULT.OFFLINE_UNTRUSTED, throwable, pluginHost);
-                }
+                ret = new DownloadLinkCandidateResult(RESULT.OFFLINE_TRUSTED, throwable, pluginHost);
                 break;
             case LinkStatus.ERROR_PLUGIN_DEFECT:
                 if (latestPlugin != null) {

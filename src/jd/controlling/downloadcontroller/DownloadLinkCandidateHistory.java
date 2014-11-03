@@ -94,7 +94,6 @@ public class DownloadLinkCandidateHistory {
                     break;
                 }
             case PLUGIN_DEFECT:
-            case OFFLINE_UNTRUSTED:
             case ACCOUNT_REQUIRED:
             case FATAL_ERROR:
                 return next;
