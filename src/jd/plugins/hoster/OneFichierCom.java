@@ -52,13 +52,20 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "https?://(?!www\\.)[a-z0-9\\-]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/?|https?://1fichier\\.com/\\?[a-z0-9]+" }, flags = { 2 })
 public class OneFichierCom extends PluginForHost {
 
-    private static AtomicInteger maxPrem          = new AtomicInteger(1);
-    private final String         PASSWORDTEXT     = "(Accessing this file is protected by password|Please put it on the box bellow|Veuillez le saisir dans la case ci-dessous)";
+    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
+    private final String         PASSWORDTEXT                 = "(Accessing this file is protected by password|Please put it on the box bellow|Veuillez le saisir dans la case ci-dessous)";
 
-    private final String         FREELINK         = "freeLink";
-    private final String         PREMLINK         = "premLink";
-    private final String         PREFER_RECONNECT = "PREFER_RECONNECT";
-    private boolean              pwProtected      = false;
+    private final String         FREELINK                     = "freeLink";
+    private final String         PREMLINK                     = "premLink";
+    private final String         PREFER_RECONNECT             = "PREFER_RECONNECT";
+    private boolean              pwProtected                  = false;
+
+    /* Max total connections for premium = 50 (RE: admin) */
+    private static final int     maxchunks_account_premium    = -4;
+    private static final int     maxdownloads_account_premium = 12;
+
+    private static final int     maxchunks_free               = 1;
+    private static final int     maxdownloads_free            = 1;
 
     public OneFichierCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -260,7 +267,7 @@ public class OneFichierCom extends PluginForHost {
         String dllink = downloadLink.getStringProperty(FREELINK, downloadLink.getDownloadURL());
         br.setFollowRedirects(true);
         // at times the second chunk creates 404 errors!
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxchunks_free);
         if (dl.getConnection().getContentType().contains("html")) {
             /* could not resume, fetch new link */
             br.followConnection();
@@ -351,7 +358,7 @@ public class OneFichierCom extends PluginForHost {
             }
         }
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxchunks_free);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -469,9 +476,9 @@ public class OneFichierCom extends PluginForHost {
             } else {
                 ai.setUnlimitedTraffic();
             }
-            maxPrem.set(1);
+            maxPrem.set(maxdownloads_free);
             try {
-                account.setMaxSimultanDownloads(1);
+                account.setMaxSimultanDownloads(maxdownloads_free);
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
             }
@@ -504,8 +511,8 @@ public class OneFichierCom extends PluginForHost {
             ai.setValidUntil(Long.parseLong(timeStamp) * 1000l + (24 * 60 * 60 * 1000l));
             ai.setUnlimitedTraffic();
             try {
-                maxPrem.set(20);
-                account.setMaxSimultanDownloads(-1);
+                maxPrem.set(maxdownloads_account_premium);
+                account.setMaxSimultanDownloads(maxdownloads_account_premium);
                 account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
             }
@@ -567,7 +574,7 @@ public class OneFichierCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return maxdownloads_free;
     }
 
     @Override
@@ -600,7 +607,7 @@ public class OneFichierCom extends PluginForHost {
         if (dllink != null) {
             /* try to resume existing file */
             br.setFollowRedirects(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxchunks_account_premium);
             if (dl.getConnection().getContentType().contains("html")) {
                 /* could not resume, fetch new link */
                 br.followConnection();
