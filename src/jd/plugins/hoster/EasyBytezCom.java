@@ -730,14 +730,13 @@ public class EasyBytezCom extends PluginForHost {
     private void checkServerErrors() throws NumberFormatException, PluginException {
         if (br.getHttpConnection() != null && br.getURL().matches(".+easybytez.com/404\\.html\\?.+")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (cbr.containsHTML("No file")) {
+        } else if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 10 * 60 * 1000l);
+        } else if (cbr.containsHTML("No file")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
-        }
-        if (cbr.containsHTML("(File Not Found|<h1>404 Not Found</h1>|<h1>The page cannot be found</h1>)")) {
+        } else if (cbr.containsHTML("(File Not Found|<h1>404 Not Found</h1>|<h1>The page cannot be found</h1>)")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
-        }
-        if (cbr.containsHTML("Wrong IP")) {
+        } else if (cbr.containsHTML("Wrong IP")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - server says 'Wrong IP'", 5 * 60 * 1000l);
         }
     }

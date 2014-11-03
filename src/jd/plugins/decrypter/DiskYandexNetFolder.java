@@ -93,7 +93,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             }
             // stored hash should not be urldecoded as it changes chars.
             main.setProperty("hash_plain", hashID);
-            parameter = protocol + "://disk.yandex.com/public/?hash=" + hashID;
+            parameter = protocol + "://disk.yandex.com/public/?hash=" + Encoding.urlEncode(hashID);
             br.getPage(parameter);
         }
 
@@ -109,6 +109,9 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         }
 
         String fpName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        if (fpName == null) {
+            fpName = br.getRegex("class=\"nb\\-panel__title\" title=\"([^<>\"]*?)\"").getMatch(0);
+        }
         if (fpName == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -166,8 +169,12 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         } else if (is_single) {
             main.setFinalFileName(fpName);
             main.setProperty("plain_filename", fpName);
-            final String filesize = br.getRegex(">Size: ([^<>\"]*?)<br/").getMatch(0);
+            String filesize = br.getRegex(">Size: ([^<>\"]*?)<br/").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex(">Size:</span>([^<>\"]*?)</div>").getMatch(0);
+            }
             if (filesize != null) {
+                filesize = fixFilesize(filesize);
                 main.setDownloadSize(SizeFormatter.getSize(filesize));
                 main.setProperty("plain_size", filesize);
             }
@@ -189,6 +196,15 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
+    }
+
+    private String fixFilesize(String filesize) {
+        filesize = filesize.replace("Г", "G");
+        filesize = filesize.replace("М", "M");
+        filesize = filesize.replaceAll("(к|К)", "k");
+        filesize = filesize.replaceAll("(Б|б)", "");
+        filesize = filesize + "b";
+        return filesize;
     }
 
     private static AtomicBoolean yt_loaded = new AtomicBoolean(false);

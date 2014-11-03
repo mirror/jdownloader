@@ -965,6 +965,13 @@ public class RapidGatorNet extends PluginForHost {
                         account.setProperty("session_type", Property.NULL);
                     }
                     throw new PluginException(LinkStatus.ERROR_RETRY);
+                } else if (errorMessage.contains("\"Error: Error e\\-mail or password")) {
+                    /* Usually comes with response_status 401 --> Not exactly sure what it means but probably some kind of account issue. */
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 if (con.getResponseCode() == 503 || errorMessage.contains("Service Temporarily Unavailable")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service Temporarily Unavailable", 5 * 60 * 1000l);

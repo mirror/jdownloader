@@ -46,7 +46,7 @@ public class FilesUploadOrg extends PluginForHost {
 
     // For sites which use this script: http://www.yetishare.com/
     // YetiShareBasic Version 0.3.2-psp
-    // mods:
+    // mods: doFree[added new getddllink handling]
     // limit-info:
     // protocol: no https
     // captchatype: null
@@ -58,6 +58,7 @@ public class FilesUploadOrg extends PluginForHost {
 
     /* Other constants */
     private final String         MAINPAGE                                     = "http://filesupload.org";
+    private final String         domains                                      = "(filesupload\\.org)";
     private final String         TYPE                                         = "php";
     private static final String  SIMULTANDLSLIMIT                             = "?e=You+have+reached+the+maximum+concurrent+downloads";
     private static final String  SIMULTANDLSLIMITUSERTEXT                     = "Max. simultan downloads limit reached, wait to start more downloads from this host";
@@ -174,10 +175,10 @@ public class FilesUploadOrg extends PluginForHost {
             for (int i = 1; i <= 3; i++) {
                 logger.info("Handling pre-download page #" + i);
                 continue_link = br.getRegex("\\$\\(\\'\\.download\\-timer\\'\\)\\.html\\(\"<a href=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
-                if (continue_link == null && i == 0) {
-                    continue_link = downloadLink.getDownloadURL() + "?d=1";
-                    logger.info("Could not find continue_link --> Using standard continue_link, continuing...");
-                } else if (continue_link == null && i > 0) {
+                if (continue_link == null) {
+                    continue_link = getDllink();
+                }
+                if (continue_link == null) {
                     logger.info("No continue_link available, stepping out of pre-download loop");
                     break;
                 } else {
@@ -199,6 +200,9 @@ public class FilesUploadOrg extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, SERVERERRORUSERTEXT, 5 * 60 * 1000l);
                 }
             }
+        }
+        if (continue_link == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (!dl.getConnection().isContentDisposition()) {
             /* Do not follow connection, already done above */
@@ -238,6 +242,10 @@ public class FilesUploadOrg extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getDllink() {
+        return br.getRegex("\"(https?://([A-Za-z0-9\\-\\.]+)?" + domains + "/[^<>\"\\?]*?\\?download_token=[A-Za-z0-9]+)\"").getMatch(0);
     }
 
     private void handleErrors() throws PluginException {
