@@ -75,7 +75,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
         final String vid = new Regex(parameter, "(\\d+)$").getMatch(0);
         if (br.containsHTML(">Sorry, we couldn\\'t find that stream\\.|<h1>This channel is closed</h1>|>I\\'m sorry, that page is in another castle") || br.getHttpConnection().getResponseCode() == 404) {
             try {
-                decryptedLinks.add(createOfflinelink("http://twitchdecrypted.tv/" + System.currentTimeMillis() + new Random().nextInt(100000000), vid + ".flv", null));
+                decryptedLinks.add(createOfflinelink(parameter, null));
             } catch (final Throwable t) {
                 logger.info("OfflineLink :" + parameter);
             }
@@ -121,7 +121,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
         } else {
             if (!br.getURL().matches(SINGLEVIDEO)) {
                 try {
-                    decryptedLinks.add(createOfflinelink("http://twitchdecrypted.tv/" + System.currentTimeMillis() + new Random().nextInt(100000000), vid + ".flv", null));
+                    decryptedLinks.add(createOfflinelink(parameter, null));
                 } catch (final Throwable t) {
                     logger.info("OfflineLink :" + parameter);
                 }
@@ -135,7 +135,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
             final String vdne = "Video does not exist";
             if (ajax != null && vdne.equals(getJson(ajax, "message"))) {
                 try {
-                    decryptedLinks.add(createOfflinelink("http://twitchdecrypted.tv/" + System.currentTimeMillis() + new Random().nextInt(100000000), vid + "_" + vdne + ".flv", vdne));
+                    decryptedLinks.add(createOfflinelink(parameter, vid + " - " + vdne, vdne));
                 } catch (final Throwable t) {
                     logger.info("OfflineLink :" + parameter);
                 }
@@ -158,7 +158,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
             }
             if (failed) {
                 try {
-                    decryptedLinks.add(createOfflinelink("http://twitchdecrypted.tv/" + System.currentTimeMillis() + new Random().nextInt(100000000), vid + "_" + failreason + ".flv", failreason));
+                    decryptedLinks.add(createOfflinelink(parameter, failreason));
                 } catch (final Throwable t) {
                     logger.info("OfflineLink :" + parameter);
                 }
