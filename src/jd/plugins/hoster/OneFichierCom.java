@@ -694,7 +694,7 @@ public class OneFichierCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink dl) {
-        String test = new Regex(dl.getDownloadURL(), "://([a-z0-9]+)\\.").getMatch(0);
+        String test = new Regex(dl.getDownloadURL(), "://([a-z0-9]+)\\.[a-zA-z0-9\\-]+\\.[a-zA-Z]{2,4}").getMatch(0);
         if (test != null && test.matches("www")) {
             test = null;
         }
