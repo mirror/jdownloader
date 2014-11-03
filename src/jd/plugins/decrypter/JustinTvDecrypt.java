@@ -158,7 +158,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
             }
             if (failed) {
                 try {
-                    decryptedLinks.add(createOfflinelink(parameter, failreason));
+                    decryptedLinks.add(createOfflinelink(parameter, vid + " - " + failreason, failreason));
                 } catch (final Throwable t) {
                     logger.info("OfflineLink :" + parameter);
                 }
