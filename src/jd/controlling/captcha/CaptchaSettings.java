@@ -1,5 +1,7 @@
 package jd.controlling.captcha;
 
+import java.util.HashMap;
+
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.AboutConfig;
@@ -8,6 +10,7 @@ import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.SpinnerValidator;
+import org.jdownloader.captcha.v2.solver.jac.AutoTrust;
 
 public interface CaptchaSettings extends ConfigInterface {
 
@@ -183,4 +186,9 @@ public interface CaptchaSettings extends ConfigInterface {
     int getCaptchaExchangeChanceToSkipBubbleTimeout();
 
     void setCaptchaExchangeChanceToSkipBubbleTimeout(int ms);
+
+    @AboutConfig
+    HashMap<String, AutoTrust> getJACThreshold();
+
+    void setJACThreshold(HashMap<String, AutoTrust> map);
 }

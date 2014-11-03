@@ -46,6 +46,7 @@ public class SolverJob<T> {
 
     public SolverJob(ChallengeResponseController controller, Challenge<T> c, List<ChallengeSolver<T>> solver) {
         this.challenge = c;
+
         this.controller = controller;
         this.solverList = new HashSet<ChallengeSolver<T>>(solver);
         config = JsonConfig.create(CaptchaSettings.class);
@@ -62,7 +63,9 @@ public class SolverJob<T> {
                 kill = true;
             }
         }
-        if (kill) kill();
+        if (kill) {
+            kill();
+        }
         fireNewAnswerEvent(abstractResponse);
     }
 
@@ -73,7 +76,9 @@ public class SolverJob<T> {
     public ResponseList<T> getResponse() {
         synchronized (LOCK) {
             ArrayList<ResponseList<T>> lst = cumulatedList;
-            if (lst == null || lst.size() == 0) return null;
+            if (lst == null || lst.size() == 0) {
+                return null;
+            }
             return lst.get(0);
         }
     }
@@ -81,7 +86,9 @@ public class SolverJob<T> {
     public boolean areDone(ChallengeSolver<?>... instances) {
         synchronized (LOCK) {
             for (ChallengeSolver<?> cs : instances) {
-                if (solverList.contains(cs) && !doneList.contains(cs)) { return false; }
+                if (solverList.contains(cs) && !doneList.contains(cs)) {
+                    return false;
+                }
             }
             logger.info("All: " + solverList);
             logger.info("Done: " + doneList);
@@ -117,11 +124,17 @@ public class SolverJob<T> {
     public void setSolverDone(ChallengeSolver<T> solver) {
 
         synchronized (LOCK) {
-            if (!solverList.contains(solver)) throw new IllegalStateException("This Job does not contain this solver");
-            if (!doneList.add(solver)) return;
-            // runningList.remove(solver);
+            if (!solverList.contains(solver)) {
+                throw new IllegalStateException("This Job does not contain this solver");
+            }
+            if (!doneList.add(solver)) {
+                return;
+                // runningList.remove(solver);
+            }
         }
-        if (eventSender != null) eventSender.fireEvent(new ChallengeSolverJobEvent(this, ChallengeSolverJobEvent.Type.SOLVER_DONE, solver));
+        if (eventSender != null) {
+            eventSender.fireEvent(new ChallengeSolverJobEvent(this, ChallengeSolverJobEvent.Type.SOLVER_DONE, solver));
+        }
         synchronized (this) {
             this.notifyAll();
         }
@@ -129,23 +142,33 @@ public class SolverJob<T> {
 
     public void fireBeforeSolveEvent(ChallengeSolver<T> solver) {
         synchronized (LOCK) {
-            if (!solverList.contains(solver)) throw new IllegalStateException("This Job does not contain this solver");
+            if (!solverList.contains(solver)) {
+                throw new IllegalStateException("This Job does not contain this solver");
+            }
         }
-        if (eventSender != null) eventSender.fireEvent(new ChallengeSolverJobEvent(this, ChallengeSolverJobEvent.Type.SOLVER_START, solver));
+        if (eventSender != null) {
+            eventSender.fireEvent(new ChallengeSolverJobEvent(this, ChallengeSolverJobEvent.Type.SOLVER_START, solver));
+        }
         controller.fireBeforeSolveEvent(this, solver);
     }
 
     private void fireNewAnswerEvent(AbstractResponse<T> abstractResponse) {
         controller.fireNewAnswerEvent(this, abstractResponse);
-        if (eventSender != null) eventSender.fireEvent(new ChallengeSolverJobEvent(this, ChallengeSolverJobEvent.Type.NEW_ANSWER, abstractResponse));
+        if (eventSender != null) {
+            eventSender.fireEvent(new ChallengeSolverJobEvent(this, ChallengeSolverJobEvent.Type.NEW_ANSWER, abstractResponse));
+        }
 
     }
 
     public void fireTimeoutEvent(ChallengeSolver<T> solver) {
         synchronized (LOCK) {
-            if (!solverList.contains(solver)) throw new IllegalStateException("This Job does not contain this solver");
+            if (!solverList.contains(solver)) {
+                throw new IllegalStateException("This Job does not contain this solver");
+            }
         }
-        if (eventSender != null) eventSender.fireEvent(new ChallengeSolverJobEvent(this, ChallengeSolverJobEvent.Type.SOLVER_TIMEOUT, solver));
+        if (eventSender != null) {
+            eventSender.fireEvent(new ChallengeSolverJobEvent(this, ChallengeSolverJobEvent.Type.SOLVER_TIMEOUT, solver));
+        }
     }
 
     public Challenge<T> getChallenge() {
@@ -212,8 +235,12 @@ public class SolverJob<T> {
         }
         try {
             while (!areDone(instances)) {
-                if (Thread.interrupted()) throw new InterruptedException(this + " got interrupted");
-                if (isSolved()) throw new InterruptedException(this + " is Solved");
+                if (Thread.interrupted()) {
+                    throw new InterruptedException(this + " got interrupted");
+                }
+                if (isSolved()) {
+                    throw new InterruptedException(this + " is Solved");
+                }
                 synchronized (this) {
                     if (!areDone(instances)) {
                         if (endTime > 0) {
@@ -233,8 +260,12 @@ public class SolverJob<T> {
                     }
                 }
             }
-            if (Thread.interrupted()) throw new InterruptedException(this + " got interrupted");
-            if (isSolved()) throw new InterruptedException(this + " is Solved");
+            if (Thread.interrupted()) {
+                throw new InterruptedException(this + " got interrupted");
+            }
+            if (isSolved()) {
+                throw new InterruptedException(this + " is Solved");
+            }
             logger.info("Exit " + this + " by done: " + areDone(instances));
         } catch (InterruptedException e) {
             logger.log(e);
@@ -260,14 +291,18 @@ public class SolverJob<T> {
         boolean kill = false;
         synchronized (this) {
 
-            if (this.skipRequest != null) return;
+            if (this.skipRequest != null) {
+                return;
+            }
             this.skipRequest = skipRequest;
             if (skipRequest != null) {
                 getLogger().info("Got Skip Request:" + skipRequest);
                 kill = true;
             }
         }
-        if (kill) kill();
+        if (kill) {
+            kill();
+        }
     }
 
     public Collection<ChallengeSolver<T>> getSolverList() {

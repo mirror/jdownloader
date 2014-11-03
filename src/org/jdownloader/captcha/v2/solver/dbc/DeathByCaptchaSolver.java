@@ -34,6 +34,7 @@ import org.jdownloader.captcha.v2.solver.dbc.api.Client;
 import org.jdownloader.captcha.v2.solver.dbc.api.SocketClient;
 import org.jdownloader.captcha.v2.solver.dbc.api.User;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -218,11 +219,11 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements 
     }
 
     @Override
-    public void setUnused(AbstractResponse<?> response) {
+    public void setUnused(AbstractResponse<?> response, SolverJob<?> job) {
     }
 
     @Override
-    public void setInvalid(final AbstractResponse<?> response) {
+    public void setInvalid(final AbstractResponse<?> response, SolverJob<?> job) {
         if (config.isFeedBackSendingEnabled() && response instanceof DeathByCaptchaResponse) {
             threadPool.execute(new Runnable() {
 
@@ -311,7 +312,7 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements 
     }
 
     @Override
-    public void setValid(AbstractResponse<?> response) {
+    public void setValid(AbstractResponse<?> response, SolverJob<?> job) {
     }
 
     @Override
