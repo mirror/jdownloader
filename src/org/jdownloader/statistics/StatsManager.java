@@ -366,9 +366,6 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                 case OFFLINE_TRUSTED:
                     dl.setResult(DownloadResult.OFFLINE_TRUSTED);
                     break;
-                case OFFLINE_UNTRUSTED:
-                    dl.setResult(DownloadResult.OFFLINE_UNTRUSTED);
-                    break;
                 case PLUGIN_DEFECT:
                     dl.setResult(DownloadResult.PLUGIN_DEFECT);
                     break;
@@ -453,7 +450,6 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             case HOSTER_UNAVAILABLE:
             case IP_BLOCKED:
             case OFFLINE_TRUSTED:
-            case OFFLINE_UNTRUSTED:
             case PLUGIN_DEFECT:
             case PROXY_UNAVAILABLE:
             case RETRY:

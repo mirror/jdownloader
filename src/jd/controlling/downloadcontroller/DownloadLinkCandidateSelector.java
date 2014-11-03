@@ -65,7 +65,7 @@ public class DownloadLinkCandidateSelector {
     }
 
     private final Comparator<CandidateResultHolder>                                                        RESULT_SORTER = new Comparator<CandidateResultHolder>() {
-                                                                                                                             private final DownloadLinkCandidateResult.RESULT[] FINAL_RESULT_SORT_ORDER = new RESULT[] { DownloadLinkCandidateResult.RESULT.SKIPPED, DownloadLinkCandidateResult.RESULT.ACCOUNT_REQUIRED, DownloadLinkCandidateResult.RESULT.PLUGIN_DEFECT, DownloadLinkCandidateResult.RESULT.FATAL_ERROR, DownloadLinkCandidateResult.RESULT.OFFLINE_UNTRUSTED };
+                                                                                                                             private final DownloadLinkCandidateResult.RESULT[] FINAL_RESULT_SORT_ORDER = new RESULT[] { DownloadLinkCandidateResult.RESULT.SKIPPED, DownloadLinkCandidateResult.RESULT.ACCOUNT_REQUIRED, DownloadLinkCandidateResult.RESULT.PLUGIN_DEFECT, DownloadLinkCandidateResult.RESULT.FATAL_ERROR };
 
                                                                                                                              private int indexOf(RESULT o1) {
                                                                                                                                  for (int index = 0; index < FINAL_RESULT_SORT_ORDER.length; index++) {
@@ -309,7 +309,6 @@ public class DownloadLinkCandidateSelector {
         } else if (proxyResult != null && linkResult != null) {
             switch (linkResult.getResult()) {
             case PLUGIN_DEFECT:
-            case OFFLINE_UNTRUSTED:
             case ACCOUNT_REQUIRED:
             case FATAL_ERROR:
             case SKIPPED:
@@ -366,7 +365,6 @@ public class DownloadLinkCandidateSelector {
                 case CONNECTION_TEMP_UNAVAILABLE:
                     continue linkLoop;
                 case PLUGIN_DEFECT:
-                case OFFLINE_UNTRUSTED:
                 case ACCOUNT_REQUIRED:
                 case FATAL_ERROR:
                 case SKIPPED:
