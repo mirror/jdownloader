@@ -1,3 +1,5 @@
 addScheduleEntryDialog_account=账户
 addScheduleEntryDialog_actionParameters=动作 & 参数
+addScheduleEntryDialog_repeat=重复
 scheduleTable_column_action=动作
+scheduleTable_column_repeats=重复
