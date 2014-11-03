@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -56,13 +58,10 @@ public class PanBaiduCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-
         br = new Browser();
-
         if (downloadLink.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         br.getHeaders().put("Accept-Charset", null);
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         // Other or older User-Agents might get slow speed
@@ -91,7 +90,7 @@ public class PanBaiduCom extends PluginForHost {
         DLLINK = checkDirectLink(downloadLink, "panbaidudirectlink");
         if (DLLINK == null) {
             /* Needed to get the pcsett cookie on http://.pcs.baidu.com/ to avoid "hotlinking forbidden" errormessage later */
-            br.getPage("http://pcs.baidu.com/rest/2.0/pcs/file?method=plantcookie&type=ett");
+            getPage(this.br, "http://pcs.baidu.com/rest/2.0/pcs/file?method=plantcookie&type=ett");
             final String original_url = downloadLink.getStringProperty("mainLink", null);
             final String shareid = downloadLink.getStringProperty("origurl_shareid", null);
             final String uk = downloadLink.getStringProperty("origurl_uk", null);
@@ -104,7 +103,7 @@ public class PanBaiduCom extends PluginForHost {
             if (link_password_cookie != null) {
                 br.setCookie("http://pan.baidu.com/", "BDCLND", link_password_cookie);
             }
-            br.getPage(original_url);
+            getPage(this.br, original_url);
             /* Re-check here for offline because if we always used the directlink before, we cannot know if the link is still online. */
             if (br.containsHTML("id=\"share_nofound_des\"")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -114,20 +113,20 @@ public class PanBaiduCom extends PluginForHost {
             final String i_frame = br.getRegex("<iframe src=\"(http://pan\\.baidu\\.com/share/link\\?shareid=\\d+\\&uk=\\d+\\&t=[A-Za-z0-9]+)\"").getMatch(0);
             if (i_frame != null) {
                 logger.info("Found i_frame - accessing it!");
-                br.getPage(i_frame);
+                getPage(this.br, i_frame);
             } else {
                 logger.info("Found no i_frame");
             }
 
             /* Fallback handling if the password cookie didn't work */
             if (link_password != null && br.getURL().matches(TYPE_FOLDER_LINK_NORMAL_PASSWORD_PROTECTED)) {
-                br.postPage("http://pan.baidu.com/share/verify?" + "vcode=&shareid=" + shareid + "&uk=" + uk + "&t=" + System.currentTimeMillis(), "&pwd=" + Encoding.urlEncode(link_password));
+                postPage(this.br, "http://pan.baidu.com/share/verify?" + "vcode=&shareid=" + shareid + "&uk=" + uk + "&t=" + System.currentTimeMillis(), "&pwd=" + Encoding.urlEncode(link_password));
                 if (!br.containsHTML("\"errno\":0")) {
                     // Wrong password -> Impossible
                     logger.warning("pan.baidu.com: Couldn't download password protected link even though the password is given...");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                br.getPage(original_url);
+                getPage(this.br, original_url);
             }
             sign = br.getRegex("FileUtils\\.share_sign=\"([a-z0-9]+)\"").getMatch(0);
             if (sign == null) {
@@ -142,7 +141,7 @@ public class PanBaiduCom extends PluginForHost {
             }
             Browser br2 = prepAjax(br.cloneBrowser());
             try {
-                br2.getPage("http://pan.baidu.com/share/autoincre?channel=chunlei&clienttype=0&web=1&type=1&shareid=" + shareid + "&uk=" + uk + "&sign=" + sign + "&timestamp=" + tsamp + "&bdstoken=null");
+                getPage(br2, "http://pan.baidu.com/share/autoincre?channel=chunlei&clienttype=0&web=1&type=1&shareid=" + shareid + "&uk=" + uk + "&sign=" + sign + "&timestamp=" + tsamp + "&bdstoken=null");
             } catch (final Throwable e) {
             }
             /* Last revision without API & csflg handling: 26909 */
@@ -156,11 +155,11 @@ public class PanBaiduCom extends PluginForHost {
                 postData += "&extra=%7B%22sekey%22%3A%22" + specialCookie + "%22%7D";
             }
             br2 = prepAjax(br.cloneBrowser());
-            br2.postPage(postLink, postData);
+            postPage(br2, postLink, postData);
             if (br2.containsHTML("\"errno\":\\-20")) {
                 final int repeat = 3;
                 for (int i = 1; i <= repeat; i++) {
-                    br2.getPage("http://pan.baidu.com/api/getcaptcha?prod=share&bdstoken=&channel=chunlei&clienttype=0&web=1&app_id=" + APPID);
+                    getPage(br2, "http://pan.baidu.com/api/getcaptcha?prod=share&bdstoken=&channel=chunlei&clienttype=0&web=1&app_id=" + APPID);
                     String captchaLink = getJson(br2, "vcode_img");
                     final String vcode_str = new Regex(captchaLink, "([A-Z0-9]+)$").getMatch(0);
                     if (captchaLink == null || vcode_str == null) {
@@ -188,7 +187,7 @@ public class PanBaiduCom extends PluginForHost {
                         }
                     }
                     br2 = prepAjax(br.cloneBrowser());
-                    br2.postPage(postLink, postData + "&vcode_input=" + Encoding.urlEncode(code) + "&vcode_str=" + vcode_str);
+                    postPage(br2, postLink, postData + "&vcode_input=" + Encoding.urlEncode(code) + "&vcode_str=" + vcode_str);
                     captchaLink = getJson(br2, "img");
                     if (!br2.containsHTML("\"errno\":\\-20")) {
                         // success!
@@ -256,6 +255,20 @@ public class PanBaiduCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             throw e;
+        }
+    }
+
+    private void getPage(final Browser br, final String url) throws IOException, PluginException {
+        br.getPage(url);
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("/error/core.html")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is on a damaged HDD, cannot download at the moment");
+        }
+    }
+
+    private void postPage(final Browser br, final String url, final String postdata) throws IOException, PluginException {
+        br.postPage(url, postdata);
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("/error/core.html")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is on a damaged HDD, cannot download at the moment");
         }
     }
 

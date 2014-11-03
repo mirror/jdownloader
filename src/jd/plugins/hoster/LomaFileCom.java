@@ -230,7 +230,7 @@ public class LomaFileCom extends PluginForHost {
         try {
             getPage(downloadLink.getDownloadURL());
         } catch (final BrowserException e) {
-            if (br.getHttpConnection().getResponseCode() == 500) {
+            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 500) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             throw e;
