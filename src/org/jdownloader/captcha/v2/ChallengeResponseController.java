@@ -116,10 +116,12 @@ public class ChallengeResponseController {
         }
     }
 
-    public <T> void handle(final Challenge<T> c) throws InterruptedException, SkipException {
+    public <T> SolverJob<T> handle(final Challenge<T> c) throws InterruptedException, SkipException {
         ArrayList<ChallengeSolver<T>> solver = null;
         LogSource logger = LogController.getInstance().getPreviousThreadLogSource();
-        if (logger == null) logger = this.logger;
+        if (logger == null) {
+            logger = this.logger;
+        }
         logger.info("Log to " + logger.getName());
         synchronized (solverList) {
             solver = createList(c);
@@ -150,9 +152,12 @@ public class ChallengeResponseController {
                     }
                 }
             }
-            if (job.getSkipRequest() != null) { throw new SkipException(job.getSkipRequest()); }
+            if (job.getSkipRequest() != null) {
+                throw new SkipException(job.getSkipRequest());
+            }
             logger.info("All Responses: " + job.getResponses());
             logger.info("Solving Done. Result: " + job.getResponse());
+            return job;
         } catch (InterruptedException e) { // for example downloads have been stopped
             job.kill();
             throw e;

@@ -103,6 +103,7 @@ import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.UrlProtection;
 import org.jdownloader.controlling.ffmpeg.FFMpegInstallProgress;
@@ -142,29 +143,29 @@ import org.jdownloader.updatev2.UpdateController;
  * @author astaldo
  */
 public abstract class PluginForHost extends Plugin {
-    private static final String         COPY_MOVE_FILE        = "CopyMoveFile";
+    private static final String           COPY_MOVE_FILE        = "CopyMoveFile";
 
-    private static Pattern[]            PATTERNS              = new Pattern[] {
+    private static Pattern[]              PATTERNS              = new Pattern[] {
 
-                                                              /**
-                                                               * these patterns should split filename and fileextension (extension must
-                                                               * include the point)
-                                                               */
-                                                              // multipart rar archives
+                                                                /**
+                                                                 * these patterns should split filename and fileextension (extension must
+                                                                 * include the point)
+                                                                 */
+                                                                // multipart rar archives
             Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
             // normal files with extension
             Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
 
-    private LazyHostPlugin              lazyP                 = null;
+    private LazyHostPlugin                lazyP                 = null;
     /**
      * Is true if the user has answered a captcha challenge. does not say anything whether if the answer was correct or not
      */
-    protected transient ResponseList<?> lastChallengeResponse = null;
+    protected transient SolverJob<String> lastSolverJob = null;
 
-    private boolean                     hasCaptchas           = false;
+    private boolean                       hasCaptchas           = false;
 
-    public void setLastChallengeResponse(ResponseList<?> lastChallengeResponse) {
-        this.lastChallengeResponse = lastChallengeResponse;
+    public void setLastSolverJob(SolverJob<String> job) {
+        this.lastSolverJob = job;
     }
 
     public LazyHostPlugin getLazyP() {
@@ -256,46 +257,120 @@ public abstract class PluginForHost extends Plugin {
 
     public void invalidateLastChallengeResponse() {
         try {
-            ResponseList<?> lLastChallengeResponse = lastChallengeResponse;
-            if (lLastChallengeResponse != null) {
+            SolverJob<String> lJob = lastSolverJob;
+            if (lJob != null) {
                 /* TODO: inform other solver that their response was not used */
-                AbstractResponse<?> response = lLastChallengeResponse.get(0);
-                if (response.getSolver() instanceof ChallengeResponseValidation) {
-                    ChallengeResponseValidation validation = (ChallengeResponseValidation) response.getSolver();
-                    try {
-                        validation.setInvalid(response);
-                    } catch (final Throwable e) {
-                        LogSource.exception(getLogger(), e);
+                ResponseList<String> usedResponseList = lJob.getResponse();
+                AbstractResponse<?> usedResponse = usedResponseList.get(0);
+
+                for (AbstractResponse<String> response : usedResponseList) {
+                    if (response.getSolver() instanceof ChallengeResponseValidation) {
+                        ChallengeResponseValidation validation = (ChallengeResponseValidation) response.getSolver();
+                        try {
+                            validation.setInvalid(response, lJob);
+                        } catch (final Throwable e) {
+                            LogSource.exception(getLogger(), e);
+                        }
+
+                        if (usedResponse != response) {
+                            try {
+                                validation.setUnused(response, lJob);
+                            } catch (final Throwable e) {
+                                LogSource.exception(getLogger(), e);
+                            }
+                        }
+                    }
+
+                }
+                for (ResponseList<String> responseList : lJob.getResponses()) {
+                    if (responseList == usedResponseList) {
+                        continue;
+                    }
+                    for (AbstractResponse<String> response : responseList) {
+                        if (response.getSolver() instanceof ChallengeResponseValidation) {
+
+                            ChallengeResponseValidation validation = (ChallengeResponseValidation) response.getSolver();
+                            try {
+                                validation.setUnused(response, lJob);
+                            } catch (final Throwable e) {
+                                LogSource.exception(getLogger(), e);
+                            }
+
+                        }
                     }
                 }
             }
         } finally {
-            lastChallengeResponse = null;
+            lastSolverJob = null;
         }
+    }
+
+    private boolean equal(Object a, Object b) {
+        if (a == b) {
+            return true;
+        }
+        if (a == null && b != null) {
+            return false;
+        }
+        return a.equals(b);
     }
 
     public void validateLastChallengeResponse() {
         try {
-            ResponseList<?> lLastChallengeResponse = lastChallengeResponse;
-            if (lLastChallengeResponse != null) {
-                /* TODO: inform other solver that their response was not used */
-                AbstractResponse<?> response = lLastChallengeResponse.get(0);
-                if (response.getSolver() instanceof ChallengeResponseValidation) {
-                    ChallengeResponseValidation validation = (ChallengeResponseValidation) response.getSolver();
-                    try {
-                        validation.setValid(response);
-                    } catch (final Throwable e) {
-                        LogSource.exception(getLogger(), e);
+            SolverJob<String> lJob = lastSolverJob;
+            if (lJob != null) {
+
+                ResponseList<String> usedResponseList = lJob.getResponse();
+                AbstractResponse<?> usedResponse = usedResponseList.get(0);
+
+                for (AbstractResponse<String> response : usedResponseList) {
+                    if (response.getSolver() instanceof ChallengeResponseValidation) {
+                        ChallengeResponseValidation validation = (ChallengeResponseValidation) response.getSolver();
+                        try {
+                            validation.setValid(response, lJob);
+                        } catch (final Throwable e) {
+                            LogSource.exception(getLogger(), e);
+                        }
+                        if (usedResponse != response) {
+                            try {
+                                validation.setUnused(response, lJob);
+                            } catch (final Throwable e) {
+                                LogSource.exception(getLogger(), e);
+                            }
+                        }
+                    }
+
+                }
+                for (ResponseList<String> responseList : lJob.getResponses()) {
+                    if (responseList == usedResponseList) {
+                        continue;
+                    }
+                    for (AbstractResponse<String> response : responseList) {
+                        if (response.getSolver() instanceof ChallengeResponseValidation) {
+
+                            ChallengeResponseValidation validation = (ChallengeResponseValidation) response.getSolver();
+                            try {
+                                validation.setUnused(response, lJob);
+                            } catch (final Throwable e) {
+                                LogSource.exception(getLogger(), e);
+                            }
+                            try {
+                                validation.setInvalid(response, lJob);
+                            } catch (final Throwable e) {
+                                LogSource.exception(getLogger(), e);
+                            }
+
+                        }
                     }
                 }
             }
         } finally {
-            lastChallengeResponse = null;
+            lastSolverJob = null;
         }
     }
 
     public boolean hasChallengeResponse() {
-        return lastChallengeResponse != null;
+        return lastSolverJob != null;
     }
 
     protected String getCaptchaCode(final String method, File file, final int flag, final DownloadLink link, final String defaultValue, final String explain) throws Exception {
@@ -355,11 +430,11 @@ public abstract class PluginForHost extends Plugin {
                 logger.warning("Cancel. Blacklist Matching");
                 throw new CaptchaException(blackListEntry);
             }
-            ChallengeResponseController.getInstance().handle(c);
+            SolverJob<String> job = ChallengeResponseController.getInstance().handle(c);
             if (!c.isSolved()) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else {
-                setLastChallengeResponse(c.getResult());
+                setLastSolverJob(job);
             }
             return c.getResult().getValue();
         } catch (InterruptedException e) {
@@ -459,7 +534,7 @@ public abstract class PluginForHost extends Plugin {
 
     @Override
     public void clean() {
-        lastChallengeResponse = null;
+        lastSolverJob = null;
         try {
             dl.getConnection().disconnect();
         } catch (Throwable e) {

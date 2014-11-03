@@ -28,6 +28,7 @@ import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
@@ -316,7 +317,7 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
     }
 
     @Override
-    public void setValid(final AbstractResponse<?> response) {
+    public void setValid(final AbstractResponse<?> response, SolverJob<?> job) {
         if (config.isfeedback()) {
             threadPool.execute(new Runnable() {
 
@@ -346,7 +347,7 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
     }
 
     @Override
-    public void setUnused(final AbstractResponse<?> response) {
+    public void setUnused(final AbstractResponse<?> response, SolverJob<?> job) {
         if (config.isfeedback()) {
             threadPool.execute(new Runnable() {
 
@@ -376,7 +377,7 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
     }
 
     @Override
-    public void setInvalid(final AbstractResponse<?> response) {
+    public void setInvalid(final AbstractResponse<?> response, SolverJob<?> job) {
         if (config.isfeedback()) {
             threadPool.execute(new Runnable() {
 

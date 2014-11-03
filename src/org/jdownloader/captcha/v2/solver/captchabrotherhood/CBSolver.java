@@ -31,6 +31,7 @@ import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -234,15 +235,15 @@ public class CBSolver extends CESChallengeSolver<String> implements ChallengeRes
     }
 
     @Override
-    public void setValid(final AbstractResponse<?> response) {
+    public void setValid(final AbstractResponse<?> response, SolverJob<?> job) {
     }
 
     @Override
-    public void setUnused(final AbstractResponse<?> response) {
+    public void setUnused(final AbstractResponse<?> response, SolverJob<?> job) {
     }
 
     @Override
-    public void setInvalid(final AbstractResponse<?> response) {
+    public void setInvalid(final AbstractResponse<?> response, SolverJob<?> job) {
         threadPool.execute(new Runnable() {
             @Override
             public void run() {

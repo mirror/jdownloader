@@ -33,6 +33,7 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
@@ -266,7 +267,7 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
     }
 
     @Override
-    public void setValid(final AbstractResponse<?> response) {
+    public void setValid(final AbstractResponse<?> response, SolverJob<?> job) {
         if (response instanceof CaptchaMyJDCESResponse) {
             try {
                 MyJDownloaderController.getInstance().sendChallengeFeedback(((CaptchaMyJDCESResponse) response).getSolution().getId(), MyCaptchaSolution.RESULT.CORRECT);
@@ -278,7 +279,7 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
     }
 
     @Override
-    public void setUnused(final AbstractResponse<?> response) {
+    public void setUnused(final AbstractResponse<?> response, SolverJob<?> job) {
         try {
             MyJDownloaderController.getInstance().sendChallengeFeedback(((CaptchaMyJDCESResponse) response).getSolution().getId(), MyCaptchaSolution.RESULT.ABORT);
         } catch (Throwable e) {
@@ -287,7 +288,7 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
     }
 
     @Override
-    public void setInvalid(final AbstractResponse<?> response) {
+    public void setInvalid(final AbstractResponse<?> response, SolverJob<?> job) {
         try {
             MyJDownloaderController.getInstance().sendChallengeFeedback(((CaptchaMyJDCESResponse) response).getSolution().getId(), MyCaptchaSolution.RESULT.WRONG);
         } catch (Throwable e) {
