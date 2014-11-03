@@ -438,6 +438,14 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         return null;
     }
 
+    public boolean isChallengeExchangeEnabled() {
+        final MyJDownloaderConnectThread th = thread.get();
+        if (th != null) {
+            return th.isChallengeExchangeEnabled();
+        }
+        return false;
+    }
+
     public MyCaptchaSolution getChallengeResponse(String id) throws MyJDownloaderException {
 
         MyJDownloaderConnectThread th = thread.get();

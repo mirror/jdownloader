@@ -43,12 +43,11 @@ import org.jdownloader.myjdownloader.client.json.MyCaptchaSolution;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements ChallengeResponseValidation, MyJDownloaderListener {
-    private MyJDownloaderSettings          config;
+    private final MyJDownloaderSettings    config;
 
-    private LogSource                      logger;
-    private final boolean                  enabled  = true;
+    private final LogSource                logger;
 
-    private ArrayList<Request>             lastChallenge;
+    private final ArrayList<Request>       lastChallenge;
 
     private static final CaptchaMyJDSolver INSTANCE = new CaptchaMyJDSolver();
 
@@ -97,9 +96,11 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
         lastChallenge = new ArrayList<Request>();
     }
 
+    private final boolean enabled = true;
+
     @Override
     public boolean canHandle(Challenge<?> c) {
-        if (enabled && c instanceof BasicCaptchaChallenge && CFG_CAPTCHA.CAPTCHA_EXCHANGE_SERVICES_ENABLED.isEnabled() && config.isCESEnabled() && super.canHandle(c)) {
+        if (validateLogins() && c instanceof BasicCaptchaChallenge && MyJDownloaderController.getInstance().isChallengeExchangeEnabled() && CFG_CAPTCHA.CAPTCHA_EXCHANGE_SERVICES_ENABLED.isEnabled() && super.canHandle(c)) {
 
             Plugin plg = ((BasicCaptchaChallenge) c).getPlugin();
             if (plg != null) {
