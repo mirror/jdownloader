@@ -126,7 +126,13 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     }
 
-    private boolean logUploadEnabled = true;
+    private boolean logUploadEnabled        = true;
+
+    private double  captchaUploadPercentage = 0.95d;
+
+    public void setCaptchaUploadPercentage(double captchaUploadPercentage) {
+        this.captchaUploadPercentage = captchaUploadPercentage;
+    }
 
     public void setLogUploadEnabled(boolean logUploadEnabled) {
         this.logUploadEnabled = logUploadEnabled;
@@ -134,6 +140,9 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     public void logCaptcha(SolverJob<?> job) {
         if (!logUploadEnabled) {
+            return;
+        }
+        if (Math.random() < captchaUploadPercentage) {
             return;
         }
         if (job.getChallenge() instanceof BasicCaptchaChallenge) {
