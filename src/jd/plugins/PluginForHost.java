@@ -297,18 +297,20 @@ public abstract class PluginForHost extends Plugin {
         progress.setDisplayInProgressColumnEnabled(false);
         this.hasCaptchas = true;
 
-        File copy = Application.getResource("captchas/" + method + "/" + Hash.getMD5(file) + "." + Files.getExtension(file.getName()));
-        copy.deleteOnExit();
-        copy.getParentFile().mkdirs();
-        file.renameTo(copy);
-        file.delete();
-        file = copy;
         try {
             link.addPluginProgress(progress);
             String orgCaptchaImage = link.getStringProperty("orgCaptchaFile", null);
             if (orgCaptchaImage != null && new File(orgCaptchaImage).exists()) {
                 file = new File(orgCaptchaImage);
             }
+
+            File copy = Application.getResource("captchas/" + method + "/" + Hash.getMD5(file) + "." + Files.getExtension(file.getName()));
+            copy.deleteOnExit();
+            copy.getParentFile().mkdirs();
+            copy.delete();
+            IO.copyFile(file, copy);
+
+            file = copy;
             if (this.getDownloadLink() == null) {
                 this.setDownloadLink(link);
             }
