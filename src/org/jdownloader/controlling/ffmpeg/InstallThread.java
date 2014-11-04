@@ -100,7 +100,7 @@ public class InstallThread extends Thread {
             }
         } else if (CrossSystem.isMac()) {
             // different ffmpeg version for 10.6-
-            if (CrossSystem.getMacOSVersion() < 10600000) {
+            if (CrossSystem.getMacOSVersion() < 10006000) {
                 return Application.getResource("tools/mac/ffmpeg_10.5.x-/" + name + "");
             } else {
                 return Application.getResource("tools/mac/ffmpeg_10.6+/" + name + "");
