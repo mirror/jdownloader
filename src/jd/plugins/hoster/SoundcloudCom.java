@@ -57,22 +57,22 @@ public class SoundcloudCom extends PluginForHost {
         this.setConfigElements();
     }
 
-    public final static String   CLIENTID                        = "b45b1aa10f1ac2941910a7f0d10f8e28";
-    public final static String   CLIENTID_8TRACKS                = "3904229f42df3999df223f6ebf39a8fe";
+    public final static String  CLIENTID                        = "b45b1aa10f1ac2941910a7f0d10f8e28";
+    public final static String  CLIENTID_8TRACKS                = "3904229f42df3999df223f6ebf39a8fe";
     /* Another way to get final links: http://api.soundcloud.com/tracks/11111xxx_test_track_ID1111111/streams?format=json&consumer_key= */
-    public final static String   CONSUMER_KEY_MYCLOUDPLAYERS_COM = "PtMyqifCQMKLqwP0A6YQ";
-    public final static String   APP_VERSION                     = "87a698ff";
+    public final static String  CONSUMER_KEY_MYCLOUDPLAYERS_COM = "PtMyqifCQMKLqwP0A6YQ";
+    public final static String  APP_VERSION                     = "b24e36e";
 
-    private static final boolean ENABLE_TYPE_PRIVATE             = false;
+    private final boolean       ENABLE_TYPE_PRIVATE             = false;
 
-    private static final String  CUSTOM_DATE                     = "CUSTOM_DATE";
-    private static final String  CUSTOM_FILENAME_2               = "CUSTOM_FILENAME_2";
-    private static final String  GRAB500THUMB                    = "GRAB500THUMB";
-    private static final String  GRABORIGINALTHUMB               = "GRABORIGINALTHUMB";
-    private static final String  CUSTOM_PACKAGENAME              = "CUSTOM_PACKAGENAME";
-    private static final String  SETS_ADD_POSITION_TO_FILENAME   = "SETS_ADD_POSITION_TO_FILENAME";
+    private final static String CUSTOM_DATE                     = "CUSTOM_DATE";
+    private final static String CUSTOM_FILENAME_2               = "CUSTOM_FILENAME_2";
+    private final String        GRAB500THUMB                    = "GRAB500THUMB";
+    private final String        GRABORIGINALTHUMB               = "GRABORIGINALTHUMB";
+    private final String        CUSTOM_PACKAGENAME              = "CUSTOM_PACKAGENAME";
+    private final static String SETS_ADD_POSITION_TO_FILENAME   = "SETS_ADD_POSITION_TO_FILENAME";
 
-    private static boolean       pluginloaded                    = false;
+    private static boolean      pluginloaded                    = false;
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("soundclouddecrypted", "soundcloud"));
@@ -109,7 +109,8 @@ public class SoundcloudCom extends PluginForHost {
             }
         }
         br.getPage("https://api.sndcdn.com/resolve?url=" + Encoding.urlEncode(parameter.getDownloadURL()) + "&_status_code_map%5B302%5D=200&_status_format=json&client_id=" + CLIENTID + "&app_version=" + APP_VERSION);
-        final String sid = br.getRegex("<id type=\"integer\">(\\d+)</id>").getMatch(0);
+        // this is poor way to determine the track id.
+        final String sid = br.getRegex("<kind>track</kind>\\s*<id type=\"integer\">(\\d+)</id>").getMatch(0);
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -179,7 +180,7 @@ public class SoundcloudCom extends PluginForHost {
             link.setProperty("directlink", Property.NULL);
             throw new PluginException(LinkStatus.ERROR_FATAL, "Not downloadable");
         } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
