@@ -207,7 +207,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     }
 
     public boolean isEnabled() {
-        if (System.getProperty("statsmanager").equalsIgnoreCase("true")) {
+        String dev = System.getProperty("statsmanager");
+        if (dev != null && dev.equalsIgnoreCase("true")) {
             return true;
         }
         if (!Application.isJared(StatsManager.class)) {
