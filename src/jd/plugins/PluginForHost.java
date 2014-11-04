@@ -233,13 +233,11 @@ public abstract class PluginForHost extends Plugin {
             logger.severe("Captcha Address nicht definiert");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        File captchaFile = null;
-
-        captchaFile = getLocalCaptchaFile();
-        Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAddress));
+        final File captchaFile = getLocalCaptchaFile();
+        final Browser brc = br.cloneBrowser();
+        brc.getDownload(captchaFile, captchaAddress);
         final String captchaCode = getCaptchaCode(method, captchaFile, downloadLink);
         return captchaCode;
-
     }
 
     protected String getCaptchaCode(final File captchaFile, final DownloadLink downloadLink) throws Exception {
@@ -296,7 +294,6 @@ public abstract class PluginForHost extends Plugin {
         progress.setProgressSource(this);
         progress.setDisplayInProgressColumnEnabled(false);
         this.hasCaptchas = true;
-
         try {
             link.addPluginProgress(progress);
             String orgCaptchaImage = link.getStringProperty("orgCaptchaFile", null);

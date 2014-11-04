@@ -373,12 +373,12 @@ public abstract class PluginForDecrypt extends Plugin {
             logger.severe("Captcha Adresse nicht definiert");
             new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        File captchaFile = this.getLocalCaptchaFile();
+        final File captchaFile = this.getLocalCaptchaFile();
         try {
-            Browser brc = br.cloneBrowser();
+            final Browser brc = br.cloneBrowser();
             brc.getDownload(captchaFile, captchaAddress);
             // erst im Nachhinein das der Bilddownload nicht gestört wird
-            String captchaCode = getCaptchaCode(method, captchaFile, param);
+            final String captchaCode = getCaptchaCode(method, captchaFile, param);
             return captchaCode;
         } finally {
             if (captchaFile != null) {
@@ -401,7 +401,6 @@ public abstract class PluginForDecrypt extends Plugin {
             if (lJob != null) {
                 lJob.invalidate();
             }
-
         } finally {
             lastSolverJob = null;
         }
