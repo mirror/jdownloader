@@ -155,7 +155,7 @@ public class MyJDownloaderConnectThread extends Thread {
         return logger;
     }
 
-    private AtomicLong                                             syncMark        = new AtomicLong(-1);
+    private final AtomicLong                                       syncMark        = new AtomicLong(Integer.MIN_VALUE);
     private ScheduledExecutorService                               THREADQUEUE     = DelayedRunnable.getNewScheduledExecutorService();
     private final DeviceConnectionHelper[]                         deviceConnectionHelper;
     private int                                                    helperIndex     = 0;
@@ -401,6 +401,9 @@ public class MyJDownloaderConnectThread extends Thread {
                         if (connected.get() == MyJDownloaderConnectionStatus.UNCONNECTED) {
                             setConnected(MyJDownloaderConnectionStatus.PENDING);
                         }
+                        if (syncMark.get() == Integer.MIN_VALUE) {
+                            sync(0, currentSession);
+                        }
                         MyJDownloaderConnectionRequest request = null;
                         boolean waitForResponse = false;
                         /* make sure we have at least one alive thread */
@@ -572,7 +575,7 @@ public class MyJDownloaderConnectThread extends Thread {
                         logger.log(e);
                     }
                     if (failed) {
-                        MyJDownloaderConnectThread.this.syncMark.compareAndSet(nextSyncMark, 0);
+                        MyJDownloaderConnectThread.this.syncMark.compareAndSet(nextSyncMark, Integer.MIN_VALUE);
                     }
                 }
             });
