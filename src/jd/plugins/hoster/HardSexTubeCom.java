@@ -62,7 +62,7 @@ public class HardSexTubeCom extends PluginForHost {
         if (!br.getURL().contains("/video/") || br.getRedirectLocation() != null || br.getHttpConnection().getResponseCode() == 302 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<meta itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
+        String filename = br.getRegex("<title>Hardsextube: ([^<>\"]*?)</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<h1 class=\"title-block\">([^<>\"]*?)</h1>").getMatch(0);
         }
