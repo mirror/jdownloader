@@ -165,6 +165,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
                         URLConnectionAdapter con = br.openRequestConnection(req);
                         String red = br.loadConnection(con).getHtmlCode();
+                        logger.info(con + "");
                         red = JSonStorage.restoreFromString(red, new TypeRef<String>() {
                         });
 
