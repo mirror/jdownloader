@@ -78,7 +78,7 @@ public abstract class Plugin implements ActionListener {
     /* after 0.95xx */
     protected Logger                                              logger              = LogController.TRASH;
 
-    protected CopyOnWriteArrayList<File>                          cleanUpCaptchaFiles = new CopyOnWriteArrayList<File>();
+    protected final CopyOnWriteArrayList<File>                    cleanUpCaptchaFiles = new CopyOnWriteArrayList<File>();
     private static final HashMap<String, HashMap<String, Object>> CACHE               = new HashMap<String, HashMap<String, Object>>();
 
     public void setLogger(Logger logger) {
