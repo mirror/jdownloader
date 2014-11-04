@@ -16,15 +16,24 @@
 
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -40,21 +49,47 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.fc2.com" }, urls = { "http://video\\.fc2\\.com(/flv2\\.swf\\?i=|(/[a-z]{2})?(/a)?/content/)\\w+" }, flags = { 2 })
 public class VideoFCTwoCom extends PluginForHost {
 
-    private static final String MAINPAGE = "http://video.fc2.com/";
+    private final String  cookieHost = "fc2.com";
 
-    private static Object       LOCK     = new Object();
-    private String              finalURL = null;
-    private boolean             loggedin = false;
+    private static Object LOCK       = new Object();
+    private String        finalURL   = null;
 
     public VideoFCTwoCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://fc2.com");
+        setConfigElements();
+    }
+
+    private final boolean fastLinkCheck_default = true;
+    private final String  fastLinkCheck         = "fastLinkCheck";
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), fastLinkCheck, JDL.L("plugins.hoster.videofcttwocom.fastlinkcheck", "Force secure communication requests via 'https' over SSL/TLS")).setDefaultValue(fastLinkCheck_default));
+    }
+
+    private static final AtomicReference<String> userAgent = new AtomicReference<String>(null);
+
+    private Browser prepareBrowser(Browser prepBr) {
+        if (prepBr == null) {
+            prepBr = new Browser();
+        }
+        if (userAgent.get() == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            userAgent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+        }
+        prepBr.getHeaders().put("User-Agent", userAgent.get());
+        prepBr.setCookie(cookieHost, "language", "en");
+        prepBr.setCustomCharset("utf-8");
+        return prepBr;
     }
 
     @Override
@@ -64,6 +99,11 @@ public class VideoFCTwoCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
+        return 4;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
         return 4;
     }
 
@@ -80,6 +120,7 @@ public class VideoFCTwoCom extends PluginForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
+                prepareBrowser(br);
                 Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -91,14 +132,15 @@ public class VideoFCTwoCom extends PluginForHost {
                         for (Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             String key = cookieEntry.getKey();
                             String value = cookieEntry.getValue();
-                            this.br.setCookie(MAINPAGE, key, value);
+                            this.br.setCookie(cookieHost, key, value);
                         }
                         return;
                     }
                 }
-                br = new Browser();
+                // for debug purposes
+                // br = prepareBrowser(new Browser());
+                final boolean ifr = br.isFollowingRedirects();
                 br.setFollowRedirects(true);
-                br.setCookie(br.getHost(), "language", "en");
                 br.getPage("http://fc2.com/en/login.php");
                 br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
                 br.postPage("https://secure.id.fc2.com/index.php?mode=login&switch_language=en", "email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&image.x=" + (int) (200 * Math.random() + 1) + "&image.y=" + (int) (47 * Math.random() + 1) + "&image=Log+in&keep_login=1&done=video");
@@ -109,17 +151,14 @@ public class VideoFCTwoCom extends PluginForHost {
                 br.getPage(loginDone);
                 // Save cookies
                 HashMap<String, String> cookies = new HashMap<String, String>();
-                Cookies add = this.br.getCookies(MAINPAGE);
+                Cookies add = this.br.getCookies(cookieHost);
                 for (Cookie c : add.getCookies()) {
-                    // if ("login_status".equals(c.getKey()) || "secure_check_fc2".equals(c.getKey()) || "Max-Age".equals(c.getKey()) ||
-                    // "glgd_val".equals(c.getKey())) {
-                    // continue;
-                    // }
                     cookies.put(c.getKey(), c.getValue());
                 }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
+                br.setFollowRedirects(ifr);
             } catch (PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
@@ -148,11 +187,14 @@ public class VideoFCTwoCom extends PluginForHost {
         if (expire != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yy", null));
             ai.setStatus("Premium User");
+            account.setProperty("free", false);
         } else if (br.containsHTML(">Paying Member</span>|>Type</li><li[^>]*>Premium Member</li>")) {
             ai.setStatus("Premium User");
+            account.setProperty("free", false);
         } else if (br.containsHTML("Free Member")) {
             ai.setValidUntil(-1);
             ai.setStatus("Registered (free) User");
+            account.setProperty("free", true);
         } else {
             account.setValid(false);
             return ai;
@@ -162,7 +204,7 @@ public class VideoFCTwoCom extends PluginForHost {
         return ai;
     }
 
-    private void dofree(DownloadLink downloadLink) throws Exception {
+    private void dofree(final DownloadLink downloadLink, final Account account) throws Exception {
         String error = br.getRegex("^err_code=(\\d+)").getMatch(0);
         if (error != null) {
             switch (Integer.parseInt(error)) {
@@ -188,13 +230,18 @@ public class VideoFCTwoCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (onlyForPremiumUsers(downloadLink)) {
+            if (account != null && !account.getBooleanProperty("free", false)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "premium only requirement, when premium account has been used!");
+            }
             if (downloadLink.getDownloadSize() > 0) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This is a sample video. Full video is only downloadable for Premium Users!");
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for Premium Users!");
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalURL, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalURL, true, -4);
+        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && requestHeadersHasKeyNValueContains(br, "server", "nginx")) {
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Service unavailable. Try again later.", 5 * 60 * 1000l);
+        } else if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The dllink seems not to be a file!");
             br.followConnection();
             if (br.containsHTML("not found")) {
@@ -208,23 +255,62 @@ public class VideoFCTwoCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dofree(downloadLink);
+        dofree(downloadLink, null);
     }
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        br = new Browser();
         login(account, false);
-        loggedin = true;
-        requestFileInformation(downloadLink);
-        dofree(downloadLink);
+        requestFileInformation(downloadLink, account);
+        dofree(downloadLink, account);
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        return requestFileInformation(downloadLink, null);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink, final Account iAccount) throws Exception {
+        Account account = iAccount;
         br.setFollowRedirects(true);
-        br.setCustomCharset("utf-8");
-        br.setCookie(br.getHost(), "language", "en");
         String dllink = downloadLink.getDownloadURL();
+        // this comes first, due to subdoman issues and cached cookie etc.
+        if (account == null) {
+            // check for accounts
+            ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
+            if (accounts != null && accounts.size() != 0) {
+                // lets sort, premium over non premium
+                Collections.sort(accounts, new Comparator<Account>() {
+                    @Override
+                    public int compare(final Account o1, final Account o2) {
+                        final int io1 = o1.getBooleanProperty("free", false) ? 0 : 1;
+                        final int io2 = o2.getBooleanProperty("free", false) ? 0 : 1;
+                        return io1 <= io2 ? io1 : io2;
+                    }
+                });
+                final Iterator<Account> it = accounts.iterator();
+                while (it.hasNext()) {
+                    Account n = it.next();
+                    if (n.isEnabled() && n.isValid()) {
+                        try {
+                            // because this site uses subdomain it causes all sorts of issues!
+                            login(n, false);
+                            account = n;
+                            break;
+                        } catch (final PluginException p) {
+                            if (it.hasNext()) {
+                                br = new Browser();
+                                continue;
+                            }
+                        }
+                    }
+                }
+            } else {
+                // no accounts prepareBrowser wouldn't have happened!
+                prepareBrowser(br);
+            }
+        }
         br.getPage(dllink);
         String filename = br.getRegex("<title>.*?◎?(.*?) -").getMatch(0);
         if (filename == null) {
@@ -260,12 +346,14 @@ public class VideoFCTwoCom extends PluginForHost {
         final String from = br.getRegex("\\&from=(\\d+)\\&").getMatch(0);
         final String tk = br.getRegex("\\&tk=([A-Za-z0-9]*?)\\&").getMatch(0);
         final String version = "WIN%2015%2C0%2C0%2C189";
-        final String encodedlink = Encoding.urlEncode(dllink).replaceAll("\\.", "%2E");
-        if (loggedin) {
+        final String encodedlink = Encoding.urlEncode(br.getURL()).replaceAll("\\.", "%2E").replaceFirst("%2F$", "");
+        br.getHeaders().put("Accept", "*/*");
+        br.getHeaders().put("Accept-Charset", null);
+        if (account != null) {
             if (tk == null || from == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getPage("/ginfo_payment.php?mimi=" + getMimi(upid) + "&upid=" + upid + "&gk=" + gk + "&tk=" + tk + "&from=" + from + "&href=" + encodedlink + "&lang=en&v=" + upid + "&fversion=" + version + "&otag=0");
+            br.getPage("/ginfo_payment.php?mimi=" + getMimi(upid) + "&upid=" + upid + "&gk=" + gk + "&tk=" + tk + "&from=" + from + "&href=" + encodedlink + "&lang=en%2F&v=" + upid + "&fversion=" + version + "&otag=0");
         } else {
             br.getPage("/ginfo.php?otag=0&tk=null&href=" + encodedlink + "&upid=" + upid + "&gk=" + gk + "&fversion=" + version + "&playid=null&lang=en&playlistid=null&mimi=" + getMimi(upid) + "&v=" + upid);
         }
@@ -306,19 +394,24 @@ public class VideoFCTwoCom extends PluginForHost {
             logger.warning("video.fc2.com: Final downloadlink equals null. Error code: " + error);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        Browser br2 = br.cloneBrowser();
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(finalURL);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        } finally {
+        if (!this.getPluginConfig().getBooleanProperty(fastLinkCheck, fastLinkCheck_default)) {
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (Throwable e) {
+                if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
+                    con = br.openHeadConnection(finalURL);
+                } else {
+                    con = br.openGetConnection(finalURL);
+                }
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
         }
         return AvailableStatus.TRUE;
@@ -367,6 +460,21 @@ public class VideoFCTwoCom extends PluginForHost {
 
     private boolean onlyForPremiumUsers(DownloadLink downloadLink) {
         return downloadLink.getBooleanProperty("ONLYFORPREMIUM", false);
+    }
+
+    /**
+     * If import Browser request headerfield contains key of k && key value of v
+     *
+     * @author raztoki
+     * */
+    private boolean requestHeadersHasKeyNValueContains(final Browser ibr, final String k, final String v) {
+        if (k == null || v == null || ibr == null || ibr.getHttpConnection() == null) {
+            return false;
+        }
+        if (ibr.getHttpConnection().getHeaderField(k) != null && ibr.getHttpConnection().getHeaderField(k).toLowerCase(Locale.ENGLISH).contains(v.toLowerCase(Locale.ENGLISH))) {
+            return true;
+        }
+        return false;
     }
 
     @Override
