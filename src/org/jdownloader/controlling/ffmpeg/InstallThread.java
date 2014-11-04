@@ -8,6 +8,7 @@ import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.os.MacOsXVersion;
 import org.jdownloader.updatev2.UpdateController;
 
 public class InstallThread extends Thread {
@@ -100,7 +101,7 @@ public class InstallThread extends Thread {
             }
         } else if (CrossSystem.isMac()) {
             // different ffmpeg version for 10.6-
-            if (CrossSystem.getMacOSVersion() < 10006000) {
+            if (CrossSystem.getMacOSVersion() < MacOsXVersion.MAC_OSX_10p6_SNOW_LEOPARD.getVersionID()) {
                 return Application.getResource("tools/mac/ffmpeg_10.5.x-/" + name + "");
             } else {
                 return Application.getResource("tools/mac/ffmpeg_10.6+/" + name + "");
@@ -121,7 +122,7 @@ public class InstallThread extends Thread {
         switch (CrossSystem.getOSFamily()) {
 
         case MAC:
-            if (CrossSystem.getMacOSVersion() < 10006000) {
+            if (CrossSystem.getMacOSVersion() < MacOsXVersion.MAC_OSX_10p6_SNOW_LEOPARD.getVersionID()) {
                 return FFMPEG_10_5_X;
             } else {
                 return FFMPEG_10_6;
