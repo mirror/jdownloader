@@ -69,7 +69,7 @@ public class AdltDlCom extends PluginForDecrypt {
         if (streamLink != null) {
             decryptedLinks.add(createDownloadlink(streamLink));
         }
-        final String linksText = br.getRegex("<div class=\\'links\\'>(.*?)<div id=\"comment\\-section\"").getMatch(0);
+        final String linksText = br.getRegex("<div class=\\'links\\'>(.*?)(?:<div id=\"comment\\-section\"|<!--//entry-content)").getMatch(0);
         if (linksText == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
