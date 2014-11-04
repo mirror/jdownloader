@@ -121,7 +121,7 @@ public class InstallThread extends Thread {
         switch (CrossSystem.getOSFamily()) {
 
         case MAC:
-            if (CrossSystem.getMacOSVersion() < 10600000) {
+            if (CrossSystem.getMacOSVersion() < 10006000) {
                 return FFMPEG_10_5_X;
             } else {
                 return FFMPEG_10_6;
