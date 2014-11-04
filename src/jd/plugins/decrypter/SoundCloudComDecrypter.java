@@ -27,6 +27,7 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -53,6 +54,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     private static final String     TYPE_INVALID          = "https?://(www\\.)?soundcloud\\.com/(you/|tour|signup|logout|login|premium|messages|settings|imprint|community\\-guidelines|videos|terms\\-of\\-use|sounds|jobs|press|mobile|#?search|upload|people|dashboard|#/).*?";
     private static final String     TYPE_API_PLAYLIST     = "https?://(www\\.|m\\.)?api\\.soundcloud\\.com/playlists/\\d+\\?secret_token=[A-Za-z0-9\\-_]+";
     private static final String     TYPE_API_TRACK        = "https?://(www\\.|m\\.)?api\\.soundcloud\\.com/tracks/\\d+(\\?secret_token=[A-Za-z0-9\\-_]+)?";
+    private static final String     TYPE_USER_SET         = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/sets/[A-Za-z0-9\\-_]+";
     private static final String     TYPE_USER_LIKES       = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/likes";
     private static final String     TYPE_GROUPS           = "https?://(www\\.)?soundcloud\\.com/groups/[A-Za-z0-9\\-_]+";
 
@@ -120,7 +122,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             final boolean decryptList = isList();
             if (decryptList) {
                 /* For sets ("/set/" links) */
-                if (parameter.contains("/sets")) {
+                if (parameter.matches(TYPE_USER_SET)) {
                     decryptSet();
                 } else if (parameter.matches(TYPE_USER_LIKES)) {
                     decryptLikes();
@@ -179,6 +181,14 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
             throw e;
+        } catch (final BrowserException e) {
+            logger.info("Link offline (BrowserException): " + parameter);
+            final DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/offlinedecrypted/" + System.currentTimeMillis() + new Random().nextInt(100000));
+            dl.setAvailable(false);
+            dl.setProperty("offline", true);
+            dl.setFinalFileName(new Regex(parameter, "soundcloud\\.com/(.+)").getMatch(0));
+            decryptedLinks.add(dl);
+            return decryptedLinks;
         }
         return decryptedLinks;
     }

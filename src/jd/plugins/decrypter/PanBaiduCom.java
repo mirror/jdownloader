@@ -76,7 +76,7 @@ public class PanBaiduCom extends PluginForDecrypt {
         shareid = br.getRegex("yunData.SHARE_ID = \"(\\d+)\";").getMatch(0);
         JDUtilities.getPluginForHost("pan.baidu.com");
 
-        if (br.getURL().matches(TYPE_FOLDER_NORMAL_PASSWORD_PROTECTED)) {
+        if (br.getURL().contains("/share/init")) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             if (parameter.matches(TYPE_FOLDER_GENERAL)) {
                 uk = new Regex(parameter, "uk=(\\d+)").getMatch(0);
