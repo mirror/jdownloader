@@ -126,23 +126,11 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     }
 
-    private boolean logUploadEnabled        = true;
-
-    private double  captchaUploadPercentage = 0.95d;
-
-    public void setCaptchaUploadPercentage(double captchaUploadPercentage) {
-        this.captchaUploadPercentage = captchaUploadPercentage;
-    }
-
-    public void setLogUploadEnabled(boolean logUploadEnabled) {
-        this.logUploadEnabled = logUploadEnabled;
-    }
-
     public void logCaptcha(SolverJob<?> job) {
-        if (!logUploadEnabled) {
+        if (!config.isCaptchaUploadEnabled()) {
             return;
         }
-        if (Math.random() < captchaUploadPercentage) {
+        if (Math.random() < config.getCaptchaUploadPercentage()) {
             return;
         }
         if (job.getChallenge() instanceof BasicCaptchaChallenge) {
@@ -155,7 +143,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
                 @Override
                 public void send(Browser br) {
-                    if (!logUploadEnabled) {
+                    if (!config.isCaptchaUploadEnabled()) {
                         return;
                     }
                     String url = "http://update3.jdownloader.org/jdserv/captcha/upload";
