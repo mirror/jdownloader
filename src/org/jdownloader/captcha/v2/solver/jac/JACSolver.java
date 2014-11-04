@@ -179,7 +179,7 @@ public class JACSolver extends ChallengeSolver<String> implements ChallengeRespo
 
                     // we need to invert th
                     job.addAnswer(new JACCaptchaResponse(captchaChallenge, this, captchaCode, trust, orgTrust));
-                    // StatsManager.I().logJac(captchaChallenge.getPlugin(), captchaChallenge.getTypeID(), trust);
+
                 }
 
             }

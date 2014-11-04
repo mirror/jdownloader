@@ -157,6 +157,7 @@ public class ChallengeResponseController {
             }
             logger.info("All Responses: " + job.getResponses());
             logger.info("Solving Done. Result: " + job.getResponse());
+
             return job;
         } catch (InterruptedException e) { // for example downloads have been stopped
             job.kill();

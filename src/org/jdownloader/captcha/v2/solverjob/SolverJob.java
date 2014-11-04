@@ -15,7 +15,9 @@ import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
+import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.ChallengeSolver;
+import org.jdownloader.statistics.StatsManager;
 
 public class SolverJob<T> {
 
@@ -308,6 +310,102 @@ public class SolverJob<T> {
     public Collection<ChallengeSolver<T>> getSolverList() {
         synchronized (solverList) {
             return Collections.unmodifiableCollection(solverList);
+        }
+    }
+
+    /**
+     * call to tell the job, that the result has been correct
+     */
+    public void validate() {
+        StatsManager.I().logCaptcha(this);
+        ResponseList<T> usedResponseList = getResponse();
+        AbstractResponse<?> usedResponse = usedResponseList.get(0);
+
+        for (AbstractResponse<T> response : usedResponseList) {
+            if (response.getSolver() instanceof ChallengeResponseValidation) {
+                ChallengeResponseValidation validation = (ChallengeResponseValidation) response.getSolver();
+                try {
+                    validation.setValid(response, this);
+                } catch (final Throwable e) {
+                    LogSource.exception(getLogger(), e);
+                }
+                if (usedResponse != response) {
+                    try {
+                        validation.setUnused(response, this);
+                    } catch (final Throwable e) {
+                        LogSource.exception(getLogger(), e);
+                    }
+                }
+            }
+
+        }
+        for (ResponseList<T> responseList : this.getResponses()) {
+            if (responseList == usedResponseList) {
+                continue;
+            }
+            for (AbstractResponse<T> response : responseList) {
+                if (response.getSolver() instanceof ChallengeResponseValidation) {
+
+                    ChallengeResponseValidation validation = (ChallengeResponseValidation) response.getSolver();
+                    try {
+                        validation.setUnused(response, this);
+                    } catch (final Throwable e) {
+                        LogSource.exception(getLogger(), e);
+                    }
+                    try {
+                        validation.setInvalid(response, this);
+                    } catch (final Throwable e) {
+                        LogSource.exception(getLogger(), e);
+                    }
+
+                }
+            }
+        }
+    }
+
+    /**
+     * call to tell the job, that the result has been INCORRECT
+     */
+
+    public void invalidate() {
+        ResponseList<T> usedResponseList = this.getResponse();
+        AbstractResponse<?> usedResponse = usedResponseList.get(0);
+
+        for (AbstractResponse<T> response : usedResponseList) {
+            if (response.getSolver() instanceof ChallengeResponseValidation) {
+                ChallengeResponseValidation validation = (ChallengeResponseValidation) response.getSolver();
+                try {
+                    validation.setInvalid(response, this);
+                } catch (final Throwable e) {
+                    LogSource.exception(getLogger(), e);
+                }
+
+                if (usedResponse != response) {
+                    try {
+                        validation.setUnused(response, this);
+                    } catch (final Throwable e) {
+                        LogSource.exception(getLogger(), e);
+                    }
+                }
+            }
+
+        }
+        for (ResponseList<T> responseList : this.getResponses()) {
+            if (responseList == usedResponseList) {
+                continue;
+            }
+            for (AbstractResponse<T> response : responseList) {
+                if (response.getSolver() instanceof ChallengeResponseValidation) {
+
+                    ChallengeResponseValidation validation = (ChallengeResponseValidation) response.getSolver();
+                    try {
+                        validation.setUnused(response, this);
+                    } catch (final Throwable e) {
+                        LogSource.exception(getLogger(), e);
+                    }
+
+                }
+            }
         }
     }
 

@@ -43,13 +43,10 @@ import org.jdownloader.captcha.blacklist.BlockAllCrawlerCaptchasEntry;
 import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByHost;
 import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByPackage;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
-import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
-import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
-import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
@@ -57,7 +54,7 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Links entschlüsseln können
- *
+ * 
  * @author astaldo
  */
 public abstract class PluginForDecrypt extends Plugin {
@@ -140,7 +137,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * return how many Instances of this PluginForDecrypt may crawl concurrently
-     *
+     * 
      * @return
      */
     public int getMaxConcurrentProcessingInstances() {
@@ -149,7 +146,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * Diese Methode entschlüsselt Links.
-     *
+     * 
      * @param cryptedLinks
      *            Ein Vector, mit jeweils einem verschlüsseltem Link. Die einzelnen verschlüsselten Links werden aufgrund des Patterns
      *            {@link jd.plugins.Plugin#getSupportedLinks() getSupportedLinks()} herausgefiltert
@@ -161,7 +158,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * creates a offline link.
-     *
+     * 
      * @param link
      * @return
      * @since JD2
@@ -173,7 +170,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * creates a offline link, with logger and comment message.
-     *
+     * 
      * @param link
      * @param message
      * @return
@@ -186,7 +183,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * creates a offline link, with filename, with logger and comment message.
-     *
+     * 
      * @param link
      * @param filename
      * @param message
@@ -234,10 +231,10 @@ public abstract class PluginForDecrypt extends Plugin {
     /**
      * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden durchlaufen. Der letzte step muss als parameter einen
      * Vector<String> mit den decoded Links setzen
-     *
+     * 
      * @param cryptedLink
      *            Ein einzelner verschlüsselter Link
-     *
+     * 
      * @return Ein Vector mit Klartext-links
      */
     public ArrayList<DownloadLink> decryptLink(CrawledLink source) {
@@ -334,9 +331,9 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * use this to process decrypted links while the decrypter itself is still running
-     *
+     * 
      * NOTE: if you use this, please put it in try{}catch(Throwable) as this function is ONLY available in>09581
-     *
+     * 
      * @param links
      */
     protected void distribute(DownloadLink... links) {
@@ -396,19 +393,11 @@ public abstract class PluginForDecrypt extends Plugin {
 
     public void invalidateLastChallengeResponse() {
         try {
-            ResponseList<?> lLastChallengeResponse = lastSolverJob.getChallenge().getResult();
-            if (lLastChallengeResponse != null) {
-                /* TODO: inform other solver that their response was not used */
-                AbstractResponse<?> response = lLastChallengeResponse.get(0);
-                if (response.getSolver() instanceof ChallengeResponseValidation) {
-                    ChallengeResponseValidation validation = (ChallengeResponseValidation) response.getSolver();
-                    try {
-                        validation.setInvalid(response, lastSolverJob);
-                    } catch (final Throwable e) {
-                        LogSource.exception(getLogger(), e);
-                    }
-                }
+            SolverJob<?> lJob = lastSolverJob;
+            if (lJob != null) {
+                lJob.invalidate();
             }
+
         } finally {
             lastSolverJob = null;
         }
@@ -422,19 +411,7 @@ public abstract class PluginForDecrypt extends Plugin {
         try {
             final SolverJob<?> lsj = this.lastSolverJob;
             if (lsj != null) {
-                ResponseList<?> lLastChallengeResponse = lsj.getChallenge().getResult();
-                if (lLastChallengeResponse != null) {
-                    /* TODO: inform other solver that their response was not used */
-                    AbstractResponse<?> response = lLastChallengeResponse.get(0);
-                    if (response.getSolver() instanceof ChallengeResponseValidation) {
-                        ChallengeResponseValidation validation = (ChallengeResponseValidation) response.getSolver();
-                        try {
-                            validation.setValid(response, lastSolverJob);
-                        } catch (final Throwable e) {
-                            LogSource.exception(getLogger(), e);
-                        }
-                    }
-                }
+                lsj.validate();
             }
         } finally {
             lastSolverJob = null;
@@ -446,7 +423,7 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     /**
-     *
+     * 
      * @param method
      *            Method name (name of the captcha method)
      * @param file
@@ -577,7 +554,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * Can be overridden to show the current status for example in captcha dialog
-     *
+     * 
      * @return
      */
     public String getCrawlerStatusString() {
@@ -590,7 +567,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * DO not use in Plugins for old 09581 Stable or try/catch
-     *
+     * 
      * @return
      */
     public boolean isAbort() {
