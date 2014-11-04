@@ -60,7 +60,8 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
             main.setName(PARAMETER);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.postPage("https://cloud.mail.ru/api/v2/batch", "files=" + id + "&batch=%5B%7B%22method%22%3A%22folder%2Ftree%22%7D%2C%7B%22method%22%3A%22folder%22%7D%5D&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&api=2&build=" + BUILD);
-            if (br.containsHTML("\"status\":400")) {
+            /* Offline|Empty folder */
+            if (br.containsHTML("\"status\":400|\"count\":\\{\"folders\":0,\"files\":0\\}")) {
                 main.setFinalFileName(id);
                 main.setAvailable(false);
                 main.setProperty("offline", true);

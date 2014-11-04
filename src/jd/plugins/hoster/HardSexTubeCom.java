@@ -72,7 +72,7 @@ public class HardSexTubeCom extends PluginForHost {
         final boolean normalViaSite = false;
         if (normalViaSite) {
             final String name = br.getRegex("\\&flvserver=(http://[^<>\"]*?)\\&").getMatch(0);
-            final String path = br.getRegex("\\&flv=(/content[^<>\"]*?)\\&start=").getMatch(0);
+            final String path = br.getRegex("\\&flv=(/content[^<>\"]*?)\\&").getMatch(0);
             if (name == null || path == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -86,6 +86,8 @@ public class HardSexTubeCom extends PluginForHost {
             final String redirect = br.getRedirectLocation();
             if (redirect == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if (redirect.contains("/categories")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String name = new Regex(redirect, "\\&flvserver=(http://[^<>\"]*?)\\&").getMatch(0);
             final String path = new Regex(redirect, "\\&flv=(/embed[^<>\"]*?)\\&start=").getMatch(0);

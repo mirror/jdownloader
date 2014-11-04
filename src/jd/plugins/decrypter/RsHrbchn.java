@@ -47,12 +47,21 @@ public class RsHrbchn extends PluginForDecrypt {
         passwords.add("www.hoerbuch.in");
         passwords.add("www.hoerbuch.us");
         br.setFollowRedirects(false);
-        br.getHeaders().put("User-Agent", ua);
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:33.0) Gecko/20100101 Firefox/33.0");
         String parameter = param.toString().replace("hoerbuch.in", "hoerbuch.us");
         br.getPage("http://" + current_domain + "/wp/");
         br.getPage(parameter);
         if (parameter.matches(FOLDER_REDIRECTLINK)) {
-            final String newlink = "http://hoerbuch.us/protection/folder_" + new Regex(parameter, "(\\d+)$").getMatch(0) + ".html";
+            br.setFollowRedirects(true);
+            if (br.getRedirectLocation() != null) {
+                br.getPage(br.getRedirectLocation());
+            }
+            final String newid = new Regex(br.getURL(), "folder_(\\d+)\\.html").getMatch(0);
+            if (newid == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final String newlink = "http://hoerbuch.us/protection/folder_" + newid + ".html";
             parameter = newlink;
             br.getPage(newlink);
         }
