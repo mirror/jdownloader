@@ -72,6 +72,7 @@ import org.appwork.swing.action.BasicAction;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
+import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.IO.SYNC;
 import org.appwork.utils.ProgressFeedback;
@@ -96,15 +97,11 @@ import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByHost;
 import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByLink;
 import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByPackage;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
-import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
-import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
-import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
-import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.UrlProtection;
 import org.jdownloader.controlling.ffmpeg.FFMpegInstallProgress;
 import org.jdownloader.controlling.ffmpeg.FFmpeg;
@@ -143,26 +140,26 @@ import org.jdownloader.updatev2.UpdateController;
  * @author astaldo
  */
 public abstract class PluginForHost extends Plugin {
-    private static final String           COPY_MOVE_FILE        = "CopyMoveFile";
+    private static final String           COPY_MOVE_FILE = "CopyMoveFile";
 
-    private static Pattern[]              PATTERNS              = new Pattern[] {
+    private static Pattern[]              PATTERNS       = new Pattern[] {
 
-                                                                /**
-                                                                 * these patterns should split filename and fileextension (extension must
-                                                                 * include the point)
-                                                                 */
-                                                                // multipart rar archives
+                                                         /**
+                                                          * these patterns should split filename and fileextension (extension must include
+                                                          * the point)
+                                                          */
+                                                         // multipart rar archives
             Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
             // normal files with extension
             Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
 
-    private LazyHostPlugin                lazyP                 = null;
+    private LazyHostPlugin                lazyP          = null;
     /**
      * Is true if the user has answered a captcha challenge. does not say anything whether if the answer was correct or not
      */
-    protected transient SolverJob<String> lastSolverJob = null;
+    protected transient SolverJob<String> lastSolverJob  = null;
 
-    private boolean                       hasCaptchas           = false;
+    private boolean                       hasCaptchas    = false;
 
     public void setLastSolverJob(SolverJob<String> job) {
         this.lastSolverJob = job;
@@ -237,14 +234,12 @@ public abstract class PluginForHost extends Plugin {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         File captchaFile = null;
-        try {
-            captchaFile = getLocalCaptchaFile();
-            Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAddress));
-            final String captchaCode = getCaptchaCode(method, captchaFile, downloadLink);
-            return captchaCode;
-        } finally {
-            FileCreationManager.getInstance().delete(captchaFile, null);
-        }
+
+        captchaFile = getLocalCaptchaFile();
+        Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAddress));
+        final String captchaCode = getCaptchaCode(method, captchaFile, downloadLink);
+        return captchaCode;
+
     }
 
     protected String getCaptchaCode(final File captchaFile, final DownloadLink downloadLink) throws Exception {
@@ -259,46 +254,8 @@ public abstract class PluginForHost extends Plugin {
         try {
             SolverJob<String> lJob = lastSolverJob;
             if (lJob != null) {
-                /* TODO: inform other solver that their response was not used */
-                ResponseList<String> usedResponseList = lJob.getResponse();
-                AbstractResponse<?> usedResponse = usedResponseList.get(0);
 
-                for (AbstractResponse<String> response : usedResponseList) {
-                    if (response.getSolver() instanceof ChallengeResponseValidation) {
-                        ChallengeResponseValidation validation = (ChallengeResponseValidation) response.getSolver();
-                        try {
-                            validation.setInvalid(response, lJob);
-                        } catch (final Throwable e) {
-                            LogSource.exception(getLogger(), e);
-                        }
-
-                        if (usedResponse != response) {
-                            try {
-                                validation.setUnused(response, lJob);
-                            } catch (final Throwable e) {
-                                LogSource.exception(getLogger(), e);
-                            }
-                        }
-                    }
-
-                }
-                for (ResponseList<String> responseList : lJob.getResponses()) {
-                    if (responseList == usedResponseList) {
-                        continue;
-                    }
-                    for (AbstractResponse<String> response : responseList) {
-                        if (response.getSolver() instanceof ChallengeResponseValidation) {
-
-                            ChallengeResponseValidation validation = (ChallengeResponseValidation) response.getSolver();
-                            try {
-                                validation.setUnused(response, lJob);
-                            } catch (final Throwable e) {
-                                LogSource.exception(getLogger(), e);
-                            }
-
-                        }
-                    }
-                }
+                lJob.invalidate();
             }
         } finally {
             lastSolverJob = null;
@@ -319,50 +276,8 @@ public abstract class PluginForHost extends Plugin {
         try {
             SolverJob<String> lJob = lastSolverJob;
             if (lJob != null) {
+                lJob.validate();
 
-                ResponseList<String> usedResponseList = lJob.getResponse();
-                AbstractResponse<?> usedResponse = usedResponseList.get(0);
-
-                for (AbstractResponse<String> response : usedResponseList) {
-                    if (response.getSolver() instanceof ChallengeResponseValidation) {
-                        ChallengeResponseValidation validation = (ChallengeResponseValidation) response.getSolver();
-                        try {
-                            validation.setValid(response, lJob);
-                        } catch (final Throwable e) {
-                            LogSource.exception(getLogger(), e);
-                        }
-                        if (usedResponse != response) {
-                            try {
-                                validation.setUnused(response, lJob);
-                            } catch (final Throwable e) {
-                                LogSource.exception(getLogger(), e);
-                            }
-                        }
-                    }
-
-                }
-                for (ResponseList<String> responseList : lJob.getResponses()) {
-                    if (responseList == usedResponseList) {
-                        continue;
-                    }
-                    for (AbstractResponse<String> response : responseList) {
-                        if (response.getSolver() instanceof ChallengeResponseValidation) {
-
-                            ChallengeResponseValidation validation = (ChallengeResponseValidation) response.getSolver();
-                            try {
-                                validation.setUnused(response, lJob);
-                            } catch (final Throwable e) {
-                                LogSource.exception(getLogger(), e);
-                            }
-                            try {
-                                validation.setInvalid(response, lJob);
-                            } catch (final Throwable e) {
-                                LogSource.exception(getLogger(), e);
-                            }
-
-                        }
-                    }
-                }
             }
         } finally {
             lastSolverJob = null;
@@ -381,6 +296,13 @@ public abstract class PluginForHost extends Plugin {
         progress.setProgressSource(this);
         progress.setDisplayInProgressColumnEnabled(false);
         this.hasCaptchas = true;
+
+        File copy = Application.getResource("captchas/" + method + "/" + Hash.getMD5(file) + "." + Files.getExtension(file.getName()));
+        copy.deleteOnExit();
+        copy.getParentFile().mkdirs();
+        file.renameTo(copy);
+        file.delete();
+        file = copy;
         try {
             link.addPluginProgress(progress);
             String orgCaptchaImage = link.getStringProperty("orgCaptchaFile", null);

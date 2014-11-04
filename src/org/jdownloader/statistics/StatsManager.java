@@ -1,6 +1,7 @@
 package org.jdownloader.statistics;
 
 import java.awt.Dialog.ModalityType;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -27,13 +28,18 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
+import jd.controlling.proxy.ProxyController;
 import jd.gui.swing.jdgui.DirectFeedback;
 import jd.gui.swing.jdgui.DownloadFeedBack;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.FormData;
+import jd.http.requests.PostFormDataRequest;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 
 import org.appwork.exceptions.WTFException;
@@ -66,6 +72,10 @@ import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.appwork.utils.swing.dialog.ProgressInterface;
 import org.appwork.utils.zip.ZipIOException;
 import org.appwork.utils.zip.ZipIOWriter;
+import org.jdownloader.captcha.utils.ImagePHash;
+import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
+import org.jdownloader.captcha.v2.solverjob.ResponseList;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
@@ -116,6 +126,63 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     }
 
+    private boolean logUploadEnabled = true;
+
+    public void setLogUploadEnabled(boolean logUploadEnabled) {
+        this.logUploadEnabled = logUploadEnabled;
+    }
+
+    public void logCaptcha(SolverJob<?> job) {
+        if (!logUploadEnabled) {
+            return;
+        }
+        if (job.getChallenge() instanceof BasicCaptchaChallenge) {
+            final BasicCaptchaChallenge challenge = (BasicCaptchaChallenge) job.getChallenge();
+            final File imageFile = challenge.getImageFile();
+            Plugin plg = challenge.getPlugin();
+
+            final String clazz = plg.getClass().getName();
+            log(new AbstractTrackEntry() {
+
+                @Override
+                public void send(Browser br) {
+                    if (!logUploadEnabled) {
+                        return;
+                    }
+                    String url = "http://update3.jdownloader.org/jdserv/captcha/upload";
+                    br.setProxySelector(ProxyController.getInstance());
+
+                    try {
+
+                        PostFormDataRequest req = (PostFormDataRequest) br.createPostFormDataRequest(url);
+                        byte[] bytes = IO.readFile(imageFile);
+                        String pHash = new ImagePHash(32, 8).getHash(new ByteArrayInputStream(bytes));
+                        req.addFormData(new FormData("0", "Data", bytes));
+                        req.addFormData(new FormData("1", Encoding.urlEncode(JSonStorage.serializeToJson(pHash))));
+                        req.addFormData(new FormData("2", Encoding.urlEncode(JSonStorage.serializeToJson(challenge.getTypeID()))));
+                        req.addFormData(new FormData("3", Encoding.urlEncode(JSonStorage.serializeToJson(clazz))));
+                        req.addFormData(new FormData("4", Encoding.urlEncode(JSonStorage.serializeToJson(Hash.getMD5(bytes)))));
+                        ResponseList<String> res = challenge.getResult();
+                        req.addFormData(new FormData("5", Encoding.urlEncode(JSonStorage.serializeToJson(res.get(0).getValue()))));
+                        req.addFormData(new FormData("6", Encoding.urlEncode(JSonStorage.serializeToJson(res.get(0).getSolver().getClass().getName()))));
+
+                        URLConnectionAdapter con = br.openRequestConnection(req);
+                        String red = br.loadConnection(con).getHtmlCode();
+                        red = JSonStorage.restoreFromString(red, new TypeRef<String>() {
+                        });
+
+                    } catch (final Exception e) {
+
+                        if (e instanceof RuntimeException) {
+                            throw (RuntimeException) e;
+                        }
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+        }
+    }
+
     /**
      * Create a new instance of StatsManager. This is a singleton class. Access the only existing instance by using {@link #link()}.
      */
@@ -143,6 +210,9 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     }
 
     public boolean isEnabled() {
+        if (System.getProperty("statsmanager").equalsIgnoreCase("true")) {
+            return true;
+        }
         if (!Application.isJared(StatsManager.class)) {
             return false;
         }
