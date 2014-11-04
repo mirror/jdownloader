@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
@@ -550,18 +551,19 @@ public class PremiumizeMe extends PluginForHost {
                 return this.name.getText();
             }
 
-            private ExtTextField  name;
+            private ExtTextField      name;
 
-            ExtPasswordField      pass;
+            ExtPasswordField          pass;
 
-            Notifier              notifier;
-            private static String EMPTYPW = "                 ";
+            private volatile Notifier notifier = null;
+            private static String     EMPTYPW  = "                 ";
+            private final JLabel      idLabel;
 
             public PremiumizeMePanel() {
                 super("ins 0, wrap 2", "[][grow,fill]", "");
                 add(new JLabel("Click here to find your ID/PIN"));
                 add(new JLink("https://www.premiumize.me/account"));
-                add(new JLabel("ID: (must be 9 digis)"));
+                add(idLabel = new JLabel("ID: (must be 9 digis)"));
                 add(this.name = new ExtTextField() {
 
                     @Override
@@ -605,10 +607,12 @@ public class PremiumizeMe extends PluginForHost {
             @Override
             public boolean validateInputs() {
                 final String userName = getUsername();
-                if (getPassword() != null && userName != null && userName.trim().matches("^\\d{9}$")) {
-                    return true;
+                if (userName == null || !userName.trim().matches("^\\d{9}$")) {
+                    idLabel.setForeground(Color.RED);
+                    return false;
                 }
-                return false;
+                idLabel.setForeground(Color.BLACK);
+                return getPassword() != null;
             }
 
             @Override

@@ -402,7 +402,13 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        super.actionPerformed(e);
+        if (e.getSource() == okButton) {
+            if (hoster != null && hoster.getSelectedItem() != null && editAccountPanel.validateInputs()) {
+                super.actionPerformed(e);
+            }
+        } else {
+            super.actionPerformed(e);
+        }
     }
 
     private JComponent header(String buyAndAddPremiumAccount_layoutDialogContent_get) {
@@ -412,8 +418,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
     }
 
     private void checkOK() {
-
-        this.okButton.setEnabled(hoster != null && hoster.getSelectedItem() != null && editAccountPanel.validateInputs());
+        editAccountPanel.validateInputs();
     }
 
     @Override
