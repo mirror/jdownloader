@@ -36,6 +36,10 @@ import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 
+import org.appwork.utils.Application;
+import org.appwork.utils.Files;
+import org.appwork.utils.Hash;
+import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.blacklist.BlacklistEntry;
@@ -447,6 +451,12 @@ public abstract class PluginForDecrypt extends Plugin {
         if (orgCaptchaImage != null && new File(orgCaptchaImage).exists()) {
             file = new File(orgCaptchaImage);
         }
+        File copy = Application.getResource("captchas/" + method + "/" + Hash.getMD5(file) + "." + Files.getExtension(file.getName()));
+        copy.deleteOnExit();
+        copy.getParentFile().mkdirs();
+        copy.delete();
+        IO.copyFile(file, copy);
+        file = copy;
         final LinkCrawler currentCrawler = getCrawler();
         final CrawledLink currentOrigin = getCurrentLink().getOriginLink();
         BasicCaptchaChallenge c = new BasicCaptchaChallenge(method, file, defaultValue, explain, this, flag) {
