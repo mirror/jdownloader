@@ -136,8 +136,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
         contentpane.add(stats, "pushx,growx,spanx");
         HashMap<String, Object> map = null;
         try {
-            map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), new TypeRef<HashMap<String, Object>>() {
-            });
+            map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), TypeRef.HASHMAP);
             stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_trademark()), "spanx,alignx center");
             stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_beta()), "spanx,alignx center");
             // contentpane.add(btn, "aligny center, spany 3");

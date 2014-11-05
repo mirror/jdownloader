@@ -18,7 +18,6 @@ package org.jdownloader.extensions.chat;
 
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.GraphicsEnvironment;
 import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -55,11 +54,14 @@ import jd.controlling.reconnect.ReconnecterListener;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.http.Browser;
 import jd.plugins.AddonPanel;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
@@ -340,7 +342,14 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
 
     public String getNickname() {
 
-        String loc = JDL.getCountryCodeByIP();
+        String loc = null;
+
+        Browser br = new Browser();
+        try {
+            loc = JSonStorage.restoreFromString(br.getPage("http://update3.jdownloader.org/jdserv/GeoDBInterface/getCountryCode"), TypeRef.STRING);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
 
         if (loc == null) {
             loc = System.getProperty("user.country");

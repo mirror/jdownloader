@@ -1,7 +1,5 @@
 package org.jdownloader.api.test;
 
-import java.util.HashMap;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storage;
 import org.appwork.storage.TypeRef;
@@ -24,8 +22,7 @@ public class DialogTest extends Test {
             DialogTypeStorable typeInfo = dialogs.getTypeInfo(info.getType());
             //
             DialogTypeStorable t = dialogs.getTypeInfo("org.jdownloader.gui.dialog.AskCrawlerPasswordDialogInterface");
-            dialogs.answer(list[0], JSonStorage.restoreFromString(Dialog.getInstance().showInputDialog(info.getType()), new TypeRef<HashMap<String, Object>>() {
-            }));
+            dialogs.answer(list[0], JSonStorage.restoreFromString(Dialog.getInstance().showInputDialog(info.getType()), TypeRef.HASHMAP));
 
             System.out.println(info);
         }

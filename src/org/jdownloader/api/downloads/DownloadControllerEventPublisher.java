@@ -76,14 +76,12 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
             EVENT_ID_LIST.add(t.name());
         }
         //
-        HashMap<String, Object> map = new SimpleMapper().convert(new LinkQueryStorableDummy(), new TypeRef<HashMap<String, Object>>() {
-        });
+        HashMap<String, Object> map = new SimpleMapper().convert(new LinkQueryStorableDummy(), TypeRef.HASHMAP);
         for (Entry<String, Object> es : map.entrySet()) {
             EVENT_ID_LIST.add(BASIC_EVENT.LINK_UPDATE.name() + "." + es.getKey());
         }
 
-        map = new SimpleMapper().convert(new PackageQueryStorableDummy(), new TypeRef<HashMap<String, Object>>() {
-        });
+        map = new SimpleMapper().convert(new PackageQueryStorableDummy(), TypeRef.HASHMAP);
         for (Entry<String, Object> es : map.entrySet()) {
             EVENT_ID_LIST.add(BASIC_EVENT.PACKAGE_UPDATE.name() + "." + es.getKey());
         }

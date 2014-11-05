@@ -110,8 +110,7 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
 
     public static String getRevision() {
         try {
-            HashMap<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), new TypeRef<HashMap<String, Object>>() {
-            });
+            HashMap<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), TypeRef.HASHMAP);
             Object ret = map.get("JDownloaderRevision");
             if (ret != null) {
                 return "core_" + ret.toString();

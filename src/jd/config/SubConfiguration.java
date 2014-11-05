@@ -102,8 +102,7 @@ public class SubConfiguration extends Property implements Serializable {
             writeMark.set(0);
             /* load existing file */
             try {
-                final Map<String, Object> load = JSonStorage.restoreFrom(this.file, false, KEY, new TypeRef<HashMap<String, Object>>() {
-                }, new HashMap<String, Object>());
+                final Map<String, Object> load = JSonStorage.restoreFrom(this.file, false, KEY, TypeRef.HASHMAP, new HashMap<String, Object>());
                 if (load != null) {
                     load.remove("saveWorkaround");
                 }

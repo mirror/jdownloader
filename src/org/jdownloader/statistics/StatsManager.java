@@ -166,8 +166,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                         URLConnectionAdapter con = br.openRequestConnection(req);
                         String red = br.loadConnection(con).getHtmlCode();
                         logger.info(con + "");
-                        red = JSonStorage.restoreFromString(red, new TypeRef<String>() {
-                        });
+                        red = JSonStorage.restoreFromString(red, TypeRef.STRING);
 
                     } catch (final Exception e) {
 
@@ -1018,8 +1017,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     private long readBuildTime() {
         try {
-            HashMap<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), new TypeRef<HashMap<String, Object>>() {
-            });
+            HashMap<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), TypeRef.HASHMAP);
             return readBuildTime(map);
         } catch (Throwable e) {
             return 0;

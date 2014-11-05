@@ -208,8 +208,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
 
         if (challenge instanceof BasicCaptchaChallenge) {
-            String res = JSonStorage.restoreFromString("\"" + result + "\"", new TypeRef<String>() {
-            });
+            String res = JSonStorage.restoreFromString("\"" + result + "\"", TypeRef.STRING);
 
             ((SolverJob<String>) job).addAnswer(new CaptchaResponse((BasicCaptchaChallenge) challenge, null, res, 100));
         } else if (challenge instanceof ClickCaptchaChallenge) {
