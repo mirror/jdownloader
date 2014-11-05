@@ -78,7 +78,7 @@ public class KingFilesNet extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://kingfiles.net";
+    private final String               COOKIE_HOST                  = "http://www.kingfiles.net";
     // domain names used within download links.
     private final String               DOMAINS                      = "(kingfiles\\.net)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
@@ -87,7 +87,7 @@ public class KingFilesNet extends PluginForHost {
     private final boolean              supportsHTTPS                = false;
     private final boolean              enforcesHTTPS                = false;
     private final boolean              useRUA                       = true;
-    private final boolean              useAltLinkCheck              = false;
+    private final boolean              useAltLinkCheck              = true;
     private final boolean              useVidEmbed                  = false;
     private final boolean              useAltEmbed                  = false;
     private final boolean              useAltExpire                 = false;
@@ -107,6 +107,7 @@ public class KingFilesNet extends PluginForHost {
     // captchatype: 4dignum
     // other: no redirects
     // mods: handleDl(error handling for 0 byte files on finallink), doFree [403 Server error errorhandling after submit download1]
+    // note: sister site uploadrocket.net
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -336,6 +337,7 @@ public class KingFilesNet extends PluginForHost {
     private String[] altAvailStat(final DownloadLink downloadLink, final String[] fileInfo) throws Exception {
         Browser alt = new Browser();
         prepBrowser(alt);
+        alt.setFollowRedirects(true);
         // cloudflare initial support is within getPage.. otherwise not needed.
         alt.getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/?op=checkfiles");
         alt.postPage("/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + downloadLink.getDownloadURL());
@@ -350,7 +352,14 @@ public class KingFilesNet extends PluginForHost {
             downloadLink.setAvailable(false);
         }
         if (!inValidate(fuid) && inValidate(fileInfo[0])) {
-            fileInfo[0] = fuid;
+            alt = new Browser();
+            prepBrowser(alt);
+            alt.setFollowRedirects(true);
+            alt.getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/?op=report_file&id=" + fuid);
+            fileInfo[0] = alt.getRegex(">Filename:</b></td><td>([^<]+)</td>").getMatch(0);
+            if (inValidate(fileInfo[0])) {
+                fileInfo[0] = fuid;
+            }
         }
         return fileInfo;
     }
@@ -482,7 +491,7 @@ public class KingFilesNet extends PluginForHost {
             }
         }
         regexStuff.add("<!(--.*?--)>");
-        regexStuff.add("(<\\s*(\\w+)\\s+[^>]*style\\s*=\\s*(\"|')(?:(?:[\\w:;\\s#-]*(visibility\\s*:\\s*hidden;|display\\s*:\\s*none;|font-size\\s*:\\s*0;)[\\w:;\\s#-]*)|font-size:0|visibility\\s*:\\s*hidden|display\\s*:\\s*none)\\3[^>]*(>.*?<\\s*/\\2[^>]*>|/\\s*>))");
+        regexStuff.add("(<\\s*(\\w+)\\s+[^>]*style\\s*=\\s*(\"|')(?:(?:[\\w:;\\s#-]*(visibility\\s*:\\s*hidden;|display\\s*:\\s*none;|font-size\\s*:\\s*0;)[\\w:;\\s#-]*)|font-size\\s*:\\s*0|visibility\\s*:\\s*hidden|display\\s*:\\s*none)\\3[^>]*(>.*?<\\s*/\\2[^>]*>|/\\s*>))");
 
         for (String aRegex : regexStuff) {
             String results[] = new Regex(toClean, aRegex).getColumn(0);
