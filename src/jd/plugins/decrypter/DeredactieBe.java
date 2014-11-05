@@ -58,6 +58,7 @@ public class DeredactieBe extends PluginForDecrypt {
             } catch (final Throwable t) {
                 logger.info("Offline Link: " + parameter);
             }
+            return decryptedLinks;
         }
         if (finalurl.contains("youtube.com")) {
             decryptedLinks.add(createDownloadlink(finalurl));
