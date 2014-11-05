@@ -115,6 +115,11 @@ public class ImgUrCom extends PluginForHost {
                     finalfilename = imgUID + "." + filetype;
                 }
                 link.setDownloadSize(filesize);
+                /*
+                 * Note that for pictures/especially GIFs over 20 MB, the "link" value will only contain a link which leads to a preview or
+                 * low quality version of the picture. TODO: Add a workaroud for this (maybe download .flv/.mp4 version) or ask the support
+                 * to make a better implementation (contacted 05.11.14).
+                 */
                 DLLINK = getJson(br.toString(), "link");
             } else {
                 /*
