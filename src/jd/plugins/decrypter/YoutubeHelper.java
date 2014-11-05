@@ -713,12 +713,12 @@ public class YoutubeHelper {
 
     /**
      * *
-     *
+     * 
      * @param html5PlayerJs
      *            TODO
      * @param br
      * @param s
-     *
+     * 
      * @return
      * @throws IOException
      * @throws PluginException
@@ -1093,12 +1093,15 @@ public class YoutubeHelper {
 
             html5_fmt_map = this.br.getRegex("\"url_encoded_fmt_stream_map\": (\".*?\")").getMatch(0);
 
-            html5_fmt_map = JSonStorage.restoreFromString(html5_fmt_map, TypeRef.STRING);
+            html5_fmt_map = JSonStorage.restoreFromString(html5_fmt_map, new TypeRef<String>() {
+            });
 
             dashFmt = this.br.getRegex("\"adaptive_fmts\": (\".*?\")").getMatch(0);
-            dashFmt = JSonStorage.restoreFromString(dashFmt, TypeRef.STRING);
+            dashFmt = JSonStorage.restoreFromString(dashFmt, new TypeRef<String>() {
+            });
             dashmpd = this.br.getRegex("\"dashmpd\": (\".*?\")").getMatch(0);
-            dashmpd = JSonStorage.restoreFromString(dashmpd, TypeRef.STRING);
+            dashmpd = JSonStorage.restoreFromString(dashmpd, new TypeRef<String>() {
+            });
         }
         if (html5_fmt_map != null) {
             for (final String line : html5_fmt_map.split("\\,")) {
@@ -1694,7 +1697,8 @@ public class YoutubeHelper {
         HashMap<String, YoutubeSubtitleInfo> urls = new HashMap<String, YoutubeSubtitleInfo>();
         String ttsUrl = br.getRegex("\"ttsurl\": (\"http.*?\")").getMatch(0);
         if (ttsUrl != null) {
-            ttsUrl = JSonStorage.restoreFromString(ttsUrl, TypeRef.STRING);
+            ttsUrl = JSonStorage.restoreFromString(ttsUrl, new TypeRef<String>() {
+            });
         } else {
             return new ArrayList<YoutubeSubtitleInfo>();
         }
