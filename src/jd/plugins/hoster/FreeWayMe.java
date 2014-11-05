@@ -643,14 +643,14 @@ public class FreeWayMe extends PluginForHost {
              */
             //
             int attempts = link.getIntegerProperty("CONNECTIONS_RETRY_COUNT", 0);
-            if (attempts >= 5) {
+            if (attempts >= 3) {
                 /* reset retrycounter */
                 link.setProperty("CONNECTIONS_RETRY_COUNT", 0);
                 tempUnavailableHoster(acc, link, 4 * 60 * 1000l, error);
             }
             link.setProperty("CONNECTIONS_RETRY_COUNT", attempts + 1);
-            String msg = "(" + (attempts + 1) + "/ 5)";
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("ERROR_RETRY_SECONDS") + msg, 21 * 1000l);
+            String msg = "(" + (attempts + 1) + "/ 3)";
+            throw new PluginException(LinkStatus.ERROR_RETRY, getPhrase("ERROR_RETRY_SECONDS") + msg, 15 * 1000l);
         } else if (error.startsWith("Die Datei darf maximal")) {
             logger.info("{handleMultiHost} File download limit");
             tempUnavailableHoster(acc, link, 2 * 60 * 1000l, error);
