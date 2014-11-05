@@ -43,8 +43,7 @@ public class JDServUtils {
             System.out.println("Length: " + bytes.length);
             URLConnectionAdapter con = br.openRequestConnection(req);
             String red = br.loadConnection(con).getHtmlCode();
-            red = JSonStorage.restoreFromString(red, new TypeRef<String>() {
-            });
+            red = JSonStorage.restoreFromString(red, TypeRef.STRING);
             return red;
         } catch (final Exception e) {
             if (e instanceof RuntimeException) {

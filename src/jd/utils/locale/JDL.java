@@ -17,9 +17,7 @@
 package jd.utils.locale;
 
 import java.util.HashMap;
-import java.util.Random;
 
-import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 
@@ -37,40 +35,9 @@ public final class JDL {
 
     public static final String                     CONFIG         = "LOCALE";
 
-    private static String                          COUNTRY_CODE   = null;
-
     public static boolean                          DEBUG          = false;
 
     public static final JDLocale                   DEFAULT_LOCALE = JDL.getInstance("en");
-
-    /**
-     * returns the correct country code
-     * 
-     * @return
-     */
-    public static String getCountryCodeByIP() {
-        if (COUNTRY_CODE != null) return COUNTRY_CODE;
-
-        if ((COUNTRY_CODE = SubConfiguration.getConfig(JDL.CONFIG).getStringProperty("DEFAULTLANGUAGE", null)) != null) { return COUNTRY_CODE; }
-        final Browser br = new Browser();
-        br.setFollowRedirects(true);
-        br.setConnectTimeout(10000);
-        br.setReadTimeout(10000);
-        try {
-            COUNTRY_CODE = br.getPage("http://www.jdownloader.org/advert/getLanguage.php?id=" + System.currentTimeMillis() + new Random(System.currentTimeMillis()).nextLong());
-            if (!br.getRequest().getHttpConnection().isOK()) {
-                COUNTRY_CODE = null;
-            } else {
-                COUNTRY_CODE = COUNTRY_CODE.trim().toUpperCase();
-
-                SubConfiguration.getConfig(JDL.CONFIG).setProperty("DEFAULTLANGUAGE", COUNTRY_CODE);
-                SubConfiguration.getConfig(JDL.CONFIG).save();
-            }
-        } catch (Exception e) {
-            COUNTRY_CODE = null;
-        }
-        return COUNTRY_CODE;
-    }
 
     /**
      * Creates a new JDLocale instance or uses a cached one
@@ -80,7 +47,9 @@ public final class JDL {
      */
     public synchronized static JDLocale getInstance(final String lngGeoCode) {
         JDLocale ret;
-        if ((ret = CACHE.get(lngGeoCode)) != null) return ret;
+        if ((ret = CACHE.get(lngGeoCode)) != null) {
+            return ret;
+        }
         ret = new JDLocale(lngGeoCode);
         CACHE.put(lngGeoCode, ret);
         return ret;
@@ -105,7 +74,9 @@ public final class JDL {
      * @return
      */
     public static String LF(final String key, final String def, final Object... args) {
-        if (DEBUG) return key;
+        if (DEBUG) {
+            return key;
+        }
         if (args == null || args.length == 0) {
             LogController.CL().severe("FIXME: " + key);
         }

@@ -355,8 +355,7 @@ public class SecondLevelLaunch {
         try {
             System.setProperty("org.jdownloader.revision", "JDownloader2(Beta)");
             // log source revision infos
-            HashMap<String, Object> versionMap = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), new TypeRef<HashMap<String, Object>>() {
-            });
+            HashMap<String, Object> versionMap = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), TypeRef.HASHMAP);
             if (versionMap != null) {
                 Iterator<Entry<String, Object>> it = versionMap.entrySet().iterator();
                 while (it.hasNext()) {
