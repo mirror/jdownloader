@@ -69,7 +69,7 @@ public class DiskYandexNet extends PluginForHost {
 
     /* Some constants which they used in browser */
     private final String        CLIENT_ID                          = "883aacd8d0b882b2e379506a55fb6b0f";
-    private final String        VERSION                            = "1.16.17-1";
+    private final String        VERSION                            = "2.0.102";
     private static final String STANDARD_FREE_SPEED                = "64 kbit/s";
 
     /* Connection limits */
@@ -151,10 +151,10 @@ public class DiskYandexNet extends PluginForHost {
         if (downloadLink.getDownloadURL().matches(TYPE_DISK)) {
             checkDiskFeatureDialog();
         }
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, null);
+        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS);
     }
 
-    private void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks, String ckey) throws Exception, PluginException {
+    private void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks) throws Exception, PluginException {
         if (br.containsHTML("class=\"text text_download\\-blocked\"")) {
             /*
              * link is only downloadable via account because the public overall download limit (traffic limit) is exceeded. In this case the
@@ -199,7 +199,7 @@ public class DiskYandexNet extends PluginForHost {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             final Browser br2 = br.cloneBrowser();
             br2.postPage("https://disk.yandex.com/secret-key.jsx", "");
-            ckey = br2.getRegex("\"([a-z0-9]+)\"").getMatch(0);
+            String ckey = br2.getRegex("\"([a-z0-9]+)\"").getMatch(0);
             if (ckey == null) {
                 logger.info("Getting ckey via html code --> Could lead to problems");
                 ckey = getCkey();
@@ -333,7 +333,6 @@ public class DiskYandexNet extends PluginForHost {
         if (dllink == null) {
             br.getPage(fixMainlink(link.getStringProperty("mainlink", null)));
             final String hash = link.getStringProperty("hash_plain", null);
-            final String ckey = getCkey();
             /* This should never happen */
             if (ACCOUNT_SK == null) {
                 logger.warning("ACCOUNT_SK is null");
@@ -360,13 +359,11 @@ public class DiskYandexNet extends PluginForHost {
                         }
                     }
                     if (dllink == null) {
-                        br2.postPage("https://disk.yandex.com/handlers.jsx", "_ckey=" + ckey + "&_name=copyToSelf&hash=" + Encoding.urlEncode(hash) + "&source=copy-public");
-                        if (!br2.containsHTML("\"success\":true")) {
-                            if (br2.containsHTML("\"code\":85")) {
-                                logger.info("No free space available, failed to move file to account");
-                                throw new PluginException(LinkStatus.ERROR_FATAL, "No free space available, failed to move file to account");
-                            }
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        br2.postPage("https://disk.yandex.com/models/?_m=do-save-resource-public", "_model.0=do-save-resource-public&id.0=%2Fpublic%2F" + Encoding.urlEncode(hash) + "&async.0=0&idClient=" + this.CLIENT_ID + "&version=" + this.VERSION + "&sk=" + ACCOUNT_SK);
+                        /* TODO: Maybe add/find a way to verify if the file really has been moved to the account. */
+                        if (br2.containsHTML("\"code\":85")) {
+                            logger.info("No free space available, failed to move file to account");
+                            throw new PluginException(LinkStatus.ERROR_FATAL, "No free space available, failed to move file to account");
                         }
                         file_moved = true;
                         link.setProperty("file_moved", true);
@@ -385,12 +382,16 @@ public class DiskYandexNet extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } else {
-                logger.info("MoveToAccount handling is inactive -> Starting free download handling");
-                doFree(link, ACCOUNT_RESUME, ACCOUNT_MAXCHUNKS, ckey);
-                return;
+                logger.info("MoveToAccount handling is inactive -> Starting free account download handling");
+                br.getPage(link.getDownloadURL());
+                br.postPage("https://disk.yandex.ru/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + Encoding.urlEncode(hash) + "&idClient=" + this.CLIENT_ID + "&version=" + this.VERSION + "&sk=" + this.ACCOUNT_SK);
+                dllink = br.getRegex("\"file\":\"(http[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), ACCOUNT_RESUME, ACCOUNT_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -438,7 +439,7 @@ public class DiskYandexNet extends PluginForHost {
 
     private void moveFileToTrash(final DownloadLink dl) {
         try {
-            br.postPage("https://disk.yandex.com/models/?_m=do-resource-delete", "_model.0=do-resource-delete&id.0=%2Fdisk%2FDownloads%2F" + "_model.0=do-resource-delete&id.0=%2Fdisk%2FDownloads%2F" + Encoding.urlEncode(dl.getName()) + "&idClient=" + CLIENT_ID + "&sk=" + this.ACCOUNT_SK + "&version=" + VERSION);
+            br.postPage("https://disk.yandex.com/models/?_m=do-resource-delete", "_model.0=do-resource-delete&id.0=%2Fdisk%2FDownloads%2F" + Encoding.urlEncode(dl.getName()) + "&idClient=" + CLIENT_ID + "&sk=" + this.ACCOUNT_SK + "&version=" + VERSION);
             logger.info("Successfully moved file to trash");
         } catch (final Throwable e) {
             logger.warning("Failed to move file to trash");
