@@ -713,12 +713,12 @@ public class YoutubeHelper {
 
     /**
      * *
-     * 
+     *
      * @param html5PlayerJs
      *            TODO
      * @param br
      * @param s
-     * 
+     *
      * @return
      * @throws IOException
      * @throws PluginException
@@ -1014,7 +1014,7 @@ public class YoutubeHelper {
             html5PlayerJs = html5PlayerJs.replace("\\/", "/");
             html5PlayerJs = "http:" + html5PlayerJs;
         }
-        final String unavailableReason = this.br.getRegex("<div id=\"player-unavailable\" class=\"[^\"]*\">.*?<h. id=\"unavailable-message\"[^>]*?>([^<]+)").getMatch(0);
+        String unavailableReason = this.br.getRegex("<div id=\"player-unavailable\" class=\"[^\"]*\">.*?<h. id=\"unavailable-message\"[^>]*?>([^<]+)").getMatch(0);
 
         boolean hass = br.containsHTML("\"dashmpd\": \"https");
 
@@ -1050,11 +1050,20 @@ public class YoutubeHelper {
                 this.br = cw.cloneBrowser();
             }
         }
-        if (unavailableReason != null && unavailableReason.contains("This video is private") && !getVideoInfoWorkaroundUsed) {
-            // check if video is private
-            String subError = br.getRegex("<div id=\"unavailable-submessage\" class=\"[^\"]*\">(.*?)</div>").getMatch(0);
-            if (subError != null && !subError.matches("\\s*")) {
-                logger.warning(unavailableReason.trim() + " :: " + subError.trim());
+        if (unavailableReason != null) {
+            unavailableReason = unavailableReason.trim();
+            if (unavailableReason.contains("This video is private") && !getVideoInfoWorkaroundUsed) {
+                // check if video is private
+                String subError = br.getRegex("<div id=\"unavailable-submessage\" class=\"[^\"]*\">(.*?)</div>").getMatch(0);
+                if (subError != null && !subError.matches("\\s*")) {
+                    logger.warning(unavailableReason + " :: " + subError.trim());
+                    vid.error = Encoding.htmlDecode(unavailableReason.replaceAll("\\+", " ").trim());
+                    return null;
+                }
+            } else if (unavailableReason.contains("This video has been removed by the user.") || (
+            /* do not use this error handling its nearly always present, will cause false positive */
+            false && unavailableReason.contains("This video is unavailable."))) {
+                logger.warning(unavailableReason);
                 vid.error = Encoding.htmlDecode(unavailableReason.replaceAll("\\+", " ").trim());
                 return null;
             }

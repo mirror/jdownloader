@@ -349,7 +349,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
             }
             if (vc == null || StringUtils.isNotEmpty(vid.error)) {
-                decryptedLinks.add(createOfflinelink("http://youtube.com/watch?v=" + vid.videoID, "Error: " + vid.videoID + (vid.title != null ? " [" + vid.title + "]:" : "") + " " + vid.error, vid.error));
+                decryptedLinks.add(createOfflinelink("http://youtube.com/watch?v=" + vid.videoID, "Error - " + vid.videoID + (vid.title != null ? " [" + vid.title + "]:" : "") + " " + vid.error, vid.error));
                 if (vc == null) {
                     continue;
                 }
@@ -647,37 +647,37 @@ public class TbCmV2 extends PluginForDecrypt {
 
                 }
 
-            if (extra != null && extra.length > 0) {
-                main: for (VariantInfo v : allVariants.values()) {
-                    for (String s : extra) {
-                        if (v.variant.getTypeId().equals(s)) {
+                if (extra != null && extra.length > 0) {
+                    main: for (VariantInfo v : allVariants.values()) {
+                        for (String s : extra) {
+                            if (v.variant.getTypeId().equals(s)) {
 
-                            String groupID = getGroupID(v.variant);
+                                String groupID = getGroupID(v.variant);
 
-                            List<VariantInfo> fromGroup = groups.get(groupID);
+                                List<VariantInfo> fromGroup = groups.get(groupID);
 
-                            decryptedLinks.add(createLink(v, fromGroup));
-                            continue main;
+                                decryptedLinks.add(createLink(v, fromGroup));
+                                continue main;
 
-                        }
-                    }
-                }
-
-            }
-
-            ArrayList<String> extraSubtitles = cfg.getExtraSubtitles();
-            if (extraSubtitles != null) {
-                for (String v : extraSubtitles) {
-                    if (v != null) {
-                        for (VariantInfo vi : allSubtitles) {
-                            if (vi.getIdentifier().equalsIgnoreCase(v)) {
-                                decryptedLinks.add(createLink(vi, allSubtitles));
                             }
+                        }
+                    }
 
+                }
+
+                ArrayList<String> extraSubtitles = cfg.getExtraSubtitles();
+                if (extraSubtitles != null) {
+                    for (String v : extraSubtitles) {
+                        if (v != null) {
+                            for (VariantInfo vi : allSubtitles) {
+                                if (vi.getIdentifier().equalsIgnoreCase(v)) {
+                                    decryptedLinks.add(createLink(vi, allSubtitles));
+                                }
+
+                            }
                         }
                     }
                 }
-            }
 
             }
         }
