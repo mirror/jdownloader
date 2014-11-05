@@ -69,7 +69,7 @@ public class HardSexTubeCom extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final boolean normalViaSite = true;
+        final boolean normalViaSite = false;
         if (normalViaSite) {
             final String name = br.getRegex("\\&flvserver=(http://[^<>\"]*?)\\&").getMatch(0);
             final String path = br.getRegex("\\&flv=(/content[^<>\"]*?)\\&").getMatch(0);
