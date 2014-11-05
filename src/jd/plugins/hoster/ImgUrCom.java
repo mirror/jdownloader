@@ -81,7 +81,7 @@ public class ImgUrCom extends PluginForHost {
             }
         } else {
             boolean api_failed = false;
-            if (this.getPluginConfig().getBooleanProperty(SETTING_USE_API, false)) {
+            if (!this.getPluginConfig().getBooleanProperty(SETTING_USE_API, false)) {
                 api_failed = true;
             } else {
                 br.getHeaders().put("Authorization", getAuthorization());

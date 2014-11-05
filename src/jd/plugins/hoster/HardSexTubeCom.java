@@ -69,14 +69,14 @@ public class HardSexTubeCom extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final boolean normalViaSite = false;
+        final boolean normalViaSite = true;
         if (normalViaSite) {
             final String name = br.getRegex("\\&flvserver=(http://[^<>\"]*?)\\&").getMatch(0);
             final String path = br.getRegex("\\&flv=(/content[^<>\"]*?)\\&").getMatch(0);
             if (name == null || path == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = Encoding.htmlDecode(name + path);
+            dllink = Encoding.htmlDecode(name + path) + "?mp4mod=1";
         } else {
             // Via the embedded video stuff we can get the final link without
             // having to decrypt anything
