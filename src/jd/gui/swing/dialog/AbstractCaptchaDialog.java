@@ -87,8 +87,6 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-import sun.swing.SwingUtilities2;
-
 public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
     public static Image[] getGifImages(InputStream openStream) {
@@ -724,8 +722,13 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
                 protected void paintComponent(Graphics g) {
                     if (headerText != null) {
                         setting = true;
-
-                        setText(SwingUtilities2.clipStringIfNecessary(this, this.getFontMetrics(getFont()), headerText, getWidth() - 30));
+                        try {
+                            setText(org.appwork.sunwrapper.sun.swing.SwingUtilities2Wrapper.clipStringIfNecessary(this, this.getFontMetrics(getFont()), headerText, getWidth() - 30));
+                        } catch (Throwable e) {
+                            // http://www.oracle.com/technetwork/java/faq-sun-packages-142232.html
+                            e.printStackTrace();
+                            setText(headerText);
+                        }
                         setting = false;
                     }
                     super.paintComponent(g);
@@ -794,8 +797,14 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
                 protected void paintComponent(Graphics g) {
                     if (headerText != null) {
                         setting = true;
+                        try {
+                            setText(org.appwork.sunwrapper.sun.swing.SwingUtilities2Wrapper.clipStringIfNecessary(this, this.getFontMetrics(getFont()), headerText, getWidth() - 30));
+                        } catch (Throwable e) {
+                            // http://www.oracle.com/technetwork/java/faq-sun-packages-142232.html
+                            e.printStackTrace();
+                            setText(headerText);
+                        }
 
-                        setText(SwingUtilities2.clipStringIfNecessary(this, this.getFontMetrics(getFont()), headerText, getWidth() - 30));
                         setting = false;
                     }
                     super.paintComponent(g);

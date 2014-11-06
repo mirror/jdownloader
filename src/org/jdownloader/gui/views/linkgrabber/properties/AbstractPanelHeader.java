@@ -19,8 +19,6 @@ import org.jdownloader.gui.views.downloads.overviewpanel.SettingsButton;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-import sun.swing.SwingUtilities2;
-
 public abstract class AbstractPanelHeader extends MigPanel {
     private JButton   bt;
     private ExtButton options;
@@ -32,7 +30,13 @@ public abstract class AbstractPanelHeader extends MigPanel {
         if (labelString != null) {
             ;
             lbl.setText("");
-            lbl.setText(SwingUtilities2.clipStringIfNecessary(lbl, lbl.getFontMetrics(getFont()), labelString, lbl.getWidth() - 15));
+            try {
+                lbl.setText(org.appwork.sunwrapper.sun.swing.SwingUtilities2Wrapper.clipStringIfNecessary(lbl, lbl.getFontMetrics(getFont()), labelString, lbl.getWidth() - 15));
+            } catch (Throwable e) {
+                // http://www.oracle.com/technetwork/java/faq-sun-packages-142232.html
+                e.printStackTrace();
+                lbl.setText(labelString);
+            }
         }
     }
 
