@@ -50,8 +50,12 @@ public class Mv2kTo extends PluginForDecrypt {
         String parameter = param.toString().replace("movie2k.to/", "movie4k.to/");
         String initalMirror = parameter.substring(parameter.lastIndexOf("/") + 1);
         br.setFollowRedirects(true);
-        if (parameter.matches(INVALIDLINKS) || parameter.matches(INVALIDLINKS2)) {
+        if (parameter.matches(INVALIDLINKS) || parameter.matches(INVALIDLINKS2) || parameter.contains("/index.php")) {
             logger.info("Link invalid: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         try {

@@ -78,7 +78,7 @@ public class NovaFileCom extends PluginForHost {
     // premium account: 1 * 10
     // protocol: no https
     // captchatype: recaptcha
-    // other: no redirects
+    // other: no redirects, OLD standard-JD User-Agent is blocked!
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
