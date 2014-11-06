@@ -179,7 +179,7 @@ public class GrabItShareCom extends PluginForHost {
                     rc.load();
                     File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     captchaform.put("recaptcha_challenge_field", rc.getChallenge());
-                    captchaform.put("recaptcha_response_field", getCaptchaCode(cf, link));
+                    captchaform.put("recaptcha_response_field", getCaptchaCode("recaptcha", cf, link));
                 }
                 if (br.containsHTML("class=textinput name=downloadpw")) {
                     if (link.getStringProperty("pass", null) == null) {

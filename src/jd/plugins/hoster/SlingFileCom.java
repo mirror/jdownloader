@@ -147,7 +147,7 @@ public class SlingFileCom extends PluginForHost {
                 rc.parse();
                 rc.load();
                 File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = getCaptchaCode(cf, downloadLink);
+                String c = getCaptchaCode("recaptcha", cf, downloadLink);
                 rc.setCode(c);
                 if (br.containsHTML("(api\\.recaptcha\\.net|g>Invalid captcha entered\\. Please try again\\.<)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }

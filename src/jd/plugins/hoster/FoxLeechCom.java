@@ -279,7 +279,7 @@ public class FoxLeechCom extends PluginForHost {
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", NICE_HOST, MAINPAGE, true);
-                    final String c = getCaptchaCode(cf, dummyLink);
+                    final String c = getCaptchaCode("recaptcha", cf, dummyLink);
                     postData += "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c);
                     br.postPage("http://www.foxleech.com/login", postData);
                 }

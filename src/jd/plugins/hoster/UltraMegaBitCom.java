@@ -184,7 +184,7 @@ public class UltraMegaBitCom extends PluginForHost {
         rc.setId(rcid);
         rc.load();
         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-        final String c = getCaptchaCode(cf, downloadLink);
+        final String c = getCaptchaCode("recaptcha", cf, downloadLink);
         dlform.put("recaptcha_response_field", c);
         dlform.put("recaptcha_challenge_field", rc.getChallenge());
         dlform.remove(null);

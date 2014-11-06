@@ -411,7 +411,7 @@ public class SoundcloudCom extends PluginForHost {
                             rc.load();
                             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                             final DownloadLink dummyLink = new DownloadLink(this, "Account", "soundcloud.com", "http://soundcloud.com", true);
-                            final String c = getCaptchaCode(cf, dummyLink);
+                            final String c = getCaptchaCode("recaptcha", cf, dummyLink);
                             con = br.openPostConnection("https://soundcloud.com/connect/login", "remember_me=on&redirect_uri=https%3A%2F%2Fsoundcloud.com%2Fsoundcloud-callback.html&response_type=token&scope=non-expiring+fast-connect+purchase+upload&display=next&client_id=" + CLIENTID + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
                             br.followConnection();
                         }

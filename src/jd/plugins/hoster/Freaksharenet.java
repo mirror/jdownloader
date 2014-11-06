@@ -209,7 +209,7 @@ public class Freaksharenet extends PluginForHost {
                 rc.parse();
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode(cf, downloadLink);
+                final String c = getCaptchaCode("recaptcha", cf, downloadLink);
                 form.put("recaptcha_challenge_field", rc.getChallenge());
                 form.put("recaptcha_response_field", c);
                 form.remove("submit");

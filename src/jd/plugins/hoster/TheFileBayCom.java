@@ -127,7 +127,7 @@ public class TheFileBayCom extends PluginForHost {
             rc.load();
             for (int i = 0; i <= 5; i++) {
                 File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = getCaptchaCode(cf, downloadLink);
+                String c = getCaptchaCode("recaptcha", cf, downloadLink);
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaAction, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, RESUME, MAXCHUNKS);
                 if (!dl.getConnection().isContentDisposition()) {
                     br.followConnection();

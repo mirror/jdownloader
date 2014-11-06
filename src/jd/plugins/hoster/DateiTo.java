@@ -254,7 +254,7 @@ public class DateiTo extends PluginForHost {
             rc.setId(reCaptchaId);
             rc.load();
             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            final String c = getCaptchaCode(cf, downloadLink);
+            final String c = getCaptchaCode("recaptcha", cf, downloadLink);
             br.postPage(APIPAGE, "op=free&step=3&id=" + id + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_challenge_field=" + rc.getChallenge());
             if (!br.containsHTML("(wrong|no input)") && br.containsHTML("ok")) {
                 break;
@@ -328,7 +328,7 @@ public class DateiTo extends PluginForHost {
                 rc.setId("6LdBbL8SAAAAAI0vKUo58XRwDd5Tu_Ze1DA7qTao");
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode(cf, downloadLink);
+                final String c = getCaptchaCode("recaptcha", cf, downloadLink);
                 br.postPage("http://datei.to/response/recaptcha", "modul=checkDLC&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&ID=" + dlid);
                 if (br.containsHTML("Eingabe war leider falsch")) {
                     continue;

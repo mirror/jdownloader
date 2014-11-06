@@ -266,7 +266,7 @@ public class FilesMonsterCom extends PluginForHost {
         rc.parse();
         rc.load();
         File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-        String c = getCaptchaCode(cf, downloadLink);
+        String c = getCaptchaCode("recaptcha", cf, downloadLink);
         rc.setCode(c);
         handleErrors();
         if (br.containsHTML("(Captcha number error or expired|api\\.recaptcha\\.net)")) {
@@ -376,7 +376,7 @@ public class FilesMonsterCom extends PluginForHost {
                     rc.setId(id);
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode(cf, dummyLink);
+                    final String c = getCaptchaCode("recaptcha", cf, dummyLink);
                     login.put("recaptcha_challenge_field", rc.getChallenge());
                     login.put("recaptcha_response_field", Encoding.urlEncode(c));
                 }

@@ -49,7 +49,7 @@ public class MovizProtectCom extends PluginForDecrypt {
             rc.findID();
             rc.load();
             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            final String c = getCaptchaCode(cf, param);
+            final String c = getCaptchaCode("recaptcha", cf, param);
             br.postPage(br.getURL(), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
             if (br.containsHTML(">incorrect\\-captcha\\-sol")) {
                 continue;

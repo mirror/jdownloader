@@ -53,7 +53,7 @@ public class UpMirrorCom extends PluginForDecrypt {
             rc.parse();
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, param);
+            String c = getCaptchaCode("recaptcha", cf, param);
             rc.setCode(c);
             if (br.containsHTML(CAPTCHATEXT)) continue;
             break;

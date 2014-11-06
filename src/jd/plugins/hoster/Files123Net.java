@@ -83,7 +83,7 @@ public class Files123Net extends PluginForHost {
             rc.load();
             for (int i = 1; i <= 5; i++) {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode(cf, downloadLink);
+                final String c = getCaptchaCode("recaptcha", cf, downloadLink);
                 br.postPage(br.getURL(), "download=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
                 if (br.containsHTML("id=\"error_note\">Please Enter Correct")) {
                     rc.reload();

@@ -264,7 +264,7 @@ public class Box4upCom extends PluginForHost {
                     rc.setId(rcID);
                     rc.load();
                     File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    String c = getCaptchaCode(cf, downloadLink);
+                    String c = getCaptchaCode("recaptcha", cf, downloadLink);
                     postData += "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c);
                 } else if (br.containsHTML(captcha_SOLVEMEDIA)) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");

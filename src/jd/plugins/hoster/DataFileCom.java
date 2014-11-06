@@ -210,7 +210,7 @@ public class DataFileCom extends PluginForHost {
             rc.load();
             for (int i = 1; i <= 5; i++) {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode(cf, downloadLink);
+                final String c = getCaptchaCode("recaptcha", cf, downloadLink);
                 if (!SKIPWAITTIME || i > 1) {
                     waitTime(timeBefore, downloadLink, wait);
                 }

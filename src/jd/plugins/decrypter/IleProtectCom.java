@@ -66,7 +66,7 @@ public class IleProtectCom extends PluginForDecrypt {
             if (skipcaptcha) {
                 c = "";
             } else {
-                c = getCaptchaCode(cf, param);
+                c = getCaptchaCode("recaptcha", cf, param);
             }
             br.postPage("http://" + DOMAIN + "/showlinks.php", "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&linkid=" + new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0) + "&x=" + Integer.toString(new Random().nextInt(100)) + "&y=" + Integer.toString(new Random().nextInt(100)));
             if (br.containsHTML("(The security code is <font color=\\'red\\'>incorrect</font>|The CAPTCHA wasn\\'t entered correctly)")) {

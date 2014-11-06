@@ -88,7 +88,7 @@ public class DoriDroNet extends PluginForHost {
                     rc.parse();
                     rc.load();
                     File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    String c = getCaptchaCode(cf, downloadLink);
+                    String c = getCaptchaCode("recaptcha", cf, downloadLink);
                     rc.setCode(c);
                     if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) continue;
                     break;

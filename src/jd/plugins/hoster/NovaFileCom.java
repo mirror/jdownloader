@@ -315,7 +315,7 @@ public class NovaFileCom extends PluginForHost {
                     rc.setId(id);
                     rc.load();
                     File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    String c = getCaptchaCode(cf, downloadLink);
+                    String c = getCaptchaCode("recaptcha", cf, downloadLink);
                     Form rcform = rc.getForm();
                     rcform.put("recaptcha_challenge_field", rc.getChallenge());
                     rcform.put("recaptcha_response_field", Encoding.urlEncode(c));
@@ -744,7 +744,7 @@ public class NovaFileCom extends PluginForHost {
                         rc.load();
                         final DownloadLink dummyLink = new DownloadLink(this, "Account", "novafile.com", "http://novafile.com", true);
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        final String c = getCaptchaCode(cf, dummyLink);
+                        final String c = getCaptchaCode("recaptcha", cf, dummyLink);
                         postData += "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c);
                         final String rand = br.getRegex("name=\"rand\" value=\"([^<>\"]*?)\"").getMatch(0);
                         if (rand != null) {

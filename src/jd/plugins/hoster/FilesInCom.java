@@ -77,7 +77,7 @@ public class FilesInCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
             }
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, downloadLink);
+            String c = getCaptchaCode("recaptcha", cf, downloadLink);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, freeLink, "download=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, false, 1);
             if (!dl.getConnection().getContentType().contains("html")) break;
             br.followConnection();

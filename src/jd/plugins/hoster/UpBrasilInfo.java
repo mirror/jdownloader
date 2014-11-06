@@ -250,7 +250,7 @@ public class UpBrasilInfo extends PluginForHost {
                 rc.parse();
                 rc.load();
                 File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = getCaptchaCode(cf, downloadLink);
+                String c = getCaptchaCode("recaptcha", cf, downloadLink);
                 if (password) {
                     passCode = handlePassword(passCode, rc.getForm(), downloadLink);
                 }

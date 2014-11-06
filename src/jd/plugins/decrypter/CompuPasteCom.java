@@ -52,7 +52,7 @@ public class CompuPasteCom extends PluginForDecrypt {
             rc.load();
             for (int i = 1; i <= 5; i++) {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode(cf, param);
+                final String c = getCaptchaCode("recaptcha", cf, param);
                 br.postPage(br.getURL(), "captcha=Soy+Humano&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
                 if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                     rc.reload();

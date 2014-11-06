@@ -100,7 +100,7 @@ public class AkatsukiSubsNet extends PluginForHost {
         rc.load();
         for (int i = 1; i <= 5; i++) {
             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            final String c = getCaptchaCode(cf, downloadLink);
+            final String c = getCaptchaCode("recaptcha", cf, downloadLink);
             final String postData = "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&submit=Download";
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getURL(), postData, false, 1);
             if (dl.getConnection().getContentType().contains("html")) {

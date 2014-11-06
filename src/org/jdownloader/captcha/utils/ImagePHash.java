@@ -11,6 +11,8 @@ import java.io.InputStream;
 
 import javax.imageio.ImageIO;
 
+import jd.utils.EditDistance;
+
 /*
  * pHash-like image hash. 
  * Author: Elliot Shepherd (elliot@jarofworms.com
@@ -27,14 +29,15 @@ public class ImagePHash {
 
     public static void main(String[] args) throws FileNotFoundException, Exception {
 
-        File a = new File("C:\\Users\\Thomas\\.jd_home\\captchas\\share-online.biz_22.03.2013_13.51.12.906_a.jpg");
-        File b = new File("C:\\Users\\Thomas\\.jd_home\\captchas\\share-online.biz_22.03.2013_13.51.12.906_b.jpg");
+        File a = new File("C:\\Users\\Thomas\\.appwork\\captchas\\2ff9d0edd827a1549010efb2a9f6cc6c.png.left.0011011011010011110110110000010100100001101000001.png");
+        File b = new File("C:\\Users\\Thomas\\.appwork\\captchas\\0c65196051b97fabe6e1abe8349c7a3a.png.left.0011011111110111010011110001011000100011100000100.png");
         ImagePHash hasher = new ImagePHash(32, 8);
         String ah;
         System.out.println(ah = new ImagePHash(32, 8).getHash(new FileInputStream(a)));
         String bh;
         System.out.println(bh = hasher.getHash(new FileInputStream(b)));
         System.out.println(hasher.distance(ah, bh));
+        System.out.println("LEv " + EditDistance.getLevenshteinDifference(ah, bh) + " - " + EditDistance.getLevenshteinDistance(ah, bh));
     }
 
     public ImagePHash(int size, int smallerSize) {

@@ -244,7 +244,7 @@ public class KingShareTo extends PluginForHost {
                 rc.parse();
                 rc.load();
                 File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = getCaptchaCode(cf, downloadLink);
+                String c = getCaptchaCode("recaptcha", cf, downloadLink);
                 waitTime(timeBefore, downloadLink);
                 Form rcform = rc.getForm();
                 rcform.put("recaptcha_challenge_field", rc.getChallenge());

@@ -59,7 +59,7 @@ public class ExtremeProtectCom extends PluginForDecrypt {
             rc.parse();
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, param);
+            String c = getCaptchaCode("recaptcha", cf, param);
             rc.setCode(c);
             if (br.containsHTML("(The security code is <font color=\\'red\\'>incorrect</font>|The CAPTCHA wasn\\'t entered correctly)")) {
                 br.getPage(parameter);

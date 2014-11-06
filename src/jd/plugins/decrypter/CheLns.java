@@ -68,7 +68,7 @@ public class CheLns extends PluginForDecrypt {
                 f1.put("recaptcha_response_field", "");
             } else {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode(cf, param);
+                final String c = getCaptchaCode("recaptcha", cf, param);
                 f1.put("recaptcha_response_field", Encoding.urlEncode(c));
             }
             br.submitForm(f1);

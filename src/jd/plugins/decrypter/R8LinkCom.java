@@ -65,7 +65,7 @@ public class R8LinkCom extends PluginForDecrypt {
                 r.put(v[2], v[4]);
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode(cf, param);
+                final String c = getCaptchaCode("recaptcha", cf, param);
                 r.put("recaptcha_challenge_field", rc.getChallenge());
                 r.put("recaptcha_response_field", Encoding.urlEncode(c));
                 br.submitForm(r);

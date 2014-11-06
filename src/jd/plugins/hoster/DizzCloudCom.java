@@ -204,7 +204,7 @@ public class DizzCloudCom extends PluginForHost {
             rc.setId(id);
             rc.load();
             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            final String c = getCaptchaCode(cf, downloadLink);
+            final String c = getCaptchaCode("recaptcha", cf, downloadLink);
             getPage(this.br, "http://dizzcloud.com/dl/" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "?type=recaptcha&challenge=" + rc.getChallenge() + "&capture=" + Encoding.urlEncode(c));
             if (br.containsHTML("\"Entered digits are incorrect")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);

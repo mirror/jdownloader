@@ -224,7 +224,7 @@ public class FileJungleCom extends PluginForHost {
         rc.load();
         for (int i = 0; i <= 5; i++) {
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, downloadLink);
+            String c = getCaptchaCode("recaptcha", cf, downloadLink);
             rc.setCode(c);
             if (br2.containsHTML(CAPTCHAFAILED)) {
                 rc.reload();

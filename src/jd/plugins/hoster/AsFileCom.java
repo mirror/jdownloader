@@ -211,7 +211,7 @@ public class AsFileCom extends PluginForHost {
         rc.setId(id);
         rc.load();
         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-        final String c = getCaptchaCode(cf, downloadLink);
+        final String c = getCaptchaCode("recaptcha", cf, downloadLink);
         postPage(br.getURL(), "recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(c));
         if (!br.containsHTML("/free\\-download/file/")) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);

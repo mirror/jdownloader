@@ -672,7 +672,7 @@ public class RealDebridCom extends PluginForHost {
                             rc.setChallenge(challenge);
                             rc.setCaptchaAddress(image);
                             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                            final String c = getCaptchaCode(cf, dummyLink);
+                            final String c = getCaptchaCode("recaptcha", cf, dummyLink);
                             br.getPage(mProt + mName + "/ajax/login.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + JDHash.getMD5(account.getPass()) + "&captcha_challenge=" + rc.getChallenge() + "&captcha_answer=" + Encoding.urlEncode(c) + "&time=" + System.currentTimeMillis() + "&pin_challenge=&pin_answer=");
                             if (br.containsHTML("\"captcha\":1")) {
                                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nError either captcha is incorrect or your user:password is incorrect", PluginException.VALUE_ID_PREMIUM_DISABLE);

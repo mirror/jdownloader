@@ -205,7 +205,7 @@ public class UGoUploadNet extends PluginForHost {
                 rc.load();
                 for (int i = 0; i <= 5; i++) {
                     File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    String c = getCaptchaCode(cf, downloadLink);
+                    String c = getCaptchaCode("recaptcha", cf, downloadLink);
                     captchaForm.put("recaptcha_challenge_field", rc.getChallenge());
                     captchaForm.put("recaptcha_response_field", Encoding.urlEncode(c));
                     dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaForm, RESUME, MAXCHUNKS);

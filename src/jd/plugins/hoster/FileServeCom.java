@@ -234,7 +234,7 @@ public class FileServeCom extends PluginForHost {
                     rc.setId(id);
                     rc.load();
                     final File cf = rc.downloadCaptcha(this.getLocalCaptchaFile());
-                    final String c = this.getCaptchaCode(cf, downloadLink);
+                    final String c = this.getCaptchaCode("recaptcha", cf, downloadLink);
                     if (c == null || c.length() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Recaptcha failed");
                     rc.getForm().put("recaptcha_response_field", Encoding.urlEncode(c));
                     rc.getForm().put("recaptcha_challenge_field", rc.getChallenge());

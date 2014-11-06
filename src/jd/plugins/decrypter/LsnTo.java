@@ -79,7 +79,7 @@ public class LsnTo extends PluginForDecrypt {
                 rc.parse();
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode(cf, param);
+                final String c = getCaptchaCode("recaptcha", cf, param);
                 rc.setCode(c);
                 if (br.containsHTML(RECAPTCHA)) {
                     br.getPage(parameter);

@@ -89,7 +89,7 @@ public class SuperUploadCom extends PluginForHost {
         rc.load();
         for (int i = 0; i <= 5; i++) {
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            final String c = getCaptchaCode(cf, downloadLink);
+            final String c = getCaptchaCode("recaptcha", cf, downloadLink);
             br.postPage(downloadLink.getDownloadURL() + "&act=t&rnd=" + System.currentTimeMillis(), "captcha=" + c + "&challenge=" + rc.getChallenge());
             if (br.containsHTML(">Incorrect captcha<")) {
                 rc.reload();

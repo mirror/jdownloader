@@ -81,7 +81,7 @@ public class FilePiCom extends PluginForHost {
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         for (int i = 1; i <= 5; i++) {
             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            final String c = getCaptchaCode(cf, downloadLink);
+            final String c = getCaptchaCode("recaptcha", cf, downloadLink);
             br.getHeaders().put("Referer", downloadLink.getDownloadURL());
             br.postPage("http://filepi.com/ajax-re", "cap1=" + Encoding.urlEncode(rc.getChallenge()) + "&cap2=" + Encoding.urlEncode(c) + "&tag=" + fid + "&pass=" + fhash + "&hash=" + fhash);
             if (br.containsHTML("\"error\":\"captcha\"")) {

@@ -135,7 +135,7 @@ public class Up4ShareVn extends PluginForHost {
         for (int i = 0; i <= 3; i++) {
             rc.load();
             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            final String c = getCaptchaCode(cf, downloadLink);
+            final String c = getCaptchaCode("recaptcha", cf, downloadLink);
             br.postPage(downloadLink.getDownloadURL(), "submit=DOWNLOAD+FREE&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
             dllink = br.getRedirectLocation();
             if (dllink == null && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {

@@ -1472,7 +1472,7 @@ public class LumFileCom extends PluginForHost {
             rc.setId(id);
             rc.load();
             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            final String c = getCaptchaCode(cf, downloadLink);
+            final String c = getCaptchaCode("recaptcha", cf, downloadLink);
             form.put("recaptcha_challenge_field", rc.getChallenge());
             form.put("recaptcha_response_field", Encoding.urlEncode(c));
             /** wait time is often skippable for reCaptcha handling */

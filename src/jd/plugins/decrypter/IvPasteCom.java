@@ -91,7 +91,7 @@ public class IvPasteCom extends PluginForDecrypt {
                 rc.setId(apiKey);
                 rc.load();
                 File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = getCaptchaCode(cf, param);
+                String c = getCaptchaCode("recaptcha", cf, param);
                 rc.setCode(c);
                 if (br.containsHTML(RECAPTCHAFAILED)) {
                     br.getPage("http://ivpaste.com/p/" + ID);

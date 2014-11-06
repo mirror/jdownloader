@@ -213,7 +213,7 @@ public class FileBoomMe extends K2SApi {
                         rc.findID();
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        final String c = getCaptchaCode(cf, downloadLink);
+                        final String c = getCaptchaCode("recaptcha", cf, downloadLink);
                         postPage(br.getURL(), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&free=1&freeDownloadRequest=1&uniqueId=" + id);
                         if (br.containsHTML(reCaptcha) && i + 1 != repeat) {
                             continue;

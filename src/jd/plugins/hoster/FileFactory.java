@@ -722,7 +722,7 @@ public class FileFactory extends PluginForHost {
         rc.setForm(form);
         rc.load();
         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-        final String c = getCaptchaCode(cf, link);
+        final String c = getCaptchaCode("recaptcha", cf, link);
         rc.setCode(c);
         if (br.containsHTML(CAPTCHALIMIT)) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);

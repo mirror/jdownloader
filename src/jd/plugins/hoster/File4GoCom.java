@@ -89,7 +89,7 @@ public class File4GoCom extends PluginForHost {
         rc.setId(rcID);
         rc.load();
         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-        final String c = getCaptchaCode(cf, downloadLink);
+        final String c = getCaptchaCode("recaptcha", cf, downloadLink);
         br.postPage("http://www.file4go.com/getdownload.php", "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&id=" + fid);
         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         br.setFollowRedirects(false);

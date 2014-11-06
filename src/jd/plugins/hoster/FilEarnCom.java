@@ -165,7 +165,7 @@ public class FilEarnCom extends PluginForHost {
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             // Waittime can be skipped atm.
             // long timeBefore = System.currentTimeMillis();
-            String c = getCaptchaCode(cf, downloadLink);
+            String c = getCaptchaCode("recaptcha", cf, downloadLink);
             // int wait = 60;
             // String waittime =
             // br.getRegex("id=\"waittime\">(\\d+)</span>").getMatch(0);

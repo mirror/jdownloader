@@ -136,7 +136,7 @@ public class ExtMatrixCom extends PluginForHost {
                 rc.setId(rcID);
                 rc.load();
                 File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = getCaptchaCode(cf, downloadLink);
+                String c = getCaptchaCode("recaptcha", cf, downloadLink);
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, action, "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c + "&task=download", true, 1);
             } else {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, getLink, true, 1);

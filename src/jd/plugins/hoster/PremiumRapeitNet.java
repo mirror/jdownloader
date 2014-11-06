@@ -256,7 +256,7 @@ public class PremiumRapeitNet extends PluginForHost {
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final DownloadLink dummyLink = new DownloadLink(this, "Account", NICE_HOST, MAINPAGE, true);
-                final String code = getCaptchaCode(cf, dummyLink);
+                final String code = getCaptchaCode("recaptcha", cf, dummyLink);
                 postData += "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(code);
                 br.postPage("http://premium.rapeit.net/", postData);
                 if (br.getCookie(MAINPAGE, "session") == null) {
