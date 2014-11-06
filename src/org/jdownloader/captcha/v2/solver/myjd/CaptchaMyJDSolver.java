@@ -17,6 +17,7 @@ import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.Base64OutputStream;
 import org.jdownloader.api.myjdownloader.MyJDownloaderConnectionStatus;
@@ -209,7 +210,10 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
             b64os.close();
 
             ch.setDataURL("data:image/" + Files.getExtension(challenge.getImageFile().getName()) + ";base64," + new String(bos.toByteArray(), "UTF-8"));
-            ch.setSource(challenge.getTypeID());
+            ch.setSource(challenge.getPlugin().getHost());
+            if (!StringUtils.equals(challenge.getTypeID(), ch.getSource())) {
+                ch.setMethod(challenge.getTypeID());
+            }
             ch.setType(TYPE.TEXT);
             MyCaptchaSolution id = MyJDownloaderController.getInstance().pushChallenge(ch);
             if (id == null) {
