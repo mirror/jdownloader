@@ -169,6 +169,7 @@ public class VideoFCTwoCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
+        br.setFollowRedirects(true);
         try {
             login(account, true);
         } catch (PluginException e) {
