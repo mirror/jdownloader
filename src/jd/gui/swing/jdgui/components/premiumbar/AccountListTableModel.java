@@ -29,6 +29,7 @@ import jd.nutils.Formatter;
 import jd.plugins.AccountInfo;
 
 import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.sunwrapper.sun.swing.SwingUtilities2Wrapper;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.swing.exttable.ExtColumn;
@@ -50,8 +51,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import sun.swing.SwingUtilities2;
 
 public class AccountListTableModel extends ExtTableModel<AccountEntry> implements AccountCheckerEventListener, AccountControllerListener {
 
@@ -256,7 +255,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                     str = "";
                 }
                 if (this.getTableColumn() != null) {
-                    this.rendererField.setText(SwingUtilities2.clipStringIfNecessary(this.rendererField, this.rendererField.getFontMetrics(this.rendererField.getFont()), str, this.getTableColumn().getWidth() - this.rendererIcon.getPreferredSize().width - 5));
+                    this.rendererField.setText(SwingUtilities2Wrapper.clipStringIfNecessary(this.rendererField, this.rendererField.getFontMetrics(this.rendererField.getFont()), str, this.getTableColumn().getWidth() - this.rendererIcon.getPreferredSize().width - 5));
                 } else {
                     this.rendererField.setText(str);
                 }

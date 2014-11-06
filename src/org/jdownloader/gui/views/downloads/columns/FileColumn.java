@@ -28,6 +28,7 @@ import jd.plugins.FilePackage;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.sunwrapper.sun.swing.SwingUtilities2Wrapper;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.columnmenu.LockColumnWidthAction;
@@ -47,8 +48,6 @@ import org.jdownloader.gui.views.components.packagetable.actions.SortPackagesDow
 import org.jdownloader.gui.views.downloads.action.OpenFileAction;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
-
-import sun.swing.SwingUtilities2;
 
 public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericConfigEventListener<Boolean> {
 
@@ -328,7 +327,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
         }
 
         if (getTableColumn() != null) {
-            this.rendererField.setText(SwingUtilities2.clipStringIfNecessary(rendererField, rendererField.getFontMetrics(rendererField.getFont()), str, getTableColumn().getWidth() - rendererIcon.getPreferredSize().width - 32));
+            this.rendererField.setText(SwingUtilities2Wrapper.clipStringIfNecessary(rendererField, rendererField.getFontMetrics(rendererField.getFont()), str, getTableColumn().getWidth() - rendererIcon.getPreferredSize().width - 32));
         } else {
             this.rendererField.setText(str);
         }

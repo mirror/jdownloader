@@ -55,8 +55,6 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-import sun.swing.SwingUtilities2;
-
 public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implements AccountCheckerEventListener {
 
     private static final long                serialVersionUID       = 3120481189794897020L;
@@ -243,7 +241,9 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
                     str = "";
                 }
                 if (this.getTableColumn() != null) {
-                    this.rendererField.setText(SwingUtilities2.clipStringIfNecessary(this.rendererField, this.rendererField.getFontMetrics(this.rendererField.getFont()), str, this.getTableColumn().getWidth() - this.rendererIcon.getPreferredSize().width - 5));
+
+                    this.rendererField.setText(org.appwork.sunwrapper.sun.swing.SwingUtilities2Wrapper.clipStringIfNecessary(this.rendererField, this.rendererField.getFontMetrics(this.rendererField.getFont()), str, this.getTableColumn().getWidth() - this.rendererIcon.getPreferredSize().width - 5));
+
                 } else {
                     this.rendererField.setText(str);
                 }

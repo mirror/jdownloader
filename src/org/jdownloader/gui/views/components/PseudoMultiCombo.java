@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.Icon;
 import javax.swing.SwingConstants;
 
+import org.appwork.sunwrapper.sun.swing.SwingUtilities2Wrapper;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.JScrollPopupMenu;
 import org.jdownloader.actions.AppAction;
@@ -22,8 +23,6 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import sun.swing.SwingUtilities2;
 
 public class PseudoMultiCombo<Type> extends ExtButton {
 
@@ -291,7 +290,7 @@ public class PseudoMultiCombo<Type> extends ExtButton {
         if (orgText == null) {
             return null;
         }
-        return SwingUtilities2.clipStringIfNecessary(this, this.getFontMetrics(this.getFont()), orgText, getWidth() - getMargin().left - getMargin().right - 10);
+        return SwingUtilities2Wrapper.clipStringIfNecessary(this, this.getFontMetrics(this.getFont()), orgText, getWidth() - getMargin().left - getMargin().right - 10);
 
     }
 

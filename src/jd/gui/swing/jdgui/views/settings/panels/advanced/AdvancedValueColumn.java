@@ -40,8 +40,6 @@ import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 import org.jdownloader.settings.advanced.RangeValidator;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-import sun.swing.SwingUtilities2;
-
 public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> {
 
     private static final long                              serialVersionUID = 1L;
@@ -444,7 +442,14 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
                 }
 
                 if (this.getTableColumn() != null) {
-                    this.rendererField.setText(SwingUtilities2.clipStringIfNecessary(this.rendererField, this.rendererField.getFontMetrics(this.rendererField.getFont()), str, this.getTableColumn().getWidth() - 18 - (icon != null ? icon.getIconWidth() : 0)));
+                    try {
+                        this.rendererField.setText(org.appwork.sunwrapper.sun.swing.SwingUtilities2Wrapper.clipStringIfNecessary(this.rendererField, this.rendererField.getFontMetrics(this.rendererField.getFont()), str, this.getTableColumn().getWidth() - 18 - (icon != null ? icon.getIconWidth() : 0)));
+
+                    } catch (Throwable e) {
+                        // fallback if org.appwork.swing.sunwrapper.SwingUtilities2 disappears someday
+                        e.printStackTrace();
+                        this.rendererField.setText(str);
+                    }
                 } else {
                     this.rendererField.setText(str);
                 }
