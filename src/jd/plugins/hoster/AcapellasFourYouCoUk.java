@@ -141,7 +141,7 @@ public class AcapellasFourYouCoUk extends PluginForHost {
                 sid = br.getCookie(MAINPAGE, "acas4u_sevulx_sid");
             }
             br.postPage("http://www.acapellas4u.co.uk/ucp.php?mode=login&sid=" + sid, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&sid=" + sid + "&redirect=index.php&login=Login&autologin=on");
-            if (br.getCookie(MAINPAGE, "acas4u_sevulx_u") == null || "1".equals(br.getCookie(MAINPAGE, "acas4u_sevulx_u"))) {
+            if ((br.getCookie(MAINPAGE, "acas4u_sevulx_u") == null || "1".equals(br.getCookie(MAINPAGE, "acas4u_sevulx_u"))) && (br.getCookie(MAINPAGE, "acas4u_sevul_u") == null || "1".equals(br.getCookie(MAINPAGE, "acas4u_sevul_u")))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             // Save cookies

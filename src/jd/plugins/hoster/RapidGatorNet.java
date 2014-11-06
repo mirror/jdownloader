@@ -341,7 +341,14 @@ public class RapidGatorNet extends PluginForHost {
             }
         }
         if (this.br.containsHTML(RapidGatorNet.PREMIUMONLYTEXT)) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, RapidGatorNet.PREMIUMONLYUSERTEXT);
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
         }
         try {
             // end of experiment

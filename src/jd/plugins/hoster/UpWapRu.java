@@ -60,10 +60,23 @@ public class UpWapRu extends PluginForHost {
             } catch (Throwable e) {
             }
         }
-        if (br.containsHTML(">Запрошенная страница или файл не найден|>Ошибка 404<|>Файл был удален\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>Файл \\&laquo;([^<>\"]*?)\\&raquo;</title>").getMatch(0);
+        if (br.containsHTML(">Запрошенная страница или файл не найден|>Ошибка 404<|>Файл был удален\\.")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename;
+        if (br.containsHTML("Пароль:<br/>")) {
+            link.getLinkStatus().setStatusText("Password protected links are not yet supported, please contact our support");
+            filename = br.getRegex("title>Файл \\&laquo;([^<>\"]*?)\\&raquo;</title>").getMatch(0);
+            if (filename != null) {
+                link.setName(Encoding.htmlDecode(filename));
+            }
+            return AvailableStatus.TRUE;
+        }
+        filename = br.getRegex("<title>Файл \\&laquo;([^<>\"]*?)\\&raquo;</title>").getMatch(0);
         String filesize = br.getRegex(">Скачать</a>]</b> \\(([^<>\"]*?)\\)<br").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         filesize = filesize.replace("Г", "G");
         filesize = filesize.replace("М", "M");
@@ -77,14 +90,24 @@ public class UpWapRu extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("error 503")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 2 * 60 * 1000l);
+        if (br.containsHTML("Пароль:<br/>")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected links are not yet supported, please contact our support");
+        } else if (br.containsHTML("error 503")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 2 * 60 * 1000l);
+            }
         String dllink = br.getRegex("<div class=\"tpanel\"><b>\\[<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://mirror\\d+\\.upwap\\.ru/d/\\d+/[a-z0-9]+/[^<>\"/]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://mirror\\d+\\.upwap\\.ru/d/\\d+/[a-z0-9]+/[^<>\"/]*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.getURL().equals(downloadLink.getDownloadURL())) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 2 * 60 * 1000l);
+            if (br.getURL().equals(downloadLink.getDownloadURL())) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 2 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

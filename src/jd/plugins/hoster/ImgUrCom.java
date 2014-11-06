@@ -117,14 +117,18 @@ public class ImgUrCom extends PluginForHost {
                 link.setDownloadSize(filesize);
                 /*
                  * Note that for pictures/especially GIFs over 20 MB, the "link" value will only contain a link which leads to a preview or
-                 * low quality version of the picture. TODO: Add a workaroud for this (maybe download .flv/.mp4 version) or ask the support
-                 * to make a better implementation (contacted 05.11.14).
+                 * low quality version of the picture. This is why we need a little workaround for this case (works from 19.5++ MB).
                  */
-                DLLINK = getJson(br.toString(), "link");
+                if (filesize > 20447232l) {
+                    logger.info("File is bigger than 20 (19.5) MB --> Using /downloadlink as API-workaround");
+                    DLLINK = "http://imgur.com/download/" + imgUID;
+                } else {
+                    DLLINK = getJson(br.toString(), "link");
+                }
             } else {
                 /*
                  * Workaround for API limit reached or in case user disabled API - second way does return 503 response in case API limit is
-                 * reached: http://imgur.com/download/ + imgUID This code should never be reached!
+                 * reached: http://imgur.com/download/ + imgUID. This code should never be reached!
                  */
                 if (imgUID == null || filetype == null) {
                     DLLINK = "http://imgur.com/download/" + imgUID;

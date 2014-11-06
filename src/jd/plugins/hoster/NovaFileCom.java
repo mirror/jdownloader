@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -55,20 +56,22 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "novafile.com" }, urls = { "https?://(www\\.)?novafile\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class NovaFileCom extends PluginForHost {
 
-    private String               correctedBR                  = "";
-    private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private static final String  COOKIE_HOST                  = "http://novafile.com";
-    private static final String  MAINTENANCE                  = ">This server is in maintenance mode|No htmlCode read";
-    private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
-    private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
-    private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private String                         correctedBR                  = "";
+    private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private static final String            COOKIE_HOST                  = "http://novafile.com";
+    private static final String            MAINTENANCE                  = ">This server is in maintenance mode|No htmlCode read";
+    private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
+    private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private static final String            PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
+    private static final String            PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private final boolean                  ENABLE_RANDOM_UA             = true;
+    private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     // note: can not be negative -x or 0 .:. [1-*]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
+    private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(1);
     // don't touch
-    private static AtomicInteger maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
-    private static Object        LOCK                         = new Object();
+    private static AtomicInteger           maxFree                      = new AtomicInteger(1);
+    private static AtomicInteger           maxPrem                      = new AtomicInteger(1);
+    private static Object                  LOCK                         = new Object();
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.8-raz
@@ -120,6 +123,14 @@ public class NovaFileCom extends PluginForHost {
         try {
             br.setAllowedResponseCodes(418);
         } catch (final Throwable e) {
+        }
+        if (ENABLE_RANDOM_UA) {
+            if (agent.get() == null) {
+                /* we first have to load the plugin, before we can reference it */
+                JDUtilities.getPluginForHost("mediafire.com");
+                agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+            }
+            br.getHeaders().put("User-Agent", agent.get());
         }
     }
 
