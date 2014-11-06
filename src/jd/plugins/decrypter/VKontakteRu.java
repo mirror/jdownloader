@@ -1495,17 +1495,21 @@ public class VKontakteRu extends PluginForDecrypt {
         return ownerID;
     }
 
+    /* Handle all kinds of stuff that disturbs the downloadflow */
+    private void getPageSafeAPI(final String parameter) throws Exception {
+        for (int i = 1; i <= 3; i++) {
+            br.getPage(parameter);
+            handleErrorsAPI();
+            break;
+        }
+    }
+
     private void postPageSafeAPI(final String page, final String postData) throws Exception {
         boolean failed = true;
         boolean failed_once = false;
         for (int i = 1; i <= 10; i++) {
             br.postPage(page, postData);
-            if (br.containsHTML(TEMPORARILYBLOCKED)) {
-                failed_once = true;
-                logger.info("Trying to avoid block " + i + " / 10");
-                this.sleep(3000, CRYPTEDLINK);
-                continue;
-            }
+            handleErrorsAPI();
             failed = false;
             break;
         }
@@ -1525,8 +1529,64 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         final int errcode = Integer.parseInt(errcodeSTR);
         switch (errcode) {
+        case 1:
+            break;
+        case 2:
+            break;
+        case 3:
+            break;
+        case 4:
+            break;
+        case 5:
+            break;
+        case 6:
+            break;
+        case 7:
+            break;
+        case 8:
+            break;
+        case 9:
+            break;
+        case 10:
+            break;
+        case 11:
+            break;
+        case 14:
+            break;
+        case 15:
+            break;
+        case 16:
+            break;
         case 17:
-
+            break;
+        case 20:
+            break;
+        case 21:
+            break;
+        case 23:
+            break;
+        case 100:
+            break;
+        case 101:
+            break;
+        case 113:
+            break;
+        case 150:
+            break;
+        case 200:
+            break;
+        case 201:
+            break;
+        case 203:
+            break;
+        case 300:
+            break;
+        case 500:
+            break;
+        case 600:
+            break;
+        case 603:
+            break;
         }
     }
 
