@@ -1,3 +1,8 @@
+EXTRACTTOPATHLOGIC_ASK_FOR_EVERY_ARCHIVE=Kérje minden archívumnál
+EXTRACTTOPATHLOGIC_ASK_ONCE=Kérdezze meg egyszer, és alkalmazza minden archívumra
+EXTRACTTOPATHLOGIC_EXTRACT_TO_ARCHIVE_PARENT=Ne kérdezze. Csomagolja ki oda ahol az archívum van.
+EXTRACTTOPATHLOGIC_USE_CUSTOMEXTRACTIONPATH=Használja az alapértelmezett kicsomagolási útvonal beállítást
+ExtractAction_getTranslationForExtractToPathLogic=Kicsomagolás logikai útvonala
 IfFileExistsDialog_layoutDialogContent_archive=Archívum:
 IfFileExistsDialog_layoutDialogContent_newName=Új név:
 ValidateArchiveAction_ValidateArchiveAction=Érvényesítve %s1
