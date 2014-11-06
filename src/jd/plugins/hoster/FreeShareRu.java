@@ -75,7 +75,7 @@ public class FreeShareRu extends PluginForHost {
         rc.parse();
         rc.load();
         File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-        String c = getCaptchaCode(cf, downloadLink);
+        String c = getCaptchaCode("recaptcha", cf, downloadLink);
         rc.getForm().put("sid", sid);
         rc.getForm().setAction(downloadLink.getDownloadURL());
         rc.setCode(c);

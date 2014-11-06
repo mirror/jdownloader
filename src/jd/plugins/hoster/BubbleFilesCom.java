@@ -100,7 +100,7 @@ public class BubbleFilesCom extends PluginForHost {
             rc.setId(rcID);
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, downloadLink);
+            String c = getCaptchaCode("recaptcha", cf, downloadLink);
             ajaxBR.postPage(downloadLink.getDownloadURL(), "downloadverify=1&d=1&recaptcha_response_field=" + c + "&recaptcha_challenge_field=" + rc.getChallenge());
             if (ajaxBR.containsHTML("incorrect\\-captcha\\-sol")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         } else if (br.containsHTML(this.getHost() + "/captcha\\.php\"")) {

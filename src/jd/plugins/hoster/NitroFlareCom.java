@@ -233,7 +233,7 @@ public class NitroFlareCom extends PluginForHost {
                 for (int i = 1; i <= 5; i++) {
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode(cf, downloadLink);
+                    final String c = getCaptchaCode("recaptcha", cf, downloadLink);
                     br.postPage("/ajax/freeDownload.php", "method=fetchDownload&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
                     if (br.containsHTML("The captcha wasn't entered correctly|You have to fill the captcha")) {
                         continue;
@@ -402,7 +402,7 @@ public class NitroFlareCom extends PluginForHost {
                         rc.setId(recap);
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        final String c = getCaptchaCode(cf, downloadLink);
+                        final String c = getCaptchaCode("recaptcha", cf, downloadLink);
                         if (!inValidate(delay) && i == 1) {
                             sleep((Long.parseLong(delay) * 1000) - (System.currentTimeMillis() - startTime), downloadLink);
                         }

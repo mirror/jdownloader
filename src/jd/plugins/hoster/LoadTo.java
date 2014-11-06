@@ -114,7 +114,7 @@ public class LoadTo extends PluginForHost {
                 rc.load();
                 linkurl = getLinkurl();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode(cf, downloadLink);
+                final String c = getCaptchaCode("recaptcha", cf, downloadLink);
                 final String postData = "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&returnUrl=" + Encoding.urlEncode(br.getURL());
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, postData, true, 1);
                 if (dl.getConnection().getContentType().contains("html")) {

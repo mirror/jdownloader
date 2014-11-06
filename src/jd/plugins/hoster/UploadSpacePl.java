@@ -86,7 +86,7 @@ public class UploadSpacePl extends PluginForHost {
             rc.setId(id);
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, downloadLink);
+            String c = getCaptchaCode("recaptcha", cf, downloadLink);
             rc.setCode(c);
             if (br.containsHTML("api.recaptcha.net")) continue;
             break;

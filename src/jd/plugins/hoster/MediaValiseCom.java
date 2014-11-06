@@ -80,7 +80,7 @@ public class MediaValiseCom extends PluginForHost {
         rc.setId(reCaptchaId);
         rc.load();
         File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-        String c = getCaptchaCode(cf, downloadLink);
+        String c = getCaptchaCode("recaptcha", cf, downloadLink);
         br.postPage(downloadLink.getDownloadURL().replace(".html", "") + ".js", "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
         if (br.containsHTML(">Wrong captcha code<")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String dllink = br.getRegex("id=\"donwload_link\" class=\"center\">[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);

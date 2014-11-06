@@ -169,7 +169,7 @@ public class AdltDlCom extends PluginForDecrypt {
                 rc.findID();
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                c = getCaptchaCode(cf, param);
+                c = getCaptchaCode("recaptcha", cf, param);
                 postData = "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c);
             } else {
                 final String cLnk = br.getRegex("\\'(/securimage/securimage_show\\.php\\?\\d+)\\'").getMatch(0);

@@ -238,7 +238,7 @@ public class BitShareCom extends PluginForHost {
                 rc.setId(id);
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode(cf, downloadLink);
+                final String c = getCaptchaCode("recaptcha", cf, downloadLink);
                 rc.getForm().put("recaptcha_response_field", c);
                 rc.getForm().put("recaptcha_challenge_field", rc.getChallenge());
                 br2 = ajax.cloneBrowser();

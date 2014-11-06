@@ -52,7 +52,7 @@ public class GuardLinksCom extends PluginForDecrypt {
         rc.load();
         for (int i = 1; i <= 5; i++) {
             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            final String c = getCaptchaCode(cf, param);
+            final String c = getCaptchaCode("recaptcha", cf, param);
             br.postPage(br.getURL(), "recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&comment=&submit1=Envoyer");
             if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                 rc.reload();

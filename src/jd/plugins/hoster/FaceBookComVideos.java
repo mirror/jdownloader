@@ -447,7 +447,7 @@ public class FaceBookComVideos extends PluginForHost {
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     String c;
                     try {
-                        c = getCaptchaCode(cf, dummyLink);
+                        c = getCaptchaCode("recaptcha", cf, dummyLink);
                     } catch (final Exception e) {
                         continue;
                     }

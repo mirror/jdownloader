@@ -196,7 +196,7 @@ public class LinkzHostCom extends PluginForHost {
             rc.parse();
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, downloadLink);
+            String c = getCaptchaCode("recaptcha", cf, downloadLink);
             if (password == true) {
                 if (downloadLink.getStringProperty("pass", null) == null) {
                     passCode = getUserInput(null, downloadLink);

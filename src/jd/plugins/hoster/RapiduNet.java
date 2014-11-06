@@ -233,7 +233,7 @@ public class RapiduNet extends PluginForHost {
         for (int i = 0; i < 5; i++) {
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, downloadLink);
+            String c = getCaptchaCode("recaptcha", cf, downloadLink);
             br.postPage(MAINPAGE + "/ajax.php?a=getCheckCaptcha", "captcha1=" + rc.getChallenge() + "&captcha2=" + Encoding.urlEncode(c) + "&fileId=" + fileID + "&_go=");
             response = br.toString();
             String message = checkForErrors(br.toString(), "error");

@@ -60,7 +60,7 @@ public class ShieldLinksCom extends PluginForDecrypt {
         rc.load();
         for (int i = 1; i <= 5; i++) {
             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            final String c = getCaptchaCode(cf, param);
+            final String c = getCaptchaCode("recaptcha", cf, param);
             br.postPage(br.getURL(), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&getln=Get+links&id=" + id);
             if (br.containsHTML("type=\"text/javascript\" src=\"http://www\\.google\\.com/recaptcha/api/challenge")) {
                 rc.reload();

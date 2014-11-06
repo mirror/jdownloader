@@ -165,7 +165,7 @@ public class UpstoRe extends PluginForHost {
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             String c = null;
             try {
-                c = getCaptchaCode(cf, downloadLink);
+                c = getCaptchaCode("recaptcha", cf, downloadLink);
             } catch (final Throwable e) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }

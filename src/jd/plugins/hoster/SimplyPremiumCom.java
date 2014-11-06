@@ -362,7 +362,7 @@ public class SimplyPremiumCom extends PluginForHost {
             rc.load();
             for (int i = 1; i <= 3; i++) {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode(cf, dummyLink);
+                final String c = getCaptchaCode("recaptcha", cf, dummyLink);
                 br.getPage("http://simply-premium.com/login.php?login_name=" + Encoding.urlEncode(account.getUser()) + "&login_pass=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
                 if (br.containsHTML("<error>captcha_incorrect</error>")) {
                     rc.reload();

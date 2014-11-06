@@ -174,7 +174,7 @@ public class NmLdsrg extends PluginForDecrypt {
             rc.load();
             for (int i = 0; i <= 3; i++) {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode(cf, param);
+                final String c = getCaptchaCode("recaptcha", cf, param);
                 ajax.postPage(br2.getURL(), "action=web&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
                 if (ajax.containsHTML("ok\":false")) {
                     rc.reload();

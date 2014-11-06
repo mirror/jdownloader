@@ -319,7 +319,7 @@ public class PururinCom extends PluginForHost {
                         rc.setId(apiKey);
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        final String response = getCaptchaCode(cf, dllink);
+                        final String response = getCaptchaCode("recaptcha", cf, dllink);
                         cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
                         cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
                         br.submitForm(cloudflare);

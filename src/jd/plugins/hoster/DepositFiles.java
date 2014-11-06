@@ -469,7 +469,7 @@ public class DepositFiles extends PluginForHost {
                     rc.setId(id);
                     rc.load();
                     File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    String c = getCaptchaCode(cf, downloadLink);
+                    String c = getCaptchaCode("recaptcha", cf, downloadLink);
                     int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
                     int waitThis = 62;
                     if (wait != null) {
@@ -732,7 +732,7 @@ public class DepositFiles extends PluginForHost {
                     rc.setId(cid);
                     rc.load();
                     File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    String c = getCaptchaCode(cf, dummy);
+                    String c = getCaptchaCode("recaptcha", cf, dummy);
                     login.put("recaptcha_challenge_field", rc.getChallenge());
                     login.put("recaptcha_response_field", Encoding.urlEncode(c));
                     br2.submitForm(login);
@@ -967,7 +967,7 @@ public class DepositFiles extends PluginForHost {
                     rc.setId("6LdRTL8SAAAAAE9UOdWZ4d0Ky-aeA7XfSqyWDM2m");
                     rc.load();
                     File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    String c = getCaptchaCode(cf, dummyLink);
+                    String c = getCaptchaCode("recaptcha", cf, dummyLink);
                     if (c == null || c.equals("")) {
                         logger.warning(this.getHost() + "requires captcha query in order to login, you've entered nothing or blank captcha respsonse. Aborting login sequence");
                         account.setValid(false);
@@ -1142,7 +1142,7 @@ public class DepositFiles extends PluginForHost {
                         rc.setId("6LdRTL8SAAAAAE9UOdWZ4d0Ky-aeA7XfSqyWDM2m");
                         rc.load();
                         File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        String c = getCaptchaCode(cf, downloadLink);
+                        String c = getCaptchaCode("recaptcha", cf, downloadLink);
                         if (c == null || c.equals("")) {
                             logger.warning("User aborted/cancelled captcha");
                             throw new PluginException(LinkStatus.ERROR_CAPTCHA);

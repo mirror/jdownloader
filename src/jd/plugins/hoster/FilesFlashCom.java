@@ -144,7 +144,7 @@ public class FilesFlashCom extends PluginForHost {
         rc.setId(rcID);
         rc.load();
         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-        final String c = getCaptchaCode(cf, downloadLink);
+        final String c = getCaptchaCode("recaptcha", cf, downloadLink);
         br.postPage("http://" + FilesFlashCom.USE_DOMAIN + "/freedownload.php", "token=" + token + "&submit=Submit&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
         if (br.containsHTML("google.com/recaptcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         // Should never happen

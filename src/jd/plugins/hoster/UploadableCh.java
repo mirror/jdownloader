@@ -114,7 +114,7 @@ public class UploadableCh extends PluginForHost {
             rc.load();
             for (int i = 1; i <= 5; i++) {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode(cf, downloadLink);
+                final String c = getCaptchaCode("recaptcha", cf, downloadLink);
                 br.postPage("http://www.uploadable.ch/checkReCaptcha.php", "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_shortencode_field=" + fid);
                 if (br.containsHTML("\"success\":0")) {
                     rc.reload();

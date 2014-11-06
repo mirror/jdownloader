@@ -91,7 +91,7 @@ public class NetKupsCom extends PluginForHost {
             rc.parse();
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, downloadLink);
+            String c = getCaptchaCode("recaptcha", cf, downloadLink);
             rc.setCode(c);
             if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             dllink = br.getRegex("id=\"getfile\"><a href=\"(http://[^<>\"]*?)\"").getMatch(0);

@@ -209,7 +209,7 @@ public class QuickUploadDotNet extends PluginForHost {
             rc.setForm(br.getFormbyProperty("name", "F1"));
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, downloadLink);
+            String c = getCaptchaCode("recaptcha", cf, downloadLink);
             if (password == true) {
                 if (downloadLink.getStringProperty("pass", null) == null) {
                     passCode = Plugin.getUserInput("Password?", downloadLink);

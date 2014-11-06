@@ -441,7 +441,7 @@ public class RapidGatorNet extends PluginForHost {
                     rc.parse();
                     rc.load();
                     final File cf = rc.downloadCaptcha(this.getLocalCaptchaFile());
-                    final String c = this.getCaptchaCode(cf, downloadLink);
+                    final String c = this.getCaptchaCode("recaptcha", cf, downloadLink);
                     rc.getForm().put("DownloadCaptchaForm%5Bcaptcha%5D", "");
                     rc.setCode(c);
                     if (this.br.containsHTML("(>Please fix the following input errors|>The verification code is incorrect|api\\.recaptcha\\.net/|google\\.com/recaptcha/api/)")) {

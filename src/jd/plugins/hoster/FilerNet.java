@@ -225,7 +225,7 @@ public class FilerNet extends PluginForHost {
                 rc.setId(recapID);
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode(cf, downloadLink);
+                final String c = getCaptchaCode("recaptcha", cf, downloadLink);
                 tries++;
                 br.postPage("http://filer.net/get/" + fuid + ".json", "recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&hash=" + fuid);
                 dllink = br.getRedirectLocation();

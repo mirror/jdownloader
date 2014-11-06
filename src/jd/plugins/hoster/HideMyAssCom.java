@@ -64,7 +64,7 @@ public class HideMyAssCom extends PluginForHost {
             rc.parse();
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, downloadLink);
+            String c = getCaptchaCode("recaptcha", cf, downloadLink);
             br.setFollowRedirects(false);
             if (br.containsHTML(PASSWORDPROTECTED)) {
                 if (downloadLink.getStringProperty("pass", null) == null) {

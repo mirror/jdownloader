@@ -70,7 +70,7 @@ public class VosProtectsCom extends PluginForDecrypt {
                 rc.parse();
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode(cf, param);
+                final String c = getCaptchaCode("recaptcha", cf, param);
                 final String postData = "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&x=" + Integer.toString(new Random().nextInt(100)) + "&y=" + Integer.toString(new Random().nextInt(100)) + "&captcha=recaptcha&mon_captcha=" + linkid;
                 br.postPage("http://" + domain + "/showlinks.php", postData);
                 if (br.containsHTML(">Captcha erroné vous allez être rediriger")) {

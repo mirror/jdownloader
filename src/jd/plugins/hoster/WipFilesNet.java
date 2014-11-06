@@ -327,7 +327,7 @@ public class WipFilesNet extends PluginForHost {
                     rc.findID();
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode(cf, downloadLink);
+                    final String c = getCaptchaCode("recaptcha", cf, downloadLink);
                     dlForm.put("recaptcha_challenge_field", rc.getChallenge());
                     dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");

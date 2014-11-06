@@ -71,7 +71,7 @@ public class EmbedUploadCom extends PluginForDecrypt {
                 rc.load();
                 for (int i = 0; i <= 3; i++) {
                     File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode(cf, param);
+                    final String c = getCaptchaCode("recaptcha", cf, param);
                     br.postPage(br.getURL(), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
                     if (br.containsHTML(recaptcha)) {
                         rc.reload();

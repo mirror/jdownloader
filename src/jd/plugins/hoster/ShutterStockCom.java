@@ -132,7 +132,7 @@ public class ShutterStockCom extends PluginForHost {
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", "shutterstock.com", "http://shutterstock.com", true);
-                    final String c = getCaptchaCode(cf, dummyLink);
+                    final String c = getCaptchaCode("recaptcha", cf, dummyLink);
                     br.postPage("http://www.shutterstock.com/login.mhtml", "submit=Sign+In&landing_page=%2F&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "");
                     if (br.containsHTML("google\\.com/recaptcha/")) {
                         logger.info("Wrong password, username or captcha, stopping...");

@@ -118,7 +118,7 @@ public class XboxIsoZoneCom extends PluginForHost {
         rc.setId(rcID);
         rc.load();
         File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-        String c = getCaptchaCode(cf, downloadLink);
+        String c = getCaptchaCode("recaptcha", cf, downloadLink);
         rc.setCode(c);
         String finallink = br.getRedirectLocation();
         if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

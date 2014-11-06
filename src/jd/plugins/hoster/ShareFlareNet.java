@@ -425,7 +425,7 @@ public class ShareFlareNet extends PluginForHost {
             rc.load();
             for (int i = 0; i <= 5; i++) {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode(cf, downloadLink);
+                final String c = getCaptchaCode("recaptcha", cf, downloadLink);
                 if (i == 0) {
                     waitTime(ajaxBR, timeBefore, downloadLink);
                 }

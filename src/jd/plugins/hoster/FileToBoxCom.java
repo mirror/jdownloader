@@ -98,7 +98,7 @@ public class FileToBoxCom extends PluginForHost {
                     }
                     File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     captchaform.put("recaptcha_challenge_field", rc.getChallenge());
-                    captchaform.put("recaptcha_response_field", getCaptchaCode(cf, link));
+                    captchaform.put("recaptcha_response_field", getCaptchaCode("recaptcha", cf, link));
                 } else if (br.containsHTML(CHEAPCAPTCHATEXT)) {
                     logger.info("Found normal captcha");
                     String captchaurl = COOKIE_HOST + "/captcha.php";

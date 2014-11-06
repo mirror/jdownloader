@@ -184,7 +184,7 @@ public class AnySendCom extends PluginForHost {
                 rc.findID();
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode(cf, downloadLink);
+                final String c = getCaptchaCode("recaptcha", cf, downloadLink);
                 XMLBR.getPage("http://download.anysend.com/download/getcode.php?a=" + a + "&v=" + v + "&key=" + key + "&code=" + JDHash.getMD5(code + rc.getChallenge() + c).toUpperCase() + "&challenge=" + rc.getChallenge() + "&response=" + Encoding.urlEncode(c));
             } catch (Throwable e) {
                 XMLBR.getPage("http://download.anysend.com/download/getcode.php?a=" + a + "&v=" + v + "&key=" + key + "&code=" + code);

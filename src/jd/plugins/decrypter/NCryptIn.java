@@ -126,7 +126,7 @@ public class NCryptIn extends PluginForDecrypt {
                         rc.parse();
                         rc.load();
                         final File cf = rc.downloadCaptcha(this.getLocalCaptchaFile());
-                        final String c = this.getCaptchaCode(cf, param);
+                        final String c = this.getCaptchaCode("recaptcha", cf, param);
                         if (allForm.containsHTML(PASSWORDTEXT)) {
                             final String passCode = getPassword(param);
                             rc.getForm().put(PASSWORDTEXT, passCode);

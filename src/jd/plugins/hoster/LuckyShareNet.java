@@ -181,14 +181,14 @@ public class LuckyShareNet extends PluginForHost {
         for (int i = 0; i <= 5; i++) {
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, downloadLink);
+            String c = getCaptchaCode("recaptcha", cf, downloadLink);
             c = c != null && "".equals(c) ? c = null : c;
 
             /* simple 'reload button' method */
             while (c == null) {
                 rc.reload();
                 cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                c = getCaptchaCode(cf, downloadLink);
+                c = getCaptchaCode("recaptcha", cf, downloadLink);
                 c = c != null && "".equals(c) ? c = null : c;
             }
 

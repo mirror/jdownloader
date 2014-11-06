@@ -244,7 +244,7 @@ public class IFileIt extends PluginForHost {
                 rc.load();
                 for (int i = 0; i <= 5; i++) {
                     File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    String c = getCaptchaCode(cf, downloadLink);
+                    String c = getCaptchaCode("recaptcha", cf, downloadLink);
                     xmlrequest(br2, "/download-request.json", "ukey=" + ukey + "&__ab1=" + ab1 + "&ctype=recaptcha&recaptcha_response=" + Encoding.urlEncode_light(c) + "&recaptcha_challenge=" + rc.getChallenge());
                     if (br2.containsHTML("(\"retry\":1|\"captcha\":1)")) {
                         rc.reload();
@@ -404,7 +404,7 @@ public class IFileIt extends PluginForHost {
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                         final DownloadLink dummyLink = new DownloadLink(this, "Account", "filecloud.io", "http://filecloud.io", true);
-                        final String c = getCaptchaCode(cf, dummyLink);
+                        final String c = getCaptchaCode("recaptcha", cf, dummyLink);
                         br.postPage("/user-login_p.html", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
                     } else {
                         br.postPage("/user-login_p.html", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));

@@ -95,7 +95,7 @@ public class Rapids24Pl extends PluginForHost {
             rc.load();
             for (int i = 1; i <= 5; i++) {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode(cf, dummyLink);
+                final String c = getCaptchaCode("recaptcha", cf, dummyLink);
                 apiRequest(API_HTTP + NICE_HOST + "/api2.php?login=" + username + "&pass=" + pass + "&recaptcha_challenge=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response=" + Encoding.urlEncode(c) + "&cmd=get_acc_details", account, null);
                 if (STATUSCODE == 3) {
                     rc.reload();

@@ -389,7 +389,7 @@ public class TeraFileCo extends PluginForHost {
                     rc.findID();
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode(cf, downloadLink);
+                    final String c = getCaptchaCode("recaptcha", cf, downloadLink);
                     dlForm.put("recaptcha_challenge_field", rc.getChallenge());
                     dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
@@ -660,7 +660,7 @@ public class TeraFileCo extends PluginForHost {
                     rc.setId(apiKey);
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String response = getCaptchaCode(cf, dllink);
+                    final String response = getCaptchaCode("recaptcha", cf, dllink);
                     cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
                     cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
                     br.submitForm(cloudflare);

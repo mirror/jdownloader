@@ -295,7 +295,7 @@ public class FileBiteCc extends PluginForHost {
                     rc.setId(id);
                     rc.load();
                     File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    String c = getCaptchaCode(cf, downloadLink);
+                    String c = getCaptchaCode("recaptcha", cf, downloadLink);
                     Form rcform = rc.getForm();
                     rcform.put("recaptcha_challenge_field", rc.getChallenge());
                     rcform.put("recaptcha_response_field", Encoding.urlEncode(c));

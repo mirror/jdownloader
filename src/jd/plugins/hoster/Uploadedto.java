@@ -770,7 +770,7 @@ public class Uploadedto extends PluginForHost {
                 rc.load();
                 for (int i = 0; i <= 5; i++) {
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode(cf, downloadLink);
+                    final String c = getCaptchaCode("recaptcha", cf, downloadLink);
                     int passedTime = (int) ((System.currentTimeMillis() - timebefore) / 1000) - 1;
                     if (i == 0 && passedTime < wait) {
                         sleep((wait - passedTime) * 1001l, downloadLink);

@@ -445,7 +445,7 @@ public class MediafireCom extends PluginForHost {
                             final File cf = rc.downloadCaptcha(this.getLocalCaptchaFile());
                             boolean defect = false;
                             try {
-                                final String c = this.getCaptchaCode(cf, downloadLink);
+                                final String c = this.getCaptchaCode("recaptcha", cf, downloadLink);
                                 rc.setCode(c);
                                 form = br.getFormbyProperty("name", "form_captcha");
                                 id = br.getRegex("challenge\\?k=(.+?)\"").getMatch(0);

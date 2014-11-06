@@ -306,7 +306,7 @@ public class XHamsterCom extends PluginForHost {
                         rc.load();
                         final DownloadLink dummyLink = new DownloadLink(this, "Account", "xhamster.com", "http://xhamster.com", true);
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        final String c = getCaptchaCode(cf, dummyLink);
+                        final String c = getCaptchaCode("recaptcha", cf, dummyLink);
                         final String loginlink = "http://xhamster.com/ajax/login.php?act=login&ref=http%3A%2F%2Fxhamster.com%2F&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on&_=" + System.currentTimeMillis() + "&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(c);
                         br.getPage(loginlink);
                         if (br.containsHTML("\\'Recaptcha does not match")) {

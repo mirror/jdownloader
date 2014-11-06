@@ -262,7 +262,7 @@ public class Keep2ShareCc extends K2SApi {
                         rc.setId(id);
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        final String c = getCaptchaCode(cf, downloadLink);
+                        final String c = getCaptchaCode("recaptcha", cf, downloadLink);
                         postPage(br.getURL(), "CaptchaForm%5Bcode%5D=&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&free=1&freeDownloadRequest=1&yt0=&uniqueId=" + uniqueID);
                         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -412,7 +412,7 @@ public class Keep2ShareCc extends K2SApi {
                         rc.setId(challenge);
                         rc.load();
                         File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        String c = getCaptchaCode(cf, dummyLink);
+                        String c = getCaptchaCode("recaptcha", cf, dummyLink);
                         postData = postData + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c);
                     }
                 }

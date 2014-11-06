@@ -91,7 +91,7 @@ public class FileShareTo extends PluginForHost {
                     rc.load();
                     File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     captchaform.put("recaptcha_challenge_field", rc.getChallenge());
-                    captchaform.put("recaptcha_response_field", getCaptchaCode(cf, downloadLink));
+                    captchaform.put("recaptcha_response_field", getCaptchaCode("recaptcha", cf, downloadLink));
                 } else if (br.containsHTML(CHEAPCAPTCHATEXT)) {
                     logger.info("Found normal captcha");
                     String captchaurl = COOKIE_HOST + "/captcha.php";

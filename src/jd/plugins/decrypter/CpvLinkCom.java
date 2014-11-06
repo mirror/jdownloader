@@ -80,7 +80,7 @@ public class CpvLinkCom extends PluginForDecrypt {
                     token = "";
                 }
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode(cf, param);
+                final String c = getCaptchaCode("recaptcha", cf, param);
                 final String postData = "_token=" + token + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&url_id=" + urlid + "&url_url=" + lid + "&recaptcha_id=" + reid;
                 br.postPage("http://shr77.com/recaptcha", postData);
                 handleContinueLink();

@@ -327,7 +327,7 @@ public class SendspaceCom extends PluginForHost {
                     rc.setId(id);
                     for (int i = 0; i <= 5; i++) {
                         File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        String c = getCaptchaCode(cf, downloadLink);
+                        String c = getCaptchaCode("recaptcha", cf, downloadLink);
                         rc.setCode(c);
                         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                             rc.reload();

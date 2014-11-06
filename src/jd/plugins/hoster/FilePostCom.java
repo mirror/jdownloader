@@ -407,7 +407,7 @@ public class FilePostCom extends PluginForHost {
                 rc.setId(cid);
                 rc.load();
                 File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = getCaptchaCode(cf, downloadLink);
+                String c = getCaptchaCode("recaptcha", cf, downloadLink);
                 form.put("recaptcha_response_field", Encoding.urlEncode(c));
                 form.put("recaptcha_challenge_field", rc.getChallenge());
             }
@@ -659,7 +659,7 @@ public class FilePostCom extends PluginForHost {
                         rc.load();
                         File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                         DownloadLink dummyLink = new DownloadLink(this, "Account", "filepost.com", "http://filepost.com", true);
-                        String c = getCaptchaCode(cf, dummyLink);
+                        String c = getCaptchaCode("recaptcha", cf, dummyLink);
                         br.postPage("/general/login_form/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + pw + "&remember=on&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_challenge_field=" + rc.getChallenge());
                     }
                 }
