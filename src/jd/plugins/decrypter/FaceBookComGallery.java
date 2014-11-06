@@ -102,6 +102,11 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 final String finallink = br.getRedirectLocation();
                 if (br.containsHTML(">Something\\'s wrong here")) {
                     logger.info("Link offline: " + parameter);
+                    final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+                    offline.setFinalFileName(new Regex(parameter, "facebook\\.com/(.+)").getMatch(0));
+                    offline.setAvailable(false);
+                    offline.setProperty("offline", true);
+                    decryptedLinks.add(offline);
                     return decryptedLinks;
                 }
                 if (finallink == null) {
@@ -113,6 +118,17 @@ public class FaceBookComGallery extends PluginForDecrypt {
             }
             logged_in = login();
             getpagefirsttime(PARAMETER);
+
+            /* temporarily unavailable (or forever, or permission/rights needed) || empty album */
+            if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar</") || br.containsHTML("class=\"fbStarGridBlankContent\"")) {
+                logger.info("The link is either offline or an account is needed to grab it: " + PARAMETER);
+                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+                offline.setFinalFileName(new Regex(parameter, "facebook\\.com/(.+)").getMatch(0));
+                offline.setAvailable(false);
+                offline.setProperty("offline", true);
+                decryptedLinks.add(offline);
+                return decryptedLinks;
+            }
 
             if (PARAMETER.matches(TYPE_ALBUMS_LINK)) {
                 decryptAlbums();
@@ -348,11 +364,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
             logger.info("Cannot decrypt link without valid account: " + PARAMETER);
             return;
         }
-        /* temporarily unavailable || empty album (link) */
-        if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar</") || br.containsHTML("class=\"fbStarGridBlankContent\"")) {
-            logger.info("The link is either offline or an account is needed to grab it: " + PARAMETER);
-            return;
-        }
         String fpName = getPageTitle();
         final boolean profile_setlink = br.getURL().contains("&set=");
         boolean dynamicLoadAlreadyDecrypted = false;
@@ -509,7 +520,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         final String ajaxpipeToken = getajaxpipeToken();
         final String user = getUser();
         String lastfirstID = "";
-        if (ajaxpipeToken == null || user == null || profileID == null || type == null || setID == null) {
+        if (ajaxpipeToken == null || user == null || type == null || setID == null) {
             logger.warning("Decrypter broken for link: " + PARAMETER);
             throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
         }
@@ -705,11 +716,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
             logger.info("Cannot decrypt link without valid account: " + PARAMETER);
             return;
         }
-        /* temporarily unavailable || empty album (link) */
-        if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar</") || br.containsHTML("class=\"fbStarGridBlankContent\"")) {
-            logger.info("The link is either offline or an account is needed to grab it: " + PARAMETER);
-            return;
-        }
         String fpName = getPageTitle();
         final String rev = getRev();
         final String user = getUser();
@@ -853,11 +859,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private void decryptPicsGeneral(String controller) throws Exception {
         if (!logged_in) {
             logger.info("Cannot decrypt link without valid account: " + PARAMETER);
-            return;
-        }
-        /* temporarily unavailable || empty album (link) */
-        if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar</") || br.containsHTML("class=\"fbStarGridBlankContent\"")) {
-            logger.info("The link is either offline or an account is needed to grab it: " + PARAMETER);
             return;
         }
         String fpName = getPageTitle();

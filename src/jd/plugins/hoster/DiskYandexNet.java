@@ -80,10 +80,6 @@ public class DiskYandexNet extends PluginForHost {
     private final int            ACCOUNT_FREE_MAXCHUNKS             = 0;
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS          = 20;
 
-    private static AtomicInteger totalMaxSimultanFreeAccDownload    = new AtomicInteger(ACCOUNT_FREE_MAXDOWNLOADS);
-    /* don't touch the following! */
-    private static AtomicInteger maxFreeAcc                         = new AtomicInteger(1);
-
     /* Domain & other login stuff */
     private final String         MAIN_DOMAIN                        = "https://yandex.com";
     private final String[]       domains                            = new String[] { "https://yandex.ru", "https://yandex.com", "https://disk.yandex.ru/", "https://disk.yandex.com/", "https://disk.yandex.net/" };
@@ -96,10 +92,20 @@ public class DiskYandexNet extends PluginForHost {
     private static final String  TYPE_VIDEO_USER                    = "http://video\\.yandex\\.ru/users/[A-Za-z0-9]+/view/\\d+";
     private static final String  TYPE_DISK                          = "http://yandexdecrypted\\.net/\\d+";
 
+    private static AtomicInteger totalMaxSimultanFreeAccDownload    = new AtomicInteger(ACCOUNT_FREE_MAXDOWNLOADS);
+    /* don't touch the following! */
+    private static AtomicInteger maxFreeAcc                         = new AtomicInteger(1);
+
+    private Account              currAcc                            = null;
+
     /* Make sure we always use our main domain */
     private String fixMainlink(String mainlink) {
         mainlink = "https://disk.yandex.com/" + new Regex(mainlink, "yandex\\.[a-z]+/(.+)").getMatch(0);
         return mainlink;
+    }
+
+    private void setConstants(final Account acc) {
+        currAcc = acc;
     }
 
     @Override
@@ -253,6 +259,7 @@ public class DiskYandexNet extends PluginForHost {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
                 prepBr();
+                setConstants(account);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -326,9 +333,10 @@ public class DiskYandexNet extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        setConstants(account);
         ACCOUNT_SK = account.getStringProperty("saved_sk", null);
         requestFileInformation(link);
-        login(account, false);
+        login(this.currAcc, false);
         String dllink = checkDirectLink(link, "directlink_account");
 
         if (dllink == null) {
@@ -348,11 +356,10 @@ public class DiskYandexNet extends PluginForHost {
                 boolean file_moved = link.getBooleanProperty("file_moved", false);
                 try {
                     logger.info("MoveToAccount handling is active -> Starting account download handling");
-                    final Browser br2 = br.cloneBrowser();
-                    br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     if (file_moved) {
                         logger.info("Seems like the file has already been moved to the account -> Trying to get it");
-                        dllink = getLinkFromFileInAccount(link, br2);
+                        dllink = getLinkFromFileInAccount(link, br);
                         if (dllink == null) {
                             logger.info("Seems like the file is not in the account -> Trying to move it");
                             file_moved = false;
@@ -360,15 +367,15 @@ public class DiskYandexNet extends PluginForHost {
                         }
                     }
                     if (dllink == null) {
-                        br2.postPage("https://disk.yandex.com/models/?_m=do-save-resource-public", "_model.0=do-save-resource-public&id.0=%2Fpublic%2F" + Encoding.urlEncode(hash) + "&async.0=0&idClient=" + this.CLIENT_ID + "&version=" + this.VERSION + "&sk=" + ACCOUNT_SK);
+                        postPage("https://disk.yandex.com/models/?_m=do-save-resource-public", "_model.0=do-save-resource-public&id.0=%2Fpublic%2F" + Encoding.urlEncode(hash) + "&async.0=0&idClient=" + this.CLIENT_ID + "&version=" + this.VERSION + "&sk=" + ACCOUNT_SK);
                         /* TODO: Maybe add/find a way to verify if the file really has been moved to the account. */
-                        if (br2.containsHTML("\"code\":85")) {
+                        if (br.containsHTML("\"code\":85")) {
                             logger.info("No free space available, failed to move file to account");
                             throw new PluginException(LinkStatus.ERROR_FATAL, "No free space available, failed to move file to account");
                         }
                         file_moved = true;
                         link.setProperty("file_moved", true);
-                        dllink = getLinkFromFileInAccount(link, br2);
+                        dllink = getLinkFromFileInAccount(link, br);
                         if (dllink == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
@@ -435,7 +442,7 @@ public class DiskYandexNet extends PluginForHost {
             br.setFollowRedirects(false);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getHeaders().put("Referer", "https://disk.yandex.com/client/disk/Downloads");
-            br.postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fdisk%2FDownloads%2F" + urlencodedfname + "&idClient=" + this.CLIENT_ID + "&version=" + this.VERSION + "&sk=" + this.ACCOUNT_SK);
+            postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fdisk%2FDownloads%2F" + urlencodedfname + "&idClient=" + this.CLIENT_ID + "&version=" + this.VERSION + "&sk=" + this.ACCOUNT_SK);
             dllink = br.getRedirectLocation();
             if (dllink == null) {
                 dllink = br.getRegex("\"file\":\"(http[^<>\"]*?)\"").getMatch(0);
@@ -453,7 +460,7 @@ public class DiskYandexNet extends PluginForHost {
 
     private void moveFileToTrash(final DownloadLink dl) {
         try {
-            br.postPage("https://disk.yandex.com/models/?_m=do-resource-delete", "_model.0=do-resource-delete&id.0=%2Fdisk%2FDownloads%2F" + Encoding.urlEncode(dl.getName()) + "&idClient=" + CLIENT_ID + "&sk=" + this.ACCOUNT_SK + "&version=" + VERSION);
+            postPage("https://disk.yandex.com/models/?_m=do-resource-delete", "_model.0=do-resource-delete&id.0=%2Fdisk%2FDownloads%2F" + Encoding.urlEncode(dl.getName()) + "&idClient=" + CLIENT_ID + "&sk=" + this.ACCOUNT_SK + "&version=" + VERSION);
             logger.info("Successfully moved file to trash");
         } catch (final Throwable e) {
             logger.warning("Failed to move file to trash");
@@ -462,7 +469,7 @@ public class DiskYandexNet extends PluginForHost {
 
     private void emptyTrash() {
         try {
-            br.postPage("https://disk.yandex.com/models/?_m=do-clean-trash", "_model.0=do-clean-trash&idClient=" + CLIENT_ID + "&sk=" + this.ACCOUNT_SK + "&version=" + VERSION);
+            postPage("https://disk.yandex.com/models/?_m=do-clean-trash", "_model.0=do-clean-trash&idClient=" + CLIENT_ID + "&sk=" + this.ACCOUNT_SK + "&version=" + VERSION);
             logger.info("Successfully emptied trash");
         } catch (final Throwable e) {
             logger.warning("Failed to empty trash");
@@ -526,6 +533,22 @@ public class DiskYandexNet extends PluginForHost {
 
     private void prepBr() {
         br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
+    }
+
+    private void getPage(final String url) throws Exception {
+        br.getPage(url);
+        if (br.containsHTML("\"id\":\"WRONG_SK\"")) {
+            logger.info("Refreshing ACCOUNT_SK");
+            this.login(this.currAcc, true);
+        }
+    }
+
+    private void postPage(final String url, final String data) throws Exception {
+        br.postPage(url, data);
+        if (br.containsHTML("\"id\":\"WRONG_SK\"")) {
+            logger.info("Refreshing ACCOUNT_SK");
+            this.login(this.currAcc, true);
+        }
     }
 
     @Override
