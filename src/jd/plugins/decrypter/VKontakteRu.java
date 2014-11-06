@@ -1086,7 +1086,7 @@ public class VKontakteRu extends PluginForDecrypt {
             currentOffset = Integer.parseInt(info.getMatch(1));
             logger.info("PATTERN_WALL_LOOPBACK_LINK has a max offset of " + total_numberof_entries + " and a current offset of " + currentOffset);
         } else {
-            br.postPage("https://vk.com/api.php", "v=" + api_version + "&format=json&owner_id=" + userID + "&count=1&offset=0&filter=all&extended=0&method=wall.get" + "&access_token=" + Encoding.Base64Decode(api_access_token_vkopt) + "&oauth=1");
+            br.postPage("https://vk.com/api.php", "v=" + api_version + "&format=json&owner_id=" + userID + "&count=1&offset=0&filter=all&extended=0&method=wall.get&access_token=" + Encoding.Base64Decode(api_access_token_vkopt) + "&oauth=1");
             total_numberof_entries = Long.parseLong(getJson("count"));
             logger.info("PATTERN_WALL_LINK has a max offset of " + total_numberof_entries + " and a current offset of " + currentOffset);
         }
@@ -1104,7 +1104,7 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             logger.info("Starting to decrypt offset " + currentOffset + " / " + total_numberof_entries);
             this.sleep(500, CRYPTEDLINK);
-            br.postPage("https://vk.com/api.php", "v=" + api_version + "&format=json&owner_id=" + userID + "&count=" + entries_per_request + "&offset=" + currentOffset + "&filter=all&extended=0&method=wall.get" + "&access_token=" + Encoding.Base64Decode(api_access_token_vkopt) + "&oauth=1");
+            br.postPage("https://vk.com/api.php", "v=" + api_version + "&format=json&owner_id=" + userID + "&count=" + entries_per_request + "&offset=" + currentOffset + "&filter=all&extended=0&method=wall.get&access_token=" + Encoding.Base64Decode(api_access_token_vkopt) + "&oauth=1");
             br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
             final String poststext = br.getRegex("\"items\":\\[(.+)\\]\\}\\}").getMatch(0);
             if (poststext == null) {
@@ -1516,8 +1516,6 @@ public class VKontakteRu extends PluginForDecrypt {
             aa.setValid(false);
             return false;
         }
-        // Account is valid, let's just add it
-        AccountController.getInstance().addAccount(hostPlugin, aa);
         return true;
     }
 

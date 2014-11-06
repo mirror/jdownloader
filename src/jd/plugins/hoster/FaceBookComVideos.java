@@ -154,7 +154,7 @@ public class FaceBookComVideos extends PluginForHost {
 
             if (link.getDownloadURL().matches(TYPE_SINGLE_PHOTO)) {
                 // Try if a downloadlink is available
-                DLLINK = br.getRegex("class=\"fbPhotosPhotoActionsItem\" href=\"(https?://[^<>\"]*?\\?dl=1)\"").getMatch(0);
+                DLLINK = br.getRegex("href=\"(https?://[^<>\"]*?(\\?|\\&amp;)dl=1)\"").getMatch(0);
                 // Try to find original quality link
                 // final String setID = br.getRegex("\"set\":\"([^<>\"]*?)\"").getMatch(0);
                 // final String user = br.getRegex("\"user\":\"([^<>\"]*?)\"").getMatch(0);

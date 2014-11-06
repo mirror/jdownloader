@@ -21,13 +21,22 @@ import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map.Entry;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -41,6 +50,7 @@ public class JustinTv extends PluginForHost {
 
     public JustinTv(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("https://secure.twitch.tv/products/turbo_year/ticket");
         setConfigElements();
     }
 
@@ -54,13 +64,15 @@ public class JustinTv extends PluginForHost {
         return -1;
     }
 
-    private final String        FASTLINKCHECK     = "FASTLINKCHECK";
-    private final String        NOCHUNKS          = "NOCHUNKS";
-    private final static String CUSTOM_DATE_2     = "CUSTOM_DATE_2";
-    private final static String CUSTOM_FILENAME_3 = "CUSTOM_FILENAME_3";
-    private final static String PARTNUMBERFORMAT  = "PARTNUMBERFORMAT";
+    private final String        FASTLINKCHECK             = "FASTLINKCHECK";
+    private final String        NOCHUNKS                  = "NOCHUNKS";
+    private final static String CUSTOM_DATE_2             = "CUSTOM_DATE_2";
+    private final static String CUSTOM_FILENAME_3         = "CUSTOM_FILENAME_3";
+    private final static String PARTNUMBERFORMAT          = "PARTNUMBERFORMAT";
 
-    private String              dllink            = null;
+    private static final int    ACCOUNT_FREE_MAXDOWNLOADS = 20;
+
+    private String              dllink                    = null;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, ParseException {
@@ -94,6 +106,10 @@ public class JustinTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    public void doFree(final DownloadLink downloadLink) throws Exception {
         int maxChunks = 0;
         if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
             maxChunks = 1;
@@ -183,6 +199,97 @@ public class JustinTv extends PluginForHost {
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
         return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+    }
+
+    private static final String MAINPAGE = "http://twitch.tv";
+    private static Object       LOCK     = new Object();
+
+    @SuppressWarnings("unchecked")
+    public static void login(final Browser br, final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                // Load cookies
+                br.setCookiesExclusive(true);
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            br.setCookie(MAINPAGE, key, value);
+                        }
+                        return;
+                    }
+                }
+                br.setFollowRedirects(true);
+                br.getPage("http://www.twitch.tv/user/login_popup?follow=");
+                final String auth_token = br.getRegex("name=\"authenticity_token\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
+                if (auth_token == null) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                br.postPage("https://secure.twitch.tv/user/login", "utf8=%E2%9C%93&authenticity_token=" + Encoding.urlEncode(auth_token) + "&redirect_on_login=&embed_form=false&mp_source_action=login-button&follow=&user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()));
+                if (br.getCookie(MAINPAGE, "persistent") == null) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                // Save cookies
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = br.getCookies(MAINPAGE);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
+            }
+        }
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            login(this.br, account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            throw e;
+        }
+        ai.setUnlimitedTraffic();
+        try {
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+        } catch (final Throwable e) {
+            /* not available in old Stable 0.9.581 */
+        }
+        ai.setStatus("Registered (free) user");
+        account.setValid(true);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        doFree(link);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return ACCOUNT_FREE_MAXDOWNLOADS;
     }
 
     @Override

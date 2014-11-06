@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -62,33 +63,38 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     /* Settings values */
-    private final String        MOVE_FILES_TO_ACCOUNT              = "MOVE_FILES_TO_ACCOUNT";
-    private final String        MOVE_FILES_TO_TRASH_AFTER_DOWNLOAD = "MOVE_FILES_TO_TRASH_AFTER_DOWNLOAD";
-    private final String        EMPTY_TRASH_AFTER_DOWNLOAD         = "EMPTY_TRASH_AFTER_DOWNLOAD";
-    private final String        DOWNLOAD_ZIP                       = "DOWNLOAD_ZIP_2";
+    private final String         MOVE_FILES_TO_ACCOUNT              = "MOVE_FILES_TO_ACCOUNT";
+    private final String         DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD = "EMPTY_TRASH_AFTER_DOWNLOAD";
+    private final String         DOWNLOAD_ZIP                       = "DOWNLOAD_ZIP_2";
 
     /* Some constants which they used in browser */
-    private final String        CLIENT_ID                          = "883aacd8d0b882b2e379506a55fb6b0f";
-    private final String        VERSION                            = "2.0.102";
-    private static final String STANDARD_FREE_SPEED                = "64 kbit/s";
+    private final String         CLIENT_ID                          = "883aacd8d0b882b2e379506a55fb6b0f";
+    private final String         VERSION                            = "2.0.102";
+    private static final String  STANDARD_FREE_SPEED                = "64 kbit/s";
 
     /* Connection limits */
-    private final boolean       FREE_RESUME                        = false;
-    private final int           FREE_MAXCHUNKS                     = 1;
-    private final boolean       ACCOUNT_RESUME                     = true;
-    private final int           ACCOUNT_MAXCHUNKS                  = 0;
+    private final boolean        FREE_RESUME                        = false;
+    private final int            FREE_MAXCHUNKS                     = 1;
+    private static final int     FREE_MAXDOWNLOADS                  = 20;
+    private final boolean        ACCOUNT_FREE_RESUME                = true;
+    private final int            ACCOUNT_FREE_MAXCHUNKS             = 0;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS          = 20;
+
+    private static AtomicInteger totalMaxSimultanFreeAccDownload    = new AtomicInteger(ACCOUNT_FREE_MAXDOWNLOADS);
+    /* don't touch the following! */
+    private static AtomicInteger maxFreeAcc                         = new AtomicInteger(1);
 
     /* Domain & other login stuff */
-    private final String        MAIN_DOMAIN                        = "https://yandex.com";
-    private final String[]      domains                            = new String[] { "https://yandex.ru", "https://yandex.com", "https://disk.yandex.ru/", "https://disk.yandex.com/", "https://disk.yandex.net/" };
-    private static Object       LOCK                               = new Object();
+    private final String         MAIN_DOMAIN                        = "https://yandex.com";
+    private final String[]       domains                            = new String[] { "https://yandex.ru", "https://yandex.com", "https://disk.yandex.ru/", "https://disk.yandex.com/", "https://disk.yandex.net/" };
+    private static Object        LOCK                               = new Object();
 
     /* Other constants */
     /* Important constant which seems to be unique for every account. It's needed for most of the requests when logged in. */
-    private String              ACCOUNT_SK                         = null;
-    private static final String TYPE_VIDEO                         = "http://video\\.yandex\\.ru/(iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+|users/[A-Za-z0-9]+/view/\\d+)";
-    private static final String TYPE_VIDEO_USER                    = "http://video\\.yandex\\.ru/users/[A-Za-z0-9]+/view/\\d+";
-    private static final String TYPE_DISK                          = "http://yandexdecrypted\\.net/\\d+";
+    private String               ACCOUNT_SK                         = null;
+    private static final String  TYPE_VIDEO                         = "http://video\\.yandex\\.ru/(iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+|users/[A-Za-z0-9]+/view/\\d+)";
+    private static final String  TYPE_VIDEO_USER                    = "http://video\\.yandex\\.ru/users/[A-Za-z0-9]+/view/\\d+";
+    private static final String  TYPE_DISK                          = "http://yandexdecrypted\\.net/\\d+";
 
     /* Make sure we always use our main domain */
     private String fixMainlink(String mainlink) {
@@ -225,9 +231,7 @@ public class DiskYandexNet extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
-            }
+            handleServerErrors();
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -303,20 +307,17 @@ public class DiskYandexNet extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        ACCOUNT_SK = account.getStringProperty("saved_sk", null);
+        br.getPage("https://beta.disk.yandex.com/client/disk/Downloads/");
+        ACCOUNT_SK = br.getRegex("\"sk\":\"([a-z0-9]+)\"").getMatch(0);
         if (ACCOUNT_SK == null) {
-            br.getPage("https://beta.disk.yandex.com/client/disk/Downloads/");
-            ACCOUNT_SK = br.getRegex("\"sk\":\"([a-z0-9]+)\"").getMatch(0);
-            if (ACCOUNT_SK == null) {
-                final String lang = System.getProperty("user.language");
-                if ("de".equalsIgnoreCase(lang)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
+            final String lang = System.getProperty("user.language");
+            if ("de".equalsIgnoreCase(lang)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            account.setProperty("saved_sk", ACCOUNT_SK);
         }
+        account.setProperty("saved_sk", ACCOUNT_SK);
         ai.setUnlimitedTraffic();
         account.setValid(true);
         ai.setStatus("Registered (free) user");
@@ -371,6 +372,15 @@ public class DiskYandexNet extends PluginForHost {
                         if (dllink == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
+                        if (this.getPluginConfig().getBooleanProperty(DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD, false)) {
+                            try {
+                                logger.info("Successfully grabbed dllink via move_to_Account_handling -> Move file to trash -> Trying to delete file from account");
+                                moveFileToTrash(link);
+                                logger.info("Successfully grabbed dllink via move_to_Account_handling -> Empty trash -> Trying to empty trash inside account");
+                                emptyTrash();
+                            } catch (final Throwable e) {
+                            }
+                        }
                     }
 
                 } catch (final PluginException e) {
@@ -391,26 +401,30 @@ public class DiskYandexNet extends PluginForHost {
                 }
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), ACCOUNT_RESUME, ACCOUNT_MAXCHUNKS);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
+            handleServerErrors();
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty("directlink_account", dllink);
-        if (this.dl.startDownload() && this.getPluginConfig().getBooleanProperty(MOVE_FILES_TO_TRASH_AFTER_DOWNLOAD, false)) {
-            try {
-                logger.info("Download successful -> DELETE_MOVED_FILES_AFTER_DOWNLOAD handling is active -> Trying to delete file from account");
-                moveFileToTrash(link);
-            } catch (final Throwable e) {
-            }
-            try {
-                if (this.getPluginConfig().getBooleanProperty(EMPTY_TRASH_AFTER_DOWNLOAD, false)) {
-                    logger.info("Download successful -> EMPTY_TRASH_AFTER_DOWNLOAD handling is active -> Trying to empty trash inside account");
-                    emptyTrash();
-                }
-            } catch (final Throwable e) {
-            }
+        try {
+            /* add a download slot */
+            controlFreeAcc(+1);
+            /* start the dl */
+            dl.startDownload();
+        } finally {
+            /* remove download slot */
+            controlFreeAcc(-1);
+        }
+    }
+
+    private void handleServerErrors() throws PluginException {
+        if (dl.getConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
+        } else if (dl.getConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
         }
     }
 
@@ -418,15 +432,15 @@ public class DiskYandexNet extends PluginForHost {
         final String urlencodedfname = Encoding.urlTotalEncode(dl.getName());
         String dllink = null;
         try {
-            br.getPage("https://docviewer.yandex.com/?url=ya-disk%3A%2F%2F%2Fdisk%2FDownloads%2F" + urlencodedfname + "&name=" + urlencodedfname);
-            /* This is another sk than the ACCOUNT_SK we have. */
-            final String sk = br.getRegex("sk:\\'([^<>\"]*?)\\'").getMatch(0);
-            final String auth = br.getRegex("auth:\\'([^<>\"]*?)\\'").getMatch(0);
-            if (sk == null || auth == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.setFollowRedirects(false);
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.getHeaders().put("Referer", "https://disk.yandex.com/client/disk/Downloads");
+            br.postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fdisk%2FDownloads%2F" + urlencodedfname + "&idClient=" + this.CLIENT_ID + "&version=" + this.VERSION + "&sk=" + this.ACCOUNT_SK);
+            dllink = br.getRedirectLocation();
+            if (dllink == null) {
+                dllink = br.getRegex("\"file\":\"(http[^<>\"]*?)\"").getMatch(0);
             }
-            br.postPage("https://docviewer.yandex.com/download.xml", "sk=" + sk + "&auth=" + auth + "&name=" + urlencodedfname + "&url=ya-disk%3A%2F%2F%2Fdisk%2FDownloads%2F" + urlencodedfname);
-            dllink = parse("url", br);
+            br.setFollowRedirects(true);
             /* Fix links - cookies sit on the other domain */
             if (dllink != null) {
                 dllink = dllink.replace("disk.yandex.ru/", "disk.yandex.com/");
@@ -474,9 +488,29 @@ public class DiskYandexNet extends PluginForHost {
         return dllink;
     }
 
+    /**
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
+     *
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
+     *
+     * @param controlFree
+     *            (+1|-1)
+     */
+    public synchronized void controlFreeAcc(final int num) {
+        logger.info("maxFree was = " + maxFreeAcc.get());
+        maxFreeAcc.set(Math.min(Math.max(1, maxFreeAcc.addAndGet(num)), totalMaxSimultanFreeAccDownload.get()));
+        logger.info("maxFree now = " + maxFreeAcc.get());
+    }
+
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        /* workaround for free/premium issue on stable 09581 */
+        return maxFreeAcc.get();
     }
 
     private String parse(final String var, final Browser srcbr) {
@@ -505,9 +539,7 @@ public class DiskYandexNet extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Account settings:"));
         final ConfigEntry moveFilesToAcc = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), MOVE_FILES_TO_ACCOUNT, JDL.L("plugins.hoster.DiskYandexNet.MoveFilesToAccount", "1. Move files to account before downloading them to get higher download speeds?")).setDefaultValue(false);
         getConfig().addEntry(moveFilesToAcc);
-        final ConfigEntry moveFilesToTrash = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), MOVE_FILES_TO_TRASH_AFTER_DOWNLOAD, JDL.L("plugins.hoster.DiskYandexNet.MoveFilesToTrashAfterSuccessfulDownload", "2. Move successfully downloaded files to trash after download?")).setEnabledCondidtion(moveFilesToAcc, true).setDefaultValue(false);
-        getConfig().addEntry(moveFilesToTrash);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EMPTY_TRASH_AFTER_DOWNLOAD, JDL.L("plugins.hoster.DiskYandexNet.EmptyTrashAfterSuccessfulDownload", "3. Empty trash after successful download?\r\n[Can only be used if setting #1 is active!]")).setEnabledCondidtion(moveFilesToTrash, true).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD, JDL.L("plugins.hoster.DiskYandexNet.EmptyTrashAfterSuccessfulDownload", "2. Delete moved files & empty trash after downloadlink-generation?")).setEnabledCondidtion(moveFilesToAcc, true).setDefaultValue(false));
     }
 
     private void checkDiskFeatureDialog() {
@@ -576,7 +608,7 @@ public class DiskYandexNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return FREE_MAXDOWNLOADS;
     }
 
     @Override

@@ -25,16 +25,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.logging2.LogSource;
@@ -68,6 +72,21 @@ public class JustinTvDecrypt extends PluginForDecrypt {
         // currently redirect to www.
         String parameter = param.toString().replaceAll("://([a-z]{2}\\.)?(twitchtv\\.com|twitch\\.tv)", "://www.twitch.tv");
         br.setFollowRedirects(true);
+
+        /* Log in if possible to be able to download "for subscribers only" videos */
+        String token = null;
+        String additionalparameters = "";
+        if (getUserLogin(false)) {
+            logger.info("Logged in via decrypter");
+            br.getPage("https://api.twitch.tv/api/viewer/token.json?as3=t");
+            token = br.getRegex("\"token\":\"([a-z0-9]+)\"").getMatch(0);
+            if (token != null) {
+                additionalparameters = "?as3=t&oauth_token=" + token;
+            }
+        } else {
+            logger.info("NOT logged in via decrypter");
+        }
+
         br.getPage(parameter);
         if (parameter.matches("http://(www\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+")) {
             parameter = "http://www.twitch.tv/" + System.currentTimeMillis() + "/b/" + new Regex(parameter, "(\\d+)$").getMatch(0);
@@ -128,7 +147,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 return decryptedLinks;
             }
             // no longer get videoname from html, it requires api call.
-            ajaxGetPage("http://api.twitch.tv/kraken/videos/" + (new Regex(parameter, "/b/\\d+$").matches() ? "a" : "c") + vid + "?on_site=1");
+            ajaxGetPage("http://api.twitch.tv/kraken/videos/" + (new Regex(parameter, "/b/\\d+$").matches() ? "a" : "c") + vid + "?on_site=1&");
             String filename = getJson(ajax, "title");
             final String channelName = getJson(ajax, "display_name");
             final String date = getJson(ajax, "recorded_at");
@@ -145,7 +164,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
             boolean failed = true;
             for (int i = 1; i <= 10; i++) {
                 try {
-                    ajaxGetPage("https://api.twitch.tv/api/videos/" + (new Regex(parameter, "/b/\\d+$").matches() ? "a" : "c") + vid);
+                    ajaxGetPage("https://api.twitch.tv/api/videos/" + (new Regex(parameter, "/b/\\d+$").matches() ? "a" : "c") + vid + additionalparameters);
                     if (ajax.containsHTML("\"restrictions\":\\{\"live\":\"chansub\"")) {
                         failreason = "Only downloadable for subscribers";
                     } else {
@@ -233,9 +252,20 @@ public class JustinTvDecrypt extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
+    private boolean getUserLogin(final boolean force) throws Exception {
+        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("twitch.tv");
+        final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
+        if (aa == null) {
+            logger.warning("There is no account available, stopping...");
+            return false;
+        }
+        try {
+            jd.plugins.hoster.JustinTv.login(this.br, aa, force);
+        } catch (final PluginException e) {
+            aa.setValid(false);
+            return false;
+        }
+        return true;
     }
 
     private final static AtomicBoolean pL = new AtomicBoolean(false);
@@ -303,6 +333,11 @@ public class JustinTvDecrypt extends PluginForDecrypt {
      * */
     private String getJsonArray(final String key) {
         return getJsonArray(br.toString(), key);
+    }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
     }
 
 }

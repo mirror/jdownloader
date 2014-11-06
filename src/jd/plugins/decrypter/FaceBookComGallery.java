@@ -59,7 +59,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private static final String   TYPE_SINGLE_VIDEO_EMBED        = "https?://(www\\.)?facebook\\.com/video/embed\\?video_id=\\d+";
     private static final String   TYPE_SET_LINK_PHOTO            = "http(s)?://(www\\.)?facebook\\.com/(media/set/\\?set=|[^<>\"/]*?/media_set\\?set=)o?a[0-9\\.]+(\\&type=\\d+)?";
     private static final String   TYPE_SET_LINK_VIDEO            = "https?://(www\\.)?facebook\\.com/media/set/\\?set=vb\\.\\d+";
-    private static final String   TYPE_ALBUMS_LINK               = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_albums";
+    private static final String   TYPE_ALBUMS_LINK               = "https?://(www\\.)?facebook\\.com/.+photos_albums";
     private static final String   TYPE_PHOTOS_OF_LINK            = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_of";
     private static final String   TYPE_PHOTOS_ALL_LINK           = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_all";
     private static final String   TYPE_PHOTOS_STREAM_LINK        = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_stream";
@@ -143,7 +143,13 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
                 final String[] links = br.getRegex("uiVideoLinkMedium\" href=\"(https?://(www\\.)?facebook\\.com/photo\\.php\\?v=\\d+)").getColumn(0);
                 for (final String link : links) {
-                    decryptedLinks.add(createDownloadlink(link.replace("facebook.com/", CRYPTLINK)));
+                    final DownloadLink dl = createDownloadlink(link.replace("facebook.com/", CRYPTLINK));
+                    try {
+                        dl.setContentUrl(link);
+                    } catch (final Throwable e) {
+                        dl.setBrowserUrl(link);
+                    }
+                    decryptedLinks.add(dl);
                 }
 
                 if (fpName != null) {
@@ -502,20 +508,24 @@ public class FaceBookComGallery extends PluginForDecrypt {
         }
         final String ajaxpipeToken = getajaxpipeToken();
         final String user = getUser();
-        if (ajaxpipeToken == null || user == null || collection_token == null || profileID == null || type == null || setID == null) {
+        String lastfirstID = "";
+        if (ajaxpipeToken == null || user == null || profileID == null || type == null || setID == null) {
             logger.warning("Decrypter broken for link: " + PARAMETER);
             throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
         }
-        collection_token = Encoding.htmlDecode(collection_token);
+        String data = null;
+        if (collection_token != null) {
+            data = "{\"scroll_load\":true,\"last_fbid\":JDL_LAST_FBID_JDL,\"fetch_size\":32,\"profile_id\":" + profileID + "\",\"overview\":false,\"active_collection\":69,\"collection_token\":\"" + Encoding.urlEncode(collection_token) + "\",\"cursor\":0,\"tab_id\":\"u_0_t\",\"order\":null,\"importer_state\":null}";
+        } else {
+            data = "{\"scroll_load\":true,\"last_fbid\":\"JDL_LAST_FBID_JDL\",\"fetch_size\":32,\"profile_id\":" + profileID + ",\"viewmode\":null,\"set\":\"" + setID + "\",\"type\":\"3\"}";
+        }
+        data = Encoding.urlEncode(data);
         if (fpName == null) {
             fpName = "Facebook_album_of_user_" + user;
         }
         fpName = Encoding.htmlDecode(fpName.trim()) + " - " + setID;
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName.trim());
-        String lastfirstID = "";
-        String additionalPostData = "";
-        additionalPostData = "%2C%22tab_key%22%3A%22media_set%22%2C%22set%22%3A%22" + setID + "%22%2C%22type%22%3A%22" + type + "%22%2C%22sk%22%3A%22photos";
 
         for (int i = 1; i <= MAX_LOOPS_GENERAL; i++) {
             int currentMaxPicCount = 28;
@@ -526,8 +536,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     logger.info("Cannot find more links, stopping decryption...");
                     break;
                 }
-                /**/
-                String loadLink = "https://www.facebook.com/ajax/pagelet/generic.php/TimelinePhotosAlbumPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipeToken + "&no_script_path=1&data=%7B%22scroll_load%22%3Atrue%2C%22last_fbid%22%3A" + currentLastFbid + "%2C%22fetch_size%22%3A32%2C%22profile_id%22%3A" + profileID + "" + additionalPostData + "%22%2C%22overview%22%3Afalse%2C%22active_collection%22%3A69%2C%22collection_token%22%3A%22" + Encoding.urlEncode(collection_token) + "%22%2C%22cursor%22%3A0%2C%22tab_id%22%3A%22u_0_t%22%2C%22order%22%3Anull%2C%22importer_state%22%3Anull%7D&__user=" + user + "&__a=1&__dyn=7n8ahyngCBDBzpQ9UoGhk4BwzCxO4oKA8ABGfirWo8popyUWdDx24QqUgKm58y&__req=jsonp_" + i + "&__rev=1414761&__adt=" + i;
+                String loadLink = "https://www.facebook.com/ajax/pagelet/generic.php/TimelinePhotosAlbumPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipeToken + "&no_script_path=1&data=" + data.replace("JDL_LAST_FBID_JDL", currentLastFbid) + "&__user=" + user + "&__a=1&__dyn=7n8ahyngCBDBzpQ9UoGhk4BwzCxO4oKA8ABGfirWo8popyUWdDx24QqUgKm58y&__req=jsonp_" + i + "&__rev=1414761&__adt=" + i;
                 br.getPage(loadLink);
                 links = br.getRegex("ajax\\\\/photos\\\\/hovercard\\.php\\?fbid=(\\d+)\\&").getColumn(0);
                 currentMaxPicCount = 32;
@@ -780,6 +789,11 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 if (!allids.contains(current_id)) {
                     allids.add(current_id);
                     final DownloadLink dl = createDownloadlink(single_link.replace("facebook.com/", CRYPTLINK));
+                    try {
+                        dl.setContentUrl(single_link);
+                    } catch (final Throwable e) {
+                        dl.setBrowserUrl(single_link);
+                    }
                     if (!logged_in) {
                         dl.setProperty("nologin", true);
                     }
@@ -996,7 +1010,13 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
     private DownloadLink createPicDownloadlink(final String picID) {
         final String final_link = "http://www." + CRYPTLINK + "photo.php?fbid=" + picID;
+        final String real_link = "http://www.facebook.com/photo.php?fbid=" + picID;
         final DownloadLink dl = createDownloadlink(final_link);
+        try {
+            dl.setContentUrl(real_link);
+        } catch (final Throwable e) {
+            dl.setBrowserUrl(real_link);
+        }
         if (!logged_in) {
             dl.setProperty("nologin", true);
         }

@@ -57,11 +57,15 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "https?://(www\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/).*?(?=http:|$|\r|\n))" }, flags = { 2 })
 public class MediafireCom extends PluginForHost {
 
+    private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+
     /** start of random agents **/
     // A alternative solution for providing random user agents.
     // last updated: 4-09-2014
     // raztoki
-    private static final ArrayList<String> stringAgent = new ArrayList<String>();
+    private static final ArrayList<String> stringAgent                  = new ArrayList<String>();
 
     /**
      * Returns a random User-Agent String (common browsers) of specified array. This array contains current user agents gathered from httpd
@@ -646,10 +650,6 @@ public class MediafireCom extends PluginForHost {
                 url = getURL(br);
                 if (url == null) {
                     handleNonAPIErrors(downloadLink, br);
-                    if ((br.containsHTML("Enter Password") && br.containsHTML("display:block;\">This file is"))) {
-                        this.handlePremiumPassword(downloadLink, account);
-                        return;
-                    }
                 }
             }
             if (url == null) {
@@ -662,6 +662,10 @@ public class MediafireCom extends PluginForHost {
                 if (con.getContentType().contains("html")) {
                     handleNonAPIErrors(downloadLink, this.br);
                     this.br.followConnection();
+                    if (br.containsHTML("class=\"downloadpassword\"")) {
+                        this.handlePremiumPassword(downloadLink, account);
+                        return;
+                    }
                     url = br.getRegex("kNO = \"(http://[^<>\"]*?)\"").getMatch(0);
                     if (url == null) {
                         lastChangeErrorhandling(downloadLink, account, passwordprotected);
@@ -676,7 +680,7 @@ public class MediafireCom extends PluginForHost {
             }
 
             this.br.setFollowRedirects(true);
-            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, 0);
+            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (!this.dl.getConnection().isContentDisposition()) {
                 handleNonAPIErrors(downloadLink, this.br);
                 logger.info("Error (4)");
@@ -700,10 +704,15 @@ public class MediafireCom extends PluginForHost {
     }
 
     private void handlePremiumPassword(final DownloadLink downloadLink, final Account account) throws Exception {
-        this.br.getPage(downloadLink.getDownloadURL());
-        String url = br.getRedirectLocation();
-        if (url != null) {
-            br.getPage(url);
+        String url = null;
+        if (br.getURL().contains("/download/")) {
+            url = br.getURL();
+        } else {
+            br.getPage("http://www.mediafire.com/download/" + fileID);
+            url = br.getRedirectLocation();
+            if (url != null) {
+                br.getPage(url);
+            }
         }
         this.handlePW(downloadLink);
         url = getURL(br);
@@ -711,12 +720,15 @@ public class MediafireCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.br.setFollowRedirects(true);
-        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, 0);
+        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
 
         if (!this.dl.getConnection().isContentDisposition()) {
             logger.info("Error (3)");
             logger.info(dl.getConnection() + "");
             this.br.followConnection();
+            if (br.containsHTML("class=\"downloadpassword\"")) {
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.dl.startDownload();

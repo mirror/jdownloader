@@ -36,7 +36,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "https?://(?!download)(\\w+\\.)?(mediafire\\.com|mfi\\.re)/(watch/|imageview|folder/|view/|i/\\?|\\\\?sharekey=|view/\\?|\\?|(?!download|file|\\?JDOWNLOADER|imgbnc\\.php))[a-z0-9,#]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "https?://(?!download)(\\w+\\.)?(mediafire\\.com|mfi\\.re)/(watch/|listen/|imageview|folder/|view/|i/\\?|\\\\?sharekey=|view/\\?|\\?|(?!download|file|\\?JDOWNLOADER|imgbnc\\.php))[a-z0-9,#]+" }, flags = { 0 })
 public class MdfrFldr extends PluginForDecrypt {
 
     public MdfrFldr(PluginWrapper wrapper) {
@@ -56,9 +56,14 @@ public class MdfrFldr extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("mfi.re/", "mediafire.com/").trim();
         if (parameter.matches("https?://(\\w+\\.)?mediafire\\.com/view/\\?.+")) {
+            /* Single view-streams (documents) --> Change to download links (normal file) */
             parameter = parameter.replaceFirst("/view", "");
         } else if (parameter.matches("https?://(\\w+\\.)?mediafire\\.com/watch/.*?")) {
+            /* Single video streams --> Change to download links (normal file) */
             parameter = parameter.replaceFirst("/watch", "");
+        } else if (parameter.matches("https?://(\\w+\\.)?mediafire\\.com/listen/.*?")) {
+            /* Single audio streams --> Change to download links (normal file) */
+            parameter = parameter.replaceFirst("/listen", "/download");
         }
         if (parameter.endsWith("mediafire.com") || parameter.endsWith("mediafire.com/")) {
             return decryptedLinks;
