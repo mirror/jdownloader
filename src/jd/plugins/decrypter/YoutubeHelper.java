@@ -713,12 +713,12 @@ public class YoutubeHelper {
 
     /**
      * *
-     * 
+     *
      * @param html5PlayerJs
      *            TODO
      * @param br
      * @param s
-     * 
+     *
      * @return
      * @throws IOException
      * @throws PluginException
@@ -885,7 +885,7 @@ public class YoutubeHelper {
             }
         }
         if (StringUtils.isEmpty(vid.channel)) {
-            final String match = this.br.getRegex("data-name=\"watch\">(.*?)</a>").getMatch(0);
+            final String match = this.br.getRegex("data-name=\"watch\"[^>]*>(.*?)</a>").getMatch(0);
             if (StringUtils.isNotEmpty(match)) {
                 vid.channel = Encoding.htmlDecode(match.trim());
 
@@ -1061,8 +1061,8 @@ public class YoutubeHelper {
                     return null;
                 }
             } else if (unavailableReason.contains("This video has been removed by the user.") || (
-            /* do not use this error handling its nearly always present, will cause false positive */
-            false && unavailableReason.contains("This video is unavailable."))) {
+                    /* do not use this error handling its nearly always present, will cause false positive */
+                    false && unavailableReason.contains("This video is unavailable."))) {
                 logger.warning(unavailableReason);
                 vid.error = Encoding.htmlDecode(unavailableReason.replaceAll("\\+", " ").trim());
                 return null;
