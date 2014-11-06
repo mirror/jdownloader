@@ -252,7 +252,6 @@ public abstract class PluginForHost extends Plugin {
         try {
             SolverJob<String> lJob = lastSolverJob;
             if (lJob != null) {
-
                 lJob.invalidate();
             }
         } finally {
@@ -275,7 +274,6 @@ public abstract class PluginForHost extends Plugin {
             SolverJob<String> lJob = lastSolverJob;
             if (lJob != null) {
                 lJob.validate();
-
             }
         } finally {
             lastSolverJob = null;
