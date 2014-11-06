@@ -207,7 +207,7 @@ public class ShareOnlineBiz extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable3", "No free Free-User Slots! Get PremiumAccount or wait!"), waitNoFreeSlot);
         }
-        if (br.containsHTML(">Share-Online \\- Server Maintenance<|>MAINTENANCE</h1>")) {
+        if (br.containsHTML(">Share-Online \\- Server Maintenance<|>MAINTENANCE</h1>") || br.containsHTML("<title>Share-Online - Not available</title>")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.maintenance", "Server maintenance"), 30 * 60 * 1000l);
         }
         // shared IP error
