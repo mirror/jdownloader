@@ -54,13 +54,8 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.fc2.com" }, urls = { "http://video\\.fc2\\.com(/flv2\\.swf\\?i=|(/[a-z]{2})?(/a)?/content/)\\w+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video.fc2.com" }, urls = { "http://video\\.fc2\\.com(/flv2\\.swf\\?i=|(/[a-z]{2})?(/a)?/content/)\\w+" }, flags = { 3 })
 public class VideoFCTwoCom extends PluginForHost {
-
-    private final String  cookieHost = "fc2.com";
-
-    private static Object LOCK       = new Object();
-    private String        finalURL   = null;
 
     public VideoFCTwoCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -68,14 +63,18 @@ public class VideoFCTwoCom extends PluginForHost {
         setConfigElements();
     }
 
+    private final String  cookieHost            = "fc2.com";
+    private String        finalURL              = null;
     private final boolean fastLinkCheck_default = true;
     private final String  fastLinkCheck         = "fastLinkCheck";
+    private Account       account               = null;
+    private static Object LOCK                  = new Object();
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), fastLinkCheck, JDL.L("plugins.hoster.videofcttwocom.fastlinkcheck", "Force secure communication requests via 'https' over SSL/TLS")).setDefaultValue(fastLinkCheck_default));
     }
 
-    private static final AtomicReference<String> userAgent = new AtomicReference<String>(null);
+    private final static AtomicReference<String> userAgent = new AtomicReference<String>(null);
 
     private Browser prepareBrowser(Browser prepBr) {
         if (prepBr == null) {
@@ -115,26 +114,25 @@ public class VideoFCTwoCom extends PluginForHost {
      * IMPORTANT NOTE: Free (unregistered) Users can watch (&download) videos up to 2 hours in length - if videos are longer, users can only
      * watch the first two hours of them - afterwards they will get this message: http://i.snag.gy/FGl1E.jpg
      */
-    private void login(Account account, boolean force) throws Exception {
+    private AccountInfo login(Account account, boolean force, final AccountInfo iai) throws Exception {
         synchronized (LOCK) {
+            this.account = account;
+            final AccountInfo ai = iai != null ? iai : account.getAccountInfo();
             try {
                 // Load cookies
-                br.setCookiesExclusive(true);
                 prepareBrowser(br);
+                br.setCookiesExclusive(true);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser()))) && Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass()))) && !force;
                 Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
                         for (Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             String key = cookieEntry.getKey();
                             String value = cookieEntry.getValue();
-                            this.br.setCookie(cookieHost, key, value);
+                            br.setCookie(cookieHost, key, value);
                         }
-                        return;
+                        return ai;
                     }
                 }
                 // for debug purposes
@@ -149,9 +147,37 @@ public class VideoFCTwoCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 br.getPage(loginDone);
+                br.getPage("http://id.fc2.com");
+                String userinfo = br.getRegex("(http://video\\.fc2\\.com(/[a-z]{2})?/mem_login\\.php\\?uid=[^\"]+)").getMatch(0);
+                if (userinfo == null) {
+                    account.setValid(false);
+                    if (iai != null) {
+                        return iai;
+                    } else {
+                        account.setAccountInfo(ai);
+                        return ai;
+                    }
+                }
+                br.getPage(userinfo);
+                ai.setUnlimitedTraffic();
+                String expire = br.getRegex("premium till (\\d{2}/\\d{2}/\\d{2})").getMatch(0);
+                if (expire != null) {
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yy", null));
+                    ai.setStatus("Premium Account");
+                    account.setProperty("free", false);
+                } else if (br.containsHTML(">Paying Member</span>|>Type</li><li[^>]*>Premium Member</li>")) {
+                    ai.setStatus("Premium Account");
+                    account.setProperty("free", false);
+                } else {
+                    // if (br.containsHTML("Free Member")) {
+                    ai.setValidUntil(-1);
+                    ai.setStatus("Free Account");
+                    account.setProperty("free", true);
+                }
+                account.setValid(true);
                 // Save cookies
                 HashMap<String, String> cookies = new HashMap<String, String>();
-                Cookies add = this.br.getCookies(cookieHost);
+                Cookies add = br.getCookies(cookieHost);
                 for (Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }
@@ -160,52 +186,20 @@ public class VideoFCTwoCom extends PluginForHost {
                 account.setProperty("cookies", cookies);
                 br.setFollowRedirects(ifr);
             } catch (PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.setProperty("name", Property.NULL);
+                account.setProperty("pass", Property.NULL);
                 throw e;
             }
+            return ai;
         }
     }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        br.setFollowRedirects(true);
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        br.getPage("http://id.fc2.com");
-        String userinfo = br.getRegex("(http://video\\.fc2\\.com(/[a-z]{2})?/mem_login\\.php\\?uid=[^\"]+)").getMatch(0);
-        if (userinfo == null) {
-            account.setValid(false);
-            return ai;
-        }
-        br.getPage(userinfo);
-        ai.setUnlimitedTraffic();
-        String expire = br.getRegex("premium till (\\d{2}/\\d{2}/\\d{2})").getMatch(0);
-        if (expire != null) {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yy", null));
-            ai.setStatus("Premium User");
-            account.setProperty("free", false);
-        } else if (br.containsHTML(">Paying Member</span>|>Type</li><li[^>]*>Premium Member</li>")) {
-            ai.setStatus("Premium User");
-            account.setProperty("free", false);
-        } else if (br.containsHTML("Free Member")) {
-            ai.setValidUntil(-1);
-            ai.setStatus("Registered (free) User");
-            account.setProperty("free", true);
-        } else {
-            account.setValid(false);
-            return ai;
-        }
-        account.setValid(true);
-
-        return ai;
+        return login(account, true, new AccountInfo());
     }
 
-    private void dofree(final DownloadLink downloadLink, final Account account) throws Exception {
+    private void dofree(final DownloadLink downloadLink) throws Exception {
         String error = br.getRegex("^err_code=(\\d+)").getMatch(0);
         if (error != null) {
             switch (Integer.parseInt(error)) {
@@ -256,25 +250,19 @@ public class VideoFCTwoCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dofree(downloadLink, null);
+        dofree(downloadLink);
     }
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         br = new Browser();
-        login(account, false);
-        requestFileInformation(downloadLink, account);
-        dofree(downloadLink, account);
+        login(account, true, null);
+        requestFileInformation(downloadLink);
+        dofree(downloadLink);
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        return requestFileInformation(downloadLink, null);
-    }
-
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink, final Account iAccount) throws Exception {
-        Account account = iAccount;
-        br.setFollowRedirects(true);
         String dllink = downloadLink.getDownloadURL();
         // this comes first, due to subdoman issues and cached cookie etc.
         if (account == null) {
@@ -295,8 +283,7 @@ public class VideoFCTwoCom extends PluginForHost {
                     Account n = it.next();
                     if (n.isEnabled() && n.isValid()) {
                         try {
-                            // because this site uses subdomain it causes all sorts of issues!
-                            login(n, false);
+                            login(n, true, null);
                             account = n;
                             break;
                         } catch (final PluginException p) {
@@ -312,6 +299,7 @@ public class VideoFCTwoCom extends PluginForHost {
                 prepareBrowser(br);
             }
         }
+        br.setFollowRedirects(true);
         br.getPage(dllink);
         String filename = br.getRegex("<title>.*?◎?(.*?) -").getMatch(0);
         if (filename == null) {
@@ -354,9 +342,14 @@ public class VideoFCTwoCom extends PluginForHost {
             if (tk == null || from == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getPage("/ginfo_payment.php?mimi=" + getMimi(upid) + "&upid=" + upid + "&gk=" + gk + "&tk=" + tk + "&from=" + from + "&href=" + encodedlink + "&lang=en%2F&v=" + upid + "&fversion=" + version + "&otag=0");
+            br.getPage("/ginfo_payment.php?mimi=" + getMimi(upid) + "&upid=" + upid + "&gk=" + gk + "&tk=" + tk + "&from=" + from + "&href=" + encodedlink + "&lang=en&v=" + upid + "&fversion=" + version + "&otag=0");
         } else {
             br.getPage("/ginfo.php?otag=0&tk=null&href=" + encodedlink + "&upid=" + upid + "&gk=" + gk + "&fversion=" + version + "&playid=null&lang=en&playlistid=null&mimi=" + getMimi(upid) + "&v=" + upid);
+        }
+        if (br.getHttpConnection() == null) {
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        } else if ("23764902a26fbd6345d3cc3533d1d5eb".equalsIgnoreCase(JDHash.getMD5(br.toString()))) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
         if (br.containsHTML("err_code=403")) {
