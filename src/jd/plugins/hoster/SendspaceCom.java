@@ -265,10 +265,6 @@ public class SendspaceCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
-        if (br.containsHTML("Please complete the form below:")) {
-            logger.info("Unsupported captcha detected!");
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported captcha - please contact our support!");
-        }
         if (!downloadLink.getDownloadURL().contains("/pro/dl/")) {
             // Re-use old directlinks to avoid captchas, especially good after
             // reconnects
@@ -318,25 +314,28 @@ public class SendspaceCom extends PluginForHost {
                     }
                 }
                 /* handle captcha */
-                if (br.containsHTML(">Please prove that you are a human being")) {
+                if (br.containsHTML(regexRecaptcha)) {
                     PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                     jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                     rc.parse();
                     rc.load();
                     String id = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
                     rc.setId(id);
-                    for (int i = 0; i <= 5; i++) {
+                    final int repeat = 5;
+                    for (int i = 0; i <= repeat; i++) {
                         File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                         String c = getCaptchaCode("recaptcha", cf, downloadLink);
                         rc.setCode(c);
-                        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                            rc.reload();
-                            continue;
+                        if (br.containsHTML(regexRecaptcha)) {
+                            if (i + 1 >= repeat) {
+                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                            } else {
+                                rc.reload();
+                                continue;
+                            }
+                        } else {
+                            break;
                         }
-                        break;
-                    }
-                    if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
                 }
                 handleErrors(false);
@@ -386,6 +385,8 @@ public class SendspaceCom extends PluginForHost {
         }
         dl.startDownload();
     }
+
+    private final String regexRecaptcha = "api\\.recaptcha\\.net|google\\.com/recaptcha/api/";
 
     private String checkDirectLink(DownloadLink downloadLink, String property) {
         String dllink = downloadLink.getStringProperty(property);
