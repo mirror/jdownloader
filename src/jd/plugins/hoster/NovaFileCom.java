@@ -317,7 +317,7 @@ public class NovaFileCom extends PluginForHost {
                     String code = getCaptchaCode("xfilesharingprobasic", captchaurl, downloadLink);
                     dlForm.put("code", code);
                     logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
-                } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
+                } else if (new Regex(correctedBR, regexRecaptcha).matches()) {
                     logger.info("Detected captcha method \"Re Captcha\" for this host");
                     PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                     jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
@@ -660,8 +660,6 @@ public class NovaFileCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
         try {
             login(account, true);
         } catch (PluginException e) {
@@ -688,11 +686,9 @@ public class NovaFileCom extends PluginForHost {
             ai.setUnlimitedTraffic();
         }
         if (account.getBooleanProperty("nopremium")) {
-            ai.setStatus("Registered (free) User");
+            ai.setStatus("Free Account");
+            maxPrem.set(1);
             try {
-                maxPrem.set(1);
-                // free accounts can still have captcha.
-                totalMaxSimultanFreeDownload.set(maxPrem.get());
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
@@ -709,14 +705,14 @@ public class NovaFileCom extends PluginForHost {
             } else {
                 expire = expire.replaceAll("(<b>|</b>)", "");
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
+                maxPrem.set(10);
                 try {
-                    maxPrem.set(10);
                     account.setMaxSimultanDownloads(maxPrem.get());
                     account.setConcurrentUsePossible(true);
                 } catch (final Throwable e) {
                 }
             }
-            ai.setStatus("Premium User");
+            ai.setStatus("Premium Account");
         }
         return ai;
     }
@@ -746,9 +742,10 @@ public class NovaFileCom extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 getPage(COOKIE_HOST + "/login");
-                for (int i = 1; i <= 2; i++) {
-                    String postData = "op=login&redirect=&rand=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
-                    if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                String postData = "op=login&redirect=&rand=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
+                final int repeat = 3;
+                for (int i = 0; i <= repeat; i++) {
+                    if (br.containsHTML(regexRecaptcha)) {
                         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                         final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                         rc.findID();
@@ -763,7 +760,11 @@ public class NovaFileCom extends PluginForHost {
                         }
                     }
                     br.postPage(COOKIE_HOST + "/login", postData);
-                    if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                    if (!br.containsHTML(regexRecaptcha)) {
+                        break;
+                    } else if (br.containsHTML(regexRecaptcha) && i + 1 >= repeat) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    } else {
                         continue;
                     }
                 }
@@ -797,6 +798,8 @@ public class NovaFileCom extends PluginForHost {
             }
         }
     }
+
+    private final String regexRecaptcha = "api\\.recaptcha\\.net|google\\.com/recaptcha/api/";
 
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
