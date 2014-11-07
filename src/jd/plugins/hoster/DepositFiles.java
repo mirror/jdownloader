@@ -505,6 +505,7 @@ public class DepositFiles extends PluginForHost {
                 }
             }
         }
+        logger.info("finallink = " + finallink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 1);
         final URLConnectionAdapter con = dl.getConnection();
         if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
@@ -948,7 +949,7 @@ public class DepositFiles extends PluginForHost {
 
     /**
      * new AccountInfo method for /api/
-     * 
+     *
      * @author raztoki
      */
     private AccountInfo apiFetchAccountInfo(final Account account) throws Exception {
