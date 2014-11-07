@@ -73,6 +73,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
     private static String         MAINPAGE                       = "http://www.facebook.com";
     private static final String   CRYPTLINK                      = "facebookdecrypted.com/";
+    private static final String   EXCEPTION_LINKOFFLINE          = "EXCEPTION_LINKOFFLINE";
 
     private static final String   CONTENTUNAVAILABLE             = ">Dieser Inhalt ist derzeit nicht verfügbar|>This content is currently unavailable<";
     private String                PARAMETER                      = null;
@@ -86,17 +87,17 @@ public class FaceBookComGallery extends PluginForDecrypt {
      * http://en.wikipedia.org/wiki/Spaghetti_code
      */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        synchronized (LOCK) {
-            String parameter = param.toString().replace("#!/", "");
-            PARAMETER = parameter;
-            if (PARAMETER.matches(TYPE_SINGLE_VIDEO_ALL) || PARAMETER.matches(TYPE_SINGLE_VIDEO_EMBED) || PARAMETER.contains("/video.php?v") || PARAMETER.matches(TYPE_SINGLE_PHOTO)) {
-                final DownloadLink fina = createDownloadlink("https://www.facebookdecrypted.com/video.php?v=" + new Regex(PARAMETER, "(\\d+)$").getMatch(0));
-                decryptedLinks.add(fina);
-                return decryptedLinks;
-            }
-            br.getHeaders().put("User-Agent", jd.plugins.hoster.FaceBookComVideos.Agent);
-            br.setFollowRedirects(false);
-            FASTLINKCHECK_PICTURES_ENABLED = SubConfiguration.getConfig("facebook.com").getBooleanProperty(FASTLINKCHECK_PICTURES, false);
+        String parameter = param.toString().replace("#!/", "");
+        PARAMETER = parameter;
+        if (PARAMETER.matches(TYPE_SINGLE_VIDEO_ALL) || PARAMETER.matches(TYPE_SINGLE_VIDEO_EMBED) || PARAMETER.contains("/video.php?v") || PARAMETER.matches(TYPE_SINGLE_PHOTO)) {
+            final DownloadLink fina = createDownloadlink("https://www.facebookdecrypted.com/video.php?v=" + new Regex(PARAMETER, "(\\d+)$").getMatch(0));
+            decryptedLinks.add(fina);
+            return decryptedLinks;
+        }
+        br.getHeaders().put("User-Agent", jd.plugins.hoster.FaceBookComVideos.Agent);
+        br.setFollowRedirects(false);
+        FASTLINKCHECK_PICTURES_ENABLED = SubConfiguration.getConfig("facebook.com").getBooleanProperty(FASTLINKCHECK_PICTURES, false);
+        try {
             if (parameter.matches(TYPE_FBSHORTLINK)) {
                 br.getPage(parameter);
                 final String finallink = br.getRedirectLocation();
@@ -116,18 +117,14 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(finallink));
                 return decryptedLinks;
             }
-            logged_in = login();
+            synchronized (LOCK) {
+                logged_in = login();
+            }
             getpagefirsttime(PARAMETER);
 
             /* temporarily unavailable (or forever, or permission/rights needed) || empty album */
             if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar</") || br.containsHTML("class=\"fbStarGridBlankContent\"")) {
-                logger.info("The link is either offline or an account is needed to grab it: " + PARAMETER);
-                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-                offline.setFinalFileName(new Regex(parameter, "facebook\\.com/(.+)").getMatch(0));
-                offline.setAvailable(false);
-                offline.setProperty("offline", true);
-                decryptedLinks.add(offline);
-                return decryptedLinks;
+                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
             }
 
             if (PARAMETER.matches(TYPE_ALBUMS_LINK)) {
@@ -146,44 +143,27 @@ public class FaceBookComGallery extends PluginForDecrypt {
             } else if (PARAMETER.matches(TYPE_SET_LINK_PHOTO)) {
                 decryptSetLinkPhoto();
             } else if (PARAMETER.matches(TYPE_SET_LINK_VIDEO)) {
-                logged_in = login();
-                if (!logged_in) {
-                    logger.info("Decrypting photo album without login: " + parameter);
-                }
-                getpagefirsttime(parameter);
-                if (br.containsHTML(CONTENTUNAVAILABLE)) {
-                    logger.info("Link offline: " + parameter);
-                    return decryptedLinks;
-                }
-                String fpName = br.getRegex("<title id=\"pageTitle\">([^<>\"]*?)videos }}| Facebook</title>").getMatch(0);
-
-                final String[] links = br.getRegex("uiVideoLinkMedium\" href=\"(https?://(www\\.)?facebook\\.com/photo\\.php\\?v=\\d+)").getColumn(0);
-                for (final String link : links) {
-                    final DownloadLink dl = createDownloadlink(link.replace("facebook.com/", CRYPTLINK));
-                    try {
-                        dl.setContentUrl(link);
-                    } catch (final Throwable e) {
-                        dl.setBrowserUrl(link);
-                    }
-                    decryptedLinks.add(dl);
-                }
-
-                if (fpName != null) {
-                    final FilePackage fp = FilePackage.getInstance();
-                    fp.setName(Encoding.htmlDecode(fpName.trim()));
-                    fp.addLinks(decryptedLinks);
-                }
+                decryptVideoSet();
             } else if (parameter.matches(TYPE_GROUPS_PHOTOS)) {
                 decryptGroupsPhotos();
             } else {
                 // Should never happen
                 logger.info("Unsupported linktype: " + PARAMETER);
-                final DownloadLink offline = createDownloadlink("directhttp://" + PARAMETER);
-                offline.setAvailable(false);
-                offline.setProperty("offline", true);
-                decryptedLinks.add(offline);
-                return decryptedLinks;
+                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
             }
+        } catch (final DecrypterException e) {
+            try {
+                if (e.getMessage().equals(EXCEPTION_LINKOFFLINE)) {
+                    final DownloadLink offline = createDownloadlink("directhttp://" + PARAMETER);
+                    offline.setAvailable(false);
+                    offline.setProperty("offline", true);
+                    offline.setName(new Regex(PARAMETER, "facebook\\.com/(.+)").getMatch(0));
+                    decryptedLinks.add(offline);
+                    return decryptedLinks;
+                }
+            } catch (final Exception x) {
+            }
+            throw e;
         }
         if (decryptedLinks == null) {
             logger.warning("Decrypter broken for link: " + PARAMETER);
@@ -279,7 +259,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         }
         if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar</")) {
             logger.info("The link is either offline or an account is needed to grab it: " + PARAMETER);
-            return;
+            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
         final String profileID = getProfileID();
         String fpName = br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
@@ -491,14 +471,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     private void decryptSetLinkPhoto() throws Exception {
-        if (!logged_in) {
-            logger.info("Cannot decrypt link without valid account: " + PARAMETER);
-            return;
-        }
-        if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar</")) {
-            logger.info("The link is either offline or an account is needed to grab it: " + PARAMETER);
-            return;
-        }
         String type;
         String collection_token;
         String profileID;
@@ -593,7 +565,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         }
         if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar</")) {
             logger.info("The link is either offline or an account is needed to grab it: " + PARAMETER);
-            return;
+            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
         String fpName = getPageTitle();
         final String rev = getRev();
@@ -708,7 +680,35 @@ public class FaceBookComGallery extends PluginForDecrypt {
         if (decryptedPicsNum < totalPicsNum && br.containsHTML("\"TimelineAppCollection\",\"setFullyLoaded\"")) {
             logger.info("facebook.com: -> Even though it seems like we don't have all images, that's all ;)");
         }
+    }
 
+    private void decryptVideoSet() throws IOException, DecrypterException {
+        if (!logged_in) {
+            logger.info("Decrypting video album without login: " + PARAMETER);
+        }
+        getpagefirsttime(PARAMETER);
+        if (br.containsHTML(CONTENTUNAVAILABLE)) {
+            logger.info("Link offline: " + PARAMETER);
+            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+        }
+        String fpName = br.getRegex("<title id=\"pageTitle\">([^<>\"]*?)videos }}| Facebook</title>").getMatch(0);
+
+        final String[] links = br.getRegex("uiVideoLinkMedium\" href=\"(https?://(www\\.)?facebook\\.com/photo\\.php\\?v=\\d+)").getColumn(0);
+        for (final String link : links) {
+            final DownloadLink dl = createDownloadlink(link.replace("facebook.com/", CRYPTLINK));
+            try {
+                dl.setContentUrl(link);
+            } catch (final Throwable e) {
+                dl.setBrowserUrl(link);
+            }
+            decryptedLinks.add(dl);
+        }
+
+        if (fpName != null) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.addLinks(decryptedLinks);
+        }
     }
 
     private void decryptGroupsPhotos() throws Exception {
