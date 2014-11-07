@@ -61,6 +61,6 @@ public interface Cnl2APIFlash extends RemoteAPIInterface {
      * @param response
      * @param request
      */
-    public void add(String password, String source, String url) throws InternalApiException;
+    public void add(RemoteAPIRequest request, String password, String source, String url) throws InternalApiException;
 
 }
