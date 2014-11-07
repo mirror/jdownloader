@@ -378,7 +378,7 @@ public class NCryptIn extends PluginForDecrypt {
             if (con.getResponseCode() == 200) {
                 file = JDUtilities.getResourceFile("tmp/ncryptin/" + theLink);
                 if (file == null) {
-                    return null;
+                    return links;
                 }
                 file.getParentFile().mkdirs();
                 file.deleteOnExit();
