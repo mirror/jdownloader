@@ -24,8 +24,8 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -48,15 +48,15 @@ public class FileCryptCc extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getURL().contains("filecrypt.cc/404.html")) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            try {
+                decryptedLinks.add(createOfflinelink(parameter));
+            } catch (final Throwable t) {
+                logger.info("OfflineLink :" + parameter);
+            }
             return decryptedLinks;
         }
-        int counter = 1;
-        while (counter <= 3 && br.containsHTML("class=\"safety\"")) {
+        int counter = 0;
+        while (counter++ < 3 && br.containsHTML("class=\"safety\"")) {
             final String captcha = br.getRegex("\"(https?://(www\\.)?filecrypt\\.cc//?captcha/[^<>\"]*?)\"").getMatch(0);
             if (captcha == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -130,7 +130,7 @@ public class FileCryptCc extends PluginForDecrypt {
         try {
             con = brc.openGetConnection(theLink);
             if (con.getResponseCode() == 200) {
-                file = JDUtilities.getResourceFile("tmp/filecryptcc/" + theLink);
+                file = JDUtilities.getResourceFile("tmp/filecryptcc/" + JDHash.getSHA1(theLink) + theLink.substring(theLink.lastIndexOf(".")));
                 if (file == null) {
                     return null;
                 }
@@ -142,7 +142,7 @@ public class FileCryptCc extends PluginForDecrypt {
                 }
             }
         } catch (Throwable e) {
-
+            e.printStackTrace();
         } finally {
             try {
                 con.disconnect();
