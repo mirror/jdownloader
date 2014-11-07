@@ -222,7 +222,31 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
 
     // For My JD API
     @Override
-    public void add(String passwords, String source, String urls) throws InternalApiException {
+    public void add(RemoteAPIRequest request, String param1, String param2, String param3) throws InternalApiException {
+        String source = null;
+        try {
+            source = request.getParameterbyKey("source");
+        } catch (IOException e) {
+        }
+        if (source == null) {
+            source = param1;
+        }
+        String urls = null;
+        try {
+            urls = request.getParameterbyKey("urls");
+        } catch (IOException e) {
+        }
+        if (urls == null) {
+            urls = param2;
+        }
+        String passwords = null;
+        try {
+            passwords = request.getParameterbyKey("passwords");
+        } catch (IOException e) {
+        }
+        if (passwords == null) {
+            passwords = param3;
+        }
         LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.CNL, null), urls);
         // String dir = HttpRequest.getParameterbyKey(request, "dir");
         // if (!StringUtils.isEmpty(dir)) {
