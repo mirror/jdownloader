@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -30,6 +31,8 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ecostream.tv" }, urls = { "http://(www\\.)?ecostream\\.tv/(stream|embed)/[a-z0-9]{32}\\.html" }, flags = { 0 })
 public class EcoStreamTv extends PluginForHost {
+
+    private final static AtomicBoolean use_js = new AtomicBoolean(true);
 
     public EcoStreamTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -72,35 +75,33 @@ public class EcoStreamTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String postpage = null;
+        Browser br2 = br.cloneBrowser();
         try {
-            final Browser tmpbr = br.cloneBrowser();
-            tmpbr.getPage("http://www.ecostream.tv/js/eco.js");
-            final String post_urls[] = tmpbr.getRegex("\\$\\.post\\(\\'(/[^<>\"]*?)\\'").getColumn(0);
-            if (post_urls != null && post_urls.length > 0) {
-                postpage = post_urls[post_urls.length - 2];
-            }
+            br2.getHeaders().put("Accept", "*/*");
+            br2.getPage("/js/ecoss.js");
+            postpage = br2.getRegex("\\$\\.post\\('(/xhr/videos/\\w+)',").getMatch(0);
         } catch (final Throwable e) {
         }
-        final boolean use_js_String = false;
-        if (postpage != null && use_js_String) {
-            postpage = "http://www.ecostream.tv" + postpage;
-        } else {
-            postpage = "http://www.ecostream.tv/xhr/videos/w0Iri0";
+
+        if (postpage == null || !use_js.get()) {
+            postpage = "/xhr/videos/w0Iri0";
         }
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        br2 = br.cloneBrowser();
+        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br2.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
 
         this.sleep(2 * 1000l, downloadLink);
 
-        br.postPage(postpage, "id=" + getfid(downloadLink) + "&tpm=" + tmp + noSenseForThat);
-        String finallink = br.getRegex("\"url\":\"(/[^<>\"]*?)\"").getMatch(0);
-        if (finallink == null && br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 15 * 60 * 1000l);
-        }
+        br2.postPage(postpage, "id=" + getfid(downloadLink) + "&tpm=" + tmp + noSenseForThat);
+        String finallink = br2.getRegex("\"url\":\"(/[^<>\"]*?)\"").getMatch(0);
         if (finallink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (!use_js.get() && br2.getHttpConnection().getResponseCode() == 404) {
+                use_js.set(false);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Blocked JD", 15 * 60 * 1000l);
+            }
         }
-        finallink = "http://www.ecostream.tv" + finallink;
         int maxChunks = 0;
         if (downloadLink.getBooleanProperty(EcoStreamTv.NOCHUNKS, false)) {
             maxChunks = 1;
