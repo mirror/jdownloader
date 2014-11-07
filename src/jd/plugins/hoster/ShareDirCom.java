@@ -229,7 +229,7 @@ public class ShareDirCom extends PluginForHost {
         final URLConnectionAdapter con = dl.getConnection();
         final String content_type = con.getContentType();
         /* Maybe server sends a wrong file */
-        if (con.getLongContentLength() <= 500 && content_type.equals("application/octet-stream")) {
+        if (con.getLongContentLength() <= 500 && "application/octet-stream".equalsIgnoreCase(content_type)) {
             int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "failedtimes_size_mismatch_errorpremium", 0);
             link.getLinkStatus().setRetryCount(0);
             if (timesFailed <= 2) {
