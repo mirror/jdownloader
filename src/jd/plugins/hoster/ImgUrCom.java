@@ -131,6 +131,10 @@ public class ImgUrCom extends PluginForHost {
                  * reached: http://imgur.com/download/ + imgUID. This code should never be reached!
                  */
                 if (imgUID == null || filetype == null) {
+                    /*
+                     * TODO: In this case, access site and grab json API response which is also located in the normal html code --> Why? -->
+                     * Because /download/ links sometimes simply do n't work.
+                     */
                     DLLINK = "http://imgur.com/download/" + imgUID;
                 } else {
                     DLLINK = "http://i.imgur.com/" + imgUID + "." + filetype;
@@ -162,6 +166,7 @@ public class ImgUrCom extends PluginForHost {
             }
             link.setFinalFileName(finalfilename);
         }
+        link.setProperty("filetype", filetype);
         return AvailableStatus.TRUE;
     }
 
