@@ -132,7 +132,7 @@ public class FileCryptCc extends PluginForDecrypt {
             if (con.getResponseCode() == 200) {
                 file = JDUtilities.getResourceFile("tmp/filecryptcc/" + JDHash.getSHA1(theLink) + theLink.substring(theLink.lastIndexOf(".")));
                 if (file == null) {
-                    return null;
+                    return links;
                 }
                 file.getParentFile().mkdirs();
                 file.deleteOnExit();
