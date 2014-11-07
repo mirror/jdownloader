@@ -138,7 +138,8 @@ public class ImgurCom extends PluginForDecrypt {
             return;
         }
         final int imgcount = Integer.parseInt(getJson(br.toString(), "images_count"));
-        if (imgcount == 0) {
+        /* Either no images there or sometimes the number of wrong. */
+        if (imgcount == 0 || br.containsHTML("images\":\\[\\]")) {
             decryptedLinks.addAll(createOfflineLink(PARAMETER));
             return;
         }

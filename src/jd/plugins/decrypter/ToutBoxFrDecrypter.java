@@ -109,7 +109,7 @@ public class ToutBoxFrDecrypter extends PluginForDecrypt {
             dl.setProperty("offline", true);
             decryptedLinks.add(dl);
             return decryptedLinks;
-        } else if (br.getURL().length() <= 30) {
+        } else if (!br.containsHTML("class=\"fileinfo tab\"|id=\"fileDetails\"")) {
             /* Link redirected to mainpage or category page --> Offline */
             final DownloadLink dl = createDecrypterURL();
             try {

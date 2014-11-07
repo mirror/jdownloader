@@ -241,8 +241,8 @@ public class UploadCd extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage("http://upload.cd/user/auth/", "User%5BrememberMe%5D=0&User%5BrememberMe%5D=1&logink=111&backurl=http%3A%2F%2Fupload.cd%2F&User%5Buemail%5D=" + Encoding.urlEncode(account.getUser()) + "&User%5Bupass%5D=" + Encoding.urlEncode(account.getPass()));
-                if (!br.containsHTML("\">Logout \\(")) {
+                br.postPage("http://upload.cd/user/auth/", "User%5Buemail%5D=" + Encoding.urlEncode(account.getUser()) + "&User%5Bupass%5D=" + Encoding.urlEncode(account.getPass()) + "&User%5BrememberMe%5D=0&User%5BrememberMe%5D=1&logink=111&backurl=http%3A%2F%2Fupload.cd%2F");
+                if (!br.containsHTML("\"status\":\"success\"") && !br.containsHTML("href=\"/site/logout/\">Logout \\(")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -295,7 +295,7 @@ public class UploadCd extends PluginForHost {
             ai.setStatus("Registered (free) user");
         } else {
             account.setProperty("free", false);
-            final String expire = br.getRegex("valid until: ([^<>\"]*?)\\)</label>").getMatch(0);
+            final String expire = br.getRegex("valid until: ([^<>\"]*?)\\)").getMatch(0);
             if (expire == null) {
                 final String lang = System.getProperty("user.language");
                 if ("de".equalsIgnoreCase(lang)) {

@@ -55,6 +55,7 @@ public class DiskYandexNet extends PluginForHost {
         super(wrapper);
         this.enablePremium("https://passport.yandex.ru/passport?mode=register&from=cloud&retpath=https%3A%2F%2Fdisk.yandex.ru%2F%3Fauth%3D1&origin=face.en");
         setConfigElements();
+        this.setStartIntervall(10 * 1000);
     }
 
     @Override
@@ -416,15 +417,7 @@ public class DiskYandexNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty("directlink_account", dllink);
-        try {
-            /* add a download slot */
-            controlFreeAcc(+1);
-            /* start the dl */
-            dl.startDownload();
-        } finally {
-            /* remove download slot */
-            controlFreeAcc(-1);
-        }
+        dl.startDownload();
     }
 
     private void handleServerErrors() throws PluginException {
@@ -495,29 +488,10 @@ public class DiskYandexNet extends PluginForHost {
         return dllink;
     }
 
-    /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
-     *
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
-     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
-     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
-     * minimal harm to downloading as slots are freed up soon as current download begins.
-     *
-     * @param controlFree
-     *            (+1|-1)
-     */
-    public synchronized void controlFreeAcc(final int num) {
-        logger.info("maxFree was = " + maxFreeAcc.get());
-        maxFreeAcc.set(Math.min(Math.max(1, maxFreeAcc.addAndGet(num)), totalMaxSimultanFreeAccDownload.get()));
-        logger.info("maxFree now = " + maxFreeAcc.get());
-    }
-
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         /* workaround for free/premium issue on stable 09581 */
-        return maxFreeAcc.get();
+        return ACCOUNT_FREE_MAXDOWNLOADS;
     }
 
     private String parse(final String var, final Browser srcbr) {

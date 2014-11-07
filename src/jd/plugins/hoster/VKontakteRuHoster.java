@@ -72,7 +72,6 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String VKWALL_GRAB_VIDEO           = "VKWALL_GRAB_VIDEO";
     private static final String VKWALL_GRAB_LINK            = "VKWALL_GRAB_LINK";
     private static final String VKVIDEO_USEIDASPACKAGENAME  = "VKVIDEO_USEIDASPACKAGENAME";
-    private static final String VKAUDIO_USEIDASPACKAGENAME  = "VKAUDIO_USEIDASPACKAGENAME";
     private static final String VKPHOTO_CORRECT_FINAL_LINKS = "VKPHOTO_CORRECT_FINAL_LINKS";
 
     /* API constants */
@@ -275,6 +274,7 @@ public class VKontakteRuHoster extends PluginForHost {
         }
     }
 
+    /** TODO: Maybe add login via API: https://vk.com/dev/auth_mobile */
     @SuppressWarnings("unchecked")
     public void login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (VKontakteRuHoster.LOCK) {
@@ -446,11 +446,7 @@ public class VKontakteRuHoster extends PluginForHost {
                     final String oid = link.getStringProperty("userid", null);
                     final String id = link.getStringProperty("videoid", null);
                     final String embedhash = link.getStringProperty("embedhash", null);
-                    if (link.getBooleanProperty("videospecial", false)) {
-                        this.br.getPage("http://vk.com/video.php?act=a_flash_vars&vid=" + oid + "_" + id);
-                    } else {
-                        this.br.getPage("http://vk.com/video_ext.php?oid=" + oid + "&id=" + id + "&hash=" + embedhash);
-                    }
+                    this.br.getPage("http://vk.com/video.php?act=a_flash_vars&vid=" + oid + "_" + id);
                     if (br.containsHTML("This video has been removed from public access")) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
@@ -627,9 +623,6 @@ public class VKontakteRuHoster extends PluginForHost {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Settings for 'vk.com/video' links:"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKVIDEO_USEIDASPACKAGENAME, JDL.L("plugins.hoster.vkontakteruhoster.videoUseIdAsPackagename", "Use video-ID as packagename ('videoXXXX_XXXX' or 'video-XXXX_XXXX')?")).setDefaultValue(false));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Settings for 'vk.com/audios' links:"));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKAUDIO_USEIDASPACKAGENAME, JDL.L("plugins.hoster.vkontakteruhoster.audioUseIdAsPackagename", "Use audio-ID as packagename ('audiosXXXX' or 'audios-XXXX')?")).setDefaultValue(false));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Settings for 'vk.com/photo' links:"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKPHOTO_CORRECT_FINAL_LINKS, JDL.L("plugins.hoster.vkontakteruhoster.correctFinallinks", "Change final downloadlinks from 'https?://csXXX.vk.me/vXXX/...' to 'https://pp.vk.me/cXXX/vXXX/...' (forces HTTPS)?")).setDefaultValue(true));

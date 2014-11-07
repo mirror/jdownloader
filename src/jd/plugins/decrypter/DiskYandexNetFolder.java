@@ -93,7 +93,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             }
             // stored hash should not be urldecoded as it changes chars.
             main.setProperty("hash_plain", hashID);
-            parameter = protocol + "://disk.yandex.com/public/?hash=" + Encoding.urlEncode(hashID);
+            parameter = protocol + "://disk.yandex.com/public/?hash=" + Encoding.deepHtmlDecode(hashID);
             br.getPage(parameter);
         }
 
