@@ -1,3 +1,6 @@
+action_captcha_none=无
+action_captcha_service=服务
+action_setCaptchaService=设置激活验证码服务
 addScheduleEntryDialog_account=账户
 addScheduleEntryDialog_actionParameters=动作 & 参数
 addScheduleEntryDialog_repeat=重复
