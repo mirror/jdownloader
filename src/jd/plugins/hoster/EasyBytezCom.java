@@ -536,7 +536,7 @@ public class EasyBytezCom extends PluginForHost {
             }
         }
         regexStuff.add("<!(--.*?--)>");
-        regexStuff.add("(<\\s*(\\w+)\\s+[^>]*style\\s*=\\s*(\"|')(?:(?:[\\w:;\\s#-]*(visibility\\s*:\\s*hidden;|display\\s*:\\s*none;|font-size\\s*:\\s*0;)[\\w:;\\s#-]*)|font-size:0|visibility\\s*:\\s*hidden|display\\s*:\\s*none)\\3[^>]*(>.*?<\\s*/\\2[^>]*>|/\\s*>))");
+        regexStuff.add("(<\\s*(\\w+)\\s+[^>]*style\\s*=\\s*(\"|')(?:(?:[\\w:;\\s#-]*(visibility\\s*:\\s*hidden;|display\\s*:\\s*none;|font-size\\s*:\\s*0;)[\\w:;\\s#-]*)|font-size\\s*:\\s*0|visibility\\s*:\\s*hidden|display\\s*:\\s*none)\\3[^>]*(>.*?<\\s*/\\2[^>]*>|/\\s*>))");
 
         for (String aRegex : regexStuff) {
             String results[] = new Regex(toClean, aRegex).getColumn(0);
@@ -1753,7 +1753,7 @@ public class EasyBytezCom extends PluginForHost {
                 Integer usedSlots = getHashedHashedValue(account);
                 // Improvised workaround for fatal XFS3 bug
                 if (usedSlots == null) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 setHashedHashKeyValue(account, -1);
                 if (usedSlots.equals(1)) {
@@ -1798,41 +1798,42 @@ public class EasyBytezCom extends PluginForHost {
      *            Account that's been used, can be null
      * @param x
      *            Integer positive or negative. Positive adds slots. Negative integer removes slots.
+     * @throws PluginException
      * */
-    private synchronized void setHashedHashKeyValue(final Account account, final Integer x) {
-        if (usedHost == null || x == null) {
-            return;
-        }
-        HashMap<String, Integer> holder = new HashMap<String, Integer>();
-        if (!hostMap.isEmpty()) {
-            // load hostMap within holder if not empty
-            holder = hostMap.get(account);
-            // remove old hashMap reference, prevents creating duplicate entry of 'account' when returning result.
-            if (holder.containsKey(account)) {
-                hostMap.remove(account);
+    private void setHashedHashKeyValue(final Account account, final Integer x) throws PluginException {
+        synchronized (CTRLLOCK) {
+            if (usedHost == null || x == null) {
+                return;
             }
-        }
-        String currentKey = getHashedHashedKey(account);
-        Integer currentValue = getHashedHashedValue(account);
-        if (currentKey == null) {
-            // virgin entry
-            holder.put(usedHost, 1);
-        } else {
-            if (currentValue.equals(1) && x.equals(-1)) {
-                // remove table
-                holder.remove(usedHost);
+            HashMap<String, Integer> holder = new HashMap<String, Integer>();
+            if (!hostMap.isEmpty() && hostMap.containsKey(account)) {
+                // load hostMap within holder if not empty
+                holder = hostMap.get(account);
+                if (holder == null) {
+                    // this shouldn't happen
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            String currentKey = getHashedHashedKey(account);
+            Integer currentValue = getHashedHashedValue(account);
+            if (currentKey == null) {
+                // virgin entry
+                holder.put(usedHost, 1);
             } else {
-                // add value, must first remove old to prevent duplication
-                holder.remove(usedHost);
-                holder.put(usedHost, currentValue + x);
+                if (currentValue.equals(1) && x.equals(-1)) {
+                    // remove table
+                    holder.remove(usedHost);
+                } else {
+                    holder.put(usedHost, currentValue + x);
+                }
             }
-        }
-        if (holder.isEmpty()) {
-            // the last value(download) within holder->account. Remove entry to reduce memory allocation
-            hostMap.remove(account);
-        } else {
-            // put updated holder back into hostMap
-            hostMap.put(account, holder);
+            if (holder.isEmpty()) {
+                // the last value(download) within holder->account. Remove entry to reduce memory allocation
+                hostMap.remove(account);
+            } else {
+                // put updated holder back into hostMap
+                hostMap.put(account, holder);
+            }
         }
     }
 
@@ -1842,20 +1843,22 @@ public class EasyBytezCom extends PluginForHost {
      * @param account
      *            Account that's been used, can be null
      * */
-    private synchronized String getHashedHashedKey(final Account account) {
-        if (usedHost == null) {
-            return null;
-        }
-        if (hostMap.containsKey(account)) {
-            final HashMap<String, Integer> accKeyValue = hostMap.get(account);
-            if (accKeyValue.containsKey(usedHost)) {
-                for (final Entry<String, Integer> keyValue : accKeyValue.entrySet()) {
-                    String key = keyValue.getKey();
-                    return key;
+    private String getHashedHashedKey(final Account account) {
+        synchronized (CTRLLOCK) {
+            if (usedHost == null) {
+                return null;
+            }
+            if (hostMap.containsKey(account)) {
+                final HashMap<String, Integer> accKeyValue = hostMap.get(account);
+                if (accKeyValue.containsKey(usedHost)) {
+                    for (final Entry<String, Integer> keyValue : accKeyValue.entrySet()) {
+                        String key = keyValue.getKey();
+                        return key;
+                    }
                 }
             }
+            return null;
         }
-        return null;
     }
 
     /**
@@ -1864,20 +1867,22 @@ public class EasyBytezCom extends PluginForHost {
      * @param account
      *            Account that's been used, can be null
      * */
-    private synchronized Integer getHashedHashedValue(final Account account) {
-        if (usedHost == null) {
-            return null;
-        }
-        if (hostMap.containsKey(account)) {
-            final HashMap<String, Integer> accKeyValue = hostMap.get(account);
-            if (accKeyValue.containsKey(usedHost)) {
-                for (final Entry<String, Integer> keyValue : accKeyValue.entrySet()) {
-                    Integer value = keyValue.getValue();
-                    return value;
+    private Integer getHashedHashedValue(final Account account) {
+        synchronized (CTRLLOCK) {
+            if (usedHost == null) {
+                return null;
+            }
+            if (hostMap.containsKey(account)) {
+                final HashMap<String, Integer> accKeyValue = hostMap.get(account);
+                if (accKeyValue.containsKey(usedHost)) {
+                    for (final Entry<String, Integer> keyValue : accKeyValue.entrySet()) {
+                        Integer value = keyValue.getValue();
+                        return value;
+                    }
                 }
             }
+            return null;
         }
-        return null;
     }
 
     /**
@@ -1888,21 +1893,23 @@ public class EasyBytezCom extends PluginForHost {
      * @param key
      *            String of what ever you want to find
      * */
-    private synchronized boolean isHashedHashedKey(final Account account, final String key) {
-        if (key == null) {
-            return false;
-        }
-        final HashMap<String, Integer> accKeyValue = hostMap.get(account);
-        if (accKeyValue != null) {
-            if (accKeyValue.containsKey(key)) {
-                for (final Entry<String, Integer> keyValue : accKeyValue.entrySet()) {
-                    if (keyValue.getKey().equals(key)) {
-                        return true;
+    private boolean isHashedHashedKey(final Account account, final String key) {
+        synchronized (CTRLLOCK) {
+            if (key == null) {
+                return false;
+            }
+            final HashMap<String, Integer> accKeyValue = hostMap.get(account);
+            if (accKeyValue != null) {
+                if (accKeyValue.containsKey(key)) {
+                    for (final Entry<String, Integer> keyValue : accKeyValue.entrySet()) {
+                        if (keyValue.getKey().equals(key)) {
+                            return true;
+                        }
                     }
                 }
             }
+            return false;
         }
-        return false;
     }
 
     /**
