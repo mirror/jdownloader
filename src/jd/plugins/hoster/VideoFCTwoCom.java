@@ -54,7 +54,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video.fc2.com" }, urls = { "http://video\\.fc2\\.com(/flv2\\.swf\\?i=|(/[a-z]{2})?(/a)?/content/)\\w+" }, flags = { 3 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.fc2.com" }, urls = { "http://video\\.fc2\\.com(/flv2\\.swf\\?i=|(/[a-z]{2})?(/a)?/content/)\\w+" }, flags = { 3 })
 public class VideoFCTwoCom extends PluginForHost {
 
     public VideoFCTwoCom(PluginWrapper wrapper) {
@@ -71,7 +71,7 @@ public class VideoFCTwoCom extends PluginForHost {
     private static Object LOCK                  = new Object();
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), fastLinkCheck, JDL.L("plugins.hoster.videofcttwocom.fastlinkcheck", "Force secure communication requests via 'https' over SSL/TLS")).setDefaultValue(fastLinkCheck_default));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), fastLinkCheck, JDL.L("plugins.hoster.videofcttwocom.fastlinkcheck", "Enable fast linkcheck, doesn't perform filesize checks! Filesize will be updated when download starts.")).setDefaultValue(fastLinkCheck_default));
     }
 
     private final static AtomicReference<String> userAgent = new AtomicReference<String>(null);
@@ -188,6 +188,7 @@ public class VideoFCTwoCom extends PluginForHost {
             } catch (PluginException e) {
                 account.setProperty("name", Property.NULL);
                 account.setProperty("pass", Property.NULL);
+                account.setProperty("cookies", Property.NULL);
                 throw e;
             }
             return ai;
@@ -294,15 +295,16 @@ public class VideoFCTwoCom extends PluginForHost {
                         }
                     }
                 }
-            } else {
-                // no accounts prepareBrowser wouldn't have happened!
-                prepareBrowser(br);
             }
+        }
+        if (account == null) {
+            // no accounts prepareBrowser wouldn't have happened!
+            prepareBrowser(br);
         }
         br.setFollowRedirects(true);
         br.getPage(dllink);
-        String filename = br.getRegex("<title>.*?◎?(.*?) -").getMatch(0);
-        if (filename == null) {
+        String filename = br.getRegex("<title>.*?◎?(.*?) -.*?</title>").getMatch(0);
+        if (filename == null || filename.isEmpty() || filename.matches("[\\s\\p{Z}]+")) {
             filename = br.getRegex("title=\".*?◎([^\"]+)").getMatch(0);
         }
 
@@ -311,7 +313,7 @@ public class VideoFCTwoCom extends PluginForHost {
         }
         String upid = dllink.substring(dllink.lastIndexOf("/") + 1);
         String gk = getKey();
-        if (filename == null || upid == null || gk == null) {
+        if (upid == null || gk == null) {
             // quite a few of these patterns are too generic, 'this content... is now in javascript variable. errmsg span is also present in
             // ALL pages just doesn't contain text when not valid...
             if (br.containsHTML("This content has already been deleted") || br.getURL().contains("/err.php") || br.getURL().contains("/404.php") || br.containsHTML("class=\"errmsg\"")) {
@@ -320,15 +322,6 @@ public class VideoFCTwoCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-
-        filename = filename.replaceAll("\\p{Z}", " ");
-        // why do we do this?? http://board.jdownloader.org/showthread.php?p=304933#post304933
-        // filename = filename.replaceAll("[\\.\\d]{3,}$", "");
-        filename = filename.trim();
-        filename = filename.replaceAll("(:|,|\\s)", "_");
-        filename = filename + (new Regex(filename, "\\.[0-9A-Za-z]{2,5}$").matches() ? "" : ".mp4");
-
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
 
         /* get url */
         downloadLink.setProperty("ONLYFORPREMIUM", false);
@@ -351,37 +344,52 @@ public class VideoFCTwoCom extends PluginForHost {
         } else if ("23764902a26fbd6345d3cc3533d1d5eb".equalsIgnoreCase(JDHash.getMD5(br.toString()))) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
-        if (br.containsHTML("err_code=403")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-
-        br.getHeaders().put("Referer", null);
         String error = br.getRegex("^err_code=(\\d+)").getMatch(0);
         if (br.getRegex("\\&charge_second=\\d+").matches()) {
             error = "603";
         }
+        AvailableStatus aError = null;
         if (error != null) {
             switch (Integer.parseInt(error)) {
+            case 403:
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             case 503:
                 // :-)
                 break;
             case 601:
                 /* reconnect */
                 logger.info("video.fc2.com: reconnect is needed!");
-                return AvailableStatus.TRUE;
+                aError = AvailableStatus.TRUE;
             case 602:
                 /* reconnect */
                 logger.info("video.fc2.com: reconnect is needed!");
-                return AvailableStatus.TRUE;
+                aError = AvailableStatus.TRUE;
             case 603:
                 downloadLink.setProperty("ONLYFORPREMIUM", true);
                 break;
             default:
                 logger.info("video.fc2.com: Unknown error code: " + error);
-                return AvailableStatus.UNCHECKABLE;
+                aError = AvailableStatus.UNCHECKABLE;
             }
         }
+
+        // prevent NPE
+        if (filename != null) {
+            filename = filename.replaceAll("\\p{Z}", " ");
+            // why do we do this?? http://board.jdownloader.org/showthread.php?p=304933#post304933
+            // filename = filename.replaceAll("[\\.\\d]{3,}$", "");
+            filename = filename.trim();
+            filename = filename.replaceAll("(:|,|\\s)", "_");
+            filename = filename + (new Regex(filename, "\\.[0-9A-Za-z]{2,5}$").matches() ? "" : ".mp4");
+            downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
+        }
+        // return aError
+        if (aError != null) {
+            return aError;
+        }
+
+        br.getHeaders().put("Referer", null);
+
         finalURL = br.getRegex("filepath=(http://.*?)$").getMatch(0);
         prepareFinalLink();
         if (finalURL == null) {
