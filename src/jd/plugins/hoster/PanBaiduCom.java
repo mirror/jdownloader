@@ -208,6 +208,8 @@ public class PanBaiduCom extends PluginForHost {
             } else if (br2.containsHTML("\"errno\":118")) {
                 logger.warning("It seems like one or multiple parameters are missing in the previous request(s)");
                 handlePluginBroken(downloadLink, "unknownerror118", 3);
+            } else if (br2.containsHTML("No htmlCode read")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error_dllink", 5 * 60 * 1000l);
             }
             DLLINK = getJson(br2, "dlink");
             if (DLLINK == null) {
