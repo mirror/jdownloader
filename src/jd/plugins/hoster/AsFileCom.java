@@ -313,9 +313,8 @@ public class AsFileCom extends PluginForHost {
                 }
                 getPage(MAINPAGE + "/en/");
                 postPage(MAINPAGE + "/en/login", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=on&referer=%2Fen%2F");
-                final String lang = System.getProperty("user.language");
                 if (br.containsHTML(">Fail login<") || !br.containsHTML("logout\">Logout ")) {
-                    if ("de".equalsIgnoreCase(lang)) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -324,7 +323,7 @@ public class AsFileCom extends PluginForHost {
                 br.getPage("http://asfile.com/en/profile");
                 if (br.containsHTML("Your account is: FREE<br")) {
                     logger.info("Free accounts are not supported!");
-                    if ("de".equalsIgnoreCase(lang)) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -333,7 +332,7 @@ public class AsFileCom extends PluginForHost {
                 if (!br.containsHTML("(<p>Your account:<strong> premium|Your account is: PREMIUM<br />)")) {
                     logger.info("This is an unsupported accounttype!");
 
-                    if ("de".equalsIgnoreCase(lang)) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -514,7 +513,7 @@ public class AsFileCom extends PluginForHost {
     /**
      * Gets page <br />
      * - natively supports silly cloudflare anti DDoS crapola
-     * 
+     *
      * @author raztoki
      */
     private void getPage(final String page) throws Exception {

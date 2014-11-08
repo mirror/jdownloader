@@ -378,6 +378,10 @@ public class DiskYandexNet extends PluginForHost {
                         link.setProperty("file_moved", true);
                         dllink = getLinkFromFileInAccount(link, br);
                         if (dllink == null) {
+                            /*
+                             * Possible errors (which should never occur:
+                             * "id":"HTTP_404 == File could not be found in the account --> Probably move handling failed or is broken"
+                             */
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                         if (this.getPluginConfig().getBooleanProperty(DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD, false)) {

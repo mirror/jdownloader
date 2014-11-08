@@ -144,6 +144,15 @@ public class ZbigzCom extends PluginForHost {
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.postPage("http://zbigz.com/login.php", "e-mail=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (!br.containsHTML("loginIn \\(true,\\[true,")) {
+                    /* aybe login is valid but it's not a premium account */
+                    if (br.containsHTML("loginIn \\(true,")) {
+                        logger.info("Free accounts are not supported!");
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                    }
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
