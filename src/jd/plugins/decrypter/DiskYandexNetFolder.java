@@ -91,6 +91,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            hashID = Encoding.htmlDecode(hashID);
             // stored hash should not be urldecoded as it changes chars.
             main.setProperty("hash_plain", hashID);
             parameter = protocol + "://disk.yandex.com/public/?hash=" + Encoding.deepHtmlDecode(hashID);

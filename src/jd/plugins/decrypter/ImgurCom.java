@@ -158,9 +158,9 @@ public class ImgurCom extends PluginForDecrypt {
         for (final String item : items) {
             final String directlink = getJson(item, "link");
             final String title = getJson(item, "title");
-            final String filesize = getJson(item, "size");
+            final String filesize_str = getJson(item, "size");
             final String imgUID = getJson(item, "id");
-            if (imgUID == null || filesize == null || directlink == null) {
+            if (imgUID == null || filesize_str == null || directlink == null) {
                 logger.warning("Decrypter broken for link: " + PARAMETER);
                 throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
             }
@@ -174,14 +174,21 @@ public class ImgurCom extends PluginForDecrypt {
             } else {
                 filename = imgUID + "." + filetype;
             }
+            final long filesize = Long.parseLong(filesize_str);
             final DownloadLink dl = createDownloadlink("http://imgurdecrypted.com/download/" + imgUID);
             dl.setFinalFileName(filename);
-            dl.setDownloadSize(Long.parseLong(filesize));
             dl.setAvailable(true);
             dl.setProperty("imgUID", imgUID);
             dl.setProperty("filetype", filetype);
             dl.setProperty("decryptedfinalfilename", filename);
             dl.setProperty("directlink", directlink);
+            try {
+                dl.setVerifiedFileSize(filesize);
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+                dl.setProperty("VERIFIEDFILESIZE", filesize);
+            }
+            dl.setProperty("decryptedfilesize", filesize);
             /* No need to hide directlinks */
             try {/* JD2 only */
                 dl.setContentUrl("http://imgur.com/download/" + imgUID);
