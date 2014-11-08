@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://(www\\.)?(members\\.)?motherless\\.com/(?!privacy|popular|register|premium|members|galleries|contact)(g(i|v)?/[\\w\\-]+/[A-Z0-9]{7}|[A-Z0-9]{7,9}(/[A-Z0-9]{7})?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://(www\\.)?(members\\.)?motherless\\.com/(?!privacy|popular|register|premium|members|galleries|contact)(g(i|v)?/[\\w\\-_]+/[A-Z0-9]{7}|[A-Z0-9]{6,9}(/[A-Z0-9]{7})?)" }, flags = { 0 })
 public class MotherLessCom extends PluginForDecrypt {
 
     private String fpName = null;
@@ -118,7 +118,11 @@ public class MotherLessCom extends PluginForDecrypt {
                 dlink.setAvailable(false);
             }
             dlink.setProperty("dltype", "video");
-           try{/*JD2 only*/dlink.setContentUrl(parameter);}catch(Throwable e){/*Stable*/ dlink.setBrowserUrl(parameter);}
+            try {/* JD2 only */
+                dlink.setContentUrl(parameter);
+            } catch (Throwable e) {/* Stable */
+                dlink.setBrowserUrl(parameter);
+            }
             dlink.setName(new Regex(parameter, "motherless\\.com/(.+)").getMatch(0));
             decryptedLinks.add(dlink);
         } else if (!br.containsHTML("<strong>Uploaded</strong>")) {
