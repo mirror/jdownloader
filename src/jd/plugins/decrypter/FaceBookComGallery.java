@@ -1024,11 +1024,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
         if (FASTLINKCHECK_PICTURES_ENABLED) {
             dl.setAvailable(true);
         }
-        try {/* JD2 only */
-            dl.setContentUrl(final_link);
-        } catch (Throwable e) {/* Stable */
-            dl.setBrowserUrl(final_link);
-        }
         // Set temp name, correct name will be set in hosterplugin later
         dl.setName(getTemporaryDecryptName(final_link));
         return dl;

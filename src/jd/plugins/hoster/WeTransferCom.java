@@ -80,7 +80,7 @@ public class WeTransferCom extends PluginForHost {
         HASH = new Regex(dlink, "([0-9a-f]+)$").getMatch(0);
         CODE = new Regex(dlink, "wetransfer\\.com/downloads/([a-z0-9]+)/").getMatch(0);
         if (HASH == null || CODE == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
         // Allow redirects for change to https

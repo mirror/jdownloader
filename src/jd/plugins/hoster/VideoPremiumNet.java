@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
@@ -37,6 +39,7 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -71,7 +74,7 @@ public class VideoPremiumNet extends PluginForHost {
     // note: can not be negative -x or 0 .:. [1-*]
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(2);
     // don't touch
-    private static AtomicInteger maxFree                      = new AtomicInteger(10);
+    private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
     private static Object        LOCK                         = new Object();
 
@@ -84,15 +87,26 @@ public class VideoPremiumNet extends PluginForHost {
     // mods: this is an RTMP host, removed F1 form- password- and captcha
     // handling
     // non account: 1 * 2
-    // free account: unchecked, set FREE limits
+    // free account: 1 * 2
     // premium account: chunk * maxdl
     // protocol: no https
     // captchatype: null
-    // other: no redirects, Too many simultan downloads returns 404 instead of 503 - 404 can also be server error (file not found), unclear
+    // other: no redirects, Too many simultan downloads returns 404 instead of 503 - 404 can also be server error (file not found), unclear,
+    // FREE accounts = are able to generate HTTP downloadlinks
     // in this case!
 
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(COOKIE_HOST + "/" + new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0));
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("videopremium.net".equals(getHost())) {
+            if (host == null || "videopremium.net".equals(host)) {
+                return "videopremium.tv";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     @Override
@@ -221,6 +235,8 @@ public class VideoPremiumNet extends PluginForHost {
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (correctedBR.contains("No htmlCode read")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 2 * 60 * 1000l);
+        } else if (oldStyle()) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This host only works in the JDownloader 2 BETA version.");
         }
         String passCode = null;
         checkErrors(downloadLink, false, passCode);
@@ -241,9 +257,50 @@ public class VideoPremiumNet extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-        if (dllink != null) {
+        // Third, continue like normal.
+        if (dllink == null) {
+            checkErrors(downloadLink, false, passCode);
+            Form download1 = getFormByKey("op", "download1");
+            if (download1 != null) {
+                download1.remove("method_premium");
+                sendForm(download1);
+                checkErrors(downloadLink, false, passCode);
+                dllink = getDllink();
+            }
+        }
+        Form dlForm = br.getFormbyProperty("name", "F1");
+        if (dlForm != null) {
+            logger.info("F1 form is available..");
+            if (correctedBR.contains(";background:#ccc;text-align")) {
+                logger.info("Detected captcha method \"plaintext captchas\" for this host");
+                /* Captcha method by ManiacMansion */
+                final String[][] letters = new Regex(br, "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
+                if (letters == null || letters.length == 0) {
+                    logger.warning("plaintext captchahandling broken!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
+                for (String[] letter : letters) {
+                    capMap.put(Integer.parseInt(letter[0]), Encoding.htmlDecode(letter[1]));
+                }
+                final StringBuilder code = new StringBuilder();
+                for (String value : capMap.values()) {
+                    code.append(value);
+                }
+                dlForm.put("code", code.toString());
+                logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
+            }
+            waitTime(System.currentTimeMillis(), downloadLink);
+            sendForm(dlForm);
+            dllink = getDllink();
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* Prefer http downloads */
+        if (dllink.startsWith("http")) {
             try {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
             } catch (final SocketTimeoutException e) {
                 /* self built http link (workaround to avoid rtmp) does not work --> retry via rtmp */
                 downloadLink.setProperty("http_failed", true);
@@ -269,25 +326,6 @@ public class VideoPremiumNet extends PluginForHost {
             downloadLink.setProperty(directlinkproperty, dllink);
             dl.startDownload();
         } else {
-            if (oldStyle()) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "This host only works in the JDownloader 2 BETA version.");
-            }
-            dllink = getDllink();
-            // Third, continue like normal.
-            if (dllink == null) {
-                checkErrors(downloadLink, false, passCode);
-                Form download1 = getFormByKey("op", "download1");
-                if (download1 != null) {
-                    download1.remove("method_premium");
-                    sendForm(download1);
-                    checkErrors(downloadLink, false, passCode);
-                    dllink = getDllink();
-                }
-            }
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            this.sleep(10 * 1000, downloadLink);
             try {
                 rtmpDownload(downloadLink, dllink);
             } catch (final Throwable e) {
@@ -325,6 +363,22 @@ public class VideoPremiumNet extends PluginForHost {
             }
         }
         return dllink;
+    }
+
+    private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
+        int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+        /** Ticket Time */
+        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        if (ttt != null) {
+            int wait = Integer.parseInt(ttt);
+            wait -= passedTime;
+            logger.info("[Seconds] Waittime on the page: " + ttt);
+            logger.info("[Seconds] Passed time: " + passedTime);
+            logger.info("[Seconds] Total time to wait: " + wait);
+            if (wait > 0) {
+                sleep(wait * 1000l, downloadLink);
+            }
+        }
     }
 
     private boolean oldStyle() {
@@ -588,7 +642,7 @@ public class VideoPremiumNet extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
@@ -600,22 +654,34 @@ public class VideoPremiumNet extends PluginForHost {
         }
         account.setValid(true);
         ai.setUnlimitedTraffic();
-        final String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
-        if (expire == null) {
-            ai.setExpired(true);
-            account.setValid(false);
-            return ai;
-        } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
+        if (account.getBooleanProperty("free", false)) {
+            maxPrem.set(2);
             try {
-                maxPrem.set(20);
+                account.setType(AccountType.FREE);
                 account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
+                account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
-                // not available in old Stable 0.9.581
+                /* not available in old Stable 0.9.581 */
             }
+            ai.setStatus("Registered (free) user");
+        } else {
+            final String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
+            if (expire == null) {
+                ai.setExpired(true);
+                account.setValid(false);
+                return ai;
+            } else {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
+                try {
+                    maxPrem.set(20);
+                    account.setMaxSimultanDownloads(maxPrem.get());
+                    account.setConcurrentUsePossible(true);
+                } catch (final Throwable e) {
+                    // not available in old Stable 0.9.581
+                }
+            }
+            ai.setStatus("Premium User");
         }
-        ai.setStatus("Premium User");
         return ai;
     }
 
@@ -676,12 +742,9 @@ public class VideoPremiumNet extends PluginForHost {
                     getPage("/?op=my_account");
                 }
                 if (!new Regex(correctedBR, ">Renew premium</strong>").matches()) {
-                    logger.info("Unknown accounttype...");
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    account.setProperty("free", true);
+                } else {
+                    account.setProperty("free", false);
                 }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -709,28 +772,32 @@ public class VideoPremiumNet extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         getPage(downloadLink.getDownloadURL());
-        String dllink = getDllink();
-        if (dllink == null) {
-            final Form dlform = br.getFormbyProperty("name", "F1");
-            if (dlform != null && new Regex(correctedBR, PASSWORDTEXT).matches()) {
-                passCode = handlePassword(dlform, downloadLink);
+        if (account.getBooleanProperty("free", false)) {
+            doFree(downloadLink, true, 1, "directlink_account_free");
+        } else {
+            String dllink = getDllink();
+            if (dllink == null) {
+                final Form dlform = br.getFormbyProperty("name", "F1");
+                if (dlform != null && new Regex(correctedBR, PASSWORDTEXT).matches()) {
+                    passCode = handlePassword(dlform, downloadLink);
+                }
+                checkErrors(downloadLink, true, passCode);
+                if (dlform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                sendForm(dlform);
+                checkErrors(downloadLink, true, passCode);
+                dllink = getDllink();
             }
-            checkErrors(downloadLink, true, passCode);
-            if (dlform == null) {
+            if (dllink == null) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            sendForm(dlform);
-            checkErrors(downloadLink, true, passCode);
-            dllink = getDllink();
-        }
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (dllink.startsWith("rtmp")) {
-            rtmpDownload(downloadLink, dllink);
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Code-part not yet done...");
+            if (dllink.startsWith("rtmp")) {
+                rtmpDownload(downloadLink, dllink);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Code-part not yet done...");
+            }
         }
     }
 
