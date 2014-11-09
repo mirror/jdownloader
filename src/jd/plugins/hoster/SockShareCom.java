@@ -85,6 +85,9 @@ public class SockShareCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (true) {
+            return AvailableStatus.FALSE;
+        }
         this.setBrowserExclusive();
         prepBrowser();
         br.setFollowRedirects(true);
@@ -233,6 +236,12 @@ public class SockShareCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
+        if (true) {
+            ai.setStatus("Account Disabled, Hoster down!");
+            account.setValid(false);
+            ai.setExpired(true);
+            return ai;
+        }
         try {
             login(account, true);
         } catch (PluginException e) {

@@ -40,6 +40,9 @@ public class PutLockerComFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        if (true) {
+            return decryptedLinks;
+        }
         final String parameter = param.toString();
         String fpName = null;
         String[] ids = null;
