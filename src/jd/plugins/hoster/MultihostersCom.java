@@ -60,34 +60,30 @@ public class MultihostersCom extends PluginForHost {
         String pass = Encoding.urlEncode(account.getPass());
         long trafficLeft = -1;
         String hosts = null;
-        try {
-            loginPage = br.getPage("http://www.multihosters.com/jDownloader.ashx?cmd=accountinfo&login=" + username + "&pass=" + pass);
-            String infos[] = br.getRegex("(.*?)(,|$)").getColumn(0);
-
-            String EndSubscriptionDate = new Regex(infos[1], "EndSubscriptionDate:(.+)").getMatch(0);
-            ac.setValidUntil(TimeFormatter.getMilliSeconds(EndSubscriptionDate, "yyyy/MM/dd HH:mm:ss", null));
-
-            String AvailableTodayTraffic = new Regex(infos[3], "AvailableTodayTraffic:(.+)").getMatch(0);
-            logger.info("Multihosters: AvailableTodayTraffic=" + AvailableTodayTraffic);
-            if (AvailableTodayTraffic.equals("0")) {
-                ac.setUnlimitedTraffic();
+        loginPage = br.getPage("http://www.multihosters.com/jDownloader.ashx?cmd=accountinfo&login=" + username + "&pass=" + pass);
+        /* Looks like it means "No traffic" but this is what their API returns if logindata = invalid. */
+        if (br.containsHTML("No trafic")) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
-                ac.setTrafficLeft(SizeFormatter.getSize(AvailableTodayTraffic + "MiB"));
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-
-            if (ac.isExpired()) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            trafficLeft = Long.parseLong(AvailableTodayTraffic);
-            hosts = br.getPage("http://www.multihosters.com/jDownloader.ashx?cmd=gethosters");
-
-        } catch (Exception e) {
-            ac.setStatus("Account is invalid. Wrong password?");
-            account.setValid(false);
-            return ac;
-        } finally {
-            br.setFollowRedirects(follow);
         }
+        String infos[] = br.getRegex("(.*?)(,|$)").getColumn(0);
+
+        String EndSubscriptionDate = new Regex(infos[1], "EndSubscriptionDate:(.+)").getMatch(0);
+        ac.setValidUntil(TimeFormatter.getMilliSeconds(EndSubscriptionDate, "yyyy/MM/dd HH:mm:ss", null));
+
+        String AvailableTodayTraffic = new Regex(infos[3], "AvailableTodayTraffic:(.+)").getMatch(0);
+        logger.info("Multihosters: AvailableTodayTraffic=" + AvailableTodayTraffic);
+        if (AvailableTodayTraffic.equals("0")) {
+            ac.setUnlimitedTraffic();
+        } else {
+            ac.setTrafficLeft(SizeFormatter.getSize(AvailableTodayTraffic + "MiB"));
+        }
+        trafficLeft = Long.parseLong(AvailableTodayTraffic);
+        hosts = br.getPage("http://www.multihosters.com/jDownloader.ashx?cmd=gethosters");
+        br.setFollowRedirects(follow);
         if (loginPage == null || trafficLeft < 0) {
             account.setValid(false);
             account.setTempDisabled(false);
