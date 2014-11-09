@@ -20,8 +20,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Locale;
 
 import jd.PluginWrapper;
+import jd.config.Property;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -38,10 +42,10 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tb7.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class Tb7Pl extends PluginForHost {
 
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private String                                         validUntil         = null;
-    private boolean                                        expired            = false;
     private String                                         MAINPAGE           = "http://tb7.pl/";
+
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
+    private static Object                                  LOCK               = new Object();
 
     public Tb7Pl(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,63 +53,72 @@ public class Tb7Pl extends PluginForHost {
     }
 
     private void login(Account account, boolean force) throws PluginException, IOException {
-        boolean invalid = false;
-        try {
-            String username = Encoding.urlEncode(account.getUser());
-            br.postPage(MAINPAGE + "login", "login=" + username + "&password=" + account.getPass());
-            if (br.containsHTML("<div id=\"message\">Hasło jest nieprawidłowe</div>")) {
-                invalid = true;
-            } else {
-                br.getPage(MAINPAGE + "mojekonto");
-            }
-
-        } catch (final Exception e) {
-        }
-        if (br.containsHTML("Brak ważnego dostępu Premium")) {
-            expired = true;
-        } else {
-            validUntil = br.getRegex("<div class=\"textPremium\">Dostęp Premium ważny do (.*?)<br>").getMatch(0);
-            validUntil = validUntil.replace(" | ", " ");
-            if (validUntil != null) {
-                expired = false;
-            }
-        }
-        if (invalid) {
-            if (invalid) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        synchronized (LOCK) {
+            try {
+                br.postPage(MAINPAGE + "login", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                if (br.getCookie(MAINPAGE, "autologin") == null) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                // Save cookies
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(MAINPAGE);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
             }
         }
 
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        String validUntil = null;
+        final AccountInfo ai = new AccountInfo();
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
-        try {
-            login(account, true);
-        } catch (Exception e) {
-            account.setValid(false);
-            ai.setStatus("Invalid account. Wrong password?");
-            return ai;
-        }
+        login(account, true);
 
-        // unfortunatelly there is no list with supported hosts anywhere on the page
-        // only PNG image at the main page
-        final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList("turbobit.net", "catshare.net", "rapidu.net", "rapidgator.net", "rg.to", "uploaded.to", "uploaded.net", "ul.to", "oboom.com", "fileparadox.in", "netload.in", "bitshare.com", "freakshare.net", "freakshare.com", "uploadable.ch", "lunaticfiles.com", "fileshark.pl"));
-        if (expired) {
+        if (!br.getURL().contains("mojekonto")) {
+            br.getPage("/mojekonto");
+        }
+        if (br.containsHTML("Brak ważnego dostępu Premium")) {
             ai.setExpired(true);
             ai.setStatus("Account expired");
             return ai;
-        } else {
-            try {
-                long expireTime = TimeFormatter.getMilliSeconds(validUntil, "dd.MM.yyyy HH:mm", null);
-                ai.setValidUntil(expireTime);
-            } catch (final Exception e) {
-                logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+        } else if (br.containsHTML(">Brak ważnego dostępu Premium<")) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
+        } else {
+            validUntil = br.getRegex("<div class=\"textPremium\">Dostęp Premium ważny do (.*?)<br>").getMatch(0);
+            if (validUntil == null) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+            validUntil = validUntil.replace(" | ", " ");
         }
+
+        /*
+         * unfortunatelly there is no list with supported hosts anywhere on the page only PNG image at the main page
+         */
+        final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList("turbobit.net", "catshare.net", "rapidu.net", "rapidgator.net", "rg.to", "uploaded.to", "uploaded.net", "ul.to", "oboom.com", "fileparadox.in", "netload.in", "bitshare.com", "freakshare.net", "freakshare.com", "uploadable.ch", "lunaticfiles.com", "fileshark.pl"));
+        long expireTime = TimeFormatter.getMilliSeconds(validUntil, "dd.MM.yyyy HH:mm", Locale.ENGLISH);
+        ai.setValidUntil(expireTime);
         account.setValid(true);
         ai.setMultiHostSupport(this, supportedHosts);
         ai.setProperty("Turbobit traffic", "Unlimited");
@@ -139,15 +152,10 @@ public class Tb7Pl extends PluginForHost {
     public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
         showMessage(link, "Phase 1/3: Login");
         login(acc, false);
-        if (expired) {
-            acc.setValid(false);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-        }
         br.setConnectTimeout(90 * 1000);
         br.setReadTimeout(90 * 1000);
         dl = null;
         /* generate new downloadlink */
-        String username = Encoding.urlEncode(acc.getUser());
         String url = Encoding.urlEncode(link.getDownloadURL());
         String postData = "step=1" + "&content=" + url;
         showMessage(link, "Phase 2/3: Generating Link");
@@ -186,7 +194,6 @@ public class Tb7Pl extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             }
             String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 2 + ")";
-
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 20 * 1000l);
         }
         // wait, workaround
@@ -199,13 +206,13 @@ public class Tb7Pl extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, generatedLink, true, chunks);
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) // unknown
-        // error
+            // error
         {
             br.followConnection();
             if (br.getBaseURL().contains("notransfer")) {
-                /* No transfer left */
-                acc.setValid(false);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+                /* No traffic left */
+                acc.getAccountInfo().setTrafficLeft(0);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "No traffic left", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
             if (br.getBaseURL().contains("serviceunavailable")) {
                 tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
@@ -214,11 +221,14 @@ public class Tb7Pl extends PluginForHost {
                 tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
             }
             if (br.getBaseURL().contains("invaliduserpass")) {
-                acc.setValid(false);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Invalid username or password.");
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
             }
             if (br.getBaseURL().contains("notfound")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "File not found.");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
 

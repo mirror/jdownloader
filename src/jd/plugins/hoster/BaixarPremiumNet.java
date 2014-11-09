@@ -75,7 +75,6 @@ public class BaixarPremiumNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        ac.setStatus("Premium User");
         ac.setUnlimitedTraffic();
         // now let's get a list of all supported hosts:
         final ArrayList<String> supportedHosts = new ArrayList<String>();
@@ -89,7 +88,6 @@ public class BaixarPremiumNet extends PluginForHost {
             }
         }
         ac.setMultiHostSupport(this, supportedHosts);
-        ac.setStatus("Account valid");
         return ac;
     }
 
@@ -116,9 +114,19 @@ public class BaixarPremiumNet extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            /* Free accounts are not supported */
+            if (br.containsHTML("Erro 404 \\- Página Não encontrada")) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
             logger.info("Unhandled download error on baixarpremium.net: " + br.toString());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        /* Now we know that it is a premium account. */
+        acc.getAccountInfo().setStatus("Premium User");
         try {
             if (!this.dl.startDownload()) {
                 try {
