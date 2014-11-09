@@ -352,6 +352,9 @@ public class VKontakteRu extends PluginForDecrypt {
                     if (e.getMessage().equals(EXCEPTION_ACCPROBLEM)) {
                         logger.info("Account problem! Stopped decryption of link: " + CRYPTEDLINK_FUNCTIONAL);
                         return decryptedLinks2;
+                    } else if (e.getMessage().equals(EXCEPTION_API_UNKNOWN)) {
+                        logger.info("Unknown API problem occured! Stopped decryption of link: " + CRYPTEDLINK_FUNCTIONAL);
+                        return decryptedLinks2;
                     } else if (e.getMessage().equals(EXCEPTION_LINKOFFLINE)) {
                         final DownloadLink offline = createDownloadlink("http://vkontaktedecrypted.ru/videolink/" + System.currentTimeMillis() + new Random().nextInt(10000000));
                         offline.setAvailable(false);
