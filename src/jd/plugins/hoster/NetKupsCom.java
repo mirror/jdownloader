@@ -62,10 +62,14 @@ public class NetKupsCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL().replace("play=", "d="));
-        if (br.containsHTML(">File not found|>This file has been deleted|>This file has been lost due to a system failure|>This file has been reported")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">File not found|>This file has been deleted|>This file has been lost due to a system failure|>This file has been reported")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<strong>File name:</strong>([^<>\"]*?)<br").getMatch(0);
         String filesize = br.getRegex("<strong>File size:</strong>([^<>\"]*?)<br").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -85,7 +89,9 @@ public class NetKupsCom extends PluginForHost {
         // dllink = br2.getRegex("url: \"(http://[^<>\"]*?)\"").getMatch(0);
         // }
         if (dllink == null) {
-            if (br.containsHTML(">You are already downloading a file")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 31 * 1000l);
+            if (br.containsHTML(">You are already downloading a file")) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 31 * 1000l);
+            }
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
             rc.parse();
@@ -93,10 +99,16 @@ public class NetKupsCom extends PluginForHost {
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             String c = getCaptchaCode("recaptcha", cf, downloadLink);
             rc.setCode(c);
-            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
             dllink = br.getRegex("id=\"getfile\"><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("\"(http://d\\d+\\.netkups\\.com/free\\?d=[a-z0-9]+\\&t=[a-z0-9]+)\"").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                dllink = br.getRegex("\"(http://d\\d+\\.netkups\\.com/free\\?d=[a-z0-9]+\\&t=[a-z0-9]+)\"").getMatch(0);
+            }
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -114,7 +126,9 @@ public class NetKupsCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -129,10 +143,16 @@ public class NetKupsCom extends PluginForHost {
                 br.setFollowRedirects(true);
                 // br.getPage("");
                 br.postPage("http://netkups.com/?page=login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(MAINPAGE, "user") == null || br.getCookie(MAINPAGE, "session") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(MAINPAGE, "user") == null || br.getCookie(MAINPAGE, "session") == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 if (!br.containsHTML("days of premium left")) {
                     logger.info("Login broken or unsupported accounttype (FREE)");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -157,7 +177,7 @@ public class NetKupsCom extends PluginForHost {
             login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
         ai.setUnlimitedTraffic();
         final String expire = br.getRegex("You have (\\d+) days of premium left").getMatch(0);
@@ -179,7 +199,9 @@ public class NetKupsCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL().replace("play=", "d="));
         String dllink = br.getRegex("id=\"getfile\"><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://d\\d+\\.netkups\\.com/priority\\?d=[a-z0-9]+\\&t=[a-z0-9]+)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://d\\d+\\.netkups\\.com/priority\\?d=[a-z0-9]+\\&t=[a-z0-9]+)\"").getMatch(0);
+        }
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
