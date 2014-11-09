@@ -1345,29 +1345,32 @@ public class VKontakteRu extends PluginForDecrypt {
         return ownerID;
     }
 
-    /* TODO: Add retries here */
     private void getPageSafeAPI(final String parameter) throws Exception {
-        for (int i = 1; i <= 3; i++) {
+        int counter = 1;
+        do {
             br.getPage(parameter);
-            handleErrorsAPI();
-            break;
-        }
+        } while (handleErrorsAPI() && counter <= 3);
     }
 
-    /* TODO: Add retries here */
     private void postPageSafeAPI(final String page, final String postData) throws Exception {
-        br.postPage(page, postData);
-        handleErrorsAPI();
+        int counter = 1;
+        do {
+            br.postPage(page, postData);
+        } while (handleErrorsAPI() && counter <= 3);
         if (getCurrentAPIErrorcode() > -1) {
             throw new DecrypterException(EXCEPTION_API_UNKNOWN);
         }
     }
 
-    /* Handles these error-codes: https://vk.com/dev/errors */
-    private void handleErrorsAPI() throws Exception {
+    /**
+     * Handles these error-codes: https://vk.com/dev/errors
+     *
+     * @return true = ready to retry, false = problem - failed!
+     */
+    private boolean handleErrorsAPI() throws Exception {
         final String errcodeSTR = br.getRegex("\"error_code\":(\\d+)").getMatch(0);
         if (errcodeSTR == null) {
-            return;
+            return false;
         }
         final int errcode = Integer.parseInt(errcodeSTR);
         switch (errcode) {
@@ -1428,10 +1431,11 @@ public class VKontakteRu extends PluginForDecrypt {
             } while (!loginsucceeded && counter <= 3);
             if (loginsucceeded) {
                 logger.info("Succeeded to re-login");
+                return true;
             } else {
                 logger.warning("FAILED to re-login");
+                throw new DecrypterException(EXCEPTION_ACCPROBLEM);
             }
-            break;
         case 20:
             logger.info("Permission to perform this action is denied for non-standalone applications");
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
@@ -1477,6 +1481,7 @@ public class VKontakteRu extends PluginForDecrypt {
         default:
             break;
         }
+        return false;
     }
 
     /** Returns current API 'error_code', returns -1 if there is none */

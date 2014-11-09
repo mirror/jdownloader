@@ -33,19 +33,19 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "url-protection.com" }, urls = { "http://(www\\.)?url\\-protection\\.com/(linkidwoc|)\\.php\\?linkid=[a-z0-9]+" }, flags = { 0 })
-public class UrlProtectionCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "my-protect-links.com" }, urls = { "http://(www\\.)?my\\-protect\\-link\\.com/(linkcheck\\.php\\?linkid=[a-z0-9]+|[a-z0-9\\-_]+\\.html)" }, flags = { 0 })
+public class MyProtectLinkCom extends PluginForDecrypt {
 
-    public UrlProtectionCom(PluginWrapper wrapper) {
+    public MyProtectLinkCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
-    // DecrypterScript_linkid=_linkcheck.php Version 0.2
+    // DecrypterScript_linkid=_linkcheck.php Version 0.3
     // mods:
     // protocol: no https
-    // captchatype: null
-    // other:
+    // captchatype: reCaptcha
+    // other: abnormal url format
 
     private static final String  RECAPTCHATEXT = "api\\.recaptcha\\.net|google\\.com/recaptcha/api/challenge";
     private static final boolean SKIP_CAPTCHA  = false;
@@ -54,13 +54,23 @@ public class UrlProtectionCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("linkidwoc.php", "linkcheck.php");
         final String domain = new Regex(parameter, "http://(www\\.)?([^<>\"/]*?)/").getMatch(1);
-        final String linkid = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
+        String linkid = new Regex(parameter, "linkid=([a-z0-9]+)$").getMatch(0);
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
-        br.getPage(parameter);
         /* In case there is a captcha: Try to prefer captcha by adding "&c=1" to the url */
         br.getPage(parameter);
+        if (linkid == null) {
+            linkid = br.getRegex("name=\"linkid\" value=\"([a-z0-9]+)\"").getMatch(0);
+        }
+        if (linkid == null) {
+            logger.warning("Could not find linkid: " + parameter);
+            return null;
+        }
 
+        String captchaPost = br.getRegex("name=\\'linkprotect\\' action=\\'([A-Za-z0-9]+\\.php)\\'").getMatch(0);
+        if (captchaPost == null) {
+            captchaPost = "showlinks.php";
+        }
         if (!SKIP_CAPTCHA && br.containsHTML(RECAPTCHATEXT)) {
             boolean failed = true;
             for (int i = 0; i <= 5; i++) {
@@ -70,9 +80,9 @@ public class UrlProtectionCom extends PluginForDecrypt {
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String c = getCaptchaCode("recaptcha", cf, param);
-                final String postData = "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&x=" + Integer.toString(new Random().nextInt(100)) + "&y=" + Integer.toString(new Random().nextInt(100)) + "&captcha=recaptcha&mon_captcha=" + linkid;
-                br.postPage("http://" + domain + "/showlinks.php", postData);
-                if (br.containsHTML(">Captcha erroné vous allez être rediriger")) {
+                final String postData = "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&x=" + Integer.toString(new Random().nextInt(100)) + "&y=" + Integer.toString(new Random().nextInt(100)) + "&linkid=" + linkid;
+                br.postPage(captchaPost, postData);
+                if (br.containsHTML(RECAPTCHATEXT)) {
                     /* In case there is a captcha: Try to prefer captcha by adding "&c=1" to the url */
                     br.getPage(parameter);
                     continue;
@@ -83,9 +93,9 @@ public class UrlProtectionCom extends PluginForDecrypt {
             if (failed) {
                 throw new DecrypterException(DecrypterException.CAPTCHA);
             }
+        } else {
+            br.postPage(captchaPost, "linkid=" + linkid + "&x=" + Integer.toString(new Random().nextInt(100)) + "&y=" + Integer.toString(new Random().nextInt(100)));
         }
-
-        br.postPage("http://" + domain + "/linkid.php", "linkid=" + linkid + "&x=" + Integer.toString(new Random().nextInt(100)) + "&y=" + Integer.toString(new Random().nextInt(100)));
         String fpName = br.getRegex("<div align=\"center\">([^<>\"]*?)</div>").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("(Titre|Title):[\t\n\r ]+</td>[\t\n\r ]+<td style='[^<>\"]+'>([^<>\"]*?)</td>").getMatch(1);
@@ -93,12 +103,12 @@ public class UrlProtectionCom extends PluginForDecrypt {
         if (fpName == null) {
             fpName = linkid;
         }
-        final String tabletext = br.getRegex("class='all_liens'(.*?)</table>").getMatch(0);
+        final String tabletext = br.getRegex("<table width=\\'100%\\' align=\\'MIDDLE\\' valign=\\'MIDDLE\\'>(.*?)</table>").getMatch(0);
         if (tabletext == null) {
             logger.warning("Could not find link-table: " + parameter);
             return null;
         }
-        String[] links = new Regex(tabletext, "href=(http[^<>\"]*?)>").getColumn(0);
+        String[] links = new Regex(tabletext, "href=(http[^<>\"]*?)(\r|>)").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

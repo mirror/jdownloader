@@ -109,6 +109,9 @@ public class KeezMoviesCom extends PluginForHost {
             String isEncrypted = getValue("encrypted");
             if ("1".equals(isEncrypted) || Boolean.parseBoolean(isEncrypted)) {
                 String decrypted = getValue("video_url");
+                if (decrypted == null) {
+                    decrypted = getValue("quality_180p");
+                }
                 String key = getValue("video_title");
                 try {
                     DLLINK = new BouncyCastleAESCounterModeDecrypt().decrypt(decrypted, key, 256);

@@ -34,14 +34,14 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "disk.yandex.net" }, urls = { "https?://(www\\.)?((((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=]+|#[A-Za-z0-9%\\/+=]+))|(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+|yadi\\.sk/mail/\\?hash=[A-Za-z0-9%/\\+=]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "disk.yandex.net" }, urls = { "https?://(www\\.)?((((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=\\-]+|#[A-Za-z0-9%\\/+=\\-]+))|(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+|yadi\\.sk/mail/\\?hash=[A-Za-z0-9%/\\+=]+)" }, flags = { 0 })
 public class DiskYandexNetFolder extends PluginForDecrypt {
 
     public DiskYandexNetFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private final String        primaryURLs       = "https?://(www\\.)?((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=\\&]+|#[A-Za-z0-9%\\/+=]+)";
+    private final String        primaryURLs       = "https?://(www\\.)?((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=\\-]+|#[A-Za-z0-9%\\/+=\\-]+)";
     private final String        shortURLs         = "https?://(www\\.)?(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+";
 
     private final String        type_yadi_sk_mail = "https?://(www\\.)?yadi\\.sk/mail/\\?hash=[A-Za-z0-9%/\\+=]+";
@@ -98,16 +98,13 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             br.getPage(parameter);
         }
 
-        hashID = Encoding.htmlDecode(hashID);
-        // stored hash should not be urldecoded as this is what we need in host plugin
-        main.setProperty("hash_plain", hashID);
         main.setProperty("mainlink", parameter);
         main.setName(hashID);
 
         if (br.containsHTML(OFFLINE_TEXT)) {
             main.setAvailable(false);
             main.setProperty("offline", true);
-            main.setFinalFileName(new Regex(parameter, "([A-Za-z0-9\\-_]+)$").getMatch(0));
+            main.setFinalFileName(hashID);
             decryptedLinks.add(main);
             return decryptedLinks;
         }
@@ -121,22 +118,36 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             return null;
         }
         fpName = Encoding.htmlDecode(fpName.trim());
-        String linktext = br.getRegex("class=\"folder _init\" data\\-nb=\"folder\" id=\"f\\-[^<>\"]*?\">(.*?)</div>([\r\n\t ]+)?</div>([\r\n\t ]+)?</div>").getMatch(0);
+        // /* First try to get files of current folder */
+        // final String hashID_special_encoded = hashID.replace("%2F", "/").replace("%28", "(").replace("%29", ")");
+        // String linktext = br.getRegex("\"idEncoded\":\"/public/" + hashID_special_encoded + "parents\":\\[(.*?)\\]").getMatch(0);
+        String linktext = br.getRegex("\"resources\":\\[(.*?)\\]\\}\\}").getMatch(0);
         if (linktext != null) {
             linktext = Encoding.htmlDecode(linktext);
         }
         String[] data = null;
         if (linktext != null) {
-            data = linktext.split("<div");
+            data = linktext.split("\\},\\{");
         }
+
+        hashID = Encoding.htmlDecode(hashID);
+        // stored hash should not be urldecoded as this is what we need in host plugin
+        main.setProperty("hash_plain", hashID);
+
         if (data != null && data.length != 0) {
             for (final String singleData : data) {
-                String hash = getJson("hash", singleData);
+                final String type = getJson("type", singleData);
+                String hash = getJson("idEncoded", singleData);
                 String name = getJson("name", singleData);
                 if (singleData.length() > 30 && hash != null) {
                     hash = unescape(hash);
-                    if (singleData.contains("\"isFolder\":true")) {
-                        decryptedLinks.add(createDownloadlink("https://disk.yandex.com/public/?hash=" + Encoding.urlEncode(hash)));
+                    if ("dir".equals(type)) {
+                        hash = hash.replace("/public/", "");
+                        hash = Encoding.urlEncode(hash);
+                        /* Correct encoding, space issues */
+                        hash = hash.replace("+", "%20");
+                        final String folderlink = "https://disk.yandex.com/public/?hash=" + hash;
+                        decryptedLinks.add(createDownloadlink(folderlink));
                     } else {
                         if (name == null) {
                             logger.warning("Decrypter broken for link: " + parameter);

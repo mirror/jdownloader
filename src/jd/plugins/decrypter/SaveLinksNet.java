@@ -33,7 +33,7 @@ urls = { "http://(www\\.)?safelink\\.strike-up\\.net/(p|d)/[a-z0-9]+", "http://(
         "http://(www\\.)?backdoor\\.ir/(p|d)/[a-z0-9]+", "http://(www\\.)?uniquerelink\\.com/(p|d)/[a-z0-9]+", "http://(www\\.)?lulusafe\\.tk/(p|d)/[a-z0-9]+", "http://(www\\.)?doujinlinks\\.org/(p|d)/[a-z0-9]+", "http://(www\\.)?matthy\\.tk/(p|d)/[a-z0-9]+", "http://(www\\.)?hydelink\\.in/(p|d)/[a-z0-9]+", "http://(www\\.)?safelinking\\.biz/(p|d)/[a-z0-9]+", "http://(www\\.)?securelinking\\.tk/(p|d)/[a-z0-9]+", "http://(www\\.)?urlshrtnr\\.com/(p|d)/[a-z0-9]+", "http://(www\\.)?uniquerelink\\.com/(p|d)/[a-z0-9]+", "http://(www\\.)?filedp\\.com/(p|d)/[a-z0-9]+", "http://(www\\.)?keepyourlinkssafe\\.com/(p|d)/[a-z0-9]+", "http://(www\\.)?7pz\\.com/(p|d)/[a-z0-9]+", "http://(www\\.)?safemylink\\.net/(p|d)/[a-z0-9]+", "http://(www\\.)?mway\\.tk/(p|d)/[a-z0-9]+", "http://(www\\.)?url\\-shortener\\.info/(p|d)/[a-z0-9]+", "http://(www\\.)?rgf\\.me/(p|d)/[a-z0-9]+",
         "http://(www\\.)?720pm\\.com/(p|d)/[a-z0-9]+", "http://(www\\.)?javaddiction\\.us/(p|d)/[a-z0-9]+", "https?://(www\\.)?hidemylinks\\.net/(p|d)/[a-z0-9]+", "https?://(www\\.)?r4dm\\.com/(p|d)/[a-z0-9]+", "http://(www\\.)?savelinks\\.net/(p|d)/[a-z0-9]+" },
 
-flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+        flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class SaveLinksNet extends SflnkgNt {
 
     // Use this as generic plugin until JD2 comes out as stable. Remove these type of and do it all within SflnkgNt class!
