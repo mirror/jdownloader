@@ -36,7 +36,7 @@ import jd.utils.locale.JDL;
 
 import org.jdownloader.logging.LogController;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw|ay\\.gy|(dl|david)\\.nhachot\\.info|chathu\\.apkmania\\.co|alien\\.apkmania\\.co|n\\.shareme\\.in|proxy\\.doujin\\.us|free\\.singlem4a\\.com|adf\\.acb\\.im|ddl\\.tiramisubs\\.tk)/[^<>\r\n\t]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw|ay\\.gy|(dl|david)\\.nhachot\\.info|chathu\\.apkmania\\.co|alien\\.apkmania\\.co|n\\.shareme\\.in|proxy\\.doujin\\.us|free\\.singlem4a\\.com|adf\\.acb\\.im|ddl\\.tiramisubs\\.tk|packs\\.redmusic\\.pl)/[^<>\r\n\t]+" }, flags = { 0 })
 @SuppressWarnings("deprecation")
 public class AdfLy extends PluginForDecrypt {
 
@@ -52,7 +52,7 @@ public class AdfLy extends PluginForDecrypt {
     // belongs to adfly group
     private static final String adfDomains   = "adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw|ay\\.gy";
     // belongs to other people who use subdomains and use adf.ly service
-    private static final String subDomains   = "dl\\.nhachot\\.info|chathu\\.apkmania\\.co|alien\\.apkmania\\.co|n\\.shareme\\.in|proxy\\.doujin\\.us|free\\.singlem4a\\.com|adf\\.acb\\.im|ddl\\.tiramisubs\\.tk";
+    private static final String subDomains   = "dl\\.nhachot\\.info|chathu\\.apkmania\\.co|alien\\.apkmania\\.co|n\\.shareme\\.in|proxy\\.doujin\\.us|free\\.singlem4a\\.com|adf\\.acb\\.im|ddl\\.tiramisubs\\.tk|packs\\.redmusic\\.pl";
     // builds final String for method calling (no need to edit).
     private static final String HOSTS        = adfPre + "(" + adfDomains + "|" + subDomains + ")";
     private static final String INVALIDLINKS = "/(link-deleted\\.php|index|login|static).+";
@@ -105,7 +105,8 @@ public class AdfLy extends PluginForDecrypt {
                     parameter = linkInsideLink.replace("www.", "");
                 }
             }
-            br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.76");
+
+            br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.111 Safari/537.36");
             boolean skipWait = true;
             String finallink = null;
             for (int i = 0; i <= 2; i++) {
