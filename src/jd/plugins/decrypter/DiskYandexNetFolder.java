@@ -91,13 +91,16 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            hashID = Encoding.htmlDecode(hashID);
-            // stored hash should not be urldecoded as it changes chars.
-            main.setProperty("hash_plain", hashID);
-            parameter = protocol + "://disk.yandex.com/public/?hash=" + Encoding.deepHtmlDecode(hashID);
+            if (hashID.contains("+") || hashID.contains("/") || hashID.contains("/")) {
+                hashID = Encoding.urlEncode(hashID);
+            }
+            parameter = protocol + "://disk.yandex.com/public/?hash=" + hashID;
             br.getPage(parameter);
         }
 
+        hashID = Encoding.htmlDecode(hashID);
+        // stored hash should not be urldecoded as this is what we need in host plugin
+        main.setProperty("hash_plain", hashID);
         main.setProperty("mainlink", parameter);
         main.setName(hashID);
 

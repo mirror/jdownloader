@@ -286,18 +286,21 @@ public class FlashxTv extends PluginForHost {
                 if (stream_dllink == null) {
                     stream_dllink = getDllink();
                 }
-                try {
-                    getPage("http://www.flashx.tv/dl?op=get_vid_versions&file_code=" + fuid);
-                    final Regex params = br.getRegex("download_video\\(\\'[a-z0-9]{12}\\',\\'([^<>\"]*?)\\',\\'([^<>\"]*?)\\'\\)");
-                    final String mode = params.getMatch(0);
-                    final String hash = params.getMatch(1);
-                    if (mode == null || hash == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                /* Only try to get the file link if there is a chance that it is available --> Usually only via account. */
+                if (!correctedBR.contains("Please <a href=\"/?op=registration\">register</a>")) {
+                    try {
+                        getPage("http://www.flashx.tv/dl?op=get_vid_versions&file_code=" + fuid);
+                        final Regex params = br.getRegex("download_video\\(\\'[a-z0-9]{12}\\',\\'([^<>\"]*?)\\',\\'([^<>\"]*?)\\'\\)");
+                        final String mode = params.getMatch(0);
+                        final String hash = params.getMatch(1);
+                        if (mode == null || hash == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        getPage("http://www.flashx.tv/dl?op=download_orig&id=" + fuid + "&mode=" + mode + "&hash=" + hash);
+                        file_dllink = new Regex(correctedBR, "\"(https?://[A-Za-z0-9\\-\\.]+\\.flashx\\.tv/[a-z0-9]{20,}/[^<>\"/]*?)\"").getMatch(0);
+                    } catch (final Throwable e) {
+                        logger.warning("HQ handling failed");
                     }
-                    getPage("http://www.flashx.tv/dl?op=download_orig&id=" + fuid + "&mode=" + mode + "&hash=" + hash);
-                    file_dllink = new Regex(correctedBR, "\"(https?://[A-Za-z0-9\\-\\.]+\\.flashx\\.tv/[a-z0-9]{20,}/[^<>\"/]*?)\"").getMatch(0);
-                } catch (final Throwable e) {
-                    logger.warning("HQ handling failed");
                 }
                 if (stream_dllink == null && file_dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -435,6 +438,24 @@ public class FlashxTv extends PluginForHost {
                         }
                     }
                 }
+            }
+        }
+        /* try rtmp workaround - thx to raztoki */
+        final String smil_url = new Regex(correctedBR, "file: \"(https?://(www\\.)?flashx\\.tv/[A-Za-z0-9]+\\.smil)\"").getMatch(0);
+        if (dllink == null && smil_url != null) {
+            try {
+                final Browser brc = br.cloneBrowser();
+                brc.getPage(smil_url);
+                // image reference
+                final String i = new Regex(correctedBR, "image:\\s*\"(https?://[^/]+/)").getMatch(0);
+                // h reference from file or streamer
+                final String h = brc.getRegex("\\?h=([a-z0-9]{30,70})").getMatch(0);
+                if (h != null && i != null) {
+                    dllink = i + h + "/video.mp4";
+                } else {
+                    logger.warning("RTMP workaround: Possible plugin defect");
+                }
+            } catch (final Throwable e) {
             }
         }
         return dllink;
