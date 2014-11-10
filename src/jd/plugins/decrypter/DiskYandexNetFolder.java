@@ -91,6 +91,8 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            /* First fully decode it */
+            hashID = Encoding.htmlDecode(hashID);
             if (hashID.contains("+") || hashID.contains("/") || hashID.contains("/")) {
                 hashID = Encoding.urlEncode(hashID);
             }

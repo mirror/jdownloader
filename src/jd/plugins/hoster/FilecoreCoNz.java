@@ -114,61 +114,6 @@ public class FilecoreCoNz extends PluginForHost {
     }
 
     @Override
-    public boolean checkLinks(final DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) {
-            return false;
-        }
-        try {
-            final Browser br = new Browser();
-            prepBrowser(br);
-            br.setCookiesExclusive(true);
-            final StringBuilder sb = new StringBuilder();
-            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-            int index = 0;
-            while (true) {
-                links.clear();
-                while (true) {
-                    /* we test 50 links at once */
-                    if (index == urls.length || links.size() > 50) {
-                        break;
-                    }
-                    links.add(urls[index]);
-                    index++;
-                }
-                sb.delete(0, sb.capacity());
-                sb.append("op=checkfiles&process=Check+URLs&list=");
-                for (final DownloadLink dl : links) {
-                    sb.append(dl.getDownloadURL());
-                    sb.append("%0A");
-                }
-                br.postPage(COOKIE_HOST + "/?op=checkfiles", sb.toString());
-                for (final DownloadLink dllink : links) {
-                    if (br.containsHTML(">" + dllink.getDownloadURL() + "</td><td style=\"color:red;\">Not found\\!</td>")) {
-                        dllink.setAvailable(false);
-                    } else {
-                        final String[][] linkInformation = br.getRegex(">" + dllink.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatches();
-                        if (linkInformation == null) {
-                            logger.warning("Linkchecker broken for " + this.getHost());
-                            return false;
-                        }
-                        String name = extractFileNameFromURL(dllink.getDownloadURL());
-                        final String size = linkInformation[0][0];
-                        dllink.setAvailable(true);
-                        dllink.setName(Encoding.htmlDecode(name).replace(".html", ""));
-                        dllink.setDownloadSize(SizeFormatter.getSize(size));
-                    }
-                }
-                if (index == urls.length) {
-                    break;
-                }
-            }
-        } catch (final Exception e) {
-            return false;
-        }
-        return true;
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
         prepBrowser(br);
@@ -203,6 +148,7 @@ public class FilecoreCoNz extends PluginForHost {
             link.setMD5Hash(fileInfo[2].trim());
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
+        fileInfo[0] = Encoding.htmlDecode(fileInfo[0]);
         link.setName(fileInfo[0].trim());
         if (fileInfo[1] != null && !fileInfo[1].equals("")) {
             link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
@@ -235,6 +181,9 @@ public class FilecoreCoNz extends PluginForHost {
                     }
                 }
             }
+        }
+        if (fileInfo[0] == null) {
+            fileInfo[0] = new Regex(correctedBR, "<tr>[\t\n\r ]+<td colspan=\"2\"><b>([^<>\"]*?)</b></td>").getMatch(0);
         }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
@@ -512,13 +461,13 @@ public class FilecoreCoNz extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlFree
      *            (+1|-1)
      */
@@ -658,7 +607,7 @@ public class FilecoreCoNz extends PluginForHost {
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
-     * 
+     *
      * @param key
      * @param value
      * @return
@@ -684,7 +633,7 @@ public class FilecoreCoNz extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
@@ -701,7 +650,7 @@ public class FilecoreCoNz extends PluginForHost {
     /**
      * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
      * which is based on fuid.
-     * 
+     *
      * @version 0.2
      * @author raztoki
      * */
@@ -888,7 +837,7 @@ public class FilecoreCoNz extends PluginForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date
      * error.
-     * 
+     *
      * @param dl
      *            : The DownloadLink
      * @param error

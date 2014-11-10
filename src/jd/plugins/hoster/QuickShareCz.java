@@ -17,11 +17,13 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -41,90 +43,8 @@ public class QuickShareCz extends PluginForHost {
         this.enablePremium("http://www.quickshare.cz/premium");
     }
 
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        br.getPage("/uzivatele/profil");
-        String trafficleft = br.getRegex("Kredit:\\s*<a href=\"/platby/cenik\">(.*?)</a>").getMatch(0);
-        if (trafficleft != null) {
-            ai.setTrafficLeft(SizeFormatter.getSize(trafficleft.replace(",", ".")));
-        }
-        if (ai.getTrafficLeft() > 0) {
-            ai.setStatus("Premium User");
-            account.setProperty("free", false);
-        } else {
-            ai.setStatus("Free User");
-            account.setProperty("free", true);
-            // not support as of yet...
-            account.setEnabled(false);
-        }
-        account.setValid(true);
-        return ai;
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "http://www.quickshare.cz/podminky-pouziti";
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        final String wait = br.getRegex("<strong id=\"freeDown-timeout\">(\\d+)</strong>").getMatch(0);
-        if (wait != null) {
-            // doesn't seem to be required... though will help with this IP is already downloading.
-            sleep(Long.parseLong(wait) * 1001, downloadLink);
-        }
-        final String ddlink = br.getRegex("(https?:[^\"]+quickshare\\.cz[^\"]+free\\.php\\?fid=\\d+)").getMatch(0);
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, ddlink.replaceAll("\\\\/", "/"), true, 1);
-        if (dl.getConnection().getContentType().contains("text")) {
-            br.followConnection();
-            if (br.containsHTML("403 Forbidden<br><br>Z Vasi IP adresy jiz probiha stahovani. Jako free uzivatel muzete stahovat pouze jeden soubor\\.")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "This IP Address is already downloading", 2 * 60 * 1000);
-            }
-        }
-        dl.startDownload();
-    }
-
-    public void handlePremium(DownloadLink parameter, Account account) throws Exception {
-        requestFileInformation(parameter);
-        login(account);
-        br.getPage(parameter.getDownloadURL());
-        final String ddlink = br.getRegex("(https?:[^\"]+quickshare\\.cz[^\"]+premium\\.php\\?[^\"]+)").getMatch(0);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, HTMLEntities.unhtmlentities(ddlink), true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    public void login(Account account) throws Exception {
-        setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getPage("http://www.quickshare.cz/");
-        br.postPage("http://www.quickshare.cz/?do=prihlaseni-submit", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on&send=P%C5%99ihl%C3%A1sit");
-        if (br.getRedirectLocation() == null || !br.getRedirectLocation().contains("/?_fid=")) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-    }
+    /* don't touch the following! */
+    private static AtomicInteger maxPrem = new AtomicInteger(1);
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
@@ -147,6 +67,114 @@ public class QuickShareCz extends PluginForHost {
             downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", ".")));
         }
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        br.getPage("/uzivatele/profil");
+        final String trafficleft = br.getRegex("Kredit:\\s*<a href=\"/platby/cenik\">(.*?)</a>").getMatch(0);
+        if (trafficleft != null) {
+            ai.setTrafficLeft(SizeFormatter.getSize(trafficleft.replace(",", ".")));
+        }
+        if (ai.getTrafficLeft() > 0) {
+            maxPrem.set(20);
+            try {
+                account.setType(AccountType.PREMIUM);
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable e) {
+                /* not available in old Stable 0.9.581 */
+            }
+            ai.setStatus("Premium user");
+            account.setProperty("free", false);
+        } else {
+            maxPrem.set(1);
+            try {
+                account.setType(AccountType.FREE);
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(false);
+            } catch (final Throwable e) {
+                /* not available in old Stable 0.9.581 */
+            }
+            ai.setStatus("Registered (free) user");
+            account.setProperty("free", true);
+        }
+        account.setValid(true);
+        return ai;
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://www.quickshare.cz/podminky-pouziti";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    public void doFree(final DownloadLink downloadLink) throws Exception {
+        final String wait = br.getRegex("<strong id=\"freeDown-timeout\">(\\d+)</strong>").getMatch(0);
+        if (wait != null) {
+            // doesn't seem to be required... though will help with this IP is already downloading.
+            sleep(Long.parseLong(wait) * 1001, downloadLink);
+        }
+        final String ddlink = br.getRegex("(https?:[^\"]+quickshare\\.cz[^\"]+free\\.php\\?fid=\\d+)").getMatch(0);
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, ddlink.replaceAll("\\\\/", "/"), true, 1);
+        if (dl.getConnection().getContentType().contains("text")) {
+            br.followConnection();
+            if (br.containsHTML("403 Forbidden<br><br>Z Vasi IP adresy jiz probiha stahovani. Jako free uzivatel muzete stahovat pouze jeden soubor\\.")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "This IP Address is already downloading", 2 * 60 * 1000);
+            }
+        }
+        dl.startDownload();
+    }
+
+    public void handlePremium(final DownloadLink parameter, final Account account) throws Exception {
+        requestFileInformation(parameter);
+        login(account);
+        br.getPage(parameter.getDownloadURL());
+        if (account.getBooleanProperty("free", false)) {
+            doFree(parameter);
+        } else {
+            final String ddlink = br.getRegex("(https?:[^\"]+quickshare\\.cz[^\"]+premium\\.php\\?[^\"]+)").getMatch(0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, HTMLEntities.unhtmlentities(ddlink), true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+        }
+    }
+
+    public void login(Account account) throws Exception {
+        setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getPage("http://www.quickshare.cz/");
+        br.postPage("http://www.quickshare.cz/?do=prihlaseni-submit", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on&send=P%C5%99ihl%C3%A1sit");
+        if (br.getRedirectLocation() == null || !br.getRedirectLocation().contains("/?_fid=")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        /* workaround for free/premium issue on stable 09581 */
+        return maxPrem.get();
     }
 
     @Override

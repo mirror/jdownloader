@@ -49,44 +49,32 @@ public class TwojLimitPl extends PluginForHost {
         this.enablePremium("http://www.twojlimit.pl/");
     }
 
-    private void login(Account account, boolean force) throws PluginException, IOException {
-        try {
-            String username = Encoding.urlEncode(account.getUser());
-            br.postPage("http://crypt.twojlimit.pl", "username=" + username + "&password=" + JDHash.getMD5(account.getPass()) + "&info=1&site=twojlimit");
-            String adres = br.toString();
-            br.getPage(adres);
-            adres = br.getRedirectLocation();
-            br.getPage(adres);
-            if (this.br.containsHTML("balance")) {
-                Info = br.toString();
-            }
-            if (this.br.containsHTML("expire")) {
-                char temp = Info.charAt(Info.length() - 11);
-                validUntil = Info.substring(Info.length() - 10);
-                expired = temp != '1';
+    private void login(final Account account) throws PluginException, IOException {
+        String username = Encoding.urlEncode(account.getUser());
+        br.postPage("http://crypt.twojlimit.pl", "username=" + username + "&password=" + JDHash.getMD5(account.getPass()) + "&info=1&site=twojlimit");
+        String adres = br.toString();
+        br.getPage(adres);
+        adres = br.getRedirectLocation();
+        br.getPage(adres);
+        if (br.containsHTML("0=Nieprawidlowa nazwa uzytkownika/haslo")) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
-                expired = false;
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            if (GetTrasferLeft(br.toString()) > 10) {
-                expired = false;
-            }
-        } catch (final Exception e) {
         }
-        boolean invalid = false;
-        if (this.br.containsHTML("Nieprawidlowa")) {
-            invalid = true;
+        if (this.br.containsHTML("balance")) {
+            Info = br.toString();
         }
-        if (invalid) {
-            if (invalid) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            AccountInfo ai = account.getAccountInfo();
-            if (ai == null) {
-                ai = new AccountInfo();
-                account.setAccountInfo(ai);
-            }
-            ai.setStatus("ServerProblems(1), will try again in few minutes!");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        if (this.br.containsHTML("expire")) {
+            char temp = Info.charAt(Info.length() - 11);
+            validUntil = Info.substring(Info.length() - 10);
+            expired = temp != '1';
+        } else {
+            expired = false;
+        }
+        if (GetTrasferLeft(br.toString()) > 10) {
+            expired = false;
         }
 
     }
@@ -105,21 +93,13 @@ public class TwojLimitPl extends PluginForHost {
         AccountInfo ac = new AccountInfo();
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
-        String hosts = null;
-        try {
-            hosts = br.getPage("https://www.twojlimit.pl/clipboard.php");
-            login(account, true);
-
-        } catch (Exception e) {
-            account.setTempDisabled(true);
-            account.setValid(false);
-            ac.setStatus("invalid account. Wrong password?");
-            return ac;
-        }
+        String hosts;
+        login(account);
 
         ac.setTrafficLeft(GetTrasferLeft(Info));
 
         ArrayList<String> supportedHosts = new ArrayList<String>();
+        hosts = br.getPage("https://www.twojlimit.pl/clipboard.php");
         if (hosts != null) {
             String hoster[] = new Regex(hosts, "(.*?)(<br />|$)").getColumn(0);
             if (hosts != null) {
@@ -174,7 +154,7 @@ public class TwojLimitPl extends PluginForHost {
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
         showMessage(link, "Phase 1/3: Login");
-        login(acc, false);
+        login(acc);
         if (expired) {
             acc.setValid(false);
             throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -219,7 +199,7 @@ public class TwojLimitPl extends PluginForHost {
          * is offline
          */
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) // unknown
-        // error
+            // error
         {
             br.followConnection();
             if (br.getBaseURL().contains("notransfer")) {
