@@ -865,14 +865,12 @@ public class SafeSharingEu extends PluginForHost {
         final String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
         long expiretime = 0;
         if (expire != null) {
-            expiretime = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
+            expiretime = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH) + (24 * 60 * 60 * 1000l);
         }
         if (account.getBooleanProperty("nopremium") && (expiretime - System.currentTimeMillis()) <= 0) {
             ai.setStatus("Registered (free) user");
+            maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
             try {
-                maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-                // free accounts can still have captcha.
-                totalMaxSimultanFreeDownload.set(maxPrem.get());
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
@@ -880,8 +878,8 @@ public class SafeSharingEu extends PluginForHost {
             }
         } else {
             ai.setValidUntil(expiretime);
+            maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             try {
-                maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
