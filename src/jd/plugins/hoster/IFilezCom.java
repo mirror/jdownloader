@@ -135,9 +135,9 @@ public class IFilezCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.ifilezcom.only4premium", ONLY4PREMIUMUSERTEXT));
         }
-        String verifycode = br.getRegex("name=\"vvcid\" value=\"(\\d+)\"").getMatch(0);
+        String verifycode = br.getRegex("name='vvcid\' value=\'(\\d+)\'").getMatch(0);
         if (verifycode == null) {
-            verifycode = br.getRegex("\\?vvcid=(\\d+)\"").getMatch(0);
+            verifycode = br.getRegex("\\?vvcid=(\\d+)").getMatch(0);
         }
         if (!br.containsHTML(CAPTCHATEXT) || verifycode == null) {
             logger.warning("Captchatext not found or verifycode null...");
