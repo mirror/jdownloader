@@ -90,7 +90,12 @@ public class FaceBookComGallery extends PluginForDecrypt {
         String parameter = param.toString().replace("#!/", "");
         PARAMETER = parameter;
         if (PARAMETER.matches(TYPE_SINGLE_VIDEO_ALL) || PARAMETER.matches(TYPE_SINGLE_VIDEO_EMBED) || PARAMETER.contains("/video.php?v") || PARAMETER.matches(TYPE_SINGLE_PHOTO)) {
-            final DownloadLink fina = createDownloadlink("https://www.facebookdecrypted.com/video.php?v=" + new Regex(PARAMETER, "(\\d+)$").getMatch(0));
+            String id = new Regex(PARAMETER, "v(ideo_id)?=(\\d+)").getMatch(1);
+            if (id == null) {
+                id = new Regex(PARAMETER, "(\\d+)$").getMatch(0);
+            }
+            final DownloadLink fina = createDownloadlink("https://www.facebookdecrypted.com/video.php?v=" + id);
+
             decryptedLinks.add(fina);
             return decryptedLinks;
         }

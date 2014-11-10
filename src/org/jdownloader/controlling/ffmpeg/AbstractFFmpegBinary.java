@@ -159,6 +159,21 @@ public class AbstractFFmpegBinary {
                 return null;
             }
 
+            // String relative = Files.getRelativePath(Application.getResource(""), new File(path));
+            // if (relative != null) {
+            // switch (CrossSystem.getOSFamily()) {
+            // case LINUX:
+            // break;
+            // case MAC:
+            // break;
+            // case WINDOWS:
+            // if(CrossSystem.is64BitOperatingSystem()){
+            //
+            // }
+            // break;
+            //
+            // }
+            // }
             File file = new File(path);
             if (!file.isAbsolute()) {
                 file = Application.getResource(path);
