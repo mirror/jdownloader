@@ -163,7 +163,7 @@ public class EasyBytezCom extends PluginForHost {
 
     /**
      * @author raztoki
-     *
+     * 
      * @category 'Experimental', Mods written July 2012 - 2013
      * */
     public EasyBytezCom(PluginWrapper wrapper) {
@@ -336,7 +336,7 @@ public class EasyBytezCom extends PluginForHost {
     /**
      * Provides alternative linkchecking method for a single link at a time. Can be used as generic failover, though kinda pointless as this
      * method doesn't give filename...
-     *
+     * 
      * */
     private String[] altAvailStat(final DownloadLink downloadLink, final String[] fileInfo) throws Exception {
         Browser alt = new Browser();
@@ -517,7 +517,7 @@ public class EasyBytezCom extends PluginForHost {
 
     /**
      * Removes patterns which could break the plugin due to fake/hidden HTML, or false positives caused by HTML comments.
-     *
+     * 
      * @throws Exception
      * @author raztoki
      */
@@ -1070,43 +1070,43 @@ public class EasyBytezCom extends PluginForHost {
     // ***************************************************************************************************** //
     // The components below doesn't require coder interaction, or configuration !
 
-    public Browser                                            cbr                    = new Browser();
+    public Browser                                                  cbr                    = new Browser();
 
-    private String                                            acctype                = null;
-    private String                                            directlinkproperty     = null;
-    private String                                            dllink                 = null;
-    private String                                            fuid                   = null;
-    private String                                            passCode               = null;
-    private String                                            usedHost               = null;
+    private String                                                  acctype                = null;
+    private String                                                  directlinkproperty     = null;
+    private String                                                  dllink                 = null;
+    private String                                                  fuid                   = null;
+    private String                                                  passCode               = null;
+    private String                                                  usedHost               = null;
 
-    private int                                               chunks                 = 1;
+    private int                                                     chunks                 = 1;
 
-    private boolean                                           resumes                = false;
-    private boolean                                           skipWaitTime           = false;
+    private boolean                                                 resumes                = false;
+    private boolean                                                 skipWaitTime           = false;
 
-    private final String                                      language               = System.getProperty("user.language");
-    private final String                                      preferHTTPS            = "preferHTTPS";
-    private final String                                      ALLWAIT_SHORT          = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private final String                                      MAINTENANCEUSERTEXT    = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
+    private final String                                            language               = System.getProperty("user.language");
+    private final String                                            preferHTTPS            = "preferHTTPS";
+    private final String                                            ALLWAIT_SHORT          = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private final String                                            MAINTENANCEUSERTEXT    = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
 
-    private static AtomicInteger                              maxFree                = new AtomicInteger(1);
-    private static AtomicInteger                              maxPrem                = new AtomicInteger(1);
+    private static AtomicInteger                                    maxFree                = new AtomicInteger(1);
+    private static AtomicInteger                                    maxPrem                = new AtomicInteger(1);
     // connections you can make to a given 'host' file server, this assumes each file server is setup identically.
-    private static AtomicInteger                              maxNonAccSimDlPerHost  = new AtomicInteger(20);
-    private static AtomicInteger                              maxFreeAccSimDlPerHost = new AtomicInteger(20);
-    private static AtomicInteger                              maxPremAccSimDlPerHost = new AtomicInteger(20);
+    private static AtomicInteger                                    maxNonAccSimDlPerHost  = new AtomicInteger(20);
+    private static AtomicInteger                                    maxFreeAccSimDlPerHost = new AtomicInteger(20);
+    private static AtomicInteger                                    maxPremAccSimDlPerHost = new AtomicInteger(20);
 
-    private static AtomicReference<String>                    userAgent              = new AtomicReference<String>(null);
+    private static AtomicReference<String>                          userAgent              = new AtomicReference<String>(null);
 
-    private static HashMap<String, String>                    cloudflareCookies      = new HashMap<String, String>();
-    private static HashMap<Account, HashMap<String, Integer>> hostMap                = new HashMap<Account, HashMap<String, Integer>>();
+    private static HashMap<String, String>                          cloudflareCookies      = new HashMap<String, String>();
+    private static HashMap<Account, HashMap<String, AtomicInteger>> hostMap                = new HashMap<Account, HashMap<String, AtomicInteger>>();
 
-    public static Object                                      ACCLOCK                = new Object();
-    private static Object                                     CTRLLOCK               = new Object();
+    public static Object                                            ACCLOCK                = new Object();
+    private static Object                                           CTRLLOCK               = new Object();
 
     /**
      * Rules to prevent new downloads from commencing
-     *
+     * 
      * */
     public boolean canHandle(DownloadLink downloadLink, Account account) {
         if (downloadLink.getBooleanProperty("requiresPremiumAccount", false) && (account == null || account.getBooleanProperty("free", false))) {
@@ -1139,7 +1139,7 @@ public class EasyBytezCom extends PluginForHost {
      * Corrects downloadLink.urlDownload().<br/>
      * <br/>
      * The following code respect the hoster supported protocols via plugin boolean settings and users config preference
-     *
+     * 
      * @author raztoki
      * */
     @SuppressWarnings("unused")
@@ -1215,7 +1215,7 @@ public class EasyBytezCom extends PluginForHost {
     /**
      * Gets page <br />
      * - natively supports silly cloudflare anti DDoS crapola
-     *
+     * 
      * @author raztoki
      */
     public void getPage(final String page) throws Exception {
@@ -1360,7 +1360,7 @@ public class EasyBytezCom extends PluginForHost {
     /**
      * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
      * which is based on fuid.
-     *
+     * 
      * @version 0.2
      * @author raztoki
      * */
@@ -1451,7 +1451,7 @@ public class EasyBytezCom extends PluginForHost {
 
     /**
      * captcha processing can be used download/login/anywhere assuming the submit values are the same (they usually are)...
-     *
+     * 
      * @author raztoki
      * */
     private Form captchaForm(DownloadLink downloadLink, Form form) throws Exception {
@@ -1621,13 +1621,13 @@ public class EasyBytezCom extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     *
+     * 
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     *
+     * 
      * @param controlSlot
      *            (+1|-1)
      * */
@@ -1648,37 +1648,33 @@ public class EasyBytezCom extends PluginForHost {
     /**
      * ControlSimHost, On error it will set the upper mark for 'max sim dl per host'. This will be the new 'static' setting used going
      * forward. Thus prevents new downloads starting when not possible and is self aware and requires no coder interaction.
-     *
+     * 
      * @param account
-     *
+     * 
      * @category 'Experimental', Mod written February 2013
      * */
     private void controlSimHost(final Account account) {
         synchronized (CTRLLOCK) {
-            if (usedHost == null) {
-                return;
-            }
-            int was, current;
-            if (account != null && account.getBooleanProperty("free")) {
-                // free account
-                was = maxFreeAccSimDlPerHost.get();
-                maxFreeAccSimDlPerHost.set(getHashedHashedValue(account) - 1);
-                current = maxFreeAccSimDlPerHost.get();
-            } else if (account != null && !account.getBooleanProperty("free")) {
-                // premium account
-                was = maxPremAccSimDlPerHost.get();
-                maxPremAccSimDlPerHost.set(getHashedHashedValue(account) - 1);
-                current = maxPremAccSimDlPerHost.get();
-            } else {
-                // non account
-                was = maxNonAccSimDlPerHost.get();
-                maxNonAccSimDlPerHost.set(getHashedHashedValue(account) - 1);
-                current = maxNonAccSimDlPerHost.get();
-            }
-            if (account == null) {
-                logger.info("maxSimPerHost = Guest @ " + acctype + " -> was = " + was + " && new upper limit = " + current);
-            } else {
-                logger.info("maxSimPerHost = " + account.getUser() + " @ " + acctype + " -> was = " + was + " && new upper limit = " + current);
+            if (usedHost != null) {
+                final AtomicInteger value = getHashedHashedValue(account);
+                final int was, current;
+                if (account != null) {
+                    if (account.getBooleanProperty("free", false)) {
+                        // free account
+                        was = maxFreeAccSimDlPerHost.getAndSet(value.get() - 1);
+                        current = maxFreeAccSimDlPerHost.get();
+                    } else {
+                        // premium account
+                        was = maxPremAccSimDlPerHost.getAndSet(value.get() - 1);
+                        current = maxPremAccSimDlPerHost.get();
+                    }
+                    logger.info("maxSimPerHost = " + account.getUser() + " @ " + acctype + " -> was = " + was + " && new upper limit = " + current);
+                } else {
+                    // non account
+                    was = maxNonAccSimDlPerHost.getAndSet(value.get() - 1);
+                    current = maxNonAccSimDlPerHost.get();
+                    logger.info("maxSimPerHost = Guest @ " + acctype + " -> was = " + was + " && new upper limit = " + current);
+                }
             }
         }
     }
@@ -1687,7 +1683,7 @@ public class EasyBytezCom extends PluginForHost {
      * This matches dllink against an array of used 'host' servers. Use this when site have multiple download servers and they allow x
      * connections to ip/host server. Currently JD allows a global connection controller and doesn't allow for handling of different
      * hosts/IP setup. This will help with those situations by allowing more connection when possible.
-     *
+     * 
      * @param Account
      *            Account that's been used, can be null
      * @param DownloadLink
@@ -1719,7 +1715,7 @@ public class EasyBytezCom extends PluginForHost {
             boolean continu = true;
             if (!hostMap.isEmpty()) {
                 // compare stored values within hashmap, determine if they allow concurrent with current account download request!
-                for (Entry<Account, HashMap<String, Integer>> holder : hostMap.entrySet()) {
+                for (Entry<Account, HashMap<String, AtomicInteger>> holder : hostMap.entrySet()) {
                     if (!allowsConcurrent(holder.getKey())) {
                         continu = false;
                     }
@@ -1750,16 +1746,15 @@ public class EasyBytezCom extends PluginForHost {
 
             if (!action) {
                 // download finished (completed, failed, etc), check for value and remove a value
-                Integer usedSlots = getHashedHashedValue(account);
                 // Improvised workaround for fatal XFS3 bug
-                if (usedSlots == null) {
+                if (!containsHashedHashedKey(account, usedHost)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                setHashedHashKeyValue(account, -1);
-                if (usedSlots.equals(1)) {
+                final int x = decrementAndGetHashedHashKeyValue(account);
+                if (x == 0) {
                     logger.info("controlHost = " + user + " -> " + usedHost + " :: No longer used!");
                 } else {
-                    logger.info("controlHost = " + user + " -> " + usedHost + " :: " + getHashedHashedValue(account) + " simulatious connection(s)");
+                    logger.info("controlHost = " + user + " -> " + usedHost + " :: " + x + " simulatious connection(s)");
                 }
             } else {
                 // New download started, check finallink host against hostMap values && max(Free|Prem)SimDlHost!
@@ -1769,116 +1764,100 @@ public class EasyBytezCom extends PluginForHost {
                  * downloads finishes. This is best practice otherwise you have to use some crude system of waits, but you have no control
                  * over to reset the count. Highly dependent on how fast or slow the users connections is.
                  */
-                if (isHashedHashedKey(account, usedHost)) {
-                    Integer usedSlots = getHashedHashedValue(account);
+                if (containsHashedHashedKey(account, usedHost)) {
+                    final AtomicInteger usedSlots = getHashedHashedValue(account);
                     if (usedSlots == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    if (!usedSlots.equals(simHost)) {
-                        setHashedHashKeyValue(account, 1);
-                        logger.info("controlHost = " + user + " -> " + usedHost + " :: " + getHashedHashedValue(account) + " simulatious connection(s)");
-                    } else {
-                        logger.info("controlHost = " + user + " -> " + usedHost + " :: Too many concurrent connectons. We will try again when next possible.");
-                        controlSlot(-1, accHolder);
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many concurrent connectons. We will try again when next possible.", 10 * 1000);
+                    synchronized (CTRLLOCK) {
+                        if (!usedSlots.equals(simHost)) {
+                            final int x = incrementAndGetHashedHashKeyValue(account);
+                            logger.info("controlHost = " + user + " -> " + usedHost + " :: " + x + " simulatious connection(s)");
+                        } else {
+                            logger.info("controlHost = " + user + " -> " + usedHost + " :: Too many concurrent connectons. We will try again when next possible.");
+                            controlSlot(-1, accHolder);
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many concurrent connectons. We will try again when next possible.", 10 * 1000);
+                        }
                     }
                 } else {
                     // virgin download for given usedHost.
-                    setHashedHashKeyValue(account, 1);
-                    logger.info("controlHost = " + user + " -> " + usedHost + " :: " + getHashedHashedValue(account) + " simulatious connection(s)");
+                    final int x = incrementAndGetHashedHashKeyValue(account);
+                    logger.info("controlHost = " + user + " -> " + usedHost + " :: " + x + " simulatious connection(s)");
                 }
             }
         }
     }
 
+    private int incrementAndGetHashedHashKeyValue(final Account account) throws PluginException {
+        return setHashedHashKeyValue(account, +1);
+    }
+
+    private int decrementAndGetHashedHashKeyValue(final Account account) throws PluginException {
+        return setHashedHashKeyValue(account, -1);
+    }
+
     /**
      * Sets Key and Values to respective Account stored within hostMap
-     *
+     * 
      * @param account
      *            Account that's been used, can be null
      * @param x
      *            Integer positive or negative. Positive adds slots. Negative integer removes slots.
      * @throws PluginException
      * */
-    private void setHashedHashKeyValue(final Account account, final Integer x) throws PluginException {
+    private int setHashedHashKeyValue(final Account account, final int delta) throws PluginException {
         synchronized (CTRLLOCK) {
-            if (usedHost == null || x == null) {
-                return;
-            }
-            HashMap<String, Integer> holder = new HashMap<String, Integer>();
-            if (!hostMap.isEmpty() && hostMap.containsKey(account)) {
-                // load hostMap within holder if not empty
-                holder = hostMap.get(account);
-                if (holder == null) {
-                    // this shouldn't happen
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
-            String currentKey = getHashedHashedKey(account);
-            Integer currentValue = getHashedHashedValue(account);
-            if (currentKey == null) {
-                // virgin entry
-                holder.put(usedHost, 1);
-            } else {
-                if (currentValue.equals(1) && x.equals(-1)) {
-                    // remove table
-                    holder.remove(usedHost);
-                } else {
-                    holder.put(usedHost, currentValue + x);
-                }
-            }
-            if (holder.isEmpty()) {
-                // the last value(download) within holder->account. Remove entry to reduce memory allocation
-                hostMap.remove(account);
-            } else {
-                // put updated holder back into hostMap
-                hostMap.put(account, holder);
-            }
-        }
-    }
-
-    /**
-     * Returns String key from Account@usedHost from hostMap
-     *
-     * @param account
-     *            Account that's been used, can be null
-     * */
-    private String getHashedHashedKey(final Account account) {
-        synchronized (CTRLLOCK) {
-            if (usedHost == null) {
-                return null;
-            }
-            if (hostMap.containsKey(account)) {
-                final HashMap<String, Integer> accKeyValue = hostMap.get(account);
-                if (accKeyValue.containsKey(usedHost)) {
-                    for (final Entry<String, Integer> keyValue : accKeyValue.entrySet()) {
-                        String key = keyValue.getKey();
-                        return key;
+            if (usedHost != null) {
+                boolean addHolder = true;
+                HashMap<String, AtomicInteger> holder = new HashMap<String, AtomicInteger>();
+                if (!hostMap.isEmpty() && hostMap.containsKey(account)) {
+                    addHolder = false;
+                    // load hostMap within holder if not empty
+                    holder = hostMap.get(account);
+                    if (holder == null) {
+                        // this shouldn't happen
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
+
+                AtomicInteger atomicValue = getHashedHashedValue(account);
+                if (atomicValue == null) {
+                    atomicValue = new AtomicInteger(0);
+                    holder.put(usedHost, atomicValue);
+                }
+                final int value = atomicValue.addAndGet(delta);
+                if (value == 0) {
+                    holder.remove(usedHost);
+                } else if (value < 0) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (holder.isEmpty()) {
+                    // the last value(download) within holder->account. Remove entry to reduce memory allocation
+                    if (addHolder == false) {
+                        hostMap.remove(account);
+                    }
+                } else if (addHolder) {
+                    // put updated holder back into hostMap
+                    hostMap.put(account, holder);
+                }
+                return value;
             }
-            return null;
         }
+        return 0;
     }
 
     /**
      * Returns integer value from Account@usedHost from hostMap
-     *
+     * 
      * @param account
      *            Account that's been used, can be null
      * */
-    private Integer getHashedHashedValue(final Account account) {
+    private AtomicInteger getHashedHashedValue(final Account account) {
         synchronized (CTRLLOCK) {
-            if (usedHost == null) {
-                return null;
-            }
-            if (hostMap.containsKey(account)) {
-                final HashMap<String, Integer> accKeyValue = hostMap.get(account);
-                if (accKeyValue.containsKey(usedHost)) {
-                    for (final Entry<String, Integer> keyValue : accKeyValue.entrySet()) {
-                        Integer value = keyValue.getValue();
-                        return value;
-                    }
+            if (usedHost != null) {
+                final HashMap<String, AtomicInteger> accKeyValue = hostMap.get(account);
+                if (accKeyValue != null) {
+                    return accKeyValue.get(usedHost);
                 }
             }
             return null;
@@ -1887,26 +1866,17 @@ public class EasyBytezCom extends PluginForHost {
 
     /**
      * Returns true if hostMap contains 'key'
-     *
+     * 
      * @param account
      *            Account that's been used, can be null
      * @param key
      *            String of what ever you want to find
      * */
-    private boolean isHashedHashedKey(final Account account, final String key) {
+    private boolean containsHashedHashedKey(final Account account, final String key) {
         synchronized (CTRLLOCK) {
-            if (key == null) {
-                return false;
-            }
-            final HashMap<String, Integer> accKeyValue = hostMap.get(account);
-            if (accKeyValue != null) {
-                if (accKeyValue.containsKey(key)) {
-                    for (final Entry<String, Integer> keyValue : accKeyValue.entrySet()) {
-                        if (keyValue.getKey().equals(key)) {
-                            return true;
-                        }
-                    }
-                }
+            if (key != null) {
+                final HashMap<String, AtomicInteger> accKeyValue = hostMap.get(account);
+                return accKeyValue != null && accKeyValue.containsKey(key);
             }
             return false;
         }
@@ -1914,7 +1884,7 @@ public class EasyBytezCom extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
+     * 
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
@@ -1931,7 +1901,7 @@ public class EasyBytezCom extends PluginForHost {
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
-     *
+     * 
      * @param key
      *            name
      * @param value
@@ -1961,9 +1931,9 @@ public class EasyBytezCom extends PluginForHost {
     /**
      * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re:
      * InputField parse(final String data). Affects revision 19688 and earlier!
-     *
+     * 
      * TODO: remove after JD2 goes stable!
-     *
+     * 
      * @author raztoki
      * */
     private Form cleanForm(Form form) {
@@ -1993,7 +1963,7 @@ public class EasyBytezCom extends PluginForHost {
     /**
      * This allows backward compatibility for design flaw in setHtmlCode(), It injects updated html into all browsers that share the same
      * request id. This is needed as request.cloneRequest() was never fully implemented like browser.cloneBrowser().
-     *
+     * 
      * @param ibr
      *            Import Browser
      * @param t
