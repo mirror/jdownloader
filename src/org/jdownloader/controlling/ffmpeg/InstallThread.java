@@ -101,7 +101,7 @@ public class InstallThread extends Thread {
             }
         } else if (CrossSystem.isMac()) {
             // different ffmpeg version for 10.6-
-            if (CrossSystem.getMacOSVersion() < MacOsXVersion.MAC_OSX_10p6_SNOW_LEOPARD.getVersionID()) {
+            if (CrossSystem.getMacOSVersion() < MacOsXVersion.MAC_OSX_10p6_SNOW_LEOPARD.getVersionID() || !CrossSystem.is64BitOperatingSystem()) {
                 return Application.getResource("tools/mac/ffmpeg_10.5.x-/" + name + "");
             } else {
                 return Application.getResource("tools/mac/ffmpeg_10.6+/" + name + "");

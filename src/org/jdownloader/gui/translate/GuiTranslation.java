@@ -5349,4 +5349,13 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "720p 60fps" })
     String YoutubeVariant_filenametag_WEBM_720_60FPS();
+
+    @Default(lngs = { "en" }, values = { "Internal Captcha Solver (JAntiCaptcha)" })
+    String JacToolbarToogleAction_getNameWhenDisabled_();
+
+    @Default(lngs = { "en" }, values = { "Internal Captcha Solver (JAntiCaptcha)" })
+    String JacToolbarToogleAction_getNameWhenEnabled_();
+
+    @Default(lngs = { "en" }, values = { "Enable/Disable the internal Captcha Solver (JAntiCaptcha)" })
+    String JacToolbarToogleAction_createTooltip_();
 }
