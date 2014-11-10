@@ -643,7 +643,15 @@ public class FileRioCom extends PluginForHost {
                         return;
                     }
                 }
-                getPage(COOKIE_HOST + "/logmeinnow.html");
+                getPage(COOKIE_HOST);
+                String loginpage = new Regex(correctedBR, "\"(https?://(www\\.)?filerio\\.in/[^<>\"]*?)\">Login").getMatch(0);
+                if (loginpage == null) {
+                    logger.info("Failed to find loginpage --> Using default");
+                    loginpage = "/logmenow.html";
+                } else {
+                    logger.info("Found loginpage: " + loginpage);
+                }
+                getPage(loginpage);
                 Form loginform = br.getForm(0);
                 if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -656,7 +664,14 @@ public class FileRioCom extends PluginForHost {
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                getPage(COOKIE_HOST + "/?op=my_account");
+                String accpage = new Regex(correctedBR, "\"(https?://filerio`\\.in/\\?[^<>\"]*?)\">My Account</a>").getMatch(0);
+                if (accpage == null) {
+                    logger.info("Failed to find accountoverview_page --> Using default");
+                    accpage = "/?op=view_account";
+                } else {
+                    logger.info("Found accountoverview_page --> Using: " + accpage);
+                }
+                getPage(accpage);
                 if (!correctedBR.contains("\"Extend Premium Account\"")) {
                     account.setProperty("nopremium", true);
                 } else {

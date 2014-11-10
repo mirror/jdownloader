@@ -132,9 +132,9 @@ public class FilecoreCoNz extends PluginForHost {
         }
         final String[] fileInfo = new String[3];
         scanInfo(fileInfo);
-        /* Case NO filename available at all */
-        if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
+        /* No better way for an offline check */
+        if (fileInfo[0] == null && !br.containsHTML("<table width=\"350\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (fileInfo[0] == null || fileInfo[0].equals("")) {
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
@@ -142,6 +142,9 @@ public class FilecoreCoNz extends PluginForHost {
                 return AvailableStatus.UNCHECKABLE;
             }
             logger.warning("filename equals null, throwing \"plugin defect\"");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (fileInfo[0] == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (fileInfo[2] != null && !fileInfo[2].equals("")) {
