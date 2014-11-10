@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -58,17 +59,78 @@ public class UploadableCh extends PluginForHost {
     }
 
     private static AtomicInteger maxPrem        = new AtomicInteger(1);
-
     private static final long    FREE_SIZELIMIT = 1073741824;
 
-    // TODO: Maybe implement mass linkchecker: http://www.uploadable.ch/check.php
+    @Override
+    public boolean checkLinks(final DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
+        try {
+            final Browser br = new Browser();
+            prepBr(br);
+            br.setCookiesExclusive(true);
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 50 links at once */
+                    if (index == urls.length || links.size() > 50) {
+                        break;
+                    }
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("urls=");
+                for (final DownloadLink dl : links) {
+                    sb.append(dl.getDownloadURL());
+                    sb.append("%0A");
+                }
+                br.postPage("http://www.uploadable.ch/check.php", sb.toString());
+                for (final DownloadLink dllink : links) {
+                    final String fid = new Regex(dllink.getDownloadURL(), "/file/([A-Za-z0-9]+)$").getMatch(0);
+                    final String linkinfo = br.getRegex("href=\"\">(http://(www\\.)?uploadable\\.ch/file/" + fid + "</a></div>.*?)</li>").getMatch(0);
+                    if (linkinfo == null) {
+                        logger.warning("Mass-Linkchecker broken");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else if (linkinfo.contains(">Not Available<")) {
+                        dllink.setAvailable(false);
+                    } else {
+                        final String name = new Regex(linkinfo, "class=\"col2\">([^<>\"]*?)</div>").getMatch(0);
+                        final String size = new Regex(linkinfo, "class=\"col3\">([^<>\"]*?)</div>").getMatch(0);
+                        dllink.setAvailable(true);
+                        dllink.setName(Encoding.htmlDecode(name.trim()));
+                        dllink.setDownloadSize(SizeFormatter.getSize(size));
+                    }
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            return false;
+        }
+        return true;
+    }
+
+    private void prepBr(final Browser br) {
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:28.0) Gecko/20100101 Firefox/28.0");
+    }
+
+    /** Don't use mass-linkchecker here as it may return wrong/outdated information. */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:28.0) Gecko/20100101 Firefox/28.0");
+        prepBr(this.br);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">File not available<|>This file is no longer available.<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getURL().contains("error_code=617")) {
+            /* >File is not available. Please check your link again.< */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("id=\"file_name\" title=\"([^<>\"]*?)\"").getMatch(0);
@@ -191,6 +253,7 @@ public class UploadableCh extends PluginForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
+                prepBr(this.br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
