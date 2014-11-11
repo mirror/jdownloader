@@ -24,6 +24,7 @@ import java.util.Map;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
@@ -43,17 +44,20 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "https?://(www\\.)?((de|ru|es)\\.)?scribd\\.com/doc/\\d+" }, flags = { 2 })
 public class ScribdCom extends PluginForHost {
 
-    private final String        formats     = "formats";
+    private final String        formats            = "formats";
 
     /** The list of server values displayed to the user */
-    private final String[]      allFormats  = new String[] { "PDF", "TXT", "DOCX" };
+    private final String[]      allFormats         = new String[] { "PDF", "TXT", "DOCX" };
 
-    private static final String FORMAT_PPS  = "class=\"format_ext\">\\.PPS</span>";
+    private static final String FORMAT_PPS         = "class=\"format_ext\">\\.PPS</span>";
 
-    private final String        NODOWNLOAD  = JDL.L("plugins.hoster.ScribdCom.NoDownloadAvailable", "Download is disabled for this file!");
-    private final String        PREMIUMONLY = JDL.L("plugins.hoster.ScribdCom.premonly", "Download requires a scribd.com account!");
-    private String              XTOKEN      = null;
-    private String              ORIGURL     = null;
+    private final String        NODOWNLOAD         = JDL.L("plugins.hoster.ScribdCom.NoDownloadAvailable", "Download is disabled for this file!");
+    private final String        PREMIUMONLY        = JDL.L("plugins.hoster.ScribdCom.premonly", "Download requires a scribd.com account!");
+    private String              authenticity_token = null;
+    private String              ORIGURL            = null;
+
+    private static Object       LOCK               = new Object();
+    private static final String COOKIE_HOST        = "http://scribd.com";
 
     public ScribdCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -134,14 +138,9 @@ public class ScribdCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
+        login(account, true);
         ai.setUnlimitedTraffic();
         ai.setStatus("Registered (Free) User");
         account.setValid(true);
@@ -215,32 +214,82 @@ public class ScribdCom extends PluginForHost {
         if (br.containsHTML("class=\"download_disabled_button\"")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, NODOWNLOAD);
         }
-        login(account);
+        login(account, false);
         final String[] downloadInfo = getDllink(parameter);
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, downloadInfo[0], false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* Assume that our current account type = free and the errorcase is correct */
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Download is only available for premium users!");
         }
         parameter.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
     }
 
-    public void login(Account account) throws Exception {
-        setBrowserExclusive();
-        prepBr();
-        br.setFollowRedirects(true);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getPage("http://de.scribd.com/csrf_token?href=http%3A%2F%2Fde.scribd.com%2F");
-
-        XTOKEN = br.getRegex("\"csrf_token\":\"([^<>\"]*?)\"").getMatch(0);
-        if (XTOKEN == null) {
-            logger.warning("Login broken!");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-        br.postPage("https://www.scribd.com/login", "authenticity_token=" + XTOKEN + "&login_params%5Bnext_url%5D=&login_params%5Bcontext%5D=join2&form_name=login_lb_form_login_lb&login_or_email=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()));
-        if (br.containsHTML("Invalid username or password") || !br.containsHTML("\"login\":true")) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    public void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                /* Load cookies */
+                br.setCookiesExclusive(true);
+                prepBr();
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(COOKIE_HOST, key, value);
+                        }
+                        getauthenticity_token(account);
+                        return;
+                    }
+                }
+                br.setFollowRedirects(true);
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.getPage("http://de.scribd.com/csrf_token?href=http%3A%2F%2Fde.scribd.com%2F");
+                authenticity_token = br.getRegex("\"csrf_token\":\"([^<>\"]*?)\"").getMatch(0);
+                if (authenticity_token == null) {
+                    logger.warning("Login broken!");
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                br.postPage("https://www.scribd.com/login", "authenticity_token=" + authenticity_token + "&login_params%5Bnext_url%5D=&login_params%5Bcontext%5D=join2&form_name=login_lb_form_login_lb&login_or_email=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()));
+                if (br.containsHTML("Invalid username or password") || !br.containsHTML("\"login\":true")) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                /* Save cookies */
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(COOKIE_HOST);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+                account.setProperty("authenticity_token", authenticity_token);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
+            }
         }
     }
 
@@ -279,7 +328,7 @@ public class ScribdCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Download is only available for premium users!");
         }
         xmlbrowser.getHeaders().put("X-Tried-CSRF", "1");
-        xmlbrowser.getHeaders().put("X-CSRF-Token", XTOKEN);
+        xmlbrowser.getHeaders().put("X-CSRF-Token", authenticity_token);
         xmlbrowser.postPage("http://de.scribd.com/document_downloads/register_download_attempt", "doc_id=" + fileId + "&next_screen=download_lightbox&source=read");
         dlinfo[0] = "http://de.scribd.com/document_downloads/" + fileId + "?extension=" + dlinfo[1];
         xmlbrowser.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
@@ -311,6 +360,12 @@ public class ScribdCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return dlinfo;
+    }
+
+    /** Returns the most important account token */
+    private String getauthenticity_token(final Account acc) {
+        authenticity_token = acc.getStringProperty("authenticity_token", null);
+        return authenticity_token;
     }
 
     private String getSessionCookie(final Browser brc) {

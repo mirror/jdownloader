@@ -777,14 +777,6 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
                 if (finallink == null || finallink.length() > 500 || !finallink.startsWith("http")) {
                     finallink = null;
                 }
-            } else if (parameter.contains("demo.ovh.net")) {
-                final String fileURL = param.getCryptedUrl();
-                final int languagePosition = fileURL.indexOf("/", 7);
-                final String language = fileURL.substring(languagePosition + 1, languagePosition + 3);
-                final String hosterURL = fileURL.substring(0, fileURL.indexOf("/" + language + "/"));
-                final String fileID = fileURL.replace(hosterURL + "/" + language + "/", "").replace("/", "");
-                finallink = hosterURL + br.getRegex("<a href=\"(/download/.*)\"><img class=\"fdd\" src=\"/images/download.gif\" alt=\"download\"><span name=\"filename\">").getMatch(0);
-                finalfilename = finallink.replace(hosterURL + "/download/", "").replace(fileID + "/", "");
             } else if (parameter.contains("mblink.info/")) {
                 finallink = br.getRegex("http\\-equiv=\"refresh\" content=\"\\d+; URL=(http[^<>\"]*?)\"").getMatch(0);
             } else if (parameter.contains("umhq.net/")) {
