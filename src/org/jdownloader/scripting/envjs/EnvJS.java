@@ -312,7 +312,7 @@ public class EnvJS {
         // ok.
         try {
             // evaluateTrustedString(cx, scope, "var EnvJSinstanceID=" + id + ";", "setInstance", 1, null);
-            evaluateTrustedString(cx, scope, "var DEBUG_LEVEL='" + debugLevel + "';", "setDebugLevel", 1, null);
+            // evaluateTrustedString(cx, scope, "var DEBUG_LEVEL='" + debugLevel + "';", "setDebugLevel", 1, null);
 
             // evaluateTrustedString(cx, scope, IO.readURLToString(EnvJS.class.getResource("env.rhino.js")), "oldRhino", 1, null);
             String initSource = readRequire("envjs/init");
