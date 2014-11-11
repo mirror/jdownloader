@@ -508,7 +508,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
         }
         String data = null;
         if (collection_token != null) {
-            // {"scroll_load":true,"last_fbid":425565290825831,"fetch_siz          e":32,"profile_id":100001170914404,"tab_key":"media_set","set":"a.331153143600380.78764.100001170914404","type":"3","sk":"photos","overview":false,"active_collection":69,"collection_token":"100001170914404:2305272732:69","cursor":0,"tab_id":"u_0_u","order":null,"importer_state":null}
             data = "{\"scroll_load\":true,\"last_fbid\":JDL_LAST_FBID_JDL,\"fetch_size\":32,\"profile_id\":" + profileID + ",\"tab_key\":\"media_set\",\"set\":\"" + setID + "\",\"type\":\"" + type + "\",\"sk\":\"photos\",\"overview\":false,\"active_collection\":" + activecollection + ",\"collection_token\":\"" + collection_token + "\",\"cursor\":0,\"tab_id\":\"u_0_u\",\"order\":null,\"importer_state\":null}";
         } else {
             data = "{\"scroll_load\":true,\"last_fbid\":\"JDL_LAST_FBID_JDL\",\"fetch_size\":32,\"profile_id\":" + profileID + ",\"viewmode\":null,\"set\":\"" + setID + "\",\"type\":\"3\"}";
