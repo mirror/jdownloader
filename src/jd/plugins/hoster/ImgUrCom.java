@@ -24,6 +24,7 @@ import jd.config.SubConfiguration;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -33,6 +34,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
+/**
+ * IMPORTANT: Never grab IDs bigger than 7 characters because these are Thumbnails - see API description: http://api.imgur.com/models/image
+ * (scroll down to "Image thumbnails"
+ */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgur.com" }, urls = { "https?://imgurdecrypted\\.com/download/[A-Za-z0-9]+" }, flags = { 2 })
 public class ImgUrCom extends PluginForHost {
 
@@ -74,7 +79,7 @@ public class ImgUrCom extends PluginForHost {
 
         br.setFollowRedirects(true);
         /* Avoid unneccessary requests --> If we have the directlink, filesize and a nice filename, do not access site/API! */
-        if (dllink == null || filesize == -1 || finalfilename == null) {
+        if (dllink == null || filesize == -1 || finalfilename == null || filetype == null) {
             boolean api_failed = false;
             if (!this.getPluginConfig().getBooleanProperty(SETTING_USE_API, false)) {
                 api_failed = true;
@@ -174,13 +179,20 @@ public class ImgUrCom extends PluginForHost {
         if (filesize == 0) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String title = getJson(br.toString(), "title");
-        String filetype = br.getRegex("\"type\":\"image/([^<>\"]*?)\"").getMatch(0);
+        String title = getJson(br.toString(), "title");
+        /* "mimetype" = site, "type" = API */
+        String filetype = br.getRegex("\"(mime)?type\":\"image/([^<>\"]*?)\"").getMatch(1);
         if (filetype == null) {
             filetype = "jpeg";
         }
         String finalfilename;
         if (title != null) {
+            title = Encoding.htmlDecode(title);
+            title = HTMLEntities.unhtmlentities(title);
+            title = HTMLEntities.unhtmlAmpersand(title);
+            title = HTMLEntities.unhtmlAngleBrackets(title);
+            title = HTMLEntities.unhtmlSingleQuotes(title);
+            title = HTMLEntities.unhtmlDoubleQuotes(title);
             finalfilename = title + "." + filetype;
         } else {
             finalfilename = imgUID + "." + filetype;

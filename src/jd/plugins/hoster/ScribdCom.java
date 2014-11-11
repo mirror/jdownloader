@@ -217,7 +217,7 @@ public class ScribdCom extends PluginForHost {
         }
         login(account);
         final String[] downloadInfo = getDllink(parameter);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, downloadInfo[0], true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, downloadInfo[0], false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
