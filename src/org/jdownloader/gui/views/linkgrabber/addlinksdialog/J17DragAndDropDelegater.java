@@ -87,12 +87,14 @@ public class J17DragAndDropDelegater extends TransferHandler {
             int end = input.getSelectionEnd();
 
             sb.append(old.substring(0, Math.min(old.length(), start)));
-            if (!StringUtils.isEmpty(html)) {
+            if (ClipboardMonitoring.isHtmlFlavorAllowed() && !StringUtils.isEmpty(html)) {
                 sb.append(html);
             }
 
             if (!StringUtils.isEmpty(text)) {
-                if (sb.length() > 0 && (text.startsWith("http") || text.startsWith("ftp://"))) sb.append("\r\n");
+                if (sb.length() > 0 && (text.startsWith("http") || text.startsWith("ftp://"))) {
+                    sb.append("\r\n");
+                }
                 sb.append(text);
             }
             sb.append(old.substring(Math.min(old.length(), end)));
