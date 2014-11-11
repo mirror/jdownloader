@@ -24,6 +24,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -33,15 +34,15 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgur.com" }, urls = { "https?://((www|i)\\.)?imgur\\.com(/gallery|/a|/download)?/[A-Za-z0-9]{5,}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgur.com" }, urls = { "https?://((www|i)\\.)?imgur\\.com(/gallery|/a|/download)?/[A-Za-z0-9]{5,7}" }, flags = { 0 })
 public class ImgurCom extends PluginForDecrypt {
 
     public ImgurCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private final String            TYPE_ALBUM      = "https?://(www\\.)?imgur\\.com/a/[A-Za-z0-9]{5,}";
-    private final String            TYPE_GALLERY    = "https?://(www\\.)?imgur\\.com/gallery/[A-Za-z0-9]{5,}";
+    private final String            TYPE_ALBUM      = "https?://(www\\.)?imgur\\.com/a/[A-Za-z0-9]{5,7}";
+    private final String            TYPE_GALLERY    = "https?://(www\\.)?imgur\\.com/gallery/[A-Za-z0-9]{5,7}";
     private static Object           ctrlLock        = new Object();
     private static AtomicBoolean    pluginLoaded    = new AtomicBoolean(false);
 
@@ -157,7 +158,7 @@ public class ImgurCom extends PluginForDecrypt {
         }
         for (final String item : items) {
             final String directlink = getJson(item, "link");
-            final String title = getJson(item, "title");
+            String title = getJson(item, "title");
             final String filesize_str = getJson(item, "size");
             final String imgUID = getJson(item, "id");
             if (imgUID == null || filesize_str == null || directlink == null) {
@@ -169,7 +170,13 @@ public class ImgurCom extends PluginForDecrypt {
                 filetype = "jpeg";
             }
             String filename;
-            if (title != null) {
+            if (title != null && !title.equals("")) {
+                title = Encoding.htmlDecode(title);
+                title = HTMLEntities.unhtmlentities(title);
+                title = HTMLEntities.unhtmlAmpersand(title);
+                title = HTMLEntities.unhtmlAngleBrackets(title);
+                title = HTMLEntities.unhtmlSingleQuotes(title);
+                title = HTMLEntities.unhtmlDoubleQuotes(title);
                 filename = title + "." + filetype;
             } else {
                 filename = imgUID + "." + filetype;
@@ -220,10 +227,10 @@ public class ImgurCom extends PluginForDecrypt {
             }
             directlink = "http://i.imgur.com/" + imgUID + ext;
             String filename;
-            if (title == null || title.equals("")) {
-                filename = imgUID + ext;
+            if (title != null && !title.equals("")) {
+                filename = Encoding.htmlDecode(title).trim() + ext;
             } else {
-                filename = title + ext;
+                filename = imgUID + ext;
             }
             final DownloadLink dl = createDownloadlink("http://imgurdecrypted.com/download/" + imgUID);
             dl.setFinalFileName(filename);
