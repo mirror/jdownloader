@@ -1,5 +1,6 @@
 package org.jdownloader.scripting;
 
+import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.sourceforge.htmlunit.corejs.javascript.ClassShutter;
@@ -98,6 +99,8 @@ import org.appwork.utils.logging.Log;
  * 
  */
 public class JSHtmlUnitPermissionRestricter {
+    public static HashSet<String> LOADED = new HashSet<String>();
+
     static public class SandboxContextFactory extends ContextFactory {
         @Override
         protected Context makeContext() {
@@ -107,15 +110,18 @@ public class JSHtmlUnitPermissionRestricter {
                 public boolean visibleToScripts(String className) {
                     Thread cur = Thread.currentThread();
                     if (TRUSTED_THREAD.containsKey(cur)) {
+                        LOADED.add(className);
                         Log.L.severe("Trusted Thread Loads: " + className);
                         return true;
 
                     }
                     if (className.startsWith("adapter")) {
+                        LOADED.add(className);
                         return true;
 
                     } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.EcmaError")) {
                         Log.L.severe("Javascript error occured");
+                        LOADED.add(className);
                         return true;
                     } else {
 

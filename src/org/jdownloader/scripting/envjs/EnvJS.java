@@ -2,6 +2,9 @@ package org.jdownloader.scripting.envjs;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -318,6 +321,35 @@ public class EnvJS {
             String initSource = readRequire("envjs/init");
             initSource = initSource.replace("%EnvJSinstanceID%", id + "");
             evaluateTrustedString(cx, scope, initSource, "setInstance", 1, null);
+
+            ArrayList<String> list = new ArrayList<String>(JSHtmlUnitPermissionRestricter.LOADED);
+
+            Collections.sort(list, new Comparator<String>() {
+
+                @Override
+                public int compare(String o1, String o2) {
+                    return o2.length() - o1.length();
+                }
+            });
+
+            // Cleanup
+            for (String s : list) {
+                while (true) {
+                    System.out.println("Delete " + s);
+                    try {
+                        eval("delete " + s + ";");
+
+                    } catch (Throwable e) {
+                        // e.printStackTrace();
+                    }
+                    int index = s.lastIndexOf(".");
+                    if (index > 0) {
+                        s = s.substring(0, index);
+                    } else {
+                        break;
+                    }
+                }
+            }
             // evaluateTrustedString(cx, scope, "delete EnvJs;delete After;", "CleanUp", 1, null);
 
             // var __context__=__context__;
