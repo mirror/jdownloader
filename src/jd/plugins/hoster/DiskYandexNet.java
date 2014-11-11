@@ -100,7 +100,8 @@ public class DiskYandexNet extends PluginForHost {
     private Account              currAcc                            = null;
 
     /* Make sure we always use our main domain */
-    private String fixMainlink(String mainlink) {
+    private String getMainLink(final DownloadLink dl) {
+        String mainlink = dl.getStringProperty("mainlink", null);
         mainlink = "https://disk.yandex.com/" + new Regex(mainlink, "yandex\\.[a-z]+/(.+)").getMatch(0);
         return mainlink;
     }
@@ -144,7 +145,7 @@ public class DiskYandexNet extends PluginForHost {
             if (!link.getDownloadURL().matches(TYPE_DISK)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            br.getPage(fixMainlink(link.getStringProperty("mainlink", null)));
+            br.getPage(getMainLink(link));
             if (br.containsHTML("(<title>The file you are looking for could not be found\\.|>Nothing found</span>|<title>Nothing found \\— Yandex\\.Disk</title>)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -341,7 +342,7 @@ public class DiskYandexNet extends PluginForHost {
         String dllink = checkDirectLink(link, "directlink_account");
 
         if (dllink == null) {
-            br.getPage(fixMainlink(link.getStringProperty("mainlink", null)));
+            br.getPage(getMainLink(link));
             final String hash = link.getStringProperty("hash_plain", null);
             /* This should never happen */
             if (ACCOUNT_SK == null) {
@@ -405,7 +406,7 @@ public class DiskYandexNet extends PluginForHost {
                 }
             } else {
                 logger.info("MoveToAccount handling is inactive -> Starting free account download handling");
-                br.getPage(link.getDownloadURL());
+                br.getPage(getMainLink(link));
                 br.postPage("https://disk.yandex.ru/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + Encoding.urlEncode(hash) + "&idClient=" + this.CLIENT_ID + "&version=" + this.VERSION + "&sk=" + this.ACCOUNT_SK);
                 dllink = br.getRegex("\"file\":\"(http[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
