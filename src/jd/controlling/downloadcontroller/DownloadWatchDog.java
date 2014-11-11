@@ -429,7 +429,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                     @Override
                     public void execute(DownloadSession currentSession) {
-                        currentSession.setUseAccountsEnabled(Boolean.TRUE.equals(newValue));
+                        final boolean useAccounts = Boolean.TRUE.equals(newValue);
+                        logger.info("USE_AVAILABLE_ACCOUNTS: " + useAccounts);
+                        currentSession.setUseAccountsEnabled(useAccounts);
                     }
 
                     @Override
@@ -442,7 +444,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
         }, false);
-        initSession.setUseAccountsEnabled(CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled());
+        final boolean useAccounts = CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled();
+        logger.info("USE_AVAILABLE_ACCOUNTS: " + useAccounts);
+        initSession.setUseAccountsEnabled(useAccounts);
         Reconnecter.getInstance().getEventSender().addListener(new ReconnecterListener() {
 
             @Override
