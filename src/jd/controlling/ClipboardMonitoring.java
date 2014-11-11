@@ -230,18 +230,16 @@ public class ClipboardMonitoring {
                                             /*
                                              * lets fetch fresh HTML Content if available
                                              */
-                                            if (htmlFlavorAllowed) {
-                                                String htmlContent = getHTMLTransferData(currentContent);
-                                                if (htmlContent != null) {
-                                                    /*
-                                                     * remember that we had HTML content this round
-                                                     */
-                                                    oldHTMLContent = htmlContent;
+                                            final String htmlContent = getHTMLTransferData(currentContent);
+                                            if (htmlContent != null) {
+                                                /*
+                                                 * remember that we had HTML content this round
+                                                 */
+                                                oldHTMLContent = htmlContent;
+                                                if (htmlFlavorAllowed) {
                                                     handleThisRound = handleThisRound + "\r\n" + htmlContent;
-                                                    lastBrowserUrl = getCurrentBrowserURL(currentContent);
-                                                } else {
-                                                    oldHTMLContent = null;
                                                 }
+                                                lastBrowserUrl = getCurrentBrowserURL(currentContent);
                                             } else {
                                                 oldHTMLContent = null;
                                             }
@@ -255,19 +253,17 @@ public class ClipboardMonitoring {
                                             /*
                                              * lets fetch fresh HTML Content if available
                                              */
-                                            if (htmlFlavorAllowed) {
-                                                String htmlContent = getHTMLTransferData(currentContent);
-                                                if (htmlContent != null) {
-                                                    /*
-                                                     * remember that we had HTML content this round
-                                                     */
-                                                    if (changeDetector(oldHTMLContent, htmlContent)) {
-                                                        oldHTMLContent = htmlContent;
+                                            final String htmlContent = getHTMLTransferData(currentContent);
+                                            if (htmlContent != null) {
+                                                /*
+                                                 * remember that we had HTML content this round
+                                                 */
+                                                if (changeDetector(oldHTMLContent, htmlContent)) {
+                                                    oldHTMLContent = htmlContent;
+                                                    if (htmlFlavorAllowed) {
                                                         handleThisRound = newStringContent + "\r\n" + htmlContent;
-                                                        lastBrowserUrl = getCurrentBrowserURL(currentContent);
                                                     }
-                                                } else {
-                                                    oldHTMLContent = null;
+                                                    lastBrowserUrl = getCurrentBrowserURL(currentContent);
                                                 }
                                             } else {
                                                 oldHTMLContent = null;
@@ -340,14 +336,14 @@ public class ClipboardMonitoring {
                 } catch (final Throwable e) {
                     e.printStackTrace();
                 }
-                StringBuilder sb = new StringBuilder();
+                final StringBuilder sb = new StringBuilder();
                 if (stringContent != null) {
                     sb.append(stringContent);
                 }
                 if (sb.length() > 0) {
                     sb.append("\r\n");
                 }
-                if (htmlContent != null) {
+                if (isHtmlFlavorAllowed() && htmlContent != null) {
                     sb.append(htmlContent);
                 }
                 return new ClipboardContent(sb.toString(), browserUrl);
@@ -533,15 +529,19 @@ public class ClipboardMonitoring {
 
     public static void processSupportedTransferData(final Transferable transferable) {
         try {
-            String browserUrl = null;
-            String htmlContent = null;
-            String listContent = getListTransferData(transferable);
-            String stringContent = getStringTransferData(transferable);
+            final String listContent = getListTransferData(transferable);
+            final String stringContent = getStringTransferData(transferable);
+            final String htmlContent;
             if (StringUtils.isNotEmpty(stringContent)) {
                 htmlContent = getHTMLTransferData(transferable);
+            } else {
+                htmlContent = null;
             }
+            final String browserUrl;
             if (StringUtils.isNotEmpty(htmlContent)) {
                 browserUrl = getCurrentBrowserURL(transferable);
+            } else {
+                browserUrl = null;
             }
             StringBuilder sb = new StringBuilder();
             if (StringUtils.isNotEmpty(listContent)) {
@@ -554,7 +554,7 @@ public class ClipboardMonitoring {
                 sb.append(stringContent);
                 sb.append(">\r\n\r\n");
             }
-            if (StringUtils.isNotEmpty(htmlContent)) {
+            if (isHtmlFlavorAllowed() && StringUtils.isNotEmpty(htmlContent)) {
                 sb.append("<");
                 sb.append(htmlContent);
                 sb.append(">");

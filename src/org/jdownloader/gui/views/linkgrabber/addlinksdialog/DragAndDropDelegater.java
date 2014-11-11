@@ -56,12 +56,14 @@ public class DragAndDropDelegater extends TransferHandler {
             int end = input.getSelectionEnd();
 
             sb.append(old.substring(0, start));
-            if (!StringUtils.isEmpty(html)) {
+            if (ClipboardMonitoring.isHtmlFlavorAllowed() && !StringUtils.isEmpty(html)) {
                 sb.append(html);
             }
 
             if (!StringUtils.isEmpty(text)) {
-                if (sb.length() > 0 && (text.startsWith("http") || text.startsWith("ftp://"))) sb.append("\r\n");
+                if (sb.length() > 0 && (text.startsWith("http") || text.startsWith("ftp://"))) {
+                    sb.append("\r\n");
+                }
                 sb.append(text);
             }
             sb.append(old.substring(end));
