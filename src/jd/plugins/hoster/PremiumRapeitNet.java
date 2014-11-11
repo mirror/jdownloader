@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -50,9 +51,6 @@ public class PremiumRapeitNet extends PluginForHost {
     private static final String                            NICE_HOST          = MAINPAGE.replaceAll("(https://|http://)", "");
     private static final String                            NICE_HOSTproperty  = MAINPAGE.replaceAll("(https://|http://|\\.|\\-)", "");
     private static final String                            USE_API            = "USE_API";
-
-    private static final String[][]                        HOSTS              = { { "YUNFILE", "yunfile.com" }, { "NITROFLARE", "nitroflare.com" }, { "TUSFILES", "tusfiles.net" }, { "4SHARED", "4shared.com" }, { "BEARFILES", "bearfiles.in" }, { "BITSHARE", "bitshare.com" }, { "DEPFILE", "depfile.com" }, { "FILECLOUD", "filecloud.cc" }, { "FILEFACTORY", "filefactory.com" }, { "FILEPARADOX", "fileparadox.in" }, { "FILERIO", "filerio.in" }, { "FILESPACE", "filespace.com" }, { "FIREDRIVE", "firedrive.com" }, { "FREAKSHARE", "freakshare.com" }, { "FSHARE.VN", "fshare.vn" }, { "KEEP2SHARE", "k2s.cc" }, { "LETITBIT", "letitbit.net" }, { "NETLOAD", "netload.in" }, { "PRIVATEFILES", "privatefiles.com" }, { "RAPIDGATOR", "rapidgator.net" }, { "SOCKSHARE", "sockshare.com" }, { "SUBYSHARE", "subyshare.com" }, { "UPLOADABLE", "uploadable.ch" }, { "UPLOADED", "uploaded.to" },
-        { "VOZUPLOAD", "vozupload.com" }, { "XERVER", "xerver.co" }      };
 
     public PremiumRapeitNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -185,13 +183,11 @@ public class PremiumRapeitNet extends PluginForHost {
         if (!br.getURL().equals("http://premium.rapeit.net/")) {
             br.getPage("http://premium.rapeit.net/");
         }
-        final ArrayList<String> supportedHosts = new ArrayList<String>();
-        for (final String[] hostinfo : HOSTS) {
-            final String siteHost = hostinfo[0];
-            final String realHost = hostinfo[1];
-            if (br.containsHTML("title=\"" + siteHost + " is ON")) {
-                supportedHosts.add(realHost);
-            }
+        final String[] hosts = br.getRegex("ON / Domain: ([^<>\"]*?)\"").getColumn(0);
+        ArrayList<String> supportedHosts = new ArrayList<String>();
+        if (hosts != null && hosts.length != 0) {
+            Collections.addAll(supportedHosts, hosts);
+            ac.setMultiHostSupport(this, supportedHosts);
         }
         final String traffic_left = br.getRegex(">Available premium bandwidth: <strong>([^<>\"]*?)</strong>").getMatch(0);
         final String traffic_downloaded = br.getRegex(">Total used premium bandwidth: <strong>([^<>\"]*?)</strong>").getMatch(0);
@@ -201,7 +197,6 @@ public class PremiumRapeitNet extends PluginForHost {
         account.setType(AccountType.PREMIUM);
         account.setMaxSimultanDownloads(-1);
         account.setConcurrentUsePossible(true);
-        ac.setMultiHostSupport(this, supportedHosts);
         ac.setStatus("Premium User");
         return ac;
     }
