@@ -56,18 +56,18 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "seenupload.com" }, urls = { "https?://(www\\.)?seenupload\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
-public class SeenUploadCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "2drive.net" }, urls = { "https?://(www\\.)?2drive\\.net/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+public class TwoDriveNet extends PluginForHost {
 
     private String                         correctedBR                  = "";
     private String                         passCode                     = null;
     private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                  = "http://seenupload.com";
+    private static final String            COOKIE_HOST                  = "http://2drive.net";
     private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(seenupload\\.com)";
+    private static final String            DOMAINS                      = "(2drive\\.net)";
     private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -82,13 +82,13 @@ public class SeenUploadCom extends PluginForHost {
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = true;
-    private static final int               FREE_MAXCHUNKS               = -2;
+    private static final int               FREE_MAXCHUNKS               = -3;
     private static final int               FREE_MAXDOWNLOADS            = 1;
     private static final boolean           ACCOUNT_FREE_RESUME          = true;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS       = -4;
+    private static final int               ACCOUNT_FREE_MAXCHUNKS       = -3;
     private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 1;
     private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = -4;
+    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = -3;
     private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 1;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
@@ -103,7 +103,7 @@ public class SeenUploadCom extends PluginForHost {
     // mods:
     // limit-info: premium untested, set FREE account limits
     // protocol: no https
-    // captchatype: null
+    // captchatype: 4dignum
     // other:
     // TODO: Add case maintenance + alternative filesize check
 
@@ -124,7 +124,7 @@ public class SeenUploadCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public SeenUploadCom(PluginWrapper wrapper) {
+    public TwoDriveNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }

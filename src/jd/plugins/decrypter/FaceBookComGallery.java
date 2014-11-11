@@ -481,11 +481,15 @@ public class FaceBookComGallery extends PluginForDecrypt {
         String collection_token;
         String profileID;
         String setID;
+        String activecollection = null;
         profileID = br.getRegex("\"profile_id\":(\\d+)").getMatch(0);
         if (profileID == null) {
             profileID = br.getRegex("follow_profile\\.php\\?profile_id=(\\d+)").getMatch(0);
         }
         collection_token = br.getRegex("\\[\"pagelet_timeline_app_collection_([^<>\"]*?)\"\\]").getMatch(0);
+        if (collection_token != null) {
+            activecollection = new Regex(collection_token, ":(\\d+)$").getMatch(0);
+        }
         type = "3";
         setID = new Regex(PARAMETER, "set=([a-z0-9\\.]+)").getMatch(0);
         String fpName = br.getRegex("id=\"pageTitle\">([^<>\"]*?)\\| Facebook</title>").getMatch(0);
@@ -498,13 +502,14 @@ public class FaceBookComGallery extends PluginForDecrypt {
         final String ajaxpipeToken = getajaxpipeToken();
         final String user = getUser();
         String lastfirstID = "";
-        if (ajaxpipeToken == null || user == null || type == null || setID == null) {
+        if (ajaxpipeToken == null || user == null || type == null || setID == null || (collection_token == null && activecollection == null)) {
             logger.warning("Decrypter broken for link: " + PARAMETER);
             throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
         }
         String data = null;
         if (collection_token != null) {
-            data = "{\"scroll_load\":true,\"last_fbid\":JDL_LAST_FBID_JDL,\"fetch_size\":32,\"profile_id\":" + profileID + "\",\"overview\":false,\"active_collection\":69,\"collection_token\":\"" + Encoding.urlEncode(collection_token) + "\",\"cursor\":0,\"tab_id\":\"u_0_t\",\"order\":null,\"importer_state\":null}";
+            // {"scroll_load":true,"last_fbid":425565290825831,"fetch_siz          e":32,"profile_id":100001170914404,"tab_key":"media_set","set":"a.331153143600380.78764.100001170914404","type":"3","sk":"photos","overview":false,"active_collection":69,"collection_token":"100001170914404:2305272732:69","cursor":0,"tab_id":"u_0_u","order":null,"importer_state":null}
+            data = "{\"scroll_load\":true,\"last_fbid\":JDL_LAST_FBID_JDL,\"fetch_size\":32,\"profile_id\":" + profileID + ",\"tab_key\":\"media_set\",\"set\":\"" + setID + "\",\"type\":\"" + type + "\",\"sk\":\"photos\",\"overview\":false,\"active_collection\":" + activecollection + ",\"collection_token\":\"" + collection_token + "\",\"cursor\":0,\"tab_id\":\"u_0_u\",\"order\":null,\"importer_state\":null}";
         } else {
             data = "{\"scroll_load\":true,\"last_fbid\":\"JDL_LAST_FBID_JDL\",\"fetch_size\":32,\"profile_id\":" + profileID + ",\"viewmode\":null,\"set\":\"" + setID + "\",\"type\":\"3\"}";
         }
