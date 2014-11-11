@@ -3,16 +3,21 @@ package jd.controlling.reconnect.ipcheck;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.controlling.proxy.ProxyController;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.http.Browser;
+import jd.http.ProxySelectorInterface;
+import jd.http.Request;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 
 /**
  * balanced IP check uses the jdownloader ip check servers. This type of ip check is default, and fallback for all reconnect methods
@@ -20,7 +25,7 @@ import org.jdownloader.logging.LogController;
  * @author thomas
  * 
  */
-public class BalancedWebIPCheck implements IPCheckProvider {
+public class BalancedWebIPCheck implements IPCheckProvider, ProxySelectorInterface {
     public static BalancedWebIPCheck getInstance() {
         return BalancedWebIPCheck.INSTANCE;
     }
@@ -46,6 +51,8 @@ public class BalancedWebIPCheck implements IPCheckProvider {
 
     private boolean                             checkOnlyOnce;
 
+    private boolean                             useGlobalProxy;
+
     public BalancedWebIPCheck(boolean useGlobalProxy) {
         this.servicesInUse = new ArrayList<String>();
         setOnlyUseWorkingServices(false);
@@ -54,9 +61,19 @@ public class BalancedWebIPCheck implements IPCheckProvider {
         this.br = new Browser();
         this.br.setDebug(true);
         this.br.setVerbose(true);
-        if (!useGlobalProxy) this.br.setProxy(HTTPProxy.NONE);
+        this.useGlobalProxy = useGlobalProxy;
+        br.setProxySelector(this);
+
         this.br.setConnectTimeout(JsonConfig.create(ReconnectConfig.class).getIPCheckConnectTimeout());
         this.br.setReadTimeout(JsonConfig.create(ReconnectConfig.class).getIPCheckReadTimeout());
+    }
+
+    public boolean isUseGlobalProxy() {
+        return useGlobalProxy;
+    }
+
+    public void setUseGlobalProxy(boolean useGlobalProxy) {
+        this.useGlobalProxy = useGlobalProxy;
     }
 
     /**
@@ -148,6 +165,28 @@ public class BalancedWebIPCheck implements IPCheckProvider {
             }
 
         }
+    }
+
+    @Override
+    public List<HTTPProxy> getProxiesByUrl(String url) {
+        if (CFG_RECONNECT.CFG.isIPCheckUsesProxyEnabled()) {
+            return ProxyController.getInstance().getProxiesByUrl(url);
+        } else {
+            ArrayList<HTTPProxy> ret = new ArrayList<HTTPProxy>();
+            ret.add(HTTPProxy.NONE);
+            return ret;
+        }
+
+    }
+
+    @Override
+    public boolean updateProxy(Request request, int retryCounter) {
+        return false;
+    }
+
+    @Override
+    public boolean reportConnectException(Request request, int retryCounter, IOException e) {
+        return false;
     }
 
 }
