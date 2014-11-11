@@ -1051,20 +1051,25 @@ public class YoutubeHelper {
             }
         }
         if (unavailableReason != null) {
-            unavailableReason = unavailableReason.trim();
+            unavailableReason = Encoding.htmlDecode(unavailableReason.replaceAll("\\+", " ").trim());
+            /*
+             * do not use 'This video is unavailable.', its nearly always present and will cause false positive! If you consider using
+             * !unavailableReason.contains("this video is unavailable), you need to also ignore content warning
+             */
             if (unavailableReason.contains("This video is private") && !getVideoInfoWorkaroundUsed) {
                 // check if video is private
                 String subError = br.getRegex("<div id=\"unavailable-submessage\" class=\"[^\"]*\">(.*?)</div>").getMatch(0);
                 if (subError != null && !subError.matches("\\s*")) {
                     logger.warning(unavailableReason + " :: " + subError.trim());
-                    vid.error = Encoding.htmlDecode(unavailableReason.replaceAll("\\+", " ").trim());
+                    vid.error = unavailableReason;
                     return null;
                 }
-            } else if (unavailableReason.contains("This video has been removed by the user.") || (
-                    /* do not use this error handling its nearly always present, will cause false positive */
-                    false && unavailableReason.contains("This video is unavailable."))) {
+            } else if (unavailableReason.startsWith("This video has been removed")) {
+                // currently covering
+                // This video has been removed by the user. .:. ab4U0RwrOTI
+                // This video has been removed because its content violated YouTube&#39;s Terms of Service. .:. 7RA4A-4QqHU
                 logger.warning(unavailableReason);
-                vid.error = Encoding.htmlDecode(unavailableReason.replaceAll("\\+", " ").trim());
+                vid.error = unavailableReason;
                 return null;
             }
         }
