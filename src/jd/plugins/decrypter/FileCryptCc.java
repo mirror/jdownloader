@@ -80,7 +80,7 @@ public class FileCryptCc extends PluginForDecrypt {
             }
         }
 
-        final String fpName = br.getRegex("class=\"status (online|offline) shield\">([^<>\"]*?)<").getMatch(0);
+        final String fpName = br.getRegex("class=\"status (online|offline) shield\">([^<>\"]*?)<").getMatch(1);
 
         logger.info("Trying single link handling");
         final String[] links = br.getRegex("openLink\\(\\'([^<>\"]*?)\\'").getColumn(0);
