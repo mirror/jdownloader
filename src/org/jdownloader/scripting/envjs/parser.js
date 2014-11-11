@@ -9,19 +9,18 @@
  *
  */ 
 
-var Envjs = Envjs || require('envjs/platform/core').Envjs,
-	After = After || require('envjs/platform/core').After,
-	DOMImplementation = DOMImplementation || require('envjs/dom').DOMImplementation,
-	Document = Document || require('envjs/dom').Document,
-	Element = Element || require('envjs/dom').Element,
-	NodeList = NodeList || require('envjs/dom').NodeList,
-	Node = Node || require('envjs/dom').Node,
-	HTMLDocument = HTMLDocument || require('envjs/html').HTMLDocument,
-	HTMLElement = HTMLElement || require('envjs/html').HTMLElement,
-	setTimeout = setTimeout || require('envjs/timer').setTimeout,
-	clearTimeout = clearTimeout || require('envjs/timer').clearTimeout,
-	setInterval = setInterval || require('envjs/timer').setInterval,
-	clearInterval = clearInterval || require('envjs/timer').clearInterval;
+var Envjs=envjsGlobals.Envjs;
+	DOMImplementation = require('envjs/dom').DOMImplementation,
+	Document =  require('envjs/dom').Document,
+	Element = require('envjs/dom').Element,
+	NodeList =  require('envjs/dom').NodeList,
+	Node = require('envjs/dom').Node,
+	HTMLDocument =  require('envjs/html').HTMLDocument,
+	HTMLElement =  require('envjs/html').HTMLElement,
+	setTimeout =  require('envjs/timer').setTimeout,
+	clearTimeout =  require('envjs/timer').clearTimeout,
+	setInterval =  require('envjs/timer').setInterval,
+	clearInterval =  require('envjs/timer').clearInterval;
 /*
  * Envjs parser.1.3.pre03 
  * Pure JavaScript Browser Environment

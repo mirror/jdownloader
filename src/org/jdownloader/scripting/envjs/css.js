@@ -18,8 +18,8 @@ var CSS2Properties,
 
 */
 	
-var Envjs = Envjs || require('envjs/platform/core').Envjs,
-	Document = require('envjs/dom').Document,
+    var Envjs=envjsGlobals.Envjs;
+	Document = require('envjs/dom').Document;
 	HTMLElement = require('envjs/html').HTMLElement;
 /*
  * Envjs css.1.3.pre03 

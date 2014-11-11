@@ -31,8 +31,8 @@ var Location,
 
  */
 
-var Envjs = Envjs || require('envjs/platform/core').Envjs,
-	Document = Document || require('envjs/dom').Document;
+    var Envjs=envjsGlobals.Envjs;
+	Document = require('envjs/dom').Document;
 
 /**
  * @author john resig

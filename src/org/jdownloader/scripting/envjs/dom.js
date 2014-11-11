@@ -41,8 +41,8 @@ var Attr,
 
 */
 
-var Envjs = Envjs || require('envjs/platform/core').Envjs,
-	After = After || require('envjs/platform/core').After;
+var Envjs=envjsGlobals.Envjs;
+
 
 /*
  * Envjs dom.1.3.pre03 

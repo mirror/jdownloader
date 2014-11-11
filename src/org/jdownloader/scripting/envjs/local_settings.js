@@ -1,4 +1,4 @@
-
+var Envjs=envjsGlobals.Envjs;
 		 Envjs.Configuration.logging=[
         {category:'Envjs.Core',                 level:'DEBUG'},
         {category:'Envjs.Core.REPL',            level:'DEBUG'},

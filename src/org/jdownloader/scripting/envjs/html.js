@@ -68,13 +68,12 @@
     __loadLink__;
 */
 
-var Envjs = Envjs || require('envjs/platform/core').Envjs,
-	After = After || require('envjs/platform/core').After,
-	Document = Document || require('envjs/dom').Document,
-	Element = Element || require('envjs/dom').Element,
-	NodeList = NodeList || require('envjs/dom').NodeList,
-	Node = Node || require('envjs/dom').Node,
-	Event = Event || require('envjs/event').Event;
+var Envjs=envjsGlobals.Envjs;
+	Document = require('envjs/dom').Document,
+	Element =  require('envjs/dom').Element,
+	NodeList =  require('envjs/dom').NodeList,
+	Node =  require('envjs/dom').Node,
+	Event =  require('envjs/event').Event;
 	
 /*
  * Envjs html.1.3.pre03 

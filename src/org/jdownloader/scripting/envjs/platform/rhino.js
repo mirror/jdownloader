@@ -5,24 +5,13 @@
  * Copyright 2008-2010 John Resig, under the MIT License
  */
 
-var Envjs = Envjs || require('envjs/platform/core').Envjs;
-require('local_settings');
 
-var __context__ = Packages.net.sourceforge.htmlunit.corejs.javascript.Context.getCurrentContext();
 
-Envjs.platform = "Rhino";
-Envjs.revision = "1.7.0.rc2";
-Envjs.argv = [];
-if (__argv__ && __argv__.length) {
-	for ( var i = 0; i < __argv__.length; i++) {
-		Envjs.argv[i] = __argv__[i];
-	}
-}
 
-Envjs.exit = function() {
-	console.log("HELP")
-	java.lang.System.exit(0);
-};
+
+
+
+
 
 /*
  * Envjs rhino-env.1.3.pre03 Pure JavaScript Browser Environment By John Resig
@@ -32,7 +21,10 @@ Envjs.exit = function() {
 
 // CLOSURE_START
 (function() {
-
+var Envjs=envjsGlobals.Envjs;
+var __context__ = Packages.net.sourceforge.htmlunit.corejs.javascript.Context.getCurrentContext();
+Envjs.platform = "Rhino";
+Envjs.revision = "1.7.0.rc2";
 	/**
 	 * @author john resig
 	 */

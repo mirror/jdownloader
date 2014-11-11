@@ -32,8 +32,8 @@ var setTimeout,
     clearInterval;
 
  */ 
+    var Envjs=envjsGlobals.Envjs;
 
-var Envjs = require('envjs/platform/core').Envjs;
 /*
 *   - timer.js
 */
