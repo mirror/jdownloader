@@ -2,12 +2,12 @@
 
 
 
-var __this__=this;
+
 
    
     
 
-var require = (function(__this__) {
+(function(__this__) {
         var cached = {};
         var envjsGlobals={};
 
@@ -52,22 +52,26 @@ var require = (function(__this__) {
             return cached[id].exports;
         };
         
-  
+        require('envjs/platform/core');
+
+        require('local_settings');
+
+        require('envjs/platform/rhino');
+
+        require('envjs/window');
         
         return require;
     }(this));
 
 
-require('envjs/platform/core');
 
-require('local_settings');
-require('envjs/platform/rhino');
-require('envjs/window');
 
 //init window
-new Window(this);
-delete __this__;
-delete require;
 
+
+
+
+
+new Window(this);
 
 
