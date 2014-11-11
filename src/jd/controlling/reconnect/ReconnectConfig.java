@@ -144,4 +144,11 @@ public interface ReconnectConfig extends ConfigInterface {
 
     void setDownloadControllerPrefersReconnectEnabled(boolean b);
 
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Usually, the IP Check has to use the direct connection. However, in some rare situations, it is important to use a proxy to do the ipcheck. Only change this if you are 100% sure.")
+    void setIPCheckUsesProxyEnabled(boolean b);
+
+    boolean isIPCheckUsesProxyEnabled();
+
 }
