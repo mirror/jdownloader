@@ -13,24 +13,23 @@ var Window,
 
  */
 
-var Envjs               = Envjs             || require('envjs/platform/core').Envjs,
-    DOMImplementation   = DOMImplementation || require('envjs/dom').DOMImplementation,
-    HTMLDocument        = HTMLDocument      || require('envjs/html').HTMLDocument,
-    HTMLFrameElement    = HTMLFrameElement  || require('envjs/html').HTMLFrameElement,
-    HTMLIFrameElement   = HTMLIFrameElement || require('envjs/html').HTMLIFrameElement,
-    HTMLParser          = HTMLParser        || require('envjs/parser').HTMLParser,
-    Location            = Location          || require('envjs/xhr').Location,
-    CSSRule             = CSSRule           || require('envjs/css').CSSRule;
+var Envjs=envjsGlobals.Envjs;
+    DOMImplementation   =   require('envjs/dom').DOMImplementation,
+    HTMLDocument        =   require('envjs/html').HTMLDocument,
+    HTMLFrameElement    =   require('envjs/html').HTMLFrameElement,
+    HTMLIFrameElement   =   require('envjs/html').HTMLIFrameElement,
+    HTMLParser          =   require('envjs/parser').HTMLParser,
+    Location            =   require('envjs/xhr').Location,
+    CSSRule             =   require('envjs/css').CSSRule;
 
 
 /*
- * Envjs window.1.3.pre03 
- * Pure JavaScript Browser Environment
- * By John Resig <http://ejohn.org/> and the Envjs Team
- * Copyright 2008-2010 John Resig, under the MIT License
+ * Envjs window.1.3.pre03 Pure JavaScript Browser Environment By John Resig
+ * <http://ejohn.org/> and the Envjs Team Copyright 2008-2010 John Resig, under
+ * the MIT License
  */
 
-//CLOSURE_START
+// CLOSURE_START
 (function(){
 
 
@@ -72,7 +71,7 @@ __extend__(HTMLFrameElement.prototype,{
     set src(value){
         var event;
         this.setAttribute('src', value);
-		//only load if we are already appended to the dom
+		// only load if we are already appended to the dom
         if (this.parentNode && value && value.length > 0){
             log.debug('loading frame via set src %s', value);
             Envjs.loadFrame(this, Envjs.uri(value, this.ownerDocument?this.ownerDocument.location+'':null));
@@ -83,11 +82,11 @@ __extend__(HTMLFrameElement.prototype,{
 
 __extend__(HTMLIFrameElement.prototype, HTMLFrameElement.prototype);
 
-}(/*Frame/Window Mixin*/));
+}(/* Frame/Window Mixin */));
 
 /*
- *  TODO: Document the History object via HTML5 spec
- *
+ * TODO: Document the History object via HTML5 spec
+ * 
  */
 (function(){
 
@@ -119,7 +118,7 @@ exports.History = History = function(owner) {
                     $current = target;
                 }
             } else {
-                //TODO: walk through the history and find the 'best match'?
+                // TODO: walk through the history and find the 'best match'?
             }
         },
 
@@ -160,8 +159,8 @@ exports.History = History = function(owner) {
         },
 
         add: function(newLocation, type) {
-            //not a standard interface, we expose it to simplify
-            //history state modifications
+            // not a standard interface, we expose it to simplify
+            // history state modifications
             if (newLocation !== $history[$current]) {
                 $history.slice(0, $current);
                 $history.push({
@@ -173,12 +172,11 @@ exports.History = History = function(owner) {
     }; 
 };
 
-}(/*History*/));
+}(/* History */));
 
 
 /*
- *      navigator.js
- *  Browser Navigator
+ * navigator.js Browser Navigator
  */
 
 (function(){
@@ -202,7 +200,7 @@ exports.Navigator = Navigator = function(){
         get appVersion(){
             return Envjs.version +" ("+
                 this.platform +"; "+
-                "U; "+//?
+                "U; "+// ?
                 Envjs.os_name+" "+Envjs.os_arch+" "+Envjs.os_version+"; "+
                 (Envjs.lang?Envjs.lang:"en-US")+"; "+
                 "rv:"+Envjs.revision+
@@ -237,7 +235,9 @@ exports.Navigator = Navigator = function(){
 }());
 /**
  * Screen
- * @param {Object} __window__
+ * 
+ * @param {Object}
+ *            __window__
  */
 (function(){
 
@@ -264,14 +264,15 @@ exports.Screen = Screen = function(__window__){
 	log.debug('extending window with screen properties');
     __extend__( __window__, {
         moveBy : function(dx,dy){
-            //TODO - modify $locals to reflect change
+            // TODO - modify $locals to reflect change
         },
         moveTo : function(x,y) {
-            //TODO - modify $locals to reflect change
+            // TODO - modify $locals to reflect change
         },
-        /*print : function(){
-            //TODO - good global to modify to ensure print is not misused
-        };*/
+        /*
+         * print : function(){ //TODO - good global to modify to ensure print is
+         * not misused };
+         */
         resizeBy : function(dw, dh){
             __window__.resizeTo($width + dw, $height + dh);
         },
@@ -280,13 +281,13 @@ exports.Screen = Screen = function(__window__){
             $height = (height <= $availHeight) ? height : $availHeight;
         },
         scroll : function(x,y){
-            //TODO - modify $locals to reflect change
+            // TODO - modify $locals to reflect change
         },
         scrollBy : function(dx, dy){
-            //TODO - modify $locals to reflect change
+            // TODO - modify $locals to reflect change
         },
         scrollTo : function(x,y){
-            //TODO - modify $locals to reflect change
+            // TODO - modify $locals to reflect change
         }
     });
 	
@@ -325,53 +326,51 @@ exports.Screen = Screen = function(__window__){
     };
 };
 
-}(/*Screen*/));
+}(/* Screen */));
 /*
  * Copyright (c) 2010 Nick Galbreath
  * http://code.google.com/p/stringencoders/source/browse/#svn/trunk/javascript
- *
- * Permission is hereby granted, free of charge, to any person
- * obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without
- * restriction, including without limitation the rights to use,
- * copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following
- * conditions:
- *
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 
-/* base64 encode/decode compatible with window.btoa/atob
- *
- * window.atob/btoa is a Firefox extension to convert binary data (the "b")
- * to base64 (ascii, the "a").
- *
- * It is also found in Safari and Chrome.  It is not available in IE.
- *
- * if (!window.btoa) window.btoa = base64.encode
- * if (!window.atob) window.atob = base64.decode
- *
+/*
+ * base64 encode/decode compatible with window.btoa/atob
+ * 
+ * window.atob/btoa is a Firefox extension to convert binary data (the "b") to
+ * base64 (ascii, the "a").
+ * 
+ * It is also found in Safari and Chrome. It is not available in IE.
+ * 
+ * if (!window.btoa) window.btoa = base64.encode if (!window.atob) window.atob =
+ * base64.decode
+ * 
  * The original spec's for atob/btoa are a bit lacking
  * https://developer.mozilla.org/en/DOM/window.atob
  * https://developer.mozilla.org/en/DOM/window.btoa
- *
- * window.btoa and base64.encode takes a string where charCodeAt is [0,255]
- * If any character is not [0,255], then an DOMException(5) is thrown.
- *
- * window.atob and base64.decode take a base64-encoded string
- * If the input length is not a multiple of 4, or contains invalid characters
- *   then an DOMException(5) is thrown.
+ * 
+ * window.btoa and base64.encode takes a string where charCodeAt is [0,255] If
+ * any character is not [0,255], then an DOMException(5) is thrown.
+ * 
+ * window.atob and base64.decode take a base64-encoded string If the input
+ * length is not a multiple of 4, or contains invalid characters then an
+ * DOMException(5) is thrown.
  */
 var base64 = {};
 base64.PADCHAR = '=';
@@ -401,8 +400,8 @@ base64.makeDOMException = function() {
 
 base64.getbyte64 = function(s,i) {
     // This is oddly fast, except on Chrome/V8.
-    //  Minimal or no improvement in performance by using a
-    //   object with properties mapping chars to value (eg. 'A': 0)
+    // Minimal or no improvement in performance by using a
+    // object with properties mapping chars to value (eg. 'A': 0)
     var idx = base64.ALPHA.indexOf(s.charAt(i));
     if (idx === -1) {
         throw base64.makeDOMException();
@@ -512,8 +511,8 @@ Envjs.once('tick', function(){
         debug('window logger available');
 });
 
-//These descriptions of window properties are taken loosely David Flanagan's
-//'JavaScript - The Definitive Guide' (O'Reilly)
+// These descriptions of window properties are taken loosely David Flanagan's
+// 'JavaScript - The Definitive Guide' (O'Reilly)
 
 var __top__ = function(_scope){
     var _parent = _scope.parent;
@@ -522,16 +521,20 @@ var __top__ = function(_scope){
             break;
         }
         _parent = _parent.parent;
-        //console.log('scope %s _parent %s', scope, _parent);
+        // console.log('scope %s _parent %s', scope, _parent);
     }
     return _parent || null;
 };
 
 /**
  * Window
- * @param {Object} scope
- * @param {Object} parent
- * @param {Object} opener
+ * 
+ * @param {Object}
+ *            scope
+ * @param {Object}
+ *            parent
+ * @param {Object}
+ *            opener
  */
 exports.Window = Window = function(scope, parent, opener){
 
@@ -548,10 +551,10 @@ exports.Window = Window = function(scope, parent, opener){
 
     var $uuid = new Date().getTime()+'-'+Math.floor(Math.random()*1000000000000000);
     Envjs.windows($uuid, scope);
-    //log.debug('opening window %s', $uuid);
+    // log.debug('opening window %s', $uuid);
 
     // every window has one-and-only-one .document property which is always
-    // an [object HTMLDocument].  also, only window.document objects are
+    // an [object HTMLDocument]. also, only window.document objects are
     // html documents, all other documents created by the window.document are
     // [object XMLDocument]
     var $htmlImplementation =  new DOMImplementation();
@@ -562,12 +565,12 @@ exports.Window = Window = function(scope, parent, opener){
     var $document = new HTMLDocument($htmlImplementation, scope);
 
     // A read-only reference to the Window object that contains this window
-    // or frame.  If the window is a top-level window, parent refers to
-    // the window itself.  If this window is a frame, this property refers
+    // or frame. If the window is a top-level window, parent refers to
+    // the window itself. If this window is a frame, this property refers
     // to the window or frame that contains it.
     var $parent = parent;
 
-    /**> $cookies - see cookie.js <*/
+    /** > $cookies - see cookie.js < */
     // read only boolean specifies whether the window has been closed
     var $closed = false;
 
@@ -582,11 +585,12 @@ exports.Window = Window = function(scope, parent, opener){
     // a read-only reference to the History object
     var $history = new History();
 
-    // a read-only reference to the Location object.  the location object does
+    // a read-only reference to the Location object. the location object does
     // expose read/write properties
     var $location = new Location('about:blank', $document, $history);
     
-    // The name of window/frame. Set directly, when using open(), or in frameset.
+    // The name of window/frame. Set directly, when using open(), or in
+    // frameset.
     // May be used when specifying the target attribute of links
     var $name = null;
 
@@ -594,7 +598,7 @@ exports.Window = Window = function(scope, parent, opener){
     var $navigator = new Navigator();
     
     // a read/write reference to the Window object that contained the script
-    // that called open() to open this browser window.  This property is valid
+    // that called open() to open this browser window. This property is valid
     // only for top-level window objects.
     var $opener = opener?opener:null;
 
@@ -603,14 +607,14 @@ exports.Window = Window = function(scope, parent, opener){
 
     // Read-only properties that specify the total height and width, in pixels,
     // of the browser window. These dimensions include the height and width of
-    // the menu bar, toolbars, scrollbars, window borders and so on.  These
+    // the menu bar, toolbars, scrollbars, window borders and so on. These
     // properties are not supported by IE and IE offers no alternative
     // properties;
     var $outerHeight = $innerHeight,
         $outerWidth = $innerWidth;
 
     // Read-only properties that specify the number of pixels that the current
-    // document has been scrolled to the right and down.  These are not
+    // document has been scrolled to the right and down. These are not
     // supported by IE.
     var $pageXOffset = 0, $pageYOffset = 0;
 
@@ -647,11 +651,9 @@ exports.Window = Window = function(scope, parent, opener){
             $document = doc;
         },
         /*
-        deprecated ie specific property probably not good to support
-        get event(){
-            return $event;
-        },
-        */
+         * deprecated ie specific property probably not good to support get
+         * event(){ return $event; },
+         */
         get frames(){
             return $document.getElementsByTagName('frame');
         },
@@ -678,8 +680,8 @@ exports.Window = Window = function(scope, parent, opener){
             return $location;
         },
         set location(url){
-            //very important or you will go into an infinite
-            //loop when creating a xml document
+            // very important or you will go into an infinite
+            // loop when creating a xml document
             log.debug('setting window location %s', url);
             if(url) {
                 $location.assign(Envjs.uri(url, $location+''));
@@ -736,8 +738,10 @@ exports.Window = Window = function(scope, parent, opener){
         set status(status){
             $status = status;
         },
-        // a read-only reference to the top-level window that contains this window.
-        // If this window is a top-level window it is simply a reference to itself.
+        // a read-only reference to the top-level window that contains this
+        // window.
+        // If this window is a top-level window it is simply a reference to
+        // itself.
         // If this window is a frame, the top property refers to the top-level
         // window that contains the frame.
         get top(){
@@ -752,22 +756,18 @@ exports.Window = Window = function(scope, parent, opener){
 
         /**
          * getComputedStyle
-         *
-         * Firefox 3.6:
-         *  - Requires both elements to be present else an
-         *    exception is thrown.
-         *  - Returns a 'ComputedCSSStyleDeclaration' object.
-         *    while a raw element.style returns a 'CSSStyleDeclaration' object.
-         *  - Bogus input also throws exception
-         *
-         * Safari 4:
-         *  - Requires one argument (second can be MIA)
-         *  - Returns a CSSStyleDeclaration object
-         *  - if bad imput, returns null
-         *
-         * getComputedStyle should really be an "add on" from the css
-         * modules.  Unfortunately, 'window' comes way after the 'css'
-         * so css can't add it.
+         * 
+         * Firefox 3.6: - Requires both elements to be present else an exception
+         * is thrown. - Returns a 'ComputedCSSStyleDeclaration' object. while a
+         * raw element.style returns a 'CSSStyleDeclaration' object. - Bogus
+         * input also throws exception
+         * 
+         * Safari 4: - Requires one argument (second can be MIA) - Returns a
+         * CSSStyleDeclaration object - if bad imput, returns null
+         * 
+         * getComputedStyle should really be an "add on" from the css modules.
+         * Unfortunately, 'window' comes way after the 'css' so css can't add
+         * it.
          */
         getComputedStyle: function(element, pseudoElement) {
             return element.style;
@@ -827,9 +827,9 @@ exports.Window = Window = function(scope, parent, opener){
         atob: function(ascii){
             return base64.decode(ascii);
         },
-        //these should be undefined on instantiation
-        //onload: function(){},
-        //onunload: function(){},
+        // these should be undefined on instantiation
+        // onload: function(){},
+        // onunload: function(){},
         focus: function(){},
         blur: function(){},
         get guid(){
@@ -842,19 +842,19 @@ exports.Window = Window = function(scope, parent, opener){
 
 };
 
-//console.log('scheduling default window creation');
-//console.log(setTimeout+"");
-//setTimeout(function(){
-//	log.info("Timeout exec");
-//    var w = new Window(__this__);
-//    log.info('[ %s ]', window.navigator.userAgent);
-//},1);
+// console.log('scheduling default window creation');
+// console.log(setTimeout+"");
+// setTimeout(function(){
+// log.info("Timeout exec");
+// var w = new Window(__this__);
+// log.info('[ %s ]', window.navigator.userAgent);
+// },1);
 //
-}(/*Window*/));
+}(/* Window */));
 
 
-//console.log('starting Envjs.eventLoop');
-//Envjs.eventLoop();
+// console.log('starting Envjs.eventLoop');
+// Envjs.eventLoop();
 
 /**
  * @author john resig & the envjs team
@@ -862,5 +862,5 @@ exports.Window = Window = function(scope, parent, opener){
  * @copyright 2008-2010
  * @license MIT
  */
-//CLOSURE_END
+// CLOSURE_END
 }());

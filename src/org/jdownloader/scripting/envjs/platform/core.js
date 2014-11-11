@@ -5,21 +5,25 @@
  * Copyright 2008-2010 John Resig, under the MIT License
  */
 
-if (!DEBUG_LEVEL) {
-    DEBUG_LEVEL = 'DEBUG';
-}
-Envjs = exports.Envjs = function() {
+
+  var  DEBUG_LEVEL = 'INFO';
+
+
+envjsGlobals.Envjs = function() {
+    
+    print("EnvJS INIT");
     var i, override = function() {
+        print("EnvJS INIT i, override");
         for (i = 0; i < arguments.length; i++) {
             for ( var name in arguments[i]) {
                 if (arguments[i].hasOwnProperty(name)) {
                     var g = arguments[i].__lookupGetter__(name), s = arguments[i].__lookupSetter__(name);
                     if (g || s) {
                         if (g) {
-                            Envjs.__defineGetter__(name, g);
+                            envjsGlobals.Envjs.__defineGetter__(name, g);
                         }
                         if (s) {
-                            Envjs.__defineSetter__(name, s);
+                            envjsGlobals.Envjs.__defineSetter__(name, s);
                         }
                     } else {
                         Envjs[name] = arguments[i][name];
@@ -65,15 +69,15 @@ try {
 }
 
 // eg "Mozilla"
-Envjs.appCodeName = "Envjs";
+envjsGlobals.Envjs.appCodeName = "Envjs";
 
 // eg "Gecko/20070309 Firefox/2.0.0.3"
-Envjs.appName = "Netscape";
+envjsGlobals.Envjs.appName = "Netscape";
 
-Envjs.version = "1.618";//
-Envjs.revision = '';
-
-Envjs.exit = function() {
+envjsGlobals.Envjs.version = "1.618";//
+envjsGlobals.Envjs.revision = '';
+envjsGlobals.Envjs.argv = [];
+envjsGlobals.Envjs.exit = function() {
 };
 
 /*
@@ -84,7 +88,7 @@ Envjs.exit = function() {
 
 // CLOSURE_START
 (function() {
-
+ var Envjs=envjsGlobals.Envjs;
     /**
      * @author john resig
      */
@@ -1259,7 +1263,7 @@ Envjs.exit = function() {
     }(/* Envjs.Platform.Core */));
 
     (function() {
-
+    
         var log = Envjs.logger();
 
         Envjs.once('tick', function() {

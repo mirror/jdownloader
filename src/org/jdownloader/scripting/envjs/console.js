@@ -3,8 +3,7 @@
  * @author envjs team
  * @Console
  */
-
-var Envjs = Envjs || require('envjs/platform/core').Envjs;
+var Envjs=envjsGlobals.Envjs;
 
 /*
  * Envjs console.1.3.pre03 
@@ -15,7 +14,7 @@ var Envjs = Envjs || require('envjs/platform/core').Envjs;
 
 //CLOSURE_START
 (function(){
-
+    
 
 
 

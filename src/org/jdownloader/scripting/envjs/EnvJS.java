@@ -15,6 +15,7 @@ import jd.http.Request;
 import net.sourceforge.htmlunit.corejs.javascript.Context;
 import net.sourceforge.htmlunit.corejs.javascript.EcmaError;
 import net.sourceforge.htmlunit.corejs.javascript.NativeObject;
+import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
 import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
 
 import org.appwork.exceptions.WTFException;
@@ -239,7 +240,7 @@ public class EnvJS {
         if ("console".equals(path)) {
             return IO.readURLToString(EnvJS.class.getResource(path + ".js"));
         }
-        if ("rhino".equals(path)) {
+        if ("init".equals(path)) {
             return IO.readURLToString(EnvJS.class.getResource(path + ".js"));
         }
 
@@ -310,13 +311,24 @@ public class EnvJS {
         // net.sourceforge.htmlunit.corejs.javascript.EcmaError: ReferenceError: "JSON" is not defined. (js#508) exceptions in the log are
         // ok.
         try {
-            evaluateTrustedString(cx, scope, "var EnvJSinstanceID=" + id + ";", "setInstance", 1, null);
+            // evaluateTrustedString(cx, scope, "var EnvJSinstanceID=" + id + ";", "setInstance", 1, null);
             evaluateTrustedString(cx, scope, "var DEBUG_LEVEL='" + debugLevel + "';", "setDebugLevel", 1, null);
 
             // evaluateTrustedString(cx, scope, IO.readURLToString(EnvJS.class.getResource("env.rhino.js")), "oldRhino", 1, null);
+            String initSource = readRequire("envjs/init");
+            initSource = initSource.replace("%EnvJSinstanceID%", id + "");
+            evaluateTrustedString(cx, scope, initSource, "setInstance", 1, null);
+            // evaluateTrustedString(cx, scope, "delete EnvJs;delete After;", "CleanUp", 1, null);
 
-            evaluateTrustedString(cx, scope, readRequire("envjs/rhino"), "setInstance", 1, null);
-
+            // var __context__=__context__;
+            // var Envjs=Envjs;
+            // var javaInstance=javaInstance;
+            // var __this__=__this__;
+            // var __argv__=__argv__;
+            // var After=After;
+            // var log=log;
+            // var DEBUG_LEVEL=DEBUG_LEVEL;
+            // var require=require;
             // evaluateTrustedString(cx, scope,
             // "Envjs.scriptTypes[\"text/javascript\"] = {\"text/javascript\"   :true,   \"text/envjs\"        :true};", "js", 1, null);
         } catch (Throwable e) {
@@ -345,6 +357,7 @@ public class EnvJS {
     }
 
     private LinkedList<String> scriptStack = new LinkedList<String>();
+    private Object             globals;
 
     private Object evaluateTrustedString(Context cx2, Global scope2, String js, String string, int i, Object object) {
         scriptStack.add(string);
@@ -360,6 +373,11 @@ public class EnvJS {
             }
 
         }
+    }
+
+    public void setGlobals(Object o) {
+        this.globals = o;
+
     }
 
     public String getDocument() {
@@ -379,7 +397,10 @@ public class EnvJS {
     }
 
     public void tick() {
-        evalTrusted("  Envjs.tick();  ");
+        // put global variables in to reference. and delete it immediately.
+        ScriptableObject.putProperty(scope, "envjsglobals", globals);
+        evalTrusted("var e=envjsglobals.Envjs;delete envjsglobals;  e.tick();  ");
+
     }
 
     public void setUserAgent(String ua) {

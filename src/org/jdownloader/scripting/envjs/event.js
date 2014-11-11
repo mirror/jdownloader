@@ -20,9 +20,9 @@ var Event,
     
  */
 
-var Envjs = Envjs || require('envjs/platform/core').Envjs,
-	After = After || require('envjs/platform/core').After,
-	Document = Document || require('envjs/dom').Document;
+var Envjs=envjsGlobals.Envjs;
+
+	Document =  require('envjs/dom').Document;
 /*
  * Envjs event.1.3.pre03 
  * Pure JavaScript Browser Environment
