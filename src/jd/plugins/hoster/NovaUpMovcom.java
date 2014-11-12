@@ -292,7 +292,8 @@ public class NovaUpMovcom extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.postPage("http://www.novamov.com/login.php?return=", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(MAINPAGE, "pass") == null) {
+                final String passcookie = br.getCookie(MAINPAGE, "pass");
+                if (passcookie == null || "deleted".equals(passcookie)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
