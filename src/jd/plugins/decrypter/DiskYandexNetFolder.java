@@ -220,6 +220,8 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         }
         /* Fix remaining encoding issues */
         hashID = hashID.replace("+", "%2B");
+        hashID = hashID.replace("%28", "(");
+        hashID = hashID.replace("%29", ")");
         return hashID;
     }
 

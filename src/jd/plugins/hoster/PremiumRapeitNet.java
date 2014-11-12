@@ -105,7 +105,7 @@ public class PremiumRapeitNet extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             logger.info("Unhandled download error on " + NICE_HOST + ": " + br.toString());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            handlePluginBroken(acc, link, "unknownerror_download", 5);
         }
         link.setProperty(NICE_HOST + "directlink", dllink);
         try {

@@ -123,13 +123,19 @@ public class DiskYandexNet extends PluginForHost {
         if (link.getDownloadURL().matches(TYPE_VIDEO)) {
             br.getPage(link.getDownloadURL());
             if (link.getDownloadURL().matches(TYPE_VIDEO_USER)) {
-                /* offline|ofline|empty */
-                if (br.containsHTML("<title>Ролик не найден</title>|<title>Хостинг Видео закрыт</title>|>Здесь пока пусто<")) {
+                /* offline|empty|enything else (e.g. abuse) */
+                if (br.containsHTML("<title>Ролик не найден</title>|>Здесь пока пусто<|class=\"error\\-container\"")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                final String iframe_url = br.getRegex("property=\"og:video:ifrаme\" content=\"(http://video\\.yandex\\.ru/iframe/[^<>\"]*?)\"").getMatch(0);
+                String iframe_url = br.getRegex("property=\"og:video:ifrаme\" content=\"(http://video\\.yandex\\.ru/iframe/[^<>\"]*?)\"").getMatch(0);
+                if (iframe_url == null) {
+                    iframe_url = br.getRegex("class=\"video\\-frame\"><iframe src=\"(//video\\.yandex\\.ru/[^<>\"]*?)\"").getMatch(0);
+                }
                 if (iframe_url == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (!iframe_url.startsWith("http:")) {
+                    iframe_url = "http:" + iframe_url;
                 }
                 link.setUrlDownload(iframe_url);
                 br.getPage(iframe_url);

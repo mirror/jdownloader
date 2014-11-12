@@ -126,6 +126,10 @@ public class YunFileCom extends PluginForHost {
         if (br.containsHTML("<span>(资源未找到|Not found)</span>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        /* Wrong ling */
+        if (br.containsHTML(">Wrong</span>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = null, filesize = null;
         // if (br.getURL().matches("http://page\\d+\\.yunfile.com/fs/[a-z0-9]+/")) ;
         filename = br.getRegex("class=\"title\">Downloading:\\&nbsp;\\&nbsp;([^<>\"]*?)</h2>").getMatch(0);

@@ -50,7 +50,7 @@ public class FlickrCom extends PluginForDecrypt {
     private static final String PHOTOLINK         = "https?://(www\\.)?flickr\\.com/photos/.*?";
     private static final String SETLINK           = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/sets/\\d+";
 
-    private static final String TYPE_SINGLE_PHOTO = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/\\d+/?";
+    private static final String TYPE_SINGLE_PHOTO = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/\\d+.+";
 
     private static final String INVALIDLINKS      = "https?://(www\\.)?flickr\\.com/(photos/(me|upload|tags.*?)|groups/[^<>\"/]+/rules|groups/[^<>\"/]+/discuss.*?)";
 
