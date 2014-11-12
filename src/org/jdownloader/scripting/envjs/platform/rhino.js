@@ -128,7 +128,7 @@ Envjs.revision = "1.7.0.rc2";
 		}
 	};
 	(function() {
-
+var localSleepReference=java.lang.Thread.sleep;
 		var log = Envjs.logger('Envjs.Timer.Rhino');
 		/**
 		 * Rhino provides a very succinct 'sync'
@@ -163,7 +163,7 @@ Envjs.revision = "1.7.0.rc2";
 		 */
 		Envjs.sleep = function(milliseconds) {
 			try {
-				return java.lang.Thread.currentThread().sleep(milliseconds);
+				return localSleepReference(milliseconds);
 			} catch (e) {
 				console.log('Threadless platform, cannot sleep.');
 			}
@@ -189,7 +189,7 @@ Envjs.revision = "1.7.0.rc2";
 
 	}());
 	(function() {
-
+var urlReference=java.net.URL;
 		var log = Envjs.logger('Envjs.XMLHttpRequest.Rhino');
 
 		/**
@@ -285,7 +285,7 @@ Envjs.revision = "1.7.0.rc2";
 		 *            data
 		 */
 		Envjs.connection = function(xhr, responseHandler, data) {
-			var url = java.net.URL(xhr.url), connection, header, outstream, buffer, length, binary = false, name, value, contentEncoding, instream, responseXML, i;
+			var url = urlReference(xhr.url), connection, header, outstream, buffer, length, binary = false, name, value, contentEncoding, instream, responseXML, i;
 
 			if (/^file\:/.test(url)) {
 				Envjs.localXHR(url, xhr, connection, data);
@@ -425,14 +425,14 @@ Envjs.revision = "1.7.0.rc2";
 		// Since we're running in rhino I guess we can safely assume
 		// java is 'enabled'. I'm sure this requires more thought
 		// than I've given it here
-		Envjs.javaEnabled = true;
-
-		Envjs.homedir = java.lang.System.getProperty("user.home");
-		Envjs.tmpdir = java.lang.System.getProperty("java.io.tmpdir");
-		Envjs.os_name = java.lang.System.getProperty("os.name");
-		Envjs.os_arch = java.lang.System.getProperty("os.arch");
-		Envjs.os_version = java.lang.System.getProperty("os.version");
-		Envjs.lang = java.lang.System.getProperty("user.lang");
+//		Envjs.javaEnabled = true;
+//
+//		Envjs.homedir = java.lang.System.getProperty("user.home");
+//		Envjs.tmpdir = java.lang.System.getProperty("java.io.tmpdir");
+//		Envjs.os_name = java.lang.System.getProperty("os.name");
+//		Envjs.os_arch = java.lang.System.getProperty("os.arch");
+//		Envjs.os_version = java.lang.System.getProperty("os.version");
+//		Envjs.lang = java.lang.System.getProperty("user.lang");
 
 		Envjs.gc = function() {
 			gc();

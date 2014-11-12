@@ -3,16 +3,19 @@ package org.jdownloader.scripting;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.sourceforge.htmlunit.corejs.javascript.Callable;
 import net.sourceforge.htmlunit.corejs.javascript.ClassShutter;
 import net.sourceforge.htmlunit.corejs.javascript.Context;
 import net.sourceforge.htmlunit.corejs.javascript.ContextFactory;
 import net.sourceforge.htmlunit.corejs.javascript.EcmaError;
+import net.sourceforge.htmlunit.corejs.javascript.NativeJavaClass;
 import net.sourceforge.htmlunit.corejs.javascript.NativeJavaObject;
 import net.sourceforge.htmlunit.corejs.javascript.Scriptable;
 import net.sourceforge.htmlunit.corejs.javascript.WrapFactory;
 import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
 
 import org.appwork.utils.logging.Log;
+import org.mozilla.javascript.ScriptRuntime;
 
 /**
  * from http://codeutopia.net/blog/2009/01/02/sandboxing-rhino-in-java/
@@ -103,13 +106,20 @@ public class JSHtmlUnitPermissionRestricter {
 
     static public class SandboxContextFactory extends ContextFactory {
         @Override
+        protected Object doTopCall(Callable callable, Context cx, Scriptable scope, Scriptable thisObj, Object[] args) {
+            return super.doTopCall(callable, cx, scope, thisObj, args);
+        }
+
+        @Override
         protected Context makeContext() {
             Context cx = super.makeContext();
             cx.setWrapFactory(new SandboxWrapFactory());
             cx.setClassShutter(new ClassShutter() {
                 public boolean visibleToScripts(String className) {
                     Thread cur = Thread.currentThread();
+
                     if (TRUSTED_THREAD.containsKey(cur)) {
+
                         LOADED.add(className);
                         Log.L.severe("Trusted Thread Loads: " + className);
                         return true;
@@ -120,11 +130,16 @@ public class JSHtmlUnitPermissionRestricter {
                         return true;
 
                     } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.EcmaError")) {
+                        if (true) {
+                            ScriptRuntime.constructError("Loaded Class", className).printStackTrace();
+                        }
                         Log.L.severe("Javascript error occured");
                         LOADED.add(className);
                         return true;
                     } else {
-
+                        if (true) {
+                            ScriptRuntime.constructError("Loaded Class", className).printStackTrace();
+                        }
                         throw new RuntimeException("Security Violation " + className);
                     }
 
@@ -136,6 +151,41 @@ public class JSHtmlUnitPermissionRestricter {
     }
 
     public static class SandboxWrapFactory extends WrapFactory {
+        @Override
+        public Scriptable wrapJavaClass(Context cx, Scriptable scope, Class javaClass) {
+            System.out.println("Wrap Java Class: " + javaClass);
+            Scriptable ret = new NativeJavaClass(scope, javaClass) {
+                @Override
+                public Object unwrap() {
+                    return super.unwrap();
+                }
+
+                @Override
+                public Object get(String name, Scriptable start) {
+
+                    Object ret = super.get(name, start);
+                    System.out.println("Access  Static Member " + this + "." + name + " = " + "(" + ret.getClass().getSimpleName() + ") " + ret);
+                    return ret;
+                }
+
+                @Override
+                public Object get(int index, Scriptable start) {
+                    return super.get(index, start);
+                }
+            };
+            return ret;
+        }
+
+        @Override
+        public Scriptable wrapNewObject(Context cx, Scriptable scope, Object obj) {
+            return super.wrapNewObject(cx, scope, obj);
+        }
+
+        @Override
+        public Object wrap(Context cx, Scriptable scope, Object obj, Class<?> staticType) {
+            Object ret = super.wrap(cx, scope, obj, staticType);
+            return ret;
+        }
 
         @SuppressWarnings("rawtypes")
         @Override
@@ -143,6 +193,11 @@ public class JSHtmlUnitPermissionRestricter {
             if (javaObject instanceof EcmaError) {
                 // Log.exception((EcmaError) javaObject);
             }
+            String str = (javaObject + "").replaceAll("[\r\n]+", " ");
+            if (str.length() > 100) {
+                str = str.substring(0, 100) + "...";
+            }
+            System.out.println("Wrap Java Object  Class:" + staticType + " Java Instance: " + str);
             return new SandboxNativeJavaObject(scope, javaObject, staticType);
         }
 
@@ -165,7 +220,9 @@ public class JSHtmlUnitPermissionRestricter {
                 return NOT_FOUND;
             }
 
-            return super.get(name, start);
+            Object ret = super.get(name, start);
+            System.out.println("Access  " + this + "." + name + " = " + "(" + ret.getClass().getSimpleName() + ") " + ret);
+            return ret;
 
         }
     }
