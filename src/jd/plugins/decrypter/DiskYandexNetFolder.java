@@ -76,12 +76,13 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 parameter = new Regex(newUrl, primaryURLs).getMatch(-1);
             } else {
                 /* URL has not changed - try to manually change it to our basic url format */
-                final String hash = br.getRegex("\"hash\":\"([^<>\"]*?)\"").getMatch(0);
-                if (hash == null) {
+                hashID = br.getRegex("\"hash\":\"([^<>\"]*?)\"").getMatch(0);
+                if (hashID == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                parameter = "https://disk.yandex.com/public/?hash=" + hash;
+                hashID = fixHash(hashID);
+                parameter = "https://disk.yandex.com/public/?hash=" + hashID;
             }
         }
         if (parameter.matches(primaryURLs)) {
@@ -91,11 +92,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            /* First fully decode it */
-            hashID = Encoding.htmlDecode(hashID);
-            if (hashID.contains("+") || hashID.contains("/") || hashID.contains("/")) {
-                hashID = Encoding.urlEncode(hashID);
-            }
+            hashID = fixHash(hashID);
             parameter = protocol + "://disk.yandex.com/public/?hash=" + hashID;
             br.getPage(parameter);
         }
@@ -213,6 +210,17 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
+    }
+
+    private String fixHash(final String input) {
+        /* First fully decode it */
+        String hashID = Encoding.htmlDecode(input);
+        if (hashID.contains("+") || hashID.contains("/") || hashID.contains("/")) {
+            hashID = Encoding.urlEncode(hashID);
+        }
+        /* Fix remaining encoding issues */
+        hashID = hashID.replace("+", "%2B");
+        return hashID;
     }
 
     private String fixFilesize(String filesize) {
