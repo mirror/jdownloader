@@ -157,9 +157,10 @@ public class EnvJS {
         return js;
     }
 
-    public String loadExternalScript(String type, String src, String url, Object window) throws IOException {
+    public String loadExternalScript(String type, String src, String url, Object window) {
 
-        throw new IOException("Script Blocked");
+        String ret = "console.log(\"Script Blocked: " + url + "\");";
+        return ret;
     }
 
     private HashMap<Object, Object> toMap(NativeObject obj, HashMap<Object, HashMap<Object, Object>> refMap) {
@@ -333,6 +334,8 @@ public class EnvJS {
             });
 
             // Cleanup
+
+            eval("delete Packages;");
             for (String s : list) {
                 while (true) {
                     System.out.println("Delete " + s);
@@ -373,12 +376,12 @@ public class EnvJS {
     }
 
     public Object evalTrusted(String js) {
-        return evaluateTrustedString(cx, scope, js, "eval", 1, null);
+        return evaluateTrustedString(cx, scope, js, "evaltrusted:" + js, 1, null);
     }
 
     public Object eval(String js) {
 
-        return cx.evaluateString(scope, js, "js", 1, null);
+        return cx.evaluateString(scope, js, "eval:" + js, 1, null);
         //
     }
 
@@ -413,7 +416,7 @@ public class EnvJS {
     }
 
     public String getDocument() {
-        Object result = cx.evaluateString(scope, "var f=function(){return document.innerHTML;}; f();", "js", 1, null);
+        Object result = cx.evaluateString(scope, "var f=function(){return document.innerHTML;}; f();", "getDocument", 1, null);
         if (result != null) {
             return result + "";
         }
@@ -424,14 +427,14 @@ public class EnvJS {
         return br;
     }
 
-    public void require(String string) throws IOException {
-        JSHtmlUnitPermissionRestricter.evaluateTrustedString(cx, scope, readRequire(string), "setInstance", 1, null);
+    public void require(Object string) throws IOException {
+        JSHtmlUnitPermissionRestricter.evaluateTrustedString(cx, scope, readRequire(string + ""), "require_" + string, 1, null);
     }
 
     public void tick() {
         // put global variables in to reference. and delete it immediately.
         ScriptableObject.putProperty(scope, "envjsglobals", globals);
-        evalTrusted("var e=envjsglobals.Envjs;delete envjsglobals;  e.tick();  ");
+        eval("var e=envjsglobals.Envjs;delete envjsglobals;  e.tick();  ");
 
     }
 

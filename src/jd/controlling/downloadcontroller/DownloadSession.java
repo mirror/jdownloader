@@ -243,6 +243,7 @@ public class DownloadSession extends Property {
                                                                                            return ret;
                                                                                        };
                                                                                    };
+    private long                                                createTime;
     private static volatile WeakReference<FileBytesCache>       downloadWriteCache = null;
 
     public static synchronized FileBytesCache getDownloadWriteCache() {
@@ -327,6 +328,7 @@ public class DownloadSession extends Property {
     }
 
     protected DownloadSession(DownloadSession previousSession) {
+        createTime = System.currentTimeMillis();
         if (previousSession == null) {
             proxyInfoHistory = new ProxyInfoHistory();
         } else {
@@ -342,6 +344,10 @@ public class DownloadSession extends Property {
             setUseAccountsEnabled(previousSession.isUseAccountsEnabled());
             setMirrorManagementEnabled(previousSession.isMirrorManagementEnabled());
         }
+    }
+
+    public long getCreateTime() {
+        return createTime;
     }
 
     public DownloadLinkCandidateHistory getHistory(DownloadLink downloadLink) {

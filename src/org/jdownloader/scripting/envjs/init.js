@@ -11,7 +11,9 @@
         var cached = {};
         var envjsGlobals={};
 
-       var javaInstance=Packages.org.jdownloader.scripting.envjs.EnvJS.get(%EnvJSinstanceID%);
+
+       var  getCurrentContext=net.sourceforge.htmlunit.corejs.javascript.Context.getCurrentContext;
+       var javaInstance=Packages.org.jdownloader.scripting.envjs.EnvJS.get(%EnvJSinstanceID%);   
        javaInstance.setGlobals(envjsGlobals);
   
         var require= function(id) {
@@ -21,8 +23,7 @@
       
             if (!cached.hasOwnProperty(id)) {
                 print('require :'+ id);
-                var source = ""+javaInstance.readRequire(id);
-          
+                var source = ""+javaInstance.readRequire(id);      
                 source = source.replace(/^\#\!.*/, '');
                 source = (
                     "(function (envjsGlobals,require, exports, module,javaInstance,__this__) { " + source + "\n});");
@@ -37,7 +38,7 @@
                 
                 try {
      
-                    var ctx = net.sourceforge.htmlunit.corejs.javascript.Context.getCurrentContext();
+                    var ctx = getCurrentContext();
                     var func = ctx.evaluateString({}, source, id, 1, null);
                  
                     func(envjsGlobals,require, cached[id].exports, cached[id].module,javaInstance,__this__);
