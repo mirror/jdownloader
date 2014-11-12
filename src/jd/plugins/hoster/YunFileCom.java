@@ -43,7 +43,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www|(page\\d)\\.)?(yunfile|filemarkets|yfdisk)\\.com/(file/(down/)?[a-z0-9]+/[a-z0-9]+|fs/[a-z0-9]+/)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www|(p(?:age)?\\d)\\.)?(yunfile|filemarkets|yfdisk)\\.com/(file/(down/)?[a-z0-9]+/[a-z0-9]+|fs/[a-z0-9]+/)" }, flags = { 2 })
 public class YunFileCom extends PluginForHost {
 
     private static final String            MAINPAGE = "http://yunfile.com/";
