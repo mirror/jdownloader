@@ -25,12 +25,12 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 25143 $", interfaceVersion = 2, names = { "audiocastle.net" }, urls = { "https?://(www\\.)?audiocastle\\.net/(tracks|albums|mixtapes|immortals|videos)/view/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 25143 $", interfaceVersion = 2, names = { "audiocastle.net" }, urls = { "https?://(www\\.)?audiocastle\\.(?:net|co)/(tracks|albums|mixtapes|immortals|videos)/view/\\d+" }, flags = { 0 })
 public class AudCtlNt extends PluginForDecrypt {
 
     /**
      * @author raztoki
-     * 
+     *
      */
     public AudCtlNt(PluginWrapper wrapper) {
         super(wrapper);
@@ -38,7 +38,8 @@ public class AudCtlNt extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace(".net/", ".co/");
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         String dl = null;
         if (dl == null && parameter.contains("/videos/")) {
