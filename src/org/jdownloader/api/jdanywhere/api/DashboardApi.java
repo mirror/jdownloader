@@ -49,15 +49,19 @@ public class DashboardApi implements IDashboardApi {
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                _speedList.addLast(DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeed());
-                _speedList.removeFirst();
+                final int speed = DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeed();
+                synchronized (_speedList) {
+                    _speedList.addLast(speed);
+                    _speedList.removeFirst();
+                }
             }
         }, 3 * 1000, 3 * 1000);
     }
 
     public List<Integer> speedList() {
-        return new ArrayList<Integer>(_speedList);
-
+        synchronized (_speedList) {
+            return new ArrayList<Integer>(_speedList);
+        }
     }
 
     public String apiVersion() {
@@ -66,7 +70,7 @@ public class DashboardApi implements IDashboardApi {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.jdownloader.extensions.jdanywhere.api.IDashboardApi#start()
      */
     @Override
@@ -77,7 +81,7 @@ public class DashboardApi implements IDashboardApi {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.jdownloader.extensions.jdanywhere.api.IDashboardApi#stop()
      */
     @Override
@@ -88,7 +92,7 @@ public class DashboardApi implements IDashboardApi {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.jdownloader.extensions.jdanywhere.api.IDashboardApi#pause(java.lang .Boolean)
      */
     @Override
@@ -102,7 +106,7 @@ public class DashboardApi implements IDashboardApi {
     // running = 0
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.jdownloader.extensions.jdanywhere.api.IDashboardApi#getState()
      */
     @Override
@@ -180,7 +184,7 @@ public class DashboardApi implements IDashboardApi {
     // used in iPhone-App
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.jdownloader.extensions.jdanywhere.api.IDashboardApi#speed()
      */
     @Override
@@ -192,7 +196,7 @@ public class DashboardApi implements IDashboardApi {
     // used in iPhone-App
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.jdownloader.extensions.jdanywhere.api.IDashboardApi#limit()
      */
     @Override
@@ -204,7 +208,7 @@ public class DashboardApi implements IDashboardApi {
     // used in iPhone-App
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.jdownloader.extensions.jdanywhere.api.IDashboardApi#traffic()
      */
     @Override
@@ -214,7 +218,7 @@ public class DashboardApi implements IDashboardApi {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.jdownloader.extensions.jdanywhere.api.IDashboardApi#setLimitspeed (int)
      */
     @Override
@@ -225,7 +229,7 @@ public class DashboardApi implements IDashboardApi {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.jdownloader.extensions.jdanywhere.api.IDashboardApi#activateLimitspeed (boolean)
      */
     @Override
@@ -239,7 +243,7 @@ public class DashboardApi implements IDashboardApi {
     // used in iPhone-App
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.jdownloader.extensions.jdanywhere.api.IDashboardApi#speedMeter(org .appwork.remoteapi.RemoteAPIRequest,
      * org.appwork.remoteapi.RemoteAPIResponse)
      */
@@ -277,7 +281,7 @@ public class DashboardApi implements IDashboardApi {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.jdownloader.extensions.jdanywhere.api.IDashboardApi#runningLinks()
      */
     @Override
