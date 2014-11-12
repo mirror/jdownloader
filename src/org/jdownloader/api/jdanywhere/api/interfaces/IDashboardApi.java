@@ -15,6 +15,8 @@ import org.jdownloader.api.jdanywhere.api.storable.RunningObjectStorable;
 @ApiSessionRequired
 public interface IDashboardApi extends RemoteAPIInterface {
 
+    public abstract List<Integer> speedList();
+
     public abstract boolean start();
 
     public abstract boolean stop();
