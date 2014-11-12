@@ -160,7 +160,11 @@ public class ScribdCom extends PluginForDecrypt {
                 logger.info("Decrypted " + decryptedLinksNum + " / " + documentsNum);
                 page++;
             } while (decryptedLinksNum < documentsNum);
-            fpname = "scribd.com uploads of user " + new Regex(parameter, "([A-Za-z0-9\\-_]+)$").getMatch(0);
+            fpname = "scribd.com uploads of user " + new Regex(parameter, "([A-Za-z0-9\\-_]+)/documents$").getMatch(0);
+        }
+        if (decryptedLinks.size() == 0) {
+            decryptedLinks.add(getOfflineLink(parameter));
+            return decryptedLinks;
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpname);
