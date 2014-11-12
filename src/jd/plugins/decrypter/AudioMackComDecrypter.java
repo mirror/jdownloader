@@ -82,6 +82,14 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(fina);
             }
         }
+        fpName = Encoding.htmlDecode(fpName.trim());
+        final String ziplink = br.getRegex("\"(https?://music\\.audiomack\\.com/albums/[^<>\"]+\\.zip?[^<>\"]*?)\"").getMatch(0);
+        if (ziplink != null) {
+            final DownloadLink fina = createDownloadlink("directhttp://" + ziplink);
+            fina.setFinalFileName(fpName + ".zip");
+            fina.setAvailable(true);
+            decryptedLinks.add(fina);
+        }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
         fp.addLinks(decryptedLinks);
