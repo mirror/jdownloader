@@ -126,7 +126,7 @@ public class YunFileCom extends PluginForHost {
         if (br.containsHTML("<span>(资源未找到|Not found)</span>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /* Wrong ling */
+        /* Wrong link */
         if (br.containsHTML(">Wrong</span>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
