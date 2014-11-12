@@ -38,7 +38,7 @@ import jd.utils.locale.JDL;
  * IMPORTANT: Never grab IDs bigger than 7 characters because these are Thumbnails - see API description: http://api.imgur.com/models/image
  * (scroll down to "Image thumbnails"
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgur.com" }, urls = { "https?://imgurdecrypted\\.com/download/[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgur.com" }, urls = { "https?://imgurdecrypted\\.com/download/([A-Za-z0-9]{7}|[A-Za-z0-9]{5})" }, flags = { 2 })
 public class ImgUrCom extends PluginForHost {
 
     public ImgUrCom(PluginWrapper wrapper) {
@@ -198,12 +198,6 @@ public class ImgUrCom extends PluginForHost {
             finalfilename = imgUID + "." + filetype;
         }
         dl.setDownloadSize(filesize);
-        try {
-            dl.setVerifiedFileSize(filesize);
-        } catch (final Throwable e) {
-            /* Not available in old 0.9.581 Stable */
-            dl.setProperty("VERIFIEDFILESIZE", filesize);
-        }
         dl.setProperty("decryptedfilesize", filesize);
         dl.setProperty("filetype", filetype);
         dl.setProperty("decryptedfinalfilename", finalfilename);

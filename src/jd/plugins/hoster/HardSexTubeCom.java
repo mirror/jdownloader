@@ -52,6 +52,10 @@ public class HardSexTubeCom extends PluginForHost {
         link.setUrlDownload("http://www.hardsextube.com/video/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + "/");
     }
 
+    /*
+     * TODO: If we cannot avoid the crypto stuff anymore at some point, simply add account support, then we can use:
+     * http://www.hardsextube.com/video/XXXXXX/download
+     */
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
@@ -78,8 +82,9 @@ public class HardSexTubeCom extends PluginForHost {
             }
             dllink = Encoding.htmlDecode(name + path) + "?mp4mod=1";
         } else {
-            // Via the embedded video stuff we can get the final link without
-            // having to decrypt anything
+            /*
+             * Via the embedded video stuff we can get the final link without having to decrypt anything
+             */
             br.setFollowRedirects(false);
             final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)/$").getMatch(0);
             br.getPage("http://www.hardsextube.com/embed/" + fid + "/");
@@ -87,14 +92,17 @@ public class HardSexTubeCom extends PluginForHost {
             if (redirect == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else if (redirect.contains("/categories")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                /* Second way to find downloadlinks */
+                br.getPage("http://www.hardsextube.com/video/" + fid + "/embedframe");
+                dllink = br.getRegex("\"(http://[a-z0-9\\.]+\\.hardsextube\\.com/flvcontent/[^<>\"]*?)\"").getMatch(0);
+            } else {
+                final String name = new Regex(redirect, "\\&flvserver=(http://[^<>\"]*?)\\&").getMatch(0);
+                final String path = new Regex(redirect, "\\&flv=(/embed[^<>\"]*?)\\&start=").getMatch(0);
+                if (name == null || path == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dllink = Encoding.htmlDecode(name + path);
             }
-            final String name = new Regex(redirect, "\\&flvserver=(http://[^<>\"]*?)\\&").getMatch(0);
-            final String path = new Regex(redirect, "\\&flv=(/embed[^<>\"]*?)\\&start=").getMatch(0);
-            if (name == null || path == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dllink = Encoding.htmlDecode(name + path);
             // br.getPage("http://vidii.hardsextube.com/video/" + fid + "/confige.xml");
             // final String cdnurl = br.getRegex("\"(/cdnurl\\.php[^<>\"]*?)\"").getMatch(0);
             // br.getPage("http://www.hardsextube.com" + cdnurl);

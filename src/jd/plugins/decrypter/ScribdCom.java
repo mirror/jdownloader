@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser.BrowserException;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -47,10 +48,7 @@ public class ScribdCom extends PluginForDecrypt {
             br.getPage(parameter);
             if (br.getURL().equals("http://www.scribd.com/")) {
                 logger.info("Link offline: " + parameter);
-                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-                offline.setAvailable(false);
-                offline.setProperty("offline", true);
-                decryptedLinks.add(offline);
+                decryptedLinks.add(getOfflineLink(parameter));
                 return decryptedLinks;
             }
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -100,13 +98,18 @@ public class ScribdCom extends PluginForDecrypt {
             if (!parameter.endsWith("/documents")) {
                 parameter += "/documents";
             }
-            br.getPage(parameter);
+            try {
+                br.getPage(parameter);
+            } catch (final BrowserException e) {
+                if (br.getHttpConnection().getResponseCode() == 410) {
+                    decryptedLinks.add(getOfflineLink(parameter));
+                    return decryptedLinks;
+                }
+                throw e;
+            }
             final String id = br.getRegex("\"id\":(\\d+)").getMatch(0);
             if (id == null) {
-                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-                offline.setAvailable(false);
-                offline.setProperty("offline", true);
-                decryptedLinks.add(offline);
+                decryptedLinks.add(getOfflineLink(parameter));
                 return decryptedLinks;
             }
 
@@ -163,6 +166,14 @@ public class ScribdCom extends PluginForDecrypt {
         fp.setName(fpname);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
+    }
+
+    private DownloadLink getOfflineLink(final String parameter) {
+        final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+        offline.setFinalFileName(new Regex(parameter, "scribd\\.com/(.+)").getMatch(0));
+        offline.setAvailable(false);
+        offline.setProperty("offline", true);
+        return offline;
     }
 
     private static AtomicBoolean yt_loaded = new AtomicBoolean(false);

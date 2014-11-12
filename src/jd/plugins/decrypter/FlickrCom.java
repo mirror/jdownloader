@@ -44,15 +44,17 @@ public class FlickrCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String MAINPAGE     = "http://flickr.com/";
-    private static final String FAVORITELINK = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/favorites";
-    private static final String GROUPSLINK   = "https?://(www\\.)?flickr\\.com/groups/[^<>\"/]+([^<>\"]+)?";
-    private static final String PHOTOLINK    = "https?://(www\\.)?flickr\\.com/photos/.*?";
-    private static final String SETLINK      = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/sets/\\d+";
+    private static final String MAINPAGE          = "http://flickr.com/";
+    private static final String FAVORITELINK      = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/favorites";
+    private static final String GROUPSLINK        = "https?://(www\\.)?flickr\\.com/groups/[^<>\"/]+([^<>\"]+)?";
+    private static final String PHOTOLINK         = "https?://(www\\.)?flickr\\.com/photos/.*?";
+    private static final String SETLINK           = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/sets/\\d+";
 
-    private static final String INVALIDLINKS = "https?://(www\\.)?flickr\\.com/(photos/(me|upload|tags.*?)|groups/[^<>\"/]+/rules|groups/[^<>\"/]+/discuss.*?)";
+    private static final String TYPE_SINGLE_PHOTO = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/\\d+/?";
 
-    private static final String api_key      = "44044129d5965db8c39819e54274917b";
+    private static final String INVALIDLINKS      = "https?://(www\\.)?flickr\\.com/(photos/(me|upload|tags.*?)|groups/[^<>\"/]+/rules|groups/[^<>\"/]+/discuss.*?)";
+
+    private static final String api_key           = "44044129d5965db8c39819e54274917b";
 
     private String getFilename() {
         String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
@@ -100,7 +102,7 @@ public class FlickrCom extends PluginForDecrypt {
 
         int lastPage = 1;
         /* Check if link is for hosterplugin */
-        if (parameter.matches("https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/\\d+")) {
+        if (parameter.matches(TYPE_SINGLE_PHOTO)) {
             final DownloadLink dl = createDownloadlink(parameter.replace("flickr.com/", "flickrdecrypted.com/").replace("https://", "http://"));
             try {
                 dl.setContentUrl(parameter);

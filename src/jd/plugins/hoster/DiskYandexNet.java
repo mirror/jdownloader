@@ -64,40 +64,43 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     /* Settings values */
-    private final String         MOVE_FILES_TO_ACCOUNT              = "MOVE_FILES_TO_ACCOUNT";
-    private final String         DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD = "EMPTY_TRASH_AFTER_DOWNLOAD";
-    private final String         DOWNLOAD_ZIP                       = "DOWNLOAD_ZIP_2";
+    private final String          MOVE_FILES_TO_ACCOUNT              = "MOVE_FILES_TO_ACCOUNT";
+    private final String          DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD = "EMPTY_TRASH_AFTER_DOWNLOAD";
+    private final String          DOWNLOAD_ZIP                       = "DOWNLOAD_ZIP_2";
 
     /* Some constants which they used in browser */
-    private final String         CLIENT_ID                          = "883aacd8d0b882b2e379506a55fb6b0f";
-    private final String         VERSION                            = "2.0.102";
-    private static final String  STANDARD_FREE_SPEED                = "64 kbit/s";
+    private final String          CLIENT_ID                          = "883aacd8d0b882b2e379506a55fb6b0f";
+    private final String          VERSION                            = "2.0.102";
+    private static final String   STANDARD_FREE_SPEED                = "64 kbit/s";
+
+    /* Different languages == different 'downloads' directory names */
+    private static final String[] downloaddirs                       = { "%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%BA%D0%B8", "Downloads" };
 
     /* Connection limits */
-    private final boolean        FREE_RESUME                        = false;
-    private final int            FREE_MAXCHUNKS                     = 1;
-    private static final int     FREE_MAXDOWNLOADS                  = 20;
-    private final boolean        ACCOUNT_FREE_RESUME                = true;
-    private final int            ACCOUNT_FREE_MAXCHUNKS             = 0;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS          = 20;
+    private final boolean         FREE_RESUME                        = false;
+    private final int             FREE_MAXCHUNKS                     = 1;
+    private static final int      FREE_MAXDOWNLOADS                  = 20;
+    private final boolean         ACCOUNT_FREE_RESUME                = true;
+    private final int             ACCOUNT_FREE_MAXCHUNKS             = 0;
+    private static final int      ACCOUNT_FREE_MAXDOWNLOADS          = 20;
 
     /* Domain & other login stuff */
-    private final String         MAIN_DOMAIN                        = "https://yandex.com";
-    private final String[]       domains                            = new String[] { "https://yandex.ru", "https://yandex.com", "https://disk.yandex.ru/", "https://disk.yandex.com/", "https://disk.yandex.net/" };
-    private static Object        LOCK                               = new Object();
+    private final String          MAIN_DOMAIN                        = "https://yandex.com";
+    private final String[]        domains                            = new String[] { "https://yandex.ru", "https://yandex.com", "https://disk.yandex.ru/", "https://disk.yandex.com/", "https://disk.yandex.net/" };
+    private static Object         LOCK                               = new Object();
 
     /* Other constants */
     /* Important constant which seems to be unique for every account. It's needed for most of the requests when logged in. */
-    private String               ACCOUNT_SK                         = null;
-    private static final String  TYPE_VIDEO                         = "http://video\\.yandex\\.ru/(iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+|users/[A-Za-z0-9]+/view/\\d+)";
-    private static final String  TYPE_VIDEO_USER                    = "http://video\\.yandex\\.ru/users/[A-Za-z0-9]+/view/\\d+";
-    private static final String  TYPE_DISK                          = "http://yandexdecrypted\\.net/\\d+";
+    private String                ACCOUNT_SK                         = null;
+    private static final String   TYPE_VIDEO                         = "http://video\\.yandex\\.ru/(iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+|users/[A-Za-z0-9]+/view/\\d+)";
+    private static final String   TYPE_VIDEO_USER                    = "http://video\\.yandex\\.ru/users/[A-Za-z0-9]+/view/\\d+";
+    private static final String   TYPE_DISK                          = "http://yandexdecrypted\\.net/\\d+";
 
-    private static AtomicInteger totalMaxSimultanFreeAccDownload    = new AtomicInteger(ACCOUNT_FREE_MAXDOWNLOADS);
+    private static AtomicInteger  totalMaxSimultanFreeAccDownload    = new AtomicInteger(ACCOUNT_FREE_MAXDOWNLOADS);
     /* don't touch the following! */
-    private static AtomicInteger maxFreeAcc                         = new AtomicInteger(1);
+    private static AtomicInteger  maxFreeAcc                         = new AtomicInteger(1);
 
-    private Account              currAcc                            = null;
+    private Account               currAcc                            = null;
 
     /* Make sure we always use our main domain */
     private String getMainLink(final DownloadLink dl) {
@@ -120,7 +123,8 @@ public class DiskYandexNet extends PluginForHost {
         if (link.getDownloadURL().matches(TYPE_VIDEO)) {
             br.getPage(link.getDownloadURL());
             if (link.getDownloadURL().matches(TYPE_VIDEO_USER)) {
-                if (br.containsHTML("<title>Ролик не найден</title>")) {
+                /* offline|ofline|empty */
+                if (br.containsHTML("<title>Ролик не найден</title>|<title>Хостинг Видео закрыт</title>|>Здесь пока пусто<")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 final String iframe_url = br.getRegex("property=\"og:video:ifrаme\" content=\"(http://video\\.yandex\\.ru/iframe/[^<>\"]*?)\"").getMatch(0);
@@ -133,11 +137,12 @@ public class DiskYandexNet extends PluginForHost {
             if (br.containsHTML("<title>Яндекс\\.Видео</title>")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = br.getRegex("<title>([^<>\"]*?) — Яндекс\\.Видео</title>").getMatch(0);
+            filename = br.getRegex("<title>([^<>]*?) — Яндекс\\.Видео</title>").getMatch(0);
             if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             filename = Encoding.htmlDecode(filename.trim()) + ".mp4";
+            filename = encodeUnicode(filename);
         } else {
             if (link.getBooleanProperty("offline", false)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -186,8 +191,16 @@ public class DiskYandexNet extends PluginForHost {
         String dllink;
         if (downloadLink.getDownloadURL().matches(TYPE_VIDEO)) {
             final String linkpart = new Regex(downloadLink.getDownloadURL(), "/iframe/(.+)").getMatch(0);
+            final String width = br.getRegex("width\\&quot;:\\&quot;(\\d+)\\&quot;").getMatch(0);
+            final String height = br.getRegex("width\\&quot;:\\&quot;(\\d+)\\&quot;").getMatch(0);
             String file = br.getRegex("\\&quot;file\\&quot;:\\&quot;([a-z0-9]+)\\&quot;").getMatch(0);
             if (file == null) {
+                file = br.getRegex("name=\"twitter:image\" content=\"https?://static\\.video\\.yandex.ru/get/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_\\.]+/([A-Za-z0-9]+)\\.jpg\"").getMatch(0);
+            }
+            if (file == null && (width != null && height != null)) {
+                file = "m" + width + "x" + height + ".flv";
+                downloadLink.setFinalFileName(downloadLink.getName().replace(".mp4", ".flv"));
+            } else if (file == null) {
                 file = "0.flv";
                 downloadLink.setFinalFileName(downloadLink.getName().replace(".mp4", ".flv"));
             } else {
@@ -438,32 +451,51 @@ public class DiskYandexNet extends PluginForHost {
     private String getLinkFromFileInAccount(final DownloadLink dl, final Browser br2) {
         final String urlencodedfname = Encoding.urlTotalEncode(dl.getName());
         String dllink = null;
-        try {
-            br.setFollowRedirects(false);
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.getHeaders().put("Referer", "https://disk.yandex.com/client/disk/Downloads");
-            postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fdisk%2FDownloads%2F" + urlencodedfname + "&idClient=" + this.CLIENT_ID + "&version=" + this.VERSION + "&sk=" + this.ACCOUNT_SK);
-            dllink = br.getRedirectLocation();
-            if (dllink == null) {
-                dllink = br.getRegex("\"file\":\"(http[^<>\"]*?)\"").getMatch(0);
+        for (final String downloaddir : downloaddirs) {
+            try {
+                br.setFollowRedirects(false);
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.getHeaders().put("Referer", "https://disk.yandex.com/client/disk/Downloads");
+                postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fdisk%2F" + downloaddir + "%2F" + urlencodedfname + "&idClient=" + this.CLIENT_ID + "&version=" + this.VERSION + "&sk=" + this.ACCOUNT_SK);
+                /* 28 = file not found, 70 = folder not found */
+                if (br.containsHTML("\"code\":28") || br.containsHTML("\"code\":70")) {
+                    logger.info("getLinkFromFileInAccount: Moved file was not found in directory: " + downloaddir);
+                    continue;
+                }
+                dllink = br.getRedirectLocation();
+                if (dllink == null) {
+                    dllink = br.getRegex("\"file\":\"(http[^<>\"]*?)\"").getMatch(0);
+                }
+                br.setFollowRedirects(true);
+                /* Fix links - cookies sit on the other domain */
+                if (dllink != null) {
+                    dllink = dllink.replace("disk.yandex.ru/", "disk.yandex.com/");
+                    dllink = dllink.replace("\\", "");
+                }
+                break;
+            } catch (final Throwable e) {
+                logger.warning("Failed to create dllink of link in account - Exception!");
+                break;
             }
-            br.setFollowRedirects(true);
-            /* Fix links - cookies sit on the other domain */
-            if (dllink != null) {
-                dllink = dllink.replace("disk.yandex.ru/", "disk.yandex.com/");
-                dllink = dllink.replace("\\", "");
-            }
-        } catch (final Throwable e) {
         }
         return dllink;
     }
 
     private void moveFileToTrash(final DownloadLink dl) {
-        try {
-            postPage("https://disk.yandex.com/models/?_m=do-resource-delete", "_model.0=do-resource-delete&id.0=%2Fdisk%2FDownloads%2F" + Encoding.urlEncode(dl.getName()) + "&idClient=" + CLIENT_ID + "&sk=" + this.ACCOUNT_SK + "&version=" + VERSION);
-            logger.info("Successfully moved file to trash");
-        } catch (final Throwable e) {
-            logger.warning("Failed to move file to trash");
+        for (final String downloaddir : downloaddirs) {
+            try {
+                postPage("https://disk.yandex.com/models/?_m=do-resource-delete", "_model.0=do-resource-delete&id.0=%2Fdisk%2F" + downloaddir + "%2F" + Encoding.urlEncode(dl.getName()) + "&idClient=" + CLIENT_ID + "&sk=" + this.ACCOUNT_SK + "&version=" + VERSION);
+                /* 28 = file not found, 70 = folder not found */
+                if (br.containsHTML("\"code\":28") || br.containsHTML("\"code\":70")) {
+                    logger.info("moveFileToTrash: ");
+                    continue;
+                }
+                logger.info("Successfully moved file to trash");
+                break;
+            } catch (final Throwable e) {
+                logger.warning("Failed to move file to trash - Exception!");
+                break;
+            }
         }
     }
 
@@ -514,6 +546,22 @@ public class DiskYandexNet extends PluginForHost {
 
     private void prepBr() {
         br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
+    }
+
+    /** Avoid chars which are not allowed in filenames under certain OS' */
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     private void getPage(final String url) throws Exception {
