@@ -151,7 +151,7 @@ public class BalancedWebIPCheck implements IPCheckProvider, ProxySelectorInterfa
                 if (servicesInUse.size() == 0) {
                     servicesInUse.clear();
                     servicesInUse.addAll(SERVICES);
-                    throw new IllegalStateException("No Services are Working. reverted to all");
+                    throw new IllegalStateException("No  Services are Working. reverted to all");
                 }
             } else {
                 servicesInUse.clear();
