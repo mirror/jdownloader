@@ -61,11 +61,20 @@ public class ExFileRu extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(Файл не найден|>Файл удалён с сервера|>Истёк срок его хранения)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("//error.caravan.ru/503.html")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML("(Файл не найден|>Файл удалён с сервера|>Истёк срок его хранения)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>Файлообменник ExFile \\-=\\- (.*?)</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("\">Название файла:</td>[\t\n\r ]+<td class=\"align_left\"><strong>(.*?)</strong></td>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("\">Название файла:</td>[\t\n\r ]+<td class=\"align_left\"><strong>(.*?)</strong></td>").getMatch(0);
+        }
         String filesize = br.getRegex("\">Размер:</td>[\t\n\r ]+<td class=\"align_left\"><strong>(.*?)</strong></td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(filename.trim());
         filesize = filesize.replace("Г", "G");
         filesize = filesize.replace("М", "M");
