@@ -7,6 +7,9 @@ import java.util.ArrayList;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Application;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.logging.LogController;
 
@@ -16,13 +19,36 @@ public class FFprobe extends AbstractFFmpegBinary {
         config = JsonConfig.create(FFmpegSetup.class);
         logger = LogController.getInstance().getLogger(FFprobe.class.getName());
         path = config.getBinaryPathProbe();
+        if (!validatePaths()) {
+
+            config.setBinaryPath(null);
+            path = null;
+        }
 
     }
 
-    public FFprobe(String path) {
-        this();
-        this.path = path;
+    private boolean validatePaths() {
+        File root = Application.getResource("");
+        String relative = Files.getRelativePath(root, new File(path));
+        logger.info("Validate Relative Path: " + relative);
+        if (relative != null) {
+            File correctPath = FFMpegInstallThread.getFFmpegPath("ffprobe");
+            String relativeCorrect = Files.getRelativePath(root, correctPath);
+            logger.info("Validate Relative Correct Path: " + relativeCorrect);
+            if (relativeCorrect != null) {
+                if (!StringUtils.equals(relative, relativeCorrect)) {
+                    logger.info("Mismatch. validation failed");
+                    return false;
+                }
+            }
+        }
+        return true;
     }
+
+    // public FFprobe(String path) {
+    // this();
+    // this.path = path;
+    // }
 
     public StreamInfo getStreamInfo(String dllink) {
         ArrayList<String> commandLine = new ArrayList<String>();

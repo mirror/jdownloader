@@ -4,12 +4,14 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import javax.swing.Icon;
 
 import jd.controlling.captcha.SkipException;
 import jd.controlling.captcha.SkipRequest;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
 import jd.plugins.DownloadLink;
 
 import org.appwork.remoteapi.RemoteAPI;
@@ -18,6 +20,7 @@ import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
@@ -29,39 +32,59 @@ import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeSolver;
+import org.jdownloader.captcha.v2.ChallengeSolverConfig;
 import org.jdownloader.captcha.v2.JobRunnable;
+import org.jdownloader.captcha.v2.SolverService;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ClickCaptchaResponse;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
+import org.jdownloader.captcha.v2.solver.captchabrotherhood.CBSolver;
+import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.gui.DialogClickCaptchaSolver;
+import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
+import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolver;
+import org.jdownloader.captcha.v2.solver.service.DialogSolverService;
+import org.jdownloader.captcha.v2.solver.solver9kw.NineKwSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
+import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
-public class CaptchaAPISolver extends ChallengeSolver<Object> implements CaptchaAPI, ChallengeResponseListener {
+public class CaptchaAPISolver extends ChallengeSolver<Object> implements CaptchaAPI, ChallengeResponseListener, SolverService {
 
+    public static final String            ID       = "myjdremote";
     private static final CaptchaAPISolver INSTANCE = new CaptchaAPISolver();
 
     public static CaptchaAPISolver getInstance() {
         return INSTANCE;
     }
 
-    private CaptchaAPIEventPublisher eventPublisher;
-
-    @Override
-    public boolean canHandle(Challenge<?> c) {
-        return CFG_CAPTCHA.REMOTE_CAPTCHA_ENABLED.isEnabled() && c instanceof ImageCaptchaChallenge && super.canHandle(c);
+    protected int getDefaultWaitForOthersTimeout() {
+        return 120000;
     }
 
     @Override
-    public String getName() {
-        return "MyJDownloader";
+    public String getID() {
+        return ID;
+    }
+
+    private CaptchaAPIEventPublisher               eventPublisher;
+    private CaptchaMyJDownloaderRemoteSolverConfig config;
+
+    @Override
+    public boolean canHandle(Challenge<?> c) {
+        return c instanceof ImageCaptchaChallenge && super.canHandle(c);
+    }
+
+    @Override
+    public String getType() {
+        return _GUI._.CaptchaAPISolver_getName();
     }
 
     @Override
@@ -72,6 +95,8 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
     public CaptchaAPISolver() {
         // 0: no threadpool
         super(0);
+        config = JsonConfig.create(CaptchaMyJDownloaderRemoteSolverConfig.class);
+        AdvancedConfigManager.getInstance().register(config);
         eventPublisher = new CaptchaAPIEventPublisher();
         ChallengeResponseController.getInstance().getEventSender().addListener(this);
     }
@@ -83,7 +108,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
     public List<CaptchaJob> list() {
 
         java.util.List<CaptchaJob> ret = new ArrayList<CaptchaJob>();
-        if (!CFG_CAPTCHA.REMOTE_CAPTCHA_ENABLED.isEnabled()) {
+        if (!isEnabled()) {
             return ret;
         }
         for (SolverJob<?> entry : listJobs()) {
@@ -363,6 +388,42 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
     @Override
     public Icon getIcon(int size) {
         return NewTheme.I().getIcon(IconKey.ICON_MYJDOWNLOADER, size);
+    }
+
+    @Override
+    public AbstractCaptchaSolverConfigPanel getConfigPanel() {
+        return null;
+    }
+
+    @Override
+    public boolean hasConfigPanel() {
+        return false;
+    }
+
+    @Override
+    public String getName() {
+        return _GUI._.CaptchaAPISolver_gettypeName();
+    }
+
+    @Override
+    public ChallengeSolverConfig getConfig() {
+        return config;
+    }
+
+    @Override
+    public HashMap<String, Integer> getWaitForOthersDefaultMap() {
+        HashMap<String, Integer> ret = new HashMap<String, Integer>();
+        ret.put(DialogSolverService.ID, 60000);
+        // ret.put(DialogClickCaptchaSolver.ID, 0);
+        // ret.put(DialogBasicCaptchaSolver.ID, 0);
+        // ret.put(CaptchaAPISolver.ID, 0);
+        ret.put(JACSolver.ID, 30000);
+        ret.put(NineKwSolverService.ID, 120000);
+        ret.put(CaptchaMyJDSolver.ID, 60000);
+        ret.put(CBSolver.ID, 120000);
+        ret.put(DeathByCaptchaSolver.ID, 60000);
+
+        return ret;
     }
 
 }

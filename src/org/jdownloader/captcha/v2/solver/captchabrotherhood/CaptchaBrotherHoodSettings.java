@@ -1,11 +1,10 @@
 package org.jdownloader.captcha.v2.solver.captchabrotherhood;
 
-import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.jdownloader.captcha.v2.ChallengeSolverConfig;
 
-public interface CaptchaBrotherHoodSettings extends ConfigInterface {
+public interface CaptchaBrotherHoodSettings extends ChallengeSolverConfig {
     @AboutConfig
     @DescriptionForConfigEntry("Your CaptchaBrotherHood Username")
     String getUser();
@@ -17,13 +16,6 @@ public interface CaptchaBrotherHoodSettings extends ConfigInterface {
     String getPass();
 
     void setPass(String jser);
-
-    @AboutConfig
-    @DescriptionForConfigEntry("Activate the CaptchaBrotherHood service")
-    @DefaultBooleanValue(false)
-    boolean isEnabled();
-
-    void setEnabled(boolean b);
 
     @AboutConfig
     @DescriptionForConfigEntry("Captcha WhiteList for hoster")

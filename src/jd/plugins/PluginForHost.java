@@ -304,7 +304,6 @@ public abstract class PluginForHost extends Plugin {
             copy.getParentFile().mkdirs();
             copy.delete();
             IO.copyFile(file, copy);
-
             file = copy;
             if (this.getDownloadLink() == null) {
                 this.setDownloadLink(link);
@@ -740,7 +739,7 @@ public abstract class PluginForHost extends Plugin {
                     //
 
                     List<String> requestedInstalls = UpdateController.getInstance().getHandler().getRequestedInstalls();
-                    if (requestedInstalls != null && requestedInstalls.contains(org.jdownloader.controlling.ffmpeg.InstallThread.getFFmpegExtensionName())) {
+                    if (requestedInstalls != null && requestedInstalls.contains(org.jdownloader.controlling.ffmpeg.FFMpegInstallThread.getFFmpegExtensionName())) {
                         throw new SkipReasonException(SkipReason.UPDATE_RESTART_REQUIRED);
 
                     } else {
@@ -785,7 +784,7 @@ public abstract class PluginForHost extends Plugin {
                     //
 
                     List<String> requestedInstalls = UpdateController.getInstance().getHandler().getRequestedInstalls();
-                    if (requestedInstalls != null && requestedInstalls.contains(org.jdownloader.controlling.ffmpeg.InstallThread.getFFmpegExtensionName())) {
+                    if (requestedInstalls != null && requestedInstalls.contains(org.jdownloader.controlling.ffmpeg.FFMpegInstallThread.getFFmpegExtensionName())) {
                         throw new SkipReasonException(SkipReason.UPDATE_RESTART_REQUIRED);
 
                     } else {

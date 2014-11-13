@@ -19,6 +19,7 @@ public class CFG_SILENTMODE {
     // let's do this mapping here. If we map all methods to static handlers, access is faster, and we get an error on init if mappings are
     // wrong.
     // false
+
     /**
      * Activate the Silent Mode
      **/

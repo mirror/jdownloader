@@ -1,30 +1,39 @@
 package org.jdownloader.captcha.v2.solver;
 
 import jd.SecondLevelLaunch;
-import jd.controlling.captcha.CaptchaSettings;
 import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanelExtender;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.jdownloader.captcha.v2.ChallengeSolver;
-import org.jdownloader.captcha.v2.solver.jac.JACSolver;
+import org.jdownloader.captcha.v2.SolverService;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 
-public abstract class CESChallengeSolver<T> extends ChallengeSolver<T> implements ServicePanelExtender {
+public abstract class CESChallengeSolver<T> extends ChallengeSolver<T> {
+    protected int getDefaultWaitForOthersTimeout() {
+        return 60000;
+    }
 
     public CESChallengeSolver(int threadCount) {
-        super(threadCount);
+        super(null, threadCount);
+
+    }
+
+    public CESChallengeSolver(SolverService service, int threadCount) {
+        super(service, threadCount);
 
     }
 
     final public void solve(final SolverJob<T> job) throws InterruptedException, SolverException {
-        if (!validateLogins()) return;
-        if (!canHandle(job.getChallenge())) return;
-        job.waitFor(JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout(), JACSolver.getInstance());
+        if (!validateLogins()) {
+            return;
+        }
+        if (!isEnabled() || !canHandle(job.getChallenge())) {
+            return;
+        }
+
         checkInterruption();
         CESSolverJob<T> cesJob = new CESSolverJob<T>(job);
         try {
@@ -44,7 +53,6 @@ public abstract class CESChallengeSolver<T> extends ChallengeSolver<T> implement
 
             @SuppressWarnings("unchecked")
             public void run() {
-                ServicePanel.getInstance().addExtender(CESChallengeSolver.this);
 
                 for (KeyHandler k : handlers) {
 

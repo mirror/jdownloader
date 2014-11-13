@@ -30,7 +30,7 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class LinkChecker<E extends CheckableLink> {
 
-    private static class InternCheckableLink {
+    protected static class InternCheckableLink {
         protected final CheckableLink                        link;
         protected final int                                  linkCheckerGeneration;
         protected final LinkChecker<? extends CheckableLink> checker;
@@ -264,12 +264,14 @@ public class LinkChecker<E extends CheckableLink> {
                                             plg.setBrowser(new Browser());
                                             plg.init();
                                         }
+                                        this.checkableLinks = roundSplit;
                                         this.plugin = plg;
                                         try {
                                             if (plg != null && PluginForHost.implementsCheckLinks(plg)) {
                                                 logger.info("Check Multiple FileInformation");
                                                 try {
                                                     final HashSet<DownloadLink> downloadLinks = new HashSet<DownloadLink>();
+
                                                     for (InternCheckableLink link : roundSplit) {
                                                         if (link.linkCheckAllowed()) {
                                                             final DownloadLink dlLink = link.getCheckableLink().getDownloadLink();
@@ -317,6 +319,7 @@ public class LinkChecker<E extends CheckableLink> {
                                             }
                                         } finally {
                                             this.plugin = null;
+                                            this.checkableLinks = null;
                                         }
                                     }
                                 }
@@ -484,5 +487,16 @@ public class LinkChecker<E extends CheckableLink> {
             }
             link.setAvailableStatus(availableStatus);
         }
+    }
+
+    public static boolean isForcedLinkCheck(CheckableLink downloadLink) {
+        if (Thread.currentThread() instanceof LinkCheckerThread) {
+            LinkChecker<?> linkchecker = ((LinkCheckerThread) Thread.currentThread()).getLinkCheckerByLink(downloadLink);
+            if (linkchecker != null) {
+                return linkchecker.isForceRecheck();
+            }
+        }
+
+        return false;
     }
 }

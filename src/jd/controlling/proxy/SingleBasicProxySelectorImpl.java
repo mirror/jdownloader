@@ -40,6 +40,7 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
         storable.setPassword(password);
         storable.setPreferNativeImplementation(isPreferNativeImplementation());
         ret.setProxy(storable);
+        ret.setReconnectSupported(isReconnectSupported());
         return ret;
     }
 
@@ -59,6 +60,7 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
         ArrayList<HTTPProxy> list = new ArrayList<HTTPProxy>();
         list.add(proxy);
         this.list = Collections.unmodifiableList(list);
+        setReconnectSupported(proxyData.isReconnectSupported());
     }
 
     public SingleBasicProxySelectorImpl(HTTPProxy rawProxy) {

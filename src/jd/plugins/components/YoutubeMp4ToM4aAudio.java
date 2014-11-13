@@ -72,7 +72,7 @@ public class YoutubeMp4ToM4aAudio implements YoutubeConverter {
                         //
 
                         List<String> requestedInstalls = UpdateController.getInstance().getHandler().getRequestedInstalls();
-                        if (requestedInstalls != null && requestedInstalls.contains(org.jdownloader.controlling.ffmpeg.InstallThread.getFFmpegExtensionName())) {
+                        if (requestedInstalls != null && requestedInstalls.contains(org.jdownloader.controlling.ffmpeg.FFMpegInstallThread.getFFmpegExtensionName())) {
                             throw new SkipReasonException(SkipReason.UPDATE_RESTART_REQUIRED);
 
                         } else {

@@ -7,6 +7,7 @@ import jd.gui.swing.jdgui.JDGui;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeSolver;
+import org.jdownloader.captcha.v2.solver.service.DialogSolverService;
 import org.jdownloader.captcha.v2.solverjob.ChallengeSolverJobListener;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
@@ -14,7 +15,12 @@ import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 public abstract class AbstractDialogSolver<T> extends ChallengeSolver<T> {
 
     public AbstractDialogSolver(int i) {
-        super(i);
+        super(DialogSolverService.getInstance(), i);
+
+    }
+
+    protected int getDefaultWaitForOthersTimeout() {
+        return 120000;
     }
 
     public void checkSilentMode(final SolverJob<T> job) throws SkipException, InterruptedException {

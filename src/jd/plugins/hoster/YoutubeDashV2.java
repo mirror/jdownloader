@@ -28,7 +28,6 @@ import jd.controlling.downloadcontroller.ExceptionRunnable;
 import jd.controlling.downloadcontroller.FileIsLockedException;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkchecker.LinkCheckerThread;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -490,8 +489,11 @@ public class YoutubeDashV2 extends PluginForHost {
         if (!downloadLink.getDownloadURL().startsWith("youtubev2://")) {
             convertOldLink(downloadLink);
         }
-        if (Thread.currentThread() instanceof LinkCheckerThread && cfg.isFastLinkCheckEnabled()) {
+
+        if (cfg.isFastLinkCheckEnabled() && !LinkChecker.isForcedLinkCheck(downloadLink)) {
+
             return AvailableStatus.UNCHECKED;
+
         }
 
         YoutubeHelper helper = getCachedHelper();

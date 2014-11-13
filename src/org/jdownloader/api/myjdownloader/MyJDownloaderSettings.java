@@ -151,33 +151,4 @@ public interface MyJDownloaderSettings extends ConfigInterface {
 
     public MyJDownloaderError getLatestError();
 
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("True if Captcha Solving through MyJDownloader is enabled")
-    public boolean isCESEnabled();
-
-    public void setCESEnabled(boolean b);
-
-    @AboutConfig
-    public String[] getCESWhitelist();
-
-    public void setCESWhitelist(String[] list);
-
-    @AboutConfig
-    public String[] getCESBlacklist();
-
-    public void setCESBlacklist(String[] list);
-
-    public static enum BlackOrWhitelist {
-        BLACKLIST,
-        WHITELIST,
-        NONE;
-    }
-
-    @AboutConfig
-    @DefaultEnumValue("BLACKLIST")
-    public BlackOrWhitelist getCESBlackOrWhitelistType();
-
-    public void setCESBlackOrWhitelistType(BlackOrWhitelist list);
-
 }

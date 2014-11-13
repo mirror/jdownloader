@@ -3827,8 +3827,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "a Remote Captcha Services are running" })
     String CESBubbleSupport_CESBubbleSupport();
 
-    @Default(lngs = { "en" }, values = { "Remote Captcha: %s1" })
-    String CESBubble_CESBubble(String string);
+    @Default(lngs = { "en" }, values = { "%s2 via %s1" })
+    String CESBubble_CESBubble2(String string, String string2);
 
     @Default(lngs = { "en" }, values = { "Status:" })
     String CESBubbleContent_CESBubbleContent_status();
@@ -5358,4 +5358,98 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Enable/Disable the internal Captcha Solver (JAntiCaptcha)" })
     String JacToolbarToogleAction_createTooltip_();
+
+    @Default(lngs = { "en" }, values = { "There are several ways to solve a captcha in JDownloader. You can change the general order/priority of these \"Solvers\" and the time a solver waits for its predecessors.\r\nExample:\r\nBy default, the manual Dialog solvers wait upto 60 seconds for all automated solvers." })
+    String CaptchaConfigPanel_order_description();
+
+    @Default(lngs = { "en" }, values = { "Captcha Solver Priority" })
+    String CaptchaConfigPanel_order();
+
+    @Default(lngs = { "en" }, values = { "edit" })
+    String lit_edit();
+
+    @Default(lngs = { "en" }, values = { "Properties for %s2 via %s1" })
+    String SolverPropertiesDialog_SolverPropertiesDialog_object_(String displayName, String type);
+
+    @Default(lngs = { "en" }, values = { "Manual Captcha Solving" })
+    String DialogBasicCaptchaSolver_getName();
+
+    @Default(lngs = { "en" }, values = { "Dialog (Window) in JDownloader" })
+    String DialogBasicCaptchaSolver_gettypeName();
+
+    @Default(lngs = { "en" }, values = { "Manual remote Captcha Solving" })
+    String CaptchaAPISolver_getName();
+
+    @Default(lngs = { "en" }, values = { "My.JDownloader.org, Mobile Apps,..." })
+    String CaptchaAPISolver_gettypeName();
+
+    @Default(lngs = { "en" }, values = { "Fully automated internal Captcha Solving" })
+    String JACSolver_getName_();
+
+    @Default(lngs = { "en" }, values = { "JAntiCaptcha" })
+    String JACSolver_gettypeName_();
+
+    @Default(lngs = { "en" }, values = { "Semi-automatic Captcha Solving" })
+    String Captcha9kwSolver_getName_();
+
+    @Default(lngs = { "en" }, values = { "9kw.eu" })
+    String Captcha9kwSolver_gettypeName_();
+
+    @Default(lngs = { "en" }, values = { "Fully automated remote Captcha Solving" })
+    String CaptchaMyJDSolver_getName();
+
+    @Default(lngs = { "en" }, values = { "Semi-automatic Captcha Solving" })
+    String CBSolver_getName_();
+
+    @Default(lngs = { "en" }, values = { "Fully automated remote Captcha Solving" })
+    String DeathByCaptchaSolver_getName_();
+
+    @Default(lngs = { "en" }, values = { "My.JDownloader.org" })
+    String CaptchaMyJDSolver_gettypeName();
+
+    @Default(lngs = { "en" }, values = { "captchabrotherhood.com" })
+    String CBSolver_gettypeName_();
+
+    @Default(lngs = { "en" }, values = { "deathbycaptcha.eu" })
+    String DeathByCaptchaSolver_gettypeName_();
+
+    @Default(lngs = { "en" }, values = { "Service" })
+    String SolverOrderTableModel_initColumns_service();
+
+    @Default(lngs = { "en" }, values = { "Solver Type" })
+    String SolverOrderTableModel_initColumns_type_();
+
+    @Default(lngs = { "en" }, values = { "Wait for" })
+    String SolverOrderTableModel_initColumns_startafter();
+
+    @Default(lngs = { "en" }, values = { "The %s1-Solver will start after %s2 at the latest." })
+    String SolverOrderTableModel_getTooltipText_object_(String serviceName, String formatMilliSeconds);
+
+    @Default(lngs = { "en" }, values = { "Settings" })
+    String lit_settings();
+
+    @Default(lngs = { "en" }, values = { "Timeouts" })
+    String SolverOrderTableModel_initColumns_timeout();
+
+    @Default(lngs = { "en" }, values = { "9kw.eu" })
+    String Captcha9kwSolverClick_gettypeName_();
+
+    @Default(lngs = { "en" }, values = { "Supported Captcha Types" })
+    String SolverOrderTableModel_initColumns_captcha_types();
+
+    @Default(lngs = { "en" }, values = { "all" })
+    String solver_types_all();
+
+    @Default(lngs = { "en" }, values = { "text" })
+    String solver_types_text();
+
+    @Default(lngs = { "en" }, values = { "click(mouse)" })
+    String solver_types_click();
+
+    @Default(lngs = { "en" }, values = { "Timing Options for %s1 via %s2" })
+    String SolverTimingDialog(String typeName, String service);
+
+    @Default(lngs = { "en" }, values = { "Reset" })
+    String lit_reset();
+
 }

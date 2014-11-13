@@ -353,6 +353,7 @@ public class PremiumizeMe extends PluginForHost {
             if (Long.parseLong(trafficleft_bytes) <= 0) {
                 trafficleft_bytes = "0";
             }
+
             ai.setTrafficLeft(trafficleft_bytes);
         } else {
             ai.setUnlimitedTraffic();

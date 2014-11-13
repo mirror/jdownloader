@@ -21,7 +21,7 @@ public class FFmpegProvider {
     }
 
     private boolean   installing = false;
-    InstallThread     installThread;
+    FFMpegInstallThread     installThread;
     private LogSource logger;
 
     /**
@@ -48,7 +48,7 @@ public class FFmpegProvider {
         DownloadWatchDog.getInstance().getSession().setProperty(FFMPEG_INSTALL_CHECK, true);
         synchronized (this) {
             if (installThread == null || !installThread.isAlive()) {
-                installThread = new InstallThread(this, task);
+                installThread = new FFMpegInstallThread(this, task);
                 installThread.start();
                 logger.info("Started Install process");
             }
