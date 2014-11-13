@@ -51,7 +51,7 @@ public class QuickShareCz extends PluginForHost {
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Takov. soubor neexistuje")) {
+        if (br.containsHTML("Takov. soubor neexistuje|>Chyba! Vámi zadaný soubor neexistuje\\.<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>(.*?) \\| QuickShare\\.cz</title>").getMatch(0);
