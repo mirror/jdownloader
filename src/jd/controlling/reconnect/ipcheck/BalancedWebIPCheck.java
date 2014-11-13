@@ -51,7 +51,7 @@ public class BalancedWebIPCheck implements IPCheckProvider, ProxySelectorInterfa
 
     private boolean                             checkOnlyOnce;
 
-    private boolean                             useGlobalProxy;
+    private final boolean                       useGlobalProxy;
 
     public BalancedWebIPCheck(boolean useGlobalProxy) {
         this.servicesInUse = new ArrayList<String>();
@@ -63,17 +63,12 @@ public class BalancedWebIPCheck implements IPCheckProvider, ProxySelectorInterfa
         this.br.setVerbose(true);
         this.useGlobalProxy = useGlobalProxy;
         br.setProxySelector(this);
-
         this.br.setConnectTimeout(JsonConfig.create(ReconnectConfig.class).getIPCheckConnectTimeout());
         this.br.setReadTimeout(JsonConfig.create(ReconnectConfig.class).getIPCheckReadTimeout());
     }
 
-    public boolean isUseGlobalProxy() {
+    public final boolean isUseGlobalProxy() {
         return useGlobalProxy;
-    }
-
-    public void setUseGlobalProxy(boolean useGlobalProxy) {
-        this.useGlobalProxy = useGlobalProxy;
     }
 
     /**
@@ -117,7 +112,6 @@ public class BalancedWebIPCheck implements IPCheckProvider, ProxySelectorInterfa
             }
             LogController.CL().severe("All balanced Services failed");
             throw new OfflineException("All balanced Services failed");
-
         }
     }
 
@@ -170,14 +164,14 @@ public class BalancedWebIPCheck implements IPCheckProvider, ProxySelectorInterfa
     @Override
     public List<HTTPProxy> getProxiesByUrl(String url) {
         if (CFG_RECONNECT.CFG.isIPCheckUsesProxyEnabled()) {
-
             return ProxyController.getInstance().getProxiesByUrl(url);
         } else {
             ArrayList<HTTPProxy> ret = new ArrayList<HTTPProxy>();
-            ret.add(HTTPProxy.NONE);
+            if (!isUseGlobalProxy()) {
+                ret.add(HTTPProxy.NONE);
+            }
             return ret;
         }
-
     }
 
     @Override
