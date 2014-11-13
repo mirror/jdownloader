@@ -40,7 +40,7 @@ public class DoAnyThingForADeveloperAction extends AbstractToolBarAction {
                 BasicCaptchaChallenge c;
                 try {
                     File file;
-                    c = new BasicCaptchaChallenge("recaptcha", file = Application.getResource("captchas/anime-loads.org_10.06.2013_15.50.29.666.jpg"), "", "Enter it", HostPluginController.getInstance().get("uploaded.to").newInstance(PluginClassLoader.getInstance().getChild()), 0) {
+                    c = new BasicCaptchaChallenge("recaptcha", file = Application.getResource("captchas/recaptcha.jpg"), "", "Enter it", HostPluginController.getInstance().get("uploaded.to").newInstance(PluginClassLoader.getInstance().getChild()), 0) {
 
                         @Override
                         public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
