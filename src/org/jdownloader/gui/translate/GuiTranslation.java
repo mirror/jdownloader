@@ -5452,4 +5452,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Reset" })
     String lit_reset();
 
+    @Default(lngs = { "en" }, values = { "Enable or Disable %s2 via %s1" })
+    String createTooltip_Captcha_Service_toggle(String name, String type);
+
+    @Default(lngs = { "en" }, values = { "Enable %s2 via %s1" })
+    String createTooltip_Captcha_Service_getNameWhenDisabled_(String name, String type);
+
+    @Default(lngs = { "en" }, values = { "Enable %s2 via %s1" })
+    String createTooltip_Captcha_Service_getNameWhenEnabled_(String name, String type);
+
 }
