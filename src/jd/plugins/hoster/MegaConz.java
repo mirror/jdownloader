@@ -545,7 +545,12 @@ public class MegaConz extends PluginForHost {
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
-        return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+        if (downloadLink != null && plugin != null) {
+            if (!StringUtils.equals((String) downloadLink.getProperty("usedPlugin", plugin.getHost()), plugin.getHost())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
