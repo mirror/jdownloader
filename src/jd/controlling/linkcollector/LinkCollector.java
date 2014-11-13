@@ -1383,7 +1383,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         if (filesInCfg != null) {
             for (File collectorList : filesInCfg) {
                 if (collectorList.isFile() && collectorList.getName().startsWith("linkcollector")) {
-                    String counter = new Regex(collectorList.getName(), "linkcollector(\\d+)\\.zip").getMatch(0);
+                    String counter = new Regex(collectorList.getName(), "linkcollector(\\d+)\\.zip$").getMatch(0);
                     if (counter != null) {
                         sortedAvailable.add(Long.parseLong(counter));
                     }
@@ -1941,12 +1941,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         zip.close();
                         fos = null;
                         deleteFile = false;
-                        linkcollectorLists.add(0, file);
                         try {
-                            int keepXOld = Math.max(JsonConfig.create(GeneralSettings.class).getKeepXOldLists(), 0);
+                            final int keepXOld = Math.max(JsonConfig.create(GeneralSettings.class).getKeepXOldLists(), 0);
                             if (linkcollectorLists.size() > keepXOld) {
-                                for (int removeIndex = linkcollectorLists.size() - 1; removeIndex > keepXOld; removeIndex--) {
-                                    File remove = linkcollectorLists.remove(removeIndex);
+                                for (int removeIndex = linkcollectorLists.size() - 1; removeIndex >= keepXOld; removeIndex--) {
+                                    final File remove = linkcollectorLists.remove(removeIndex);
                                     if (remove != null) {
                                         logger.info("Delete outdated CollectorList: " + remove + " " + FileCreationManager.getInstance().delete(remove, null));
                                     }
@@ -1954,6 +1953,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             }
                         } catch (final Throwable e) {
                             logger.log(e);
+                        } finally {
+                            linkcollectorLists.add(0, file);
                         }
                         return null;
                     } catch (final Throwable e) {
