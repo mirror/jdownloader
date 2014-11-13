@@ -1,6 +1,7 @@
 package org.jdownloader.captcha.v2.solver.service;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.Icon;
 
@@ -57,7 +58,7 @@ public class DialogSolverService extends AbstractSolverService {
     }
 
     @Override
-    public HashMap<String, Integer> getWaitForOthersDefaultMap() {
+    public Map<String, Integer> getWaitForOthersDefaultMap() {
         HashMap<String, Integer> ret = new HashMap<String, Integer>();
 
         // ret.put(DialogClickCaptchaSolver.ID, 0);

@@ -3,8 +3,10 @@ package org.jdownloader.captcha.v2;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -172,18 +174,23 @@ public abstract class ChallengeSolver<T> {
     }
 
     public int getWaitForByID(String solverID) {
-
         Integer obj = getWaitForMap().get(solverID);
         return obj == null ? 0 : obj.intValue();
     }
 
-    public HashMap<String, Integer> getWaitForMap() {
-        HashMap<String, Integer> map = getService().getConfig().getWaitForMap();
+    private Map<String, Integer> waitForMap = null;
+
+    public synchronized Map<String, Integer> getWaitForMap() {
+        if (waitForMap != null) {
+            return waitForMap;
+        }
+        Map<String, Integer> map = getService().getConfig().getWaitForMap();
         if (map == null || map.size() == 0) {
             map = getService().getWaitForOthersDefaultMap();
             getService().getConfig().setWaitForMap(map);
         }
-        return map;
+        waitForMap = Collections.synchronizedMap(map);
+        return waitForMap;
     }
 
 }

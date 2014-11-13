@@ -19,12 +19,10 @@ public class FFprobe extends AbstractFFmpegBinary {
         config = JsonConfig.create(FFmpegSetup.class);
         logger = LogController.getInstance().getLogger(FFprobe.class.getName());
         path = config.getBinaryPathProbe();
-        if (!validatePaths()) {
-
+        if (path != null && !validatePaths()) {
             config.setBinaryPath(null);
             path = null;
         }
-
     }
 
     private boolean validatePaths() {
@@ -44,11 +42,6 @@ public class FFprobe extends AbstractFFmpegBinary {
         }
         return true;
     }
-
-    // public FFprobe(String path) {
-    // this();
-    // this.path = path;
-    // }
 
     public StreamInfo getStreamInfo(String dllink) {
         ArrayList<String> commandLine = new ArrayList<String>();

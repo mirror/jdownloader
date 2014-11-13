@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -65,7 +66,7 @@ public class CBSolver extends CESChallengeSolver<String> implements ChallengeRes
     }
 
     @Override
-    public HashMap<String, Integer> getWaitForOthersDefaultMap() {
+    public Map<String, Integer> getWaitForOthersDefaultMap() {
         HashMap<String, Integer> ret = new HashMap<String, Integer>();
         // ret.put(Captcha9kwSolverClick.ID, 60000);
         // ret.put(DialogClickCaptchaSolver.ID, 60000);

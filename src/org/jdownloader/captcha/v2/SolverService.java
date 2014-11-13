@@ -1,6 +1,6 @@
 package org.jdownloader.captcha.v2;
 
-import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.Icon;
 
@@ -19,9 +19,9 @@ public interface SolverService {
 
     public int getWaitForByID(String solverID);
 
-    public abstract HashMap<String, Integer> getWaitForOthersDefaultMap();
+    public abstract Map<String, Integer> getWaitForOthersDefaultMap();
 
-    public HashMap<String, Integer> getWaitForMap();
+    public Map<String, Integer> getWaitForMap();
 
     public abstract ChallengeSolverConfig getConfig();
 

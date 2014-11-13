@@ -1,6 +1,7 @@
 package org.jdownloader.captcha.v2.solver.service;
 
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.Map;
 
 import jd.SecondLevelLaunch;
 import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
@@ -13,7 +14,6 @@ import org.jdownloader.captcha.v2.SolverService;
 public abstract class AbstractSolverService implements SolverService {
     @Override
     public int getWaitForByID(String solverID) {
-
         Integer obj = getWaitForMap().get(solverID);
         return obj == null ? 0 : obj.intValue();
     }
@@ -55,13 +55,18 @@ public abstract class AbstractSolverService implements SolverService {
 
     }
 
-    @Override
-    public HashMap<String, Integer> getWaitForMap() {
-        HashMap<String, Integer> map = getConfig().getWaitForMap();
+    private Map<String, Integer> waitForMap = null;
+
+    public synchronized Map<String, Integer> getWaitForMap() {
+        if (waitForMap != null) {
+            return waitForMap;
+        }
+        Map<String, Integer> map = getConfig().getWaitForMap();
         if (map == null || map.size() == 0) {
             map = getWaitForOthersDefaultMap();
             getConfig().setWaitForMap(map);
         }
-        return map;
+        waitForMap = Collections.synchronizedMap(map);
+        return waitForMap;
     }
 }
