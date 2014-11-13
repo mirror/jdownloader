@@ -122,7 +122,7 @@ public class MyJDownloaderConnectThread extends Thread {
                             }
                             timeout = Math.min(300 * 1000l, timeout);
                             timeout = timeout + new Random().nextInt(5000);
-                            logger.info("Backoff:" + currentBackOff + "->" + timeout);
+                            logger.info("Error #:" + currentBackOff + " next retry: " + timeout);
                             Thread.sleep(timeout);
                         } finally {
                             backoffCounter.compareAndSet(currentBackOff, currentBackOff + 1);

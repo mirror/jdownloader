@@ -42,6 +42,9 @@ import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
@@ -87,7 +90,7 @@ public class ProxyController implements ProxySelectorInterface {
         return ProxyController.INSTANCE;
     }
 
-    private volatile CopyOnWriteArrayList<AbstractProxySelectorImpl>        list  = new CopyOnWriteArrayList<AbstractProxySelectorImpl>();
+    private volatile CopyOnWriteArrayList<AbstractProxySelectorImpl>        list   = new CopyOnWriteArrayList<AbstractProxySelectorImpl>();
 
     private final DefaultEventSender<ProxyEvent<AbstractProxySelectorImpl>> eventSender;
 
@@ -95,17 +98,19 @@ public class ProxyController implements ProxySelectorInterface {
 
     private final LogSource                                                 logger;
 
-    private final Queue                                                     QUEUE = new Queue(getClass().getName()) {
+    private final Queue                                                     QUEUE  = new Queue(getClass().getName()) {
 
-                                                                                      @Override
-                                                                                      public void killQueue() {
-                                                                                          LogController.CL().log(new Throwable("YOU CANNOT KILL ME!"));
-                                                                                          /*
-                                                                                           * this queue can't be killed
-                                                                                           */
-                                                                                      }
+                                                                                       @Override
+                                                                                       public void killQueue() {
+                                                                                           LogController.CL().log(new Throwable("YOU CANNOT KILL ME!"));
+                                                                                           /*
+                                                                                            * this queue can't be killed
+                                                                                            */
+                                                                                       }
 
-                                                                                  };
+                                                                                   };
+
+    private boolean                                                         saving = false;
 
     public Queue getQUEUE() {
         return QUEUE;
@@ -130,6 +135,7 @@ public class ProxyController implements ProxySelectorInterface {
                 }
             });
         }
+
         list = new CopyOnWriteArrayList<AbstractProxySelectorImpl>(loadProxySettings(true));
         getEventSender().addListener(new DefaultEventListener<ProxyEvent<AbstractProxySelectorImpl>>() {
             final DelayedRunnable asyncSaving = new DelayedRunnable(5000l, 60000l) {
@@ -149,10 +155,26 @@ public class ProxyController implements ProxySelectorInterface {
                 asyncSaving.resetAndStart();
             }
         });
+        final GenericConfigEventListener<Object> updateListener = new GenericConfigEventListener<Object>() {
+
+            @Override
+            public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
+                if (!saving) {
+                    setList(new CopyOnWriteArrayList<AbstractProxySelectorImpl>(loadProxySettings(true)));
+                }
+            }
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
+            }
+        };
+        config._getStorageHandler().getKeyHandler("CustomProxyList").getEventSender().addListener(updateListener);
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
             public void onShutdown(final ShutdownRequest shutdownRequest) {
+                // avoid that the controller gets reinitialized during shutdown
+                config._getStorageHandler().getKeyHandler("CustomProxyList").getEventSender().removeListener(updateListener);
                 ProxyController.this.saveProxySettings();
             }
 
@@ -739,8 +761,13 @@ public class ProxyController implements ProxySelectorInterface {
                 final ProxyData pd = proxy.toProxyData();
                 ret.add(pd);
             }
-            this.config.setCustomProxyList(ret);
-            this.config._getStorageHandler().write();
+            saving = true;
+            try {
+                this.config.setCustomProxyList(ret);
+                this.config._getStorageHandler().write();
+            } finally {
+                saving = false;
+            }
         }
     }
 

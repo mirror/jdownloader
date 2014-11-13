@@ -52,6 +52,7 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
         setEnabled(proxyData.isEnabled());
         setPreferNativeImplementation(proxyData.getProxy().isPreferNativeImplementation());
         setFilter(proxyData.getFilter());
+        setReconnectSupported(proxyData.isReconnectSupported());
     }
 
     @Override
@@ -223,6 +224,7 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
         proxy.setPreferNativeImplementation(isPreferNativeImplementation());
         ret.setProxy(proxy);
         ret.setPac(true);
+        ret.setReconnectSupported(isReconnectSupported());
         return ret;
     }
 

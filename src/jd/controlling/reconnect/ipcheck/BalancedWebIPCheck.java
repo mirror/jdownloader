@@ -170,6 +170,7 @@ public class BalancedWebIPCheck implements IPCheckProvider, ProxySelectorInterfa
     @Override
     public List<HTTPProxy> getProxiesByUrl(String url) {
         if (CFG_RECONNECT.CFG.isIPCheckUsesProxyEnabled()) {
+
             return ProxyController.getInstance().getProxiesByUrl(url);
         } else {
             ArrayList<HTTPProxy> ret = new ArrayList<HTTPProxy>();

@@ -60,7 +60,7 @@ public class CESBubbleContent extends AbstractBubbleContentPanel {
     private JLabel                credits;
 
     public CESBubbleContent(final CESChallengeSolver<?> solver, final CESSolverJob<?> cesSolverJob, int timeoutms) {
-        super(solver.getIcon(20));
+        super(solver.getService().getIcon(20));
         this.solver = solver;
         this.job = cesSolverJob;
         startTime = System.currentTimeMillis();
@@ -69,7 +69,7 @@ public class CESBubbleContent extends AbstractBubbleContentPanel {
         // , _GUI._.balloon_reconnect_start_msg(), NewTheme.I().getIcon("reconnect", 32)
         MigPanel east = new MigPanel("ins 0 0 0 0,wrap 2", "[fill][grow,fill]", "[]");
         east.setOpaque(false);
-        east.add(timeoutLbl = new JLabel(_GUI._.CESBubbleContent_CESBubbleContent_wait(TimeFormatter.formatMilliSeconds(timeoutms, 0), solver.getName())), "hidemode 3,spanx");
+        east.add(timeoutLbl = new JLabel(_GUI._.CESBubbleContent_CESBubbleContent_wait(TimeFormatter.formatMilliSeconds(timeoutms, 0), solver.getService().getName())), "hidemode 3,spanx");
         timeoutLbl.setForeground(LAFOptions.getInstance().getColorForErrorForeground());
         SwingUtils.toBold(timeoutLbl);
 
@@ -182,7 +182,7 @@ public class CESBubbleContent extends AbstractBubbleContentPanel {
 
     public void updateTimer(final long rest) {
         update();
-        timeoutLbl.setText(_GUI._.CESBubbleContent_CESBubbleContent_wait(TimeFormatter.formatMilliSeconds(rest, 0), solver.getName()));
+        timeoutLbl.setText(_GUI._.CESBubbleContent_CESBubbleContent_wait(TimeFormatter.formatMilliSeconds(rest, 0), solver.getService().getName()));
         button.setVisible(true);
         timeoutLbl.setVisible(rest > 0);
         durationLbl.setVisible(rest <= 0);

@@ -11,7 +11,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.MacOsXVersion;
 import org.jdownloader.updatev2.UpdateController;
 
-public class InstallThread extends Thread {
+public class FFMpegInstallThread extends Thread {
 
     public static final String   FFMPEG        = "ffmpeg";
 
@@ -30,7 +30,7 @@ public class InstallThread extends Thread {
 
     private String               task;
 
-    public InstallThread(FFmpegProvider fFmpegProvider, String task) {
+    public FFMpegInstallThread(FFmpegProvider fFmpegProvider, String task) {
         this.fFmpegProvider = fFmpegProvider;
         this.task = task;
     }
@@ -84,7 +84,7 @@ public class InstallThread extends Thread {
 
     }
 
-    private File getFFmpegPath(String name) {
+    public static File getFFmpegPath(String name) {
 
         if (CrossSystem.isWindows()) {
             if (CrossSystem.is64BitOperatingSystem()) {
@@ -122,7 +122,7 @@ public class InstallThread extends Thread {
         switch (CrossSystem.getOSFamily()) {
 
         case MAC:
-            if (CrossSystem.getMacOSVersion() < MacOsXVersion.MAC_OSX_10p6_SNOW_LEOPARD.getVersionID()) {
+            if (CrossSystem.getMacOSVersion() < MacOsXVersion.MAC_OSX_10p6_SNOW_LEOPARD.getVersionID() || !CrossSystem.is64BitOperatingSystem()) {
                 return FFMPEG_10_5_X;
             } else {
                 return FFMPEG_10_6;

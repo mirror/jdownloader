@@ -90,19 +90,9 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.ExtFileSystemView;
 import org.jdownloader.api.RemoteAPIController;
-import org.jdownloader.api.captcha.CaptchaAPISolver;
 import org.jdownloader.api.cnl2.ExternInterface;
 import org.jdownloader.api.myjdownloader.MyJDownloaderController;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
-import org.jdownloader.captcha.v2.solver.captchabrotherhood.CBSolver;
-import org.jdownloader.captcha.v2.solver.captcharesolutor.CaptchaResolutorCaptchaSolver;
-import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolver;
-import org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver;
-import org.jdownloader.captcha.v2.solver.gui.DialogClickCaptchaSolver;
-import org.jdownloader.captcha.v2.solver.jac.JACSolver;
-import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolver;
-import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver;
-import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.extensions.ExtensionController;
@@ -884,21 +874,8 @@ public class SecondLevelLaunch {
                                                 public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
                                                 }
                                             });
-                                            ChallengeResponseController.getInstance().addSolver(JACSolver.getInstance());
+                                            ChallengeResponseController.getInstance().init();
 
-                                            if (!Application.isHeadless()) {
-                                                ChallengeResponseController.getInstance().addSolver(DialogBasicCaptchaSolver.getInstance());
-                                            }
-                                            if (!Application.isHeadless()) {
-                                                ChallengeResponseController.getInstance().addSolver(DialogClickCaptchaSolver.getInstance());
-                                            }
-                                            ChallengeResponseController.getInstance().addSolver(CaptchaMyJDSolver.getInstance());
-                                            ChallengeResponseController.getInstance().addSolver(CBSolver.getInstance());
-                                            ChallengeResponseController.getInstance().addSolver(DeathByCaptchaSolver.getInstance());
-                                            ChallengeResponseController.getInstance().addSolver(Captcha9kwSolver.getInstance());
-                                            ChallengeResponseController.getInstance().addSolver(Captcha9kwSolverClick.getInstance());
-                                            ChallengeResponseController.getInstance().addSolver(CaptchaResolutorCaptchaSolver.getInstance());
-                                            ChallengeResponseController.getInstance().addSolver(CaptchaAPISolver.getInstance());
                                         };
                                     }.start();
                                 }

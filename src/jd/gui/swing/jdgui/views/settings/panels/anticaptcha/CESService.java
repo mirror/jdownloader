@@ -8,7 +8,7 @@ public interface CESService {
 
     public String getDisplayName();
 
-    public CESGenericConfigPanel createPanel();
+    public AbstractCaptchaSolverConfigPanel createPanel();
 
     public String getDescription();
 }

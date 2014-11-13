@@ -26,11 +26,13 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class ServicePanel9kwTooltip extends PanelToolTip {
-    private Color        color;
+    private Color               color;
 
-    private ServicePanel owner;
+    private ServicePanel        owner;
 
-    private JComponent   activeComponent;
+    private JComponent          activeComponent;
+
+    private NineKwSolverService service;
 
     public Point getDesiredLocation(JComponent activeComponent, Point ttPosition) {
         if (activeComponent != null) {
@@ -43,9 +45,10 @@ public class ServicePanel9kwTooltip extends PanelToolTip {
         return AbstractLocator.correct(ttPosition, getPreferredSize());
     }
 
-    public ServicePanel9kwTooltip(ServicePanel owner, final Captcha9kwSolver captcha9kwSolver) {
+    public ServicePanel9kwTooltip(ServicePanel owner, final NineKwSolverService service) {
 
         super(new TooltipPanel("ins 0,wrap 1", "[grow,fill]", "[grow,fill]"));
+        this.service = service;
         this.owner = owner;
         color = (LAFOptions.getInstance().getColorForTooltipForeground());
         JProgressBar progress = new JProgressBar();
@@ -62,7 +65,7 @@ public class ServicePanel9kwTooltip extends PanelToolTip {
             public void run() {
 
                 try {
-                    final NineKWAccount account = captcha9kwSolver.loadAccount();
+                    final NineKWAccount account = service.loadAccount();
                     new EDTRunner() {
 
                         @Override

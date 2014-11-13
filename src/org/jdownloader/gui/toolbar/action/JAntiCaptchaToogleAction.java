@@ -1,13 +1,12 @@
 package org.jdownloader.gui.toolbar.action;
 
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
+import org.jdownloader.settings.staticreferences.CFG_JAC_CAPTCHA_SOLVER;
 
 public class JAntiCaptchaToogleAction extends AbstractToolbarToggleAction {
 
     public JAntiCaptchaToogleAction() {
-        super(CFG_CAPTCHA.JANTI_CAPTCHA_ENABLED);
+        super(CFG_JAC_CAPTCHA_SOLVER.ENABLED);
         setIconKey("ocr");
 
     }

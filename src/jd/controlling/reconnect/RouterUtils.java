@@ -52,8 +52,8 @@ public class RouterUtils {
     private static InetAddress  ADDRESS_CACHE;
 
     /**
-     * Runs throw a predefined Host Table (multithreaded) and checks if there is a service on port 80. returns the ip if there is a webservice on any adress.
-     * See {@link #updateHostTable()}
+     * Runs throw a predefined Host Table (multithreaded) and checks if there is a service on port 80. returns the ip if there is a
+     * webservice on any adress. See {@link #updateHostTable()}
      * 
      * @return
      */
@@ -114,7 +114,9 @@ public class RouterUtils {
         final String[] parts = JDUtilities.runCommand("arp", new String[] { "-a" }, null, 10).split(System.getProperty("line.separator"));
         pb.directory();
         for (final String part : parts) {
-            if (part.indexOf(ipAddress) > -1 && new Regex(part, PATTERN_WIN_ARP).matches()) { return part; }
+            if (part.indexOf(ipAddress) > -1 && new Regex(part, PATTERN_WIN_ARP).matches()) {
+                return part;
+            }
         }
         return null;
     }
@@ -158,8 +160,8 @@ public class RouterUtils {
 
             String redirect = br.getRedirectLocation();
             String domain = Browser.getHost(redirect);
-            logger.info(redirect);
-            logger.info(domain);
+            logger.info("Redirect To: " + redirect);
+            logger.info("Current Domain: " + domain);
             // some isps or DNS server redirect in case of no server found
             if (redirect != null && !InetAddress.getByName(domain).equals(InetAddress.getByName(host))) {
                 // if we have redirects, the new domain should be the local one,
@@ -191,7 +193,9 @@ public class RouterUtils {
      * @throws InterruptedException
      */
     public synchronized static InetAddress getAddress(final boolean force) throws InterruptedException {
-        if (!force && RouterUtils.ADDRESS_CACHE != null) { return RouterUtils.ADDRESS_CACHE; }
+        if (!force && RouterUtils.ADDRESS_CACHE != null) {
+            return RouterUtils.ADDRESS_CACHE;
+        }
         InetAddress address = null;
         try {
             try {
@@ -199,9 +203,13 @@ public class RouterUtils {
             } catch (UnknownHostException e) {
                 e.printStackTrace();
             }
-            if (address != null) { return address; }
+            if (address != null) {
+                return address;
+            }
             address = RouterUtils.getIPFromRouteCommand();
-            if (address != null) { return address; }
+            if (address != null) {
+                return address;
+            }
             address = RouterUtils.getIpFormHostTable();
             return address;
         } finally {
@@ -223,16 +231,24 @@ public class RouterUtils {
         threadPool.allowCoreThreadTimeOut(true);
         for (final String host : hostNames) {
             try {
-                if (ASYNCH_RETURN != null) break;
+                if (ASYNCH_RETURN != null) {
+                    break;
+                }
                 threadPool.execute(new Runnable() {
                     @Override
                     public void run() {
                         try {
-                            if (ASYNCH_RETURN != null) return;
+                            if (ASYNCH_RETURN != null) {
+                                return;
+                            }
                             if (RouterUtils.checkPort(host)) {
-                                if (ASYNCH_RETURN != null) return;
+                                if (ASYNCH_RETURN != null) {
+                                    return;
+                                }
                                 synchronized (LOCK) {
-                                    if (ASYNCH_RETURN != null) return;
+                                    if (ASYNCH_RETURN != null) {
+                                        return;
+                                    }
                                     RouterUtils.ASYNCH_RETURN = InetAddress.getByName(host);
                                     threadPool.shutdown();
                                 }
@@ -267,10 +283,14 @@ public class RouterUtils {
 
         final String[] out = Regex.getLines(exec.getOutputStream());
         for (final String string : out) {
-            if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
+            if (Thread.currentThread().isInterrupted()) {
+                throw new InterruptedException();
+            }
             final String m = new Regex(string, pat).getMatch(0);
             if (m != null && !"0.0.0.0".equals(m)) {
-                if (checkPort(m)) { return InetAddress.getByName(m); }
+                if (checkPort(m)) {
+                    return InetAddress.getByName(m);
+                }
 
             }
         }
@@ -303,9 +323,13 @@ public class RouterUtils {
                         try {
                             final InetAddress ia = InetAddress.getByName(hostname);
                             /* first we try to connect to http */
-                            if (RouterUtils.checkPort(hostname)) { return ia; }
+                            if (RouterUtils.checkPort(hostname)) {
+                                return ia;
+                            }
                             /* then lets try https */
-                            if (RouterUtils.checkPort(hostname)) { return ia; }
+                            if (RouterUtils.checkPort(hostname)) {
+                                return ia;
+                            }
                         } catch (final Exception e) {
                             LogController.CL().log(e);
                         }
@@ -333,9 +357,13 @@ public class RouterUtils {
                         try {
                             final InetAddress ia = InetAddress.getByName(hostname);
                             /* first we try to connect to http */
-                            if (RouterUtils.checkPort(hostname)) { return ia; }
+                            if (RouterUtils.checkPort(hostname)) {
+                                return ia;
+                            }
                             /* then lets try https */
-                            if (RouterUtils.checkPort(hostname)) { return ia; }
+                            if (RouterUtils.checkPort(hostname)) {
+                                return ia;
+                            }
 
                         } catch (final Exception e) {
                             LogController.CL().log(e);
@@ -351,9 +379,13 @@ public class RouterUtils {
 
     public static String getMacAddress(final InetAddress hostAddress) throws IOException, InterruptedException {
         final String resultLine = RouterUtils.callArpTool(hostAddress.getHostAddress());
-        if (resultLine == null) { return null; }
+        if (resultLine == null) {
+            return null;
+        }
         String rd = new Regex(resultLine, RouterUtils.PATTERN_WIN_ARP).getMatch(-1).replaceAll("-", ":");
-        if (rd == null) { return null; }
+        if (rd == null) {
+            return null;
+        }
         rd = rd.replaceAll("\\s", "0");
         final String[] d = rd.split("[:\\-]");
         final StringBuilder ret = new StringBuilder(18);
@@ -380,7 +412,9 @@ public class RouterUtils {
     public static String getMacAddress(final String ip) throws UnknownHostException, IOException, InterruptedException {
 
         final String ret = RouterUtils.getMacAddress(InetAddress.getByName(ip));
-        if (ret != null) { return ret.replace(":", "").replace("-", "").toUpperCase(); }
+        if (ret != null) {
+            return ret.replace(":", "").replace("-", "").toUpperCase();
+        }
         return ret;
     }
 

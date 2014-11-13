@@ -1,52 +1,37 @@
 package org.jdownloader.captcha.v2.solver.gui;
 
-import javax.swing.Icon;
-
 import jd.controlling.captcha.BasicCaptchaDialogHandler;
 import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
-import jd.plugins.PluginForDecrypt;
 
 import org.appwork.storage.config.JsonConfig;
-import org.jdownloader.api.myjdownloader.MyJDownloaderSettings;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
-import org.jdownloader.captcha.v2.solver.captchabrotherhood.CBSolver;
 import org.jdownloader.captcha.v2.solver.captchabrotherhood.CaptchaBrotherHoodSettings;
-import org.jdownloader.captcha.v2.solver.captcharesolutor.CaptchaResolutorCaptchaSettings;
-import org.jdownloader.captcha.v2.solver.captcharesolutor.CaptchaResolutorCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSettings;
-import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
-import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolver;
+import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolverConfig;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSettings;
-import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver;
 import org.jdownloader.captcha.v2.solverjob.ChallengeSolverJobListener;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
+import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
 public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
+
     private CaptchaSettings                       config;
     private Captcha9kwSettings                    config9kw;
-    private MyJDownloaderSettings                 configMyJD;
+    private CaptchaMyJDSolverConfig               configMyJD;
     private CaptchaBrotherHoodSettings            configcbh;
-    private CaptchaResolutorCaptchaSettings       configresolutor;
+
     private BasicCaptchaDialogHandler             handler;
     private DeathByCaptchaSettings                configDBC;
     private Thread                                waitingThread;
     private boolean                               focusRequested;
     private static final DialogBasicCaptchaSolver INSTANCE = new DialogBasicCaptchaSolver();
-
-    @Override
-    public Icon getIcon(int size) {
-        return NewTheme.I().getIcon(IconKey.ICON_OCR, size);
-    }
 
     public static DialogBasicCaptchaSolver getInstance() {
         return INSTANCE;
@@ -64,13 +49,8 @@ public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
     }
 
     @Override
-    public String getName() {
-        return "Dialog";
-    }
-
-    @Override
     public boolean canHandle(Challenge<?> c) {
-        return CFG_CAPTCHA.CAPTCHA_DIALOGS_ENABLED.isEnabled() && super.canHandle(c);
+        return super.canHandle(c);
     }
 
     private DialogBasicCaptchaSolver() {
@@ -79,8 +59,10 @@ public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
         config9kw = JsonConfig.create(Captcha9kwSettings.class);
         configDBC = JsonConfig.create(DeathByCaptchaSettings.class);
         configcbh = JsonConfig.create(CaptchaBrotherHoodSettings.class);
-        configresolutor = JsonConfig.create(CaptchaResolutorCaptchaSettings.class);
-        configMyJD = JsonConfig.create(MyJDownloaderSettings.class);
+
+        configMyJD = JsonConfig.create(CaptchaMyJDSolverConfig.class);
+
+        AdvancedConfigManager.getInstance().register(JsonConfig.create(DialogCaptchaSolverConfig.class));
     }
 
     // /**
@@ -101,34 +83,32 @@ public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
     public void solve(final SolverJob<String> job) throws InterruptedException, SkipException {
         synchronized (this) {
 
-            if (job.getChallenge() instanceof BasicCaptchaChallenge && CFG_CAPTCHA.CAPTCHA_DIALOGS_ENABLED.isEnabled()) {
+            if (job.getChallenge() instanceof BasicCaptchaChallenge) {
                 job.getLogger().info("Waiting for Other Solvers");
                 try {
+
                     focusRequested = false;
                     waitingThread = Thread.currentThread();
-                    job.waitFor(config.getCaptchaDialogJAntiCaptchaTimeout(), JACSolver.getInstance());
-                    if (configDBC.isEnabled() && config.getCaptchaDialogDBCTimeout() > 0) {
-                        job.waitFor(config.getCaptchaDialogDBCTimeout(), DeathByCaptchaSolver.getInstance());
-                    }
-                    if (config9kw.isEnabled() && config.getCaptchaDialog9kwTimeout() > 0) {
-                        job.waitFor(config.getCaptchaDialog9kwTimeout(), Captcha9kwSolver.getInstance());
-                    }
-                    if (Challenge.getPlugin(job.getChallenge()) instanceof PluginForDecrypt) {
-                        if (configMyJD.isCESEnabled() && config.getCaptchaDialogMyJDCESForCrawlerPluginsTimeout() > 0) {
-                            job.waitFor(config.getCaptchaDialogMyJDCESForCrawlerPluginsTimeout(), CaptchaMyJDSolver.getInstance());
-                        }
-                    } else {
-                        if (configMyJD.isCESEnabled() && config.getCaptchaDialogMyJDCESForHostPluginsTimeout() > 0) {
-                            job.waitFor(config.getCaptchaDialogMyJDCESForHostPluginsTimeout(), CaptchaMyJDSolver.getInstance());
-                        }
-                    }
-
-                    if (configcbh.isEnabled() && config.getCaptchaDialogCaptchaBrotherhoodTimeout() > 0) {
-                        job.waitFor(config.getCaptchaDialogCaptchaBrotherhoodTimeout(), CBSolver.getInstance());
-                    }
-                    if (configresolutor.isEnabled() && config.getCaptchaDialogResolutorCaptchaTimeout() > 0) {
-                        job.waitFor(config.getCaptchaDialogResolutorCaptchaTimeout(), CaptchaResolutorCaptchaSolver.getInstance());
-                    }
+                    job.waitFor(9, JACSolver.getInstance());
+                    // if (configDBC.isEnabled() && config.getCaptchaDialogDBCTimeout() > 0) {
+                    // job.waitFor(config.getCaptchaDialogDBCTimeout(), DeathByCaptchaSolver.getInstance());
+                    // }
+                    // if (config9kw.isEnabled() && config.getCaptchaDialog9kwTimeout() > 0) {
+                    // job.waitFor(config.getCaptchaDialog9kwTimeout(), Captcha9kwSolver.getInstance());
+                    // }
+                    // if (Challenge.getPlugin(job.getChallenge()) instanceof PluginForDecrypt) {
+                    // if (configMyJD.isEnabled() && config.getCaptchaDialogMyJDCESForCrawlerPluginsTimeout() > 0) {
+                    // job.waitFor(config.getCaptchaDialogMyJDCESForCrawlerPluginsTimeout(), CaptchaMyJDSolver.getInstance());
+                    // }
+                    // } else {
+                    // if (configMyJD.isEnabled() && config.getCaptchaDialogMyJDCESForHostPluginsTimeout() > 0) {
+                    // job.waitFor(config.getCaptchaDialogMyJDCESForHostPluginsTimeout(), CaptchaMyJDSolver.getInstance());
+                    // }
+                    // }
+                    //
+                    // if (configcbh.isEnabled() && config.getCaptchaDialogCaptchaBrotherhoodTimeout() > 0) {
+                    // job.waitFor(config.getCaptchaDialogCaptchaBrotherhoodTimeout(), CBSolver.getInstance());
+                    // }
 
                 } catch (InterruptedException e) {
                     e.printStackTrace();

@@ -1,61 +1,45 @@
 package org.jdownloader.captcha.v2.solver.solver9kw;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.swing.Icon;
-
-import jd.SecondLevelLaunch;
-import jd.controlling.captcha.CaptchaSettings;
-import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.ValidationException;
-import org.appwork.storage.config.events.GenericConfigEventListener;
-import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.swing.components.tooltips.ExtTooltip;
-import org.appwork.utils.Application;
 import org.appwork.utils.IO;
-import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseValidation;
+import org.jdownloader.captcha.v2.SolverService;
 import org.jdownloader.captcha.v2.SolverStatus;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.settings.advanced.AdvancedConfigManager;
-import org.jdownloader.settings.staticreferences.CFG_9KWCAPTCHA;
-import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 public class Captcha9kwSolver extends CESChallengeSolver<String> implements ChallengeResponseValidation {
-    private Captcha9kwSettings            config;
+
     private static final Captcha9kwSolver INSTANCE           = new Captcha9kwSolver();
     private ThreadPoolExecutor            threadPool         = new ThreadPoolExecutor(0, 1, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), Executors.defaultThreadFactory());
 
-    private AtomicInteger                 counterSolved      = new AtomicInteger();
-    private AtomicInteger                 counterInterrupted = new AtomicInteger();
-    private AtomicInteger                 counter            = new AtomicInteger();
-    private AtomicInteger                 counterSend        = new AtomicInteger();
-    private AtomicInteger                 counterSendError   = new AtomicInteger();
-    private AtomicInteger                 counterOK          = new AtomicInteger();
-    private AtomicInteger                 counterNotOK       = new AtomicInteger();
-    private AtomicInteger                 counterUnused      = new AtomicInteger();
+    AtomicInteger                         counterSolved      = new AtomicInteger();
+    AtomicInteger                         counterInterrupted = new AtomicInteger();
+    AtomicInteger                         counter            = new AtomicInteger();
+    AtomicInteger                         counterSend        = new AtomicInteger();
+    AtomicInteger                         counterSendError   = new AtomicInteger();
+    AtomicInteger                         counterOK          = new AtomicInteger();
+    AtomicInteger                         counterNotOK       = new AtomicInteger();
+    AtomicInteger                         counterUnused      = new AtomicInteger();
     private String                        long_debuglog      = "";
+
+    private Captcha9kwSettings            config;
 
     public static Captcha9kwSolver getInstance() {
         return INSTANCE;
@@ -67,59 +51,16 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
     }
 
     private Captcha9kwSolver() {
-        super(Math.max(1, Math.min(25, JsonConfig.create(Captcha9kwSettings.class).getThreadpoolSize())));
-
-        config = JsonConfig.create(Captcha9kwSettings.class);
-        AdvancedConfigManager.getInstance().register(config);
+        super(NineKwSolverService.getInstance(), Math.max(1, Math.min(25, NineKwSolverService.getInstance().getConfig().getThreadpoolSize())));
+        config = NineKwSolverService.getInstance().getConfig();
+        NineKwSolverService.getInstance().setTextSolver(this);
         threadPool.allowCoreThreadTimeOut(true);
-        if (!Application.isHeadless()) {
-            SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
-                public void run() {
-                    ServicePanel.getInstance().addExtender(Captcha9kwSolver.this);
-                    CFG_9KWCAPTCHA.API_KEY.getEventSender().addListener(new GenericConfigEventListener<String>() {
-
-                        @Override
-                        public void onConfigValueModified(KeyHandler<String> keyHandler, String newValue) {
-                            ServicePanel.getInstance().requestUpdate(true);
-                        }
-
-                        @Override
-                        public void onConfigValidatorError(KeyHandler<String> keyHandler, String invalidValue, ValidationException validateException) {
-                        }
-                    });
-
-                    CFG_9KWCAPTCHA.ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
-                        @Override
-                        public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
-                        }
-
-                        @Override
-                        public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                            ServicePanel.getInstance().requestUpdate(true);
-                        }
-                    });
-                    CFG_9KWCAPTCHA.MOUSE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
-                        @Override
-                        public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
-                        }
-
-                        @Override
-                        public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                            ServicePanel.getInstance().requestUpdate(true);
-                        }
-                    });
-                }
-
-            });
-        }
     }
 
     @Override
     public boolean canHandle(Challenge<?> c) {
-        return c instanceof BasicCaptchaChallenge && CFG_CAPTCHA.CAPTCHA_EXCHANGE_SERVICES_ENABLED.isEnabled() && config.isEnabled() && super.canHandle(c);
+        return c instanceof BasicCaptchaChallenge && super.canHandle(c);
     }
 
     public synchronized void setlong_debuglog(String long_debuglog) {
@@ -134,17 +75,15 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
         return this.long_debuglog;
     }
 
-    public String getAPIROOT() {
-        if (config.ishttps()) {
-            return "https://www.9kw.eu/";
-        } else {
-            return "http://www.9kw.eu/";
-        }
+    @Override
+    public boolean isEnabled() {
+        return config.ismouse() || config.isEnabled();
     }
 
     @Override
-    public Icon getIcon(int size) {
-        return new AbstractIcon(IconKey.ICON_9KW, size);
+    public void setEnabled(boolean b) {
+        config.setmouse(b);
+        config.setEnabled(b);
     }
 
     public void setdebug_short(String logdata) {
@@ -166,7 +105,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
 
         int cph = config.gethour();
         int priothing = config.getprio();
-        int timeoutthing = (JsonConfig.create(CaptchaSettings.class).getCaptchaDialog9kwTimeout() / 1000);
+        long timeoutthing = config.getDefaultTimeout();
         boolean selfsolve = config.isSelfsolve();
         boolean confirm = config.isconfirm();
 
@@ -329,7 +268,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
             String ret = "";
             job.setStatus(SolverStatus.UPLOADING);
             for (int i = 0; i <= 5; i++) {
-                ret = br.postPage(getAPIROOT() + "index.cgi", "action=usercaptchaupload&jd=2&source=jd2" + moreoptions + "&captchaperhour=" + cph + "&prio=" + priothing + "&selfsolve=" + selfsolve + "&confirm=" + confirm + "&oldsource=" + Encoding.urlEncode(challenge.getTypeID()) + "&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&maxtimeout=" + timeoutthing + "&version=1.2&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false)));
+                ret = br.postPage(NineKwSolverService.getInstance().getAPIROOT() + "index.cgi", "action=usercaptchaupload&jd=2&source=jd2" + moreoptions + "&captchaperhour=" + cph + "&prio=" + priothing + "&selfsolve=" + selfsolve + "&confirm=" + confirm + "&oldsource=" + Encoding.urlEncode(challenge.getTypeID()) + "&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&maxtimeout=" + timeoutthing + "&version=1.2&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false)));
                 if (ret.startsWith("OK-")) {
                     counterSend.incrementAndGet();
                     break;
@@ -356,7 +295,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
             Thread.sleep(5000);
             while (true) {
                 setdebug(job, "9kw.eu CaptchaID " + captchaID + ": Ask");
-                ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectdata&jd=2&source=jd2&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&id=" + Encoding.urlEncode(captchaID) + "&version=1.1");
+                ret = br.getPage(NineKwSolverService.getInstance().getAPIROOT() + "index.cgi?action=usercaptchacorrectdata&jd=2&source=jd2&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&id=" + Encoding.urlEncode(captchaID) + "&version=1.1");
                 if (StringUtils.isEmpty(ret)) {
                     setdebug(job, "9kw.eu CaptchaID " + captchaID + " - NO answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s ");
                 } else {
@@ -381,6 +320,11 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
     }
 
     @Override
+    public SolverService getService() {
+        return super.getService();
+    }
+
+    @Override
     public void setValid(final AbstractResponse<?> response, SolverJob<?> job) {
         if (config.isfeedback()) {
             threadPool.execute(new Runnable() {
@@ -393,7 +337,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
                         String ret = "";
                         br.setAllowedResponseCodes(new int[] { 500 });
                         for (int i = 0; i <= 3; i++) {
-                            ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=1&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
+                            ret = br.getPage(NineKwSolverService.getInstance().getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=1&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
                             if (ret.startsWith("OK")) {
                                 setdebug_short("9kw.eu CaptchaID " + captchaID + ": OK (Feedback)");
                                 counterOK.incrementAndGet();
@@ -423,7 +367,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
                         String ret = "";
                         br.setAllowedResponseCodes(new int[] { 500 });
                         for (int i = 0; i <= 3; i++) {
-                            ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=3&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
+                            ret = br.getPage(NineKwSolverService.getInstance().getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=3&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
                             if (ret.startsWith("OK")) {
                                 setdebug_short("9kw.eu CaptchaID " + captchaID + ": Unused (Feedback)");
                                 counterUnused.incrementAndGet();
@@ -454,7 +398,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
                         String ret = "";
                         br.setAllowedResponseCodes(new int[] { 500 });
                         for (int i = 0; i <= 3; i++) {
-                            ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=2&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
+                            ret = br.getPage(NineKwSolverService.getInstance().getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=2&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
                             if (ret.startsWith("OK")) {
                                 setdebug_short("9kw.eu CaptchaID " + captchaID + ": NotOK (Feedback)");
                                 counterNotOK.incrementAndGet();
@@ -473,102 +417,9 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
     }
 
     @Override
-    public String getName() {
-        return "9kw.eu";
-    }
-
-    @Override
-    public void extendServicePabel(List<ServiceCollection<?>> services) {
-        if (StringUtils.isNotEmpty(config.getApiKey())) {
-            services.add(new ServiceCollection<Captcha9kwSolver>() {
-
-                /**
-                 * 
-                 */
-                private static final long serialVersionUID = 5569965026755271172L;
-
-                @Override
-                public Icon getIcon() {
-                    return new AbstractIcon(IconKey.ICON_9KW, 18);
-                }
-
-                @Override
-                public boolean isEnabled() {
-                    return config.isEnabled() || config.ismouse();
-                }
-
-                @Override
-                protected long getLastActiveTimestamp() {
-                    return System.currentTimeMillis();
-                }
-
-                @Override
-                protected String getName() {
-                    return "9kw.eu";
-                }
-
-                @Override
-                public ExtTooltip createTooltip(ServicePanel owner) {
-                    return new ServicePanel9kwTooltip(owner, Captcha9kwSolver.this);
-                }
-
-            });
-        }
-    }
-
-    public NineKWAccount loadAccount() throws IOException {
-        Browser br = new Browser();
-        NineKWAccount ret = new NineKWAccount();
-        String credits;
-
-        ret.setRequests(counter.get() + org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick.getInstance().click9kw_counter.get());
-        ret.setSkipped(counterInterrupted.get() + org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick.getInstance().click9kw_counterInterrupted.get());
-        ret.setSolved(counterSolved.get() + org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick.getInstance().click9kw_counterSolved.get());
-
-        ret.setSend(counterSend.get() + org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick.getInstance().click9kw_counterSend.get());
-        ret.setSendError(counterSendError.get() + org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick.getInstance().click9kw_counterSendError.get());
-        ret.setOK(counterOK.get() + org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick.getInstance().click9kw_counterOK.get());
-        ret.setNotOK(counterNotOK.get() + org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick.getInstance().click9kw_counterNotOK.get());
-        ret.setUnused(counterUnused.get() + org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick.getInstance().click9kw_counterUnused.get());
-
-        try {
-            String servercheck = br.getPage(getAPIROOT() + "grafik/servercheck.txt");
-            ret.setWorker(Integer.parseInt(new Regex(servercheck, "worker=(\\d+)").getMatch(0)));
-            ret.setAvgSolvtime(Integer.parseInt(new Regex(servercheck, "avg1h=(\\d+)").getMatch(0)));
-            ret.setQueue(Integer.parseInt(new Regex(servercheck, "queue=(\\d+)").getMatch(0)));
-            ret.setQueue1(Integer.parseInt(new Regex(servercheck, "queue1=(\\d+)").getMatch(0)));
-            ret.setQueue2(Integer.parseInt(new Regex(servercheck, "queue2=(\\d+)").getMatch(0)));
-            ret.setInWork(Integer.parseInt(new Regex(servercheck, "inwork=(\\d+)").getMatch(0)));
-            ret.setWorkerMouse(Integer.parseInt(new Regex(servercheck, "workermouse=(\\d+)").getMatch(0)));
-            ret.setWorkerConfirm(Integer.parseInt(new Regex(servercheck, "workerconfirm=(\\d+)").getMatch(0)));
-            ret.setWorkerText(Integer.parseInt(new Regex(servercheck, "workertext=(\\d+)").getMatch(0)));
-        } catch (NumberFormatException e) {
-            ret.setError("API Error!");
-        }
-
-        if (!config.getApiKey().matches("^[a-zA-Z0-9]+$")) {
-            ret.setError("API Key is not correct!");
-        } else {
-            credits = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchaguthaben&apikey=" + Encoding.urlEncode(config.getApiKey()));
-
-            try {
-                ret.setCreditBalance(Integer.parseInt(credits.trim()));
-                String userhistory1 = br.getPage(getAPIROOT() + "index.cgi?action=userhistory&short=1&apikey=" + Encoding.urlEncode(config.getApiKey()));
-                String userhistory2 = br.getPage(getAPIROOT() + "index.cgi?action=userhistory2&short=1&apikey=" + Encoding.urlEncode(config.getApiKey()));
-
-                ret.setAnswered9kw(Integer.parseInt(Regex.getLines(userhistory2)[0]));
-                ret.setSolved9kw(Integer.parseInt(Regex.getLines(userhistory1)[0]));
-            } catch (NumberFormatException e) {
-                ret.setError(credits);
-            }
-        }
-        return ret;
-
-    }
-
-    @Override
     protected boolean validateLogins() {
-        return StringUtils.isNotEmpty(config.getApiKey()) && config.isEnabled();
+        return StringUtils.isNotEmpty(config.getApiKey()) && isEnabled();
 
     }
+
 }

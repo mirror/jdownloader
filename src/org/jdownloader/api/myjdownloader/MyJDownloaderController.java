@@ -438,7 +438,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         return null;
     }
 
-    public boolean isChallengeExchangeEnabled() {
+    public boolean isRemoteCaptchaServiceEnabled() {
         final MyJDownloaderConnectThread th = thread.get();
         if (th != null) {
             return th.isChallengeExchangeEnabled();

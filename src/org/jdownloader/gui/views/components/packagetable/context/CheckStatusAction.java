@@ -77,6 +77,7 @@ public class CheckStatusAction extends CustomizableTableContextAppAction {
                     }
                 }
                 LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
+
                 linkChecker.setLinkCheckHandler(new LinkCheckerHandler<CheckableLink>() {
 
                     @Override

@@ -1,13 +1,14 @@
 package org.jdownloader.gui.toolbar.action;
 
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.handler.BooleanKeyHandler;
+import org.jdownloader.captcha.v2.solver.gui.DialogCaptchaSolverConfig;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 public class CaptchaDialogsToogleAction extends AbstractToolbarToggleAction {
 
     public CaptchaDialogsToogleAction() {
-        super(CFG_CAPTCHA.CAPTCHA_DIALOGS_ENABLED);
+        super(JsonConfig.create(DialogCaptchaSolverConfig.class)._getStorageHandler().getKeyHandler("Enabled", BooleanKeyHandler.class));
         setIconKey("dialogOCR");
 
     }

@@ -2,7 +2,6 @@ package org.jdownloader.captcha.v2;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 
 import jd.controlling.captcha.CaptchaSettings;
@@ -10,9 +9,19 @@ import jd.controlling.captcha.SkipException;
 import jd.controlling.captcha.SkipRequest;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.api.captcha.CaptchaAPISolver;
 import org.jdownloader.captcha.event.ChallengeResponseEvent;
 import org.jdownloader.captcha.event.ChallengeResponseEventSender;
+import org.jdownloader.captcha.v2.solver.captchabrotherhood.CBSolver;
+import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolver;
+import org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver;
+import org.jdownloader.captcha.v2.solver.gui.DialogClickCaptchaSolver;
+import org.jdownloader.captcha.v2.solver.jac.JACSolver;
+import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolver;
+import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver;
+import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.logging.LogController;
 
@@ -27,6 +36,19 @@ public class ChallengeResponseController {
     public static ChallengeResponseController getInstance() {
         return ChallengeResponseController.INSTANCE;
     }
+
+    // public ChallengeSolver<?>[] getWaitForOtherSolversList(ChallengeSolver<?> requestor) {
+    // List<ChallengeSolver<?>> so = solverOrder;
+    // ArrayList<ChallengeSolver<?>> ret = new ArrayList<ChallengeSolver<?>>();
+    // for (ChallengeSolver<?> solver : so) {
+    // if (solver == requestor) {
+    // break;
+    // }
+    // ret.add(solver);
+    // }
+    // return ret.toArray(new ChallengeSolver<?>[] {});
+    //
+    // }
 
     private CaptchaSettings              config;
     private ChallengeResponseEventSender eventSender;
@@ -45,12 +67,45 @@ public class ChallengeResponseController {
         config = JsonConfig.create(CaptchaSettings.class);
         logger = LogController.getInstance().getLogger(getClass().getName());
         eventSender = new ChallengeResponseEventSender(logger);
+
     }
 
-    public boolean addSolver(ChallengeSolver<?> solver) {
-        synchronized (solverList) {
-            return solverList.add(solver);
+    public void init() {
+        addSolver(JACSolver.getInstance());
+
+        addSolver(CaptchaMyJDSolver.getInstance());
+        addSolver(DeathByCaptchaSolver.getInstance());
+        addSolver(CBSolver.getInstance());
+        addSolver(Captcha9kwSolver.getInstance());
+        addSolver(Captcha9kwSolverClick.getInstance());
+
+        if (!Application.isHeadless()) {
+            addSolver(DialogBasicCaptchaSolver.getInstance());
         }
+        if (!Application.isHeadless()) {
+            addSolver(DialogClickCaptchaSolver.getInstance());
+        }
+        addSolver(CaptchaAPISolver.getInstance());
+
+    }
+
+    public List<ChallengeSolver<?>> listSolvers() {
+        return new ArrayList<ChallengeSolver<?>>(solverList);
+    }
+
+    // public List<ChallengeSolver<?>> getSolverByID(String id) {
+    // return solverMap.get(id);
+    // }
+
+    private HashMap<String, SolverService> solverMap   = new HashMap<String, SolverService>();
+    private List<SolverService>            serviceList = new ArrayList<SolverService>();
+
+    private boolean addSolver(ChallengeSolver<?> solver) {
+        if (solverMap.put(solver.getService().getID(), solver.getService()) == null) {
+            serviceList.add(solver.getService());
+        }
+
+        return solverList.add(solver);
 
     }
 
@@ -91,7 +146,7 @@ public class ChallengeResponseController {
 
     }
 
-    private HashSet<ChallengeSolver<?>> solverList = new HashSet<ChallengeSolver<?>>();
+    private List<ChallengeSolver<?>>    solverList = new ArrayList<ChallengeSolver<?>>();
     private List<SolverJob<?>>          activeJobs = new ArrayList<SolverJob<?>>();
     private HashMap<Long, SolverJob<?>> idToJobMap = new HashMap<Long, SolverJob<?>>();
 
@@ -123,9 +178,10 @@ public class ChallengeResponseController {
             logger = this.logger;
         }
         logger.info("Log to " + logger.getName());
-        synchronized (solverList) {
-            solver = createList(c);
-        }
+
+        solver = createList(c);
+        logger.info("Solver: " + solver);
+
         logger.info("Handle Challenge: " + c);
 
         @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -177,15 +233,14 @@ public class ChallengeResponseController {
     @SuppressWarnings("unchecked")
     private <T> ArrayList<ChallengeSolver<T>> createList(Challenge<T> c) {
         ArrayList<ChallengeSolver<T>> ret = new ArrayList<ChallengeSolver<T>>();
-        synchronized (solverList) {
-            for (ChallengeSolver<?> s : solverList) {
-                try {
-                    if (s.canHandle(c)) {
-                        ret.add((ChallengeSolver<T>) s);
-                    }
-                } catch (final Throwable e) {
-                    logger.log(e);
+
+        for (ChallengeSolver<?> s : solverList) {
+            try {
+                if (s.isEnabled() && s.canHandle(c)) {
+                    ret.add((ChallengeSolver<T>) s);
                 }
+            } catch (final Throwable e) {
+                logger.log(e);
             }
         }
 
@@ -194,6 +249,10 @@ public class ChallengeResponseController {
 
     public SolverJob<?> getJobById(long id) {
         return idToJobMap.get(id);
+    }
+
+    public List<SolverService> listServices() {
+        return serviceList;
     }
 
 }

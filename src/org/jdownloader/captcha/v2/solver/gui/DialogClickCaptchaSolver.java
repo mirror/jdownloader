@@ -1,7 +1,5 @@
 package org.jdownloader.captcha.v2.solver.gui;
 
-import javax.swing.Icon;
-
 import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.ClickCaptchaDialogHandler;
 import jd.controlling.captcha.SkipException;
@@ -13,13 +11,11 @@ import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ClickCaptchaResponse;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSettings;
-import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
+import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
 public class DialogClickCaptchaSolver extends AbstractDialogSolver<ClickedPoint> {
+
     private CaptchaSettings           config;
     private Captcha9kwSettings        config9kw;
     private ClickCaptchaDialogHandler handler;
@@ -28,11 +24,8 @@ public class DialogClickCaptchaSolver extends AbstractDialogSolver<ClickedPoint>
         super(1);
         config = JsonConfig.create(CaptchaSettings.class);
         config9kw = JsonConfig.create(Captcha9kwSettings.class);
-    }
 
-    @Override
-    public Icon getIcon(int size) {
-        return NewTheme.I().getIcon(IconKey.ICON_OCR, size);
+        AdvancedConfigManager.getInstance().register(JsonConfig.create(DialogCaptchaSolverConfig.class));
     }
 
     private static final DialogClickCaptchaSolver INSTANCE = new DialogClickCaptchaSolver();
@@ -43,7 +36,7 @@ public class DialogClickCaptchaSolver extends AbstractDialogSolver<ClickedPoint>
 
     @Override
     public boolean canHandle(Challenge<?> c) {
-        return CFG_CAPTCHA.CAPTCHA_DIALOGS_ENABLED.isEnabled() && super.canHandle(c);
+        return super.canHandle(c);
     }
 
     public void enqueue(SolverJob<ClickedPoint> solverJob) {
@@ -53,11 +46,6 @@ public class DialogClickCaptchaSolver extends AbstractDialogSolver<ClickedPoint>
 
     }
 
-    @Override
-    public String getName() {
-        return "Dialog";
-    }
-
     public void requestFocus(Challenge<?> challenge) {
         ClickCaptchaDialogHandler hndlr = handler;
         if (hndlr != null) {
@@ -65,26 +53,30 @@ public class DialogClickCaptchaSolver extends AbstractDialogSolver<ClickedPoint>
         }
     }
 
-    /**
-     * returns true if the dialog solver waits for invisible solvers like captcha exchange services
-     * 
-     * @return
-     */
-    public boolean hasToWaitForInvisibleSolvers() {
-
-        if (config9kw.isEnabled() && config.getCaptchaDialog9kwTimeout() > 0) return true;
-
-        return false;
-    }
+    // /**
+    // * returns true if the dialog solver waits for invisible solvers like captcha exchange services
+    // *
+    // * @return
+    // */
+    // public boolean hasToWaitForInvisibleSolvers() {
+    //
+    // if (config9kw.isEnabled() && config.getCaptchaDialog9kwTimeout() > 0) {
+    // return true;
+    // }
+    //
+    // return false;
+    // }
 
     @Override
     public void solve(SolverJob<ClickedPoint> solverJob) throws InterruptedException, SkipException {
         synchronized (DialogBasicCaptchaSolver.getInstance()) {
-            if (solverJob.getChallenge() instanceof ClickCaptchaChallenge && CFG_CAPTCHA.CAPTCHA_DIALOGS_ENABLED.isEnabled()) {
+            if (solverJob.getChallenge() instanceof ClickCaptchaChallenge) {
                 solverJob.getLogger().info("Waiting for JAC (Click/Mouse)");
-                solverJob.waitFor(config.getCaptchaDialogJAntiCaptchaTimeout(), JACSolver.getInstance());
+                solverJob.waitFor(9, JACSolver.getInstance());
                 // StringUtils.isEmpty(config.getApiKey())
-                if (config9kw.ismouse() && config.getCaptchaDialog9kwTimeout() > 0) solverJob.waitFor(config.getCaptchaDialog9kwTimeout(), Captcha9kwSolverClick.getInstance());
+                // if (config9kw.ismouse() && config.getCaptchaDialog9kwTimeout() > 0) {
+                // solverJob.waitFor(config.getCaptchaDialog9kwTimeout(), Captcha9kwSolverClick.getInstance());
+                // }
 
                 solverJob.getLogger().info("JAC (Click/Mouse) is done. Response so far: " + solverJob.getResponse());
                 checkSilentMode(solverJob);

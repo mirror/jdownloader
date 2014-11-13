@@ -1,7 +1,6 @@
 package org.jdownloader.api.test;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 
 import org.appwork.storage.Storage;
 import org.jdownloader.api.test.TestClient.Test;
@@ -19,18 +18,21 @@ public class AccountTest extends Test {
         final ArrayList<String> premiumhoster = accounts.listPremiumHoster();
         AccountQuery query = new AccountQuery();
         query.setUserName(true);
+        query.setEnabled(true);
+        query.setTrafficLeft(true);
+        query.setTrafficMax(true);
         // should contain all
         ArrayList<AccountStorable> list = accounts.listAccounts(query);
-        long firstID = 0;
-        if (list.size() > 0) firstID = list.get(0).getUUID();
-        HashSet<Long> accountsToRefresh = new HashSet<Long>();
-        accountsToRefresh.add(1l);
-        query.setUUIDList(accountsToRefresh);
-        // should contain none
-        list = accounts.listAccounts(query);
-        accountsToRefresh.add(firstID);
-        // should contain the first one
-        list = accounts.listAccounts(query);
+        // long firstID = 0;
+        // if (list.size() > 0) firstID = list.get(0).getUUID();
+        // HashSet<Long> accountsToRefresh = new HashSet<Long>();
+        // accountsToRefresh.add(1l);
+        // query.setUUIDList(accountsToRefresh);
+        // // should contain none
+        // list = accounts.listAccounts(query);
+        // accountsToRefresh.add(firstID);
+        // // should contain the first one
+        // list = accounts.listAccounts(query);
         System.out.println(list);
     }
 

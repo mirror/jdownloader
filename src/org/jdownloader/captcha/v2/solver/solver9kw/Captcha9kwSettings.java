@@ -1,6 +1,5 @@
 package org.jdownloader.captcha.v2.solver.solver9kw;
 
-import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
@@ -8,21 +7,15 @@ import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
+import org.jdownloader.captcha.v2.ChallengeSolverConfig;
 
-public interface Captcha9kwSettings extends ConfigInterface {
+public interface Captcha9kwSettings extends ChallengeSolverConfig {
     @AboutConfig
     @DefaultStringValue("")
     @DescriptionForConfigEntry("Your (User) ApiKey from 9kw.eu")
     String getApiKey();
 
     void setApiKey(String jser);
-
-    @AboutConfig
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Activate the 9kw.eu service")
-    boolean isEnabled();
-
-    void setEnabled(boolean b);
 
     @AboutConfig
     @DefaultBooleanValue(false)
@@ -37,6 +30,12 @@ public interface Captcha9kwSettings extends ConfigInterface {
     boolean ismouse();
 
     void setmouse(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isEnabledGlobally();
+
+    void setEnabledGlobally(boolean b);
 
     @AboutConfig
     @DefaultBooleanValue(false)
@@ -217,4 +216,11 @@ public interface Captcha9kwSettings extends ConfigInterface {
     boolean getlowcredits();
 
     void setlowcredits(boolean b);
+
+    @AboutConfig
+    @DefaultIntValue(60000)
+    @DescriptionForConfigEntry("Default Timeout in ms")
+    int getDefaultTimeout();
+
+    void setDefaultTimeout(int ms);
 }

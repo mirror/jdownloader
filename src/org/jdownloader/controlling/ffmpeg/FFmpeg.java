@@ -7,7 +7,10 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Application;
+import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
@@ -19,12 +22,36 @@ public class FFmpeg extends AbstractFFmpegBinary {
         logger = LogController.getInstance().getLogger(FFmpeg.class.getName());
         path = config.getBinaryPath();
 
+        if (!validatePaths()) {
+
+            config.setBinaryPath(null);
+            path = null;
+        }
+
     }
 
-    public FFmpeg(String path) {
-        this();
-        this.path = path;
+    private boolean validatePaths() {
+        File root = Application.getResource("");
+        String relative = Files.getRelativePath(root, new File(path));
+        logger.info("Validate Relative Path: " + relative);
+        if (relative != null) {
+            File correctPath = FFMpegInstallThread.getFFmpegPath("ffmpeg");
+            String relativeCorrect = Files.getRelativePath(root, correctPath);
+            logger.info("Validate Relative Correct Path: " + relativeCorrect);
+            if (relativeCorrect != null) {
+                if (!StringUtils.equals(relative, relativeCorrect)) {
+                    logger.info("Mismatch. validation failed");
+                    return false;
+                }
+            }
+        }
+        return true;
     }
+
+    // public FFmpeg(String path) {
+    // this();
+    // this.path = path;
+    // }
 
     // public boolean validateBinary() {
     // String fp = getFullPath();

@@ -17,6 +17,15 @@ public class ProxyData implements Storable {
 
     private FilterList        filter;
     private boolean           pac                    = false;
+    private boolean           reconnectSupported     = false;
+
+    public boolean isReconnectSupported() {
+        return reconnectSupported;
+    }
+
+    public void setReconnectSupported(boolean reconnectSupported) {
+        this.reconnectSupported = reconnectSupported;
+    }
 
     public boolean isRangeRequestsSupported() {
         return rangeRequestsSupported;

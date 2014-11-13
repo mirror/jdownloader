@@ -1,21 +1,15 @@
 package org.jdownloader.captcha.v2.solver.solver9kw;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.swing.Icon;
-
-import jd.controlling.captcha.CaptchaSettings;
-import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.AbstractResponse;
@@ -26,15 +20,12 @@ import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
-import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> implements ChallengeResponseValidation {
+
     private Captcha9kwSettings                 config;
     private static final Captcha9kwSolverClick INSTANCE                    = new Captcha9kwSolverClick();
     private ThreadPoolExecutor                 threadPool                  = new ThreadPoolExecutor(0, 1, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), Executors.defaultThreadFactory());
@@ -52,31 +43,32 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
     }
 
     @Override
-    public Icon getIcon(int size) {
-        return NewTheme.I().getIcon(IconKey.ICON_9KW, size);
-    }
-
-    @Override
-    public String getName() {
-        return "9kw.eu";
-    }
-
-    @Override
     public Class<ClickedPoint> getResultType() {
         return ClickedPoint.class;
     }
 
     private Captcha9kwSolverClick() {
-        super(JsonConfig.create(Captcha9kwSettings.class).getThreadpoolSize());
-        config = JsonConfig.create(Captcha9kwSettings.class);
-        // AdvancedConfigManager.getInstance().register(config);
+        super(NineKwSolverService.getInstance(), Math.max(1, Math.min(25, NineKwSolverService.getInstance().getConfig().getThreadpoolSize())));
+        config = NineKwSolverService.getInstance().getConfig();
+        NineKwSolverService.getInstance().setClickSolver(this);
         threadPool.allowCoreThreadTimeOut(true);
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return config.ismouse() || config.isEnabled();
+    }
+
+    @Override
+    public void setEnabled(boolean b) {
+        config.setmouse(b);
+        config.setEnabled(b);
     }
 
     @Override
     public boolean canHandle(Challenge<?> c) {
         // do not use && config.isEnabled() here. config.ismouse() is the enable config for the mouse solver
-        return c instanceof ClickCaptchaChallenge && CFG_CAPTCHA.CAPTCHA_EXCHANGE_SERVICES_ENABLED.isEnabled() && config.ismouse() && super.canHandle(c);
+        return c instanceof ClickCaptchaChallenge && super.canHandle(c);
     }
 
     public String getAPIROOT() {
@@ -97,13 +89,13 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
     @Override
     protected void solveCES(CESSolverJob<ClickedPoint> solverJob) throws InterruptedException, SolverException {
 
-        solverJob.waitFor(JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout(), JACSolver.getInstance());
+        // solverJob.waitFor(JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout(), JACSolver.getInstance());
         checkInterruption();
         ClickCaptchaChallenge captchaChallenge = (ClickCaptchaChallenge) solverJob.getChallenge();
 
         int cph = config.gethour();
         int priothing = config.getprio();
-        int timeoutthing = (JsonConfig.create(CaptchaSettings.class).getCaptchaDialog9kwTimeout() / 1000);
+        long timeoutthing = config.getDefaultTimeout();
         boolean selfsolve = config.isSelfsolve();
         boolean confirm = config.ismouseconfirm();
 
@@ -112,7 +104,9 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
             return;
         }
 
-        setdebug(solverJob, "Start Captcha to 9kw.eu. Timeout: " + JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout() + " - getTypeID: " + captchaChallenge.getTypeID());
+        // setdebug(solverJob, "Start Captcha to 9kw.eu. Timeout: " +
+        // JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout() + " - getTypeID: " +
+        // captchaChallenge.getTypeID());
         if (config.getwhitelistcheck()) {
             if (config.getwhitelist() != null) {
                 if (config.getwhitelist().length() > 5) {
@@ -407,11 +401,8 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
     }
 
     @Override
-    public void extendServicePabel(List<ServiceCollection<?>> services) {
-    }
-
-    @Override
     protected boolean validateLogins() {
         return StringUtils.isNotEmpty(config.getApiKey()) && config.ismouse();
     }
+
 }

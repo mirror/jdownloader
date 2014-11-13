@@ -11,7 +11,7 @@ import jd.captcha.JACMethod;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
 import jd.captcha.pixelgrid.Captcha;
-import jd.controlling.captcha.CaptchaSettings;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -27,21 +27,45 @@ import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.ChallengeSolver;
+import org.jdownloader.captcha.v2.ChallengeSolverConfig;
+import org.jdownloader.captcha.v2.SolverService;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
+import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
-public class JACSolver extends ChallengeSolver<String> implements ChallengeResponseValidation {
+public class JACSolver extends ChallengeSolver<String> implements ChallengeResponseValidation, SolverService {
+    public static final String             ID                = "jac";
     private static final double            _0_85             = 0.85;
-    private CaptchaSettings                config;
+    private JACSolverConfig                config;
     private static final JACSolver         INSTANCE          = new JACSolver();
     private final HashMap<String, Integer> jacMethodTrustMap = new HashMap<String, Integer>();
     private HashMap<String, AutoTrust>     threshold;
     private LogSource                      logger;
+
+    protected int getDefaultWaitForOthersTimeout() {
+        return 0;
+    }
+
+    @Override
+    public HashMap<String, Integer> getWaitForOthersDefaultMap() {
+        HashMap<String, Integer> ret = new HashMap<String, Integer>();
+        // ret.put(Captcha9kwSolverClick.ID, 60000);
+        // ret.put(DialogClickCaptchaSolver.ID, 60000);
+        // ret.put(DialogBasicCaptchaSolver.ID, 60000);
+        // ret.put(CaptchaAPISolver.ID, 60000);
+        // ret.put(JACSolver.ID, 30000);
+        // ret.put(Captcha9kwSolver.ID, 60000);
+        // ret.put(CaptchaMyJDSolver.ID, 60000);
+        // ret.put(CBSolver.ID, 60000);
+        // ret.put(DeathByCaptchaSolver.ID, 60000);
+
+        return ret;
+    }
 
     /**
      * get the only existing instance of JACSolver. This is a singleton
@@ -63,7 +87,8 @@ public class JACSolver extends ChallengeSolver<String> implements ChallengeRespo
 
     private JACSolver() {
         super(5);
-        config = JsonConfig.create(CaptchaSettings.class);
+        config = JsonConfig.create(JACSolverConfig.class);
+        AdvancedConfigManager.getInstance().register(config);
         logger = LogController.getInstance().getLogger(JACSolver.class.getName());
         threshold = config.getJACThreshold();
         if (threshold == null) {
@@ -76,11 +101,12 @@ public class JACSolver extends ChallengeSolver<String> implements ChallengeRespo
                 config.setJACThreshold(threshold);
             }
         });
+
     }
 
     @Override
-    public String getName() {
-        return "Auto Solver";
+    public String getType() {
+        return _GUI._.JACSolver_getName_();
     }
 
     @Override
@@ -95,7 +121,7 @@ public class JACSolver extends ChallengeSolver<String> implements ChallengeRespo
 
     @Override
     public void enqueue(SolverJob<String> job) {
-        if (CFG_CAPTCHA.JANTI_CAPTCHA_ENABLED.isEnabled() && super.canHandle(job.getChallenge())) {
+        if (isEnabled() && super.canHandle(job.getChallenge())) {
             super.enqueue(job);
         } else {
 
@@ -105,7 +131,7 @@ public class JACSolver extends ChallengeSolver<String> implements ChallengeRespo
     @Override
     public void solve(SolverJob<String> job) throws InterruptedException, SolverException {
         try {
-            if (job.getChallenge() instanceof BasicCaptchaChallenge && CFG_CAPTCHA.JANTI_CAPTCHA_ENABLED.isEnabled()) {
+            if (job.getChallenge() instanceof BasicCaptchaChallenge && isEnabled()) {
                 BasicCaptchaChallenge captchaChallenge = (BasicCaptchaChallenge) job.getChallenge();
                 String host = null;
                 if (captchaChallenge.getPlugin() instanceof PluginForHost) {
@@ -118,8 +144,8 @@ public class JACSolver extends ChallengeSolver<String> implements ChallengeRespo
                     return;
                 }
                 job.getLogger().info("JACSolver handles " + job);
-                job.getLogger().info("JAC: enabled: " + config.isAutoCaptchaRecognitionEnabled() + " Has Method: " + JACMethod.hasMethod(captchaChallenge.getTypeID()));
-                if (!config.isAutoCaptchaRecognitionEnabled() || !JACMethod.hasMethod(captchaChallenge.getTypeID())) {
+                job.getLogger().info("JAC: enabled: " + config.isEnabled() + " Has Method: " + JACMethod.hasMethod(captchaChallenge.getTypeID()));
+                if (!config.isEnabled() || !JACMethod.hasMethod(captchaChallenge.getTypeID())) {
                     return;
                 }
                 checkInterruption();
@@ -255,4 +281,30 @@ public class JACSolver extends ChallengeSolver<String> implements ChallengeRespo
         }
 
     }
+
+    @Override
+    public String getID() {
+        return ID;
+    }
+
+    @Override
+    public AbstractCaptchaSolverConfigPanel getConfigPanel() {
+        return null;
+    }
+
+    @Override
+    public boolean hasConfigPanel() {
+        return false;
+    }
+
+    @Override
+    public String getName() {
+        return _GUI._.JACSolver_gettypeName_();
+    }
+
+    @Override
+    public ChallengeSolverConfig getConfig() {
+        return config;
+    }
+
 }

@@ -10,8 +10,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import javax.swing.Icon;
-
 import jd.controlling.captcha.SkipException;
 
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
@@ -21,6 +19,7 @@ public abstract class ChallengeSolver<T> {
 
     private ThreadPoolExecutor threadPool;
     private Class<T>           resultType;
+    private SolverService      service;
 
     /**
      * 
@@ -28,15 +27,37 @@ public abstract class ChallengeSolver<T> {
      *            size of the threadpool. if i<=0 there will be no threadpool. each challenge will get a new thread in this case
      */
     @SuppressWarnings("unchecked")
-    public ChallengeSolver(int i) {
+    public ChallengeSolver(SolverService service, int i) {
+        this.service = service;
+        if (service == null) {
+            this.service = (SolverService) this;
+        }
         initThreadPool(i);
 
         final Type superClass = this.getClass().getGenericSuperclass();
-        if (superClass instanceof Class) { throw new IllegalArgumentException("Wrong Construct"); }
+        if (superClass instanceof Class) {
+            throw new IllegalArgumentException("Wrong Construct");
+        }
         resultType = (Class<T>) ((ParameterizedType) superClass).getActualTypeArguments()[0];
     }
 
+    public ChallengeSolver(int i) {
+        this(null, i);
+    }
+
     protected HashMap<SolverJob<T>, JobRunnable<T>> map = new HashMap<SolverJob<T>, JobRunnable<T>>();
+
+    public SolverService getService() {
+        return service;
+    }
+
+    public boolean isEnabled() {
+        return getService().getConfig().isEnabled();
+    }
+
+    public void setEnabled(boolean b) {
+        getService().getConfig().setEnabled(b);
+    }
 
     public List<SolverJob<T>> listJobs() {
         synchronized (map) {
@@ -68,7 +89,9 @@ public abstract class ChallengeSolver<T> {
     }
 
     protected static void checkInterruption() throws InterruptedException {
-        if (Thread.interrupted()) throw new InterruptedException();
+        if (Thread.interrupted()) {
+            throw new InterruptedException();
+        }
     }
 
     public void kill(SolverJob<T> job) {
@@ -90,7 +113,9 @@ public abstract class ChallengeSolver<T> {
     }
 
     private void initThreadPool(int i) {
-        if (i <= 0) return;
+        if (i <= 0) {
+            return;
+        }
         threadPool = new ThreadPoolExecutor(0, i, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), new ThreadFactory() {
 
             public Thread newThread(final Runnable r) {
@@ -146,8 +171,19 @@ public abstract class ChallengeSolver<T> {
         return -1;
     }
 
-    public abstract String getName();
+    public int getWaitForByID(String solverID) {
 
-    public abstract Icon getIcon(int size);
+        Integer obj = getWaitForMap().get(solverID);
+        return obj == null ? 0 : obj.intValue();
+    }
+
+    public HashMap<String, Integer> getWaitForMap() {
+        HashMap<String, Integer> map = getService().getConfig().getWaitForMap();
+        if (map == null || map.size() == 0) {
+            map = getService().getWaitForOthersDefaultMap();
+            getService().getConfig().setWaitForMap(map);
+        }
+        return map;
+    }
 
 }

@@ -95,9 +95,14 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
 
     protected final CopyOnWriteArraySet<SingleDownloadController> activeSingleDownloadControllers = new CopyOnWriteArraySet<SingleDownloadController>();
     protected final CopyOnWriteArrayList<SelectProxyByUrlHook>    selectProxyByUrlHooks           = new CopyOnWriteArrayList<SelectProxyByUrlHook>();
+    private boolean                                               reconnectSupported;
 
     public boolean isReconnectSupported() {
-        return Type.NONE.equals(getType());
+        return reconnectSupported;
+    }
+
+    public void setReconnectSupported(boolean reconnectSupported) {
+        this.reconnectSupported = reconnectSupported;
     }
 
     public AbstractProxySelectorImpl() {
