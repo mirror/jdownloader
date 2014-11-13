@@ -1,6 +1,6 @@
 package org.jdownloader.captcha.v2;
 
-import java.util.HashMap;
+import java.util.Map;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
@@ -15,8 +15,8 @@ public interface ChallengeSolverConfig extends ConfigInterface {
     void setEnabled(boolean b);
 
     @AboutConfig
-    HashMap<String, Integer> getWaitForMap();
+    Map<String, Integer> getWaitForMap();
 
-    void setWaitForMap(HashMap<String, Integer> map);
+    void setWaitForMap(Map<String, Integer> map);
 
 }

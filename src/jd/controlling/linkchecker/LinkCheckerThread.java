@@ -4,9 +4,7 @@ import java.util.List;
 
 import jd.controlling.linkchecker.LinkChecker.InternCheckableLink;
 import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.BrowserSettingsThread;
-import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.UseSetLinkStatusThread;
 
@@ -19,30 +17,25 @@ public class LinkCheckerThread extends BrowserSettingsThread implements UseSetLi
     protected List<InternCheckableLink> checkableLinks;
 
     public LinkChecker<?> getLinkCheckerByLink(CheckableLink link) {
-        if (checkableLinks != null) {
-            for (InternCheckableLink l : checkableLinks) {
-
+        final List<InternCheckableLink> lcheckableLinks = checkableLinks;
+        if (lcheckableLinks != null) {
+            for (InternCheckableLink l : lcheckableLinks) {
                 if (match(l.getCheckableLink(), link)) {
                     return l.getLinkChecker();
                 }
             }
         }
         return null;
-
     }
 
     private boolean match(CheckableLink a, CheckableLink b) {
-        if (a instanceof CrawledLink) {
-            if (b instanceof DownloadLink) {
-                return a.getDownloadLink() == b;
-            }
+        if (a == b) {
+            return true;
         }
-        if (b instanceof CrawledLink) {
-            if (a instanceof DownloadLink) {
-                return b.getDownloadLink() == a;
-            }
+        if (a != null && b != null) {
+            return a.getDownloadLink() == b.getDownloadLink();
         }
-        return a == b;
+        return false;
     }
 
     protected PluginForHost plugin;

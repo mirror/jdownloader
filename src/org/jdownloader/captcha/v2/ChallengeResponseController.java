@@ -3,12 +3,11 @@ package org.jdownloader.captcha.v2;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
 import jd.controlling.captcha.SkipRequest;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.api.captcha.CaptchaAPISolver;
@@ -37,20 +36,6 @@ public class ChallengeResponseController {
         return ChallengeResponseController.INSTANCE;
     }
 
-    // public ChallengeSolver<?>[] getWaitForOtherSolversList(ChallengeSolver<?> requestor) {
-    // List<ChallengeSolver<?>> so = solverOrder;
-    // ArrayList<ChallengeSolver<?>> ret = new ArrayList<ChallengeSolver<?>>();
-    // for (ChallengeSolver<?> solver : so) {
-    // if (solver == requestor) {
-    // break;
-    // }
-    // ret.add(solver);
-    // }
-    // return ret.toArray(new ChallengeSolver<?>[] {});
-    //
-    // }
-
-    private CaptchaSettings              config;
     private ChallengeResponseEventSender eventSender;
 
     public ChallengeResponseEventSender getEventSender() {
@@ -64,47 +49,43 @@ public class ChallengeResponseController {
      * {@link #getInstance()}.
      */
     private ChallengeResponseController() {
-        config = JsonConfig.create(CaptchaSettings.class);
         logger = LogController.getInstance().getLogger(getClass().getName());
         eventSender = new ChallengeResponseEventSender(logger);
-
     }
 
+    private final AtomicBoolean init = new AtomicBoolean(false);
+
     public void init() {
-        addSolver(JACSolver.getInstance());
+        if (init.compareAndSet(false, true)) {
+            addSolver(JACSolver.getInstance());
 
-        addSolver(CaptchaMyJDSolver.getInstance());
-        addSolver(DeathByCaptchaSolver.getInstance());
-        addSolver(CBSolver.getInstance());
-        addSolver(Captcha9kwSolver.getInstance());
-        addSolver(Captcha9kwSolverClick.getInstance());
+            addSolver(CaptchaMyJDSolver.getInstance());
+            addSolver(DeathByCaptchaSolver.getInstance());
+            addSolver(CBSolver.getInstance());
+            addSolver(Captcha9kwSolver.getInstance());
+            addSolver(Captcha9kwSolverClick.getInstance());
 
-        if (!Application.isHeadless()) {
-            addSolver(DialogBasicCaptchaSolver.getInstance());
+            if (!Application.isHeadless()) {
+                addSolver(DialogBasicCaptchaSolver.getInstance());
+            }
+            if (!Application.isHeadless()) {
+                addSolver(DialogClickCaptchaSolver.getInstance());
+            }
+            addSolver(CaptchaAPISolver.getInstance());
         }
-        if (!Application.isHeadless()) {
-            addSolver(DialogClickCaptchaSolver.getInstance());
-        }
-        addSolver(CaptchaAPISolver.getInstance());
-
     }
 
     public List<ChallengeSolver<?>> listSolvers() {
         return new ArrayList<ChallengeSolver<?>>(solverList);
     }
 
-    // public List<ChallengeSolver<?>> getSolverByID(String id) {
-    // return solverMap.get(id);
-    // }
-
-    private HashMap<String, SolverService> solverMap   = new HashMap<String, SolverService>();
-    private List<SolverService>            serviceList = new ArrayList<SolverService>();
+    private final HashMap<String, SolverService> solverMap   = new HashMap<String, SolverService>();
+    private final List<SolverService>            serviceList = new ArrayList<SolverService>();
 
     private boolean addSolver(ChallengeSolver<?> solver) {
         if (solverMap.put(solver.getService().getID(), solver.getService()) == null) {
             serviceList.add(solver.getService());
         }
-
         return solverList.add(solver);
 
     }

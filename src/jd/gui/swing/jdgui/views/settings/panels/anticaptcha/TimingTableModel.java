@@ -2,9 +2,9 @@ package jd.gui.swing.jdgui.views.settings.panels.anticaptcha;
 
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.AbstractAction;
 import javax.swing.Icon;
@@ -29,7 +29,7 @@ public class TimingTableModel extends ExtTableModel<SolverService> {
         update();
     }
 
-    private HashMap<String, Integer>        waitTimesMap;
+    private Map<String, Integer>            waitTimesMap;
     private ExtSpinnerColumn<SolverService> timingColumn;
 
     private void update() {

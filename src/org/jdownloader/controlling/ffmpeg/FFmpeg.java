@@ -21,13 +21,10 @@ public class FFmpeg extends AbstractFFmpegBinary {
         config = JsonConfig.create(FFmpegSetup.class);
         logger = LogController.getInstance().getLogger(FFmpeg.class.getName());
         path = config.getBinaryPath();
-
-        if (!validatePaths()) {
-
+        if (path != null && !validatePaths()) {
             config.setBinaryPath(null);
             path = null;
         }
-
     }
 
     private boolean validatePaths() {
@@ -47,51 +44,6 @@ public class FFmpeg extends AbstractFFmpegBinary {
         }
         return true;
     }
-
-    // public FFmpeg(String path) {
-    // this();
-    // this.path = path;
-    // }
-
-    // public boolean validateBinary() {
-    // String fp = getFullPath();
-    // logger.info("Validate FFmpeg Binary: " + fp);
-    // if (StringUtils.isEmpty(fp)) {
-    // logger.info("Binary does not exist");
-    // return false;
-    // }else{
-    // return
-    // }
-    //
-    //
-    // if (fp.toLowerCase(Locale.ENGLISH).endsWith("ffmpeg") || fp.toLowerCase(Locale.ENGLISH).endsWith("ffmpeg.exe")) {
-    //
-    // // only check if the binary is ffmpeg
-    // for (int i = 0; i < 5; i++) {
-    // try {
-    // logger.info("Start ");
-    // long t = System.currentTimeMillis();
-    // String[] result = execute(-1, null, null, fp, "-version");
-    // logger.info("STD: " + result[0]);
-    // logger.info("ERR: " + result[1]);
-    // logger.info("Done in" + (System.currentTimeMillis() - t));
-    // boolean ret = result != null && result.length == 2 && result[0] != null && result[0].toLowerCase(Locale.ENGLISH).contains("ffmpeg");
-    // if (ret) {
-    // logger.info("Binary is ok: " + ret);
-    // return ret;
-    // }
-    // } catch (InterruptedException e) {
-    // logger.log(e);
-    // logger.info("Binary is ok(i): " + false);
-    // return false;
-    // } catch (IOException e) {
-    // logger.log(e);
-    // }
-    // }
-    // }
-    // logger.info("Binary is ok: " + false);
-    // return false;
-    // }
 
     public boolean muxToMp4(FFMpegProgress progress, String out, String videoIn, String audioIn) throws InterruptedException, IOException, FFMpegException {
         logger.info("Merging " + videoIn + " + " + audioIn + " = " + out);
