@@ -44,7 +44,9 @@ public class ScribdCom extends PluginForDecrypt {
         String parameter = param.toString().replace("http://", "https://");
         br.setFollowRedirects(true);
         String fpname;
+        final FilePackage fp = FilePackage.getInstance();
         if (parameter.matches(type_collections)) {
+            fpname = "scribd.com collection - " + new Regex(parameter, "scribd\\.com/collections/\\d+/([A-Za-z0-9\\-_]+)").getMatch(0);
             br.getPage(parameter);
             if (br.getURL().equals("http://www.scribd.com/")) {
                 logger.info("Link offline: " + parameter);
@@ -76,7 +78,9 @@ public class ScribdCom extends PluginForDecrypt {
                     return null;
                 }
                 for (final String singleLink : links) {
+                    /** TODO: Also find filenames here */
                     final DownloadLink dl = createDownloadlink("http://www.scribd.com/doc/" + singleLink);
+                    dl.setAvailable(true);
                     try {
                         distribute(dl);
                     } catch (final Throwable e) {
@@ -93,8 +97,9 @@ public class ScribdCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            fpname = "scribd.com collection - " + new Regex(parameter, "scribd\\.com/collections/\\d+/([A-Za-z0-9\\-_]+)").getMatch(0);
         } else {
+            fpname = "scribd.com uploads of user " + new Regex(parameter, "([A-Za-z0-9\\-_]+)$").getMatch(0);
+            fp.setName(fpname);
             if (!parameter.endsWith("/documents")) {
                 parameter += "/documents";
             }
@@ -138,16 +143,19 @@ public class ScribdCom extends PluginForDecrypt {
                 if (br.containsHTML("\"objects\":null")) {
                     break;
                 }
-                final String[] uploads = br.getRegex("class=\"document_title\"><a href=\"(https?://[a-z]{2}\\.scribd\\.com/doc/[^<>\"]*?)\"").getColumn(0);
-                if (uploads == null || uploads.length == 0) {
+                final String[][] uplInfo = br.getRegex("href=\"(https?://[a-z]{2}\\.scribd\\.com/doc/[^<>\"]*?)\">([^<>]*?)</a>").getMatches();
+                if (uplInfo == null || uplInfo.length == 0) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                for (final String singleLink : uploads) {
-                    decryptedLinks.add(createDownloadlink(singleLink));
-                }
-                for (final String singleLink : uploads) {
-                    final DownloadLink dl = createDownloadlink("http://www.scribd.com/doc/" + singleLink);
+                for (final String[] docinfo : uplInfo) {
+                    final String link = docinfo[0];
+                    String title = docinfo[1];
+                    title = encodeUnicode(title);
+                    final DownloadLink dl = createDownloadlink(link);
+                    dl.setAvailable(true);
+                    dl.setName(title + ".pdf");
+                    dl._setFilePackage(fp);
                     try {
                         distribute(dl);
                     } catch (final Throwable e) {
@@ -155,18 +163,16 @@ public class ScribdCom extends PluginForDecrypt {
                     }
                     decryptedLinks.add(dl);
                 }
-                decryptedLinksNum += uploads.length;
+                decryptedLinksNum += uplInfo.length;
                 logger.info("Decrypted page: " + page);
                 logger.info("Decrypted " + decryptedLinksNum + " / " + documentsNum);
                 page++;
             } while (decryptedLinksNum < documentsNum);
-            fpname = "scribd.com uploads of user " + new Regex(parameter, "([A-Za-z0-9\\-_]+)/documents$").getMatch(0);
         }
         if (decryptedLinks.size() == 0) {
             decryptedLinks.add(getOfflineLink(parameter));
             return decryptedLinks;
         }
-        final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpname);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
@@ -188,6 +194,22 @@ public class ScribdCom extends PluginForDecrypt {
             JDUtilities.getPluginForHost("youtube.com");
         }
         return jd.plugins.hoster.Youtube.unescape(s);
+    }
+
+    /** Avoid chars which are not allowed in filenames under certain OS' */
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
 }

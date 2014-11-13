@@ -71,6 +71,9 @@ public class AlotPornCom extends PluginForHost {
         String dURL = null;
         if (!downloadLink.getDownloadURL().matches("https?://(\\w+\\.)?alotporn\\.com/\\d+/.+")) {
             br.getPage(downloadLink.getDownloadURL());
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             dURL = br.getURL();
         } else {
             dURL = downloadLink.getDownloadURL();

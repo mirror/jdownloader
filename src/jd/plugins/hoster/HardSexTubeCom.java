@@ -52,6 +52,8 @@ public class HardSexTubeCom extends PluginForHost {
         link.setUrlDownload("http://www.hardsextube.com/video/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + "/");
     }
 
+    private static final String NORESUME = "NORESUME";
+
     /*
      * TODO: If we cannot avoid the crypto stuff anymore at some point, simply add account support, then we can use:
      * http://www.hardsextube.com/video/XXXXXX/download
@@ -140,16 +142,27 @@ public class HardSexTubeCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+
+        boolean resume = true;
+        if (downloadLink.getBooleanProperty(HardSexTubeCom.NORESUME, false)) {
+            logger.info("Resume is disabled for this try");
+            resume = false;
+            downloadLink.setProperty(HardSexTubeCom.NORESUME, Boolean.valueOf(false));
+        }
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 3 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 416) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 3 * 60 * 1000l);
+                logger.info("Resume impossible, disabling it for the next try");
+                downloadLink.setChunksProgress(null);
+                downloadLink.setProperty(HardSexTubeCom.NORESUME, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

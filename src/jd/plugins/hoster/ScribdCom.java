@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -76,20 +77,14 @@ public class ScribdCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
+        prepFreeBrowser(this.br);
         try {
-            br.setAllowedResponseCodes(new int[] { 400, 410 });
-            br.setLoadLimit(br.getLoadLimit() * 3);
-        } catch (Throwable e) {
-        }
-        try {
-            for (int i = 0; i <= 3; i++) {
+            int counter400 = 0;
+            do {
                 br.getPage(downloadLink.getDownloadURL());
-                if (br.getHttpConnection().getResponseCode() == 400) {
-                    logger.info("Server returns error 400 --> Retrying");
-                    continue;
-                }
-                break;
-            }
+                counter400++;
+            } while (counter400 <= 5 && br.getHttpConnection().getResponseCode() == 400);
+
             for (int i = 0; i <= 5; i++) {
                 String newurl = br.getRedirectLocation();
                 if (newurl != null) {
@@ -134,6 +129,16 @@ public class ScribdCom extends PluginForHost {
         }
 
         downloadLink.setName(Encoding.htmlDecode(filename.trim()) + "." + getExtension());
+
+        /* saving session info can result in avoiding 400, 410 server errors */
+        final HashMap<String, String> cookies = new HashMap<String, String>();
+        final Cookies add = br.getCookies(this.getHost());
+        for (final Cookie c : add.getCookies()) {
+            cookies.put(c.getKey(), c.getValue());
+        }
+        synchronized (cookieMonster) {
+            cookieMonster.set(cookies);
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -238,7 +243,7 @@ public class ScribdCom extends PluginForHost {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
-                prepBr();
+                prepBRGeneral();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -388,8 +393,33 @@ public class ScribdCom extends PluginForHost {
         return finalID;
     }
 
-    private void prepBr() {
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/20100101 Firefox/26.0");
+    private boolean                        coLoaded      = false;
+    private static AtomicReference<Object> cookieMonster = new AtomicReference<Object>();
+
+    @SuppressWarnings("unchecked")
+    private Browser prepFreeBrowser(final Browser prepBr) {
+        prepBRGeneral();
+        // loading previous cookie session results in less captchas
+        synchronized (cookieMonster) {
+            if (cookieMonster.get() != null && cookieMonster.get() instanceof HashMap<?, ?>) {
+                final HashMap<String, String> cookies = (HashMap<String, String>) cookieMonster.get();
+                for (Map.Entry<String, String> entry : cookies.entrySet()) {
+                    prepBr.setCookie(this.getHost(), entry.getKey(), entry.getValue());
+
+                }
+                coLoaded = true;
+            }
+        }
+        return prepBr;
+    }
+
+    private void prepBRGeneral() {
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:33.0) Gecko/20100101 Firefox/33.0");
+        try {
+            br.setAllowedResponseCodes(new int[] { 400, 410 });
+            br.setLoadLimit(br.getLoadLimit() * 3);
+        } catch (Throwable e) {
+        }
     }
 
     @Override
