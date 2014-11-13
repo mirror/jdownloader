@@ -68,6 +68,8 @@ public class DiskYandexNet extends PluginForHost {
     private final String          DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD = "EMPTY_TRASH_AFTER_DOWNLOAD";
     private final String          DOWNLOAD_ZIP                       = "DOWNLOAD_ZIP_2";
 
+    private static final String   NORESUME                           = "NORESUME";
+
     /* Some constants which they used in browser */
     private final String          CLIENT_ID                          = "883aacd8d0b882b2e379506a55fb6b0f";
     private final String          VERSION                            = "2.0.102";
@@ -258,7 +260,7 @@ public class DiskYandexNet extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
-            handleServerErrors();
+            handleServerErrors(downloadLink);
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -433,9 +435,17 @@ public class DiskYandexNet extends PluginForHost {
                 }
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
+
+        boolean resume = ACCOUNT_FREE_RESUME;
+        if (link.getBooleanProperty(DiskYandexNet.NORESUME, false)) {
+            logger.info("Resume is disabled for this try");
+            resume = false;
+            link.setProperty(DiskYandexNet.NORESUME, Boolean.valueOf(false));
+        }
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, ACCOUNT_FREE_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
-            handleServerErrors();
+            handleServerErrors(link);
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -444,13 +454,16 @@ public class DiskYandexNet extends PluginForHost {
         dl.startDownload();
     }
 
-    private void handleServerErrors() throws PluginException {
+    private void handleServerErrors(final DownloadLink link) throws PluginException {
         if (dl.getConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
         } else if (dl.getConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
         } else if (dl.getConnection().getResponseCode() == 416) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
+            logger.info("Resume impossible, disabling it for the next try");
+            link.setChunksProgress(null);
+            link.setProperty(DiskYandexNet.NORESUME, Boolean.valueOf(true));
+            throw new PluginException(LinkStatus.ERROR_RETRY);
         }
     }
 

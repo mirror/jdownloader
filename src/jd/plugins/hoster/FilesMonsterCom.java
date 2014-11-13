@@ -89,7 +89,7 @@ public class FilesMonsterCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        br.setReadTimeout(3 * 60 * 1000);
+        prepBR();
         br.setFollowRedirects(false);
         if (downloadLink.getDownloadURL().contains("/free/2/")) {
             br.getPage(downloadLink.getStringProperty("mainlink"));
@@ -335,6 +335,7 @@ public class FilesMonsterCom extends PluginForHost {
         synchronized (LOCK) {
             try {
                 /** Load cookies */
+                prepBR();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -351,7 +352,6 @@ public class FilesMonsterCom extends PluginForHost {
                         return;
                     }
                 }
-                br.setReadTimeout(3 * 60 * 1000);
                 br.setFollowRedirects(true);
                 // get login page first, that way we don't post twice in case
                 // captcha is already invoked!
@@ -383,6 +383,12 @@ public class FilesMonsterCom extends PluginForHost {
                 login.put("user", Encoding.urlEncode(account.getUser()));
                 login.put("pass", Encoding.urlEncode(account.getPass()));
                 br.submitForm(login);
+
+                /* Make sure that we have the correct language (English) */
+                final String lang_cookie = br.getCookie("http://filesmonster.com/", "yab_ulanguage");
+                if (!"en".equals(lang_cookie)) {
+                    br.getPage("http://filesmonster.com/?setlang=en");
+                }
 
                 if (br.containsHTML("Username/Password can not be found in our database") || br.containsHTML("Try to recover your password by \\'Password reminder\\'")) {
                     if ("de".equalsIgnoreCase(lang)) {
@@ -559,6 +565,11 @@ public class FilesMonsterCom extends PluginForHost {
             account.setAccountInfo(ai);
         }
         return ai;
+    }
+
+    private void prepBR() {
+        br.setReadTimeout(3 * 60 * 1000);
+        br.setCookie("http://filesmonster.com/", "yab_ulanguage", "en");
     }
 
     private String[] getTempLinks() throws IOException {
