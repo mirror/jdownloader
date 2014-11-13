@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser.BrowserException;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -30,14 +31,14 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "https?://(www\\.)?((de|ru|es)\\.)?scribd\\.com/(?!doc/)[A-Za-z0-9\\-_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "https?://(www\\.)?((de|ru|es)\\.)?scribd\\.com/(?!doc/)[A-Za-z0-9\\-_%]+" }, flags = { 0 })
 public class ScribdCom extends PluginForDecrypt {
 
     public ScribdCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String type_collections = "https?://(www\\.)?((de|ru|es)\\.)?scribd\\.com/collections/\\d+/[A-Za-z0-9\\-_]+";
+    private static final String type_collections = "https?://(www\\.)?((de|ru|es)\\.)?scribd\\.com/collections/\\d+/[A-Za-z0-9\\-_%]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -46,7 +47,7 @@ public class ScribdCom extends PluginForDecrypt {
         String fpname;
         final FilePackage fp = FilePackage.getInstance();
         if (parameter.matches(type_collections)) {
-            fpname = "scribd.com collection - " + new Regex(parameter, "scribd\\.com/collections/\\d+/([A-Za-z0-9\\-_]+)").getMatch(0);
+            fpname = "scribd.com collection - " + Encoding.htmlDecode(new Regex(parameter, "scribd\\.com/collections/\\d+/([A-Za-z0-9\\-_]+)").getMatch(0));
             br.getPage(parameter);
             if (br.getURL().equals("http://www.scribd.com/")) {
                 logger.info("Link offline: " + parameter);
@@ -98,7 +99,7 @@ public class ScribdCom extends PluginForDecrypt {
                 return null;
             }
         } else {
-            fpname = "scribd.com uploads of user " + new Regex(parameter, "([A-Za-z0-9\\-_]+)$").getMatch(0);
+            fpname = "scribd.com uploads of user " + Encoding.htmlDecode(new Regex(parameter, "([A-Za-z0-9\\-_%]+)$").getMatch(0));
             fp.setName(fpname);
             if (!parameter.endsWith("/documents")) {
                 parameter += "/documents";
@@ -137,20 +138,20 @@ public class ScribdCom extends PluginForDecrypt {
                 } catch (final Throwable e) {
                     // Not available in old 0.9.581 Stable
                 }
-                br.getPage("https://de.scribd.com/profiles/documents/get_documents?page=" + page + "&sort_by=hotness_pmp_first&id=" + id);
+                br.getPage("https://www.scribd.com/profiles/documents/get_documents?page=" + page + "&sort_by=hotness_pmp_first&id=" + id);
                 br.getRequest().setHtmlCode(unescape(br.toString()));
                 br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
                 if (br.containsHTML("\"objects\":null")) {
                     break;
                 }
-                final String[][] uplInfo = br.getRegex("href=\"(https?://[a-z]{2}\\.scribd\\.com/doc/[^<>\"]*?)\">([^<>]*?)</a>").getMatches();
+                final String[][] uplInfo = br.getRegex("href=\"(https?://([a-z]{2}|www)\\.scribd\\.com/doc/[^<>\"]*?)\">([^<>]*?)</a>").getMatches();
                 if (uplInfo == null || uplInfo.length == 0) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
                 for (final String[] docinfo : uplInfo) {
                     final String link = docinfo[0];
-                    String title = docinfo[1];
+                    String title = docinfo[2];
                     title = encodeUnicode(title);
                     final DownloadLink dl = createDownloadlink(link);
                     dl.setAvailable(true);
