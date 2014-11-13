@@ -375,7 +375,6 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                     break;
                 case CONNECTION_ISSUES:
                     dl.setResult(DownloadResult.CONNECTION_ISSUES);
-
                     break;
                 case CONNECTION_TEMP_UNAVAILABLE:
                     dl.setResult(DownloadResult.CONNECTION_UNAVAILABLE);

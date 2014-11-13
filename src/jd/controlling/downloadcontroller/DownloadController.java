@@ -407,7 +407,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         if (filesInCfg != null) {
             for (File downloadList : filesInCfg) {
                 if (downloadList.isFile() && downloadList.getName().startsWith("downloadList")) {
-                    String counter = new Regex(downloadList.getName(), "downloadList(\\d+)\\.zip").getMatch(0);
+                    String counter = new Regex(downloadList.getName(), "downloadList(\\d+)\\.zip$").getMatch(0);
                     if (counter != null) {
                         sortedAvailable.add(Long.parseLong(counter));
                     }
@@ -952,12 +952,11 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     zip.close();
                     fos = null;
                     deleteFile = false;
-                    downloadLists.add(0, file);
                     try {
-                        int keepXOld = Math.max(JsonConfig.create(GeneralSettings.class).getKeepXOldLists(), 0);
+                        final int keepXOld = Math.max(JsonConfig.create(GeneralSettings.class).getKeepXOldLists(), 0);
                         if (downloadLists.size() > keepXOld) {
-                            for (int removeIndex = downloadLists.size() - 1; removeIndex > keepXOld; removeIndex--) {
-                                File remove = downloadLists.remove(removeIndex);
+                            for (int removeIndex = downloadLists.size() - 1; removeIndex >= keepXOld; removeIndex--) {
+                                final File remove = downloadLists.remove(removeIndex);
                                 if (remove != null) {
                                     logger.info("Delete outdated DownloadList: " + remove + " " + FileCreationManager.getInstance().delete(remove, null));
                                 }
@@ -965,6 +964,8 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         }
                     } catch (final Throwable e) {
                         logger.log(e);
+                    } finally {
+                        downloadLists.add(0, file);
                     }
                     return true;
                 } catch (final Throwable e) {
