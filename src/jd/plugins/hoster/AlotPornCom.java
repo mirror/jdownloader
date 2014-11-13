@@ -21,6 +21,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -77,9 +78,17 @@ public class AlotPornCom extends PluginForHost {
         final String[] values = new Regex(dURL, "http://.*?/(\\d+)/([\\w-]+)").getRow(0);
         String filename = values[1].replaceAll("-", "_");
         br.getPage("http://alotporn.com/modules/video/player/nuevo/maconfig.php?id=" + values[0]);
-        if (!br.containsHTML("<provider>http</provider>")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Plugin update needed!"); }
+        if (!br.containsHTML("<provider>http</provider>")) {
+            // http://svn.jdownloader.org/issues/57727
+            if ("c3d9e3b8e0d79af5c48fc18a28b02c0e".equals(JDHash.getMD5(br.toString()))) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Plugin update needed!");
+        }
         DLLINK = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
-        if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
