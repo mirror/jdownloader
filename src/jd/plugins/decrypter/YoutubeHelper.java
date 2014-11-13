@@ -743,9 +743,12 @@ public class YoutubeHelper {
         if (all == null || descrambler == null || des == null) {
             cache = new HashMap<String, String>();
             jsContent = getAbsolute(jsUrl, jsUrl, br.cloneBrowser());
-            descrambler = new Regex(jsContent, "\\w+\\.signature\\=([\\$\\w\\d]+)\\([\\w\\d]+\\)").getMatch(0);
+            descrambler = new Regex(jsContent, "\\.sig\\|\\|([\\$\\w\\d]+)\\(").getMatch(0);
             if (descrambler == null) {
-                return sig;
+                descrambler = new Regex(jsContent, "\\w+\\.signature\\=([\\$\\w\\d]+)\\([\\w\\d]+\\)").getMatch(0);
+                if (descrambler == null) {
+                    return sig;
+                }
             }
             final String func = "function " + Pattern.quote(descrambler) + "\\(([^)]+)\\)\\{(.+?return.*?)\\}";
             des = new Regex(jsContent, Pattern.compile(func)).getMatch(1);
