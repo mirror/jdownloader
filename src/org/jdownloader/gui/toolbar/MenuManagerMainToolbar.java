@@ -41,11 +41,16 @@ import org.jdownloader.gui.mainmenu.action.LogSendAction;
 import org.jdownloader.gui.mainmenu.container.CaptchaQuickSettingsContainer;
 import org.jdownloader.gui.mainmenu.container.OptionalContainer;
 import org.jdownloader.gui.mainmenu.container.SettingsMenuContainer;
-import org.jdownloader.gui.toolbar.action.CaptchaDialogsToogleAction;
 import org.jdownloader.gui.toolbar.action.CaptchaModeChangeAction;
+import org.jdownloader.gui.toolbar.action.CaptchaToogle9KWAction;
+import org.jdownloader.gui.toolbar.action.CaptchaToogleCBAction;
+import org.jdownloader.gui.toolbar.action.CaptchaToogleDBCAction;
+import org.jdownloader.gui.toolbar.action.CaptchaToogleDialogAction;
+import org.jdownloader.gui.toolbar.action.CaptchaToogleJACAction;
+import org.jdownloader.gui.toolbar.action.CaptchaToogleMyJDAutoAction;
+import org.jdownloader.gui.toolbar.action.CaptchaToogleMyJDRemoteAction;
 import org.jdownloader.gui.toolbar.action.CollapseExpandAllAction;
 import org.jdownloader.gui.toolbar.action.GenericDeleteFromTableToolbarAction;
-import org.jdownloader.gui.toolbar.action.JAntiCaptchaToogleAction;
 import org.jdownloader.gui.toolbar.action.MoveDownAction;
 import org.jdownloader.gui.toolbar.action.MoveToBottomAction;
 import org.jdownloader.gui.toolbar.action.MoveToTopAction;
@@ -171,10 +176,17 @@ public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, Down
         CaptchaQuickSettingsContainer ocr;
         opt.add(ocr = new CaptchaQuickSettingsContainer());
         ocr.add(CaptchaModeChangeAction.class);
+
         // ocr.add(CaptchaExchangeToogleAction.class);
-        ocr.add(JAntiCaptchaToogleAction.class);
+
         // ocr.add(RemoteCaptchaToogleAction.class);
-        ocr.add(CaptchaDialogsToogleAction.class);
+        ocr.add(CaptchaToogle9KWAction.class);
+        ocr.add(CaptchaToogleCBAction.class);
+        ocr.add(CaptchaToogleDBCAction.class);
+        ocr.add(CaptchaToogleDialogAction.class);
+        ocr.add(CaptchaToogleJACAction.class);
+        ocr.add(CaptchaToogleMyJDAutoAction.class);
+        ocr.add(CaptchaToogleMyJDRemoteAction.class);
         opt.add(setIconKey(new ActionData(GenericDeleteFromTableToolbarAction.class).putSetup(GenericDeleteFromTableToolbarAction.DELETE_ALL, true).putSetup(GenericDeleteFromTableToolbarAction.ONLY_SELECTED_ITEMS, true), IconKey.ICON_DELETE));
         opt.add(createDeleteMenu());
 
