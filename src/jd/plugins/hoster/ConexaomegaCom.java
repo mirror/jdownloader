@@ -116,7 +116,6 @@ public class ConexaomegaCom extends PluginForHost {
         br.setReadTimeout(60 * 1000);
         if (!login(account, true)) {
             account.setValid(false);
-
             final String lang = System.getProperty("user.language");
             if ("de".equalsIgnoreCase(lang)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -129,9 +128,11 @@ public class ConexaomegaCom extends PluginForHost {
         br.getPage("http://www.conexaomega.com/gerador");
         final String expireDays = br.getRegex(">Seu plano expira em (\\d+) dias\\.</strong>").getMatch(0);
         if (expireDays == null) {
-            account.setValid(false);
-
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAccount invalid!\r\nAccount ungültig!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         }
 
         ac.setUnlimitedTraffic();

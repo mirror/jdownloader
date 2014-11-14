@@ -57,6 +57,16 @@ public class FernsehkritikTv extends PluginForHost {
     }
 
     @Override
+    public String rewriteHost(String host) {
+        if ("fernsehkritik.tv".equals(getHost())) {
+            if (host == null || "fernsehkritik.tv".equals(host)) {
+                return "massengeschmack.tv";
+            }
+        }
+        return super.rewriteHost(host);
+    }
+
+    @Override
     public String getAGBLink() {
         return "http://fernsehkritik.tv/datenschutzbestimmungen/";
     }
@@ -79,10 +89,9 @@ public class FernsehkritikTv extends PluginForHost {
     private static final String TYPE_COUCHSTREAM                      = "http://couch\\.fernsehkritik\\.tv/userbereich/archive#stream:.*";
     private static final String TYPE_MASSENGESCHMACK_GENERAL          = "http://(www\\.)?massengeschmack\\.tv/play/\\d+/[a-z0-9\\-]+";
 
-    private static final String HOST_COUCH                            = "http://couch.fernsehkritik.tv";
-    private static final String HOST_MASSENGESCHMACK                  = "http://couch.fernsehkritik.tv";
+    private static final String HOST_MASSENGESCHMACK                  = "http://massengeschmack.tv";
     private static Object       LOCK                                  = new Object();
-    private static final String LOGIN_ERROR                           = "Login fehlerhaft";
+    private static final String LOGIN_ERROR                           = "class=\"alert alert\\-error\"";
     private String              DLLINK                                = null;
     private static final String DL_AS_MOV                             = "DL_AS_MOV";
     private static final String DL_AS_MP4                             = "DL_AS_MP4";
@@ -298,16 +307,25 @@ public class FernsehkritikTv extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            return ai;
+        login(account, true);
+        br.getPage("/u/account.php");
+        if (br.containsHTML("<td>\\(0 Tage\\)</td>")) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         }
+        /** TODO: This is broken */
         String expire = br.getRegex("gültig bis zum:.*?<strong>(.*?)</strong>").getMatch(0);
-        if (expire != null) {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy hh:mm", Locale.UK));
+        if (expire == null) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         }
+        ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy hh:mm", Locale.UK));
         return ai;
     }
 
@@ -392,23 +410,24 @@ public class FernsehkritikTv extends PluginForHost {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            br.setCookie(HOST_COUCH, key, value);
+                            br.setCookie(HOST_MASSENGESCHMACK, key, value);
                         }
                         return;
                     }
                 }
                 br.getHeaders().put("Accept-Encoding", "gzip");
                 br.setFollowRedirects(true);
-                br.getPage(HOST_COUCH);
-                br.postPage(HOST_COUCH + "/login.php", "location=&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&setCookie=set");
+                br.getPage(HOST_MASSENGESCHMACK);
+                br.postPage(HOST_MASSENGESCHMACK + "/login/", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.containsHTML(LOGIN_ERROR)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                if (br.getCookie(HOST_COUCH, "couchlogin") == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(HOST_COUCH);
+                final Cookies add = br.getCookies(HOST_MASSENGESCHMACK);
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }

@@ -162,7 +162,6 @@ public class RapiduNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-
         checkLinks(new DownloadLink[] { downloadLink });
         if (!downloadLink.isAvailabilityStatusChecked()) {
             return AvailableStatus.UNCHECKED;
@@ -203,19 +202,17 @@ public class RapiduNet extends PluginForHost {
 
         long timeLeft = eventDate.getTime() - actualDate.getTime();
 
-        if (timeLeft > 0) {
+        if (timeLeft > 600 * 1000) {
             long seconds = timeLeft / 1000l;
             long minutes = seconds / 60;
             long hours = minutes / 60;
             seconds = (long) Math.floor(seconds % 60);
             minutes = (long) Math.floor(minutes % 60);
             hours = (long) Math.floor(hours);
-
             logger.info("Waittime =" + hours + " hours, " + minutes + " minutes, " + seconds + " seconds!");
-
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Wait time!", seconds * 1000l + minutes * 60l * 1000l + hours * 3600l * 1000l);
-            // sleep(seconds * 1000l + minutes * 60l * 1000l + hours * 3600l * 1000l, downloadLink);
-
+        } else if (timeLeft > 0) {
+            sleep(timeLeft, downloadLink);
         }
         String fileID = downloadLink.getProperty("FILEID").toString();
         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
