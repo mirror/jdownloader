@@ -43,7 +43,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Open the default download destination" })
     String action_open_dlfolder_tooltip();
 
-    @Default(lngs = { "en" }, values = { "Enable or disable all Premium Accounts" })
+    @Default(lngs = { "en" }, values = { "Enable/Disable accounts for download purposes" })
     String action_premium_toggle_tooltip();
 
     @Default(lngs = { "en" }, values = { "Perform a Reconnect, to get a new dynamic IP" })
