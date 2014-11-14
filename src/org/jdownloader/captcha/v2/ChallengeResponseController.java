@@ -7,6 +7,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.controlling.captcha.SkipException;
 import jd.controlling.captcha.SkipRequest;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
@@ -21,6 +24,7 @@ import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolver;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick;
+import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.logging.LogController;
 
@@ -168,6 +172,14 @@ public class ChallengeResponseController {
         @SuppressWarnings({ "rawtypes", "unchecked" })
         final SolverJob<T> job = new SolverJob<T>(this, c, solver);
         job.setLogger(logger);
+        final Plugin plugin = Challenge.getPlugin(c);
+        if (plugin != null) {
+            if (plugin instanceof PluginForHost) {
+                ((PluginForHost) plugin).setLastSolverJob(job);
+            } else if (plugin instanceof PluginForDecrypt) {
+                ((PluginForDecrypt) plugin).setLastSolverJob(job);
+            }
+        }
         synchronized (activeJobs) {
             activeJobs.add(job);
             idToJobMap.put(c.getId().getID(), job);
@@ -183,18 +195,16 @@ public class ChallengeResponseController {
             while (!job.isSolved() && !job.isDone()) {
                 synchronized (job) {
                     if (!job.isSolved() && !job.isDone()) {
-
                         job.wait(10000);
-
                     }
                 }
             }
             if (job.getSkipRequest() != null) {
                 throw new SkipException(job.getSkipRequest());
             }
+            final ResponseList<T> response = job.getResponseAndKill();
             logger.info("All Responses: " + job.getResponses());
-            logger.info("Solving Done. Result: " + job.getResponse());
-
+            logger.info("Solving Done. Result: " + response);
             return job;
         } catch (InterruptedException e) { // for example downloads have been stopped
             job.kill();

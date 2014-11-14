@@ -415,7 +415,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             }
         } catch (Throwable e) {
             final PluginForHost lastPlugin = finalizeProcessingPlugin();
-            if (e instanceof PluginException && ((PluginException) e).getLinkStatus() == LinkStatus.ERROR_CAPTCHA || e instanceof SkipReasonException && ((SkipReasonException) e).getSkipReason() == SkipReason.CAPTCHA) {
+            if ((e instanceof PluginException && ((PluginException) e).getLinkStatus() == LinkStatus.ERROR_CAPTCHA) || (e instanceof SkipReasonException && ((SkipReasonException) e).getSkipReason() == SkipReason.CAPTCHA)) {
                 try {
                     if (handlePlugin != null) {
                         handlePlugin.invalidateLastChallengeResponse();
