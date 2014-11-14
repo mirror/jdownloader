@@ -27,7 +27,6 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -192,14 +191,7 @@ public class AnimeaNet extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getPage("http://" + this.getHost() + "/login.php");
-                Form loginform = br.getFormbyProperty("name", "login");
-                if (loginform == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                loginform.put("amember_login", Encoding.urlEncode(account.getUser()));
-                loginform.put("amember_pass", Encoding.urlEncode(account.getPass()));
-                br.submitForm(loginform);
+                br.postPage("http://www.animea.net/forums/login.php?do=login", "cookieuser=1&s=&securitytoken=guest&do=login&vb_login_password_hint=Password&vb_login_md5password=&vb_login_md5password_utf=&vb_login_username=" + Encoding.urlEncode(account.getUser()) + "&vb_login_password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie("http://" + this.getHost().replace("vip.", "") + "/", "bb_password") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -207,6 +199,7 @@ public class AnimeaNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
+                /** TODO: Correctly recognize VIP accounts here */
                 if (br.getCookie("http://" + this.getHost().replace("vip.", "") + "/", "amember_nr") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);

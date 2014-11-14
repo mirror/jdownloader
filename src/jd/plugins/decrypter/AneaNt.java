@@ -73,14 +73,15 @@ public class AneaNt extends PluginForDecrypt {
         br.getHeaders().put("User-Agent", agent);
 
         br.getPage(parameter);
-
         final String redirect = br.getRedirectLocation();
         if (br.containsHTML("> 404 Not Found") || (redirect != null && (redirect.contains("manga.animea.net/browse.html") || !redirect.contains("animea.net/")))) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
-        }
-        if (br.containsHTML(">This episode has been licensed, downloading is not possible")) {
+        } else if (br.containsHTML(">This episode has been licensed, downloading is not possible")) {
             logger.info("Not downloadable: " + parameter);
+            return decryptedLinks;
+        } else if (br.containsHTML(">Site is in maint")) {
+            logger.info("Not downloadable (site is under maintenance): " + parameter);
             return decryptedLinks;
         }
 

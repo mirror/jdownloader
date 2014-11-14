@@ -51,6 +51,9 @@ public class StahomatCz extends PluginForHost {
     private static final String                            mAPI               = "http://api.stahomat.cz/a-p-i";
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
+    private static final String                            NICE_HOST          = mName.replaceAll("/", "");
+    private static final String                            NICE_HOSTproperty  = mName.replaceAll("(/|\\.)", "");
+
     private static Object                                  LOCK               = new Object();
     private String                                         TOKEN              = null;
 
@@ -225,7 +228,10 @@ public class StahomatCz extends PluginForHost {
             } else if (br.containsHTML("\"error\":\"temporarilyUnsupportedServer\"")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temp. Error. Try again later", 5 * 60 * 1000l);
             } else if (br.containsHTML("\"error\":\"fileNotFound\"")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                logger.info("Detected untrusted fileNotFound --> Retrying until we have to temporarily disable the host");
+                handleErrorRetries(account, downloadLink, "untrusted_file_not_found", 10);
+                /* Do not trust their file_not_found status --> http://svn.jdownloader.org/issues/56989 */
+                // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.containsHTML("\"error\":\"unsupportedServer\"")) {
                 logger.info("Superload.cz says 'unsupported server', disabling real host for 1 hour.");
                 tempUnavailableHoster(account, downloadLink, 60 * 60 * 1000l);
@@ -242,6 +248,32 @@ public class StahomatCz extends PluginForHost {
         }
         // might need a sleep here hoster seems to have troubles with new links.
         handleDL(account, downloadLink, dllink);
+    }
+
+    /**
+     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
+     * from the host list.
+     *
+     * @param dl
+     *            : The DownloadLink
+     * @param error
+     *            : The name of the error
+     * @param maxRetries
+     *            : Max retries before out of date error is thrown
+     */
+    private void handleErrorRetries(final Account acc, final DownloadLink dl, final String error, final int maxRetries) throws PluginException {
+        int timesFailed = dl.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
+        dl.getLinkStatus().setRetryCount(0);
+        if (timesFailed <= maxRetries) {
+            logger.info(NICE_HOST + ": " + error + " -> Retrying");
+            timesFailed++;
+            dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
+            throw new PluginException(LinkStatus.ERROR_RETRY, error);
+        } else {
+            dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
+            logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
+            tempUnavailableHoster(acc, dl, 1 * 60 * 60 * 1000l);
+        }
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {

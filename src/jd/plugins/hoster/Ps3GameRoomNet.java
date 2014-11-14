@@ -131,9 +131,21 @@ public class Ps3GameRoomNet extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage("http://" + this.getHost() + "/login." + TYPE, "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
-                if (!br.getURL().contains("ps3gameroom.net/account_home.html")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                br.getPage("http://www.ps3gameroom.net/vip/public/index.php/home");
+                br.postPage("http://www.ps3gameroom.net/vip/public/index.php/user/login", "submit=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                if (!br.containsHTML("/> Manage Account")) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                if (br.containsHTML("Benefits-of-becoming-vip-members\\&p=")) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -152,14 +164,9 @@ public class Ps3GameRoomNet extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
+        login(account, true);
         ai.setUnlimitedTraffic();
         account.setValid(true);
         ai.setStatus("Registered (free) User");
@@ -197,24 +204,23 @@ public class Ps3GameRoomNet extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-
-/* NO OVERRIDE!! We need to stay 0.9*compatible */
-public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-if (acc == null) {
-/* no account, yes we can expect captcha */
-return true;
-}
- if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-/* free accounts also have captchas */
-return true;
-}
- if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
-/* free accounts also have captchas */
-return true;
-}
- if (acc.getStringProperty("session_type")!=null&&!"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
-return true;
-}
-return false;
-}
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        if (acc.getStringProperty("session_type") != null && !"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
+            return true;
+        }
+        return false;
+    }
 }

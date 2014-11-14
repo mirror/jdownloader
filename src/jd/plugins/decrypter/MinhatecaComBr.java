@@ -137,6 +137,12 @@ public class MinhatecaComBr extends PluginForDecrypt {
             dl.setProperty("pass", passCode);
             dl.setProperty("LINKDUPEID", fid + filename);
 
+            try {
+                dl.setContentUrl(parameter);
+            } catch (final Throwable e) {
+                dl.setBrowserUrl(parameter);
+            }
+
             dl.setName(filename);
             dl.setDownloadSize(SizeFormatter.getSize(filesize));
             dl.setAvailable(true);
@@ -178,6 +184,12 @@ public class MinhatecaComBr extends PluginForDecrypt {
                     return null;
                 }
                 for (final String lnkinfo : linkinfo) {
+                    String content_url = new Regex(linkinfo, "\"(/[^<>\"]*?)\"").getMatch(0);
+                    if (content_url != null) {
+                        content_url = "http://minhateca.com.br" + content_url;
+                    } else {
+                        content_url = parameter;
+                    }
                     final String fid = new Regex(lnkinfo, "rel=\"(\\d+)\"").getMatch(0);
                     final Regex finfo = new Regex(lnkinfo, "<span class=\"bold\">([^<>\"]*?)</span>([^<>\"]*?)</a>");
                     String filesize = new Regex(lnkinfo, "<li><span>([^<>\"]*?)</span></li>").getMatch(0);
@@ -216,6 +228,12 @@ public class MinhatecaComBr extends PluginForDecrypt {
                     dl.setProperty("mainlink", parameter);
                     dl.setProperty("pass", passCode);
                     dl.setProperty("LINKDUPEID", fid + filename);
+
+                    try {
+                        dl.setContentUrl(content_url);
+                    } catch (final Throwable e) {
+                        dl.setBrowserUrl(content_url);
+                    }
 
                     dl.setName(filename);
                     dl.setDownloadSize(SizeFormatter.getSize(filesize));
