@@ -487,7 +487,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
     private boolean isConnectionOffline(Throwable e) {
         HTTPProxy proxy = null;
         final BrowserException browserException = Exceptions.getInstanceof(e, BrowserException.class);
-        if (browserException.getRequest() != null) {
+        if (browserException != null && browserException.getRequest() != null) {
             proxy = browserException.getRequest().getProxy();
         }
         if (proxy == null) {
