@@ -89,7 +89,7 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
 
     @Override
     public void paintComponent(Graphics g) {
-        if (overwriteHorizontalLinesPossible == false) {
+        if (overwriteHorizontalLinesPossible == false || isShowHorizontalLineBelowLastEntry()) {
             super.paintComponent(g);
         } else {
             boolean before = getShowHorizontalLines();
