@@ -17,13 +17,19 @@ public class DefaultEditAccountPanel extends MigPanel implements EditAccountPane
     private static final long serialVersionUID = 1L;
 
     private String getPassword() {
-        if (this.pass == null) return null;
-        if (EMPTYPW.equals(new String(this.pass.getPassword()))) return null;
+        if (this.pass == null) {
+            return null;
+        }
+        if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
+            return null;
+        }
         return new String(this.pass.getPassword());
     }
 
     private String getUsername() {
-        if (_GUI._.jd_gui_swing_components_AccountDialog_help_username().equals(this.name.getText())) return null;
+        if (_GUI._.jd_gui_swing_components_AccountDialog_help_username().equals(this.name.getText())) {
+            return null;
+        }
         return this.name.getText();
     }
 

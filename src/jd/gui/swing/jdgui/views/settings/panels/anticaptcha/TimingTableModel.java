@@ -12,10 +12,13 @@ import javax.swing.Icon;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtSpinnerColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.SolverService;
+import org.jdownloader.captcha.v2.solver.service.AbstractSolverService;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 
@@ -154,8 +157,26 @@ public class TimingTableModel extends ExtTableModel<SolverService> {
 
             @Override
             protected void setNumberValue(Number value, SolverService object) {
+
                 waitTimesMap.put(object.getID(), value.intValue() * 1000);
                 mySolver.setWaitForMap(waitTimesMap);
+
+                ArrayList<SolverService> waitLoop = AbstractSolverService.validateWaittimeQueue(mySolver, ChallengeResponseController.getInstance().getServiceByID(object.getID()));
+                if (waitLoop != null) {
+                    StringBuilder sb = new StringBuilder();
+                    for (int i = 0; i < waitLoop.size(); i++) {
+                        SolverService entry = waitLoop.get(i);
+                        SolverService next = i == waitLoop.size() - 1 ? null : waitLoop.get(i + 1);
+                        if (next == null) {
+
+                        } else {
+                            sb.append(_GUI._.TimingTableModel_initColumns_waitloop_print(entry.getName(), TimeFormatter.formatMilliSeconds(entry.getWaitForByID(next.getID()), 0), next.getName())).append("\r\n");
+                        }
+                    }
+                    Dialog.getInstance().showErrorDialog(0, _GUI._.TimingTableModel_initColumns_waitloop_title(), _GUI._.TimingTableModel_initColumns_waitloop_warning(sb.toString()));
+                    waitTimesMap.put(object.getID(), 0);
+                    mySolver.setWaitForMap(waitTimesMap);
+                }
                 refreshSort();
 
             }

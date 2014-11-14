@@ -34,4 +34,5 @@ public interface SolverService {
     public abstract void setEnabled(boolean b);
 
     public abstract void setWaitForMap(Map<String, Integer> waitTimesMap);
+
 }
