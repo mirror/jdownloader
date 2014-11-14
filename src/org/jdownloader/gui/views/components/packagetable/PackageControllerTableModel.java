@@ -325,10 +325,9 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     }
 
     public void addFilter(PackageControllerTableModelFilter<PackageType, ChildrenType> filter) {
-        if (filter == null) {
-            return;
+        if (filter != null) {
+            availableTableFilters.add(filter);
         }
-        availableTableFilters.add(filter);
     }
 
     public boolean isFilteredView() {
@@ -341,10 +340,9 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     }
 
     public void removeFilter(PackageControllerTableModelFilter<PackageType, ChildrenType> filter) {
-        if (filter == null) {
-            return;
+        if (filter != null) {
+            availableTableFilters.remove(filter);
         }
-        availableTableFilters.remove(filter);
     }
 
     @Override
