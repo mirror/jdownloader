@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Locale;
 
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
@@ -250,6 +251,23 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
                     return null;
                 }
                 return DomainInfo.getInstance(value.getDisplayName()).getFavIcon();
+            }
+
+            @Override
+            protected boolean matches(String a, String b) {
+                final String aa;
+                if (a != null) {
+                    aa = a.replaceAll("[^a-zA-Z0-9]+", "").toLowerCase(Locale.ENGLISH);
+                } else {
+                    aa = "";
+                }
+                final String bb;
+                if (b != null) {
+                    bb = b.replaceAll("[^a-zA-Z0-9]+", "").toLowerCase(Locale.ENGLISH);
+                } else {
+                    bb = "";
+                }
+                return aa.startsWith(bb);
             }
 
             @Override
