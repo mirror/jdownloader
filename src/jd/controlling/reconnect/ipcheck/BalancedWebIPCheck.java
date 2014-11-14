@@ -3,15 +3,11 @@ package jd.controlling.reconnect.ipcheck;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.controlling.proxy.ProxyController;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.http.Browser;
-import jd.http.ProxySelectorInterface;
-import jd.http.Request;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging2.LogSource;
@@ -25,7 +21,7 @@ import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
  * @author thomas
  * 
  */
-public class BalancedWebIPCheck implements IPCheckProvider, ProxySelectorInterface {
+public class BalancedWebIPCheck implements IPCheckProvider {
     public static BalancedWebIPCheck getInstance() {
         return BalancedWebIPCheck.INSTANCE;
     }
@@ -51,8 +47,6 @@ public class BalancedWebIPCheck implements IPCheckProvider, ProxySelectorInterfa
 
     private boolean                             checkOnlyOnce;
 
-    private final boolean                       useGlobalProxy;
-
     public BalancedWebIPCheck(boolean useGlobalProxy) {
         this.servicesInUse = new ArrayList<String>();
         setOnlyUseWorkingServices(false);
@@ -61,14 +55,11 @@ public class BalancedWebIPCheck implements IPCheckProvider, ProxySelectorInterfa
         this.br = new Browser();
         this.br.setDebug(true);
         this.br.setVerbose(true);
-        this.useGlobalProxy = useGlobalProxy;
-        br.setProxySelector(this);
+        if (!useGlobalProxy && !CFG_RECONNECT.CFG.isIPCheckUsesProxyEnabled()) {
+            br.setProxy(HTTPProxy.NONE);
+        }
         this.br.setConnectTimeout(JsonConfig.create(ReconnectConfig.class).getIPCheckConnectTimeout());
         this.br.setReadTimeout(JsonConfig.create(ReconnectConfig.class).getIPCheckReadTimeout());
-    }
-
-    public final boolean isUseGlobalProxy() {
-        return useGlobalProxy;
     }
 
     /**
@@ -159,29 +150,6 @@ public class BalancedWebIPCheck implements IPCheckProvider, ProxySelectorInterfa
             }
 
         }
-    }
-
-    @Override
-    public List<HTTPProxy> getProxiesByUrl(String url) {
-        if (CFG_RECONNECT.CFG.isIPCheckUsesProxyEnabled()) {
-            return ProxyController.getInstance().getProxiesByUrl(url);
-        } else {
-            ArrayList<HTTPProxy> ret = new ArrayList<HTTPProxy>();
-            if (!isUseGlobalProxy()) {
-                ret.add(HTTPProxy.NONE);
-            }
-            return ret;
-        }
-    }
-
-    @Override
-    public boolean updateProxy(Request request, int retryCounter) {
-        return false;
-    }
-
-    @Override
-    public boolean reportConnectException(Request request, int retryCounter, IOException e) {
-        return false;
     }
 
 }
