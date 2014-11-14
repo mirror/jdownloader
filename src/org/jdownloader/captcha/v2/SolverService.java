@@ -23,8 +23,6 @@ public interface SolverService {
 
     public abstract Map<String, Integer> getWaitForOthersDefaultMap();
 
-    public Map<String, Integer> getWaitForMap();
-
     public abstract ChallengeSolverConfig getConfig();
 
     public abstract String getID();
@@ -33,6 +31,8 @@ public interface SolverService {
 
     public abstract void setEnabled(boolean b);
 
-    public abstract void setWaitForMap(Map<String, Integer> waitTimesMap);
+    public abstract void setWaitFor(String id, Integer waitFor);
+
+    public abstract Map<String, Integer> getWaitForMapCopy();
 
 }

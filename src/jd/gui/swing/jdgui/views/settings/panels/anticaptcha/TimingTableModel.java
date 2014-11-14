@@ -3,8 +3,6 @@ package jd.gui.swing.jdgui.views.settings.panels.anticaptcha;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 
 import javax.swing.AbstractAction;
 import javax.swing.Icon;
@@ -24,7 +22,7 @@ import org.jdownloader.gui.translate._GUI;
 
 public class TimingTableModel extends ExtTableModel<SolverService> {
 
-    private SolverService mySolver;
+    private final SolverService mySolver;
 
     public TimingTableModel(SolverService solver) {
         super("TimingTableModel");
@@ -32,7 +30,6 @@ public class TimingTableModel extends ExtTableModel<SolverService> {
         update();
     }
 
-    private Map<String, Integer>            waitTimesMap;
     private ExtSpinnerColumn<SolverService> timingColumn;
 
     private void update() {
@@ -41,19 +38,14 @@ public class TimingTableModel extends ExtTableModel<SolverService> {
             @Override
             protected void runInEDT() {
                 // make sure that this class is loaded. it contains the logic to restore old settings.
-                List<SolverService> lst;
-                ArrayList<SolverService> solverList = new ArrayList<SolverService>();
-
-                HashSet<String> dupeMap = new HashSet<String>();
+                final ArrayList<SolverService> solverList = new ArrayList<SolverService>();
+                final HashSet<String> dupeMap = new HashSet<String>();
                 dupeMap.add(mySolver.getID());
-                waitTimesMap = mySolver.getWaitForMap();
-
                 for (SolverService es : ChallengeResponseController.getInstance().listServices()) {
                     if (dupeMap.add(es.getID())) {
                         solverList.add(es);
                     }
                 }
-
                 _fireTableStructureChanged(solverList, true);
             }
         };
@@ -157,13 +149,11 @@ public class TimingTableModel extends ExtTableModel<SolverService> {
 
             @Override
             protected void setNumberValue(Number value, SolverService object) {
+                mySolver.setWaitFor(object.getID(), value.intValue() * 1000);
 
-                waitTimesMap.put(object.getID(), value.intValue() * 1000);
-                mySolver.setWaitForMap(waitTimesMap);
-
-                ArrayList<SolverService> waitLoop = AbstractSolverService.validateWaittimeQueue(mySolver, ChallengeResponseController.getInstance().getServiceByID(object.getID()));
+                final ArrayList<SolverService> waitLoop = AbstractSolverService.validateWaittimeQueue(mySolver, ChallengeResponseController.getInstance().getServiceByID(object.getID()));
                 if (waitLoop != null) {
-                    StringBuilder sb = new StringBuilder();
+                    final StringBuilder sb = new StringBuilder();
                     for (int i = 0; i < waitLoop.size(); i++) {
                         SolverService entry = waitLoop.get(i);
                         SolverService next = i == waitLoop.size() - 1 ? null : waitLoop.get(i + 1);
@@ -174,8 +164,7 @@ public class TimingTableModel extends ExtTableModel<SolverService> {
                         }
                     }
                     Dialog.getInstance().showErrorDialog(0, _GUI._.TimingTableModel_initColumns_waitloop_title(), _GUI._.TimingTableModel_initColumns_waitloop_warning(sb.toString()));
-                    waitTimesMap.put(object.getID(), 0);
-                    mySolver.setWaitForMap(waitTimesMap);
+                    mySolver.setWaitFor(object.getID(), 0);
                 }
                 refreshSort();
 
@@ -191,9 +180,9 @@ public class TimingTableModel extends ExtTableModel<SolverService> {
     }
 
     public int getWaittimeBySolver(SolverService value) {
-        Integer v = waitTimesMap.get(value.getID());
+        final Integer v = mySolver.getWaitForByID(value.getID());
         if (v == null || v.intValue() < 0) {
-            v = 0;
+            return 0;
         }
         return v.intValue() / 1000;
     }
