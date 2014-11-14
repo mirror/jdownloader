@@ -2,7 +2,6 @@ package jd.controlling.reconnect;
 
 import java.util.ArrayList;
 
-import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.controlling.reconnect.ipcheck.IPController;
 
 import org.appwork.storage.config.JsonConfig;
@@ -21,7 +20,9 @@ public abstract class ReconnectInvoker {
     }
 
     public void setLogger(LogSource logger) {
-        if (logger == null) logger = LogController.TRASH;
+        if (logger == null) {
+            logger = LogController.TRASH;
+        }
         this.logger = logger;
     }
 
@@ -44,14 +45,14 @@ public abstract class ReconnectInvoker {
             IPController.getInstance().invalidate();
             Thread.sleep(1000);
             IPController.getInstance().validate();
-            if (IPController.getInstance().getIpState().isOffline()) { throw new ReconnectException(_GUI._.ReconnectInvoker_validate_offline_()); }
+            if (IPController.getInstance().getIpState().isOffline()) {
+                throw new ReconnectException(_GUI._.ReconnectInvoker_validate_offline_());
+            }
 
         }
         logger.info("IP BEFORE=" + IPController.getInstance().getIP());
 
         try {
-
-            BalancedWebIPCheck.getInstance().setOnlyUseWorkingServices(true);
             IPController.getInstance().invalidate();
             ret.setStartTime(System.currentTimeMillis());
             testRun();
@@ -84,7 +85,9 @@ public abstract class ReconnectInvoker {
                 while (System.currentTimeMillis() < endTime) {
                     /* ip change detected then we can stop */
                     long s = System.currentTimeMillis();
-                    if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
+                    if (Thread.currentThread().isInterrupted()) {
+                        throw new InterruptedException();
+                    }
                     if (ipc.validate()) {
                         ret.setSuccessTime(System.currentTimeMillis());
                         ret.setSuccess(true);
@@ -111,7 +114,6 @@ public abstract class ReconnectInvoker {
             }
         } finally {
             logger.info("IP AFTER=" + IPController.getInstance().getIP());
-            BalancedWebIPCheck.getInstance().setOnlyUseWorkingServices(false);
         }
     }
 

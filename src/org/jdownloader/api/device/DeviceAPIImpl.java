@@ -15,12 +15,14 @@ import org.jdownloader.myjdownloader.client.json.DirectConnectionInfo;
 import org.jdownloader.myjdownloader.client.json.DirectConnectionInfos;
 
 public class DeviceAPIImpl implements DeviceAPI {
-    
+
     @Override
     public DirectConnectionInfos getDirectConnectionInfos(RemoteAPIRequest request) {
         MyJDownloaderDirectServer directServer = MyJDownloaderController.getInstance().getConnectThread().getDirectServer();
         DirectConnectionInfos ret = new DirectConnectionInfos();
-        if (directServer == null || !directServer.isAlive() || directServer.getLocalPort() < 0) return ret;
+        if (directServer == null || !directServer.isAlive() || directServer.getLocalPort() < 0) {
+            return ret;
+        }
         List<DirectConnectionInfo> infos = new ArrayList<DirectConnectionInfo>();
         List<InetAddress> localIPs = HTTPProxyUtils.getLocalIPs(true);
         if (localIPs != null) {
@@ -33,7 +35,7 @@ public class DeviceAPIImpl implements DeviceAPI {
         }
         if (directServer.getRemotePort() > 0) {
             try {
-                IP externalIP = BalancedWebIPCheck.getInstance().getExternalIP();
+                final IP externalIP = new BalancedWebIPCheck().getExternalIP();
                 if (externalIP.getIP() != null) {
                     DirectConnectionInfo info = new DirectConnectionInfo();
                     info.setPort(directServer.getRemotePort());
@@ -44,13 +46,15 @@ public class DeviceAPIImpl implements DeviceAPI {
                 /* eg OfflineException */
             }
         }
-        if (infos.size() > 0) ret.setInfos(infos);
+        if (infos.size() > 0) {
+            ret.setInfos(infos);
+        }
         return ret;
     }
-    
+
     @Override
     public boolean ping() {
         return true;
     }
-    
+
 }

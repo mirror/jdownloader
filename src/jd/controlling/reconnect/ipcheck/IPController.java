@@ -63,12 +63,16 @@ public class IPController extends ArrayList<IPConnectionState> {
 
     @Override
     public boolean add(final IPConnectionState state) {
-        if (state == null) { return false; }
+        if (state == null) {
+            return false;
+        }
         synchronized (this.LOCK) {
             if (this.size() > 0) {
                 final IPConnectionState entry = this.get(this.size() - 1);
                 /* new and current state are equal */
-                if (entry.equalsLog(state)) { return false; }
+                if (entry.equalsLog(state)) {
+                    return false;
+                }
             }
             /* new IPConnectionState reached */
             IPConnectionState oldState = latestConnectionState;
@@ -81,9 +85,13 @@ public class IPController extends ArrayList<IPConnectionState> {
     }
 
     protected boolean changedIP() {
-        if (this.invalidState == null) { return false; }
+        if (this.invalidState == null) {
+            return false;
+        }
         /* we dont have any previous states, we cannot check if ip changed */
-        if (this.size() == 0) { return false; }
+        if (this.size() == 0) {
+            return false;
+        }
         synchronized (this.LOCK) {
             /* fetch current ip */
             this.fetchIP();
@@ -91,7 +99,8 @@ public class IPController extends ArrayList<IPConnectionState> {
             /* currently offline = no ip change */
             if (current.isOffline()) {
 
-            return false; }
+                return false;
+            }
 
             // run back the statelog, until we reached the invalidState. Check
             // all states on the way for a new ip
@@ -192,7 +201,7 @@ public class IPController extends ArrayList<IPConnectionState> {
         if (p == null || this.badProviders.contains(p)) {
 
             if (!JsonConfig.create(ReconnectConfig.class).isCustomIPCheckEnabled()) {
-                p = BalancedWebIPCheck.getInstance();
+                p = new BalancedWebIPCheck();
             } else {
                 p = CustomWebIpCheck.getInstance();
             }
@@ -207,7 +216,9 @@ public class IPController extends ArrayList<IPConnectionState> {
      * @see #validateAndWait(int, int, int)
      */
     public void invalidate() {
-        if (this.invalidated == true) { return; }
+        if (this.invalidated == true) {
+            return;
+        }
         this.setInvalidated(true);
         this.invalidState = this.getIpState();
     }
@@ -229,7 +240,9 @@ public class IPController extends ArrayList<IPConnectionState> {
      *      This method only does one single Check.
      */
     public boolean validate() {
-        if (!this.invalidated) { return true; }
+        if (!this.invalidated) {
+            return true;
+        }
         latestValidateTime = System.currentTimeMillis();
         if (JsonConfig.create(ReconnectConfig.class).isIPCheckGloballyDisabled()) {
             // IP check disabled. each validate request is successful
@@ -248,7 +261,9 @@ public class IPController extends ArrayList<IPConnectionState> {
     }
 
     private void setInvalidated(boolean invalidated) {
-        if (invalidated == this.invalidated) return;
+        if (invalidated == this.invalidated) {
+            return;
+        }
         this.invalidated = invalidated;
         if (invalidated) {
             eventSender.fireEvent(new IPControllEvent(IPControllEvent.Type.INVALIDATED, getIpState()));
@@ -271,7 +286,9 @@ public class IPController extends ArrayList<IPConnectionState> {
      * @throws InterruptedException
      */
     public boolean validateAndWait(final int waitForIPTime, int waitForOfflineTime, final int ipCheckInterval) throws InterruptedException {
-        if (!this.invalidated) { return true; }
+        if (!this.invalidated) {
+            return true;
+        }
         if (JsonConfig.create(ReconnectConfig.class).isIPCheckGloballyDisabled()) {
             Thread.sleep(waitForIPTime);
             // IP check disabled. each validate request is successful
@@ -327,11 +344,15 @@ public class IPController extends ArrayList<IPConnectionState> {
         // Make sure that we are online
         while (IPController.getInstance().getIpState().isOffline()) {
             IPController.getInstance().invalidate();
-            if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
+            if (Thread.currentThread().isInterrupted()) {
+                throw new InterruptedException();
+            }
             Thread.sleep(interval);
             while (System.currentTimeMillis() - latestValidateTime < interval) {
                 Thread.sleep(500);
-                if (!IPController.getInstance().getIpState().isOffline()) return;
+                if (!IPController.getInstance().getIpState().isOffline()) {
+                    return;
+                }
             }
             IPController.getInstance().validate();
         }

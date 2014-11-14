@@ -17,7 +17,6 @@
 package jd.controlling;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -36,8 +35,11 @@ import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.controlling.reconnect.ipcheck.IPCheckException;
 import jd.controlling.reconnect.ipcheck.OfflineException;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.BrowserSettingsThread;
 import jd.http.NoGateWayException;
+import jd.http.ProxySelectorInterface;
+import jd.http.StaticProxySelector;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountError;
@@ -53,9 +55,11 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
@@ -356,15 +360,28 @@ public class AccountController implements AccountControllerListener, AccountProp
                     account.setError(AccountError.TEMP_DISABLED, errorMsg);
                     return ai;
 
-                } else if (e instanceof IOException) {
+                } else {
+                    ProxySelectorInterface proxySelector = null;
+                    final BrowserException browserException = Exceptions.getInstanceof(e, BrowserException.class);
+                    if (browserException != null && browserException.getRequest() != null) {
+                        final HTTPProxy proxy = browserException.getRequest().getProxy();
+                        if (proxy != null) {
+                            proxySelector = new StaticProxySelector(proxy);
+                        }
+                    }
+                    if (proxySelector == null && plugin != null && plugin.getBrowser() != null && plugin.getBrowser().getRequest() != null) {
+                        final HTTPProxy proxy = plugin.getBrowser().getRequest().getProxy();
+                        if (proxy != null) {
+                            proxySelector = new StaticProxySelector(proxy);
+                        }
+                    }
                     /* network exception, lets temp disable the account */
-                    BalancedWebIPCheck onlineCheck = new BalancedWebIPCheck(true);
+                    final BalancedWebIPCheck onlineCheck = new BalancedWebIPCheck(proxySelector);
                     try {
                         onlineCheck.getExternalIP();
-                    } catch (final OfflineException e2) {
-                        /*
-                         * we are offline, so lets just return without any account update
-                         */
+                    } catch (final OfflineException e2) { /*
+                                                           * we are offline, so lets just return without any account update
+                                                           */
                         logger.clear();
                         LogController.CL().info("It seems Computer is currently offline, skipped Accountcheck for " + whoAmI);
                         account.setError(AccountError.TEMP_DISABLED, "No Internet Connection");
@@ -375,7 +392,6 @@ public class AccountController implements AccountControllerListener, AccountProp
                     }
                 }
                 logger.severe("AccountCheck: Failed because of exception, temp disable it!");
-                logger.log(e);
                 String errorMsg = null;
                 if (e instanceof PluginException && !StringUtils.isEmpty(((PluginException) e).getErrorMessage())) {
                     errorMsg = ((PluginException) e).getErrorMessage();
