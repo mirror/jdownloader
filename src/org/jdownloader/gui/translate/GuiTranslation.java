@@ -5461,4 +5461,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enable %s2 via %s1" })
     String createTooltip_Captcha_Service_getNameWhenEnabled_(String name, String type);
 
+    @Default(lngs = { "en" }, values = { "%s1 waits up to %s2 for %s3" })
+    String TimingTableModel_initColumns_waitloop_print(String name, String formatMilliSeconds, String name2);
+
+    @Default(lngs = { "en" }, values = { "Waittime Loop Detected!" })
+    String TimingTableModel_initColumns_waitloop_title();
+
+    @Default(lngs = { "en" }, values = { "You cannot change this value. This would result in the following wait loop conflict:\r\n\r\n%s1\r\n\r\nPlease break this loop first." })
+    String TimingTableModel_initColumns_waitloop_warning(String string);
+
 }

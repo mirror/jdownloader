@@ -236,4 +236,15 @@ public class ChallengeResponseController {
         return serviceList;
     }
 
+    public SolverService getServiceByID(String key) {
+
+        for (SolverService service : ChallengeResponseController.getInstance().listServices()) {
+            if (service.getID().equals(key)) {
+                return service;
+
+            }
+        }
+        return null;
+    }
+
 }

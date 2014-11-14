@@ -1,11 +1,13 @@
 package org.jdownloader.captcha.v2;
 
+import java.util.ArrayList;
 import java.util.concurrent.ScheduledExecutorService;
 
 import jd.controlling.captcha.SkipException;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.solver.service.AbstractSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 
 public class JobRunnable<T> implements Runnable {
@@ -81,21 +83,30 @@ public class JobRunnable<T> implements Runnable {
                 for (ChallengeSolver<?> s : job.getSolverList()) {
                     if (s != solver) {
                         int waitForThisSolver = solver.getService().getWaitForByID(s.getService().getID());
+
                         if (waitForThisSolver > 1000) {
+
                             job.getLogger().info(solver + " will wait up to " + TimeFormatter.formatMilliSeconds(waitForThisSolver, 0) + " for " + s);
 
                         }
                     }
                 }
+                System.out.println("Logged");
                 for (ChallengeSolver<?> s : job.getSolverList()) {
                     if (s != solver) {
                         int waitForThisSolver = solver.getService().getWaitForByID(s.getService().getID());
                         waitForThisSolver -= (System.currentTimeMillis() - startedWaiting);
-                        if (waitForThisSolver > 1000) {
-                            long t = System.currentTimeMillis();
-                            job.getLogger().info(solver + " now waits up to " + TimeFormatter.formatMilliSeconds(waitForThisSolver, 0) + " for " + s);
-                            job.waitFor(waitForThisSolver, s);
-                            job.getLogger().info(solver + " actually waited " + TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - t, 0) + " for " + s);
+                        ArrayList<SolverService> waitLoop = AbstractSolverService.validateWaittimeQueue(solver.getService(), s.getService());
+                        if (waitLoop == null) {
+                            if (waitForThisSolver > 1000) {
+                                long t = System.currentTimeMillis();
+                                job.getLogger().info(solver + " now waits up to " + TimeFormatter.formatMilliSeconds(waitForThisSolver, 0) + " for " + s);
+                                job.waitFor(waitForThisSolver, s);
+                                job.getLogger().info(solver + " actually waited " + TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - t, 0) + " for " + s);
+                            }
+                        } else {
+                            job.getLogger().info(solver + " wait VALIDATION FAILED!" + TimeFormatter.formatMilliSeconds(waitForThisSolver, 0) + " for " + s);
+                            job.getLogger().info("Wait Loop- >" + waitLoop + "");
                         }
                     }
                 }
