@@ -57,7 +57,6 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
             initMouseOverRowHighlighter();
         }
         initRowHeight();
-        // this.addRowHighlighter(new AlternateHighlighter(null, ColorUtils.getAlphaInstance(new JLabel().getForeground(), 6)));
 
         this.setIntercellSpacing(new Dimension(0, 0));
         initAlternateRowHighlighter();
