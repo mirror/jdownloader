@@ -1,7 +1,7 @@
 package org.jdownloader.captcha.v2.solver.service;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -38,19 +38,45 @@ public abstract class AbstractSolverService implements SolverService {
     }
 
     @Override
-    public int getWaitForByID(String solverID) {
-        Integer obj = getWaitForMap().get(solverID);
-        return obj == null ? 0 : obj.intValue();
+    public synchronized int getWaitForByID(String solverID) {
+        Map<String, Integer> map = getConfig().getWaitForMap();
+        if (map == null) {
+            map = getWaitForOthersDefaultMap();
+        }
+        if (map != null) {
+            final Integer obj = map.get(solverID);
+            return obj == null ? 0 : Math.max(0, obj.intValue());
+        }
+        return 0;
     }
 
-    public void setWaitForMap(Map<String, Integer> waitForMap) {
-        synchronized (this) {
-            this.waitForMap = null;
-            getConfig().setWaitForMap(waitForMap);
-            // reinit
-
-            getWaitForMap();
+    @Override
+    public synchronized void setWaitFor(String id, Integer waitFor) {
+        Map<String, Integer> map = getConfig().getWaitForMap();
+        if (map == null) {
+            map = getWaitForOthersDefaultMap();
         }
+        if (map != null) {
+            if (waitFor == null || waitFor <= 0) {
+                map.remove(id);
+            } else {
+                map.put(id, waitFor);
+            }
+            getConfig().setWaitForMap(map);
+        }
+    }
+
+    @Override
+    public synchronized Map<String, Integer> getWaitForMapCopy() {
+        final HashMap<String, Integer> ret = new HashMap<String, Integer>();
+        Map<String, Integer> map = getConfig().getWaitForMap();
+        if (map == null) {
+            map = getWaitForOthersDefaultMap();
+        }
+        if (map != null) {
+            ret.putAll(map);
+        }
+        return ret;
     }
 
     @Override
@@ -90,60 +116,35 @@ public abstract class AbstractSolverService implements SolverService {
 
     }
 
-    private Map<String, Integer> waitForMap = null;
-
-    public Map<String, Integer> getWaitForMap() {
-        synchronized (this) {
-            if (waitForMap != null) {
-                return waitForMap;
-            }
-            getConfig()._getStorageHandler().getKeyHandler("WaitForMap").getEventSender().addListener(new GenericConfigEventListener<Object>() {
-
-                @Override
-                public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
-                    synchronized (this) {
-                        waitForMap = null;
-                        getWaitForMap();
-                    }
-                }
-
-                @Override
-                public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
-                }
-            });
-            Map<String, Integer> map = getConfig().getWaitForMap();
-
-            if (map == null || map.size() == 0) {
-                map = getWaitForOthersDefaultMap();
-            }
-            waitForMap = Collections.synchronizedMap(map);
-        }
-        return waitForMap;
-    }
-
     public static ArrayList<SolverService> validateWaittimeQueue(SolverService start, SolverService check) {
+        if (start == null || check == null) {
+            return null;
+        }
         return validateWaittimeQueue(start, check, new ArrayList<SolverService>(), new HashSet<SolverService>());
     }
 
-    public static ArrayList<SolverService> validateWaittimeQueue(SolverService start, SolverService check, ArrayList<SolverService> arrayList, HashSet<SolverService> dupe) {
-
+    private static ArrayList<SolverService> validateWaittimeQueue(SolverService start, SolverService check, ArrayList<SolverService> arrayList, HashSet<SolverService> dupe) {
+        if (arrayList == null) {
+            arrayList = new ArrayList<SolverService>();
+        }
+        if (dupe == null) {
+            dupe = new HashSet<SolverService>();
+        }
         if (arrayList.size() == 0) {
             arrayList.add(start);
             dupe.add(start);
         }
         arrayList.add(check);
-
         if (!dupe.add(check)) {
             return arrayList;
         }
-        for (Entry<String, Integer> es : check.getWaitForMap().entrySet()) {
-            SolverService service = ChallengeResponseController.getInstance().getServiceByID(es.getKey());
+        for (Entry<String, Integer> es : check.getWaitForMapCopy().entrySet()) {
+            final SolverService service = ChallengeResponseController.getInstance().getServiceByID(es.getKey());
             if (service != null && es.getValue() != null && es.getValue().intValue() > 0) {
-                ArrayList<SolverService> ret = validateWaittimeQueue(start, service, new ArrayList<SolverService>(arrayList), new HashSet<SolverService>(dupe));
+                final ArrayList<SolverService> ret = validateWaittimeQueue(start, service, new ArrayList<SolverService>(arrayList), new HashSet<SolverService>(dupe));
                 if (ret != null) {
                     return ret;
                 }
-
             }
         }
         return null;
