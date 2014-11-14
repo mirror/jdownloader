@@ -73,7 +73,7 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
     }
 
     private boolean showHorizontalLineBelowLastEntry = true;
-    private boolean noRepaint;
+    private boolean noRepaint                        = false;
 
     public boolean isShowHorizontalLineBelowLastEntry() {
         return showHorizontalLineBelowLastEntry;
