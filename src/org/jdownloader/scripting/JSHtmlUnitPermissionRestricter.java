@@ -138,7 +138,7 @@ public class JSHtmlUnitPermissionRestricter {
                         return true;
                     } else {
                         if (true) {
-                            ScriptRuntime.constructError("Loaded Class", className).printStackTrace();
+                            ScriptRuntime.constructError("Security Violation Loaded Class", className).printStackTrace();
                         }
                         throw new RuntimeException("Security Violation " + className);
                     }
