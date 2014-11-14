@@ -1239,7 +1239,7 @@ public class YoutubeDashV2 extends PluginForHost {
                     /* Skip video if just audio should be downloaded */
                     loadVideo = false;
                 } else {
-                    loadVideo |= !new File(videoStreamPath).exists();
+                    loadVideo |= !(new File(videoStreamPath).exists() && new File(videoStreamPath).length() > 0);
                 }
 
                 if (loadVideo) {
@@ -1257,7 +1257,7 @@ public class YoutubeDashV2 extends PluginForHost {
                     data.setDashAudioFinished(true);
                 }
                 boolean loadAudio = !data.isDashAudioFinished();
-                loadAudio |= !new File(getAudioStreamPath(downloadLink)).exists();
+                loadAudio |= !(new File(getAudioStreamPath(downloadLink)).exists() && new File(getAudioStreamPath(downloadLink)).length() > 0);
                 if (loadAudio) {
                     /* audioStream not finished yet, resume/download it */
                     Boolean ret = downloadDashStream(downloadLink, data, false);
@@ -1547,10 +1547,10 @@ public class YoutubeDashV2 extends PluginForHost {
         YoutubeProperties data = downloadLink.bindData(YoutubeProperties.class);
         data.setDashAudioBytesLoaded(0);
         data.setDashAudioFinished(false);
-        data.setDashAudioSize(0);
+        data.setDashAudioSize(-1);
         data.setDashVideoBytesLoaded(0);
         data.setDashVideoFinished(false);
-        data.setDashVideoSize(0);
+        data.setDashVideoSize(-1);
         downloadLink.setProperty(DASH_VIDEO_CHUNKS, Property.NULL);
         downloadLink.setProperty(DASH_AUDIO_CHUNKS, Property.NULL);
 
