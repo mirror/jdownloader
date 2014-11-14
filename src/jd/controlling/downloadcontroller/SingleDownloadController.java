@@ -36,6 +36,8 @@ import jd.controlling.reconnect.ipcheck.OfflineException;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.BrowserSettingsThread;
+import jd.http.ProxySelectorInterface;
+import jd.http.StaticProxySelector;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -50,6 +52,7 @@ import jd.plugins.PluginProgress;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.HashResult;
 
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
@@ -287,12 +290,16 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                     if (lastAvailableStatusChange + availableStatusChangeTimeout < System.currentTimeMillis()) {
                         try {
                             processingPlugin.set(defaultPlugin);
-                            availableStatus = defaultPlugin.checkLink(downloadLink);
-                            if (AvailableStatus.FALSE == availableStatus) {
-                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                            try {
+                                availableStatus = defaultPlugin.checkLink(downloadLink);
+                                if (AvailableStatus.FALSE == availableStatus) {
+                                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                                }
+                            } catch (final Throwable e) {
+                                downloadLogger.log(e);
+                                throw e;
                             }
                         } catch (final BrowserException browserException) {
-                            downloadLogger.log(browserException);
                             try {
                                 if (browserException.getRequest() != null) {
                                     browserException.getRequest().disconnect();
@@ -359,23 +366,28 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                 try {
                     processingPlugin.set(handlePlugin);
                     downloadLink.setLivePlugin(handlePlugin);
-                    watchDog.localFileCheck(this, new ExceptionRunnable() {
+                    try {
+                        watchDog.localFileCheck(this, new ExceptionRunnable() {
 
-                        @Override
-                        public void run() throws Exception {
-                            final List<DownloadLinkCandidate> candidates = new ArrayList<DownloadLinkCandidate>();
-                            candidates.add(getDownloadLinkCandidate());
-                            final DISKSPACERESERVATIONRESULT result = watchDog.validateDiskFree(candidates);
-                            switch (result) {
-                            case FAILED:
-                                throw new SkipReasonException(SkipReason.DISK_FULL);
-                            case INVALIDDESTINATION:
-                                throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
+                            @Override
+                            public void run() throws Exception {
+                                final List<DownloadLinkCandidate> candidates = new ArrayList<DownloadLinkCandidate>();
+                                candidates.add(getDownloadLinkCandidate());
+                                final DISKSPACERESERVATIONRESULT result = watchDog.validateDiskFree(candidates);
+                                switch (result) {
+                                case FAILED:
+                                    throw new SkipReasonException(SkipReason.DISK_FULL);
+                                case INVALIDDESTINATION:
+                                    throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
+                                }
                             }
-                        }
-                    }, null);
-                    startTimestamp = System.currentTimeMillis();
-                    handlePlugin.handle(downloadLink, account);
+                        }, null);
+                        startTimestamp = System.currentTimeMillis();
+                        handlePlugin.handle(downloadLink, account);
+                    } catch (final Throwable e) {
+                        downloadLogger.log(e);
+                        throw e;
+                    }
                 } catch (DeferredRunnableException e) {
                     if (e.getExceptionRunnable() != null) {
                         e.getExceptionRunnable().run();
@@ -386,12 +398,14 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                 final SingleDownloadReturnState ret = new SingleDownloadReturnState(this, null, finalizeProcessingPlugin());
                 return ret;
             } catch (final BrowserException browserException) {
-                downloadLogger.log(browserException);
                 try {
                     if (browserException.getRequest() != null) {
                         browserException.getRequest().disconnect();
                     }
                 } catch (final Throwable ignore) {
+                }
+                if (isConnectionOffline(browserException)) {
+                    throw new NoInternetConnection(browserException);
                 }
                 if (browserException.getCause() != null) {
                     throw browserException.getCause();
@@ -414,14 +428,13 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                 case LinkStatus.ERROR_RETRY:
                 case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
                     // we might be offline
-                    BalancedWebIPCheck onlineCheck = new BalancedWebIPCheck(true);
-                    try {
-                        onlineCheck.getExternalIP();
-                    } catch (final OfflineException e2) {
+                    if (isConnectionOffline(e)) {
                         e = new NoInternetConnection(e);
-                    } catch (final IPCheckException e2) {
                     }
+                    break;
                 }
+            } else if (!(e instanceof NoInternetConnection) && isConnectionOffline(e)) {
+                e = new NoInternetConnection(e);
             }
             downloadLogger.info("Exception: ");
             downloadLogger.log(e);
@@ -471,6 +484,37 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         return usedProxy;
     }
 
+    private boolean isConnectionOffline(Throwable e) {
+        HTTPProxy proxy = null;
+        final BrowserException browserException = Exceptions.getInstanceof(e, BrowserException.class);
+        if (browserException.getRequest() != null) {
+            proxy = browserException.getRequest().getProxy();
+        }
+        if (proxy == null) {
+            final PluginForHost plugin = getProcessingPlugin();
+            if (plugin != null && plugin.getBrowser() != null && plugin.getBrowser().getRequest() != null) {
+                proxy = plugin.getBrowser().getRequest().getProxy();
+            }
+        }
+        if (proxy == null) {
+            proxy = getUsedProxy();
+        }
+        final ProxySelectorInterface proxySelector;
+        if (proxy != null) {
+            proxySelector = new StaticProxySelector(proxy);
+        } else {
+            proxySelector = getProxySelector();
+        }
+        final BalancedWebIPCheck onlineCheck = new BalancedWebIPCheck(proxySelector);
+        try {
+            onlineCheck.getExternalIP();
+        } catch (final OfflineException e2) {
+            return true;
+        } catch (final IPCheckException e2) {
+        }
+        return false;
+    }
+
     @Override
     public void run() {
         LogSource downloadLogger = null;
@@ -488,7 +532,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                             usedProxy = ret.get(0);
                         }
                     }
-
                 });
             }
             String logID = downloadLink.getDefaultPlugin().getHost();

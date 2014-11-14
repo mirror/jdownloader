@@ -475,11 +475,10 @@ public class MyJDownloaderConnectThread extends Thread {
                             myJDownloaderController.onError(MyJDownloaderError.SERVER_DOWN);
                             currentHelper.requestbackoff();
                         } else {
-                            BalancedWebIPCheck onlineCheck = new BalancedWebIPCheck(true);
+                            final BalancedWebIPCheck onlineCheck = new BalancedWebIPCheck();
                             currentHelper.requestbackoff();
                             try {
                                 onlineCheck.getExternalIP();
-
                             } catch (final OfflineException e2) {
                                 logger.info("Could not connect! NO Internet!");
 

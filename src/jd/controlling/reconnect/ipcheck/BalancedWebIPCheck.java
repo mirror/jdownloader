@@ -1,13 +1,15 @@
 package jd.controlling.reconnect.ipcheck;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.controlling.proxy.ProxyController;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.http.Browser;
+import jd.http.ProxySelectorInterface;
+import jd.http.StaticProxySelector;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging2.LogSource;
@@ -22,9 +24,6 @@ import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
  * 
  */
 public class BalancedWebIPCheck implements IPCheckProvider {
-    public static BalancedWebIPCheck getInstance() {
-        return BalancedWebIPCheck.INSTANCE;
-    }
 
     private static final java.util.List<String> SERVICES = new ArrayList<String>();
     static {
@@ -32,31 +31,29 @@ public class BalancedWebIPCheck implements IPCheckProvider {
         SERVICES.add("http://ipcheck2.jdownloader.org");
         SERVICES.add("http://ipcheck1.jdownloader.org");
         SERVICES.add("http://ipcheck0.jdownloader.org");
+        Collections.shuffle(SERVICES);
     }
     /**
      * All registered ip check urls
      */
-    private final java.util.List<String>        servicesInUse;
 
     private final Browser                       br;
 
     private final Pattern                       pattern;
 
-    private static final BalancedWebIPCheck     INSTANCE = new BalancedWebIPCheck(false);
     private final Object                        LOCK     = new Object();
 
-    private boolean                             checkOnlyOnce;
+    public BalancedWebIPCheck() {
+        this(CFG_RECONNECT.CFG.isIPCheckUsesProxyEnabled() ? ProxyController.getInstance() : new StaticProxySelector(HTTPProxy.NONE));
+    }
 
-    public BalancedWebIPCheck(boolean useGlobalProxy) {
-        this.servicesInUse = new ArrayList<String>();
-        setOnlyUseWorkingServices(false);
+    public BalancedWebIPCheck(final ProxySelectorInterface proxySelector) {
         this.pattern = Pattern.compile("(\\d+\\.\\d+\\.\\d+\\.\\d+)");
-        Collections.shuffle(this.servicesInUse);
         this.br = new Browser();
         this.br.setDebug(true);
         this.br.setVerbose(true);
-        if (!useGlobalProxy && !CFG_RECONNECT.CFG.isIPCheckUsesProxyEnabled()) {
-            br.setProxy(HTTPProxy.NONE);
+        if (proxySelector != null) {
+            br.setProxySelector(proxySelector);
         }
         this.br.setConnectTimeout(JsonConfig.create(ReconnectConfig.class).getIPCheckConnectTimeout());
         this.br.setReadTimeout(JsonConfig.create(ReconnectConfig.class).getIPCheckReadTimeout());
@@ -70,38 +67,31 @@ public class BalancedWebIPCheck implements IPCheckProvider {
      */
     public IP getExternalIP() throws IPCheckException {
         synchronized (this.LOCK) {
-            System.out.println("CHECK");
-            for (int i = 0; i < (checkOnlyOnce ? 1 : this.servicesInUse.size()); i++) {
-                LogSource logger = LogController.CL(false);
-                logger.setAllowTimeoutFlush(false);
+            final LogSource logger = LogController.getFastPluginLogger("BalancedWebIPCheck");
+            logger.setAllowTimeoutFlush(false);
+            br.setLogger(logger);
+            for (String service : SERVICES) {
                 try {
-                    final String service = this.servicesInUse.get(i);
                     /* call website and check for ip */
-                    br.setLogger(logger);
                     final Matcher matcher = this.pattern.matcher(this.br.getPage(service));
                     if (matcher.find()) {
                         if (matcher.groupCount() > 0) {
                             logger.clear();
+                            logger.close();
                             return IP.getInstance(matcher.group(1));
                         }
                     }
-                } catch (final IOException e2) {
-                    try {
-                        br.disconnect();
-                    } catch (final Throwable e) {
-                    }
                 } catch (final Throwable e2) {
-                    try {
-                        br.disconnect();
-                    } catch (final Throwable e) {
-                    }
                     logger.log(e2);
                 } finally {
-                    br.setLogger(null);
-                    logger.close();
+                    try {
+                        br.disconnect();
+                    } catch (final Throwable e) {
+                    }
                 }
             }
-            LogController.CL().severe("All balanced Services failed");
+            logger.severe("All balanced Services failed");
+            logger.close();
             throw new OfflineException("All balanced Services failed");
         }
     }
@@ -111,45 +101,6 @@ public class BalancedWebIPCheck implements IPCheckProvider {
      */
     public int getIpCheckInterval() {
         return 5;
-    }
-
-    public void setOnlyUseWorkingServices(boolean b) {
-        synchronized (this.LOCK) {
-            checkOnlyOnce = b;
-            if (b) {
-                servicesInUse.clear();
-                for (int i = 0; i < SERVICES.size(); i++) {
-                    LogSource logger = LogController.CL(false);
-                    logger.setAllowTimeoutFlush(false);
-                    try {
-
-                        final String service = SERVICES.get(i);
-                        /* call website and check for ip */
-                        br.setLogger(logger);
-                        final Matcher matcher = this.pattern.matcher(this.br.getPage(service));
-                        if (matcher.find()) {
-                            if (matcher.groupCount() > 0) {
-                                logger.clear();
-                                servicesInUse.add(service);
-                            }
-                        }
-                    } catch (final Throwable e2) {
-                        logger.log(e2);
-                    } finally {
-                        logger.close();
-                    }
-                }
-                if (servicesInUse.size() == 0) {
-                    servicesInUse.clear();
-                    servicesInUse.addAll(SERVICES);
-                    throw new IllegalStateException("No  Services are Working. reverted to all");
-                }
-            } else {
-                servicesInUse.clear();
-                servicesInUse.addAll(SERVICES);
-            }
-
-        }
     }
 
 }
