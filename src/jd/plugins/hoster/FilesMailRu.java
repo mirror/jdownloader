@@ -36,18 +36,21 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.mail.ru" }, urls = { "filesmailrudecrypted://.+" }, flags = { 2 })
 public class FilesMailRu extends PluginForHost {
-    private static String       UA            = RandomUserAgent.generate();
-    private boolean             keepCookies   = false;
+    private static String        UA            = RandomUserAgent.generate();
+    private boolean              keepCookies   = false;
 
-    public static final String  DLLINKREGEX   = "<div id=\"dlinklinkOff\\d+\".*?<a href=\"(http[^<>\"]*?)\"";
-    public static final String  UNAVAILABLE1  = ">В обработке<";
-    public static final String  UNAVAILABLE2  = ">In process<";
-    private static final String INFOREGEX     = "<td class=\"name\">(.*?<td class=\"do\">.*?)</td>";
-    public static final String  LINKOFFLINE   = "(was not found|were deleted by sender|Не найдено файлов, отправленных с кодом|<b>Ошибка</b>|>Page cannot be displayed<)";
-    public static final String  DLMANAGERPAGE = "class=\"download_type_choose_l\"";
+    public static final String   DLLINKREGEX   = "<div id=\"dlinklinkOff\\d+\".*?<a href=\"(http[^<>\"]*?)\"";
+    public static final String   UNAVAILABLE1  = ">В обработке<";
+    public static final String   UNAVAILABLE2  = ">In process<";
+    private static final String  INFOREGEX     = "<td class=\"name\">(.*?<td class=\"do\">.*?)</td>";
+    public static final String   LINKOFFLINE   = "(was not found|were deleted by sender|Не найдено файлов, отправленных с кодом|<b>Ошибка</b>|>Page cannot be displayed<)";
+    public static final String   DLMANAGERPAGE = "class=\"download_type_choose_l\"";
 
-    private static final String TYPE_VIDEO    = "http://my\\.mail\\.ru/video/top#?video=/[a-z0-9\\-_]+/[a-z0-9\\-_]+/[a-z0-9\\-_]+/\\d+";
-    private String              DLLINK        = null;
+    private static final String  TYPE_VIDEO    = "http://my\\.mail\\.ru/video/top#?video=/[a-z0-9\\-_]+/[a-z0-9\\-_]+/[a-z0-9\\-_]+/\\d+";
+    private String               DLLINK        = null;
+
+    /* files.mail.ru is now clóud.mail.ru (see plugin for that) */
+    private static final boolean host_moved    = true;
 
     public FilesMailRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -194,12 +197,7 @@ public class FilesMailRu extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account);
         account.setValid(true);
         ai.setUnlimitedTraffic();
         String expire = br.getRegex("<b>Your VIP status is valid until (.*?)</b><br><br>").getMatch(0);
@@ -251,6 +249,13 @@ public class FilesMailRu extends PluginForHost {
     }
 
     private void login(Account account) throws Exception {
+        if (host_moved) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nfiles.mail.ru ist jetzt cloud.mail.ru\r\nAus diesem Grund kannst du keine Accounts dieses Hosters mehr eintragen!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nfiles.mail.ru is now cloud.mail.ru\r\nBecause of this you cannot add any accounts of this host to JD anymore!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
         this.setBrowserExclusive();
         prepareBrowser();
         br.setFollowRedirects(true);

@@ -39,6 +39,7 @@ import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -1016,7 +1017,18 @@ public class TeraFileCo extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                getPage(COOKIE_HOST + "/login.html");
+                try {
+                    getPage(COOKIE_HOST + "/login.html");
+                } catch (final BrowserException e) {
+                    if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 502) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nServerfehler beim Login, bitte per Browser gegenprüfen und ggf. dem Support melden!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nServer error happened while logging in, please verify via browser and contact our support if necessary!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                    }
+                    throw e;
+                }
                 final String lang = System.getProperty("user.language");
                 final Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) {

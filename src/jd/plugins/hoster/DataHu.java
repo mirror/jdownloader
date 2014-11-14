@@ -61,23 +61,26 @@ public class DataHu extends PluginForHost {
         }
         br.getPage("http://data.hu/index.php?isl=1");
         if (!br.containsHTML("<td>Prémium:</td>")) {
-            account.setValid(false);
-            return ai;
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         }
         String days = br.getRegex("<td><a href=\"/premium\\.php\">(.*?)<span").getMatch(0);
         if (days != null && !days.equals("0")) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(days, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
         } else {
-            // Free account
-            final String lang = System.getProperty("user.language");
-            if ("de".equalsIgnoreCase(lang)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDieses Plugin unterstützt keine kostenlosen Accounts!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nThis plugin does not support free accounts!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
         String points = br.getRegex(Pattern.compile("title=\"Mi az a DataPont\\?\">(\\d+) pont</a>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (points != null) ai.setPremiumPoints(Long.parseLong(points));
+        if (points != null) {
+            ai.setPremiumPoints(Long.parseLong(points));
+        }
         ai.setStatus("Premium account");
         account.setValid(true);
         return ai;
@@ -113,14 +116,20 @@ public class DataHu extends PluginForHost {
         }
         br.getPage(downloadLink.getDownloadURL());
         String link = br.getRegex(Pattern.compile("<div class=\"download_box_button\"><a href=\"(http://.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (link == null) link = br.getRegex(Pattern.compile("\"(http://ddl\\d+\\.data\\.hu/get/\\d+/\\d+/.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (link == null) {
+            link = br.getRegex(Pattern.compile("\"(http://ddl\\d+\\.data\\.hu/get/\\d+/\\d+/.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        }
+        if (link == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The finallink doesn't seem to be a file...");
             // Wait a minute for respons 503 because JD tried to start too many
             // downloads in a short time
-            if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.datahu.toomanysimultandownloads", "Too many simultan downloads, please wait some time!"), 60 * 1000l);
+            if (dl.getConnection().getResponseCode() == 503) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.datahu.toomanysimultandownloads", "Too many simultan downloads, please wait some time!"), 60 * 1000l);
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -134,8 +143,12 @@ public class DataHu extends PluginForHost {
         login(account);
         br.getPage(downloadLink.getDownloadURL());
         String link = br.getRegex("window\\.location\\.href=\\'(.*?)\\';").getMatch(0);
-        if (link == null) link = br.getRegex("\"(http://ddlp\\.data\\.hu/get/[a-z0-9]+/\\d+/.*?)\"").getMatch(0);
-        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (link == null) {
+            link = br.getRegex("\"(http://ddlp\\.data\\.hu/get/[a-z0-9]+/\\d+/.*?)\"").getMatch(0);
+        }
+        if (link == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -154,7 +167,9 @@ public class DataHu extends PluginForHost {
             br.forceDebug(true);
             br.getPage("http://data.hu/index.php?isl=1");
             final String loginID = br.getRegex("name=\"login_passfield\" value=\"(.*?)\"").getMatch(0);
-            if (loginID == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (loginID == null) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             String postData = "act=dologin&login_passfield=" + loginID + "&target=%2Findex.php&t=&id=&data=&url_for_login=%2Findex.php%3Fisl%3D1&need_redirect=1&username=" + Encoding.urlEncode(account.getUser()) + "&" + loginID + "=" + Encoding.urlEncode(account.getPass()) + "&remember=on";
             br.postPage("http://data.hu/login.php", postData);
             if (br.getCookie("http://data.hu/", "datapremiumseccode") == null) {
@@ -173,10 +188,14 @@ public class DataHu extends PluginForHost {
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getRedirectLocation() != null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<div class=\"download_filename\">(.*?)</div>").getMatch(0);
         String filesize = br.getRegex("<div class=\"download_filename\">(\\d+(\\.\\d+)? [A-Za-z]{1,5})</div></div>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         downloadLink.setName(filename.trim());
         return AvailableStatus.TRUE;

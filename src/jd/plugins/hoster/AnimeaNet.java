@@ -76,7 +76,9 @@ public class AnimeaNet extends PluginForHost {
     public boolean checkLinks(DownloadLink[] urls) {
         prepBrowser();
         br.setFollowRedirects(false);
-        if (urls == null || urls.length == 0) { return false; }
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
         try {
             for (DownloadLink dl : urls) {
                 if ("true".equalsIgnoreCase((String) dl.getProperty("fastAdd"))) {
@@ -108,7 +110,9 @@ public class AnimeaNet extends PluginForHost {
             final Field field = link.getClass().getDeclaredField("availableStatus");
             field.setAccessible(true);
             Object ret = field.get(link);
-            if (ret != null && ret instanceof AvailableStatus) return (AvailableStatus) ret;
+            if (ret != null && ret instanceof AvailableStatus) {
+                return (AvailableStatus) ret;
+            }
         } catch (final Throwable e) {
         }
         return AvailableStatus.UNCHECKED;
@@ -118,7 +122,9 @@ public class AnimeaNet extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         prepBrowser();
         String dllink = downloadLink.getDownloadURL();
-        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -137,7 +143,9 @@ public class AnimeaNet extends PluginForHost {
         this.setBrowserExclusive();
         login(account, false);
         String dllink = downloadLink.getDownloadURL();
-        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -154,12 +162,7 @@ public class AnimeaNet extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
+        login(account, true);
         account.setValid(true);
         ai.setStatus("Premium User");
         return ai;
@@ -174,7 +177,9 @@ public class AnimeaNet extends PluginForHost {
                 prepBrowser();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -189,11 +194,26 @@ public class AnimeaNet extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.getPage("http://" + this.getHost() + "/login.php");
                 Form loginform = br.getFormbyProperty("name", "login");
-                if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (loginform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 loginform.put("amember_login", Encoding.urlEncode(account.getUser()));
                 loginform.put("amember_pass", Encoding.urlEncode(account.getPass()));
                 br.submitForm(loginform);
-                if (br.getCookie("http://" + this.getHost().replace("vip.", "") + "/", "amember_nr") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie("http://" + this.getHost().replace("vip.", "") + "/", "bb_password") == null) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                if (br.getCookie("http://" + this.getHost().replace("vip.", "") + "/", "amember_nr") == null) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = br.getCookies("http://" + this.getHost());

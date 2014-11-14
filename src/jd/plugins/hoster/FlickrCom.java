@@ -350,7 +350,7 @@ public class FlickrCom extends PluginForHost {
 
     private boolean isValid(final Browser br) throws IOException {
         br.getPage("https://www.flickr.com/");
-        if (!br.containsHTML("class=\"disk left\"")) {
+        if (!br.containsHTML("class=\"welcome")) {
             return false;
         }
         return true;
