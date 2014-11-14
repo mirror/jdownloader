@@ -1235,7 +1235,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             logger.info("Do not track. " + result.getLastPluginHost() + "!=" + dl.getCandidate().getPlugin());
             // return;
         }
-
+        //
         log(dl);
     }
 }
