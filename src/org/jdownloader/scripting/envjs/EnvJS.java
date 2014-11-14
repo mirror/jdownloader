@@ -157,6 +157,26 @@ public class EnvJS {
         return js;
     }
 
+    public Boolean preInitBoolean(Boolean b, boolean b2) {
+        return true;
+    }
+
+    public Integer preInitInteger(Integer b, int b2) {
+        return 0;
+    }
+
+    public Long preInitLong(Long b, long b2) {
+        return 0l;
+    }
+
+    public Double preInitDouble(Double b, double b2) {
+        return 0d;
+    }
+
+    public Float preInitFloat(Float b, float b2) {
+        return 0f;
+    }
+
     public String loadExternalScript(String type, String src, String url, Object window) {
 
         String ret = "console.log(\"Script Blocked: " + url + "\");";
