@@ -15,6 +15,7 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
@@ -31,7 +32,6 @@ import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.NullsafeAtomicReference;
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRuleWrapper;
@@ -50,10 +50,10 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
     private DelayedRunnable                                                                    delayedFilter;
     private PackageControllerTable<PackageType, ChildType>                                     table2Filter;
 
-    private JLabel                                                                             label;
+    private volatile JLabel                                                                    label;
     private int                                                                                labelWidth;
     private Color                                                                              bgColor;
-    private SearchCat[]                                                                        searchCategories;
+    private volatile SearchCat[]                                                               searchCategories;
     private Image                                                                              popIcon;
     private int                                                                                iconGap          = 38;
     private Border                                                                             orgBorder;
@@ -61,7 +61,7 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
 
     private int                                                                                closeXPos        = -1;
     private boolean                                                                            mouseoverClose   = false;
-    private boolean                                                                            closeEnabled     = false;
+    private volatile boolean                                                                   closeEnabled     = false;
     private NullsafeAtomicReference<PackageControllerTableModelFilter<PackageType, ChildType>> appliedFilter    = new NullsafeAtomicReference<PackageControllerTableModelFilter<PackageType, ChildType>>(null);
     private AppAction                                                                          focusAction;
 
@@ -122,12 +122,12 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
 
     @Override
     public void onChanged() {
+        final String text = getText();
+        closeEnabled = text != null && text.length() > 0;
         delayedFilter.run();
-        closeEnabled = StringUtils.isNotEmpty(getText());
     }
 
     protected void paintComponent(Graphics g) {
-
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
         Composite comp = g2.getComposite();
@@ -141,8 +141,10 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
             g2.setColor(getBackground().darker());
             g2.drawLine(labelWidth + 5 + iconGap + 8, 1, labelWidth + iconGap + 5 + 8, getHeight() - 1);
             g2.setComposite(comp);
-            selectedCategory.getIcon().paintIcon(this, g2, iconGap - 24, 3);
-
+            final SearchCat cat = getSelectedCategory();
+            if (cat != null) {
+                cat.getIcon().paintIcon(this, g2, iconGap - 24, 3);
+            }
             g2.translate(iconGap + 1, 0);
             label.getUI().paint(g2, label);
             g2.drawImage(popIcon, labelWidth + 3, (getHeight() - popIcon.getHeight(null)) / 2, null);
@@ -168,11 +170,11 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
     }
 
     private void updateFilter() {
-        String filterRegex = this.getText();
-        boolean enabled = filterRegex.length() > 0;
+        final String filterRegex = this.getText();
+        final boolean enabled = filterRegex != null && filterRegex.length() > 0;
         PackageControllerTableModelFilter<PackageType, ChildType> newFilter = null;
         if (enabled) {
-            java.util.List<Pattern> list = new ArrayList<Pattern>();
+            final List<Pattern> list = new ArrayList<Pattern>();
             try {
                 if (JsonConfig.create(GeneralSettings.class).isFilterRegex()) {
                     list.add(LinkgrabberFilterRuleWrapper.createPattern(filterRegex, true));
@@ -187,7 +189,7 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
                 Log.exception(e);
             }
         }
-        PackageControllerTableModelFilter<PackageType, ChildType> oldFilter = appliedFilter.getAndSet(newFilter);
+        final PackageControllerTableModelFilter<PackageType, ChildType> oldFilter = appliedFilter.getAndSet(newFilter);
         if (oldFilter != null) {
             table2Filter.getModel().removeFilter(oldFilter);
         }
@@ -296,19 +298,18 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
         mouseoverClose = false;
     }
 
-    protected SearchCat selectedCategory = null;
+    protected final AtomicReference<SearchCat> selectedCategory = new AtomicReference<SearchCat>(null);
 
     public SearchCat getSelectedCategory() {
-        return selectedCategory;
+        return selectedCategory.get();
     }
 
     public void setSelectedCategory(SearchCat selectedCategory) {
         if (selectedCategory == null) {
             Log.exception(Level.WARNING, new NullPointerException("selectedCategory null"));
         }
-        SearchCat old = this.selectedCategory;
-        this.selectedCategory = selectedCategory;
-        if (this.selectedCategory != old) {
+        final SearchCat old = this.selectedCategory.getAndSet(selectedCategory);
+        if (old != selectedCategory) {
             onChanged();
         }
         if (label != null) {
@@ -330,27 +331,29 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
             }
         };
 
-        SearchCat preSel = selectedCategory;
+        final SearchCat preSel = getSelectedCategory();
         boolean found = false;
-        for (SearchCat sc : searchCategories) {
-            if (sc == preSel) {
-                found = true;
+        if (preSel != null) {
+            for (SearchCat sc : searchCategories) {
+                if (sc == preSel) {
+                    found = true;
+                }
+                label.setText(sc.getLabel());
+                labelWidth = Math.max(label.getPreferredSize().width, labelWidth);
             }
-            label.setText(sc.getLabel());
-            labelWidth = Math.max(label.getPreferredSize().width, labelWidth);
         }
         if (!found) {
-            SearchCat old = selectedCategory;
-            this.selectedCategory = searchCategories[0];
-            if (this.selectedCategory != old) {
+            final SearchCat old = this.selectedCategory.getAndSet(searchCategories[0]);
+            if (old != searchCategories[0]) {
                 onChanged();
             }
         }
         label.setSize(labelWidth, 24);
         // label.setEnabled(false);
         setBorder(BorderFactory.createCompoundBorder(orgBorder, BorderFactory.createEmptyBorder(0, labelWidth + 14 + iconGap, 0, 18)));
-        label.setText(selectedCategory.getLabel());
-        setHelpText(selectedCategory.getHelpText());
+        final SearchCat sel = getSelectedCategory();
+        label.setText(sel.getLabel());
+        setHelpText(sel.getHelpText());
     }
 
 }
