@@ -32,7 +32,7 @@ public class SolverJob<T> {
     private final HashSet<ChallengeSolver<T>>      doneList  = new HashSet<ChallengeSolver<T>>();
     private volatile ChallengeSolverJobEventSender eventSender;
     private final List<AbstractResponse<T>>        responses = new ArrayList<AbstractResponse<T>>();
-    // private HashSet<ChallengeSolver<T>> runningList = new HashSet<ChallengeSolver<T>>();
+
     private final HashSet<ChallengeSolver<T>>      solverList;
 
     private LogSource                              logger;
@@ -42,8 +42,6 @@ public class SolverJob<T> {
     private final Object                           LOCK      = new Object();
 
     private final AtomicBoolean                    alive     = new AtomicBoolean(true);
-
-    // private boolean canceled = false;
 
     public String toString() {
         return "CaptchaJob: " + challenge + " Solver: " + solverList;
