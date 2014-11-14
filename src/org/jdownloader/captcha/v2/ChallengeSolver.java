@@ -34,6 +34,7 @@ public abstract class ChallengeSolver<T> {
         if (service == null) {
             this.service = (SolverService) this;
         }
+        service.addSolver(this);
         initThreadPool(i);
 
         final Type superClass = this.getClass().getGenericSuperclass();

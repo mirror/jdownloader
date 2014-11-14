@@ -15,6 +15,8 @@ public interface SolverService {
 
     public abstract Icon getIcon(int size);
 
+    public abstract void addSolver(ChallengeSolver<?> solver);
+
     public abstract String getType();
 
     public int getWaitForByID(String solverID);
@@ -30,4 +32,6 @@ public interface SolverService {
     public abstract boolean isEnabled();
 
     public abstract void setEnabled(boolean b);
+
+    public abstract void setWaitForMap(Map<String, Integer> waitTimesMap);
 }

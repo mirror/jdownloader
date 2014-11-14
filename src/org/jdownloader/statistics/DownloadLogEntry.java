@@ -3,7 +3,7 @@ package org.jdownloader.statistics;
 import org.appwork.storage.JSonStorage;
 
 public class DownloadLogEntry extends AbstractLogEntry {
-    protected DownloadLogEntry() {
+    public DownloadLogEntry() {
 
     }
 

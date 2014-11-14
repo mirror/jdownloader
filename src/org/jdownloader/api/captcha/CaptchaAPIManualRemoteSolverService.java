@@ -1,4 +1,4 @@
-package org.jdownloader.captcha.v2.solver.service;
+package org.jdownloader.api.captcha;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -11,35 +11,32 @@ import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.captcha.v2.ChallengeSolverConfig;
 import org.jdownloader.captcha.v2.solver.captchabrotherhood.CBSolverService;
 import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolverService;
-import org.jdownloader.captcha.v2.solver.gui.DialogCaptchaSolverConfig;
 import org.jdownloader.captcha.v2.solver.jac.JacSolverService;
 import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolverService;
+import org.jdownloader.captcha.v2.solver.service.AbstractSolverService;
+import org.jdownloader.captcha.v2.solver.service.DialogSolverService;
 import org.jdownloader.captcha.v2.solver.solver9kw.NineKwSolverService;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
-public class DialogSolverService extends AbstractSolverService {
-    public static final String               ID       = "dialog";
-    private static final DialogSolverService INSTANCE = new DialogSolverService();
+public class CaptchaAPIManualRemoteSolverService extends AbstractSolverService {
+    private CaptchaMyJDownloaderRemoteSolverConfig config;
 
-    public static DialogSolverService getInstance() {
-        return INSTANCE;
+    public CaptchaAPIManualRemoteSolverService() {
+        config = JsonConfig.create(CaptchaMyJDownloaderRemoteSolverConfig.class);
+        AdvancedConfigManager.getInstance().register(config);
     }
 
     @Override
     public String getType() {
-        return _GUI._.DialogBasicCaptchaSolver_getName();
+        return _GUI._.CaptchaAPISolver_getName();
     }
 
     @Override
     public Icon getIcon(int size) {
-        return NewTheme.I().getIcon(IconKey.ICON_OCR, size);
-    }
-
-    @Override
-    public String getName() {
-        return _GUI._.DialogBasicCaptchaSolver_gettypeName();
+        return NewTheme.I().getIcon(IconKey.ICON_MYJDOWNLOADER, size);
     }
 
     @Override
@@ -53,14 +50,26 @@ public class DialogSolverService extends AbstractSolverService {
     }
 
     @Override
+    public String getName() {
+        return _GUI._.CaptchaAPISolver_gettypeName();
+    }
+
+    public static final String ID = "myjdremote";
+
+    @Override
+    public String getID() {
+        return ID;
+    }
+
+    @Override
     public ChallengeSolverConfig getConfig() {
-        return JsonConfig.create(DialogCaptchaSolverConfig.class);
+        return config;
     }
 
     @Override
     public Map<String, Integer> getWaitForOthersDefaultMap() {
         HashMap<String, Integer> ret = new HashMap<String, Integer>();
-
+        ret.put(DialogSolverService.ID, 60000);
         // ret.put(DialogClickCaptchaSolver.ID, 0);
         // ret.put(DialogBasicCaptchaSolver.ID, 0);
         // ret.put(CaptchaAPISolver.ID, 0);
@@ -72,10 +81,4 @@ public class DialogSolverService extends AbstractSolverService {
 
         return ret;
     }
-
-    @Override
-    public String getID() {
-        return ID;
-    }
-
 }

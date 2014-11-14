@@ -41,7 +41,7 @@ public class ServicePanelCBHTooltip extends PanelToolTip {
         return AbstractLocator.correct(ttPosition, getPreferredSize());
     }
 
-    public ServicePanelCBHTooltip(ServicePanel owner, final CBSolver solver) {
+    public ServicePanelCBHTooltip(ServicePanel owner, final CBSolverService cbSolverService) {
 
         super(new TooltipPanel("ins 0,wrap 1", "[grow,fill]", "[grow,fill]"));
         this.owner = owner;
@@ -59,7 +59,7 @@ public class ServicePanelCBHTooltip extends PanelToolTip {
         new Thread() {
             public void run() {
 
-                final CBHAccount account = solver.loadAccount();
+                final CBHAccount account = cbSolverService.getSolver().loadAccount();
                 new EDTRunner() {
 
                     @Override

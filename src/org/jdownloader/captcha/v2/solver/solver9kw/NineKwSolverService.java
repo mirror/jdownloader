@@ -23,9 +23,9 @@ import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolver;
-import org.jdownloader.captcha.v2.solver.jac.JACSolver;
-import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolver;
+import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolverService;
+import org.jdownloader.captcha.v2.solver.jac.JacSolverService;
+import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolverService;
 import org.jdownloader.captcha.v2.solver.service.AbstractSolverService;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -235,11 +235,11 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
         // ret.put(DialogClickCaptchaSolver.ID, 60000);
         // ret.put(DialogBasicCaptchaSolver.ID, 60000);
         // ret.put(CaptchaAPISolver.ID, 60000);
-        ret.put(JACSolver.ID, 30000);
+        ret.put(JacSolverService.ID, 30000);
         // ret.put(Captcha9kwSolver.ID, 60000);
-        ret.put(CaptchaMyJDSolver.ID, 60000);
+        ret.put(CaptchaMyJDSolverService.ID, 60000);
         // ret.put(CBSolver.ID, 60000);
-        ret.put(DeathByCaptchaSolver.ID, 60000);
+        ret.put(DeathByCaptchaSolverService.ID, 60000);
 
         return ret;
     }
