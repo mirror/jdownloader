@@ -57,7 +57,7 @@ public class FileCryptCc extends PluginForDecrypt {
         }
         int counter = 0;
         while (counter++ < 3 && br.containsHTML("class=\"safety\"")) {
-            final String captcha = br.getRegex("\"(https?://(www\\.)?filecrypt\\.cc//?captcha/[^<>\"]*?)\"").getMatch(0);
+            final String captcha = br.getRegex("(/captcha/[^<>\"]*?)\"").getMatch(0);
             if (captcha == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

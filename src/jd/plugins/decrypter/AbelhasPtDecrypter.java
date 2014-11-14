@@ -162,23 +162,29 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
 
             decryptedLinks.add(dl);
         } else {
-            int maxPage = 1;
-            final String[] pageNums = br.getRegex("rel=\"(\\d+)\" title=\"página seguinte").getColumn(0);
-            for (final String pageNum : pageNums) {
-                final int curpgnum = Integer.parseInt(pageNum);
-                if (curpgnum > maxPage) {
-                    maxPage = curpgnum;
+            int currentpage = 0;
+            int maxPage = 0;
+            String param_current_page = new Regex(parameter, ",(\\d+)$").getMatch(0);
+            if (param_current_page != null) {
+                maxPage = Integer.parseInt(param_current_page);
+                currentpage = maxPage;
+                parameter = parameter.substring(0, parameter.lastIndexOf(","));
+            } else {
+                final String[] pageNums = br.getRegex("rel=\"(\\d+)\" title=\"página seguinte").getColumn(0);
+                for (final String pageNum : pageNums) {
+                    final int curpgnum = Integer.parseInt(pageNum);
+                    if (curpgnum > maxPage) {
+                        maxPage = curpgnum;
+                    }
                 }
             }
             String fpName = br.getRegex("class=\"T_selected\">([^<>\"]*?)<").getMatch(0);
             if (fpName == null) {
                 fpName = new Regex(parameter, "abelhas\\.pt/(.+)").getMatch(0);
             }
-            for (int i = 1; i <= maxPage; i++) {
-                logger.info("Decrypting page " + i + " of " + maxPage);
-                if (i > 1) {
-                    br.getPage(parameter + "," + i);
-                }
+            do {
+                logger.info("Decrypting page " + currentpage + " of " + maxPage);
+                br.getPage(parameter + "," + currentpage);
                 try {
                     if (this.isAbort()) {
                         logger.info("Decryption aborted by user: " + parameter);
@@ -243,10 +249,10 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
                     dl.setName(filename);
                     dl.setDownloadSize(SizeFormatter.getSize(filesize));
                     dl.setAvailable(true);
-
                     decryptedLinks.add(dl);
                 }
-            }
+                currentpage++;
+            } while (currentpage <= maxPage);
 
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
