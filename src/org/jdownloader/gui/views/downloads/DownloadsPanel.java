@@ -502,7 +502,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                     lastContentChanges = contentChanges;
                 }
 
-            }, 250, 1000, TimeUnit.MILLISECONDS);
+            }, 250, CFG_GUI.CFG.getDownloadsTableRefreshInterval(), TimeUnit.MILLISECONDS);
         }
         DownloadController.getInstance().addListener(this);
         // SecondLevelLaunch.EXTENSIONS_LOADED.executeWhenReached(new Runnable() {

@@ -1113,4 +1113,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setShortcutForCaptchaDialogRefresh(String b);
 
+    @AboutConfig
+    @RequiresRestart("Restart JDownloader if you changed this value")
+    @DescriptionForConfigEntry("Interval of the Downloads Table Refresher. Default 1000ms (once per second). Decreasing this value will cost CPU Power")
+    @DefaultLongValue(1000)
+    long getDownloadsTableRefreshInterval();
+
+    void setDownloadsTableRefreshInterval(long ms);
 }
