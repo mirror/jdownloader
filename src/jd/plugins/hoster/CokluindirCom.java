@@ -43,7 +43,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cokluindir.com", "i-debrid.com" }, urls = { "http://\\w+\\.(cokluindir|i-debrid)\\.com(:\\d+)?/aio2?\\.php/.+\\?id=[a-z0-9]{32}", "HAHAHAHAHAHAHA://thisisafakeregex" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cokluindir.com" }, urls = { "http://\\w+\\.cokluindir\\.com(:\\d+)?/aio2?\\.php/.+\\?id=[a-z0-9]{32}" }, flags = { 2 })
 public class CokluindirCom extends PluginForHost {
 
     // DEV NOTES
