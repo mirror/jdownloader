@@ -140,28 +140,28 @@ import org.jdownloader.updatev2.UpdateController;
  * @author astaldo
  */
 public abstract class PluginForHost extends Plugin {
-    private static final String           COPY_MOVE_FILE = "CopyMoveFile";
+    private static final String      COPY_MOVE_FILE = "CopyMoveFile";
 
-    private static Pattern[]              PATTERNS       = new Pattern[] {
+    private static Pattern[]         PATTERNS       = new Pattern[] {
 
-                                                         /**
-                                                          * these patterns should split filename and fileextension (extension must include
-                                                          * the point)
-                                                          */
-                                                         // multipart rar archives
+                                                    /**
+                                                     * these patterns should split filename and fileextension (extension must include the
+                                                     * point)
+                                                     */
+                                                    // multipart rar archives
             Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
             // normal files with extension
             Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
 
-    private LazyHostPlugin                lazyP          = null;
+    private LazyHostPlugin           lazyP          = null;
     /**
      * Is true if the user has answered a captcha challenge. does not say anything whether if the answer was correct or not
      */
-    protected transient SolverJob<String> lastSolverJob  = null;
+    protected transient SolverJob<?> lastSolverJob  = null;
 
-    private boolean                       hasCaptchas    = false;
+    private boolean                  hasCaptchas    = false;
 
-    public void setLastSolverJob(SolverJob<String> job) {
+    public void setLastSolverJob(SolverJob<?> job) {
         this.lastSolverJob = job;
     }
 
@@ -250,7 +250,7 @@ public abstract class PluginForHost extends Plugin {
 
     public void invalidateLastChallengeResponse() {
         try {
-            SolverJob<String> lJob = lastSolverJob;
+            SolverJob<?> lJob = lastSolverJob;
             if (lJob != null) {
                 lJob.invalidate();
             }
@@ -271,7 +271,7 @@ public abstract class PluginForHost extends Plugin {
 
     public void validateLastChallengeResponse() {
         try {
-            SolverJob<String> lJob = lastSolverJob;
+            SolverJob<?> lJob = lastSolverJob;
             if (lJob != null) {
                 lJob.validate();
             }
@@ -348,11 +348,9 @@ public abstract class PluginForHost extends Plugin {
                 logger.warning("Cancel. Blacklist Matching");
                 throw new CaptchaException(blackListEntry);
             }
-            SolverJob<String> job = ChallengeResponseController.getInstance().handle(c);
+            final SolverJob<String> job = ChallengeResponseController.getInstance().handle(c);
             if (!c.isSolved()) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            } else {
-                setLastSolverJob(job);
             }
             return c.getResult().getValue();
         } catch (InterruptedException e) {

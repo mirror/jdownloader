@@ -497,9 +497,8 @@ public abstract class PluginForDecrypt extends Plugin {
             logger.warning("Cancel. Blacklist Matching");
             throw new CaptchaException(blackListEntry);
         }
-        SolverJob<String> job = null;
         try {
-            job = ChallengeResponseController.getInstance().handle(c);
+            ChallengeResponseController.getInstance().handle(c);
         } catch (InterruptedException e) {
             LogSource.exception(logger, e);
             throw e;
@@ -533,7 +532,6 @@ public abstract class PluginForDecrypt extends Plugin {
         if (!c.isSolved()) {
             throw new DecrypterException(DecrypterException.CAPTCHA);
         }
-        setLastSolverJob(job);
         return c.getResult().getValue();
 
     }

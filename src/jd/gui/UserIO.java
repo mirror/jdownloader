@@ -60,7 +60,6 @@ import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
-import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
@@ -324,9 +323,8 @@ public class UserIO {
                 plugin.getLogger().warning("Cancel. Blacklist Matching");
                 throw new CaptchaException(blackListEntry);
             }
-            SolverJob<?> job = null;
             try {
-                job = ChallengeResponseController.getInstance().handle(c);
+                ChallengeResponseController.getInstance().handle(c);
             } catch (InterruptedException ie) {
                 LogSource.exception(logger, ie);
                 throw ie;
@@ -354,7 +352,6 @@ public class UserIO {
             if (!c.isSolved()) {
                 return null;
             }
-            plugin.setLastSolverJob(job);
             return new Point(c.getResult().getValue().getX(), c.getResult().getValue().getY());
         } else {
             Log.exception(new WTFException("DO NOT USE OUTSIDE DECRYPTER"));
