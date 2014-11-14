@@ -48,7 +48,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "novaup.com" }, urls = { "http://(www\\.)?(nova(up|mov)\\.com/(download|sound|video)/[a-z0-9]+|(embed\\.)?novamov\\.com/embed\\.php(\\?width=\\d+\\&height=\\d+\\&|\\?)v=[a-z0-9]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "novamov.com", "novaup.com" }, urls = { "http://(www\\.)?(nova(up|mov)\\.com/(download|sound|video)/[a-z0-9]+|(embed\\.)?novamov\\.com/embed\\.php(\\?width=\\d+\\&height=\\d+\\&|\\?)v=[a-z0-9]+)", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2, 0 })
 public class NovaUpMovcom extends PluginForHost {
 
     private final String         TEMPORARYUNAVAILABLE         = "(The file is being transfered to our other servers\\.|This may take few minutes\\.</)";
@@ -73,6 +73,16 @@ public class NovaUpMovcom extends PluginForHost {
     public NovaUpMovcom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.novamov.com/premium.php");
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("novaup.com".equals(getHost())) {
+            if (host == null || "novaup.com".equals(host)) {
+                return "novamov.com";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     @Override

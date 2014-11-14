@@ -69,6 +69,16 @@ public class FShareVn extends PluginForHost {
     }
 
     @Override
+    public String rewriteHost(String host) {
+        if ("mega.1280.com".equals(getHost())) {
+            if (host == null || "mega.1280.com".equals(host)) {
+                return "fshare.vn";
+            }
+        }
+        return super.rewriteHost(host);
+    }
+
+    @Override
     public boolean checkLinks(final DownloadLink[] urls) {
         if (urls == null || urls.length == 0) {
             return false;
