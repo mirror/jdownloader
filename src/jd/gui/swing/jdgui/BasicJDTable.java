@@ -43,7 +43,7 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
         super(tableModel);
         this.setShowVerticalLines(true);
         this.setShowGrid(true);
-        this.setShowHorizontalLines(true);
+        this.setShowHorizontalLinesWithoutRepaint(true);
         this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         sortNotifyColor = CFG_GUI.SORT_COLUMN_HIGHLIGHT_ENABLED.getValue() ? (LAFOptions.getInstance().getColorForTableSortedColumnView()) : null;
         Color c = (LAFOptions.getInstance().getColorForPanelHeaderBackground());
@@ -74,6 +74,7 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
     }
 
     private boolean showHorizontalLineBelowLastEntry = true;
+    private boolean noRepaint;
 
     public boolean isShowHorizontalLineBelowLastEntry() {
         return showHorizontalLineBelowLastEntry;
@@ -88,6 +89,23 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
     }
 
     @Override
+    public void repaint() {
+        if (noRepaint) {
+            return;
+        }
+        super.repaint();
+    }
+
+    private void setShowHorizontalLinesWithoutRepaint(boolean b) {
+        noRepaint = true;
+        try {
+            setShowHorizontalLines(b);
+        } finally {
+            noRepaint = false;
+        }
+    }
+
+    @Override
     public void paintComponent(Graphics g) {
         if (overwriteHorizontalLinesPossible == false || isShowHorizontalLineBelowLastEntry()) {
             super.paintComponent(g);
@@ -95,11 +113,11 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
             boolean before = getShowHorizontalLines();
             try {
                 if (!isShowHorizontalLineBelowLastEntry()) {
-                    setShowHorizontalLines(false);
+                    setShowHorizontalLinesWithoutRepaint(false);
                 }
                 super.paintComponent(g);
             } finally {
-                setShowHorizontalLines(before);
+                setShowHorizontalLinesWithoutRepaint(before);
             }
             if (before && !isShowHorizontalLineBelowLastEntry()) {
                 g.setColor(getGridColor());
