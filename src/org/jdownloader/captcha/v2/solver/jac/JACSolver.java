@@ -4,15 +4,11 @@ import java.awt.Image;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
-
-import javax.swing.Icon;
 
 import jd.captcha.JACMethod;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
 import jd.captcha.pixelgrid.Captcha;
-import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -28,45 +24,19 @@ import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.ChallengeSolver;
-import org.jdownloader.captcha.v2.ChallengeSolverConfig;
-import org.jdownloader.captcha.v2.SolverService;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
-public class JACSolver extends ChallengeSolver<String> implements ChallengeResponseValidation, SolverService {
-    public static final String             ID                = "jac";
+public class JACSolver extends ChallengeSolver<String> implements ChallengeResponseValidation {
+
     private static final double            _0_85             = 0.85;
     private JACSolverConfig                config;
     private static final JACSolver         INSTANCE          = new JACSolver();
     private final HashMap<String, Integer> jacMethodTrustMap = new HashMap<String, Integer>();
     private HashMap<String, AutoTrust>     threshold;
     private LogSource                      logger;
-
-    protected int getDefaultWaitForOthersTimeout() {
-        return 0;
-    }
-
-    @Override
-    public Map<String, Integer> getWaitForOthersDefaultMap() {
-        HashMap<String, Integer> ret = new HashMap<String, Integer>();
-        // ret.put(Captcha9kwSolverClick.ID, 60000);
-        // ret.put(DialogClickCaptchaSolver.ID, 60000);
-        // ret.put(DialogBasicCaptchaSolver.ID, 60000);
-        // ret.put(CaptchaAPISolver.ID, 60000);
-        // ret.put(JACSolver.ID, 30000);
-        // ret.put(Captcha9kwSolver.ID, 60000);
-        // ret.put(CaptchaMyJDSolver.ID, 60000);
-        // ret.put(CBSolver.ID, 60000);
-        // ret.put(DeathByCaptchaSolver.ID, 60000);
-
-        return ret;
-    }
 
     /**
      * get the only existing instance of JACSolver. This is a singleton
@@ -77,19 +47,18 @@ public class JACSolver extends ChallengeSolver<String> implements ChallengeRespo
         return JACSolver.INSTANCE;
     }
 
-    @Override
-    public Icon getIcon(int size) {
-        return NewTheme.I().getIcon(IconKey.ICON_OCR, size);
-    }
-
     /**
      * Create a new instance of JACSolver. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
+    @Override
+    public JacSolverService getService() {
+        return (JacSolverService) super.getService();
+    }
 
     private JACSolver() {
-        super(5);
+        super(new JacSolverService(), 5);
         config = JsonConfig.create(JACSolverConfig.class);
-        AdvancedConfigManager.getInstance().register(config);
+
         logger = LogController.getInstance().getLogger(JACSolver.class.getName());
         threshold = config.getJACThreshold();
         if (threshold == null) {
@@ -103,11 +72,6 @@ public class JACSolver extends ChallengeSolver<String> implements ChallengeRespo
             }
         });
 
-    }
-
-    @Override
-    public String getType() {
-        return _GUI._.JACSolver_getName_();
     }
 
     @Override
@@ -281,31 +245,6 @@ public class JACSolver extends ChallengeSolver<String> implements ChallengeRespo
             }
         }
 
-    }
-
-    @Override
-    public String getID() {
-        return ID;
-    }
-
-    @Override
-    public AbstractCaptchaSolverConfigPanel getConfigPanel() {
-        return null;
-    }
-
-    @Override
-    public boolean hasConfigPanel() {
-        return false;
-    }
-
-    @Override
-    public String getName() {
-        return _GUI._.JACSolver_gettypeName_();
-    }
-
-    @Override
-    public ChallengeSolverConfig getConfig() {
-        return config;
     }
 
 }

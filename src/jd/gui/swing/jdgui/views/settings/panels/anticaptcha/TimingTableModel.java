@@ -155,6 +155,7 @@ public class TimingTableModel extends ExtTableModel<SolverService> {
             @Override
             protected void setNumberValue(Number value, SolverService object) {
                 waitTimesMap.put(object.getID(), value.intValue() * 1000);
+                mySolver.setWaitForMap(waitTimesMap);
                 refreshSort();
 
             }

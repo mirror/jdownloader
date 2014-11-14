@@ -5,8 +5,6 @@ import java.net.UnknownHostException;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.SkipReason;
 
@@ -115,17 +113,17 @@ public class DownloadLinkCandidateResult {
     }
 
     public DownloadLinkCandidateResult(RESULT result, Throwable throwable, String lastPluginHost) {
-        if (result == RESULT.PLUGIN_DEFECT) {
-            try {
-                LogSource logger = LogController.getInstance().getPreviousThreadLogSource();
-                if (logger == null) {
-                    logger = LogController.getInstance().getLogger(DownloadLinkCandidateResult.class.getName());
-                }
-                logger.log(new Exception("Created Plugin_defect linkresult"));
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
-        }
+        // if (result == RESULT.PLUGIN_DEFECT) {
+        // try {
+        // LogSource logger = LogController.getInstance().getPreviousThreadLogSource();
+        // if (logger == null) {
+        // logger = LogController.getInstance().getLogger(DownloadLinkCandidateResult.class.getName());
+        // }
+        // logger.log(new Exception("Created Plugin_defect linkresult"));
+        // } catch (Throwable e) {
+        // e.printStackTrace();
+        // }
+        // }
         this.result = result;
         this.lastPluginHost = lastPluginHost;
         this.skipReason = null;
