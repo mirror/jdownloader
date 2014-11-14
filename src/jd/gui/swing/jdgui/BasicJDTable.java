@@ -18,7 +18,6 @@ import javax.swing.ListSelectionModel;
 import javax.swing.plaf.TableUI;
 import javax.swing.plaf.synth.SynthContext;
 import javax.swing.plaf.synth.SynthGraphicsUtils;
-import javax.swing.plaf.synth.SynthTableUI;
 
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -28,6 +27,7 @@ import org.appwork.swing.exttable.ExtComponentRowHighlighter;
 import org.appwork.swing.exttable.ExtTable;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.appwork.utils.Application;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
@@ -37,7 +37,7 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
     private static final long serialVersionUID = -9181860215412270250L;
     protected int             mouseOverRow     = -1;
     private Color             sortNotifyColor;
-    private boolean           overwriteHorizontalLinesPossible;
+    private final boolean     overwriteHorizontalLinesPossible;
 
     public BasicJDTable(ExtTableModel<T> tableModel) {
         super(tableModel);
@@ -61,12 +61,15 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
 
         this.setIntercellSpacing(new Dimension(0, 0));
         initAlternateRowHighlighter();
-        TableUI lui = getUI();
-        if (lui instanceof SynthTableUI) {
-            overwriteHorizontalLinesPossible = true;
-
-        } else {
+        if (Application.getJavaVersion() < Application.JAVA17) {
             overwriteHorizontalLinesPossible = false;
+        } else {
+            final TableUI lui = getUI();
+            if (lui != null && lui instanceof javax.swing.plaf.synth.SynthTableUI) {
+                overwriteHorizontalLinesPossible = true;
+            } else {
+                overwriteHorizontalLinesPossible = false;
+            }
         }
     }
 
@@ -86,38 +89,39 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
 
     @Override
     public void paintComponent(Graphics g) {
-        boolean before = getShowHorizontalLines();
-        try {
-            if (!isShowHorizontalLineBelowLastEntry() && overwriteHorizontalLinesPossible) {
-                setShowHorizontalLines(false);
-            }
+        if (overwriteHorizontalLinesPossible == false) {
             super.paintComponent(g);
-        } finally {
-            setShowHorizontalLines(before);
-        }
-        if (before && !isShowHorizontalLineBelowLastEntry() && overwriteHorizontalLinesPossible) {
-            g.setColor(getGridColor());
-
-            TableUI lui = getUI();
-            if (lui instanceof SynthTableUI) {
-                SynthContext context = ((SynthTableUI) lui).getContext(this);
-
-                int rMin = 0;
-                int cMin = 0;
-                Rectangle minCell = getCellRect(rMin, cMin, true);
-                int rMax = getRowCount() - 1;
-                int cMax = getColumnCount() - 1;
-                Rectangle maxCell = getCellRect(rMax, cMax, true);
-                Rectangle damagedArea = minCell.union(maxCell);
-                SynthGraphicsUtils synthG = context.getStyle().getGraphicsUtils(context);
-
-                int tableWidth = damagedArea.x + damagedArea.width;
-                int y = damagedArea.y;
-                for (int row = rMin; row <= rMax - 1; row++) {
-                    y += getRowHeight(row);
-                    synthG.drawLine(context, "Table.grid", g, damagedArea.x, y - 1, tableWidth - 1, y - 1);
+        } else {
+            boolean before = getShowHorizontalLines();
+            try {
+                if (!isShowHorizontalLineBelowLastEntry()) {
+                    setShowHorizontalLines(false);
                 }
+                super.paintComponent(g);
+            } finally {
+                setShowHorizontalLines(before);
+            }
+            if (before && !isShowHorizontalLineBelowLastEntry()) {
+                g.setColor(getGridColor());
+                final TableUI lui = getUI();
+                if (lui instanceof javax.swing.plaf.synth.SynthTableUI) {
+                    SynthContext context = ((javax.swing.plaf.synth.SynthTableUI) lui).getContext(this);
+                    int rMin = 0;
+                    int cMin = 0;
+                    Rectangle minCell = getCellRect(rMin, cMin, true);
+                    int rMax = getRowCount() - 1;
+                    int cMax = getColumnCount() - 1;
+                    Rectangle maxCell = getCellRect(rMax, cMax, true);
+                    Rectangle damagedArea = minCell.union(maxCell);
+                    SynthGraphicsUtils synthG = context.getStyle().getGraphicsUtils(context);
 
+                    int tableWidth = damagedArea.x + damagedArea.width;
+                    int y = damagedArea.y;
+                    for (int row = rMin; row <= rMax - 1; row++) {
+                        y += getRowHeight(row);
+                        synthG.drawLine(context, "Table.grid", g, damagedArea.x, y - 1, tableWidth - 1, y - 1);
+                    }
+                }
             }
         }
         if (getModel() instanceof TriStateSorterTableModel) {
