@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -44,7 +43,6 @@ import org.appwork.utils.os.CrossSystem;
 public class NoPremiumPl extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static AtomicInteger                           maxPrem            = new AtomicInteger(1);
     private static final String                            NICE_HOST          = "nopremium.pl";
     private static final String                            NICE_HOSTproperty  = "nopremiumpl";
 
@@ -59,15 +57,9 @@ public class NoPremiumPl extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownload(DownloadLink link, Account account) {
-        return maxPrem.get();
-    }
-
-    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         final AccountInfo ac = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
         String username = Encoding.urlEncode(account.getUser());
@@ -93,11 +85,9 @@ public class NoPremiumPl extends PluginForHost {
             account.setValid(false);
             return ac;
         }
-
-        maxPrem.set(20);
         ac.setTrafficLeft(SizeFormatter.getSize(br.getRegex("balance=(\\d+)").getMatch(0) + "MB"));
         try {
-            account.setMaxSimultanDownloads(maxPrem.get());
+            account.setMaxSimultanDownloads(20);
             account.setConcurrentUsePossible(true);
         } catch (final Throwable e) {
             // not available in old Stable 0.9.581
