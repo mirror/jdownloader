@@ -31,7 +31,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "https?://(www\\.)?((de|ru|es)\\.)?scribd\\.com/(?!doc/)[A-Za-z0-9\\-_%]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "https?://(www\\.)?((de|ru|es)\\.)?scribd\\.com/(?!doc/)(collections/\\d+/)?[A-Za-z0-9\\-_%]+" }, flags = { 0 })
 public class ScribdCom extends PluginForDecrypt {
 
     public ScribdCom(PluginWrapper wrapper) {
@@ -48,6 +48,7 @@ public class ScribdCom extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         if (parameter.matches(type_collections)) {
             fpname = "scribd.com collection - " + Encoding.htmlDecode(new Regex(parameter, "scribd\\.com/collections/\\d+/([A-Za-z0-9\\-_]+)").getMatch(0));
+            final String collection_id = new Regex(parameter, "/collections/(\\d+)/").getMatch(0);
             br.getPage(parameter);
             if (br.getURL().equals("http://www.scribd.com/")) {
                 logger.info("Link offline: " + parameter);
@@ -55,8 +56,13 @@ public class ScribdCom extends PluginForDecrypt {
                 return decryptedLinks;
             }
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            final int documentsNum = Integer.parseInt(br.getRegex("class=\"document_count\">\\((\\d+)\\)</span>").getMatch(0));
-            int page = 1;
+            final String documentsnum_str = br.getRegex("class=\"subtitle\">(\\d+) books").getMatch(0);
+            if (documentsnum_str == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final int documentsNum = Integer.parseInt(documentsnum_str);
+            int page = 0;
             int decryptedLinksNum = 0;
             do {
                 try {
@@ -67,21 +73,25 @@ public class ScribdCom extends PluginForDecrypt {
                 } catch (final Throwable e) {
                     // Not available in old 0.9.581 Stable
                 }
-                br.getPage("http://www.scribd.com/profiles/collections/get_collection_documents?page=" + page + "&id=" + new Regex(parameter, "/collections/(\\d+)/").getMatch(0));
+                br.getPage("https://www.scribd.com/collections/" + collection_id + "/get_collection_documents?page=" + page);
                 br.getRequest().setHtmlCode(unescape(br.toString()));
                 br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
                 if (br.containsHTML("\"objects\":null")) {
                     break;
                 }
-                final String[] links = br.getRegex("data\\-object_id=\"(\\d+)\"").getColumn(0);
-                if (links == null || links.length == 0) {
+                final String[][] uplInfo = br.getRegex("href=\"(https?://([a-z]{2}|www)\\.scribd\\.com/doc/[^<>\"]*?)\">([^<>]*?)</a>").getMatches();
+                if (uplInfo == null || uplInfo.length == 0) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                for (final String singleLink : links) {
-                    /** TODO: Also find filenames here */
-                    final DownloadLink dl = createDownloadlink("http://www.scribd.com/doc/" + singleLink);
+                for (final String[] docinfo : uplInfo) {
+                    final String link = docinfo[0];
+                    String title = docinfo[2];
+                    title = encodeUnicode(title);
+                    final DownloadLink dl = createDownloadlink(link);
                     dl.setAvailable(true);
+                    dl.setName(title + ".pdf");
+                    dl._setFilePackage(fp);
                     try {
                         distribute(dl);
                     } catch (final Throwable e) {
@@ -89,7 +99,7 @@ public class ScribdCom extends PluginForDecrypt {
                     }
                     decryptedLinks.add(dl);
                 }
-                decryptedLinksNum += links.length;
+                decryptedLinksNum += uplInfo.length;
                 logger.info("Decrypted page: " + page);
                 logger.info("Decrypted " + decryptedLinksNum + " / " + documentsNum);
                 page++;

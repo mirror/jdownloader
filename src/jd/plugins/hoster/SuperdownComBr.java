@@ -51,8 +51,8 @@ public class SuperdownComBr extends PluginForHost {
 
     private static Object                                  LOCK               = new Object();
     private static final String[][]                        HOSTS              = { { "mega", "mega.co.nz" }, { "oboom", "oboom.com" }, { "4shared", "4shared.com" }, { "asfile", "asfile.com" }, { "Bitshare", "bitshare.com" }, { "datafile", "datafile.com," }, { "ddlstorage", "ddlstorage.com" }, { "Depfile", "depfile.com" }, { "depositfiles", "depositfiles.com" }, { "dizzcloud", "dizzcloud.com" }, { "easybytez", "easybytez.com" }, { "extmatrix", "extmatrix.com" }, { "fayloobmennik", "fayloobmennik.net" }, { "filecloud", "filecloud.io" }, { "Filefactory", "filefactory.com" }, { "filemonkey", "filemonkey.in" }, { "fileom", "fileom.com" }, { "filepost", "filepost.com" }, { "filesflash", "filesflash.com" }, { "filesmonster", "filesmonster.com" }, { "firedrive", "firedrive.com" }, { "Freakshare", "freakshare.com" }, { "hugefiles", "hugefiles.net" }, { "hulkfile", "hulkfile.eu" },
-            { "Keep2share", "keep2share.cc" }, { "kingfiles", "kingfiles.net" }, { "Letitbit", "letitbit.net" }, { "Luckyshare", "luckyshare.net" }, { "lumfile", "lumfile.com" }, { "Mediafire", "mediafire.com" }, { "megairon", "megairon.net" }, { "Megashares", "megashares.com" }, { "mightyupload", "mightyupload.com" }, { "Netload", "netload.in" }, { "novafile", "novafile.com" }, { "putlocker", "putlocker.com" }, { "Rapidgator", "rapidgator.net" }, { "Rapidshare", "rapidshare.com" }, { "Ryushare", "ryushare.com" }, { "Sendspace", "sendspace.com" }, { "Shareflare", "shareflare.net" }, { "Terafile", "terafile.co" }, { "Turbobit", "turbobit.net" }, { "ultramegabit", "ultramegabit.com" }, { "uploadable", "uploadable.ch" }, { "uploaded.to", "uploaded.net" }, { "uppit", "uppit.com" }, { "videomega", "videomega.tv" }, { "Zippyshare", "zippyshare.com" }, { "1Fichier", "1fichier.com" },
-            { "2shared", "2shared.com" }, { "Crocko", "crocko.com" }, { "Gigasize", "gigasize.com" }, { "Jumbofiles", "jumbofiles.com" }, { "Mega", "mega.co.nz" }, { "Minhateca", "minhateca.com.br" }, { "Uploading", "uploading.com" }, { "Uptobox", "uptobox.com" }, { "Vip-file", "vip-file.com" } };
+        { "Keep2share", "keep2share.cc" }, { "kingfiles", "kingfiles.net" }, { "Letitbit", "letitbit.net" }, { "Luckyshare", "luckyshare.net" }, { "lumfile", "lumfile.com" }, { "Mediafire", "mediafire.com" }, { "megairon", "megairon.net" }, { "Megashares", "megashares.com" }, { "mightyupload", "mightyupload.com" }, { "Netload", "netload.in" }, { "novafile", "novafile.com" }, { "putlocker", "putlocker.com" }, { "Rapidgator", "rapidgator.net" }, { "Rapidshare", "rapidshare.com" }, { "Ryushare", "ryushare.com" }, { "Sendspace", "sendspace.com" }, { "Shareflare", "shareflare.net" }, { "Terafile", "terafile.co" }, { "Turbobit", "turbobit.net" }, { "ultramegabit", "ultramegabit.com" }, { "uploadable", "uploadable.ch" }, { "uploaded.to", "uploaded.net" }, { "uppit", "uppit.com" }, { "videomega", "videomega.tv" }, { "Zippyshare", "zippyshare.com" }, { "1Fichier", "1fichier.com" },
+        { "2shared", "2shared.com" }, { "Crocko", "crocko.com" }, { "Gigasize", "gigasize.com" }, { "Jumbofiles", "jumbofiles.com" }, { "Mega", "mega.co.nz" }, { "Minhateca", "minhateca.com.br" }, { "Uploading", "uploading.com" }, { "Uptobox", "uptobox.com" }, { "Vip-file", "vip-file.com" } };
 
     public SuperdownComBr(PluginWrapper wrapper) {
         super(wrapper);
@@ -258,13 +258,7 @@ public class SuperdownComBr extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            ai.setProperty("multiHostSupport", Property.NULL);
-            return ai;
-        }
+        login(account, true);
 
         br.getPage("http://www.superdown.com.br/en/");
 

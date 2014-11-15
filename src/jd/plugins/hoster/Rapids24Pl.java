@@ -295,7 +295,7 @@ public class Rapids24Pl extends PluginForHost {
         if (statusCode != null) {
             STATUSCODE = Integer.parseInt(statusCode);
         } else {
-            if (br.containsHTML("premium_no_transfer 1")) {
+            if (br.containsHTML("premium_no_transfer 1|no_transfer")) {
                 STATUSCODE = 600;
             } else if (br.containsHTML("> \\(Pobieranie zablokowane z powodu dubla")) {
                 STATUSCODE = 601;

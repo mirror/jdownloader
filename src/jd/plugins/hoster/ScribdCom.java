@@ -64,6 +64,7 @@ public class ScribdCom extends PluginForHost {
         super(wrapper);
         this.enablePremium("http://www.scribd.com");
         setConfigElements();
+        this.setStartIntervall(5 * 1000l);
     }
 
     public void correctDownloadLink(DownloadLink link) {
