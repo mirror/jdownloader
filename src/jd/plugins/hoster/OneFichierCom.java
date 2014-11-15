@@ -49,7 +49,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "https?://(?!www\\.)[a-z0-9\\-]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/?|https?://1fichier\\.com/\\?[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "https?://(?!www\\.)[a-z0-9\\-]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/?|https?://(?:www\\.)?(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/\\?[a-z0-9]+" }, flags = { 2 })
 public class OneFichierCom extends PluginForHost {
 
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
@@ -701,12 +701,12 @@ public class OneFichierCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink dl) {
-        String test = new Regex(dl.getDownloadURL(), "://([a-z0-9]+)\\.[a-zA-z0-9\\-]+\\.[a-zA-Z]{2,4}").getMatch(0);
-        if (test != null && test.matches("www")) {
-            test = null;
-        }
+        String test = new Regex(dl.getDownloadURL(), "/\\?([a-z0-9]+)$").getMatch(0);
         if (test == null) {
-            test = new Regex(dl.getDownloadURL(), "/\\?([a-z0-9]+)$").getMatch(0);
+            test = new Regex(dl.getDownloadURL(), "://(?!www\\.)([a-z0-9]+)\\.").getMatch(0);
+            if (test != null && test.matches("www")) {
+                test = null;
+            }
         }
         return test;
     }
