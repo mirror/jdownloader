@@ -1,3 +1,5 @@
+EXTRACTTOPATHLOGIC_ASK_FOR_EVERY_ARCHIVE=Preguntar para cada archivo
+EXTRACTTOPATHLOGIC_ASK_ONCE=Preguntar una vez para todos los archivos
 IfFileExistsDialog_layoutDialogContent_archive=Archivo:
 IfFileExistsDialog_layoutDialogContent_newName=Nuevo Nombre:
 ValidateArchiveAction_ValidateArchiveAction=Validar %s1
