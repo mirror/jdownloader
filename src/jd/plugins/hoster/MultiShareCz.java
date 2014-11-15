@@ -76,9 +76,14 @@ public class MultiShareCz extends PluginForHost {
         }
         final String trafficleft = getJson("credit");
         if (trafficleft != null) {
-            final double traffic = Double.parseDouble(trafficleft);
+            double traffic = Double.parseDouble(trafficleft);
             // 1 credit = 1 MB
-            ai.setTrafficLeft((long) traffic * 1024 * 1024);
+            traffic = traffic * 1024 * 1024;
+            if (traffic >= 0) {
+                ai.setTrafficLeft((long) traffic);
+            } else {
+                ai.setTrafficLeft(0);
+            }
         }
         ai.setStatus("Premium User");
         if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
@@ -104,7 +109,7 @@ public class MultiShareCz extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from String source.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -120,7 +125,7 @@ public class MultiShareCz extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -129,7 +134,7 @@ public class MultiShareCz extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from provided Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
