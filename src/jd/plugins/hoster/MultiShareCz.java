@@ -47,6 +47,11 @@ public class MultiShareCz extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private final String                                   mhLink             = "https?://[\\w\\.]*?multishare\\.cz/html/mms_process\\.php\\?.+";
+    private static final String                            MAINPAGE           = "http://multishare.cz";
+    private static final String                            NICE_HOST          = MAINPAGE.replaceAll("(https://|http://)", "");
+    private static final String                            NICE_HOSTproperty  = MAINPAGE.replaceAll("(https://|http://|\\.|\\-)", "");
+
+    private Account                                        currentAcc         = null;
 
     private Browser prepBrowser(Browser prepBr) {
         // define custom browser headers and language settings.
@@ -58,8 +63,13 @@ public class MultiShareCz extends PluginForHost {
         return prepBr;
     }
 
+    private void setConstants(final Account acc) {
+        this.currentAcc = acc;
+    }
+
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        setConstants(account);
         AccountInfo ai = new AccountInfo();
         try {
             login(account);
@@ -187,6 +197,7 @@ public class MultiShareCz extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+        setConstants(account);
         if (downloadLink.getDownloadURL().matches(mhLink)) {
             dlGeneratedMhLink(downloadLink);
             return;
@@ -265,17 +276,7 @@ public class MultiShareCz extends PluginForHost {
         }
         String dllink = getJson("link");
         if (dllink == null) {
-            int timesFailed = downloadLink.getIntegerProperty("timesfailedmultisharecz_unknown", 0);
-            if (timesFailed <= 2) {
-                timesFailed++;
-                downloadLink.setProperty("timesfailedmultisharecz_unknown", timesFailed);
-                logger.info("multishare.cz: Download failed -> Retrying");
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
-            } else {
-                downloadLink.setProperty("timesfailedmultisharecz_unknown", Property.NULL);
-                logger.info("multishare.cz: Download failed -> Plugin broken");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            handleUnknownErrors(this.currentAcc, downloadLink, "dllinknull", 10);
         }
         handleDl(downloadLink, dllink);
     }
@@ -294,12 +295,16 @@ public class MultiShareCz extends PluginForHost {
             if (br.getURL().contains("typ=nedostatecny-kredit")) {
                 logger.info("No traffic available -> Temporarily disabling account");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            }
-            if (br.containsHTML("Soubor na zdrojovém serveru pravděpodobně neexistuje")) {
+            } else if (br.containsHTML("Soubor na zdrojovém serveru pravděpodobně neexistuje")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.containsHTML("<h1>Chyba stahování</h1>")) {
+                if (downloadLink.getDownloadURL().contains("multishare.cz/")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
+                }
+                handleUnknownErrors(this.currentAcc, downloadLink, "known_unknown_downloaderror", 10);
             }
-            logger.warning("Received html code instead of file -> Plugin broken");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            logger.warning("Received html code instead of file -> Unknown error");
+            handleUnknownErrors(this.currentAcc, downloadLink, "unknown_downloaderror", 20);
         }
     }
 
@@ -360,6 +365,32 @@ public class MultiShareCz extends PluginForHost {
             unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
+    }
+
+    /**
+     * Is intended to handle unknown errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
+     * from the host list.
+     *
+     * @param dl
+     *            : The DownloadLink
+     * @param error
+     *            : The name of the error
+     * @param maxRetries
+     *            : Max retries before out of date error is thrown
+     */
+    private void handleUnknownErrors(final Account acc, final DownloadLink dl, final String error, final int maxRetries) throws PluginException {
+        int timesFailed = dl.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
+        dl.getLinkStatus().setRetryCount(0);
+        if (timesFailed <= maxRetries) {
+            logger.info(NICE_HOST + ": " + error + " -> Retrying");
+            timesFailed++;
+            dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
+            throw new PluginException(LinkStatus.ERROR_RETRY, error);
+        } else {
+            dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
+            logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
+            tempUnavailableHoster(acc, dl, 1 * 60 * 60 * 1000l);
+        }
     }
 
     @Override
