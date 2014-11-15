@@ -496,7 +496,7 @@ public class LinkChecker<E extends CheckableLink> {
                 return linkchecker.isForceRecheck();
             }
         }
-
-        return false;
+        // always force if we are not in LinkCheckerThread
+        return true;
     }
 }

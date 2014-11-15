@@ -984,11 +984,16 @@ public class YoutubeDashV2 extends PluginForHost {
 
             @Override
             public long getVerifiedFileSize() {
+                long ret = -1l;
                 if (isVideoStream) {
-                    return data.getDashVideoSize();
+                    ret = data.getDashVideoSize();
                 } else {
-                    return data.getDashAudioSize();
+                    ret = data.getDashAudioSize();
                 }
+                if (ret <= 0) {
+                    ret = -1;
+                }
+                return ret;
             }
 
             @Override
