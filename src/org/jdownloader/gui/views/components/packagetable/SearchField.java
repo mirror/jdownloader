@@ -333,15 +333,15 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
 
         final SearchCat preSel = getSelectedCategory();
         boolean found = false;
-        if (preSel != null) {
-            for (SearchCat sc : searchCategories) {
-                if (sc == preSel) {
-                    found = true;
-                }
-                label.setText(sc.getLabel());
-                labelWidth = Math.max(label.getPreferredSize().width, labelWidth);
+
+        for (SearchCat sc : searchCategories) {
+            if (sc == preSel) {
+                found = true;
             }
+            label.setText(sc.getLabel());
+            labelWidth = Math.max(label.getPreferredSize().width, labelWidth);
         }
+
         if (!found) {
             final SearchCat old = this.selectedCategory.getAndSet(searchCategories[0]);
             if (old != searchCategories[0]) {
