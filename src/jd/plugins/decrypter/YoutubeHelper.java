@@ -1056,14 +1056,14 @@ public class YoutubeHelper {
         if (unavailableReason != null) {
             unavailableReason = Encoding.htmlDecode(unavailableReason.replaceAll("\\+", " ").trim());
             /*
-             * do not use 'This video is unavailable.', its nearly always present and will cause false positive! If you consider using
-             * !unavailableReason.contains("this video is unavailable), you need to also ignore content warning
+             * If you consider using !unavailableReason.contains("this video is unavailable), you need to also ignore content warning
              */
             if (unavailableReason.contains("This video is private") && !getVideoInfoWorkaroundUsed) {
                 // check if video is private
                 String subError = br.getRegex("<div id=\"unavailable-submessage\" class=\"[^\"]*\">(.*?)</div>").getMatch(0);
                 if (subError != null && !subError.matches("\\s*")) {
-                    logger.warning(unavailableReason + " :: " + subError.trim());
+                    subError = subError.trim();
+                    logger.warning(unavailableReason + " :: " + subError);
                     vid.error = unavailableReason;
                     return null;
                 }
@@ -1074,6 +1074,17 @@ public class YoutubeHelper {
                 logger.warning(unavailableReason);
                 vid.error = unavailableReason;
                 return null;
+            } else if (unavailableReason.equals("This video is unavailable.")) {
+                // be aware that this is always present, only when there is a non whitespace suberror is it valid.
+                // currently covering
+                // Sorry about that. .:. 7BN5H7AVHUIE8 invalid uid.
+                String subError = br.getRegex("<div id=\"unavailable-submessage\" class=\"[^\"]*\">(.*?)</div>").getMatch(0);
+                if (subError != null && !subError.matches("\\s*")) {
+                    subError = subError.trim();
+                    logger.warning(unavailableReason + " :: " + subError);
+                    vid.error = unavailableReason;
+                    return null;
+                }
             }
         }
         this.extractData(vid);
