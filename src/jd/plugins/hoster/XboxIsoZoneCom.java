@@ -41,7 +41,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xboxisozone.com" }, urls = { "(http://(www\\.)?((xboxisozone|dcisozone|gcisozone|psisozone|theisozone)\\.com|romgamer\\.com/download)/dl\\-start/\\d+/(\\d+/)?|xboxisopremiumonly://.+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "theisozone.com", "xboxisozone.com" }, urls = { "(http://(www\\.)?((xboxisozone|dcisozone|gcisozone|psisozone|theisozone)\\.com|romgamer\\.com/download)/dl\\-start/\\d+/(\\d+/)?|xboxisopremiumonly://.+)", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2, 0 })
 public class XboxIsoZoneCom extends PluginForHost {
 
     public XboxIsoZoneCom(PluginWrapper wrapper) {
@@ -53,8 +53,20 @@ public class XboxIsoZoneCom extends PluginForHost {
     private final String  MAINPAGE = "http://theisozone.com/";
 
     public void correctDownloadLink(DownloadLink link) {
-        if (!link.getDownloadURL().contains("www.")) link.setUrlDownload(link.getDownloadURL().replace("http://", "http://www."));
+        if (!link.getDownloadURL().contains("www.")) {
+            link.setUrlDownload(link.getDownloadURL().replace("http://", "http://www."));
+        }
         link.setUrlDownload(link.getDownloadURL().replace("xboxisopremiumonly://", "http://"));
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("xboxisozone.com".equals(getHost())) {
+            if (host == null || "xboxisozone.com".equals(host)) {
+                return "theisozone.com";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     @Override
@@ -82,8 +94,12 @@ public class XboxIsoZoneCom extends PluginForHost {
         }
         final String filesize = br.getRegex(">Premium Download</span>[\t\n\r ]+<center style=\"margin\\-top:3px;\">[\t\n\r ]+1 File download, Total size ([^<>\"]*?) <br").getMatch(0);
         final String filename = br.getRegex("class=\"content_icon\" style=\"padding\\-top:5px;\" />([^<>\"]*?)<br").getMatch(0);
-        if (filename != null) link.setName(Encoding.htmlDecode(filename.trim()) + nameAddition);
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
+        if (filename != null) {
+            link.setName(Encoding.htmlDecode(filename.trim()) + nameAddition);
+        }
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -94,19 +110,27 @@ public class XboxIsoZoneCom extends PluginForHost {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available for Premium Members");
         }
         String mainlink = downloadLink.getStringProperty("mainlink");
-        if (mainlink == null) throw new PluginException(LinkStatus.ERROR_FATAL, "mainlink missing, please delete and re-add this link to your downloadlist!");
+        if (mainlink == null) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "mainlink missing, please delete and re-add this link to your downloadlist!");
+        }
         br.getPage(mainlink);
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         final String filesize = br.getRegex("<title>Download [^<>\"/]*? ([0-9\\.,]+ MB) \\&bull;").getMatch(0);
-        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
+        if (filesize != null) {
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
+        }
         String rcID = br.getRegex("\\?k=([^<>\"/]+)\"").getMatch(0);
-        if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (rcID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
         Form rcForm = new Form();
@@ -121,17 +145,31 @@ public class XboxIsoZoneCom extends PluginForHost {
         String c = getCaptchaCode("recaptcha", cf, downloadLink);
         rc.setCode(c);
         String finallink = br.getRedirectLocation();
-        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (finallink.contains("/dl-start/")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        if (finallink.contains("/download-limit-exceeded/")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
+        if (finallink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (finallink.contains("/dl-start/")) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        if (finallink.contains("/download-limit-exceeded/")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             String waittime = br.getRegex("You may download again in approximately:<b> (\\d+) Minutes").getMatch(0);
-            if (waittime == null) waittime = br.getRegex("You may resume downloading in (\\d+) Minutes").getMatch(0);
-            if (waittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 60 * 1001l);
-            if (br.containsHTML("(<TITLE>404 Not Found</TITLE>|<H1>Not Found</H1>|<title>404 \\- Not Found</title>|<h1>404 \\- Not Found</h1>|<h1>403 \\- Forbidden</h1>|<title>403 \\- Forbidden</title>)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-            if (br.containsHTML("The file you requested could not be found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (waittime == null) {
+                waittime = br.getRegex("You may resume downloading in (\\d+) Minutes").getMatch(0);
+            }
+            if (waittime != null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 60 * 1001l);
+            }
+            if (br.containsHTML("(<TITLE>404 Not Found</TITLE>|<H1>Not Found</H1>|<title>404 \\- Not Found</title>|<h1>404 \\- Not Found</h1>|<h1>403 \\- Forbidden</h1>|<title>403 \\- Forbidden</title>)")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            }
+            if (br.containsHTML("The file you requested could not be found<")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
@@ -146,7 +184,9 @@ public class XboxIsoZoneCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -161,7 +201,9 @@ public class XboxIsoZoneCom extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.getPage("http://www.theisozone.com/");
                 br.postPage("http://www.theisozone.com/sub-login/", "sub_login=&login=Login&sub_user=" + Encoding.urlEncode(account.getUser()) + "&sub_pass=" + Encoding.urlEncode(account.getPass()));
-                if (!br.containsHTML("Account Status: <span style=\"color:green\">Active</span>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!br.containsHTML("Account Status: <span style=\"color:green\">Active</span>")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -209,7 +251,9 @@ public class XboxIsoZoneCom extends PluginForHost {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available for Free Users");
         }
@@ -217,7 +261,9 @@ public class XboxIsoZoneCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         final Form dlform = br.getFormbyProperty("class", "dl_form");
-        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dlform == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");

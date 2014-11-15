@@ -184,7 +184,9 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
             }
             do {
                 logger.info("Decrypting page " + currentpage + " of " + maxPage);
-                br.getPage(parameter + "," + currentpage);
+                if (currentpage > 1) {
+                    br.getPage(parameter + "," + currentpage);
+                }
                 try {
                     if (this.isAbort()) {
                         logger.info("Decryption aborted by user: " + parameter);

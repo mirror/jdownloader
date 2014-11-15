@@ -400,7 +400,7 @@ public class WeShareMe extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.getPage(this.getProtocol() + "www." + this.getHost() + "/login." + type);
-                final String loginstart = new Regex(br.getURL(), "(https?://(www\\.))").getMatch(0);
+                final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
                 final String loginpostpage = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");

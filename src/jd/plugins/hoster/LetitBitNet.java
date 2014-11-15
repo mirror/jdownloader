@@ -573,7 +573,7 @@ public class LetitBitNet extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
             }
-            // Download limit is per day so let's just wait 3 hours
+            /* Download limit is per day so let's just wait 3 hours */
             if (br2.containsHTML("error_free_download_blocked")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
             }
