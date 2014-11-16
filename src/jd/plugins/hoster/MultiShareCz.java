@@ -67,6 +67,10 @@ public class MultiShareCz extends PluginForHost {
         this.currentAcc = acc;
     }
 
+    /**
+     * They only have premium accounts. When you register as a free user you get 5 GB of traffic - after that you ll simply have an empty
+     * premium account.
+     */
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setConstants(account);

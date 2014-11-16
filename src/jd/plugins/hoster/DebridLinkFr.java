@@ -287,9 +287,7 @@ public class DebridLinkFr extends PluginForHost {
             final String error = getJson("ERR");
 
             if (error != null) {
-
                 // generic errors not specific to download routine!
-
                 if ("unknowR".equals(error)) {
                     // Bad r argument
                     // changes with the API? this shouldn't happen
@@ -319,7 +317,6 @@ public class DebridLinkFr extends PluginForHost {
                 // handling for download routines!
 
                 else if (downloadLink != null) {
-
                     if ("notDebrid".equals(error)) {
                         // Maybe the filehoster is down or the link is not online
                         tempUnavailableHoster(account, downloadLink, 1 * 60 * 60 * 1000l);
@@ -344,6 +341,9 @@ public class DebridLinkFr extends PluginForHost {
                         // Unable to retrieve the file name
                         // what todo here? revert to another plugin **
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                    } else if ("notFreeHost".equals(error)) {
+                        /* Filehost is disabled for current FREE account --> Disablew it "forever" */
+                        tempUnavailableHoster(account, downloadLink, 10 * 60 * 60 * 1000l);
                     }
                 }
             }

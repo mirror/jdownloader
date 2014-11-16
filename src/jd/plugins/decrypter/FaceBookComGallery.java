@@ -58,7 +58,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private static final String   TYPE_SINGLE_VIDEO_ALL          = "https?://(www\\.)?facebook\\.com/(video/video|photo|video)\\.php\\?v=\\d+";
     private static final String   TYPE_SINGLE_VIDEO_EMBED        = "https?://(www\\.)?facebook\\.com/video/embed\\?video_id=\\d+";
     private static final String   TYPE_SET_LINK_PHOTO            = "http(s)?://(www\\.)?facebook\\.com/(media/set/\\?set=|[^<>\"/]*?/media_set\\?set=)o?a[0-9\\.]+(\\&type=\\d+)?";
-    private static final String   TYPE_SET_LINK_VIDEO            = "https?://(www\\.)?facebook\\.com/media/set/\\?set=vb\\.\\d+";
+    private static final String   TYPE_SET_LINK_VIDEO            = "https?://(www\\.)?facebook\\.com/media/set/\\?set=vb\\.\\d+.*?";
     private static final String   TYPE_ALBUMS_LINK               = "https?://(www\\.)?facebook\\.com/.+photos_albums";
     private static final String   TYPE_PHOTOS_OF_LINK            = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_of";
     private static final String   TYPE_PHOTOS_ALL_LINK           = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_all";
@@ -502,7 +502,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         final String ajaxpipeToken = getajaxpipeToken();
         final String user = getUser();
         String lastfirstID = "";
-        if (ajaxpipeToken == null || user == null || type == null || setID == null || (collection_token == null && activecollection == null)) {
+        if (ajaxpipeToken == null || user == null || type == null || setID == null) {
             logger.warning("Decrypter broken for link: " + PARAMETER);
             throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
         }
@@ -557,7 +557,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             }
             // currentMaxPicCount = max number of links per segment
-            if (links.length < currentMaxPicCount || profileID == null) {
+            if (links.length < currentMaxPicCount || profileID == null || (collection_token == null && activecollection == null)) {
                 stop = true;
             }
             if (stop) {
@@ -703,7 +703,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         }
         String fpName = br.getRegex("<title id=\"pageTitle\">([^<>\"]*?)videos }}| Facebook</title>").getMatch(0);
 
-        final String[] links = br.getRegex("uiVideoLinkMedium\" href=\"(https?://(www\\.)?facebook\\.com/photo\\.php\\?v=\\d+)").getColumn(0);
+        final String[] links = br.getRegex("uiVideoLinkMedium\" href=\"(https?://(www\\.)?facebook\\.com/(photo|video)\\.php\\?v=\\d+)").getColumn(0);
         for (final String link : links) {
             final DownloadLink dl = createDownloadlink(link.replace("facebook.com/", CRYPTLINK));
             try {
