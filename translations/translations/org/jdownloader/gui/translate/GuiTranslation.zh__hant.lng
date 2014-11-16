@@ -1540,6 +1540,7 @@ lit_restart=重新啟動
 lit_save=儲存
 lit_save_to=儲存到
 lit_send=傳送
+lit_settings=設定
 lit_status=任務動作
 lit_successfull=成功
 lit_unknown=未知
