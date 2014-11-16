@@ -8,6 +8,7 @@ action_enableAccount=啟用帳號
 action_enableReconnect=啟用重新連線
 action_pauseDownloads=暫停下載
 action_setCaptchaService=設定啟動驗證碼服務
+action_setConnections=設定同時下載
 action_setDownloadspeed=設定下載速度
 action_setSopMark=設定停止標記
 action_startDownload=開始下載
