@@ -91,7 +91,8 @@ public class ExLoadCom extends PluginForHost {
     private final boolean              useVidEmbed                  = false;
     private final boolean              useAltEmbed                  = false;
     private final boolean              useAltExpire                 = true;
-    private final long                 useLoginIndividual           = 6 * 3480000;
+    /* Extra long time to avoid login captchas */
+    private final long                 useLoginIndividual           = 86400000;
     private final boolean              waitTimeSkipableReCaptcha    = true;
     private final boolean              waitTimeSkipableSolveMedia   = false;
     private final boolean              waitTimeSkipableKeyCaptcha   = false;
@@ -880,9 +881,9 @@ public class ExLoadCom extends PluginForHost {
                 sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     if ("de".equalsIgnoreCase(language)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort (oder login Captcha)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password (or login captcha)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 /** Save cookies */

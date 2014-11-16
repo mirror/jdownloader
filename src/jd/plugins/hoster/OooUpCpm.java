@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -55,18 +56,18 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filepom.com" }, urls = { "https?://(www\\.)?filepom\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
-public class FilepomCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oooup.com" }, urls = { "https?://(www\\.)?oooup\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+public class OooUpCpm extends PluginForHost {
 
     private String                         correctedBR                  = "";
     private String                         passCode                     = null;
     private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                  = "http://filepom.com";
+    private static final String            COOKIE_HOST                  = "http://oooup.com";
     private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(filepom\\.com)";
+    private static final String            DOMAINS                      = "(oooup\\.com)";
     private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -75,18 +76,20 @@ public class FilepomCom extends PluginForHost {
     private static final boolean           VIDEOHOSTER                  = false;
     private static final boolean           VIDEOHOSTER_2                = false;
     private static final boolean           SUPPORTSHTTPS                = false;
+    private static final boolean           SUPPORTSHTTPS_FORCED         = false;
+    private static final boolean           SUPPORTS_ALT_AVAILABLECHECK  = true;
     private final boolean                  ENABLE_RANDOM_UA             = false;
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = true;
-    private static final int               FREE_MAXCHUNKS               = -2;
-    private static final int               FREE_MAXDOWNLOADS            = 1;
+    private static final int               FREE_MAXCHUNKS               = 0;
+    private static final int               FREE_MAXDOWNLOADS            = 20;
     private static final boolean           ACCOUNT_FREE_RESUME          = true;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS       = -2;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 1;
+    private static final int               ACCOUNT_FREE_MAXCHUNKS       = 0;
+    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 20;
     private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = -2;
-    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 1;
+    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
@@ -96,21 +99,24 @@ public class FilepomCom extends PluginForHost {
     private String                         fuid                         = null;
 
     /* DEV NOTES */
-    // XfileSharingProBasic Version 2.6.6.2
+    // XfileSharingProBasic Version 2.6.6.6
     // mods:
     // limit-info: premium untested, set FREE account limits
     // protocol: no https
-    // captchatype: recaptcha
+    // captchatype: null
     // other:
+    // TODO: Add case maintenance + alternative filesize check
 
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        /* link cleanup, but respect users protocol choosing */
+        link.setUrlDownload(link.getDownloadURL().replace("/embed-", "/"));
+        /* link cleanup, but respect users protocol choosing or forced protocol */
         if (!SUPPORTSHTTPS) {
             link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
+        } else if (SUPPORTSHTTPS && SUPPORTSHTTPS_FORCED) {
+            link.setUrlDownload(link.getDownloadURL().replaceFirst("http://", "https://"));
         }
-        final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
-        link.setUrlDownload(COOKIE_HOST + "/" + fid);
     }
 
     @Override
@@ -118,29 +124,73 @@ public class FilepomCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public FilepomCom(PluginWrapper wrapper) {
+    public OooUpCpm(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final String[] fileInfo = new String[3];
+        final Browser altbr = br.cloneBrowser();
         br.setFollowRedirects(true);
+        correctDownloadLink(link);
         prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) {
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
+            fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
+            if (fileInfo[0] != null) {
+                link.setName(Encoding.htmlDecode(fileInfo[0]).trim());
+                return AvailableStatus.TRUE;
+            }
             link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.UNCHECKABLE;
         }
         if (br.getURL().contains("/?op=login&redirect=")) {
+            logger.info("PREMIUMONLY handling: Trying alternative linkcheck");
             link.getLinkStatus().setStatusText(PREMIUMONLY2);
+            try {
+                fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
+                if (br.containsHTML(">No such file<")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                altbr.getPage("http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
+                if (altbr.containsHTML(">No such file<")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                fileInfo[0] = altbr.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
+                if (SUPPORTS_ALT_AVAILABLECHECK) {
+                    altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
+                    fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
+                }
+                /* 2nd offline check */
+                if ((SUPPORTS_ALT_AVAILABLECHECK && altbr.containsHTML("(>" + link.getDownloadURL() + "</td><td style=\"color:red;\">Not found\\!</td>|" + this.fuid + " not found\\!</font>)")) && fileInfo[0] == null) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (fileInfo[0] != null || fileInfo[1] != null) {
+                    /* We know the link is online, set all information we got */
+                    link.setAvailable(true);
+                    if (fileInfo[0] != null) {
+                        link.setName(Encoding.htmlDecode(fileInfo[0].trim()));
+                    } else {
+                        link.setName(fuid);
+                    }
+                    if (fileInfo[1] != null) {
+                        link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
+                    }
+                    return AvailableStatus.TRUE;
+                }
+            } catch (final Throwable e) {
+                logger.info("Unknown error occured in alternative linkcheck:");
+                e.printStackTrace();
+            }
+            logger.warning("Alternative linkcheck failed!");
             return AvailableStatus.UNCHECKABLE;
         }
-        final String[] fileInfo = new String[3];
         scanInfo(fileInfo);
         if (fileInfo[0] == null || fileInfo[0].equals("")) {
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
@@ -155,6 +205,15 @@ public class FilepomCom extends PluginForHost {
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
         link.setName(fileInfo[0].trim());
+        if (fileInfo[1] == null && SUPPORTS_ALT_AVAILABLECHECK) {
+            /* Do alt availablecheck here but don't check availibility because we already know that the file must be online! */
+            logger.info("Filesize not available, trying altAvailablecheck");
+            try {
+                altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
+                fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
+            } catch (final Throwable e) {
+            }
+        }
         if (fileInfo[1] != null && !fileInfo[1].equals("")) {
             link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         }
@@ -202,13 +261,18 @@ public class FilepomCom extends PluginForHost {
         return fileInfo;
     }
 
+    private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws IOException, PluginException {
+        br.getPage("http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
+        return br.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
+    }
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings({ "unused", "deprecation" })
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty("pass");
@@ -442,6 +506,26 @@ public class FilepomCom extends PluginForHost {
         }
     }
 
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            try {
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+                con.disconnect();
+            } catch (final Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            }
+        }
+        return dllink;
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return maxFree.get();
@@ -569,31 +653,12 @@ public class FilepomCom extends PluginForHost {
         return finallink;
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-                con.disconnect();
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            }
-        }
-        return dllink;
-    }
-
     private void getPage(final String page) throws Exception {
         br.getPage(page);
         correctBR();
     }
 
+    @SuppressWarnings("unused")
     private void postPage(final String page, final String postdata) throws Exception {
         br.postPage(page, postdata);
         correctBR();
@@ -709,6 +774,7 @@ public class FilepomCom extends PluginForHost {
         downloadLink.setFinalFileName(FFN);
     }
 
+    @SuppressWarnings("deprecation")
     private void setFUID(final DownloadLink dl) {
         fuid = new Regex(dl.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
     }
@@ -1007,6 +1073,7 @@ public class FilepomCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         passCode = downloadLink.getStringProperty("pass");

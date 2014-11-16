@@ -79,6 +79,7 @@ public class CloudMailRu extends PluginForHost {
                 }
             }
         } else {
+            /** TODO: Remove this */
             /* Check if main-folder still exists */
             if (link.getBooleanProperty("noapi", false)) {
                 br.getPage(link.getStringProperty("mainlink", null));
@@ -86,7 +87,7 @@ public class CloudMailRu extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             } else {
-                br.getPage("https://cloud.mail.ru/api/v1/folder/recursive?storage=public&id=" + Encoding.urlEncode(getID(link)) + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&api=1&htmlencoded=false&build=" + BUILD);
+                br.getPage("https://cloud.mail.ru/api/v2/folder?weblink=" + Encoding.urlEncode(getID(link)) + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=500&api=2&build=" + BUILD);
                 if (br.containsHTML("\"status\":400")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -116,6 +117,9 @@ public class CloudMailRu extends PluginForHost {
             maxchunks = 1;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxchunks);
+        if (dl.getConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -166,10 +170,16 @@ public class CloudMailRu extends PluginForHost {
                 if (request_id == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                br.postPage("https://cloud.mail.ru/api/v1/zip", "name=%D0%9D%D0%BE%D0%B2%D0%B0%D1%8F+%D0%BF%D0%B0%D0%BF%D0%BA%D0%B0&ids=%5B%22" + request_id + "%22%5D&storage=public&cp866=false&api=1&htmlencoded=false&build=" + BUILD);
+                br.postPage("https://cloud.mail.ru/api/v2/zip", "weblink_list=%5B%22" + Encoding.urlEncode(request_id) + "%22%5D&name=" + Encoding.urlEncode(dl.getName()) + "&cp866=false&api=2&build=" + BUILD);
                 dllink = getJson("body", br.toString());
             } else {
+                /** TODO: Fix this and remove the workaround */
                 logger.warning("Failed");
+                br.getPage(dl.getStringProperty("browser_url", null));
+                final String dataserver = br.getRegex("\"url\": \"(https?://[a-z0-9]+\\.datacloudmail\\.ru)").getMatch(0);
+                if (dataserver != null) {
+                    dllink = dataserver + "/weblink/get/" + dl.getStringProperty("encoded_id", null) + "?x-email=undefined";
+                }
                 /* FAIL case */
                 // dllink = checkDirectLink(dl, "plain_directlink");
             }
@@ -209,7 +219,7 @@ public class CloudMailRu extends PluginForHost {
             try {
                 final Browser br2 = br.cloneBrowser();
                 URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (con.getContentType().contains("html") || con.getResponseCode() == 404 || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
