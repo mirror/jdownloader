@@ -31,6 +31,7 @@ addScheduleEntryDialog_title=建立新的排程計劃
 entry_remove_action_msg=確定要刪除 %s1
 entry_remove_action_title=確定要刪除 %s1 排程計劃嗎？
 lit_copy=複製
+lit_never=從不
 scheduleTable_column_enable=啟用
 scheduleTable_column_name=名稱
 scheduleTable_column_repeats=重複
