@@ -37,10 +37,10 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public static final String  BUILD            = "hotfix-25-1.201410241639";
+    public static final String  BUILD            = "hotfix-26-5.201411142035";
     /* Max .zip filesize = 4 GB */
     private static final double MAX_ZIP_FILESIZE = 4194304;
-    private static final String DOWNLOAD_ZIP     = "DOWNLOAD_ZIP_2";
+    private static String       DOWNLOAD_ZIP     = "DOWNLOAD_ZIP_2";
 
     private static final String TYPE_APIV2       = "https?://(www\\.)?cloud\\.mail\\.ru/[A-Z0-9]{32}";
 
@@ -73,7 +73,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
             id = new Regex(PARAMETER, "cloud\\.mail\\.ru/public/(.+)").getMatch(0);
             main.setName(new Regex(PARAMETER, "public/[a-z0-9]+/(.+)").getMatch(0));
             final String id_url_encoded = Encoding.urlEncode(id);
-            br.getPage("https://cloud.mail.ru/api/v1/folder/recursive?storage=public&id=" + id_url_encoded + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=500&api=1&htmlencoded=false&build=" + BUILD);
+            br.getPage("https://cloud.mail.ru/api/v2/folder?weblink=" + id_url_encoded + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=500&api=2&build=" + BUILD);
             json = br.toString();
             if (br.containsHTML("\"status\":(400|404)") || br.getHttpConnection().getResponseCode() == 404) {
                 main.setAvailable(false);
@@ -108,23 +108,28 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         long totalSize = 0;
         for (final String singleinfo : links) {
             if ("folder".equals(getJson(singleinfo, "kind"))) {
-                String folder_url = getJson(singleinfo, "web");
+                String folder_url = getJson(singleinfo, "weblink");
                 if (folder_url == null) {
                     logger.warning("Decrypter broken for link: " + PARAMETER);
                     return null;
                 }
-                folder_url = "https://cloud.mail.ru" + Encoding.htmlDecode(folder_url);
+                folder_url = Encoding.htmlDecode(folder_url);
+                folder_url = "https://cloud.mail.ru/public/" + folder_url;
                 decryptedLinks.add(createDownloadlink(folder_url));
             } else {
+                String browserurl;
                 final DownloadLink dl = createDownloadlink("http://clouddecrypted.mail.ru/" + System.currentTimeMillis() + new Random().nextInt(100000));
                 final String filesize = getJson(singleinfo, "size");
                 String filename = getJson(singleinfo, "name");
                 String directlink = getJson(singleinfo, "get");
-                if (filesize == null || filename == null || directlink == null) {
+                if (filesize == null || filename == null) {
                     logger.warning("Decrypter broken for link: " + PARAMETER);
                     return null;
                 }
-                if (directlink.startsWith("//")) {
+                final String encoded_id = Encoding.urlTotalEncode(id + filename);
+                if (directlink == null) {
+                    directlink = "https://cloclo20.datacloudmail.ru/weblink/get/" + encoded_id + "?x-email=undefined";
+                } else if (directlink.startsWith("//")) {
                     directlink = "http:" + directlink;
                 }
                 filename = Encoding.htmlDecode(filename.trim());
@@ -137,8 +142,18 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 dl.setProperty("mainlink", PARAMETER);
                 dl.setProperty("plain_directlink", directlink);
                 dl.setProperty("plain_request_id", id);
+                dl.setProperty("encoded_id", encoded_id);
+                /** TODO: Remove this */
                 if (PARAMETER.matches(TYPE_APIV2)) {
                     dl.setProperty("noapi", true);
+                }
+                browserurl = "https://cloud.mail.ru/public/" + id + "/" + filename;
+                dl.setProperty("browser_url", browserurl);
+                try {
+                    dl.setContentUrl(browserurl);
+                } catch (final Throwable e) {
+                    /* Not available in old 0.9.581 Stable */
+                    dl.setBrowserUrl(browserurl);
                 }
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);

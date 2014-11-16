@@ -161,6 +161,12 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                             dl.setDownloadSize(SizeFormatter.getSize(filesize));
                             dl.setProperty("plain_size", filesize);
                         }
+                        try {
+                            dl.setContentUrl(parameter);
+                        } catch (final Throwable e) {
+                            /* Not available in old 0.9.581 Stable */
+                            dl.setBrowserUrl(parameter);
+                        }
                         dl.setProperty("plain_filename", name);
                         dl.setProperty("hash_plain", hash);
                         dl.setProperty("mainlink", parameter);
