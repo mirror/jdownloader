@@ -71,17 +71,17 @@ public class MultihostersCom extends PluginForHost {
         }
         String infos[] = br.getRegex("(.*?)(,|$)").getColumn(0);
 
-        String EndSubscriptionDate = new Regex(infos[1], "EndSubscriptionDate:(.+)").getMatch(0);
-        ac.setValidUntil(TimeFormatter.getMilliSeconds(EndSubscriptionDate, "yyyy/MM/dd HH:mm:ss", null));
+        String endSubscriptionDate = new Regex(infos[1], "EndSubscriptionDate:(.+)").getMatch(0);
+        ac.setValidUntil(TimeFormatter.getMilliSeconds(endSubscriptionDate, "yyyy/MM/dd HH:mm:ss", null));
 
-        String AvailableTodayTraffic = new Regex(infos[3], "AvailableTodayTraffic:(.+)").getMatch(0);
-        logger.info("Multihosters: AvailableTodayTraffic=" + AvailableTodayTraffic);
-        if (AvailableTodayTraffic.equals("0")) {
+        String availableTodayTraffic = new Regex(infos[3], "AvailableTodayTraffic:(.+)").getMatch(0);
+        logger.info("Multihosters: AvailableTodayTraffic=" + availableTodayTraffic);
+        if (availableTodayTraffic.equals("0")) {
             ac.setUnlimitedTraffic();
         } else {
-            ac.setTrafficLeft(SizeFormatter.getSize(AvailableTodayTraffic + "MiB"));
+            ac.setTrafficLeft(SizeFormatter.getSize(availableTodayTraffic + "MiB"));
         }
-        trafficLeft = Long.parseLong(AvailableTodayTraffic);
+        trafficLeft = Long.parseLong(availableTodayTraffic);
         hosts = br.getPage("http://www.multihosters.com/jDownloader.ashx?cmd=gethosters");
         br.setFollowRedirects(follow);
         if (loginPage == null || trafficLeft < 0) {
@@ -89,7 +89,6 @@ public class MultihostersCom extends PluginForHost {
             account.setTempDisabled(false);
             ac.setStatus("Account invalid");
         } else {
-
             ArrayList<String> supportedHosts = new ArrayList<String>();
             if (!"0".equals(hosts.trim())) {
                 String hoster[] = new Regex(hosts, "(.*?)(,|$)").getColumn(0);
