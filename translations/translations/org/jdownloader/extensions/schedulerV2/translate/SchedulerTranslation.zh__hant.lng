@@ -1,4 +1,5 @@
 action_Reconnect=重新連線
+action_captcha_none=無
 action_captcha_service=服務
 action_disableAccount=停用帳號
 action_disableReconnect=停用重新連線
@@ -6,6 +7,7 @@ action_disableSpeedLimit=停用速度限制
 action_enableAccount=啟用帳號
 action_enableReconnect=啟用重新連線
 action_pauseDownloads=暫停下載
+action_setCaptchaService=設定啟動驗證碼服務
 action_setDownloadspeed=設定下載速度
 action_setSopMark=設定停止標記
 action_startDownload=開始下載
