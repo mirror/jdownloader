@@ -51,14 +51,17 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(www\\.)?facebookdecrypted\\.com/(video\\.php\\?v=|photo\\.php\\?fbid=|download/)\\d+" }, flags = { 2 })
 public class FaceBookComVideos extends PluginForHost {
 
+    public static String        Agent                      = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0";
     private String              FACEBOOKMAINPAGE           = "http://www.facebook.com";
     private String              PREFERHD                   = "PREFERHD";
-    private static Object       LOCK                       = new Object();
-    public static String        Agent                      = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0";
-    private boolean             pluginloaded               = false;
     private static final String TYPE_SINGLE_PHOTO          = "https?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
     private static final String TYPE_SINGLE_VIDEO_ALL      = "https?://(www\\.)?facebook\\.com/video\\.php\\?v=\\d+";
     private static final String TYPE_DOWNLOAD              = "https?://(www\\.)?facebook\\.com/download/\\d+";
+    private static final String REV                        = jd.plugins.decrypter.FaceBookComGallery.REV;
+
+    private static Object       LOCK                       = new Object();
+    private boolean             pluginloaded               = false;
+
     private String              DLLINK                     = null;
     private boolean             loggedIN                   = false;
     private boolean             accountNeeded              = false;
@@ -156,24 +159,31 @@ public class FaceBookComVideos extends PluginForHost {
                 // Try if a downloadlink is available
                 DLLINK = br.getRegex("href=\"(https?://[^<>\"]*?(\\?|\\&amp;)dl=1)\"").getMatch(0);
                 // Try to find original quality link
-                // final String setID = br.getRegex("\"set\":\"([^<>\"]*?)\"").getMatch(0);
-                // final String user = br.getRegex("\"user\":\"([^<>\"]*?)\"").getMatch(0);
-                // if (setID != null && user != null && DLLINK == null) {
-                // final String fbid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
-                // final Browser br2 = br.cloneBrowser();
-                // String theaterView = FACEBOOKMAINPAGE + "/photo.php?fbid=" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) +
-                // "&set=" + setID +
-                // "&type=3&src=http%3A%2F%2Fsphotos-a.ak.fbcdn.net%2Fhphotos-ak-prn1%2F621123_4356832729269_1617797914_n.jpg&smallsrc=";
-                // theaterView = FACEBOOKMAINPAGE +
-                // "/ajax/pagelet/generic.php/PhotoViewerInitPagelet?no_script_path=1&data={%22fbid%22%3A%22" +
-                // fbid + "%22%2C%22set%22%3A%22" + setID +
-                // "%22%2C%22type%22%3A%221%22%2C%22firstLoad%22%3Atrue%2C%22ssid%22%3A1374160988631%7D&__user=" + user +
-                // "&__a=1&__dyn=7n8ahyj35CFUlgDxqihXzAu&__req=jsonp_3&__adt=3";
-                // br2.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-                // br2.getPage(theaterView);
-                // DLLINK = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
-                // }
-                // If no downloadlink is there, simply try to find the directlink to the picture
+                final String setID = br.getRegex("\"set\":\"([^<>\"]*?)\"").getMatch(0);
+                final String user = getUser();
+                final String ajaxpipe_token = getajaxpipeToken();
+                /*
+                 * If no downloadlink is there, simply try to find the fullscreen link to the picture which is located on the "theatre view"
+                 * page
+                 */
+                if (setID != null && user != null && ajaxpipe_token != null && DLLINK == null) {
+                    try {
+                        logger.info("Trying to get original quality image");
+                        final String fbid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+                        final String data = "{\"type\":\"1\",\"fbid\":\"" + fbid + "\",\"set\":\"" + setID + "\",\"firstLoad\":true,\"ssid\":0,\"av\":\"0\"}";
+                        final Browser br2 = br.cloneBrowser();
+                        final String theaterView = "https://www.facebook.com/ajax/pagelet/generic.php/PhotoViewerInitPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipe_token + "&no_script_path=1&data=" + Encoding.urlEncode(data) + "&__user=" + user + "&__a=1&__dyn=7n8ajEyl2qm9udDgDxyF4EihUtCxO4p9GgSmEZ9LFwxBxCuUWdDx2ubhHximmey8OdUS8w&__req=jsonp_3&__rev=" + REV + "&__adt=3";
+                        br2.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+                        br2.getPage(theaterView);
+                        DLLINK = br2.getRegex("\"url\":\"(http[^<>\"]*?_o\\.jpg)\"").getMatch(0);
+                    } catch (final Throwable e) {
+                    }
+                    if (DLLINK != null) {
+                        logger.info("Found original quality image");
+                    } else {
+                        logger.warning("Failed to find original quality image");
+                    }
+                }
                 if (DLLINK == null) {
                     DLLINK = br.getRegex("id=\"fbPhotoImage\" src=\"(https?://[^<>\"]*?)\"").getMatch(0);
                 }
@@ -558,6 +568,22 @@ public class FaceBookComVideos extends PluginForHost {
             res = res.replaceAll("\\" + m.group(0), Character.toString((char) Integer.parseInt(m.group(1), 16)));
         }
         return res;
+    }
+
+    private String getUser() {
+        String user = br.getRegex("\"user\":\"(\\d+)\"").getMatch(0);
+        if (user == null) {
+            user = br.getRegex("detect_broken_proxy_cache\\(\"(\\d+)\", \"c_user\"\\)").getMatch(0);
+        }
+        // regex verified: 10.2.2014
+        if (user == null) {
+            user = br.getRegex("\\[(\\d+)\\,\"c_user\"").getMatch(0);
+        }
+        return user;
+    }
+
+    private String getajaxpipeToken() {
+        return br.getRegex("\"ajaxpipe_token\":\"([^<>\"]*?)\"").getMatch(0);
     }
 
     private void checkFeatureDialog() {

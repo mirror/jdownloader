@@ -22,6 +22,7 @@ import java.util.Random;
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -59,7 +60,15 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
             id = new Regex(PARAMETER, "([A-Z0-9]{32})$").getMatch(0);
             main.setName(PARAMETER);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage("https://cloud.mail.ru/api/v2/batch", "files=" + id + "&batch=%5B%7B%22method%22%3A%22folder%2Ftree%22%7D%2C%7B%22method%22%3A%22folder%22%7D%5D&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&api=2&build=" + BUILD);
+            try {
+                br.postPage("https://cloud.mail.ru/api/v2/batch", "files=" + id + "&batch=%5B%7B%22method%22%3A%22folder%2Ftree%22%7D%2C%7B%22method%22%3A%22folder%22%7D%5D&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&api=2&build=" + BUILD);
+            } catch (final BrowserException e) {
+                main.setFinalFileName(id);
+                main.setAvailable(false);
+                main.setProperty("offline", true);
+                decryptedLinks.add(main);
+                return decryptedLinks;
+            }
             /* Offline|Empty folder */
             if (br.containsHTML("\"status\":400|\"count\":\\{\"folders\":0,\"files\":0\\}")) {
                 main.setFinalFileName(id);
@@ -73,7 +82,15 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
             id = new Regex(PARAMETER, "cloud\\.mail\\.ru/public/(.+)").getMatch(0);
             main.setName(new Regex(PARAMETER, "public/[a-z0-9]+/(.+)").getMatch(0));
             final String id_url_encoded = Encoding.urlEncode(id);
-            br.getPage("https://cloud.mail.ru/api/v2/folder?weblink=" + id_url_encoded + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=500&api=2&build=" + BUILD);
+            try {
+                br.getPage("https://cloud.mail.ru/api/v2/folder?weblink=" + id_url_encoded + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=500&api=2&build=" + BUILD);
+            } catch (final BrowserException e) {
+                main.setFinalFileName(id);
+                main.setAvailable(false);
+                main.setProperty("offline", true);
+                decryptedLinks.add(main);
+                return decryptedLinks;
+            }
             json = br.toString();
             if (br.containsHTML("\"status\":(400|404)") || br.getHttpConnection().getResponseCode() == 404) {
                 main.setAvailable(false);
