@@ -81,7 +81,7 @@ public class VeevrCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">This video has been removed for violating the terms of use\\.<") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML(">This video has been removed for violating the terms of use\\.<|id=\"deleted\"") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dllink = br.getRegex("url: \\'(http[^<>\"\\']*?\\.mp4)\\'").getMatch(0);
