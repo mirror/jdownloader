@@ -173,15 +173,15 @@ public class CloudMailRu extends PluginForHost {
                 br.postPage("https://cloud.mail.ru/api/v2/zip", "weblink_list=%5B%22" + Encoding.urlEncode(request_id) + "%22%5D&name=" + Encoding.urlEncode(dl.getName()) + "&cp866=false&api=2&build=" + BUILD);
                 dllink = getJson("body", br.toString());
             } else {
-                /** TODO: Fix this and remove the workaround */
-                logger.warning("Failed");
-                br.getPage(dl.getStringProperty("browser_url", null));
-                final String dataserver = br.getRegex("\"url\": \"(https?://[a-z0-9]+\\.datacloudmail\\.ru)").getMatch(0);
+                logger.warning("Failed to use saved dllink, trying to generate new link");
+                String dataserver;
+                br.getPage("https://cloud.mail.ru/api/v2/dispatcher?api=2&build=" + BUILD + "&_=" + System.currentTimeMillis());
+                dataserver = br.getRegex("\"url\":\"(https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/)view/\"").getMatch(0);
                 if (dataserver != null) {
-                    dllink = dataserver + "/weblink/get/" + dl.getStringProperty("encoded_id", null) + "?x-email=undefined";
+                    dllink = dataserver + "get/" + dl.getStringProperty("unique_id", null) + "?x-email=undefined";
+                } else {
+                    logger.warning("Failed to find dataserver for finallink");
                 }
-                /* FAIL case */
-                // dllink = checkDirectLink(dl, "plain_directlink");
             }
         }
         if (dllink == null) {
