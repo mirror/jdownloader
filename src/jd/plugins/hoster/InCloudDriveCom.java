@@ -90,22 +90,19 @@ public class InCloudDriveCom extends PluginForHost {
 
     private AvailableStatus parseFileInformation(final DownloadLink link) throws Exception {
         setFUID(link);
-        if ("link".equals(hashTag[0])) {
-            ajaxPostPage("https://www.inclouddrive.com/index.php/link", "user_id=&user_loged_in=no&link_value=" + Encoding.urlEncode(hashTag[1]));
-        } else {
-            ajaxPostPage("https://www.inclouddrive.com/index.php/" + hashTag[0] + "/" + hashTag[1], "user_id=");
-        }
-        String filename = ajax.getRegex("class=\"propreties-file-count\">[\t\n\r ]+<b>([^<>\"]+)</b>").getMatch(0);
-        String filesize = ajax.getRegex(">Total size:</span><span class=\"propreties-dark-txt\">([^<>\"]+)</span>").getMatch(0);
+        br.getPage("https://www.inclouddrive.com/file/" + hashTag[1]);
+        final String regexFS = "<div class=\"downloadfileinfo[^>]*>(.*?) \\((.*?)\\)";
+        String filename = br.getRegex(regexFS).getMatch(0);
+        String filesize = br.getRegex(regexFS).getMatch(1);
         // premium only files regex is different!
         if (filename == null) {
-            filename = ajax.getRegex("<div class=\"name wordwrap\">(.*?)</div>").getMatch(0);
+            filename = br.getRegex("<div class=\"name wordwrap\">(.*?)</div>").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("fileinfo [a-z0-9 ]+\">([^<>]*?) \\([0-9\\.]*? .?B\\)<").getMatch(0);
             }
         }
         if (filesize == null) {
-            filesize = ajax.getRegex("<div class=\"icddownloadsteptwo-filesize\">(.*?)</div>").getMatch(0);
+            filesize = br.getRegex("<div class=\"icddownloadsteptwo-filesize\">(.*?)</div>").getMatch(0);
             if (filesize == null) {
                 filesize = br.getRegex("fileinfo [a-z0-9 ]+\">[^<>]*? \\(([0-9\\.]*? .?B)\\)<").getMatch(0);
             }
@@ -117,11 +114,11 @@ public class InCloudDriveCom extends PluginForHost {
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
-        if (ajax.containsHTML(">A Database Error Occurred<|This link has been removed from system\\.|>The requested file isn't anymore!</p>") || br.containsHTML(">Content you have requested is unavailable...<")) {
+        if (br.containsHTML(">A Database Error Occurred<|This link has been removed from system\\.|>The requested file isn't anymore!</p>|>Content you have requested is unavailable")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (filename == null) {
-            if (ajax.containsHTML("<button[^>]*file_type=\"folder\"[^>]*>Download</button>")) {
+            if (br.containsHTML("<button[^>]*file_type=\"folder\"[^>]*>Download</button>")) {
                 // folder, not supported as of yet...
                 return AvailableStatus.FALSE;
             }
@@ -143,17 +140,16 @@ public class InCloudDriveCom extends PluginForHost {
                 // canHandle for JD2, non JD2 here.
                 premiumDownloadRestriction(downloadLink, downloadLink.getStringProperty("premiumRestrictionMsg", null));
             }
-            // premium only check can be done here now (20140610)
-            if (ajax.containsHTML("<p[^>]*>This link only for premium user\\. Wish to remove the restrictions\\?")) {
+            // premium only check can be done here now (20141117)
+            if (br.containsHTML(">The requested file is to big for a guest or free download\\.")) {
                 premiumDownloadRestriction(downloadLink, "The requested file is to big! You need premium!");
             }
-            final String uplid = ajax.getRegex("uploader_id=\"(\\d+)\"").getMatch(0);
-            final String fileid = ajax.getRegex("file_id=\"(\\d+)\"").getMatch(0);
-            final String predlwait = ajax.getRegex("var pre_download_timer_set\\s*=\\s*'(\\d+)';").getMatch(0);
-            if (uplid == null || fileid == null) {
+            final String token = br.getRegex("freetoken=\"(.*?)\"").getMatch(0);
+            final String predlwait = br.getRegex("id=\"freetimer\"[^>]*>*(\\d+)</div>").getMatch(0);
+            final String dlserver = br.getRegex("freeaccess=\"(.*?)\"").getMatch(0);
+            if (token == null || predlwait == null || dlserver == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            ajaxPostPage("/index.php/download_page_captcha", "type=yes");
             long captchaRequest = System.currentTimeMillis();
             final int repeat = 5;
             for (int i = 1; i <= repeat; i++) {
@@ -166,7 +162,7 @@ public class InCloudDriveCom extends PluginForHost {
                         sleep(wait, downloadLink);
                     }
                 }
-                ajaxPostPage("/captcha/php/check_captcha.php", "captcha_code=" + Encoding.urlEncode(code));
+                ajaxPostPage("/captcha/php/check_captcha.php", "captcha_code=" + Encoding.urlEncode(code) + "&token=" + token);
                 if (ajax.toString().equals("not_match") && i + 1 != repeat) {
                     continue;
                 } else if (ajax.toString().equals("not_match") && i + 1 == repeat) {
@@ -175,30 +171,10 @@ public class InCloudDriveCom extends PluginForHost {
                     break;
                 }
             }
-            ajaxPostPage("/index.php/download_page_captcha/check_download_delay", "check_download_size=yes&uploder_id=" + uplid + "&file_id=" + fileid);
-            if (ajax.getHttpConnection() != null && ajax.toString().startsWith("d_no")) {
-                // this message is shown in browser regardless if your concurrent downloading or not! its also used as a history that you've
-                // downloadded.
-
-                // var msg = '<h3 class="pageheading" style="font-weight:bold;font-size:42px;margin-left:100px;">SORRY!</h3><p
-                // style="text-align:center;font-size:17px;">You can not download more than 1 file at a time in free mode. Wish to remove
-                // the restrictions? <span id="buy_premium_access_id" style="font-weight:bold;color:#3AB2F0;cursor: pointer;">Buy Premium
-                // access</span>.</p>';
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download session limit reached!", 5 * 60 * 1000l);
-            } else if (ajax.getHttpConnection() != null && ajax.toString().startsWith("max_download_error")) {
-                // var msg = '<h3 class="pageheading" style="font-weight:bold;font-size:42px;margin-left:100px;">SORRY!</h3><p
-                // style="text-align:center;font-size:17px;">The requested file is to big for a guest or free download. Please upgrade your
-                // account. <span id="buy_premium_access_id" style="font-weight:bold;color:#3AB2F0;cursor: pointer;">Buy Premium
-                // access</span>.</p>';
-                // --ID:6405TS:1409860097189-04.09.14 21:48:17 - [jd.http.Browser(loadConnection)] ->
-                // max_download_error@@@1023
-                premiumDownloadRestriction(downloadLink, "The requested file is to big! You need premium!");
-            } else if (ajax.getHttpConnection() == null || !ajax.toString().startsWith("d_yes")) {
-                // uncaught error
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            ajaxPostPage("/index.php/get_download_server/download_page_link", "contact_id=" + uplid + "&table_id=" + fileid);
-            dllink = ajax.toString();
+            //
+            br.setFollowRedirects(false);
+            br.getPage(Encoding.urlDecode(dlserver, false) + "download_sfd/?token=" + token);
+            dllink = br.getRedirectLocation();
             if (dllink == null || !dllink.startsWith("http")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -504,7 +480,7 @@ public class InCloudDriveCom extends PluginForHost {
 
     /**
      * When premium only download restriction (eg. filesize), throws exception with given message
-     * 
+     *
      * @param msg
      * @throws PluginException
      */
@@ -579,7 +555,7 @@ public class InCloudDriveCom extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
