@@ -1580,28 +1580,17 @@ public abstract class K2SApi extends PluginForHost {
                     }
                 } else if (responseCode == 503 && cloudflare != null) {
                     // 503 response code with javascript math section
-                    String host = new Regex(URL, "https?://([^/]+)(:\\d+)?/").getMatch(0);
-                    String math = ibr.getRegex("\\$\\('#jschl_answer'\\)\\.val\\(([^\\)]+)\\);").getMatch(0);
-                    if (math == null) {
-                        math = ibr.getRegex("a\\.value = ([\\d\\-\\.\\+\\*/]+);").getMatch(0);
-                    }
-                    if (math == null) {
-                        String variableName = ibr.getRegex("(\\w+)\\s*=\\s*\\$\\('#jschl_answer'\\);").getMatch(0);
-                        if (variableName != null) {
-                            variableName = variableName.trim();
-                        }
-                        math = ibr.getRegex(variableName + "\\.val\\(([^\\)]+)\\)").getMatch(0);
-                    }
-                    if (math == null) {
-                        logger.warning("Couldn't find 'math'");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    // use js for now, but change to Javaluator as the provided string doesn't get evaluated by JS according to Javaluator
-                    // author.
+                    final String[] line1 = br.getRegex("var t,r,a,f, (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
+                    String line2 = br.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length\\;)").getMatch(0);
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("var a={};\r\nvar t=\"" + br.getHost() + "\";\r\n");
+                    sb.append("var " + line1[0] + "={\"" + line1[1] + "\":" + line1[2] + "}\r\n");
+                    sb.append(line2);
+
                     ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
                     ScriptEngine engine = mgr.getEngineByName("JavaScript");
-                    final long value = ((Number) engine.eval("(" + math + ") + " + host.length())).longValue();
-                    cloudflare.put("jschl_answer", value + "");
+                    long answer = ((Number) engine.eval(sb.toString())).longValue();
+                    cloudflare.getInputFieldByName("jschl_answer").setValue(answer + "");
                     Thread.sleep(5500);
                     ibr.submitForm(cloudflare);
                     if (ibr.getFormbyProperty("id", "ChallengeForm") != null || ibr.getFormbyProperty("id", "challenge-form") != null) {
