@@ -114,6 +114,10 @@ public class CrhyRllCom extends PluginForDecrypt {
             this.br.getPage(cryptedLink.getCryptedUrl());
             if (br.getURL().equals("http://www.crunchyroll.com/") || br.containsHTML("Sorry, this video is not available in your region due to licensing restrictions")) {
                 logger.info("Link offline: " + cryptedLink.getCryptedUrl());
+                final DownloadLink offline = createDownloadlink("directhttp://" + cryptedLink.getCryptedUrl());
+                offline.setAvailable(false);
+                offline.setProperty("offline", true);
+                decryptedLinks.add(offline);
                 return decryptedLinks;
             }
             if (br.containsHTML("\"Note: This video requires a")) {
@@ -124,6 +128,10 @@ public class CrhyRllCom extends PluginForDecrypt {
             // Determine if the video exists
             if (this.br.containsHTML("(<title>Crunchyroll \\- Page Not Found</title>|<p>But we were unable to find the page you were looking for\\. Sorry\\.</p>)")) {
                 // not available == offline, no need to show error message
+                final DownloadLink offline = createDownloadlink("directhttp://" + cryptedLink.getCryptedUrl());
+                offline.setAvailable(false);
+                offline.setProperty("offline", true);
+                decryptedLinks.add(offline);
                 return decryptedLinks;
             }
             if (br.getURL().contains("crunchyroll.com/showmedia_wall?next=")) {
@@ -141,7 +149,11 @@ public class CrhyRllCom extends PluginForDecrypt {
                 title = new Regex(cryptedLink.getCryptedUrl(), "/([^<>\"/]+)$").getMatch(0);
             }
             if (title == null) {
-                throw new DecrypterException("Invalid video URL");
+                final DownloadLink offline = createDownloadlink("directhttp://" + cryptedLink.getCryptedUrl());
+                offline.setAvailable(false);
+                offline.setProperty("offline", true);
+                decryptedLinks.add(offline);
+                return decryptedLinks;
             }
 
             // Get the link to the XML file
@@ -151,11 +163,13 @@ public class CrhyRllCom extends PluginForDecrypt {
             }
 
             final String configUrlDecode = Encoding.htmlDecode(configUrlSearch.getMatch(0));
-            final String configErrorHandling = new Regex(configUrlDecode, "pop_out_disable_message=([^&\\?]+)").getMatch(0);
-            if (configErrorHandling != null) {
-                logger.info("Link can only be decrypted if you own and add a crunchyroll.com account! Crunchyroll Error Message: " + Encoding.htmlDecode(configErrorHandling.replace("+", " ")) + " :: " + cryptedLink.getCryptedUrl());
-                return decryptedLinks;
-            }
+            /** TODO: Fix this broken errorhandling */
+            // final String configErrorHandling = new Regex(configUrlDecode, "pop_out_disable_message=([^&\\?]+)").getMatch(0);
+            // if (configErrorHandling != null) {
+            // logger.info("Link can only be decrypted if you own and add a crunchyroll.com account! Crunchyroll Error Message: " +
+            // Encoding.htmlDecode(configErrorHandling.replace("+", " ")) + " :: " + cryptedLink.getCryptedUrl());
+            // return decryptedLinks;
+            // }
             final Regex configUrl = new Regex(configUrlDecode, CrhyRllCom.CONFIG_URL);
             if (!configUrl.matches()) {
                 throw new DecrypterException("Invalid config url");
@@ -208,7 +222,11 @@ public class CrhyRllCom extends PluginForDecrypt {
 
                 final DownloadLink thisLink = this.createDownloadlink(xmlUrl);
 
-               try{/*JD2 only*/thisLink.setContentUrl(cryptedLink.getCryptedUrl());}catch(Throwable e){/*Stable*/ thisLink.setBrowserUrl(cryptedLink.getCryptedUrl());}
+                try {/* JD2 only */
+                    thisLink.setContentUrl(cryptedLink.getCryptedUrl());
+                } catch (Throwable e) {/* Stable */
+                    thisLink.setBrowserUrl(cryptedLink.getCryptedUrl());
+                }
                 thisLink.setFinalFileName(filename + EXT_UNKNOWN);
                 thisLink.setProperty("quality", qualityValue.getFirstValue());
                 thisLink.setProperty("filename", filename);
@@ -240,7 +258,11 @@ public class CrhyRllCom extends PluginForDecrypt {
                 final String subFile = title + "." + subName;
                 final DownloadLink thisLink = this.createDownloadlink(subUrl);
 
-               try{/*JD2 only*/thisLink.setContentUrl(cryptedLink.getCryptedUrl());}catch(Throwable e){/*Stable*/ thisLink.setBrowserUrl(cryptedLink.getCryptedUrl());}
+                try {/* JD2 only */
+                    thisLink.setContentUrl(cryptedLink.getCryptedUrl());
+                } catch (Throwable e) {/* Stable */
+                    thisLink.setBrowserUrl(cryptedLink.getCryptedUrl());
+                }
                 thisLink.setFinalFileName(subFile + EXT_SUBS);
                 thisLink.setProperty("filename", subFile);
                 thisLink.setProperty("valid", true);
@@ -254,7 +276,11 @@ public class CrhyRllCom extends PluginForDecrypt {
 
             final DownloadLink androidLink = this.createDownloadlink("http://www.crunchyroll.com/android_rpc/?req=RpcApiAndroid_GetVideoWithAcl&media_id=" + mediaId);
 
-           try{/*JD2 only*/androidLink.setContentUrl(cryptedLink.getCryptedUrl());}catch(Throwable e){/*Stable*/ androidLink.setBrowserUrl(cryptedLink.getCryptedUrl());}
+            try {/* JD2 only */
+                androidLink.setContentUrl(cryptedLink.getCryptedUrl());
+            } catch (Throwable e) {/* Stable */
+                androidLink.setBrowserUrl(cryptedLink.getCryptedUrl());
+            }
             androidLink.setFinalFileName(androidFile + EXT_UNKNOWN);
             androidLink.setProperty("filename", androidFile);
 
@@ -322,7 +348,7 @@ public class CrhyRllCom extends PluginForDecrypt {
 
     /**
      * Try and find the Android details for the given link. If the details are successfully found, then set the properties of the link.
-     * 
+     *
      * @param downloadLink
      *            The DownloadLink file to check
      * @param br
@@ -423,7 +449,7 @@ public class CrhyRllCom extends PluginForDecrypt {
      * Try and find the RTMP details for the given link. If the details are successfully found, then set the properties of the link.
      * rtmphost = TcUrl. rtmpfile = playpath. rtmpswf = swfVfy (without full path). filename = output filename without extension.
      * qualityname = text definition of the quality found ("360p", "480p", etc).
-     * 
+     *
      * @param downloadLink
      *            The DownloadLink file to check
      * @param br
