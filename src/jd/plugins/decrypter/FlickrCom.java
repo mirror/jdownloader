@@ -18,7 +18,9 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Random;
 import java.util.regex.Pattern;
 
@@ -26,6 +28,7 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -209,7 +212,10 @@ public class FlickrCom extends PluginForDecrypt {
             }
         } else {
             /* Old code, last change 21.05.2014 */
-            br.getPage(parameter);
+            // no need to reget a page you're already on
+            if (logged_in) {
+                br.getPage(parameter);
+            }
             if ((br.containsHTML("class=\"ThinCase Interst\"") || br.getURL().contains("/login.yahoo.com/")) && !logged_in) {
                 logger.info("Account needed to decrypt this link: " + parameter);
                 final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
@@ -253,11 +259,23 @@ public class FlickrCom extends PluginForDecrypt {
                     fpName = br.getRegex("\"search_default\":\"Search ([^<>\"]*)\"").getMatch(0);
                 }
                 if (parameter.endsWith("/sets/") && !parameter.matches(SETLINK)) {
+                    LinkedHashSet<String> set_ids = new LinkedHashSet<String>();
                     logger.info("Decrypting all set links (albums) of a user...");
-                    final String[] set_ids = br.getRegex("class=\"Seta\" data\\-setid=\"(\\d+)\"").getColumn(0);
-                    if (set_ids == null || set_ids.length == 0) {
-                        logger.warning("Decrypter broken for link: " + parameter);
-                        return null;
+                    while (true) {
+                        final String[] set_id = br.getRegex("class=\"Seta\" data\\-setid=\"(\\d+)\"").getColumn(0);
+                        if (set_id == null || set_id.length == 0) {
+                            logger.warning("Decrypter broken for link: " + parameter);
+                            return null;
+                        }
+                        set_ids.addAll(Arrays.asList(set_id));
+                        String next_page = br.getRegex("<a data-track=\"next\" href=\"(/photos/[^/]+/sets/\\?(?:&(?:amp;)?)?page=\\d+)\" class=\"Next rapidnofollow\">next &rarr;</a>").getMatch(0);
+                        if (next_page != null) {
+                            next_page = HTMLEntities.unhtmlentities(next_page);
+                            br.getPage(next_page);
+                            continue;
+                        } else {
+                            break;
+                        }
                     }
                     for (final String set_id : set_ids) {
                         decryptedLinks.add(createDownloadlink(parameter + set_id));
