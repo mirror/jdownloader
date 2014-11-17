@@ -100,9 +100,15 @@ public class InCloudDriveCom extends PluginForHost {
         // premium only files regex is different!
         if (filename == null) {
             filename = ajax.getRegex("<div class=\"name wordwrap\">(.*?)</div>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("fileinfo [a-z0-9 ]+\">([^<>]*?) \\([0-9\\.]*? .?B\\)<").getMatch(0);
+            }
         }
         if (filesize == null) {
             filesize = ajax.getRegex("<div class=\"icddownloadsteptwo-filesize\">(.*?)</div>").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("fileinfo [a-z0-9 ]+\">[^<>]*? \\(([0-9\\.]*? .?B)\\)<").getMatch(0);
+            }
         }
 
         if (filename != null) {
@@ -498,7 +504,7 @@ public class InCloudDriveCom extends PluginForHost {
 
     /**
      * When premium only download restriction (eg. filesize), throws exception with given message
-     *
+     * 
      * @param msg
      * @throws PluginException
      */
@@ -573,7 +579,7 @@ public class InCloudDriveCom extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
+     * 
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
