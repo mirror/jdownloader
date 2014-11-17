@@ -347,7 +347,7 @@ public class AniLinkzCom extends PluginForDecrypt {
             sb.append(line2);
 
             ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
-            ScriptEngine engine = mgr.getEngineByName("JavaScript");
+            ScriptEngine engine = mgr.getEngineByName("js");
             long answer = ((Number) engine.eval(sb.toString())).longValue();
 
             form.getInputFieldByName("jschl_answer").setValue(answer + "");
