@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.net.UnknownHostException;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -59,7 +57,9 @@ public class AuEngineCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         dllink = br.getRegex("url: '(http[^']+auengine\\.com(%2F|/)videos[^']+)").getMatch(0);
-        if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = Encoding.urlDecode(dllink, false);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -68,16 +68,19 @@ public class AuEngineCom extends PluginForHost {
         try {
             try {
                 con = br2.openGetConnection(dllink);
-            } catch (final UnknownHostException e) {
+            } catch (final Throwable e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             // only way to check for made up links... or offline is here
-            if (con.getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setFinalFileName(filename);
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            } else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

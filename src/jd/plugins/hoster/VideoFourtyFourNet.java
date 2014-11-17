@@ -56,7 +56,7 @@ public class VideoFourtyFourNet extends PluginForHost {
         // Nice filenames also for offline links
         downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "video44\\.net/(.+)").getMatch(0));
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("The file does not exist")) {
+        if (br.containsHTML("The file does not exist|\"video not found\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML("The video is transferring")) {
