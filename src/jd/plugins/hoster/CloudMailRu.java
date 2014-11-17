@@ -178,6 +178,7 @@ public class CloudMailRu extends PluginForHost {
                 br.getPage("https://cloud.mail.ru/api/v2/dispatcher?api=2&build=" + BUILD + "&_=" + System.currentTimeMillis());
                 dataserver = br.getRegex("\"url\":\"(https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/)view/\"").getMatch(0);
                 if (dataserver != null) {
+                    logger.info("Successfully found new finallink");
                     dllink = dataserver + "get/" + dl.getStringProperty("unique_id", null) + "?x-email=undefined";
                 } else {
                     logger.warning("Failed to find dataserver for finallink");
