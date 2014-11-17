@@ -722,9 +722,6 @@ public class EasyBytezCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, msg);
         }
-        if (cbr.containsHTML(">Your account was banned by administrator\\.<") && account != null) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account has been banned!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
         if (cbr.containsHTML(MAINTENANCE)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
         }
