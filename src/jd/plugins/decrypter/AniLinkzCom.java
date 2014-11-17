@@ -27,7 +27,6 @@ import javax.script.ScriptEngineManager;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -42,7 +41,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anilinkz.com" }, urls = { "http://(www\\.)?anilinkz\\.com/[^<>\"/]+(/[^<>\"/]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "anilinkz.com" }, urls = { "http://(www\\.)?anilinkz\\.com/[^<>\"/]+(/[^<>\"/]+)?" }, flags = { 0 })
 @SuppressWarnings("deprecation")
 public class AniLinkzCom extends PluginForDecrypt {
 
@@ -82,6 +81,7 @@ public class AniLinkzCom extends PluginForDecrypt {
             /* we first have to load the plugin, before we can reference it */
             agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
         }
+
         prepBr.getHeaders().put("User-Agent", agent.get());
         prepBr.getHeaders().put("Referer", null);
         return prepBr;
@@ -103,16 +103,8 @@ public class AniLinkzCom extends PluginForDecrypt {
         synchronized (LOCK) {
             prepBrowser(br);
 
-            try {
-                getPage(parameter);
-            } catch (final BrowserException e) {
-                logger.info("Link offline (Server error): " + parameter);
-                final DownloadLink dl = createDownloadlink("directhttp://" + parameter);
-                dl.setProperty("OFFLINE", true);
-                dl.setAvailable(false);
-                decryptedLinks.add(dl);
-                return decryptedLinks;
-            }
+            getPage(parameter);
+
             boolean offline = false;
             if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("/home/anilinkz/public_html/")) {
                 logger.info("Incorrect Link! Redirecting to search page...");
@@ -130,10 +122,7 @@ public class AniLinkzCom extends PluginForDecrypt {
                 offline = true;
             }
             if (offline) {
-                final DownloadLink dl = createDownloadlink("directhttp://" + parameter);
-                dl.setProperty("OFFLINE", true);
-                dl.setAvailable(false);
-                decryptedLinks.add(dl);
+                decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
             }
             if (parameter.contains(".com/series/")) {
@@ -225,10 +214,7 @@ public class AniLinkzCom extends PluginForDecrypt {
                 } else {
                     logger.warning("Decrypter out of date for link: " + br2.getURL());
                 }
-                DownloadLink dl = createDownloadlink("directhttp://" + br2.getURL());
-                dl.setProperty("OFFLINE", true);
-                dl.setAvailable(false);
-                decryptedLinks.add(dl);
+                decryptedLinks.add(createOfflinelink(br2.getURL()));
                 return false;
             }
         }
@@ -320,20 +306,18 @@ public class AniLinkzCom extends PluginForDecrypt {
     /**
      * Gets page <br />
      * - natively supports silly cloudflare anti DDoS crapola
-     * 
+     *
      * @author raztoki
      */
     private void getPage(final String page) throws Exception {
         if (page == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         br.setAllowedResponseCodes(503);
         try {
             br.getPage(page);
         } finally {
             br.setAllowedResponseCodes(new int[0]);
-
         }
         Form form = br.getFormbyKey("jschl_answer");
         // prevention is better than cure
@@ -351,8 +335,10 @@ public class AniLinkzCom extends PluginForDecrypt {
             long answer = ((Number) engine.eval(sb.toString())).longValue();
 
             form.getInputFieldByName("jschl_answer").setValue(answer + "");
-            br.setFollowRedirects(true);
             br.submitForm(form);
+            if (!br.getURL().contains(page)) {
+                br.getPage(page);
+            }
 
             // lets save cloudflare cookie to reduce the need repeat cloudFlare()
             final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -373,7 +359,7 @@ public class AniLinkzCom extends PluginForDecrypt {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
