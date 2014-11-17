@@ -142,7 +142,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 }
                 final String unique_id = id + "/" + filename;
                 if (dataserver != null) {
-                    final String directlink = "https://cloclo20.datacloudmail.ru/weblink/get/" + unique_id + "?x-email=undefined";
+                    final String directlink = dataserver + "get/" + unique_id + "?x-email=undefined";
                     dl.setProperty("plain_directlink", directlink);
                 }
                 filename = Encoding.htmlDecode(filename.trim());
