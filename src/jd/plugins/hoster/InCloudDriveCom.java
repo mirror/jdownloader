@@ -134,7 +134,7 @@ public class InCloudDriveCom extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink, final boolean resume, final int maxchunks, final String directlinkparam) throws Exception, PluginException {
-        String dllink = checkDirectLink(downloadLink, directlinkparam);
+        String dllink = null;// checkDirectLink(downloadLink, directlinkparam);
         if (dllink == null) {
             if (downloadLink.getBooleanProperty("premiumRequired", false)) {
                 // canHandle for JD2, non JD2 here.
@@ -144,7 +144,7 @@ public class InCloudDriveCom extends PluginForHost {
             if (br.containsHTML(">The requested file is to big for a guest or free download\\.")) {
                 premiumDownloadRestriction(downloadLink, "The requested file is to big! You need premium!");
             }
-            final String token = br.getRegex("freetoken=\"(.*?)\"").getMatch(0);
+            final String token = Encoding.urlDecode(br.getRegex("freetoken=\"(.*?)\"").getMatch(0), false);
             final String predlwait = br.getRegex("id=\"freetimer\"[^>]*>*(\\d+)</div>").getMatch(0);
             final String dlserver = br.getRegex("freeaccess=\"(.*?)\"").getMatch(0);
             if (token == null || predlwait == null || dlserver == null) {
@@ -173,7 +173,7 @@ public class InCloudDriveCom extends PluginForHost {
             }
             //
             br.setFollowRedirects(false);
-            br.getPage(Encoding.urlDecode(dlserver, false) + "download_sfd/?token=" + token);
+            br.getPage(Encoding.urlDecode(dlserver, false) + "download_f/?token=" + token);
             dllink = br.getRedirectLocation();
             if (dllink == null || !dllink.startsWith("http")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
