@@ -18,7 +18,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -47,16 +46,16 @@ import jd.plugins.PluginForDecrypt;
 @SuppressWarnings("deprecation")
 public class AniLinkzCom extends PluginForDecrypt {
 
-    private final String                   supported_hoster  = "(4shared\\.com|4vid\\.me|animeuploads\\.com|auengine\\.com|chia\\-anime\\.com|cizgifilmlerizle\\.com|dailymotion\\.com|gogoanime\\.com|gorillavid\\.in|mp4upload\\.com|movreel\\.com|myspace\\.com|nowvideo\\.eu|novamov\\.com|play44\\.net|(putlocker|firedrive)\\.com|rutube\\.ru|sockshare\\.com|stagevu\\.com|upload2\\.com|uploadc\\.com|veevr\\.com|veoh\\.com|vidbox\\.yt|video44\\.net|videobb\\.com|videobam\\.com|videofun\\.me|videonest\\.net|videoweed\\.com|vidzur\\.com|vimeo\\.com|vk\\.com|yourupload\\.com|youtube\\.com|zshare\\.net|220\\.ro|videos\\.sapo\\.pt)";
-    private final String                   invalid_links     = "http://(www\\.)?anilinkz\\.com/(search|affiliates|get|img|dsa|forums|files|category|\\?page=|faqs|.*?-list|.*?-info|\\?random).*?";
-    private String                         parameter         = null;
-    private String                         fpName            = null;
-    private String                         escapeAll         = null;
-    private int                            spart             = 1;
-    private Browser                        br2               = new Browser();
-    private ArrayList<DownloadLink>        decryptedLinks    = null;
-    private static HashMap<String, String> cloudflareCookies = new HashMap<String, String>();
-    private static Object                  LOCK              = new Object();
+    private final String                   supported_hoster   = "(4shared\\.com|4vid\\.me|animeuploads\\.com|auengine\\.com|chia\\-anime\\.com|cizgifilmlerizle\\.com|dailymotion\\.com|gogoanime\\.com|gorillavid\\.in|mp4upload\\.com|movreel\\.com|myspace\\.com|nowvideo\\.eu|novamov\\.com|play44\\.net|(putlocker|firedrive)\\.com|rutube\\.ru|sockshare\\.com|stagevu\\.com|upload2\\.com|uploadc\\.com|veevr\\.com|veoh\\.com|vidbox\\.yt|video44\\.net|videobb\\.com|videobam\\.com|videofun\\.me|videonest\\.net|videoweed\\.com|vidzur\\.com|vimeo\\.com|vk\\.com|yourupload\\.com|youtube\\.com|zshare\\.net|220\\.ro|videos\\.sapo\\.pt)";
+    private final String                   invalid_links      = "http://(www\\.)?anilinkz\\.com/(search|affiliates|get|img|dsa|forums|files|category|\\?page=|faqs|.*?-list|.*?-info|\\?random).*?";
+    private String                         parameter          = null;
+    private String                         fpName             = null;
+    private String                         escapeAll          = null;
+    private int                            spart              = 1;
+    private Browser                        br2                = new Browser();
+    private ArrayList<DownloadLink>        decryptedLinks     = null;
+    private static HashMap<String, String> CLOUDFLARE_COOKIES = new HashMap<String, String>();
+    private static Object                  LOCK               = new Object();
 
     /**
      * @author raztoki
@@ -69,8 +68,8 @@ public class AniLinkzCom extends PluginForDecrypt {
 
     private Browser prepBrowser(Browser prepBr) {
         HashMap<String, String> map = null;
-        synchronized (cloudflareCookies) {
-            map = new HashMap<String, String>(cloudflareCookies);
+        synchronized (CLOUDFLARE_COOKIES) {
+            map = new HashMap<String, String>(CLOUDFLARE_COOKIES);
         }
         if (!map.isEmpty()) {
             for (final Map.Entry<String, String> cookieEntry : map.entrySet()) {
@@ -328,68 +327,47 @@ public class AniLinkzCom extends PluginForDecrypt {
         if (page == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+
+        br.setAllowedResponseCodes(503);
         try {
             br.getPage(page);
-        } catch (Exception e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
-            }
-            // should only be picked up now if not JD2
-            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
-                logger.warning("Cloudflare anti DDoS measures enabled, your version of JD can not support this. In order to go any further you will need to upgrade to JDownloader 2");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cloudflare anti DDoS measures enabled");
-            } else {
-                throw e;
-            }
+        } finally {
+            br.setAllowedResponseCodes(new int[0]);
+
         }
+        Form form = br.getFormbyKey("jschl_answer");
         // prevention is better than cure
-        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
-            String host = new Regex(page, "https?://([^/]+)(:\\d+)?/").getMatch(0);
-            Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
-            if (cloudflare == null) {
-                cloudflare = br.getFormbyProperty("id", "challenge-form");
-            }
-            if (cloudflare != null) {
-                String math = br.getRegex("\\$\\('#jschl_answer'\\)\\.val\\(([^\\)]+)\\);").getMatch(0);
-                if (math == null) {
-                    math = br.getRegex("a\\.value = ([\\d\\-\\.\\+\\*/]+);").getMatch(0);
-                }
-                if (math == null) {
-                    String variableName = br.getRegex("(\\w+)\\s*=\\s*\\$\\(\'#jschl_answer\'\\);").getMatch(0);
-                    if (variableName != null) {
-                        variableName = variableName.trim();
-                    }
-                    math = br.getRegex(variableName + "\\.val\\(([^\\)]+)\\)").getMatch(0);
-                }
-                if (math == null) {
-                    logger.warning("Couldn't find 'math'");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                // use js for now, but change to Javaluator as the provided string doesn't get evaluated by JS according to Javaluator
-                // author.
-                ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
-                ScriptEngine engine = mgr.getEngineByName("JavaScript");
-                final long value = ((Number) engine.eval("(" + math + ") + " + host.length())).longValue();
-                cloudflare.put("jschl_answer", value + "");
-                Thread.sleep(5500);
-                br.submitForm(cloudflare);
-                if (br.getFormbyProperty("id", "ChallengeForm") != null || br.getFormbyProperty("id", "challenge-form") != null) {
-                    logger.warning("Possible plugin error within cloudflare handling");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                // lets save cloudflare cookie to reduce the need repeat cloudFlare()
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(this.getHost());
-                for (final Cookie c : add.getCookies()) {
-                    if (new Regex(c.getKey(), "(cfduid|cf_clearance)").matches()) {
-                        cookies.put(c.getKey(), c.getValue());
-                    }
-                }
-                synchronized (cloudflareCookies) {
-                    cloudflareCookies.clear();
-                    cloudflareCookies.putAll(cookies);
+        if (form != null) {
+
+            String[] line1 = br.getRegex("var t,r,a,f, (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
+            String line2 = br.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length\\;)").getMatch(0);
+            StringBuilder sb = new StringBuilder();
+            sb.append("var a={};\r\nvar t=\"" + br.getHost() + "\";\r\n");
+            sb.append("var " + line1[0] + "={\"" + line1[1] + "\":" + line1[2] + "}\r\n");
+            sb.append(line2);
+
+            ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+            ScriptEngine engine = mgr.getEngineByName("JavaScript");
+            long answer = ((Number) engine.eval(sb.toString())).longValue();
+
+            form.getInputFieldByName("jschl_answer").setValue(answer + "");
+            br.setFollowRedirects(true);
+            br.submitForm(form);
+
+            // lets save cloudflare cookie to reduce the need repeat cloudFlare()
+            final HashMap<String, String> cookies = new HashMap<String, String>();
+            final Cookies add = br.getCookies(this.getHost());
+            for (final Cookie c : add.getCookies()) {
+                if (new Regex(c.getKey(), "(cfduid|cf_clearance)").matches()) {
+                    cookies.put(c.getKey(), c.getValue());
                 }
             }
+
+            synchronized (CLOUDFLARE_COOKIES) {
+                CLOUDFLARE_COOKIES.clear();
+                CLOUDFLARE_COOKIES.putAll(cookies);
+            }
+
         }
     }
 
