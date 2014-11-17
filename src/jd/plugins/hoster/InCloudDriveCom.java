@@ -77,13 +77,20 @@ public class InCloudDriveCom extends PluginForHost {
     /* don't touch the following! */
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        br.setFollowRedirects(true);
+    private Browser prepBrowser(final Browser prepBr) {
         try {
-            br.setAllowedResponseCodes(400, 500);
+            prepBr.setAllowedResponseCodes(400, 500);
         } catch (final Throwable e) {
         }
+        prepBr.getHeaders().put("Accept-Language", "en-AU,en;q=0.8");
+        prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.111 Safari/537.36");
+        return prepBr;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        prepBrowser(br);
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         return parseFileInformation(link);
     }
@@ -134,7 +141,7 @@ public class InCloudDriveCom extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink, final boolean resume, final int maxchunks, final String directlinkparam) throws Exception, PluginException {
-        String dllink = null;// checkDirectLink(downloadLink, directlinkparam);
+        String dllink = checkDirectLink(downloadLink, directlinkparam);
         if (dllink == null) {
             if (downloadLink.getBooleanProperty("premiumRequired", false)) {
                 // canHandle for JD2, non JD2 here.
@@ -253,6 +260,7 @@ public class InCloudDriveCom extends PluginForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
+                prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -270,15 +278,19 @@ public class InCloudDriveCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                br.getPage("https://www.inclouddrive.com/");
-                ajaxPostPage("https://www.inclouddrive.com/index.php/user/login_post", "remember_me=1&email_id=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (!ajax.toString().equals("1")) {
+                br.getPage("https://www.inclouddrive.com/user/login");
+                final String js = br.cloneBrowser().getPage("/java/mycloud.js");
+                final String appToken = new Regex(js, "app:\\s*'(.*?)',").getMatch(0);
+                ajaxPostPage("https://www.inclouddrive.com/api/0/signmein", "useraccess=&access_token=" + appToken + "&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&keep=1");
+                final String doz = Encoding.urlEncode(ajax.getRegex("\"doz\":\"([^\"]+)").getMatch(0));
+                if (!ajax.containsHTML("\"result\":\"ok\"") || doz == null || "".equals(doz)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
+                br.setCookie(MAINPAGE, "userdata", doz);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = ajax.getCookies(MAINPAGE);
@@ -312,18 +324,9 @@ public class InCloudDriveCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        ajaxPostPage("/index.php/user/after_login_html", "");
-        final String user_id = ajax.getRegex("var user_id = '(\\d+)';").getMatch(0);
-        if (user_id == null) {
-            if ("de".equalsIgnoreCase(lang)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
-        ajaxPostPage("/index.php/my_account/overview", "user_id=" + user_id);
-
-        if (ajax.containsHTML("class=\"memberplandetails leftbox\">[\t\n\r ]+<h5>Free</h5>")) {
+        br.getPage("/me");
+        final String[] premExpire = br.getRegex(">(Premium)</div>[^<]*<div[^>]*>Expires on (\\d+ \\w+, \\d{4})<").getRow(0);
+        if (premExpire == null) {
             account.setProperty("free", true);
             ai.setStatus("Free Account");
             maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
@@ -335,7 +338,7 @@ public class InCloudDriveCom extends PluginForHost {
                 /* not available in old Stable 0.9.581 */
             }
         } else {
-            final String expire = ajax.getRegex("Expiry date: (\\d+\\-\\d{2}\\-\\d{4})").getMatch(0);
+            final String expire = premExpire[1];
             if (expire == null) {
                 if ("de".equalsIgnoreCase(lang)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -343,7 +346,7 @@ public class InCloudDriveCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd-MM-yyyy", Locale.ENGLISH));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMM, yyyy", Locale.ENGLISH));
             }
             account.setProperty("free", false);
             ai.setStatus("Premium Account");
@@ -357,28 +360,19 @@ public class InCloudDriveCom extends PluginForHost {
             }
         }
 
-        final String space = ajax.getRegex("<div class=\"bacdbox\"\\s*>\\s*<h2>Used Space</h2>.*?(?:</div>\\s*){3}").getMatch(-1);
+        final String space = br.getRegex(">Used Space</div>\\s*<span[^>]*>(.*?) / \\d+ GB</span>").getMatch(0);
         if (space != null) {
-            String spaceUsed = new Regex(space, "class=\"leftusage active\">([^<]+)</span>").getMatch(0);
-            if (spaceUsed != null) {
-                ai.setUsedSpace(SizeFormatter.getSize(spaceUsed.trim()));
-            }
+            ai.setUsedSpace(SizeFormatter.getSize(space.trim()));
         } else {
             logger.warning("Could not determine Used Space! Account type: " + getAccountType(account));
         }
 
-        final String traffic = ajax.getRegex("<div class=\"bacdbox\"\\s*>\\s*<h2>Used Bandwidth</h2>.*?(?:</div>\\s*){3}").getMatch(-1);
+        final String[] traffic = br.getRegex(">Used Bandwidth</div>\\s*<span[^>]*>(.*?)\\s*/\\s*(\\d+ GB)<").getRow(0);
         if (traffic != null) {
-            final String used_traffic = new Regex(traffic, "<span class=\"leftusage\">([^<]+)</span>").getMatch(0);
-            final String max_traffic = new Regex(traffic, "<span class=\"rightusage\">([^<]+)</span>").getMatch(0);
-            if (used_traffic != null && max_traffic != null) {
-                final long trafficmax = SizeFormatter.getSize(max_traffic.replace("BT", "Byte"));
-                final long trafficused = SizeFormatter.getSize(used_traffic.replace("BT", "Byte"));
-                ai.setTrafficMax(trafficmax);
-                ai.setTrafficLeft(trafficmax - trafficused);
-            } else {
-                logger.warning("Could not determine Traffic Used or Traffic Total! Account type: " + getAccountType(account));
-            }
+            final long trafficused = SizeFormatter.getSize(traffic[0].contains("&nbsp;") ? "0" : traffic[0].replace("BT", "Byte"));
+            final long trafficmax = SizeFormatter.getSize(traffic[1].replace("BT", "Byte"));
+            ai.setTrafficMax(trafficmax);
+            ai.setTrafficLeft(trafficmax - trafficused);
         } else {
             logger.warning("Could not determine Used Bandwidth! Account type: " + getAccountType(account));
         }
@@ -418,13 +412,7 @@ public class InCloudDriveCom extends PluginForHost {
             }
             if (dllink == null) {
                 parseFileInformation(link);
-                final String uplid = ajax.getRegex("uploader_id=\"(\\d+)\"").getMatch(0);
-                final String fileid = ajax.getRegex("file_id=\"(\\d+)\"").getMatch(0);
-                if (uplid == null || fileid == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                ajaxPostPage("/index.php/get_download_server/download_page_link", "contact_id=" + uplid + "&table_id=" + fileid);
-                dllink = ajax.toString();
+                dllink = br.getRegex("\"(https?://\\w+\\.inclouddrive\\.com/download_f/\\?token=[^\"]+)\"").getMatch(0);
                 if (dllink == null || !dllink.startsWith("http")) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
