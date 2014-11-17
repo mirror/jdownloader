@@ -52,11 +52,12 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         prepBR();
         PARAMETER = Encoding.htmlDecode(param.toString()).replace("http://", "https://");
+        if (PARAMETER.endsWith("/")) {
+            PARAMETER = PARAMETER.substring(0, PARAMETER.lastIndexOf("/"));
+        }
         String id;
-        String detailedName;
         final DownloadLink main = createDownloadlink("http://clouddecrypted.mail.ru/" + System.currentTimeMillis() + new Random().nextInt(100000));
         if (PARAMETER.matches(TYPE_APIV2)) {
-            detailedName = null;
             id = new Regex(PARAMETER, "([A-Z0-9]{32})$").getMatch(0);
             main.setName(PARAMETER);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -98,13 +99,12 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(main);
                 return decryptedLinks;
             }
-            detailedName = new Regex(PARAMETER, "([^<>\"/]+)/?$").getMatch(0);
         }
         main.setProperty("plain_request_id", id);
         main.setProperty("mainlink", PARAMETER);
 
         String fpName = null;
-        String mainName = new Regex(json, "\"url\":.*?\\},\"name\":\"([^<>\"]*?)\",\"id").getMatch(0);
+        String mainName = new Regex(json, "\"body\":\\{\"count\":\\{\"folders\":\\d+,\"files\":\\d+\\},\"name\":\"([^<>\"]*?)\"").getMatch(0);
         if (mainName == null) {
             mainName = new Regex(PARAMETER, "public/([a-z0-9]+)/").getMatch(0);
         }
@@ -112,16 +112,14 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
             mainName = id;
         }
         mainName = Encoding.htmlDecode(mainName.trim());
-        if (detailedName != null) {
-            fpName = mainName + " - " + detailedName;
-        } else {
-            fpName = mainName;
-        }
+        fpName = mainName;
         final String[] links = getList(id);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + PARAMETER);
             return null;
         }
+        br.getPage("https://cloud.mail.ru/api/v2/dispatcher?api=2&build=" + BUILD + "&_=" + System.currentTimeMillis());
+        final String dataserver = br.getRegex("\"url\":\"(https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/)view/\"").getMatch(0);
         long totalSize = 0;
         for (final String singleinfo : links) {
             if ("folder".equals(getJson(singleinfo, "kind"))) {
@@ -138,16 +136,14 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 final DownloadLink dl = createDownloadlink("http://clouddecrypted.mail.ru/" + System.currentTimeMillis() + new Random().nextInt(100000));
                 final String filesize = getJson(singleinfo, "size");
                 String filename = getJson(singleinfo, "name");
-                String directlink = getJson(singleinfo, "get");
                 if (filesize == null || filename == null) {
                     logger.warning("Decrypter broken for link: " + PARAMETER);
                     return null;
                 }
-                final String encoded_id = Encoding.urlTotalEncode(id + filename);
-                if (directlink == null) {
-                    directlink = "https://cloclo20.datacloudmail.ru/weblink/get/" + encoded_id + "?x-email=undefined";
-                } else if (directlink.startsWith("//")) {
-                    directlink = "http:" + directlink;
+                final String unique_id = id + "/" + filename;
+                if (dataserver != null) {
+                    final String directlink = "https://cloclo20.datacloudmail.ru/weblink/get/" + unique_id + "?x-email=undefined";
+                    dl.setProperty("plain_directlink", directlink);
                 }
                 filename = Encoding.htmlDecode(filename.trim());
                 final long cursize = Long.parseLong(filesize);
@@ -157,9 +153,8 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 dl.setProperty("plain_name", filename);
                 dl.setProperty("plain_size", filesize);
                 dl.setProperty("mainlink", PARAMETER);
-                dl.setProperty("plain_directlink", directlink);
                 dl.setProperty("plain_request_id", id);
-                dl.setProperty("encoded_id", encoded_id);
+                dl.setProperty("unique_id", unique_id);
                 /** TODO: Remove this */
                 if (PARAMETER.matches(TYPE_APIV2)) {
                     dl.setProperty("noapi", true);
