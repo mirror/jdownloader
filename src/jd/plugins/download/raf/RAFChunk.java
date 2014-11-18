@@ -4,8 +4,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.nio.channels.AsynchronousCloseException;
-import java.nio.channels.ClosedByInterruptException;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -78,7 +76,7 @@ public class RAFChunk extends Thread {
 
     /**
      * Die Connection wird entsprechend der start und endbytes neu aufgebaut.
-     * 
+     *
      * @param startByte
      * @param endByte
      * @param connection
@@ -119,7 +117,7 @@ public class RAFChunk extends Thread {
 
     /**
      * Gibt Fortschritt in % an (10000 entspricht 100%))
-     * 
+     *
      * @return
      */
     public int getPercent() {
@@ -128,7 +126,7 @@ public class RAFChunk extends Thread {
 
     /**
      * Kopiert die Verbindung. Es wird bis auf die Range und timeouts exakt die selbe Verbindung nochmals aufgebaut.
-     * 
+     *
      * @param connection
      * @return
      * @throws InterruptedException
@@ -235,6 +233,7 @@ public class RAFChunk extends Thread {
         if (endByte > 0) {
             bytes2Do = (endByte - startByte) + 1;
         }
+        boolean remoteIO = false;
         try {
             if (connection == null) {
                 throw new WTFException("connection null");
@@ -267,6 +266,7 @@ public class RAFChunk extends Thread {
                     while (!reachedEOF && buffer.free() > 0 && buffer.size() <= flushLevel) {
                         if (endByte > 0) {
                             /* read only as much as needed */
+                            remoteIO = true;
                             read = inputStream.read(buffer.getInternalBuffer(), buffer.size(), (int) Math.min(bytes2Do, (buffer.getInternalBuffer().length - buffer.size())));
                             if (read > 0) {
                                 bytes2Do -= read;
@@ -277,6 +277,7 @@ public class RAFChunk extends Thread {
                             }
                         } else {
                             /* read as much as possible */
+                            remoteIO = true;
                             read = inputStream.read(buffer.getInternalBuffer(), buffer.size(), (buffer.getInternalBuffer().length - buffer.size()));
                         }
                         if (read > 0) {
@@ -311,28 +312,6 @@ public class RAFChunk extends Thread {
                         break;
                     }
                     throw e;
-                } catch (SocketException e2) {
-                    LogSource.exception(logger, e2);
-                    if (!isExternalyAborted() && !connectionclosed.get()) {
-                        throw e2;
-                    }
-                    towrite = -1;
-                    break;
-                } catch (ClosedByInterruptException e) {
-                    LogSource.exception(logger, e);
-                    if (!isExternalyAborted()) {
-                        logger.severe("Timeout detected");
-                        dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, null, LinkStatus.VALUE_NETWORK_IO_ERROR));
-                    }
-                    towrite = -1;
-                    break;
-                } catch (AsynchronousCloseException e3) {
-                    LogSource.exception(logger, e3);
-                    if (!isExternalyAborted() && !connectionclosed.get()) {
-                        throw e3;
-                    }
-                    towrite = -1;
-                    break;
                 } catch (IOException e4) {
                     LogSource.exception(logger, e4);
                     if (!isExternalyAborted() && !connectionclosed.get()) {
@@ -346,6 +325,7 @@ public class RAFChunk extends Thread {
                     break;
                 }
                 if (towrite > 0) {
+                    remoteIO = false;
                     dl.addToTotalLinkBytesLoaded(towrite, false);
                     addChunkBytesLoaded(towrite);
                     dl.writeBytes(this);
@@ -369,8 +349,11 @@ public class RAFChunk extends Thread {
             }
         } catch (FileNotFoundException e) {
             LogSource.exception(logger, e);
-            logger.severe("file not found. " + e.getLocalizedMessage());
-            dl.error(new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null));
+            if (remoteIO) {
+                dl.error(new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null));
+            } else {
+                dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.download_error_message_iopermissions(), LinkStatus.VALUE_LOCAL_IO_ERROR));
+            }
         } catch (SecurityException e) {
             LogSource.exception(logger, e);
             logger.severe("not enough rights to write the file. " + e.getLocalizedMessage());
@@ -380,7 +363,6 @@ public class RAFChunk extends Thread {
             dl.error(new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.download_error_message_unavailable(), 10 * 60000l));
         } catch (IOException e) {
             LogSource.exception(logger, e);
-
             if (e.getMessage() != null && e.getMessage().contains("reset")) {
                 logger.info("Connection reset: network problems!");
                 dl.error(new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.download_error_message_networkreset(), 1000l * 60 * 5));
@@ -395,12 +377,14 @@ public class RAFChunk extends Thread {
                 LogSource.exception(logger, e);
                 if (e.getMessage() != null && e.getMessage().contains("503")) {
                     dl.error(new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.download_error_message_unavailable(), 10 * 60000l));
+                } else if (remoteIO) {
+                    dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_networkreset(), LinkStatus.VALUE_NETWORK_IO_ERROR));
                 } else {
                     logger.severe("error occurred while writing to file. " + e.getMessage());
                     dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.download_error_message_iopermissions(), LinkStatus.VALUE_LOCAL_IO_ERROR));
                 }
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             LogSource.exception(logger, e);
             dl.error(new PluginException(LinkStatus.ERROR_RETRY, Exceptions.getStackTrace(e)));
         } finally {
@@ -423,7 +407,7 @@ public class RAFChunk extends Thread {
 
     /**
      * Gibt die Geladenen ChunkBytes zurueck
-     * 
+     *
      * @return
      */
     public long getBytesLoaded() {
@@ -437,7 +421,7 @@ public class RAFChunk extends Thread {
     /**
      * Gibt die Aktuelle Endposition in der gesamtfile zurueck. Diese Methode gibt die Endposition unahaengig davon an Ob der aktuelle
      * BUffer schon geschrieben wurde oder nicht.
-     * 
+     *
      * @return
      */
     public long getCurrentBytesPosition() {
@@ -458,7 +442,7 @@ public class RAFChunk extends Thread {
 
     /**
      * Gibt die Schreibposition des Chunks in der gesamtfile zurueck
-     * 
+     *
      * @throws Exception
      */
     public long getWritePosition() throws Exception {
@@ -469,7 +453,7 @@ public class RAFChunk extends Thread {
 
     /**
      * Gibt zurueck ob der chunk von einem externen eregniss unterbrochen wurde
-     * 
+     *
      * @return
      */
     private boolean isExternalyAborted() {
@@ -603,7 +587,7 @@ public class RAFChunk extends Thread {
 
     /**
      * Setzt die anzahl der schon geladenen partbytes. Ist fuer resume wichtig.
-     * 
+     *
      * @param loaded
      */
     public void setLoaded(long loaded) {
