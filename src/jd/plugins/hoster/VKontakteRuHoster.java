@@ -238,7 +238,8 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     /**
-     * Checks a given directlink for content.
+     * Checks a given directlink for content. Sets finalfilename as final filename if finalfilename != null - else sets server filename as
+     * final filename.
      *
      * @return <b>true</b>: Link is valid and can be downloaded <b>false</b>: Link leads to HTML, times out or other problems occured - link
      *         is not downloadable!
@@ -375,6 +376,8 @@ public class VKontakteRuHoster extends PluginForHost {
 
         this.FINALLINK = null;
         this.setBrowserExclusive();
+        final String owner_id = link.getStringProperty("owner_id", null);
+        final String content_id = link.getStringProperty("content_id", null);
 
         this.br.setFollowRedirects(false);
         // Login required to check/download
@@ -522,27 +525,36 @@ public class VKontakteRuHoster extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         source = Encoding.htmlDecode(source).replace("\\", "");
-        final String[] qs = { "w_", "z_", "y_", "x_", "m_" };
-        final String base = new Regex(source, "base(\\')?:(\"|\\')(http://[^<>\"]*?)(\"|\\')").getMatch(2);
-        for (final String q : qs) {
-            /* large image */
-            if (this.FINALLINK == null || this.FINALLINK != null && !this.linkOk(dl, null)) {
-                if (base == null) {
-                    this.FINALLINK = new Regex(source, q + "(\\')?:\\[(\"|\\')([^<>\"]*?)(\"|\\')").getMatch(2);
-                    if (this.FINALLINK != null) {
-                        this.FINALLINK += ".jpg";
+        if (source.contains("\"type\":\"photo\"")) {
+            final String[] qualitylinks = new Regex(source, "\"photo_\\d+\":\"(http[^<>\"]*?)\"").getColumn(0);
+            if (qualitylinks != null && qualitylinks.length > 0) {
+                this.FINALLINK = qualitylinks[qualitylinks.length - 1];
+                /* Do this to set the final filename and get size */
+                this.linkOk(dl, null);
+            }
+        } else {
+            final String[] qs = { "w_", "z_", "y_", "x_", "m_" };
+            final String base = new Regex(source, "base(\\')?:(\"|\\')(http://[^<>\"]*?)(\"|\\')").getMatch(2);
+            for (final String q : qs) {
+                /* large image */
+                if (this.FINALLINK == null || this.FINALLINK != null && !this.linkOk(dl, null)) {
+                    if (base == null) {
+                        this.FINALLINK = new Regex(source, q + "(\\')?:\\[(\"|\\')([^<>\"]*?)(\"|\\')").getMatch(2);
+                        if (this.FINALLINK != null) {
+                            this.FINALLINK += ".jpg";
+                        } else {
+                            /* Other source has complete links */
+                            this.FINALLINK = new Regex(source, "\"" + q + "src\":\"(http[^<>\"]*?)\"").getMatch(0);
+                        }
                     } else {
-                        /* Other source has complete links */
-                        this.FINALLINK = new Regex(source, "\"" + q + "src\":\"(http[^<>\"]*?)\"").getMatch(0);
+                        final String linkPart = new Regex(source, q + "(\\')?:\\[(\"|\\')([^<>\"]*?)(\"|\\')").getMatch(2);
+                        if (linkPart != null) {
+                            this.FINALLINK = base + linkPart + ".jpg";
+                        }
                     }
                 } else {
-                    final String linkPart = new Regex(source, q + "(\\')?:\\[(\"|\\')([^<>\"]*?)(\"|\\')").getMatch(2);
-                    if (linkPart != null) {
-                        this.FINALLINK = base + linkPart + ".jpg";
-                    }
+                    break;
                 }
-            } else {
-                break;
             }
         }
     }
