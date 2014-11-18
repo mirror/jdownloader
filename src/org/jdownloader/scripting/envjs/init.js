@@ -14,11 +14,11 @@
 
        var  getCurrentContext=net.sourceforge.htmlunit.corejs.javascript.Context.getCurrentContext;
        var javaInstance=Packages.org.jdownloader.scripting.envjs.EnvJS.get(%EnvJSinstanceID%);   
-       javaInstance.preInitBoolean(true,true);
-       javaInstance.preInitInteger(0,0);
-       javaInstance.preInitLong(0,0);
-       javaInstance.preInitDouble(0.0,0.0);
-       javaInstance.preInitFloat(0.0,0.0);
+//       javaInstance.preInitBoolean(true,true);
+//       javaInstance.preInitInteger(0,0);
+//       javaInstance.preInitLong(0,0);
+//       javaInstance.preInitDouble(0.0,0.0);
+//       javaInstance.preInitFloat(0.0,0.0);
        
        javaInstance.setGlobals(envjsGlobals);
   
