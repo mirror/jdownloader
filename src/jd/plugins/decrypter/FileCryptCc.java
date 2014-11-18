@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -26,6 +27,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -35,7 +37,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecrypt.cc" }, urls = { "http://(www\\.)?filecrypt\\.cc/Container/[A-Z0-9]{10}\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecrypt.cc" }, urls = { "http://(?:www\\.)?filecrypt\\.cc/Container/([A-Z0-9]{10})\\.html" }, flags = { 0 })
 public class FileCryptCc extends PluginForDecrypt {
 
     public FileCryptCc(PluginWrapper wrapper) {
@@ -46,6 +48,7 @@ public class FileCryptCc extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
+        final String uid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         br.getPage(parameter);
         if (br.getURL().contains("filecrypt.cc/404.html")) {
             try {
@@ -68,19 +71,32 @@ public class FileCryptCc extends PluginForDecrypt {
         if (br.containsHTML("class=\"safety\"")) {
             throw new DecrypterException(DecrypterException.CAPTCHA);
         }
+        final String fpName = br.getRegex("class=\"status (online|offline) shield\">([^<>\"]*?)<").getMatch(1);
 
-        /* First try DLC, then single links */
-        final String dlc_id = br.getRegex("DownloadDLC\\(\\'([^<>\"]*?)\\'\\)").getMatch(0);
-        if (dlc_id != null) {
-            logger.info("DLC found - trying to add it");
-            decryptedLinks.addAll(loadcontainer("http://filecrypt.cc/DLC/" + dlc_id + ".dlc"));
+        // mirrors
+        final String[] mirrors = br.getRegex("\"([^\"]*/Container/" + uid + "\\.html\\?mirror=\\d+)\"").getColumn(0);
+        if (mirrors != null) {
+            // first mirror shown should be mirror 0;
+            Arrays.sort(mirrors);
+            for (final String mirror : mirrors) {
+                // if 0 we don't need to get new page
+                if (!mirror.endsWith("mirror=0")) {
+                    br.getPage(mirror);
+                }
+                /* First try DLC, then single links */
+                final String dlc_id = br.getRegex("DownloadDLC\\(\\'([^<>\"]*?)\\'\\)").getMatch(0);
+                if (dlc_id != null) {
+                    logger.info("DLC found - trying to add it");
+                    decryptedLinks.addAll(loadcontainer("http://filecrypt.cc/DLC/" + dlc_id + ".dlc"));
+                }
+            }
             if (!decryptedLinks.isEmpty()) {
                 logger.info("DLC successfully added");
                 return decryptedLinks;
             }
         }
 
-        final String fpName = br.getRegex("class=\"status (online|offline) shield\">([^<>\"]*?)<").getMatch(1);
+        // this isn't always shown, see 104061178D - raztoki 20141118
 
         logger.info("Trying single link handling");
         final String[] links = br.getRegex("openLink\\(\\'([^<>\"]*?)\\'").getColumn(0);
