@@ -238,7 +238,8 @@ public class SpaceForFilesCom extends PluginForHost {
             if (fileInfo[1] == null) {
                 fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
                 if (fileInfo[1] == null) {
-                    fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                    final String fileunit = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(&nbsp;)? ?(bytes|KB|MB|GB))").getMatch(2);
+                    fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(&nbsp;)? ?(bytes|KB|MB|GB))").getMatch(0) + fileunit;
                 }
             }
         }
