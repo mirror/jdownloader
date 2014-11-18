@@ -376,8 +376,6 @@ public class VKontakteRuHoster extends PluginForHost {
 
         this.FINALLINK = null;
         this.setBrowserExclusive();
-        final String owner_id = link.getStringProperty("owner_id", null);
-        final String content_id = link.getStringProperty("content_id", null);
 
         this.br.setFollowRedirects(false);
         // Login required to check/download
@@ -525,6 +523,7 @@ public class VKontakteRuHoster extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         source = Encoding.htmlDecode(source).replace("\\", "");
+        /* New way */
         if (source.contains("\"type\":\"photo\"")) {
             final String[] qualitylinks = new Regex(source, "\"photo_\\d+\":\"(http[^<>\"]*?)\"").getColumn(0);
             if (qualitylinks != null && qualitylinks.length > 0) {
@@ -533,6 +532,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 this.linkOk(dl, null);
             }
         } else {
+            /* Old way */
             final String[] qs = { "w_", "z_", "y_", "x_", "m_" };
             final String base = new Regex(source, "base(\\')?:(\"|\\')(http://[^<>\"]*?)(\"|\\')").getMatch(2);
             for (final String q : qs) {
