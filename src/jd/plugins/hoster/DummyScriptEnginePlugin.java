@@ -1133,7 +1133,7 @@ public class DummyScriptEnginePlugin extends PluginForHost {
             final CustomRhinoScriptEngineFactory factory = new CustomRhinoScriptEngineFactory();
             this.registerEngineName("javascript", factory);
             this.registerEngineName("js", factory);
-
+            this.registerEngineName("JavaScript", factory);
         }
     }
 
