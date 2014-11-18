@@ -198,6 +198,10 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 }
             }
             if (links == null || links.length == 0) {
+                used_quality = "standard";
+                links = ajax.getRegex("\"url\":\"(https?://[^<>\"]*?)\"").getColumn(0);
+            }
+            if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken: " + parameter);
                 return null;
             }
