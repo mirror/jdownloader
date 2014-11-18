@@ -741,6 +741,7 @@ public class VKontakteRu extends PluginForDecrypt {
         return dl;
     }
 
+    /** NOT Using API */
     private void decryptPhotoAlbums() throws NumberFormatException, Exception {
         final String type = "multiplephotoalbums";
         if (this.CRYPTEDLINK_FUNCTIONAL.matches(".*?vk\\.com/id\\d+\\?z=albums\\d+")) {
@@ -775,7 +776,7 @@ public class VKontakteRu extends PluginForDecrypt {
         }
     }
 
-    /** NOT Using API */
+    /** NOT Using API --> NOT possible */
     private void decryptVideoAlbum() throws Exception {
         if (br.containsHTML("The owner of this video has either been suspended or deleted")) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
@@ -1060,10 +1061,6 @@ public class VKontakteRu extends PluginForDecrypt {
         }
     }
 
-    private String get_wall_id() {
-        return br.getRegex("\"wall_oid\":((\\-)?\\d+)").getMatch(0);
-    }
-
     /** Using API */
     private void decryptWallPost() throws Exception {
         final String postID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/wall(\\-\\d+_\\d+)").getMatch(0);
@@ -1081,7 +1078,7 @@ public class VKontakteRu extends PluginForDecrypt {
         fp.addLinks(decryptedLinks2);
     }
 
-    /** NOT using API */
+    /** NOT using API - general method */
     private ArrayList<String> decryptMultiplePages(final String type, final String numberOfEntries, final String[][] regexesPageOne, final String[][] regexesAllOthers, int offset, int increase, int alreadyOnPage, final String postPage, final String postData) throws Exception {
         ArrayList<String> decryptedData = new ArrayList<String>();
         logger.info("Decrypting " + numberOfEntries + " entries for linktype: " + type);
@@ -1145,7 +1142,7 @@ public class VKontakteRu extends PluginForDecrypt {
         return decryptedData;
     }
 
-    /** NOT using API */
+    /** NOT using API - general method */
     private ArrayList<String> decryptMultiplePagesCommunityVideo(final String parameter, final String type, final String numberOfEntries, final String[][] regexesPageOne, final String[][] regexesAllOthers, int offset, int increase, int alreadyOnPage, final String postPage, final String postData) throws IOException {
         ArrayList<String> decryptedData = new ArrayList<String>();
         logger.info("Decrypting " + numberOfEntries + " entries for linktype: " + type);
@@ -1429,6 +1426,10 @@ public class VKontakteRu extends PluginForDecrypt {
             return -1;
         }
         return Integer.parseInt(errcodeSTR);
+    }
+
+    private String get_wall_id() {
+        return br.getRegex("\"wall_oid\":((\\-)?\\d+)").getMatch(0);
     }
 
     /**
