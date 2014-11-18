@@ -10,12 +10,12 @@ import net.sourceforge.htmlunit.corejs.javascript.ContextFactory;
 import net.sourceforge.htmlunit.corejs.javascript.EcmaError;
 import net.sourceforge.htmlunit.corejs.javascript.NativeJavaClass;
 import net.sourceforge.htmlunit.corejs.javascript.NativeJavaObject;
+import net.sourceforge.htmlunit.corejs.javascript.ScriptRuntime;
 import net.sourceforge.htmlunit.corejs.javascript.Scriptable;
 import net.sourceforge.htmlunit.corejs.javascript.WrapFactory;
 import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
 
 import org.appwork.utils.logging.Log;
-import org.mozilla.javascript.ScriptRuntime;
 
 /**
  * from http://codeutopia.net/blog/2009/01/02/sandboxing-rhino-in-java/
@@ -119,19 +119,27 @@ public class JSHtmlUnitPermissionRestricter {
                     Thread cur = Thread.currentThread();
 
                     if (TRUSTED_THREAD.containsKey(cur)) {
+                        if (true) {
+                            ScriptRuntime.constructError("Trusted Thread Loaded", className).printStackTrace();
 
+                        }
                         LOADED.add(className);
-                        Log.L.severe("Trusted Thread Loads: " + className);
+
                         return true;
 
                     }
                     if (className.startsWith("adapter")) {
+                        if (true) {
+                            ScriptRuntime.constructError("Trusted Thread Loaded", className).printStackTrace();
+
+                        }
                         LOADED.add(className);
                         return true;
 
                     } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.EcmaError")) {
                         if (true) {
-                            ScriptRuntime.constructError("Loaded Class", className).printStackTrace();
+                            ScriptRuntime.constructError("Thread Loaded ", className).printStackTrace();
+
                         }
                         Log.L.severe("Javascript error occured");
                         LOADED.add(className);
@@ -238,7 +246,9 @@ public class JSHtmlUnitPermissionRestricter {
             TRUSTED_THREAD.put(Thread.currentThread(), true);
 
             return cx.evaluateString(scope, source, sourceName, lineno, securityDomain);
+
         } finally {
+
             TRUSTED_THREAD.remove(Thread.currentThread());
         }
     }

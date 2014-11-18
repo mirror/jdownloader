@@ -157,25 +157,25 @@ public class EnvJS {
         return js;
     }
 
-    public Boolean preInitBoolean(Boolean b, boolean b2) {
-        return true;
-    }
-
-    public Integer preInitInteger(Integer b, int b2) {
-        return 0;
-    }
-
-    public Long preInitLong(Long b, long b2) {
-        return 0l;
-    }
-
-    public Double preInitDouble(Double b, double b2) {
-        return 0d;
-    }
-
-    public Float preInitFloat(Float b, float b2) {
-        return 0f;
-    }
+    // public Boolean preInitBoolean(Boolean b, boolean b2) {
+    // return true;
+    // }
+    //
+    // public Integer preInitInteger(Integer b, int b2) {
+    // return 0;
+    // }
+    //
+    // public Long preInitLong(Long b, long b2) {
+    // return 0l;
+    // }
+    //
+    // public Double preInitDouble(Double b, double b2) {
+    // return 0d;
+    // }
+    //
+    // public Float preInitFloat(Float b, float b2) {
+    // return 0f;
+    // }
 
     public String loadExternalScript(String type, String src, String url, Object window) {
 
@@ -339,6 +339,13 @@ public class EnvJS {
             // evaluateTrustedString(cx, scope, "var DEBUG_LEVEL='" + debugLevel + "';", "setDebugLevel", 1, null);
 
             // evaluateTrustedString(cx, scope, IO.readURLToString(EnvJS.class.getResource("env.rhino.js")), "oldRhino", 1, null);
+            String preloadClasses = "";
+            Class[] classes = new Class[] { Boolean.class, Integer.class, Long.class, String.class, Double.class, Float.class, net.sourceforge.htmlunit.corejs.javascript.EcmaError.class };
+            for (Class c : classes) {
+                preloadClasses += "load=" + c.getName() + ";\r\n";
+            }
+
+            evalTrusted(preloadClasses);
             String initSource = readRequire("envjs/init");
             initSource = initSource.replace("%EnvJSinstanceID%", id + "");
             evaluateTrustedString(cx, scope, initSource, "setInstance", 1, null);
@@ -400,8 +407,12 @@ public class EnvJS {
     }
 
     public Object eval(String js) {
-
-        return cx.evaluateString(scope, js, "eval:" + js, 1, null);
+        Context.enter();
+        try {
+            return cx.evaluateString(scope, js, "eval:" + js, 1, null);
+        } finally {
+            Context.exit();
+        }
         //
     }
 
@@ -417,12 +428,13 @@ public class EnvJS {
     private Object evaluateTrustedString(Context cx2, Global scope2, String js, String string, int i, Object object) {
         scriptStack.add(string);
         try {
-
+            Context.enter();
             return JSHtmlUnitPermissionRestricter.evaluateTrustedString(cx2, scope, js, string, i, object);
         } catch (EcmaError e) {
             logger.log(e);
             throw e;
         } finally {
+            Context.exit();
             if (string != scriptStack.removeLast()) {
                 throw new WTFException("Stack problem");
             }
