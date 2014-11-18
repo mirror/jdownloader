@@ -107,8 +107,8 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_EVENT_LINK                   = "https?://(www\\.)?vk\\.com/event\\d+";
     private static final String     PATTERN_ID_LINK                      = "https?://(www\\.)?vk\\.com/id\\d+";
 
-    /* Some html text patterns */
-    private static final String     TEMPORARILYBLOCKED                   = "You tried to load the same page more than once in one second|Вы попытались загрузить более одной однотипной страницы в секунду|Sie haben versucht die Seite mehrfach innerhalb einer Sekunde zu laden";
+    /* Some html text patterns: English, Russian, German, Polish */
+    private static final String     TEMPORARILYBLOCKED                   = "You tried to load the same page more than once in one second|Вы попытались загрузить более одной однотипной страницы в секунду|Próbujesz za³adowaæ wiêcej ni¿ jedn± stronê w ci±gu sekundy|Sie haben versucht die Seite mehrfach innerhalb einer Sekunde zu laden";
     private static final String     FILEOFFLINE                          = "(id=\"msg_back_button\">Wr\\&#243;\\&#263;</button|B\\&#322;\\&#261;d dost\\&#281;pu)";
     private static final String     DOMAIN                               = "http://vk.com";
 
