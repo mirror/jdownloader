@@ -252,6 +252,8 @@ public class RAFChunk extends Thread {
             int read = 0;
             boolean reachedEOF = false;
             long lastFlush = 0;
+            long bytesRead = 0;
+            long bytesWritten = 0;
             while (!isExternalyAborted()) {
                 try {
                     buffer.reset();
@@ -272,6 +274,7 @@ public class RAFChunk extends Thread {
                                 bytes2Do -= read;
                                 if (bytes2Do == 0) {
                                     /* we reached our artificial EOF */
+                                    logger.warning("reached artificial EOF");
                                     reachedEOF = true;
                                 }
                             }
@@ -282,11 +285,13 @@ public class RAFChunk extends Thread {
                         }
                         if (read > 0) {
                             /* we read some data */
+                            bytesRead += read;
                             towrite += read;
                             dl.totalLinkBytesLoadedLive.getAndAdd(read);
                             buffer.setUsed(towrite);
                         } else if (read == -1) {
                             /* we reached EOF */
+                            logger.warning("reached EOF");
                             reachedEOF = true;
                         } else {
                             /*
@@ -302,10 +307,10 @@ public class RAFChunk extends Thread {
                         }
                     }
                 } catch (NullPointerException e) {
+                    LogSource.exception(logger, e);
                     if (inputStream == null) {
                         /* connection is closed and steam is null */
                         if (!isExternalyAborted() && !connectionclosed.get()) {
-                            LogSource.exception(logger, e);
                             throw e;
                         }
                         towrite = -1;
@@ -321,7 +326,7 @@ public class RAFChunk extends Thread {
                     break;
                 }
                 if (towrite == -1 || isExternalyAborted() || connectionclosed.get()) {
-                    logger.warning("towrite: " + towrite + " exClosed: " + isExternalyAborted() + " conClosed: " + connectionclosed);
+                    logger.warning("towrite: " + towrite + " exClosed: " + isExternalyAborted() + " conClosed: " + connectionclosed + " read:" + bytesRead + " written:" + bytesWritten);
                     break;
                 }
                 if (towrite > 0) {
@@ -329,6 +334,7 @@ public class RAFChunk extends Thread {
                     dl.addToTotalLinkBytesLoaded(towrite, false);
                     addChunkBytesLoaded(towrite);
                     dl.writeBytes(this);
+                    bytesWritten += towrite;
                 }
                 /* enough bytes loaded */
                 if (bytes2Do == 0 && endByte > 0) {
@@ -344,7 +350,7 @@ public class RAFChunk extends Thread {
                 endPosition = downloadable.getVerifiedFileSize();
             }
             if (endPosition >= 0 && getCurrentBytesPosition() < endPosition) {
-                logger.warning("Download not finished. Loaded until now: " + getCurrentBytesPosition() + "/" + endPosition);
+                logger.warning("Download not finished. Loaded until now: " + getCurrentBytesPosition() + "/" + endPosition + " read:" + bytesRead + " written:" + bytesWritten);
                 dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_incomplete()));
             }
         } catch (FileNotFoundException e) {
