@@ -54,7 +54,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private static final String   FASTLINKCHECK_PICTURES         = "FASTLINKCHECK_PICTURES";
 
     private static final String   TYPE_FBSHORTLINK               = "http(s)?://(www\\.)?on\\.fb\\.me/[A-Za-z0-9]+\\+?";
-    private static final String   TYPE_SINGLE_PHOTO              = "http(s)?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
+    private static final String   TYPE_SINGLE_PHOTO              = "http(s)?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+.*?";
     private static final String   TYPE_SINGLE_VIDEO_ALL          = "https?://(www\\.)?facebook\\.com/(video/video|photo|video)\\.php\\?v=\\d+";
     private static final String   TYPE_SINGLE_VIDEO_EMBED        = "https?://(www\\.)?facebook\\.com/video/embed\\?video_id=\\d+";
     private static final String   TYPE_SET_LINK_PHOTO            = "http(s)?://(www\\.)?facebook\\.com/(media/set/\\?set=|[^<>\"/]*?/media_set\\?set=)o?a[0-9\\.]+(\\&type=\\d+)?";
@@ -96,7 +96,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             decryptedLinks.add(fina);
             return decryptedLinks;
         } else if (PARAMETER.matches(TYPE_SINGLE_PHOTO)) {
-            final String id = new Regex(PARAMETER, "(\\d+)$").getMatch(0);
+            final String id = new Regex(PARAMETER, "fbid=(\\d+)").getMatch(0);
             final DownloadLink fina = createDownloadlink("https://www.facebookdecrypted.com/photo.php?fbid=" + id);
             decryptedLinks.add(fina);
             return decryptedLinks;

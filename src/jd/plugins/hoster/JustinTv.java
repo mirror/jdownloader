@@ -163,6 +163,7 @@ public class JustinTv extends PluginForHost {
         final String date = downloadLink.getStringProperty("originaldate", null);
         final String channelName = downloadLink.getStringProperty("channel", null);
         final int partNumber = downloadLink.getIntegerProperty("partnumber", -1);
+        final String quality = downloadLink.getStringProperty("quality", null);
 
         String formattedDate = null;
         if (date != null) {
@@ -179,6 +180,7 @@ public class JustinTv extends PluginForHost {
         }
 
         formattedFilename = formattedFilename.replace("*partnumber*", df.format(partNumber));
+        formattedFilename = formattedFilename.replace("*quality*", quality);
         if (channelName != null) {
             formattedFilename = formattedFilename.replace("*channelname*", channelName);
         } else {
@@ -297,7 +299,7 @@ public class JustinTv extends PluginForHost {
         return "JDownloader's twitch.tv plugin helps downloading videoclips. JDownloader provides settings for the filenames.";
     }
 
-    private final static String defaultCustomFilename = "*partnumber**videoname**ext*";
+    private final static String defaultCustomFilename = "*partnumber**videoname*_*quality**ext*";
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.justintv.fastlinkcheck", "Activate fast linkcheck (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
@@ -317,6 +319,7 @@ public class JustinTv extends PluginForHost {
         sb.append("*videoname* = name of the video without extension\r\n");
         sb.append("*partnumber* = number of the part of the video - if there is only 1 part, it's 1\r\n");
         sb.append("*ext* = the extension of the file, in this case usually '.flv'");
+        sb.append("*quality* = the quality of the file, e.g. '720p'");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
     }
 

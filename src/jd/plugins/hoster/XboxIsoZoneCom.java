@@ -41,7 +41,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "theisozone.com", "xboxisozone.com" }, urls = { "(http://(www\\.)?((xboxisozone|dcisozone|gcisozone|psisozone|theisozone)\\.com|romgamer\\.com/download)/dl\\-start/\\d+/(\\d+/)?|xboxisopremiumonly://.+)", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "theisozone.com", "xboxisozone.com" }, urls = { "(http://(www\\.)?theisozonedecrypted\\.com/dl\\-start/\\d+/(\\d+/)?|xboxisopremiumonly://.+)", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2, 0 })
 public class XboxIsoZoneCom extends PluginForHost {
 
     public XboxIsoZoneCom(PluginWrapper wrapper) {
@@ -57,6 +57,7 @@ public class XboxIsoZoneCom extends PluginForHost {
             link.setUrlDownload(link.getDownloadURL().replace("http://", "http://www."));
         }
         link.setUrlDownload(link.getDownloadURL().replace("xboxisopremiumonly://", "http://"));
+        link.setUrlDownload(link.getDownloadURL().replace("theisozonedecrypted.com/", "theisozone.com/"));
     }
 
     @Override
@@ -88,6 +89,10 @@ public class XboxIsoZoneCom extends PluginForHost {
             br.getPage(link.getDownloadURL());
             link.getLinkStatus().setStatusText("Only downloadable for premium users");
         } else {
+            /* Make sure we got the links via decrypter */
+            if (!link.getDownloadURL().contains("theisozone.com/")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             nameAddition = "-free";
             br.getPage(link.getStringProperty("mainlink"));
             link.getLinkStatus().setStatusText("Only downloadable for freeusers");
