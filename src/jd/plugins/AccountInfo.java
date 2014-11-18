@@ -243,25 +243,27 @@ public class AccountInfo extends Property {
         if (multiHostSupport != null && multiHostSupport.size() > 0) {
             final LinkedHashSet<String> supportedHostsSet = new LinkedHashSet<String>();
             for (final String host : multiHostSupport) {
-                final String assignedHost;
-                if (pluginFinder == null) {
-                    assignedHost = host;
-                } else {
-                    assignedHost = pluginFinder.assignHost(host);
-                }
-                final LazyHostPlugin lazyPlugin = HostPluginController.getInstance().get(assignedHost);
-                if (lazyPlugin != null && !lazyPlugin.getClassName().endsWith("r.Offline") && !supportedHostsSet.contains(lazyPlugin.getHost())) {
-                    try {
-                        if (!lazyPlugin.isHasAllowHandle()) {
-                            supportedHostsSet.add(lazyPlugin.getHost());
-                        } else {
-                            final DownloadLink link = new DownloadLink(null, "", lazyPlugin.getHost(), "", false);
-                            if (lazyPlugin.getPrototype(null).allowHandle(link, multiHostPlugin)) {
+                if (host != null) {
+                    final String assignedHost;
+                    if (pluginFinder == null) {
+                        assignedHost = host;
+                    } else {
+                        assignedHost = pluginFinder.assignHost(host);
+                    }
+                    final LazyHostPlugin lazyPlugin = HostPluginController.getInstance().get(assignedHost);
+                    if (lazyPlugin != null && !lazyPlugin.getClassName().endsWith("r.Offline") && !supportedHostsSet.contains(lazyPlugin.getHost())) {
+                        try {
+                            if (!lazyPlugin.isHasAllowHandle()) {
                                 supportedHostsSet.add(lazyPlugin.getHost());
+                            } else {
+                                final DownloadLink link = new DownloadLink(null, "", lazyPlugin.getHost(), "", false);
+                                if (lazyPlugin.getPrototype(null).allowHandle(link, multiHostPlugin)) {
+                                    supportedHostsSet.add(lazyPlugin.getHost());
+                                }
                             }
+                        } catch (final Throwable e) {
+                            LogController.CL().log(e);
                         }
-                    } catch (final Throwable e) {
-                        LogController.CL().log(e);
                     }
                 }
             }

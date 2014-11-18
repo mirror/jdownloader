@@ -659,7 +659,7 @@ public class RapidGatorNet extends PluginForHost {
             try {
                 RapidGatorNet.maxPrem.set(1);
                 // free accounts still have captcha.
-                account.setMaxSimultanDownloads(RapidGatorNet.maxPrem.get());
+                account.setMaxSimultanDownloads(1);
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
                 // not available in old Stable 0.9.581
@@ -691,7 +691,7 @@ public class RapidGatorNet extends PluginForHost {
             ai.setStatus("Premium User");
             try {
                 RapidGatorNet.maxPrem.set(-1);
-                account.setMaxSimultanDownloads(RapidGatorNet.maxPrem.get());
+                account.setMaxSimultanDownloads(-1);
                 account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
                 // not available in old Stable 0.9.581

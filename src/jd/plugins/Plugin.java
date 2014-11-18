@@ -369,14 +369,11 @@ public abstract class Plugin implements ActionListener {
      * @return wahr, falls ein Treffer gefunden wurde.
      */
     public boolean canHandle(final String data) {
-        if (data == null) {
-            return false;
-        }
-        final Pattern pattern = this.getSupportedLinks();
-        if (pattern != null) {
-            final Matcher matcher = pattern.matcher(data);
-            if (matcher.find()) {
-                return true;
+        if (data != null) {
+            final Pattern pattern = this.getSupportedLinks();
+            if (pattern != null) {
+                final Matcher matcher = pattern.matcher(data);
+                return matcher.find();
             }
         }
         return false;

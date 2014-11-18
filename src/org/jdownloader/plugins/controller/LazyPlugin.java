@@ -22,6 +22,7 @@ import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.storage.config.MinTimeWeakReferenceCleanup;
 import org.appwork.utils.Application;
 import org.appwork.utils.ModifyLock;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
@@ -127,7 +128,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
 
     public boolean canHandle(String url) {
         final Pattern pattern = this.getPattern();
-        if (pattern != null) {
+        if (pattern != null && StringUtils.isNotEmpty(pattern.pattern())) {
             final Matcher matcher = pattern.matcher(url);
             return matcher.find();
         } else {

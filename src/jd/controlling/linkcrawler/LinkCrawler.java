@@ -7,6 +7,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -29,10 +30,12 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Files;
@@ -42,6 +45,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.UrlProtection;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.LazyPluginClass;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
@@ -638,9 +642,26 @@ public class LinkCrawler {
         return crawledLink != null && crawledLink.gethPlugin() == null;
     }
 
+    protected boolean canHandle(final LazyPlugin<? extends Plugin> lazyPlugin, final String url, final CrawledLink link) {
+        if (lazyPlugin.canHandle(url)) {
+            try {
+                final Plugin plugin = lazyPlugin.newInstance(getPluginClassLoaderChild());
+                if (plugin != null) {
+                    /* now we run the plugin and let it find some links */
+                    return plugin.canHandle(url);
+                } else {
+                    throw new WTFException("Plugin not available:" + lazyPlugin);
+                }
+            } catch (Throwable e) {
+                LogController.CL().log(e);
+            }
+        }
+        return false;
+    }
+
     protected Boolean distributePluginForHost(final LazyHostPlugin pluginForHost, final int generation, final String url, final CrawledLink link) {
         try {
-            if (pluginForHost.canHandle(url)) {
+            if (canHandle(pluginForHost, url, link)) {
                 if (!isBlacklisted(pluginForHost)) {
                     if (insideCrawlerPlugin()) {
                         if (generation != this.getCrawlerGeneration(false) || !isCrawlingAllowed()) {
@@ -681,7 +702,7 @@ public class LinkCrawler {
 
     protected Boolean distributePluginForDecrypt(final LazyCrawlerPlugin pDecrypt, final int generation, final String url, final CrawledLink link) {
         try {
-            if (pDecrypt.canHandle(url)) {
+            if (canHandle(pDecrypt, url, link)) {
                 if (!isBlacklisted(pDecrypt)) {
                     final java.util.List<CrawledLink> allPossibleCryptedLinks = getCrawlableLinks(pDecrypt.getPattern(), link, null);
                     if (allPossibleCryptedLinks != null) {
@@ -859,6 +880,8 @@ public class LinkCrawler {
         }
         final int generation = this.getCrawlerGeneration(true);
         if (checkStartNotify()) {
+            List<LazyHostPlugin> hostPlugins = null;
+            List<LazyCrawlerPlugin> crawlPlugins = null;
             try {
                 mainloop: for (final CrawledLink possibleCryptedLink : possibleCryptedLinks) {
                     if (generation != this.getCrawlerGeneration(false) || !isCrawlingAllowed()) {
@@ -892,24 +915,44 @@ public class LinkCrawler {
                             }
                         } else {
                             if (!url.startsWith("directhttp://") && !url.startsWith("httpviajd://") && !url.startsWith("httpsviajd://")) {
-                                /*
-                                 * first we will walk through all available decrypter plugins
-                                 */
-                                for (final LazyCrawlerPlugin pDecrypt : getCrawlerPlugins()) {
-                                    final Boolean ret = distributePluginForDecrypt(pDecrypt, generation, url, possibleCryptedLink);
-                                    if (Boolean.FALSE.equals(ret)) {
-                                        return;
-                                    } else if (Boolean.TRUE.equals(ret)) {
-                                        continue mainloop;
+                                {
+                                    /*
+                                     * first we will walk through all available decrypter plugins
+                                     */
+                                    if (crawlPlugins == null) {
+                                        crawlPlugins = getCrawlerPlugins();
+                                    }
+                                    final ListIterator<LazyCrawlerPlugin> it = crawlPlugins.listIterator();
+                                    while (it.hasNext()) {
+                                        final LazyCrawlerPlugin pDecrypt = it.next();
+                                        final Boolean ret = distributePluginForDecrypt(pDecrypt, generation, url, possibleCryptedLink);
+                                        if (Boolean.FALSE.equals(ret)) {
+                                            return;
+                                        } else if (Boolean.TRUE.equals(ret)) {
+                                            if (it.previousIndex() > crawlPlugins.size() / 50) {
+                                                crawlPlugins = null;
+                                            }
+                                            continue mainloop;
+                                        }
                                     }
                                 }
-                                /* now we will walk through all available hoster plugins */
-                                for (final LazyHostPlugin pHost : getHosterPlugins()) {
-                                    final Boolean ret = distributePluginForHost(pHost, generation, url, possibleCryptedLink);
-                                    if (Boolean.FALSE.equals(ret)) {
-                                        return;
-                                    } else if (Boolean.TRUE.equals(ret)) {
-                                        continue mainloop;
+                                {
+                                    /* now we will walk through all available hoster plugins */
+                                    if (hostPlugins == null) {
+                                        hostPlugins = getHosterPlugins();
+                                    }
+                                    final ListIterator<LazyHostPlugin> it = hostPlugins.listIterator();
+                                    while (it.hasNext()) {
+                                        final LazyHostPlugin pHost = it.next();
+                                        final Boolean ret = distributePluginForHost(pHost, generation, url, possibleCryptedLink);
+                                        if (Boolean.FALSE.equals(ret)) {
+                                            return;
+                                        } else if (Boolean.TRUE.equals(ret)) {
+                                            if (it.previousIndex() > hostPlugins.size() / 50) {
+                                                hostPlugins = null;
+                                            }
+                                            continue mainloop;
+                                        }
                                     }
                                 }
                             }
@@ -935,7 +978,7 @@ public class LinkCrawler {
                                 /* now we will check for normal http links */
                                 final String newURL = url.replaceFirst("https?://", (url.startsWith("https://") ? "httpsviajd://" : "httpviajd://"));
                                 try {
-                                    if (httpPlugin.canHandle(newURL)) {
+                                    if (canHandle(httpPlugin, newURL, possibleCryptedLink)) {
                                         /* create new CrawledLink that holds the modified CrawledLink */
                                         final CrawledLinkModifier parentLinkModifier = possibleCryptedLink.getCustomCrawledLinkModifier();
                                         possibleCryptedLink.setCustomCrawledLinkModifier(null);
