@@ -97,8 +97,10 @@ public class Main {
             // the logmanager should not be initialized here. so setting the
             // property should tell the logmanager to init a ExtLogManager
             // instance.
-            System.setProperty("java.util.logging.manager", ExtLogManager.class.getName());
-            ((ExtLogManager) LogManager.getLogManager()).setLogController(LogController.getInstance());
+            if (LogManager.getLogManager() instanceof ExtLogManager || LogManager.getLogManager() == null) {
+                System.setProperty("java.util.logging.manager", ExtLogManager.class.getName());
+                ((ExtLogManager) LogManager.getLogManager()).setLogController(LogController.getInstance());
+            }
         } catch (Throwable e) {
             e.printStackTrace();
             LogManager lm = LogManager.getLogManager();

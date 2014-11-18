@@ -617,6 +617,10 @@ public abstract class PluginForHost extends Plugin {
                 /* 1 or more downloads */
                 return max;
             }
+            if (max == -1) {
+                /*-1 = unlimited*/
+                return Integer.MAX_VALUE;
+            }
             if (max == 0) {
                 /* 0 = use deprecated getMaxSimultanPremiumDownloadNum */
                 max = getMaxSimultanPremiumDownloadNum();
@@ -630,10 +634,6 @@ public abstract class PluginForHost extends Plugin {
                 }
                 /* no downloads */
                 return 0;
-            }
-            if (max == -1) {
-                /*-1 = unlimited*/
-                return Integer.MAX_VALUE;
             }
             /* no downloads */
             return 0;
