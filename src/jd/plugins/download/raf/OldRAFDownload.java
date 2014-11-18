@@ -294,7 +294,6 @@ public class OldRAFDownload extends DownloadInterface {
             } else {
                 logger.info("Valid Chunk " + i + ": " + chunksP[i]);
             }
-
             last = chunksP[i];
 
         }
@@ -829,40 +828,42 @@ public class OldRAFDownload extends DownloadInterface {
         downloadable.setDownloadBytesLoaded(0);
         long fileSize = getFileSize();
         long partSize = 0;
+        int chunks = getChunkNum();
         if (fileSize < 0) {
             /* unknown filesize handling */
-            if (getChunkNum() > 1) {
+            if (chunks > 1) {
                 logger.warning("Unknown FileSize->reset chunks to 1 and start at beginning");
-                setChunkNum(1);
+                chunks = 1;
             } else {
                 logger.warning("Unknown FileSize->start at beginning");
             }
         } else if (fileSize == 0) {
             /* zero filesize handling */
-            if (getChunkNum() > 1) {
+            if (chunks > 1) {
                 logger.warning("Zero FileSize->reset chunks to 1 and start at beginning");
-                setChunkNum(1);
+                chunks = 1;
             } else {
                 logger.warning("Zero FileSize->start at beginning");
             }
         } else {
-            partSize = fileSize / getChunkNum();
+            partSize = fileSize / chunks;
             if (connection.getRange() != null) {
                 if ((connection.getRange()[1] == connection.getRange()[2] - 1) || (connection.getRange()[1] == connection.getRange()[2])) {
                     logger.warning("Chunkload protection. this may cause traffic errors");
-                    partSize = fileSize / getChunkNum();
+                    partSize = fileSize / chunks;
                 } else {
                     // Falls schon der 1. range angefordert wurde.... werden die
                     // restlichen chunks angepasst
-                    partSize = (fileSize - connection.getLongContentLength()) / (getChunkNum() - 1);
+                    partSize = (fileSize - connection.getLongContentLength()) / Math.max(1, (chunks - 1));
                 }
             }
             if (partSize <= 0) {
                 logger.warning("Filesize is " + fileSize + " but partSize is " + partSize + "-> reset chunks to 1");
-                setChunkNum(1);
+                chunks = 1;
             }
         }
-        logger.finer("Start Download in " + getChunkNum() + " chunks. Chunksize: " + partSize);
+        setChunkNum(chunks);
+        logger.finer("Start Download in " + chunks + " chunks. Chunksize: " + partSize);
         downloadable.setChunksProgress(new long[chunkNum]);
 
         int start = 0;
@@ -879,8 +880,8 @@ public class OldRAFDownload extends DownloadInterface {
             start++;
         }
 
-        for (int i = start; i < getChunkNum(); i++) {
-            if (i == getChunkNum() - 1) {
+        for (int i = start; i < chunks; i++) {
+            if (i == chunks - 1) {
                 chunk = new RAFChunk(rangePosition, -1, connection, this, downloadable, id++);
             } else {
                 chunk = new RAFChunk(rangePosition, rangePosition + partSize - 1, connection, this, downloadable, id++);
