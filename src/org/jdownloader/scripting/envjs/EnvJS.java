@@ -458,6 +458,14 @@ public class EnvJS {
 
     }
 
+    public Global getScope() {
+        return scope;
+    }
+
+    public void doBreak(int i) {
+        System.out.println("Break " + i);
+    }
+
     public void setUserAgent(String ua) {
         br.getHeaders().put("User-Agent", ua);
     }
