@@ -225,7 +225,7 @@ public class FileSharkPl extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wrong captcha!", 5 * 60 * 1000l);
         }
         String dllink = br.getRedirectLocation();
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -363,7 +363,7 @@ public class FileSharkPl extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override
