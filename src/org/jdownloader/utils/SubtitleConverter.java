@@ -11,51 +11,33 @@ import java.util.Scanner;
 
 import jd.parser.Regex;
 
+/**
+ * Parse the Google XML subtitles into the SRT-format
+ *
+ * @author coalado, Max
+ *
+ */
 public class SubtitleConverter {
+
+    private final static String     LINE_SEPERATOR = System.getProperty("line.separator");
+    private final static String[][] REPLACE        = { { LINE_SEPERATOR, " " }, { "&amp;", "&" }, { "&quot;", "\"" }, { "&#39;", "'" } };
+
     /**
      * Converts the the time of the Google format to the SRT format.
-     * 
+     *
      * @param time
      *            . The time from the Google XML.
      * @return The converted time as String.
      */
-    private static String convertSubtitleTime(Double time) {
-        String hour = "00";
-        String minute = "00";
-        String second = "00";
-        String millisecond = "0";
+    private static String convertSubtitleTime(double time) {
 
-        Integer itime = Integer.valueOf(time.intValue());
+        // its important to use (int) to cut off the milliseconds instead of rounding to the nearest int.
+        int itime = (int) time;
 
-        // Hour
-        Integer timeHour = Integer.valueOf(itime.intValue() / 3600);
-        if (timeHour < 10) {
-            hour = "0" + timeHour.toString();
-        } else {
-            hour = timeHour.toString();
-        }
-
-        // Minute
-        Integer timeMinute = Integer.valueOf((itime.intValue() % 3600) / 60);
-        if (timeMinute < 10) {
-            minute = "0" + timeMinute.toString();
-        } else {
-            minute = timeMinute.toString();
-        }
-
-        // Second
-        Integer timeSecond = Integer.valueOf(itime.intValue() % 60);
-        if (timeSecond < 10) {
-            second = "0" + timeSecond.toString();
-        } else {
-            second = timeSecond.toString();
-        }
-
-        // Millisecond
-        millisecond = String.valueOf(time - itime).split("\\.")[1];
-        if (millisecond.length() == 1) millisecond = millisecond + "00";
-        if (millisecond.length() == 2) millisecond = millisecond + "0";
-        if (millisecond.length() > 2) millisecond = millisecond.substring(0, 3);
+        String hour = leadingZero(itime / 3600, 2);
+        String minute = leadingZero((itime % 3600) / 60, 2);
+        String second = leadingZero(itime % 60, 2);
+        String millisecond = leadingZero((int) ((time - itime) * 1000), 3);
 
         // Result
         String result = hour + ":" + minute + ":" + second + "," + millisecond;
@@ -64,10 +46,29 @@ public class SubtitleConverter {
     }
 
     /**
+     *
+     * @param number
+     *            number that shell be converted
+     * @param digits
+     *            count of total digits the number should have.
+     * @return A number String with leading zeros
+     */
+    private static String leadingZero(int number, int digits) {
+
+        int numberDigits = String.valueOf(number).length();
+
+        assert numberDigits <= digits : "The number is bigger then expected!";
+
+        String stringNumber = String.format("%0" + digits + "d", number);
+
+        return stringNumber;
+    }
+
+    /**
      * Converts the Google Closed Captions subtitles to SRT subtitles. It runs after the completed download.
-     * 
+     *
      * @param out
-     * 
+     *
      * @param downloadlink
      *            . The finished link to the Google CC subtitle file.
      * @return The success of the conversion.
@@ -86,14 +87,14 @@ public class SubtitleConverter {
 
             final StringBuilder xml = new StringBuilder();
             int counter = 1;
-            final String lineseparator = System.getProperty("line.separator");
 
             FileInputStream fis = null;
             try {
                 Scanner scan = new Scanner(new InputStreamReader(fis = new FileInputStream(in), "UTF-8"));
                 while (scan.hasNext()) {
-                    xml.append(scan.nextLine() + lineseparator);
+                    xml.append(scan.nextLine() + LINE_SEPERATOR);
                 }
+                scan.close();
             } catch (Exception e) {
                 return false;
             } finally {
@@ -109,35 +110,17 @@ public class SubtitleConverter {
                 String[] prevMatch = null;
                 for (String[] match : matches) {
                     if (prevMatch != null) {
-                        String[] lastMatch = prevMatch;
+
+                        writeNewLine(dest, prevMatch[0], match[0], prevMatch[3], counter++);
                         prevMatch = null;
-                        dest.write(counter++ + lineseparator);
-                        Double start = Double.valueOf(lastMatch[0]);
-                        Double end = Double.valueOf(match[0]);
-                        dest.write(convertSubtitleTime(start) + " --> " + convertSubtitleTime(end) + lineseparator);
-                        String text = lastMatch[3].trim();
-                        text = text.replaceAll(lineseparator, " ");
-                        text = text.replaceAll("&amp;", "&");
-                        text = text.replaceAll("&quot;", "\"");
-                        text = text.replaceAll("&#39;", "'");
-                        dest.write(text + lineseparator + lineseparator);
                     }
                     if (match[1] == null) {
-                        /* no end timestamp */
+                        /* no end time stamp */
                         prevMatch = match;
                         continue;
                     }
-                    /* we have start/end timestamps */
-                    dest.write(counter++ + lineseparator);
-                    Double start = Double.valueOf(match[0]);
-                    Double end = start + Double.valueOf(match[2]);
-                    dest.write(convertSubtitleTime(start) + " --> " + convertSubtitleTime(end) + lineseparator);
-                    String text = match[3].trim();
-                    text = text.replaceAll(lineseparator, " ");
-                    text = text.replaceAll("&amp;", "&");
-                    text = text.replaceAll("&quot;", "\"");
-                    text = text.replaceAll("&#39;", "'");
-                    dest.write(text + lineseparator + lineseparator);
+                    /* we have start/end time stamps */
+                    writeNewLine(dest, match[0], match[2], match[3], counter++);
                 }
             } catch (Exception e) {
                 return false;
@@ -154,5 +137,40 @@ public class SubtitleConverter {
         }
         in.delete();
         return true;
+    }
+
+    /**
+     * Writes a subtitle line in the SRT format
+     *
+     * @param dest
+     *            the function will use this writer
+     * @param from
+     *            subtitle start point
+     * @param duration
+     *            subtitle duration
+     * @param text
+     *            text of the subtitle
+     * @param counter
+     *            number of the subtitle text
+     * @throws IOException
+     *             in case of a problem with the writer
+     */
+    private static void writeNewLine(BufferedWriter dest, String from, String duration, String text, int counter) throws IOException {
+
+        dest.write(counter + LINE_SEPERATOR);
+        double start = Double.valueOf(from);
+        double end = start + Double.valueOf(duration);
+
+        // assert start <= end : "The subtitles can only proceed parallel to our time line.";
+
+        dest.write(convertSubtitleTime(start) + " --> " + convertSubtitleTime(end) + LINE_SEPERATOR);
+
+        text = text.trim();
+
+        for (String[] replaceString : REPLACE) {
+            text = text.replaceAll(replaceString[0], replaceString[1]);
+        }
+
+        dest.write(text + LINE_SEPERATOR + LINE_SEPERATOR);
     }
 }
