@@ -175,13 +175,20 @@ public class FaceBookComVideos extends PluginForHost {
                         final String theaterView = "https://www.facebook.com/ajax/pagelet/generic.php/PhotoViewerInitPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipe_token + "&no_script_path=1&data=" + Encoding.urlEncode(data) + "&__user=" + user + "&__a=1&__dyn=7n8ajEyl2qm9udDgDxyF4EihUtCxO4p9GgSmEZ9LFwxBxCuUWdDx2ubhHximmey8OdUS8w&__req=jsonp_3&__rev=" + REV + "&__adt=3";
                         br2.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
                         br2.getPage(theaterView);
-                        DLLINK = br2.getRegex("\"url\":\"(http[^<>\"]*?_o\\.jpg)\"").getMatch(0);
+                        DLLINK = br2.getRegex("\"url\":\"(http[^<>\"]*?" + lid + "[^<>\"]*?_o\\.jpg[^<>\"/]*?)\"").getMatch(0);
+                        if (DLLINK == null) {
+                            /*
+                             * Failed to find original - try to get the "n" version --> Still better than the one we cannot get via generic
+                             * page
+                             */
+                            DLLINK = br2.getRegex("\"url\":\"(http[^<>\"]*?" + lid + "[^<>\"]*?_n\\.jpg[^<>\"/]*?)\"").getMatch(0);
+                        }
                     } catch (final Throwable e) {
                     }
                     if (DLLINK != null) {
-                        logger.info("Found original quality image");
+                        logger.info("Found image via generic page");
                     } else {
-                        logger.warning("Failed to find original quality image");
+                        logger.warning("Failed to find image via generic page");
                     }
                 }
                 if (DLLINK == null) {
