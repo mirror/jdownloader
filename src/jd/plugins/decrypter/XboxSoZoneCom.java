@@ -21,14 +21,13 @@ import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xboxisozone.com" }, urls = { "http://(www\\.)?((xboxisozone|dcisozone|gcisozone|theisozone)\\.com/downloads/[^<>\"/]+/[^<>\"/]+/(?!page\\-)[^<>\"/]{4,}/|psisozone\\.com/downloads/\\d+/.*?/|romgamer\\.com/roms/.*?/\\d+/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xboxisozone.com" }, urls = { "http://(www\\.)?theisozone\\.com/downloads/[^<>\"/]+/[^<>\"/]+/(?!page\\-)[^<>\"/]{4,}/" }, flags = { 0 })
 public class XboxSoZoneCom extends PluginForDecrypt {
 
     public XboxSoZoneCom(PluginWrapper wrapper) {
@@ -48,10 +47,10 @@ public class XboxSoZoneCom extends PluginForDecrypt {
         if (fpName == null) {
             fpName = br.getRegex("<title>([^<>\"]*?) \\&bull; .*?</title>").getMatch(0);
         }
+        final String host = "http://theisozonedecrypted.com";
         final String[] externalLinks = br.getRegex("\"(http://(www\\.)?cloudstor\\.es/(f|file)/[A-Za-z0-9_]+/)\"").getColumn(0);
         final String[] links = br.getRegex("\"(/dl\\-start/\\d+/(\\d+/)?)\"").getColumn(0);
         if (links != null && links.length != 0) {
-            String host = new Regex(parameter, "(http://.*?\\.com)").getMatch(0);
             for (String finallink : links) {
                 final DownloadLink finaldownloadlink = createDownloadlink(host + finallink);
                 finaldownloadlink.setName(String.valueOf(new Random().nextInt(100000)));

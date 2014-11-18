@@ -66,18 +66,24 @@ public class DlFreeFr extends PluginForHost {
     }
 
     private boolean breakCaptcha(Form form, DownloadLink downloadLink) throws Exception {
-        if (!form.containsHTML("Adyoulike\\.create")) return false;
+        if (!form.containsHTML("Adyoulike\\.create")) {
+            return false;
+        }
         HashMap<String, String> c = new HashMap<String, String>();
         for (String[] s : form.getRegex("\"([^\\{\"]+)\":\"([^,\"]+)\"").getMatches()) {
             c.put(s[0], s[1]);
         }
-        if (c == null || c.size() == 0) return false;
+        if (c == null || c.size() == 0) {
+            return false;
+        }
 
         /* create challenge url */
         final Browser ayl = br.cloneBrowser();
         ayl.getPage("http://api-ayl.appspot.com/challenge?key=" + c.get("key") + "&env=" + c.get("env") + "&callback=Adyoulike.g._jsonp_" + (int) (Math.random() * (99999 - 10000) + 10000));
         final String[][] allValues = ayl.getRegex("\"([^\\{\\}\"]+)\":\"?([^,\"\\}\\{]+)\"?").getMatches();
-        if (allValues == null || allValues.length == 0) return false;
+        if (allValues == null || allValues.length == 0) {
+            return false;
+        }
         for (String[] s : allValues) {
             c.put(s[0], s[1]);
         }
@@ -92,14 +98,18 @@ public class DlFreeFr extends PluginForHost {
             return true;
         }
         /* Only available in France */
-        if ("notDetected".equals(cType) && c.containsKey("disabled") && "true".equals(c.get("disabled"))) throw new PluginException(LinkStatus.ERROR_FATAL, "Only available in France. Please use a french proxy!");
+        if ("notDetected".equals(cType) && c.containsKey("disabled") && "true".equals(c.get("disabled"))) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Only available in France. Please use a french proxy!");
+        }
 
         switch (CaptchaTyp.valueOf(cType)) {
         case image:
             ayl.setFollowRedirects(true);
             instructions = c.get("instructions_visual");
             // Captcha also broken via browser
-            if (c.get("token") == null) { throw new PluginException(LinkStatus.ERROR_FATAL, "No captcha shown, please contact the dl.free.fr support!"); }
+            if (c.get("token") == null) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "No captcha shown, please contact the dl.free.fr support!");
+            }
             final String responseUrl = "http://api-ayl.appspot.com/resource?token=" + c.get("token") + "&env=" + c.get("env");
             if (instructions != null) {
                 cCode = new Regex(instructions, "Recopiez « (.*?) » ci\\-dessous").getMatch(0);
@@ -124,7 +134,9 @@ public class DlFreeFr extends PluginForHost {
             logger.warning("Unknown captcha typ: " + cType);
             return false;
         }
-        if (cCode == null) { return false; }
+        if (cCode == null) {
+            return false;
+        }
         form.put("_ayl_captcha_engine", "adyoulike");
         form.put("_ayl_response", cCode);
         form.put("_ayl_utf8_ie_fix", "%E2%98%83");
@@ -141,13 +153,17 @@ public class DlFreeFr extends PluginForHost {
         if (HTML) {
             logger.info("InDirect download");
             br.setFollowRedirects(false);
-            if (br.containsHTML("Trop de slots utilis")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+            if (br.containsHTML("Trop de slots utilis")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+            }
             // These are not used, so why throw exception?
             // final Form captchaForm = br.getForm(1);
             // if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String filename = br.getRegex(Pattern.compile("Fichier:</td>.*?<td.*?>(.*?)<", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
             String filesize = br.getRegex(Pattern.compile("Taille:</td>.*?<td.*?>(.*?)soit", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-            if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (filename == null || filesize == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
 
             // Old
             // /* special captcha handling */
@@ -191,15 +207,18 @@ public class DlFreeFr extends PluginForHost {
                 // small sleep?
                 sleep((new Random().nextInt(10) + 1) * 1000, downloadLink);
                 final String file = br.getRegex("type=\"hidden\" name=\"file\" value=\"([^<>\"]*?)\"").getMatch(0);
-                if (file == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (file == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 br.postPage("http://dl.free.fr/getfile.pl", "submit=Valider+et+t%C3%A9l%C3%A9charger+le+fichier&file=" + Encoding.urlEncode(file));
                 dlLink = br.getRedirectLocation();
-                if (dlLink != null)
+                if (dlLink != null) {
                     break;
-                else if (dlLink == null && (i + 1 != repeat))
+                } else if (dlLink == null && (i + 1 != repeat)) {
                     continue;
-                else
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
+                }
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, true, 1);
         } else {
@@ -209,7 +228,9 @@ public class DlFreeFr extends PluginForHost {
         }
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            if (br.getURL().contains("overload")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+            if (br.getURL().contains("overload")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -233,7 +254,10 @@ public class DlFreeFr extends PluginForHost {
                 HTML = true;
             }
         } catch (final BrowserException e) {
-            if (br.getRequest().getHttpConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.getRequest() != null && br.getRequest().getHttpConnection().getResponseCode() == 503) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            throw e;
         } finally {
             try {
                 con.disconnect();
@@ -242,7 +266,9 @@ public class DlFreeFr extends PluginForHost {
         }
         String filename = br.getRegex(Pattern.compile("Fichier:</td>.*?<td.*?>(.*?)<", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         String filesize = br.getRegex(Pattern.compile("Taille:</td>.*?<td.*?>(.*?)soit", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll("o", "byte").replaceAll("Ko", "Kb").replaceAll("Mo", "Mb").replaceAll("Go", "Gb")));
         return AvailableStatus.TRUE;

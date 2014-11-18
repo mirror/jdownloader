@@ -186,7 +186,17 @@ public class JustinTvDecrypt extends PluginForDecrypt {
             if (filename == null) {
                 filename = vid;
             }
-            String[] links = ajax.getRegex("\"url\":\"(https?://[^<>\"]*?)\"").getColumn(0);
+            /** Prefer highest quality */
+            String used_quality = null;
+            final String[] qualities = { "720p", "480p", "360p", "240p" };
+            String[] links = null;
+            for (final String current_quality : qualities) {
+                links = ajax.getRegex("\"url\":\"(https?://[^<>\"]*?format_" + current_quality + "_\\d+\\.flv)\"").getColumn(0);
+                if (links != null && links.length > 0) {
+                    used_quality = current_quality;
+                    break;
+                }
+            }
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken: " + parameter);
                 return null;
@@ -201,6 +211,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 dlink.setProperty("plain_directlink", directlink);
                 dlink.setProperty("plainfilename", filename);
                 dlink.setProperty("partnumber", counter);
+                dlink.setProperty("quality", used_quality);
                 if (date != null) {
                     dlink.setProperty("originaldate", date);
                 }
@@ -244,7 +255,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 }
             }
             fpName += filename;
-            fpName += " - [" + links.length + "]";
+            fpName += " - [" + links.length + "]" + " - " + used_quality;
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName);
             fp.addLinks(decryptedLinks);

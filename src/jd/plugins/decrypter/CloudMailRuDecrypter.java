@@ -140,7 +140,12 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                     logger.warning("Decrypter broken for link: " + PARAMETER);
                     return null;
                 }
-                final String unique_id = id + "/" + filename;
+                String unique_id;
+                if (id.contains(filename)) {
+                    unique_id = id;
+                } else {
+                    unique_id = id + "/" + filename;
+                }
                 if (dataserver != null) {
                     final String directlink = dataserver + "get/" + unique_id + "?x-email=undefined";
                     dl.setProperty("plain_directlink", directlink);
@@ -159,7 +164,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 if (PARAMETER.matches(TYPE_APIV2)) {
                     dl.setProperty("noapi", true);
                 }
-                browserurl = "https://cloud.mail.ru/public/" + id + "/" + filename;
+                browserurl = "https://cloud.mail.ru/public/" + unique_id;
                 dl.setProperty("browser_url", browserurl);
                 try {
                     dl.setContentUrl(browserurl);
