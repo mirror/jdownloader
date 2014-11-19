@@ -75,11 +75,11 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     VKVIDEO_USEIDASPACKAGENAME           = "VKVIDEO_USEIDASPACKAGENAME";
 
     /* Settings 'in action' */
-    boolean                         wall_grabalbums;
-    boolean                         wall_grabphotos;
-    boolean                         wall_grabaudio;
-    boolean                         wall_grabvideo;
-    boolean                         wall_grablink;
+    private boolean                 wall_grabalbums;
+    private boolean                 wall_grabphotos;
+    private boolean                 wall_grabaudio;
+    private boolean                 wall_grabvideo;
+    private boolean                 wall_grablink;
 
     /* Some supported url patterns */
     private static final String     PATTERN_SHORT                        = "https?://(www\\.)?vk\\.cc/[A-Za-z0-9]+";
@@ -108,7 +108,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_ID_LINK                      = "https?://(www\\.)?vk\\.com/id\\d+";
 
     /* Some html text patterns: English, Russian, German, Polish */
-    private static final String     TEMPORARILYBLOCKED                   = "You tried to load the same page more than once in one second|Вы попытались загрузить более одной однотипной страницы в секунду|Próbujesz za³adowaæ wiêcej ni¿ jedn± stronê w ci±gu sekundy|Sie haben versucht die Seite mehrfach innerhalb einer Sekunde zu laden";
+    public static final String      TEMPORARILYBLOCKED                   = "You tried to load the same page more than once in one second|Вы попытались загрузить более одной однотипной страницы в секунду|Pr\\&#243;bujesz za\\&#322;adowa\\&#263; wi\\&#281;cej ni\\&#380; jedn\\&#261; stron\\&#281; w ci\\&#261;gu sekundy|Sie haben versucht die Seite mehrfach innerhalb einer Sekunde zu laden";
     private static final String     FILEOFFLINE                          = "(id=\"msg_back_button\">Wr\\&#243;\\&#263;</button|B\\&#322;\\&#261;d dost\\&#281;pu)";
     private static final String     DOMAIN                               = "http://vk.com";
 
@@ -134,7 +134,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private boolean                 fastcheck_photo                      = false;
     private boolean                 fastcheck_audio                      = false;
 
-    private ArrayList<DownloadLink> decryptedLinks2                      = new ArrayList<DownloadLink>();
+    private ArrayList<DownloadLink> decryptedLinks                       = new ArrayList<DownloadLink>();
 
     @Override
     protected DownloadLink createDownloadlink(String link) {
@@ -181,15 +181,15 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.warning("vk.com: Decrypter broken for link: " + this.CRYPTEDLINK_FUNCTIONAL);
                 return null;
             }
-            decryptedLinks2.add(createDownloadlink(finallink));
-            return decryptedLinks2;
+            decryptedLinks.add(createDownloadlink(finallink));
+            return decryptedLinks;
         } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_SINGLE)) {
             /**
              * Single photo links, those are just passed to the hosterplugin! Example:http://vk.com/photo125005168_269986868
              */
             final DownloadLink decryptedPhotolink = getSinglePhotoDownloadLink(new Regex(CRYPTEDLINK_ORIGINAL, "((\\-)?\\d+_\\d+)").getMatch(0));
-            decryptedLinks2.add(decryptedPhotolink);
-            return decryptedLinks2;
+            decryptedLinks.add(decryptedPhotolink);
+            return decryptedLinks;
         } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_ALL)) {
             loginrequired = false;
             if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_PUBLIC_EXTENDED)) {
@@ -212,7 +212,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     /* Login process */
                     if (!loggedIN) {
                         logger.info("Existing account is invalid or no account available, cannot decrypt link: " + CRYPTEDLINK_FUNCTIONAL);
-                        return decryptedLinks2;
+                        return decryptedLinks;
                     }
                     br.setFollowRedirects(true);
                     /* Login process end */
@@ -224,54 +224,27 @@ public class VKontakteRu extends PluginForDecrypt {
                 /* Replace section start */
                 String newLink = CRYPTEDLINK_FUNCTIONAL;
                 if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_PUBLIC_LINK) || CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_CLUB_LINK) || CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_EVENT_LINK)) {
-                    // group and club links --> wall links
+                    /* group and club links --> wall links */
                     newLink = MAINPAGE + "/wall-" + new Regex(CRYPTEDLINK_FUNCTIONAL, "((\\-)?\\d+)$").getMatch(0);
                 } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_ID_LINK)) {
-                    // Change id links -> albums links
+                    /* Change id links -> albums links */
                     newLink = MAINPAGE + "/albums" + new Regex(CRYPTEDLINK_FUNCTIONAL, "(\\d+)$").getMatch(0);
                 } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_WALL_LOOPBACK_LINK)) {
-                    // Remove loopback-part as it only contains information which we need later but not in the link
+                    /* Remove loopback-part as it only contains information which we need later but not in the link */
                     newLink = new Regex(CRYPTEDLINK_FUNCTIONAL, "(http://(www\\.)?vk\\.com/wall(\\-)?\\d+)").getMatch(0);
-                } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_PUBLIC_EXTENDED)) {
+                } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_PUBLIC_EXTENDED) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUMS) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_PAGE)) {
                     /* Don't change anything */
                 } else {
-                    // No case matched, in order to avoid too many requests we
-                    // only access the link here in this case
-                    if (br.getURL() == null || !br.getURL().equals(CRYPTEDLINK_FUNCTIONAL)) {
-                        getPageSafe(CRYPTEDLINK_FUNCTIONAL);
+                    /* We either have a public community or profile --> Get the owner_id and change the link to a wall-link */
+                    final String ownerID = resolveScreenNameAPI(new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/(.+)").getMatch(0));
+                    final String type = this.getJson("type");
+                    if (ownerID == null || type == null) {
+                        logger.warning("Failed to find ownerID for open-community-link: " + CRYPTEDLINK_FUNCTIONAL);
+                        return null;
                     }
-                    /* TODO: Replace everything possible with API methods so in the end we do not even have to access the webpage anymore. */
-                    if (br.containsHTML("id=\"profile_main_actions\"")) {
-                        // Change profile links -> albums links --> If no albums link available, we probably only have 1-2 pictures --> Use
-                        // wall/user-id and build albums url
-                        String profileAlbums;
-                        if (br.containsHTML("id=\"profile_photos_module\"")) {
-                            profileAlbums = br.getRegex("id=\"profile_albums\">[\t\n\r ]+<a href=\"/albums(\\d+)\"").getMatch(0);
-                            if (profileAlbums == null) {
-                                profileAlbums = br.getRegex("id=\"profile_photos_module\">[\t\n\r ]+<a href=\"/albums(\\d+)").getMatch(0);
-                            }
-                        } else {
-                            profileAlbums = get_wall_id();
-                        }
-                        if (profileAlbums == null) {
-                            logger.warning("Failed to find profileAlbums for profile-link: " + CRYPTEDLINK_FUNCTIONAL);
-                            return null;
-                        }
-                        newLink = MAINPAGE + "/albums" + profileAlbums;
-                    } else if (br.containsHTML("id=\"public_like_module\"")) {
-                        // Change public page links -> wall links
-                        final String wallID = get_wall_id();
-                        if (wallID == null) {
-                            logger.warning("Failed to find wallID for public-page-link: " + CRYPTEDLINK_FUNCTIONAL);
-                            return null;
-                        }
-                        newLink = MAINPAGE + "/wall" + wallID;
-                    } else if (br.containsHTML("class=\"group_like_enter_desc\"")) {
-                        final String ownerID = resolveScreenNameAPI(new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/(.+)").getMatch(0));
-                        if (ownerID == null) {
-                            logger.warning("Failed to find ownerID for open-community-link: " + CRYPTEDLINK_FUNCTIONAL);
-                            return null;
-                        }
+                    if (type.equals("user")) {
+                        newLink = MAINPAGE + "/albums" + ownerID;
+                    } else {
                         newLink = MAINPAGE + "/wall-" + ownerID;
                     }
                 }
@@ -341,7 +314,7 @@ public class VKontakteRu extends PluginForDecrypt {
                      * Single posts of wall links: https://vk.com/wall-28122291_906
                      */
                     decryptWallPost();
-                    if (decryptedLinks2.size() == 0) {
+                    if (decryptedLinks.size() == 0) {
                         logger.info("Check your plugin settings -> They affect the results!");
                     }
                 } else if (this.CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_WALL_LINK)) {
@@ -352,13 +325,13 @@ public class VKontakteRu extends PluginForDecrypt {
                         throw new DecrypterException(EXCEPTION_LINKOFFLINE);
                     }
                     decryptWallLink();
-                    logger.info("Decrypted " + decryptedLinks2.size() + " total links out of a wall-link");
-                    if (decryptedLinks2.size() == 0) {
+                    logger.info("Decrypted " + decryptedLinks.size() + " total links out of a wall-link");
+                    if (decryptedLinks.size() == 0) {
                         logger.info("Check your plugin settings -> They affect the results!");
                     }
                 } else {
                     /*
-                     * Unsupported link -> Errorhandling -> Either link offline or plugin broken
+                     * Unsupported link --> Should never happen -> Errorhandling -> Either link offline or plugin broken
                      */
                     if (br.containsHTML("class=\"profile_blocked\"")) {
                         throw new DecrypterException(EXCEPTION_LINKOFFLINE);
@@ -373,17 +346,17 @@ public class VKontakteRu extends PluginForDecrypt {
                 try {
                     if (e.getMessage().equals(EXCEPTION_ACCPROBLEM)) {
                         logger.info("Account problem! Stopped decryption of link: " + CRYPTEDLINK_FUNCTIONAL);
-                        return decryptedLinks2;
+                        return decryptedLinks;
                     } else if (e.getMessage().equals(EXCEPTION_API_UNKNOWN)) {
                         logger.info("Unknown API problem occured! Stopped decryption of link: " + CRYPTEDLINK_FUNCTIONAL);
-                        return decryptedLinks2;
+                        return decryptedLinks;
                     } else if (e.getMessage().equals(EXCEPTION_LINKOFFLINE)) {
                         final DownloadLink offline = createDownloadlink("http://vkontaktedecrypted.ru/videolink/" + System.currentTimeMillis() + new Random().nextInt(10000000));
                         offline.setAvailable(false);
                         offline.setProperty("offline", true);
                         offline.setName(new Regex(CRYPTEDLINK_FUNCTIONAL, "vk\\.com/(.+)").getMatch(0));
-                        decryptedLinks2.add(offline);
-                        return decryptedLinks2;
+                        decryptedLinks.add(offline);
+                        return decryptedLinks;
                     }
                 } catch (final Exception x) {
                 }
@@ -391,39 +364,39 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             sleep(2500l, param);
         }
-        if (decryptedLinks2 == null) {
+        if (decryptedLinks == null) {
             logger.warning("vk.com: Decrypter broken for link: " + this.CRYPTEDLINK_FUNCTIONAL);
             return null;
         } else {
-            logger.info("vk.com: Done, decrypted: " + decryptedLinks2.size() + " links!");
+            logger.info("vk.com: Done, decrypted: " + decryptedLinks.size() + " links!");
         }
-        return decryptedLinks2;
+        return decryptedLinks;
     }
 
     /** Using API */
     private void decryptAudioAlbum() throws Exception {
         final String fpName = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/(.+)").getMatch(0);
         final String ownerID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "((\\-)?\\d+)$").getMatch(0);
-        this.postPageSafeAPI("https://vk.com/api.php", "v=3.0&format=json&uid=" + ownerID + "&access_token=" + Encoding.Base64Decode(api_access_token_vkopt) + "&method=audio.get&oauth=1");
-        final String completeData = br.getRegex("\\{\"response\":\\[(.*?)\\]\\}").getMatch(0);
+        this.postPageSafeAPI("https://vk.com/api.php", "v=" + api_version + "&format=json&uid=" + ownerID + "&access_token=" + Encoding.Base64Decode(api_access_token_vkopt) + "&method=audio.get&oauth=1");
+        final String completeData = br.getRegex("\"items\":\\[(.*?)\\]\\}").getMatch(0);
         if (completeData == null) {
-            decryptedLinks2 = null;
+            decryptedLinks = null;
             return;
         }
         final String[] audioData = completeData.split("\\},\\{");
         if (audioData == null || audioData.length == 0) {
-            decryptedLinks2 = null;
+            decryptedLinks = null;
             return;
         }
         for (final String singleAudioData : audioData) {
             final String owner_id = getJson(singleAudioData, "owner_id");
-            final String content_id = getJson(singleAudioData, "aid");
+            final String content_id = getJson(singleAudioData, "id");
             final String artist = getJson(singleAudioData, "artist");
             final String title = getJson(singleAudioData, "title");
             String directlink = getJson(singleAudioData, "url");
             if (owner_id == null || content_id == null || artist == null || title == null) {
                 logger.warning("FATAL error occured in audios decryption");
-                decryptedLinks2 = null;
+                decryptedLinks = null;
                 return;
             }
 
@@ -437,11 +410,11 @@ public class VKontakteRu extends PluginForDecrypt {
             if (fastcheck_audio) {
                 dl.setAvailable(true);
             }
-            decryptedLinks2.add(dl);
+            decryptedLinks.add(dl);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
-        fp.addLinks(decryptedLinks2);
+        fp.addLinks(decryptedLinks);
     }
 
     /* audio pages and audio playlists are similar */
@@ -457,13 +430,13 @@ public class VKontakteRu extends PluginForDecrypt {
         final DecimalFormat df = new DecimalFormat("00000");
         final String[][] audioLinks = br.getRegex("\"(https?://cs\\d+\\.(vk\\.com|userapi\\.com|vk\\.me)/u\\d+/audio/[a-z0-9]+\\.mp3),\\d+\".*?return false\">([^<>\"]*?)</a></b> &ndash; <span class=\"title\">([^<>\"]*?)</span><span class=\"user\"").getMatches();
         if (audioLinks == null || audioLinks.length == 0) {
-            decryptedLinks2 = null;
+            decryptedLinks = null;
             return;
         }
         for (String audioInfo[] : audioLinks) {
             String finallink = audioInfo[0];
             if (finallink == null) {
-                decryptedLinks2 = null;
+                decryptedLinks = null;
                 return;
             }
             finallink = "directhttp://" + finallink;
@@ -473,18 +446,18 @@ public class VKontakteRu extends PluginForDecrypt {
             if (fastcheck_audio) {
                 dl.setAvailable(true);
             }
-            decryptedLinks2.add(dl);
+            decryptedLinks.add(dl);
             logger.info("Decrypted link number " + df.format(overallCounter) + " :" + finallink);
             overallCounter++;
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks2);
+            fp.addLinks(decryptedLinks);
         }
     }
 
-    /* audio pages and audio playlists are similar */
+    /** Using API */
     private void decryptAudioPage() throws IOException, DecrypterException {
         if (br.containsHTML("Page not found")) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
@@ -500,13 +473,13 @@ public class VKontakteRu extends PluginForDecrypt {
         final DecimalFormat df = new DecimalFormat("00000");
         final String[][] audioLinks = br.getRegex("\"(https?://cs[a-z0-9]+\\.(vk\\.com|userapi\\.com|vk\\.me)/u\\d+/audio[^<>\"]*?)\".*?onclick=\"return nav\\.go\\(this, event\\);\">([^<>\"]*?)</a></b> \\&ndash; <span class=\"title\" id=\"title\\d+_\\d+_\\d+\">([^<>\"]*?)</span>").getMatches();
         if (audioLinks == null || audioLinks.length == 0) {
-            decryptedLinks2 = null;
+            decryptedLinks = null;
             return;
         }
         for (String audioInfo[] : audioLinks) {
             String finallink = audioInfo[0];
             if (finallink == null) {
-                decryptedLinks2 = null;
+                decryptedLinks = null;
                 return;
             }
             finallink = "directhttp://" + finallink;
@@ -516,13 +489,13 @@ public class VKontakteRu extends PluginForDecrypt {
             if (fastcheck_audio) {
                 dl.setAvailable(true);
             }
-            decryptedLinks2.add(dl);
+            decryptedLinks.add(dl);
             logger.info("Decrypted link number " + df.format(overallCounter) + " :" + finallink);
             overallCounter++;
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
-        fp.addLinks(decryptedLinks2);
+        fp.addLinks(decryptedLinks);
     }
 
     /** Using API */
@@ -544,21 +517,21 @@ public class VKontakteRu extends PluginForDecrypt {
             if (embeddedVideo != null) {
                 embeddedVideo = Encoding.htmlDecode(embeddedVideo.replace("\\", ""));
                 if (embeddedVideo.startsWith("http")) {
-                    decryptedLinks2.add(createDownloadlink(embeddedVideo));
+                    decryptedLinks.add(createDownloadlink(embeddedVideo));
                 } else {
-                    decryptedLinks2.add(createDownloadlink("http://www.youtube.com/watch?v=" + embeddedVideo));
+                    decryptedLinks.add(createDownloadlink("http://www.youtube.com/watch?v=" + embeddedVideo));
                 }
                 return;
             }
             embedHash = new Regex(correctedBR, "\"hash\":\"([a-z0-9]+)\"").getMatch(0);
             if (embedHash == null) {
-                decryptedLinks2 = null;
+                decryptedLinks = null;
                 return;
             }
             filename = new Regex(correctedBR, "\"md_title\":\"([^<>\"]*?)\"").getMatch(0);
             if (filename == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
-                decryptedLinks2 = null;
+                decryptedLinks = null;
                 return;
             }
             final FilePackage fp = FilePackage.getInstance();
@@ -566,7 +539,7 @@ public class VKontakteRu extends PluginForDecrypt {
             final LinkedHashMap<String, String> foundQualities = findAvailableVideoQualities();
             if (foundQualities == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
-                decryptedLinks2 = null;
+                decryptedLinks = null;
                 return;
             }
             filename = Encoding.htmlDecode(filename.trim());
@@ -640,7 +613,7 @@ public class VKontakteRu extends PluginForDecrypt {
                         dl.setAvailable(true);
                     }
                     fp.add(dl);
-                    decryptedLinks2.add(dl);
+                    decryptedLinks.add(dl);
                 }
             }
 
@@ -702,7 +675,7 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         if (numberOfEntrys == null) {
             logger.warning("Decrypter broken for link: " + this.CRYPTEDLINK_FUNCTIONAL);
-            decryptedLinks2 = null;
+            decryptedLinks = null;
             return;
         }
         final String[][] regexesPage1 = { { "><a href=\"/photo((\\-)?\\d+_\\d+(\\?tag=\\d+)?)\"", "0" } };
@@ -716,12 +689,12 @@ public class VKontakteRu extends PluginForDecrypt {
             /** Pass those goodies over to the hosterplugin */
             final DownloadLink dl = getSinglePhotoDownloadLink(element);
             dl.setProperty("albumid", albumID);
-            decryptedLinks2.add(dl);
+            decryptedLinks.add(dl);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(new Regex(this.CRYPTEDLINK_FUNCTIONAL, "/(album|tag)(.+)").getMatch(1));
         fp.setProperty("CLEANUP_NAME", false);
-        fp.addLinks(decryptedLinks2);
+        fp.addLinks(decryptedLinks);
     }
 
     private DownloadLink getSinglePhotoDownloadLink(final String photoID) throws IOException {
@@ -761,7 +734,7 @@ public class VKontakteRu extends PluginForDecrypt {
         final String startOffset = br.getRegex("var preload = \\[(\\d+),\"").getMatch(0);
         if (numberOfEntrys == null || startOffset == null) {
             logger.warning("Decrypter broken for link: " + this.CRYPTEDLINK_FUNCTIONAL);
-            decryptedLinks2 = null;
+            decryptedLinks = null;
             return;
         }
         /** Photos are placed in different locations, find them all */
@@ -771,7 +744,7 @@ public class VKontakteRu extends PluginForDecrypt {
         if (decryptedData != null && decryptedData.size() != 0) {
             for (String element : decryptedData) {
                 final String decryptedLink = "http://vk.com/" + element;
-                decryptedLinks2.add(createDownloadlink(decryptedLink));
+                decryptedLinks.add(createDownloadlink(decryptedLink));
             }
         }
     }
@@ -801,7 +774,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 final String jsVideoArray = br.getRegex("videoList: \\{\\'all\\': \\[(.*?)\\]\\]\\}").getMatch(0);
                 if (jsVideoArray == null) {
                     logger.warning("Decrypter broken for link: " + this.CRYPTEDLINK_FUNCTIONAL);
-                    decryptedLinks2 = null;
+                    decryptedLinks = null;
                     return;
                 }
                 videos = new Regex(jsVideoArray, "\\[((\\-)?\\d+, \\d+), \\'").getColumn(0);
@@ -833,14 +806,14 @@ public class VKontakteRu extends PluginForDecrypt {
                         final DownloadLink offline = createDownloadlink("http://vkontaktedecrypted.ru/videolink/" + System.currentTimeMillis() + new Random().nextInt(10000000));
                         offline.setProperty("offline", true);
                         offline.setName(singleVideo);
-                        decryptedLinks2.add(offline);
+                        decryptedLinks.add(offline);
                     }
-                    if (decryptedLinks2 == null) {
+                    if (decryptedLinks == null) {
                         logger.warning("Decrypter broken for link: " + this.CRYPTEDLINK_FUNCTIONAL + "\n");
                         logger.warning("stopped at: " + completeVideolink);
-                        decryptedLinks2 = null;
+                        decryptedLinks = null;
                         return;
-                    } else if (decryptedLinks2.size() == 0) {
+                    } else if (decryptedLinks.size() == 0) {
                         offlineCounter++;
                         logger.info("Continuing, found " + offlineCounter + " offline/invalid videolinks so far...");
                         continue;
@@ -897,7 +870,7 @@ public class VKontakteRu extends PluginForDecrypt {
         String numberOfEntrys = br.getRegex("class=\"summary fl_l\">(\\d+) videos</div>").getMatch(0);
         if (numberOfEntrys == null) {
             logger.warning("Decrypter broken for link: " + this.CRYPTEDLINK_FUNCTIONAL);
-            decryptedLinks2 = null;
+            decryptedLinks = null;
             return;
         }
         final String[][] regexesPage1 = { { "id=\"video_cont((\\-)?\\d+_\\d+)\"", "0" } };
@@ -912,7 +885,7 @@ public class VKontakteRu extends PluginForDecrypt {
         for (String singleVideo : decryptedData) {
             singleVideo = singleVideo.replace(", ", "_");
             final String completeVideolink = "http://vk.com/video" + singleVideo.replace(", ", "");
-            decryptedLinks2.add(createDownloadlink(completeVideolink));
+            decryptedLinks.add(createDownloadlink(completeVideolink));
         }
     }
 
@@ -968,11 +941,11 @@ public class VKontakteRu extends PluginForDecrypt {
             }
 
             logger.info("Decrypted offset " + currentOffset + " / " + total_numberof_entries);
-            logger.info("Found " + decryptedLinks2.size() + " links so far");
-            if (decryptedLinks2.size() >= MAX_LINKS_PER_RUN) {
+            logger.info("Found " + decryptedLinks.size() + " links so far");
+            if (decryptedLinks.size() >= MAX_LINKS_PER_RUN) {
                 logger.info("Reached " + MAX_LINKS_PER_RUN + " links per run limit -> Returning link to continue");
                 final DownloadLink loopBack = createDownloadlink(this.CRYPTEDLINK_FUNCTIONAL + "-maxoffset=" + total_numberof_entries + "-currentoffset=" + currentOffset);
-                decryptedLinks2.add(loopBack);
+                decryptedLinks.add(loopBack);
                 break;
             }
             currentOffset += api_max_entries_per_request;
@@ -980,7 +953,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(userID);
-        fp.addLinks(decryptedLinks2);
+        fp.addLinks(decryptedLinks);
     }
 
     /** Decrypts media of single API wall-post json objects */
@@ -1010,7 +983,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 dl.setProperty("owner_id", owner_id);
                 dl.setProperty("content_id", content_id);
                 dl.setProperty("directlinks", attachment);
-                decryptedLinks2.add(dl);
+                decryptedLinks.add(dl);
             } else if (type.equals("doc")) {
                 if (title == null || url == null) {
                     return;
@@ -1019,7 +992,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 dl.setDownloadSize(Long.parseLong(getJson(attachment, "size")));
                 dl.setName(title);
                 dl.setAvailable(true);
-                decryptedLinks2.add(dl);
+                decryptedLinks.add(dl);
             } else if (type.equals("audio") && wall_grabaudio) {
                 final String artist = getJson(attachment, "artist");
                 if (owner_id == null || content_id == null || artist == null || title == null || url == null) {
@@ -1033,26 +1006,26 @@ public class VKontakteRu extends PluginForDecrypt {
                     dl.setAvailable(true);
                 }
                 dl.setFinalFileName(artist + " - " + title + ".mp3");
-                decryptedLinks2.add(dl);
+                decryptedLinks.add(dl);
             } else if (type.equals("link") && wall_grablink) {
                 if (url == null) {
                     return;
                 }
                 final DownloadLink dl = createDownloadlink(url);
-                decryptedLinks2.add(dl);
+                decryptedLinks.add(dl);
             } else if (type.equals("video") && wall_grabvideo) {
                 if (content_id == null || owner_id == null) {
                     return;
                 }
                 final DownloadLink dl = createDownloadlink("https://vk.com/video" + owner_id + "_" + content_id);
-                decryptedLinks2.add(dl);
+                decryptedLinks.add(dl);
             } else if (type.equals("album") && wall_grabalbums) {
                 final String album_id = getJson(attachment, "album_id");
                 if (album_id == null || owner_id == null) {
                     return;
                 }
                 final DownloadLink dl = createDownloadlink("https://vk.com/album" + owner_id + "_" + album_id);
-                decryptedLinks2.add(dl);
+                decryptedLinks.add(dl);
             } else if (type.equals("poll")) {
                 logger.info("Current post only contains a poll --> Skipping it");
             } else {
@@ -1071,11 +1044,11 @@ public class VKontakteRu extends PluginForDecrypt {
             return;
         }
         decryptWallSinglePostJson(br.toString());
-        logger.info("Found " + decryptedLinks2.size() + " links");
+        logger.info("Found " + decryptedLinks.size() + " links");
 
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(postID);
-        fp.addLinks(decryptedLinks2);
+        fp.addLinks(decryptedLinks);
     }
 
     /** NOT using API - general method */
