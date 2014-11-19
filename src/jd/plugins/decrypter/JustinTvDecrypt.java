@@ -188,12 +188,14 @@ public class JustinTvDecrypt extends PluginForDecrypt {
             }
             /** Prefer highest quality */
             String used_quality = null;
-            final String[] qualities = { "720p", "480p", "360p", "240p" };
+            final String[][] qualities = { { "live_user_[A-Za-z0-9]+", "high" }, { "format_720p", "720p" }, { "format_480p", "480p" }, { "format_360p", "360p" }, { "format_240p", "240p" } };
             String[] links = null;
-            for (final String current_quality : qualities) {
-                links = ajax.getRegex("\"url\":\"(https?://[^<>\"]*?format_" + current_quality + "_\\d+\\.flv)\"").getColumn(0);
+            for (final String current_quality[] : qualities) {
+                final String qual_regex = current_quality[0];
+                final String qual_name = current_quality[1];
+                links = ajax.getRegex("\"url\":\"(https?://[^<>\"]*?" + qual_regex + "_\\d+\\.flv)\"").getColumn(0);
                 if (links != null && links.length > 0) {
-                    used_quality = current_quality;
+                    used_quality = qual_name;
                     break;
                 }
             }
