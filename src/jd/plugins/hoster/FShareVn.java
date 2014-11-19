@@ -35,7 +35,6 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -325,23 +324,29 @@ public class FShareVn extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getPage("https://www.fshare.vn/login.php");
-                Form login = br.getFormbyProperty("name", "loginfrm");
-                if (login != null) {
-                    // another stable issue....
-                    // eg. https://www.fshare.vn/login.php/login.php
-                    login.setAction("https://www.fshare.vn/login.php");
-                    login.put("login_useremail", Encoding.urlEncode(account.getUser()));
-                    login.put("login_password", Encoding.urlEncode(account.getPass()));
-                    // login.put("url_refe", Encoding.urlEncode("/index.php"));
-                    // login.put("auto_login", "1");
+                br.getPage("https://www.fshare.vn/login");
+                final String fs_csrf = br.getRegex("value=\"([a-z0-9]+)\" name=\"fs_csrf\"").getMatch(0);
+                if (fs_csrf == null) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
-                // stable postPage or submitForm doesn't contain this header...
-                br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-                br.submitForm(login);
-
-                if (br.getCookie(this.getHost(), "fshare_userpass") == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                br.postPage("https://www.fshare.vn/login", "fs_csrf=" + fs_csrf + "&LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&LoginForm%5BrememberMe%5D=0&LoginForm%5BrememberMe%5D=1&yt0=%C4%90%C4%83ng+nh%E1%BA%ADp");
+                if (br.containsHTML("class=\"errorMessage\"")) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                if (br.getURL().contains("/resend")) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDein Account ist noch nicht aktiviert. Bestätige die Aktivierungsmail um ihn verwenden zu können..", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account is not activated yet. Confirm the activation mail to use it.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -376,12 +381,7 @@ public class FShareVn extends PluginForHost {
         }
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
+        login(account, true);
         if (!br.getURL().endsWith("/index.php")) {
             br.getPage("/index.php");
         }

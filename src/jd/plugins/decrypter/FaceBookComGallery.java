@@ -558,7 +558,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             }
             // currentMaxPicCount = max number of links per segment
-            if (links.length < currentMaxPicCount || profileID == null || (collection_token == null && activecollection == null)) {
+            if (links.length < currentMaxPicCount || profileID == null) {
                 stop = true;
             }
             if (stop) {

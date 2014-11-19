@@ -30,36 +30,52 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "general-files.org" }, urls = { "http://(www\\.)?(general\\-files\\.com|generalfiles\\.org|generalfiles\\.me|general\\-files\\.org|generalfiles\\.biz|generalfiles\\.pw|general\\-file\\.com|general\\-fil\\.es)/download/[a-z0-9]+/[^<>\"/]*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "general-files.org" }, urls = { "http://(www\\.)?(general\\-files\\.com|generalfiles\\.org|generalfiles\\.me|general\\-files\\.org|generalfiles\\.biz|generalfiles\\.pw|general\\-file\\.com|general\\-fil\\.es|generalfil\\.es)/download/[a-z0-9]+/[^<>\"/]*?\\.html" }, flags = { 0 })
 public class GeneralFilesCom extends PluginForDecrypt {
 
     public GeneralFilesCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String currenthost = "general-fil.es";
+    private static final String currenthost = "generalfil.es";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        final String parameter = param.toString().replaceAll("(general\\-files\\.com|generalfiles\\.org|generalfiles\\.me|general\\-files\\.org|generalfiles\\.biz|generalfiles\\.pw|general\\-file\\.com|general\\-fil\\.es)/", currenthost + "/");
+        final String parameter = param.toString().replaceAll("(general\\-files\\.com|generalfiles\\.org|generalfiles\\.me|general\\-files\\.org|generalfiles\\.biz|generalfiles\\.pw|general\\-file\\.com|general\\-fil\\.es|generalfil\\.es)/", currenthost + "/");
         try {
             br.getPage(parameter);
         } catch (final UnknownHostException e) {
             logger.info("Link offline (server error): " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
 
         if (br.containsHTML(">File was removed from filehosting<|>The file no longer exists at this location|class=\"gf\\-removed\\-h\"|class=\"deleted\"") || br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         if (br.getURL().equals("http://www." + currenthost + "/")) {
             logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         if (br.containsHTML("No htmlCode read")) {
             logger.info("Cannot decrypt link (server error): " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
 
@@ -112,6 +128,9 @@ public class GeneralFilesCom extends PluginForDecrypt {
             return null;
         }
         finallink = finallink.replace("\\", "");
+        if (finallink.endsWith(".torrent")) {
+            finallink = "directhttp://" + finallink;
+        }
         final DownloadLink dl = createDownloadlink(finallink);
         decryptedLinks.add(dl);
 
