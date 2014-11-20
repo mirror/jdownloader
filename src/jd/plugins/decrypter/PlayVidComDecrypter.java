@@ -70,12 +70,9 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         /* Decrypt start */
-        FILENAME = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        FILENAME = br.getRegex("data\\-title=\"([^<>\"]*?)\"").getMatch(0);
         if (FILENAME == null) {
-            FILENAME = br.getRegex("<title>([^<>\"]*?)\\- PlayVid</title>").getMatch(0);
-        }
-        if (FILENAME == null) {
-            FILENAME = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            FILENAME = br.getRegex("data\\-callback=\"pv_hideshowTitle\">([^<>\"]*?)<").getMatch(0);
         }
         if (FILENAME == null) {
             logger.warning("Playvid.com decrypter failed..." + PARAMETER);

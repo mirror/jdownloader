@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -30,11 +29,9 @@ import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
 import jd.config.Property;
-import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -77,67 +74,69 @@ public class FShareVn extends PluginForHost {
         return super.rewriteHost(host);
     }
 
-    @Override
-    public boolean checkLinks(final DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) {
-            return false;
-        }
-        try {
-            final Browser br = new Browser();
-            prepBrowser();
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.setCookiesExclusive(true);
-            final StringBuilder sb = new StringBuilder();
-            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-            int index = 0;
-            while (true) {
-                links.clear();
-                while (true) {
-                    /* we test 50 links at once, maybe even more is possible */
-                    if (index == urls.length || links.size() > 49) {
-                        break;
-                    }
-                    links.add(urls[index]);
-                    index++;
-                }
-                sb.delete(0, sb.capacity());
-                sb.append("action=check_link&arrlinks=");
-                for (final DownloadLink dl : links) {
-                    sb.append(dl.getDownloadURL());
-                    sb.append("%0A");
-                }
-                br.postPage("http://www.fshare.vn/check_link.php", sb.toString());
-                br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-                for (final DownloadLink dllink : links) {
-                    final String fid = new Regex(dllink.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0);
-                    final String[][] fileInfo = br.getRegex("/file/" + fid + "</a></b></p>[a-z0-9]+<p>([^<>\"]*?)</p>ttrntt<p>([^<>\"]*?)</p>").getMatches();
-                    if (fileInfo == null || fileInfo.length == 0) {
-                        dllink.setAvailable(false);
-                        logger.warning("Linkchecker broken for " + getHost() + " Example link: " + dllink.getDownloadURL());
-                    } else if (br.containsHTML("/file/" + fid + "</a></b></p>[a-z0-9]+<p></p>[a-z0-9]+<p>0 KB</p>")) {
-                        dllink.setAvailable(false);
-                    } else {
-                        dllink.setName(fileInfo[0][0]);
-                        dllink.setAvailable(true);
-                        dllink.setDownloadSize(SizeFormatter.getSize(fileInfo[0][1]));
-                    }
-                }
-                if (index == urls.length) {
-                    break;
-                }
-            }
-        } catch (final Exception e) {
-            return false;
-        }
-        return true;
-    }
+    /** TODO: Find out of that thing still exists */
+    // @Override
+    // public boolean checkLinks(final DownloadLink[] urls) {
+    // if (urls == null || urls.length == 0) {
+    // return false;
+    // }
+    // try {
+    // final Browser br = new Browser();
+    // prepBrowser();
+    // br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+    // br.setCookiesExclusive(true);
+    // final StringBuilder sb = new StringBuilder();
+    // final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+    // int index = 0;
+    // while (true) {
+    // links.clear();
+    // while (true) {
+    // /* we test 50 links at once, maybe even more is possible */
+    // if (index == urls.length || links.size() > 49) {
+    // break;
+    // }
+    // links.add(urls[index]);
+    // index++;
+    // }
+    // sb.delete(0, sb.capacity());
+    // sb.append("action=check_link&arrlinks=");
+    // for (final DownloadLink dl : links) {
+    // sb.append(dl.getDownloadURL());
+    // sb.append("%0A");
+    // }
+    // br.postPage("http://www.fshare.vn/check_link.php", sb.toString());
+    // br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
+    // for (final DownloadLink dllink : links) {
+    // final String fid = new Regex(dllink.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0);
+    // final String[][] fileInfo = br.getRegex("/file/" + fid +
+    // "</a></b></p>[a-z0-9]+<p>([^<>\"]*?)</p>ttrntt<p>([^<>\"]*?)</p>").getMatches();
+    // if (fileInfo == null || fileInfo.length == 0) {
+    // dllink.setAvailable(false);
+    // logger.warning("Linkchecker broken for " + getHost() + " Example link: " + dllink.getDownloadURL());
+    // } else if (br.containsHTML("/file/" + fid + "</a></b></p>[a-z0-9]+<p></p>[a-z0-9]+<p>0 KB</p>")) {
+    // dllink.setAvailable(false);
+    // } else {
+    // dllink.setName(fileInfo[0][0]);
+    // dllink.setAvailable(true);
+    // dllink.setDownloadSize(SizeFormatter.getSize(fileInfo[0][1]));
+    // }
+    // }
+    // if (index == urls.length) {
+    // break;
+    // }
+    // }
+    // } catch (final Exception e) {
+    // return false;
+    // }
+    // return true;
+    // }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         prepBrowser();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(<title>Fshare \\– Dịch vụ chia sẻ số 1 Việt Nam \\– Cần là có \\- </title>|b>Liên kết bạn chọn không tồn tại trên hệ thống Fshare</|<li>Liên kết không chính xác, hãy kiểm tra lại|<li>Liên kết bị xóa bởi người sở hữu\\.<)")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(<title>Fshare \\– Dịch vụ chia sẻ số 1 Việt Nam \\– Cần là có \\- </title>|b>Liên kết bạn chọn không tồn tại trên hệ thống Fshare</|<li>Liên kết không chính xác, hãy kiểm tra lại|<li>Liên kết bị xóa bởi người sở hữu\\.<)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("file\" title=\"(.*?)\">").getMatch(0);
@@ -389,18 +388,28 @@ public class FShareVn extends PluginForHost {
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
         login(account, true);
-        if (!br.getURL().endsWith("/index.php")) {
-            br.getPage("/index.php");
+        if (!br.getURL().endsWith("/home")) {
+            br.getPage("/home");
         }
         String validUntil = br.getRegex(">Hạn dùng:<strong[^>]+>\\&nbsp;(\\d+\\-\\d+\\-\\d+)</strong>").getMatch(0);
         if (validUntil == null) {
             validUntil = br.getRegex(">Hạn dùng:<strong>\\&nbsp;([^<>\"]*?)</strong>").getMatch(0);
         }
+        if (validUntil == null) {
+            validUntil = br.getRegex("<dt>Hạn dùng</dt>[\t\n\r ]+<dd><b>([^<>\"]*?)</b></dd>").getMatch(0);
+        }
+        if (validUntil == null) {
+            validUntil = br.getRegex("Hạn dùng: ([^<>\"]*?)</p></li>").getMatch(0);
+        }
         if (br.containsHTML("title=\"Platium\">VIP </span>")) {
             ai.setStatus("Vip User");
             account.setProperty("acctype", Property.NULL);
         } else if (validUntil != null) {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd-MM-yyyy", Locale.ENGLISH));
+            if (validUntil.contains("-")) {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd-MM-yyyy", Locale.ENGLISH));
+            } else {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd/MM/yyyy", Locale.ENGLISH));
+            }
             try {
                 maxPrem.set(-1);
                 account.setMaxSimultanDownloads(-1);

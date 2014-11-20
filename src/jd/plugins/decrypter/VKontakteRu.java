@@ -59,9 +59,9 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     EXCEPTION_API_UNKNOWN                = "EXCEPTION_LINKOFFLINE";
 
     /* Settings */
-    private final String            FASTLINKCHECK                        = "FASTLINKCHECK";
-    private final String            FASTPICTURELINKCHECK                 = "FASTPICTURELINKCHECK";
-    private final String            FASTAUDIOLINKCHECK                   = "FASTAUDIOLINKCHECK";
+    private static final String     FASTLINKCHECK_VIDEO                  = "FASTLINKCHECK_VIDEO";
+    private static final String     FASTLINKCHECK_PICTURES               = "FASTLINKCHECK_PICTURES";
+    private static final String     FASTLINKCHECK_AUDIO                  = "FASTLINKCHECK_AUDIO";
     private static final String     ALLOW_BEST                           = "ALLOW_BEST";
     private static final String     ALLOW_240P                           = "ALLOW_240P";
     private static final String     ALLOW_360P                           = "ALLOW_360P";
@@ -155,8 +155,8 @@ public class VKontakteRu extends PluginForDecrypt {
         CRYPTEDLINK = param;
         /* Set settings */
         cfg = SubConfiguration.getConfig("vkontakte.ru");
-        fastcheck_photo = cfg.getBooleanProperty(FASTPICTURELINKCHECK, false);
-        fastcheck_audio = cfg.getBooleanProperty(FASTAUDIOLINKCHECK, false);
+        fastcheck_photo = cfg.getBooleanProperty(FASTLINKCHECK_PICTURES, false);
+        fastcheck_audio = cfg.getBooleanProperty(FASTLINKCHECK_AUDIO, false);
         wall_grabalbums = cfg.getBooleanProperty(VKWALL_GRAB_ALBUMS, false);
         wall_grabphotos = cfg.getBooleanProperty(VKWALL_GRAB_PHOTOS, false);
         wall_grabaudio = cfg.getBooleanProperty(VKWALL_GRAB_AUDIO, false);
@@ -232,7 +232,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_WALL_LOOPBACK_LINK)) {
                     /* Remove loopback-part as it only contains information which we need later but not in the link */
                     newLink = new Regex(CRYPTEDLINK_FUNCTIONAL, "(http://(www\\.)?vk\\.com/wall(\\-)?\\d+)").getMatch(0);
-                } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_PUBLIC_EXTENDED) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUMS) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_PAGE)) {
+                } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_PUBLIC_EXTENDED) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUMS) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_PAGE) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_ALL) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUM)) {
                     /* Don't change anything */
                 } else {
                     /* We either have a public community or profile --> Get the owner_id and change the link to a wall-link */
@@ -551,7 +551,7 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             /* Decrypt qualities, selected by the user */
             final ArrayList<String> selectedQualities = new ArrayList<String>();
-            final boolean fastLinkcheck = cfg.getBooleanProperty(FASTLINKCHECK, false);
+            final boolean fastLinkcheck = cfg.getBooleanProperty(FASTLINKCHECK_VIDEO, false);
             if (cfg.getBooleanProperty(ALLOW_BEST, false)) {
                 final ArrayList<String> list = new ArrayList<String>(foundQualities.keySet());
                 final String highestAvailableQualityValue = list.get(0);
