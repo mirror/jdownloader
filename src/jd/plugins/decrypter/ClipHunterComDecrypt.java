@@ -64,6 +64,12 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
         }
         if (offline || br.getURL().contains("error/missing") || br.containsHTML("(>Ooops, This Video is not available|>This video was removed and is no longer available at our site|<title></title>)")) {
             final DownloadLink dl = createDownloadlink("http://cliphunterdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
+            try {
+                dl.setContentUrl(parameter);
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+                dl.setBrowserUrl(parameter);
+            }
             dl.setName(new Regex(parameter, "cliphunter\\.com/w/\\d+/(.+)").getMatch(0));
             dl.setAvailable(false);
             dl.setProperty("offline", true);
@@ -117,6 +123,12 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
                 dllink = foundQualities.get(quality[0]);
                 if (dllink != null) {
                     final DownloadLink dl = createDownloadlink("http://cliphunterdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
+                    try {
+                        dl.setContentUrl(parameter);
+                    } catch (final Throwable e) {
+                        /* Not available in old 0.9.581 Stable */
+                        dl.setBrowserUrl(parameter);
+                    }
                     dl.setFinalFileName(filename + "_" + quality[1]);
                     dl.setProperty("directlink", dllink);
                     dl.setProperty("originallink", parameter);
@@ -135,6 +147,12 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
                     final String currentQualityValue = quality[0];
                     if ((currentQualityValue == selectedQuality) && dllink != null) {
                         final DownloadLink dl = createDownloadlink("http://cliphunterdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
+                        try {
+                            dl.setContentUrl(parameter);
+                        } catch (final Throwable e) {
+                            /* Not available in old 0.9.581 Stable */
+                            dl.setBrowserUrl(parameter);
+                        }
                         dl.setFinalFileName(filename + "_" + quality[1]);
                         dl.setProperty("directlink", dllink);
                         dl.setProperty("originallink", parameter);
@@ -155,7 +173,7 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
 
     /**
      * Same function in hoster and decrypterplugin, sync it!!
-     * 
+     *
      * @throws IOException
      */
     private LinkedHashMap<String, String> findAvailableVideoQualities() throws IOException {

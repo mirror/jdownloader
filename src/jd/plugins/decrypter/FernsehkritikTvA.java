@@ -152,6 +152,12 @@ public class FernsehkritikTvA extends PluginForDecrypt {
                     continue;
                 }
                 final DownloadLink dlLink = createDownloadlink("http://fernsehkritik.tv/jdownloaderfolgealt" + System.currentTimeMillis() + new Random().nextInt(1000000));
+                try {
+                    dlLink.setContentUrl(parameter);
+                } catch (final Throwable e) {
+                    /* Not available in old 0.9.581 Stable */
+                    dlLink.setBrowserUrl(parameter);
+                }
                 dlLink.setProperty("directdate", DATE);
                 dlLink.setProperty("directepisodenumber", EPISODENUMBER);
                 dlLink.setProperty("directtype", finallink.substring(finallink.lastIndexOf(".")));
@@ -239,6 +245,12 @@ public class FernsehkritikTvA extends PluginForDecrypt {
                 directlink += episode + "-" + part + ".flv";
             }
             final DownloadLink dlLink = createDownloadlink("http://fernsehkritik.tv/jdownloaderfolgeneu" + System.currentTimeMillis() + new Random().nextInt(1000000));
+            try {
+                dlLink.setContentUrl(parameter);
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+                dlLink.setBrowserUrl(parameter);
+            }
             dlLink.setProperty("directpartnumber", part);
             dlLink.setProperty("directdate", DATE);
             dlLink.setProperty("directepisodenumber", EPISODENUMBER);
