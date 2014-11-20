@@ -743,9 +743,9 @@ public class YoutubeHelper {
         if (all == null || descrambler == null || des == null) {
             cache = new HashMap<String, String>();
             jsContent = getAbsolute(jsUrl, jsUrl, br.cloneBrowser());
-            descrambler = new Regex(jsContent, "\\.sig\\|\\|([\\$\\w\\d]+)\\(").getMatch(0);
+            descrambler = new Regex(jsContent, "\\.sig\\|\\|([\\$\\w]+)\\(").getMatch(0);
             if (descrambler == null) {
-                descrambler = new Regex(jsContent, "\\w+\\.signature\\=([\\$\\w\\d]+)\\([\\w\\d]+\\)").getMatch(0);
+                descrambler = new Regex(jsContent, "\\w+\\.signature\\=([\\$\\w]+)\\([\\w]+\\)").getMatch(0);
                 if (descrambler == null) {
                     return sig;
                 }
@@ -773,20 +773,22 @@ public class YoutubeHelper {
                 if (e.getMessage() != null) {
                     // do not use language components of the error message. Only static identifies, otherwise other languages will fail!
                     // -raztoki
-                    final String ee = new Regex(e.getMessage(), "ReferenceError: \"(\\w+)\".+<Unknown source>").getMatch(0);
+                    final String ee = new Regex(e.getMessage(), "ReferenceError: \"([\\$\\w]+)\".+<Unknown source>").getMatch(0);
                     // should only be needed on the first entry, then on after 'cache' should get result the first time!
                     if (ee != null) {
                         if (jsContent == null) {
                             jsContent = getAbsolute(jsUrl, jsUrl, br.cloneBrowser());
                         }
                         // lets look for missing reference
-                        final String ref = new Regex(jsContent, "var\\s+" + ee + "\\s*=\\s*\\{.*?\\};").getMatch(-1);
+                        final String ref = new Regex(jsContent, "var\\s+" + Pattern.quote(ee) + "\\s*=\\s*\\{.*?\\};").getMatch(-1);
                         if (ref != null) {
                             all = ref + "\r\n" + all;
                             continue;
                         } else {
                             logger.warning("Could not find missing var/function");
                         }
+                    } else {
+                        logger.warning("Could not find reference Error");
                     }
                 }
                 logger.log(e);
