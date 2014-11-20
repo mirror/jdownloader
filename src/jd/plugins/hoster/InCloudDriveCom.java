@@ -180,7 +180,7 @@ public class InCloudDriveCom extends PluginForHost {
             }
             //
             br.setFollowRedirects(false);
-            br.getPage(Encoding.urlDecode(dlserver, false) + "download_f/?token=" + token);
+            br.getPage(Encoding.urlDecode(dlserver, false) + "download.php?accesstoken=" + token);
             dllink = br.getRedirectLocation();
             if (dllink == null || !dllink.startsWith("http")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -412,9 +412,12 @@ public class InCloudDriveCom extends PluginForHost {
             }
             if (dllink == null) {
                 parseFileInformation(link);
-                dllink = br.getRegex("\"(https?://\\w+\\.inclouddrive\\.com/download_f/\\?token=[^\"]+)\"").getMatch(0);
-                if (dllink == null || !dllink.startsWith("http")) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                dllink = br.getRegex("\"(https?://\\w+\\.inclouddrive\\.com/download/\\?token=[^\"]+)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("\"(https?://\\w+\\.inclouddrive\\.com/download\\.php\\?accesstoken=[^\"]+)\"").getMatch(0);
+                    if (dllink == null || !dllink.startsWith("http")) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
