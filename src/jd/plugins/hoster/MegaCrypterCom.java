@@ -58,7 +58,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.PluginTaskID;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megacrypter.com" }, urls = { "https?://(?:www\\.)?megacrypter\\.com/\\![A-Za-z0-9\\-_\\!]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megacrypter.com" }, urls = { "https?://(?:www\\.)?(megacrypter\\.com|megacrypter\\.linkcrypter\\.net)/\\![A-Za-z0-9\\-_\\!]+" }, flags = { 2 })
 public class MegaCrypterCom extends PluginForHost {
 
     public MegaCrypterCom(PluginWrapper wrapper) {
@@ -170,10 +170,10 @@ public class MegaCrypterCom extends PluginForHost {
         }
     }
 
-    private final static boolean supportsHTTPS       = true;
-    private final static String  preferHTTPS         = "preferHTTPS";
-    private final static boolean preferHTTPS_default = false;
-    private final static boolean enforcesHTTPS       = true;
+    private final boolean supportsHTTPS       = true;
+    private final String  preferHTTPS         = "preferHTTPS";
+    private final boolean preferHTTPS_default = false;
+    private final boolean enforcesHTTPS       = true;
 
     @SuppressWarnings({ "unused", "deprecation" })
     private void setConfigElements() {
@@ -190,9 +190,8 @@ public class MegaCrypterCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_TMP, JDL.L("plugins.hoster.megacryptercom.usetmp", "Use tmp decrypting file?")).setDefaultValue(false));
     }
 
-    @SuppressWarnings("unused")
-    private void setUrl() {
-        mcUrl = (enforcesHTTPS || this.getPluginConfig().getBooleanProperty(preferHTTPS, preferHTTPS_default) ? "https" : "http") + "://megacrypter.com/api";
+    private void setUrl(final DownloadLink downloadLink) {
+        mcUrl = (enforcesHTTPS || this.getPluginConfig().getBooleanProperty(preferHTTPS, preferHTTPS_default) ? (Browser.getHost(downloadLink.getDownloadURL()).contains("megacrypter.com") ? "https" : "http") : "http") + "://" + new Regex(downloadLink.getDownloadURL(), "://([^/]+)").getMatch(0) + "/api";
     }
 
     private String mcUrl = null;
@@ -200,9 +199,9 @@ public class MegaCrypterCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        setUrl();
+        setUrl(link);
         br.setFollowRedirects(true);
-        LINKPART = new Regex(link.getDownloadURL(), "megacrypter\\.com/(.+)").getMatch(0);
+        LINKPART = new Regex(link.getDownloadURL(), "/(\\!.+)").getMatch(0);
         br.postPageRaw(mcUrl, "{\"m\": \"info\", \"link\":\"" + LINKPART + "\"}");
         try {
             checkError(br);
