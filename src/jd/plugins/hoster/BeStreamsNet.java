@@ -91,7 +91,7 @@ public class BeStreamsNet extends PluginForHost {
     private final boolean              useVidEmbed                  = false;
     private final boolean              useAltEmbed                  = false;
     private final boolean              useAltExpire                 = true;
-    private final long                 useLoginIndividual           = 6 * 3480000;
+    private final long                 useLoginIndividual           = 6 * 3480000l;
     private final boolean              waitTimeSkipableReCaptcha    = true;
     private final boolean              waitTimeSkipableSolveMedia   = false;
     private final boolean              waitTimeSkipableKeyCaptcha   = false;
@@ -1490,10 +1490,15 @@ public class BeStreamsNet extends PluginForHost {
             final Browser captcha = br.cloneBrowser();
             cleanupBrowser(captcha, form.getHtmlCode());
             final PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-            final jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(captcha);
-            final String result = kc.handleKeyCaptcha(downloadLink.getDownloadURL(), downloadLink);
-            if (result != null && "CANCEL".equals(result)) {
-                throw new PluginException(LinkStatus.ERROR_FATAL);
+            String result = null;
+            try {
+                final jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(captcha);
+                result = (form.hasInputFieldByName("login") && form.hasInputFieldByName("password") ? kc.showDialog(downloadLink.getDownloadURL()) : kc.handleKeyCaptcha(downloadLink.getDownloadURL(), downloadLink));
+            } catch (final Throwable e) {
+                result = null;
+            }
+            if (result == null || "CANCEL".equals(result)) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             form.put("capcode", result);
             skipWaitTime = waitTimeSkipableKeyCaptcha;
