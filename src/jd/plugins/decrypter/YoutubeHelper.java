@@ -888,7 +888,11 @@ public class YoutubeHelper {
             }
         }
         if (StringUtils.isEmpty(vid.channel)) {
-            final String match = this.br.getRegex("data-name=\"watch\"[^>]*>(.*?)</a>").getMatch(0);
+            String match = this.br.getRegex("<div class=\"yt-user-info\"><a [^>]*data-name[^>]*>(.*?)</a>").getMatch(0);
+            if (StringUtils.isEmpty(match)) {
+                // in the html5 json info
+                match = this.br.getRegex("\"author\":\\s*\"(.*?)\",").getMatch(0);
+            }
             if (StringUtils.isNotEmpty(match)) {
                 vid.channel = Encoding.htmlDecode(match.trim());
 
