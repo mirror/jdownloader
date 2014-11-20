@@ -140,7 +140,10 @@ public class FShareVn extends PluginForHost {
         if (br.containsHTML("(<title>Fshare \\– Dịch vụ chia sẻ số 1 Việt Nam \\– Cần là có \\- </title>|b>Liên kết bạn chọn không tồn tại trên hệ thống Fshare</|<li>Liên kết không chính xác, hãy kiểm tra lại|<li>Liên kết bị xóa bởi người sở hữu\\.<)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<p><b>Tên file:</b> (.*?)</p>").getMatch(0);
+        String filename = br.getRegex("file\" title=\"(.*?)\">").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<p><b>Tên file:</b> (.*?)</p>").getMatch(0);
+        }
         if (filename == null) {
             filename = br.getRegex("<p><b>Tên tập tin:</b> (.*?)</p>").getMatch(0);
         }
@@ -148,7 +151,11 @@ public class FShareVn extends PluginForHost {
             filename = br.getRegex("<title>(.*?) \\- Fshare \\- Dịch vụ chia sẻ, lưu trữ dữ liệu miễn phí tốt nhất </title>").getMatch(0);
         }
         String filesize = br.getRegex("<p><b>Dung lượng: </b>(.*?)</p>").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("10px\">(.*?[K|M|G]B)<").getMatch(0);
+        }
         if (filename == null || filesize == null) {
+            logger.info("filename = " + filename + ", filesize = " + filesize);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // Server sometimes sends bad filenames
