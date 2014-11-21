@@ -570,7 +570,13 @@ public class FourSharedCom extends PluginForHost {
             br2.getHeaders().put("X-Requested-With", null);
         }
         br.getPage("/web/account/settings/overview");
-        final String expire = br.getRegex(">Expires in:.*?(\\d+) days<span><br>after last log in</span>").getMatch(0);
+        String expire = br.getRegex(">Expires in:.*?(\\d+) days<span><br>after last log in</span>").getMatch(0);
+        if (expire == null) {
+            expire = br.getRegex(">Expiration Date:.*\\s.*(Until Cancellation)<").getMatch(0);
+            if (expire != null) {
+                expire = "Until Cancellation";
+            }
+        }
         String accType = br.getRegex(">Account type:</div>[\t\n\r ]+<div[^>]+>(.*?)</div").getMatch(0);
         if (accType == null) {
             accType = br.getRegex("accountType : \"AccType = (\\w+)\"").getMatch(0);
@@ -578,6 +584,7 @@ public class FourSharedCom extends PluginForHost {
         final String usedSpace = br.getRegex(">Used space:</div>[\t\n\r ]+<div[^>]+>([0-9\\.]+(KB|MB|GB|TB)) of").getMatch(0);
         final String[] traffic = br.getRegex(">Premium traffic:</div>[\t\n\r ]+<div[^>]+>([0-9\\.]+(KB|MB|GB|TB)) of ([0-9\\.]+(KB|MB|GB|TB))").getRow(0);
         if (expire == null || accType == null) {
+            logger.info("expire = " + expire + ", accType = " + accType);
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         if (usedSpace != null) {
@@ -587,7 +594,10 @@ public class FourSharedCom extends PluginForHost {
             ai.setTrafficLeft(SizeFormatter.getSize(traffic[2]) - SizeFormatter.getSize(traffic[0]));
             ai.setTrafficMax(SizeFormatter.getSize(traffic[2]));
         }
-        ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(expire) * 24 * 60 * 60 * 1000l));
+        if (expire == "Until Cancellation") {
+        } else {
+            ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(expire) * 24 * 60 * 60 * 1000l));
+        }
         if ("FREE (<a href=\"/premium.jsp\">Upgrade</a>)".equalsIgnoreCase(accType) || br.containsHTML(">FREE \\(<a")) {
             ai.setStatus("Registered (free) User");
             account.setValid(true);
