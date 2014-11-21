@@ -401,6 +401,9 @@ public class FShareVn extends PluginForHost {
         if (validUntil == null) {
             validUntil = br.getRegex("Hạn dùng: ([^<>\"]*?)</p></li>").getMatch(0);
         }
+        if (validUntil == null) {
+            validUntil = br.getRegex("Expire: ([^<>\"]*?)</p></li>").getMatch(0);
+        }
         if (br.containsHTML("title=\"Platium\">VIP </span>")) {
             ai.setStatus("Vip User");
             account.setProperty("acctype", Property.NULL);
