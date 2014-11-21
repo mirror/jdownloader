@@ -1,5 +1,8 @@
 EXTRACTTOPATHLOGIC_ASK_FOR_EVERY_ARCHIVE=Preguntar para cada archivo
 EXTRACTTOPATHLOGIC_ASK_ONCE=Preguntar una vez para todos los archivos
+EXTRACTTOPATHLOGIC_EXTRACT_TO_ARCHIVE_PARENT=No preguntar. Extraer en la localización del Archivo
+EXTRACTTOPATHLOGIC_USE_CUSTOMEXTRACTIONPATH=Utilizar configuración de la ruta de extracción personalizada
+ExtractAction_getTranslationForExtractToPathLogic=Ruta de Extracción Lógica
 IfFileExistsDialog_layoutDialogContent_archive=Archivo:
 IfFileExistsDialog_layoutDialogContent_newName=Nuevo Nombre:
 ValidateArchiveAction_ValidateArchiveAction=Validar %s1
