@@ -72,12 +72,16 @@ public class H2PornCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (server_problems) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+        if (server_problems) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+        }
         if (br.containsHTML("This video is a private video uploaded by <")) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered members");
         }
@@ -99,12 +103,16 @@ public class H2PornCom extends PluginForHost {
             server_problems = true;
             return AvailableStatus.UNCHECKABLE;
         }
-        if (br.containsHTML("(<title>Page Not Found|>Channels</h1>)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("(<title>Page Not Found|>Channels</h1>)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<div class=\"video_view\">[\t\n\r ]+<h1 class=\"block_header\">(.*?)\\&nbsp;<g:plusone").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?) @ H2Porn</title>").getMatch(0);
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         filename = Encoding.htmlDecode(filename.trim());
         if (br.containsHTML("This video is a private video uploaded by <")) {
             downloadLink.setName(filename + ".flv");
@@ -113,9 +121,11 @@ public class H2PornCom extends PluginForHost {
         }
         DLLINK = br.getRegex("video_url=(http://.*?)\\&amp;preview_url").getMatch(0);
         if (DLLINK == null) {
-            DLLINK = br.getRegex("video_url:.*?\\('(http://.*?)'\\)").getMatch(0);
+            DLLINK = br.getRegex("video_url:.*?(http://.*?)'").getMatch(0);
         }
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         String ext = DLLINK.substring(DLLINK.lastIndexOf(".")).replaceAll("\\W", "");
         if (ext == null || ext.length() > 5) {
