@@ -162,7 +162,7 @@ public class PlayVidCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                String continuelink = br.getRegex("\"redirect\":\"(\\\\/[^<>\"]*?)\"").getMatch(0);
+                String continuelink = br.getRegex("\"redirect\":\"(https[^<>\"]*?)\"").getMatch(0);
                 if (continuelink == null) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -170,7 +170,7 @@ public class PlayVidCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                continuelink = "https://accounts.playvid.com" + continuelink.replace("\\", "");
+                continuelink = continuelink.replace("\\", "");
                 br.getPage(continuelink);
                 final String cookie = br.getCookie(MAINPAGE, "sunsid");
                 if (cookie == null) {
