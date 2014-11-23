@@ -439,7 +439,7 @@ public class FreeWayMe extends PluginForHost {
                 account.setProperty(ACC_PROPERTY_DROSSEL_ACTIVE, Boolean.FALSE);
             }
         }
-        account.setProperty(ACC_PROPERTY_TRAFFIC_REDUCTION, ((int) trafficPerc * 100));
+        account.setProperty(ACC_PROPERTY_TRAFFIC_REDUCTION, ((int) (trafficPerc * 100)));
         account.setConcurrentUsePossible(true);
 
         final String accountType = getRegexTag(accInfoAPIResp, "premium").getMatch(0);
