@@ -166,6 +166,7 @@ public class SpaceForFilesCom extends PluginForHost {
             }
             br.getHeaders().put("User-Agent", agent.get());
         }
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:33.0) Gecko/20100101 Firefox/33.0");
     }
 
     @Override
@@ -257,6 +258,9 @@ public class SpaceForFilesCom extends PluginForHost {
 
     @SuppressWarnings("unused")
     public void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        final Browser brajax = br.cloneBrowser();
+        brajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        brajax.getPage("http://filespace.com/?op=ajax_time");
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty("pass");
         // First, bring up saved final links
@@ -280,7 +284,6 @@ public class SpaceForFilesCom extends PluginForHost {
             }
         }
         // Possibility to skip captcha & (reconnect) waittimes
-        dllink = null;
         boolean special_success = false;
         boolean special2_success = false;
         if (dllink == null && TRY_SPECIAL_WAY && !downloadLink.getBooleanProperty("special2_failed", false)) {
@@ -338,6 +341,7 @@ public class SpaceForFilesCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
+        dllink = null;
         // Fourth, continue like normal.
         if (dllink == null) {
             checkErrors(downloadLink, false);
@@ -355,6 +359,11 @@ public class SpaceForFilesCom extends PluginForHost {
                     }
                 }
                 // end of backward compatibility
+                download1.remove("lck");
+                download1.remove("method_premium");
+                download1.remove("method_free");
+                download1.put("method_free", "Free Download");
+                download1.setAction(br.getURL());
                 sendForm(download1);
                 checkErrors(downloadLink, false);
                 dllink = getDllink();

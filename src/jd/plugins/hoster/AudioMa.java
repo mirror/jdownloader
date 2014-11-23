@@ -75,22 +75,25 @@ public class AudioMa extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String dllink;
-        String apilink;
-        if (downloadLink.getDownloadURL().matches(TYPE_API)) {
-            apilink = downloadLink.getDownloadURL();
-        } else {
-            apilink = br.getRegex("\"(http://(www\\.)?audiomack\\.com/api/[^<>\"]*?)\"").getMatch(0);
-            if (apilink == null) {
+        /* Prefer downloadlink --> Higher quality version */
+        String dllink = br.getRegex("\"(http://(www\\.)?music\\.audiomack\\.com/tracks/[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            String apilink;
+            if (downloadLink.getDownloadURL().matches(TYPE_API)) {
+                apilink = downloadLink.getDownloadURL();
+            } else {
+                apilink = br.getRegex("\"(http://(www\\.)?audiomack\\.com/api/[^<>\"]*?)\"").getMatch(0);
+                if (apilink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            br.getPage(apilink);
+            dllink = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            dllink = dllink.replace("\\", "");
         }
-        br.getPage(apilink);
-        dllink = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = dllink.replace("\\", "");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

@@ -221,11 +221,9 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     private String fixHash(final String input) {
         /* First fully decode it */
         String hashID = Encoding.htmlDecode(input);
-        if (hashID.contains("+") || hashID.contains("/") || hashID.contains("/")) {
-            hashID = Encoding.urlEncode(hashID);
-        }
-        /* Fix remaining encoding issues */
-        hashID = hashID.replace("+", "%20");
+        hashID = hashID.replace("/", "%2F");
+        hashID = hashID.replace("+", "%2B");
+        hashID = hashID.replace("=", "%3D");
         return hashID;
     }
 

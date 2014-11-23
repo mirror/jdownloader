@@ -204,6 +204,17 @@ public class XboxIsoZoneCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
+                /**
+                 * TODO: Verify this and maybe change it again but at the moment (23.11.14) it seems like they use the OCH "cloudstor.es"
+                 * for their premium stuff.
+                 */
+                if (true) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 br.getPage("http://www.theisozone.com/");
                 br.postPage("http://www.theisozone.com/sub-login/", "sub_login=&login=Login&sub_user=" + Encoding.urlEncode(account.getUser()) + "&sub_pass=" + Encoding.urlEncode(account.getPass()));
                 if (!br.containsHTML("Account Status: <span style=\"color:green\">Active</span>")) {

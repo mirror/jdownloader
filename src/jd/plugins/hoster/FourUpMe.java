@@ -52,7 +52,7 @@ public class FourUpMe extends PluginForHost {
     private String               passCode                     = null;
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private static final String  COOKIE_HOST                  = "http://4upfiles.com";
-    private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
+    private static final String  MAINTENANCE                  = ">This server is in maintenance mode|>Website under Maintenance";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
@@ -66,7 +66,7 @@ public class FourUpMe extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.0.9
-    // mods: getdllink regex added additional domains to the lookup
+    // mods: getdllink regex added additional domains to the lookup, MAINTENANCE[Additional text]
     // non account: 10 * ??
     // free account: chunks * maxdls
     // premium account: chunks * maxdls
