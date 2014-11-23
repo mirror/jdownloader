@@ -237,14 +237,9 @@ public class XboxIsoZoneCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
+        login(account, true);
         br.getPage("http://www.theisozone.com/subscribers/control-panel/");
         ai.setUnlimitedTraffic();
         final String expire = br.getRegex("Next payment due on:</strong> (\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
