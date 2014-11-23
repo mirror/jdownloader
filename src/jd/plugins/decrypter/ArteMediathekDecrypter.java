@@ -47,7 +47,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     private static final String TYPE_CONCERT          = "http://(www\\.)?concert\\.arte\\.tv/(de|fr)/[a-z0-9\\-]+";
     private static final String TYPE_GUIDE            = "http://((videos|www)\\.)?arte\\.tv/guide/[a-z]{2}/[0-9\\-]+";
 
-    private static final String Q_SUBTITLES           = "Q_SUBTITLES";
+    private static final String arteversions          = "arteversions";
     private static final String Q_BEST                = "Q_BEST";
     private static final String Q_LOW                 = "Q_LOW";
     private static final String Q_HIGH                = "Q_HIGH";
@@ -147,8 +147,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         final SubConfiguration cfg = SubConfiguration.getConfig("arte.tv");
         final boolean BEST = cfg.getBooleanProperty(Q_BEST, false);
         final boolean preferHBBTV = cfg.getBooleanProperty(HBBTV, false);
-        final boolean grabSubtitles = cfg.getBooleanProperty(Q_SUBTITLES, false);
+        final int preferredversion = cfg.getIntegerProperty(arteversions, 0);
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        /* 1 = German, 2 = French, 3 = Subtitled version, 4 = Subtitled version for disabled people, 5 = Hörfilm */
         int languageVersion = 1;
         String lang = new Regex(parameter, "(concert\\.arte\\.tv|guide)/(\\w+)/.+").getMatch(1);
         if (lang != null) {
@@ -227,10 +228,16 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             return ret;
         }
 
-        /* Needed for checks later - only set languageVersion to 3 if we know that it's actually available! */
-        if (vsr.contains("\"versionCode\":\"VOF-STMF\"") && grabSubtitles) {
+        /* Needed for checks later - only set languageVersion user selected value if we know that it's actually available! */
+        if (preferredversion == 1 && vsr.contains("\"versionCode\":\"VOF-STMF\"")) {
             logger.info("Subtitled versions available!");
             languageVersion = 3;
+        } else if (preferredversion == 2 && vsr.contains("\"versionCode\":\"VOA-STMA\"")) {
+            logger.info("Subtitled versions available!");
+            languageVersion = 4;
+        } else if (preferredversion == 3 && vsr.contains("\"versionCode\":\"VAAUD\"")) {
+            logger.info("Subtitled versions available!");
+            languageVersion = 5;
         }
 
         final String[][] qualities = new Regex(vsr, "\"([^<>\"/]*?)\":\\{(.*?)\\}").getMatches();
@@ -265,6 +272,10 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 l = "1";
             } else if (versionCode.startsWith("VF") || versionCode.equals("VOF")) {
                 l = "2";
+            } else if (versionCode.equals("VOA-STMA")) {
+                l = "4";
+            } else if (versionCode.equals("VAAUD")) {
+                l = "5";
             } else {
                 /* Unknown - use language inside the link */
                 /* Unknown language Strings so far: VOF-STF, VOA */

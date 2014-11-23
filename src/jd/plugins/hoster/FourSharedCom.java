@@ -594,11 +594,10 @@ public class FourSharedCom extends PluginForHost {
             ai.setTrafficLeft(SizeFormatter.getSize(traffic[2]) - SizeFormatter.getSize(traffic[0]));
             ai.setTrafficMax(SizeFormatter.getSize(traffic[2]));
         }
-        if (expire == "Until Cancellation") {
-        } else {
+        if (!expire.equalsIgnoreCase("Until Cancellation")) {
             ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(expire) * 24 * 60 * 60 * 1000l));
         }
-        if ("FREE (<a href=\"/premium.jsp\">Upgrade</a>)".equalsIgnoreCase(accType) || br.containsHTML(">FREE \\(<a")) {
+        if (!"Premium".equalsIgnoreCase(accType)) {
             ai.setStatus("Registered (free) User");
             account.setValid(true);
             account.setProperty("nopremium", true);

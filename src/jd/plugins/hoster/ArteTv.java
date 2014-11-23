@@ -53,24 +53,25 @@ import org.w3c.dom.NodeList;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "arte.tv", "liveweb.arte.tv", "videos.arte.tv", "concert.arte.tv" }, urls = { "http://(www\\.)?arte\\.tv/[a-z]{2}/videos/.+", "http://liveweb\\.arte\\.tv/[a-z]{2}/videos?/.+", "decrypted://(videos|www)\\.arte\\.tv/(guide/[a-z]{2}/[0-9\\-]+|[a-z]{2}/videos)/.+", "decrypted://concert\\.arte\\.tv/(de|fr)/.+" }, flags = { 32, 32, 32, 32 })
 public class ArteTv extends PluginForHost {
 
-    private String              CLIPURL      = null;
-    private String              EXPIRED      = null;
-    private String              FLASHPLAYER  = null;
-    private String              clipData;
+    private String                CLIPURL      = null;
+    private String                EXPIRED      = null;
+    private String                FLASHPLAYER  = null;
+    private String                clipData;
 
-    private Document            doc;
+    private Document              doc;
+    private static final String   arteversions = "arteversions";
+    /* The list of server values displayed to the user */
+    private static final String[] versions     = new String[] { "Without subtitle & added language", "Subtitle", "Subtitle for disabled people", "Audio description" };
+    private static final String   Q_BEST       = "Q_BEST";
+    private static final String   Q_LOW        = "Q_LOW";
+    private static final String   Q_HIGH       = "Q_HIGH";
+    private static final String   Q_VERYHIGH   = "Q_VERYHIGH";
+    private static final String   Q_HD         = "Q_HD";
+    private static final String   HBBTV        = "HBBTV_2";
+    private static final String   THUMBNAIL    = "THUMBNAIL";
 
-    private static final String Q_SUBTITLES  = "Q_SUBTITLES";
-    private static final String Q_BEST       = "Q_BEST";
-    private static final String Q_LOW        = "Q_LOW";
-    private static final String Q_HIGH       = "Q_HIGH";
-    private static final String Q_VERYHIGH   = "Q_VERYHIGH";
-    private static final String Q_HD         = "Q_HD";
-    private static final String HBBTV        = "HBBTV_2";
-    private static final String THUMBNAIL    = "THUMBNAIL";
-
-    private static final String TYPE_GUIDE   = "http://((videos|www)\\.)?arte\\.tv/guide/[a-z]{2}/.+";
-    private static final String TYPE_CONCERT = "http://(www\\.)?concert\\.arte\\.tv/.+";
+    private static final String   TYPE_GUIDE   = "http://((videos|www)\\.)?arte\\.tv/guide/[a-z]{2}/.+";
+    private static final String   TYPE_CONCERT = "http://(www\\.)?concert\\.arte\\.tv/.+";
 
     public ArteTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -430,7 +431,7 @@ public class ArteTv extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, JDL.L("plugins.hoster.arte.subtitles", "Download subtitled version whenever possible")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), arteversions, versions, JDL.L("plugins.hoster.arte.versions", "Download this version if available:")).setDefaultValue(0));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.arte.best", "Load Best Version ONLY")).setDefaultValue(false);
         getConfig().addEntry(bestonly);
