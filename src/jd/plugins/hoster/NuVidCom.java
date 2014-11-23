@@ -91,7 +91,7 @@ public class NuVidCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?) - Free Porn \\& Sex Video").getMatch(0);
         }
-        final String linkPart = br.getRegex("\\'http://www\\.nuvid\\.com(/player_config/\\?(check_speed=0%26)?t=.*?)\\'\\);").getMatch(0);
+        final String linkPart = br.getRegex("\\'http://www\\.nuvid\\.com(/player_config/\\?(check_speed=.%26)?t=.*?)\\'\\);").getMatch(0);
         if (filename == null || linkPart == null) {
             logger.info("filename = " + filename + "; linkPart = " + linkPart);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
