@@ -1,5 +1,6 @@
 package org.jdownloader.scripting;
 
+import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -8,13 +9,18 @@ import net.sourceforge.htmlunit.corejs.javascript.ClassShutter;
 import net.sourceforge.htmlunit.corejs.javascript.Context;
 import net.sourceforge.htmlunit.corejs.javascript.ContextFactory;
 import net.sourceforge.htmlunit.corejs.javascript.EcmaError;
+import net.sourceforge.htmlunit.corejs.javascript.ErrorReporter;
+import net.sourceforge.htmlunit.corejs.javascript.Evaluator;
+import net.sourceforge.htmlunit.corejs.javascript.Function;
 import net.sourceforge.htmlunit.corejs.javascript.NativeJavaClass;
 import net.sourceforge.htmlunit.corejs.javascript.NativeJavaObject;
+import net.sourceforge.htmlunit.corejs.javascript.Script;
 import net.sourceforge.htmlunit.corejs.javascript.ScriptRuntime;
 import net.sourceforge.htmlunit.corejs.javascript.Scriptable;
 import net.sourceforge.htmlunit.corejs.javascript.WrapFactory;
 import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.utils.logging.Log;
 
 /**
@@ -102,66 +108,100 @@ import org.appwork.utils.logging.Log;
  * 
  */
 public class JSHtmlUnitPermissionRestricter {
-    public static HashSet<String> LOADED = new HashSet<String>();
+    public static HashSet<String>        LOADED = new HashSet<String>();
+    private static SandboxContextFactory CONTEXT_FACTORY;
 
     static public class SandboxContextFactory extends ContextFactory {
+        public SandboxContextFactory() {
+
+        }
+
         @Override
         protected Object doTopCall(Callable callable, Context cx, Scriptable scope, Scriptable thisObj, Object[] args) {
             return super.doTopCall(callable, cx, scope, thisObj, args);
         }
 
         @Override
-        protected Context makeContext() {
-            Context cx = super.makeContext();
+        public Context makeContext() {
+            return makeContext(null);
+        }
+
+        protected Context makeContext(final ContextCallback contextCallback) {
+            Context cx = new Context() {
+                @Override
+                protected Script compileString(String source, Evaluator compiler, ErrorReporter compilationErrorReporter, String sourceName, int lineno, Object securityDomain) {
+                    if (contextCallback != null) {
+                        source = contextCallback.onBeforeSourceCompiling(source, compiler, compilationErrorReporter, sourceName, lineno, securityDomain);
+                    }
+                    Script ret = super.compileString(source, compiler, compilationErrorReporter, sourceName, lineno, securityDomain);
+                    if (contextCallback != null) {
+                        ret = contextCallback.onAfterSourceCompiling(ret, source, compiler, compilationErrorReporter, sourceName, lineno, securityDomain);
+                    }
+                    return ret;
+                }
+
+                @Override
+                protected Function compileFunction(Scriptable scope, String source, Evaluator compiler, ErrorReporter compilationErrorReporter, String sourceName, int lineno, Object securityDomain) {
+                    return super.compileFunction(scope, source, compiler, compilationErrorReporter, sourceName, lineno, securityDomain);
+                }
+
+            };
+            try {
+                Field field = Context.class.getDeclaredField("factory");
+                field.setAccessible(true);
+                field.set(cx, SandboxContextFactory.this);
+                field.setAccessible(false);
+            } catch (Throwable e) {
+                throw new WTFException(e);
+            }
             cx.setWrapFactory(new SandboxWrapFactory());
             cx.setClassShutter(new ClassShutter() {
                 public boolean visibleToScripts(String className) {
                     Thread cur = Thread.currentThread();
 
                     if (TRUSTED_THREAD.containsKey(cur)) {
-                        if (true) {
-                            ScriptRuntime.constructError("Trusted Thread Loaded", className).printStackTrace();
 
-                        }
                         LOADED.add(className);
 
                         return true;
 
                     }
                     if (className.startsWith("adapter")) {
-                        if (true) {
-                            ScriptRuntime.constructError("Trusted Thread Loaded", className).printStackTrace();
-
-                        }
+                        // if (true) {
+                        // ScriptRuntime.constructError("Trusted Thread Loaded", className).printStackTrace();
+                        //
+                        // }
                         LOADED.add(className);
                         return true;
 
                     } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.EcmaError")) {
-                        if (true) {
-                            ScriptRuntime.constructError("Thread Loaded ", className).printStackTrace();
-
-                        }
+                        // if (true) {
+                        // ScriptRuntime.constructError("Thread Loaded ", className).printStackTrace();
+                        //
+                        // }
                         Log.L.severe("Javascript error occured");
                         LOADED.add(className);
                         return true;
                     } else {
-                        if (true) {
-                            ScriptRuntime.constructError("Security Violation Loaded Class", className).printStackTrace();
-                        }
-                        throw new RuntimeException("Security Violation " + className);
+                        // if (!Application.isJared(null)) {
+                        // ScriptRuntime.constructError("Security Violation Loaded Class", className).printStackTrace();
+                        // }
+                        throw ScriptRuntime.constructError("Security Violation", "Security Violation " + className);
+                        // return true;
                     }
 
                 }
             });
-
+            onContextCreated(cx);
             return cx;
         }
+
     }
 
     public static class SandboxWrapFactory extends WrapFactory {
         @Override
         public Scriptable wrapJavaClass(Context cx, Scriptable scope, Class javaClass) {
-            System.out.println("Wrap Java Class: " + javaClass);
+            // System.out.println("Wrap Java Class: " + javaClass);
             Scriptable ret = new NativeJavaClass(scope, javaClass) {
                 @Override
                 public Object unwrap() {
@@ -172,7 +212,8 @@ public class JSHtmlUnitPermissionRestricter {
                 public Object get(String name, Scriptable start) {
 
                     Object ret = super.get(name, start);
-                    System.out.println("Access  Static Member " + this + "." + name + " = " + "(" + ret.getClass().getSimpleName() + ") " + ret);
+                    // System.out.println("Access  Static Member " + this + "." + name + " = " + "(" + ret.getClass().getSimpleName() + ") "
+                    // + ret);
                     return ret;
                 }
 
@@ -205,7 +246,7 @@ public class JSHtmlUnitPermissionRestricter {
             if (str.length() > 100) {
                 str = str.substring(0, 100) + "...";
             }
-            System.out.println("Wrap Java Object  Class:" + staticType + " Java Instance: " + str);
+            // System.out.println("Wrap Java Object  Class:" + staticType + " Java Instance: " + str);
             return new SandboxNativeJavaObject(scope, javaObject, staticType);
         }
 
@@ -229,14 +270,19 @@ public class JSHtmlUnitPermissionRestricter {
             }
 
             Object ret = super.get(name, start);
-            System.out.println("Access  " + this + "." + name + " = " + "(" + ret.getClass().getSimpleName() + ") " + ret);
+            // System.out.println("Access  " + this + "." + name + " = " + "(" + ret.getClass().getSimpleName() + ") " + ret);
             return ret;
 
         }
     }
 
-    public static void init() {
-        ContextFactory.initGlobal(new SandboxContextFactory());
+    public synchronized static void init() {
+        if (CONTEXT_FACTORY != null) {
+            throw new IllegalStateException("Init already done earlier");
+        }
+        SandboxContextFactory synch = new SandboxContextFactory();
+        ContextFactory.initGlobal(synch);
+        CONTEXT_FACTORY = synch;
     }
 
     private static ConcurrentHashMap<Thread, Boolean> TRUSTED_THREAD = new ConcurrentHashMap<Thread, Boolean>();
@@ -252,4 +298,9 @@ public class JSHtmlUnitPermissionRestricter {
             TRUSTED_THREAD.remove(Thread.currentThread());
         }
     }
+
+    public static Context makeContext(ContextCallback contextCallback) {
+        return CONTEXT_FACTORY.makeContext(contextCallback);
+    }
+
 }

@@ -41,8 +41,8 @@ public class SolverTimingDialog extends AbstractDialog<Object> {
     public SolverTimingDialog(SolverService editing) {
         super(UIOManager.BUTTONS_HIDE_CANCEL | Dialog.STYLE_HIDE_ICON, _GUI._.SolverTimingDialog(editing.getType(), editing.getName()), null, _GUI._.lit_close(), null);
         this.solver = editing;
-        setLocator(new RememberAbsoluteDialogLocator(getClass().getSimpleName() + "." + editing.getName()));
-        setDimensor(new RememberLastDialogDimension(getClass().getSimpleName() + "." + editing.getName()));
+        setLocator(new RememberAbsoluteDialogLocator(getClass().getSimpleName()));
+        setDimensor(new RememberLastDialogDimension(getClass().getSimpleName()));
         table = new TimingTable(solver);
         setLeftActions(table.getResetAction());
     }
