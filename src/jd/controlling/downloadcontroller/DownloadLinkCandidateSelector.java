@@ -234,7 +234,9 @@ public class DownloadLinkCandidateSelector {
                 }
             }
         }
-
+        if (maxPluginConcurrentHost <= 0 || maxPluginConcurrentAccount <= 0) {
+            return DownloadLinkCandidatePermission.CONCURRENCY_LIMIT;
+        }
         if (candidate.isForced() && forcedDownloads < maxDownloadsForced) {
             /**
              * we can still start forced downloads
