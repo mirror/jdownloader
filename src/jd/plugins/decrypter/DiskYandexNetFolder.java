@@ -93,7 +93,6 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 return null;
             }
             hashID = fixHash(hashID);
-            hashID = hashID.replace("+", "%20");
             parameter = protocol + "://disk.yandex.com/public/?hash=" + hashID;
             br.getPage(parameter);
         }

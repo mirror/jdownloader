@@ -206,13 +206,22 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
         String VRA = br.getRegex("\"VRA\":\"([^\"]+)\"").getMatch(0);
         VRU = br.getRegex("\"VRU\":\"([^\"]+)\"").getMatch(0);
-        if (VRU.matches("\\d+/\\d+/\\d+ \\d+:\\d+:\\d+ \\+\\d+")) {
+        /*
+         * In this case the video is not yet released and there usually is a value "VDB" which contains the release-date of the video -->
+         * But we don't need that - right now, such videos are simply offline and will be added as offline.
+         */
+        if (VRU == null) {
+            final DownloadLink offline = this.createofflineDownloadLink(parameter);
+            offline.setFinalFileName("Not_yet_available_" + title);
+            ret.add(offline);
+            return ret;
+        } else if (VRU.matches("\\d+/\\d+/\\d+ \\d+:\\d+:\\d+ \\+\\d+")) {
             SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss Z", Locale.getDefault());
             final Date date = df.parse(VRU);
             /* Maybe their rights to show the video expired */
             if (date.getTime() <= System.currentTimeMillis()) {
                 final DownloadLink offline = this.createofflineDownloadLink(parameter);
-                offline.setFinalFileName(title);
+                offline.setFinalFileName("Not_available_anymore_" + title);
                 ret.add(offline);
                 return ret;
             }
