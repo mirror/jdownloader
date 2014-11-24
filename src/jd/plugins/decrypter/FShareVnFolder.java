@@ -48,7 +48,6 @@ public class FShareVnFolder extends PluginForDecrypt {
         final String uid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         final String fpName = br.getRegex("data-id=\"" + uid + "\" data-path=\"/(.*?)\"").getMatch(0);
         String[] linkinformation = br.getRegex("<li>(\\s*<div[^>]+class=\"[^\"]+file_name[^\"]*.*?)</li>").getColumn(0);
-        linkinformation = null;
         if (linkinformation == null || linkinformation.length == 0) {
             failed = true;
             linkinformation = br.getRegex("(https?://(www\\.)?fshare\\.vn/file/[A-Z0-9]+)").getColumn(0);
