@@ -75,17 +75,6 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
         return this.long_debuglog;
     }
 
-    @Override
-    public boolean isEnabled() {
-        return config.ismouse() || config.isEnabled();
-    }
-
-    @Override
-    public void setEnabled(boolean b) {
-        config.setmouse(b);
-        config.setEnabled(b);
-    }
-
     public void setdebug_short(String logdata) {
         if (config.isDebug() && logdata != null) {
             setlong_debuglog(logdata);
@@ -317,6 +306,11 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
             job.getLogger().log(e);
         }
 
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return super.isEnabled() && config.isEnabledGlobally();
     }
 
     @Override

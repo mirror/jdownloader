@@ -58,9 +58,9 @@ public abstract class ChallengeSolver<T> {
         return getService().getConfig().isEnabled();
     }
 
-    public void setEnabled(boolean b) {
-        getService().getConfig().setEnabled(b);
-    }
+    // public void setEnabled(boolean b) {
+    // getService().getConfig().setEnabled(b);
+    // }
 
     public List<SolverJob<T>> listJobs() {
         synchronized (map) {
