@@ -7,6 +7,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.WeakHashMap;
 
@@ -41,6 +42,7 @@ public class SmoozedCom extends PluginForHost {
 
     private static WeakHashMap<Account, Map<String, Object>> ACCOUNTINFOS = new WeakHashMap<Account, Map<String, Object>>();
     private final String                                     ACCOUNTINFO  = "ACCOUNTINFO";
+    private final String                                     ACCOUNTHASH  = "ACCOUNTHASH";
 
     public SmoozedCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -107,18 +109,20 @@ public class SmoozedCom extends PluginForHost {
                 final String responseString = account.getStringProperty(ACCOUNTINFO, null);
                 if (StringUtils.isNotEmpty(responseString)) {
                     try {
-                        final HashMap<String, Object> responseMap = JSonStorage.restoreFromString(responseString, new TypeRef<HashMap<String, Object>>() {
-                        }, null);
-                        if (responseMap != null && responseMap.size() > 0) {
-                            rewriteHosterNames(responseMap, new PluginFinder());
-                            ACCOUNTINFOS.put(account, responseMap);
-                        } else {
-                            account.removeProperty(ACCOUNTINFO);
+                        if (StringUtils.equals(Hash.getSHA256((account.getUser() + account.getPass()).toLowerCase(Locale.ENGLISH)), account.getStringProperty(ACCOUNTHASH, null))) {
+                            final HashMap<String, Object> responseMap = JSonStorage.restoreFromString(responseString, new TypeRef<HashMap<String, Object>>() {
+                            }, null);
+                            if (responseMap != null && responseMap.size() > 0) {
+                                rewriteHosterNames(responseMap, new PluginFinder());
+                                ACCOUNTINFOS.put(account, responseMap);
+                                return;
+                            }
                         }
                     } catch (final Throwable e) {
                         LogSource.exception(logger, e);
-                        account.removeProperty(ACCOUNTINFO);
                     }
+                    account.removeProperty(ACCOUNTHASH);
+                    account.removeProperty(ACCOUNTINFO);
                 }
             }
         }
@@ -127,7 +131,20 @@ public class SmoozedCom extends PluginForHost {
     private Map<String, Object> login(Account account) throws Exception {
         synchronized (ACCOUNTINFOS) {
             try {
-                final Request request = apiLogin(account);
+                restoreAccountInfos(account);
+                final String session_Key = get(account, String.class, "data", "session_key");
+                Request request = null;
+                if (session_Key != null) {
+                    try {
+                        // apiCheckSession(account, session_Key);
+                        request = apiConfigJS(account, session_Key);
+                    } catch (PluginException e) {
+                        request = null;
+                    }
+                }
+                if (request == null) {
+                    request = apiLogin(account);
+                }
                 final String responseString = request.getHtmlCode();
                 final HashMap<String, Object> responseMap = JSonStorage.restoreFromString(responseString, new TypeRef<HashMap<String, Object>>() {
                 }, null);
@@ -137,9 +154,11 @@ public class SmoozedCom extends PluginForHost {
                 }
                 ACCOUNTINFOS.put(account, responseMap);
                 account.setProperty(ACCOUNTINFO, responseString);
+                account.setProperty(ACCOUNTHASH, Hash.getSHA256((account.getUser() + account.getPass()).toLowerCase(Locale.ENGLISH)));
                 return responseMap;
             } catch (final PluginException e) {
                 account.removeProperty(ACCOUNTINFO);
+                account.removeProperty(ACCOUNTHASH);
                 ACCOUNTINFOS.remove(account);
                 throw e;
             }
@@ -311,6 +330,20 @@ public class SmoozedCom extends PluginForHost {
         return api(account, null, "/api/login", "auth=" + Encoding.urlEncode(account.getUser()) + "&password=" + PBKDF2Key(account.getPass()));
     }
 
+    private Request apiConfigJS(final Account account, final String session_Key) throws Exception {
+        br.getPage(API + "/config.js?session_key=" + Encoding.urlEncode(session_Key));
+        final Request request = br.getRequest();
+        errorHandling(request, account, session_Key, "/config.js");
+        final String responseString = request.getHtmlCode();
+        final HashMap<String, Object> responseMap = JSonStorage.restoreFromString(responseString, new TypeRef<HashMap<String, Object>>() {
+        }, null);
+        final String new_Session_Key = get(responseMap, String.class, "data", "session_key");
+        if (StringUtils.isEmpty(new_Session_Key) || "error".equalsIgnoreCase(new_Session_Key)) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid session_key", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        return request;
+    }
+
     private void errorHandling(Request request, final Account account, final String session_Key, final String method) throws Exception {
         if (StringUtils.containsIgnoreCase(request.getResponseHeader("Content-Type"), "application/json")) {
             final HashMap<String, Object> responseMap = JSonStorage.restoreFromString(request.getHtmlCode(), new TypeRef<HashMap<String, Object>>() {
@@ -337,6 +370,7 @@ public class SmoozedCom extends PluginForHost {
                         synchronized (ACCOUNTINFOS) {
                             if (StringUtils.equals(session_Key, get(account, String.class, "data", "session_key"))) {
                                 account.removeProperty(ACCOUNTINFO);
+                                account.removeProperty(ACCOUNTHASH);
                                 ACCOUNTINFOS.remove(account);
                             }
                         }
