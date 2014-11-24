@@ -31,6 +31,7 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -54,6 +55,7 @@ public class FShareVn extends PluginForHost {
     private static final String  IPBLOCKED   = "<li>Tài khoản của bạn thuộc GUEST nên chỉ tải xuống";
     private static Object        LOCK        = new Object();
     private static AtomicInteger maxPrem     = new AtomicInteger(1);
+    private String               dllink      = null;
 
     public FShareVn(PluginWrapper wrapper) {
         super(wrapper);
@@ -136,6 +138,39 @@ public class FShareVn extends PluginForHost {
         this.setBrowserExclusive();
         prepBrowser();
         br.getPage(link.getDownloadURL());
+        String redirect = br.getRedirectLocation();
+        if (redirect != null) {
+            final boolean follows_redirects = br.isFollowingRedirects();
+            URLConnectionAdapter con = null;
+            br.setFollowRedirects(true);
+            try {
+                if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
+                    con = br.openHeadConnection(redirect);
+                } else {
+                    con = br.openGetConnection(redirect);
+                }
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    br.followConnection();
+                } else {
+                    link.setName(getFileNameFromHeader(con));
+                    try {
+                        // @since JD2
+                        link.setVerifiedFileSize(con.getLongContentLength());
+                    } catch (final Throwable t) {
+                        link.setDownloadSize(con.getLongContentLength());
+                    }
+                    // lets also set dllink
+                    dllink = br.getURL();
+                    return AvailableStatus.TRUE;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+                br.setFollowRedirects(follows_redirects);
+            }
+        }
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(<title>Fshare \\– Dịch vụ chia sẻ số 1 Việt Nam \\– Cần là có \\- </title>|b>Liên kết bạn chọn không tồn tại trên hệ thống Fshare</|<li>Liên kết không chính xác, hãy kiểm tra lại|<li>Liên kết bị xóa bởi người sở hữu\\.<)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -166,8 +201,8 @@ public class FShareVn extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception {
-        String dllink = br.getRedirectLocation();
         if (dllink != null) {
+            // these are effectively premium links?
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
             if (!dl.getConnection().getContentType().contains("html")) {
                 dl.startDownload();
@@ -199,14 +234,14 @@ public class FShareVn extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
             }
-            String downloadURL = br.getRegex("window\\.location=\\'(.*?)\\'").getMatch(0);
-            if (downloadURL == null) {
-                downloadURL = br.getRegex("value=\"Download\" name=\"btn_download\" value=\"Download\"  onclick=\"window\\.location=\\'(http://.*?)\\'\"").getMatch(0);
-                if (downloadURL == null) {
-                    downloadURL = br.getRegex("<form action=\"(http://download[^\\.]+\\.fshare\\.vn/download/[^<>]+/.*?)\"").getMatch(0);
+            dllink = br.getRegex("window\\.location=\\'(.*?)\\'").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("value=\"Download\" name=\"btn_download\" value=\"Download\"  onclick=\"window\\.location=\\'(http://.*?)\\'\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("<form action=\"(http://download[^\\.]+\\.fshare\\.vn/download/[^<>]+/.*?)\"").getMatch(0);
                 }
             }
-            logger.info("downloadURL = " + downloadURL);
+            logger.info("downloadURL = " + dllink);
             // Waittime
             String wait = br.getRegex("var count = \"(\\d+)\";").getMatch(0);
             if (wait == null) {
@@ -216,23 +251,23 @@ public class FShareVn extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             // No downloadlink shown, host is buggy
-            if (downloadURL == null && "0".equals(wait)) {
+            if (dllink == null && "0".equals(wait)) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
             }
-            if (wait == null || downloadURL == null || !downloadURL.contains("fshare.vn")) {
+            if (wait == null || dllink == null || !dllink.contains("fshare.vn")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             sleep(Long.parseLong(wait) * 1001l, downloadLink);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadURL, false, 1);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
-                if (br.containsHTML(SERVERERROR)) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.fsharevn.Servererror", "Servererror!"), 60 * 60 * 1000l);
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl.startDownload();
         }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML(SERVERERROR)) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.fsharevn.Servererror", "Servererror!"), 60 * 60 * 1000l);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     private void prepBrowser() {
