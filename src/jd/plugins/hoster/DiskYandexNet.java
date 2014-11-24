@@ -635,9 +635,9 @@ public class DiskYandexNet extends PluginForHost {
             hash = hash.replace(" ", "-");
             hash = hash.replace("/", "%2F");
         } else {
-            hash = hash.replace("%20", "+");
-            hash = hash.replace("%2F", "_");
-            hash = hash.replace("/", "_");
+            // hash = hash.replace("%20", "+");
+            // hash = hash.replace("%2F", "_");
+            // hash = hash.replace("/", "_");
         }
         return hash;
     }
