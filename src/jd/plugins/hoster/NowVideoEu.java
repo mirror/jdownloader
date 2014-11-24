@@ -60,6 +60,9 @@ public class NowVideoEu extends PluginForHost {
         return MAINPAGE.get() + "/terms.php";
     }
 
+    /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet */
+    private static final String DOMAIN = "nowvideo.eu";
+
     @Override
     public String rewriteHost(String host) {
         if ("nowvideo.co".equals(getHost())) {
@@ -189,32 +192,57 @@ public class NowVideoEu extends PluginForHost {
         if (br.containsHTML(ISBEINGCONVERTED)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is being converted!", 2 * 60 * 60 * 1000l);
         }
-        String fKey = br.getRegex("flashvars\\.filekey=\"([^<>\"]*)\"").getMatch(0);
-        if (fKey == null) {
-            fKey = br.getRegex("var fkzd=\"([^<>\"]*)\"").getMatch(0);
+        String cid2 = br.getRegex("flashvars\\.cid2=\"(\\d+)\";").getMatch(0);
+        String key = br.getRegex("flashvars\\.filekey=\"(.*?)\"").getMatch(0);
+        if (key == null) {
+            key = br.getRegex("var fkzd=\"([^<>\"]*?)\"").getMatch(0);
         }
-        if (fKey == null && br.containsHTML("w,i,s,e")) {
+        if (key == null && br.containsHTML("w,i,s,e")) {
             String result = unWise();
-            fKey = new Regex(result, "(\"\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}-[a-f0-9]{32})\"").getMatch(0);
+            key = new Regex(result, "(\"\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}-[a-f0-9]{32})\"").getMatch(0);
         }
-        if (fKey == null) {
+        if (key == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage(MAINPAGE.get() + "/api/player.api.php?pass=undefined&user=undefined&codes=undefined&file=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&key=" + Encoding.urlEncode(fKey));
-        if (br.containsHTML("The video is being transfered")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: The video is being transfered", 30 * 60 * 1000l);
+        if (cid2 == null) {
+            cid2 = "undefined";
         }
-        if (br.containsHTML("error=1&error_msg=The video is converting")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster Issue: Video still Converting", 30 * 60 * 1000);
+        key = Encoding.urlEncode(key);
+        final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+        String lastdllink = null;
+        boolean success = false;
+        for (int i = 0; i <= 3; i++) {
+            if (i > 0) {
+                br.getPage("http://www." + DOMAIN + "/api/player.api.php?user=undefined&errorUrl=" + Encoding.urlEncode(lastdllink) + "&pass=undefined&cid3=undefined&errorCode=404&cid=1&cid2=" + cid2 + "&key=" + key + "&file=" + fid + "&numOfErrors=" + i);
+            } else {
+                br.getPage("http://www." + DOMAIN + "/api/player.api.php?cid2=" + cid2 + "&numOfErrors=0&user=undefined&cid=1&pass=undefined&key=" + key + "&file=" + fid + "&cid3=undefined");
+            }
+            String dllink = br.getRegex("url=(http://.*?)\\&title").getMatch(0);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            try {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+                if (!dl.getConnection().getContentType().contains("html")) {
+                    success = true;
+                    break;
+                } else {
+                    lastdllink = dllink;
+                    continue;
+                }
+            } finally {
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e) {
+                }
+            }
         }
-        String dllink = br.getRegex("url=(http://[^<>\"]*?\\.flv)\\&title").getMatch(0);
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!success) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
         dl.startDownload();
     }

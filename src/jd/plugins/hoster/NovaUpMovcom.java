@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map.Entry;
@@ -51,8 +50,10 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "novamov.com", "novaup.com" }, urls = { "http://(www\\.)?(nova(up|mov)\\.com/(download|sound|video)/[a-z0-9]+|(embed\\.)?novamov\\.com/embed\\.php(\\?width=\\d+\\&height=\\d+\\&|\\?)v=[a-z0-9]+)", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2, 0 })
 public class NovaUpMovcom extends PluginForHost {
 
+    /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet */
     private final String         TEMPORARYUNAVAILABLE         = "(The file is being transfered to our other servers\\.|This may take few minutes\\.</)";
     private final String         TEMPORARYUNAVAILABLEUSERTEXT = "Temporary unavailable";
+    private static final String  DOMAIN                       = "novamov.com";
 
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
@@ -122,7 +123,6 @@ public class NovaUpMovcom extends PluginForHost {
             }
             filename = filename.trim();
             downloadLink.setFinalFileName(filename.replace(filename.substring(filename.length() - 4, filename.length()), "") + ".flv");
-            getVideoLink();
             if (br.containsHTML("error_msg=The video is being transfered")) {
                 downloadLink.getLinkStatus().setStatusText("Not downloadable at the moment, try again later...");
                 return AvailableStatus.TRUE;
@@ -132,16 +132,6 @@ public class NovaUpMovcom extends PluginForHost {
             } else if (br.containsHTML("error_msg=invalid token")) {
                 downloadLink.getLinkStatus().setStatusText("Server error 'invalid token'");
                 return AvailableStatus.TRUE;
-            }
-            if (DLLINK == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            DLLINK = Encoding.urlDecode(DLLINK, false);
-            final URLConnectionAdapter con = br.openGetConnection(DLLINK);
-            try {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } finally {
-                con.disconnect();
             }
 
         } else {
@@ -167,18 +157,61 @@ public class NovaUpMovcom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        if (dllink == null) {
+        DLLINK = checkDirectLink(downloadLink, directlinkproperty);
+        if (DLLINK == null) {
             if (downloadLink.getDownloadURL().contains("video")) {
                 /* Generate new link */
                 br.getPage(downloadLink.getDownloadURL());
-                getVideoLink();
                 if (br.containsHTML("error_msg=The video is being transfered")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not downloadable at the moment, try again later...", 60 * 60 * 1000l);
                 } else if (br.containsHTML("error_msg=The video has failed to convert")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'The video has failed to convert'", 30 * 60 * 1000l);
                 } else if (br.containsHTML("error_msg=invalid token")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'invalid token'", 30 * 60 * 1000l);
+                }
+                String cid2 = br.getRegex("flashvars\\.cid2=\"(\\d+)\";").getMatch(0);
+                String key = br.getRegex("flashvars\\.filekey=\"(.*?)\"").getMatch(0);
+                if (key == null && br.containsHTML("w,i,s,e")) {
+                    String result = unWise();
+                    key = new Regex(result, "(\"\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}-[a-f0-9]{32})\"").getMatch(0);
+                }
+                if (key == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (cid2 == null) {
+                    cid2 = "undefined";
+                }
+                final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+                String lastdllink = null;
+                boolean success = false;
+                for (int i = 0; i <= 3; i++) {
+                    if (i > 0) {
+                        br.getPage("http://www." + DOMAIN + "/api/player.api.php?user=undefined&errorUrl=" + Encoding.urlEncode(lastdllink) + "&pass=undefined&cid3=undefined&errorCode=404&cid=1&cid2=" + cid2 + "&key=" + key + "&file=" + fid + "&numOfErrors=" + i);
+                    } else {
+                        br.getPage("http://www." + DOMAIN + "/api/player.api.php?cid2=" + cid2 + "&numOfErrors=0&user=undefined&cid=1&pass=undefined&key=" + key + "&file=" + fid + "&cid3=undefined");
+                    }
+                    DLLINK = br.getRegex("url=(http://.*?)\\&title").getMatch(0);
+                    if (DLLINK == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    try {
+                        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resumable, maxchunks);
+                        if (!dl.getConnection().getContentType().contains("html")) {
+                            success = true;
+                            break;
+                        } else {
+                            lastdllink = DLLINK;
+                            continue;
+                        }
+                    } finally {
+                        try {
+                            dl.getConnection().disconnect();
+                        } catch (final Throwable e) {
+                        }
+                    }
+                }
+                if (!success) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
                 }
             } else {
                 // handling für "nicht"-video Links
@@ -197,15 +230,15 @@ public class NovaUpMovcom extends PluginForHost {
                 if (!DLLINK.contains("http://")) {
                     DLLINK = "http://novaup.com" + DLLINK;
                 }
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resumable, maxchunks);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             handleServerErrors();
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
+        downloadLink.setProperty(directlinkproperty, DLLINK);
         dl.startDownload();
     }
 
@@ -213,22 +246,6 @@ public class NovaUpMovcom extends PluginForHost {
         if (dl.getConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
         }
-    }
-
-    private void getVideoLink() throws PluginException, IOException {
-        String result = unWise();
-        // Maybe it's directly in the html
-        if (result == null) {
-            result = br.toString();
-        }
-        final String fileId = new Regex(result, "flashvars\\.file=\"(.*?)\"").getMatch(0);
-        final String fileKey = new Regex(result, "flashvars\\.filekey=\"(.*?)\"").getMatch(0);
-        final String fileCid = new Regex(result, "flashvars\\.cid=\"(.*?)\"").getMatch(0);
-        if (fileId == null || fileKey == null || fileCid == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.getPage("http://www.novamov.com/api/player.api.php?user=undefined&codes=" + fileCid + "&file=" + fileId + "&pass=undefined&key=" + fileKey);
-        DLLINK = br.getRegex("url=(.*?)\\&").getMatch(0);
     }
 
     private String unWise() {
