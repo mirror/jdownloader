@@ -49,8 +49,6 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videoweed.es", "videoweed.com" }, urls = { "http://(www\\.)?(videoweed\\.(com|es)/(file/|embed\\.php\\?.*?v=)|embed\\.videoweed\\.(com|es)/embed\\.php\\?v=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2, 0 })
 public class VideoWeedCom extends PluginForHost {
 
-    private String dllink = null;
-
     public VideoWeedCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.videoweed.es/premium.php");
@@ -73,9 +71,11 @@ public class VideoWeedCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.videoweed.com/terms.php";
+        return "http://www.videoweed.es/terms.php";
     }
 
+    /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet */
+    private static final String  DOMAIN                       = "videoweed.es";
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
     private static final int     FREE_MAXCHUNKS               = 0;
@@ -113,15 +113,9 @@ public class VideoWeedCom extends PluginForHost {
                 }
             }
         }
-        String key = br.getRegex("flashvars\\.filekey=\"(.*?)\"").getMatch(0);
-        if (key == null && br.containsHTML("w,i,s,e")) {
-            String result = unWise();
-            key = new Regex(result, "(\"\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}-[a-f0-9]{32})\"").getMatch(0);
-        }
-        if (key == null || filename == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage("http://www.videoweed.es/api/player.api.php?user=undefined&codes=1&file=" + new Regex(downloadLink.getDownloadURL(), "videoweed\\.es/file/(.+)").getMatch(0) + "&pass=undefined&key=" + Encoding.urlEncode(key));
         filename = Encoding.htmlDecode(filename.trim());
         final String ext = ".flv";
         if (filename.contains(".")) {
@@ -144,28 +138,7 @@ public class VideoWeedCom extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText("Server says: This video is converting");
             return AvailableStatus.TRUE;
         }
-        dllink = br.getRegex("url=(http://.*?)\\&title").getMatch(0);
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -174,6 +147,7 @@ public class VideoWeedCom extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
+    @SuppressWarnings("deprecation")
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
@@ -184,12 +158,55 @@ public class VideoWeedCom extends PluginForHost {
             } else if (br.containsHTML("error_msg=The video is converting")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server says: This video is converting", 60 * 60 * 1000l);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String cid2 = br.getRegex("flashvars\\.cid2=\"(\\d+)\";").getMatch(0);
+            String key = br.getRegex("flashvars\\.filekey=\"(.*?)\"").getMatch(0);
+            if (key == null && br.containsHTML("w,i,s,e")) {
+                String result = unWise();
+                key = new Regex(result, "(\"\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}-[a-f0-9]{32})\"").getMatch(0);
+            }
+            if (key == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (cid2 == null) {
+                cid2 = "undefined";
+            }
+            key = Encoding.urlEncode(key);
+            final String fid = new Regex(downloadLink.getDownloadURL(), "videoweed\\.es/file/(.+)").getMatch(0);
+            String lastdllink = null;
+            boolean success = false;
+            for (int i = 0; i <= 3; i++) {
+                if (i > 0) {
+                    br.getPage("http://www." + DOMAIN + "/api/player.api.php?user=undefined&errorUrl=" + Encoding.urlEncode(lastdllink) + "&pass=undefined&cid3=undefined&errorCode=404&cid=1&cid2=" + cid2 + "&key=" + key + "&file=" + fid + "&numOfErrors=" + i);
+                } else {
+                    br.getPage("http://www." + DOMAIN + "/api/player.api.php?cid2=" + cid2 + "&numOfErrors=0&user=undefined&cid=1&pass=undefined&key=" + key + "&file=" + fid + "&cid3=undefined");
+                }
+                dllink = br.getRegex("url=(http://.*?)\\&title").getMatch(0);
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                try {
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+                    if (!dl.getConnection().getContentType().contains("html")) {
+                        success = true;
+                        break;
+                    } else {
+                        lastdllink = dllink;
+                        continue;
+                    }
+                } finally {
+                    try {
+                        dl.getConnection().disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
+            }
+            if (!success) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+            }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
         downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();

@@ -15,7 +15,6 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.HashMap;
 import java.util.logging.Level;
 
 import javax.script.ScriptEngine;
@@ -32,12 +31,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-//movshare by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movshare.net", "epornik.com" }, urls = { "http://(www\\.)?movshare\\.net/video/[a-z0-9]+|http://embed\\.movshare\\.net/embed\\.php\\?v=[a-z0-9]+", "http://(www\\.)?epornik\\.com/video/[a-z0-9]+" }, flags = { 0, 0 })
 public class MovShareNet extends PluginForHost {
 
     private static final String HUMANTEXT = "We need you to prove you\\'re human";
     private static final String EPRON     = "epornik.com/";
+    private static final String DOMAIN    = "movshare.net";
 
     public MovShareNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -57,6 +56,7 @@ public class MovShareNet extends PluginForHost {
         link.setUrlDownload("http://www.movshare.net/video/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
     }
 
+    /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet */
     // This plugin is 99,99% copy the same as the DivxStageNet plugin, if this
     // gets broken please also check the other one!
     @Override
@@ -126,54 +126,66 @@ public class MovShareNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             }
         }
-        String dllink = br.getRegex("video/divx\" src=\"(.*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("src\" value=\"(.*?)\"").getMatch(0);
+        String cid2 = br.getRegex("flashvars\\.cid2=\"(\\d+)\";").getMatch(0);
+        String key = br.getRegex("flashvars\\.filekey=\"(.*?)\"").getMatch(0);
+        if (key == null && br.containsHTML("w,i,s,e")) {
+            String result = unWise();
+            key = new Regex(result, "(\"\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}-[a-f0-9]{32})\"").getMatch(0);
+        }
+        if (key == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (cid2 == null) {
+            cid2 = "undefined";
+        }
+        final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+        String lastdllink = null;
+        boolean success = false;
+        for (int i = 0; i <= 3; i++) {
+            if (i > 0) {
+                br.getPage("http://www." + DOMAIN + "/api/player.api.php?user=undefined&errorUrl=" + Encoding.urlEncode(lastdllink) + "&pass=undefined&cid3=undefined&errorCode=404&cid=1&cid2=" + cid2 + "&key=" + key + "&file=" + fid + "&numOfErrors=" + i);
+            } else {
+                br.getPage("http://www." + DOMAIN + "/api/player.api.php?cid2=" + cid2 + "&numOfErrors=0&user=undefined&cid=1&pass=undefined&key=" + key + "&file=" + fid + "&cid3=undefined");
+            }
+            String dllink = br.getRegex("url=(http://.*?)\\&title").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("\"file\",\"(http:.*?)\"").getMatch(0);
-                if (dllink == null) {
-                    dllink = br.getRegex("flashvars\\.file=\"(http:.*?)\"").getMatch(0);
-                    if (dllink == null) {
-                        final String key = br.getRegex("flashvars\\.filekey=\"(.*?)\"").getMatch(0);
-                        if (key != null) {
-                            br.getPage("http://www.movshare.net/api/player.api.php?key=" + Encoding.urlEncode(key) + "&user=undefined&codes=undefined&pass=undefined&file=" + new Regex(downloadLink.getDownloadURL(), "movshare\\.net/video/(.+)").getMatch(0));
-                            if (br.containsHTML("error_msg=invalid token")) {
-                                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'invalid token'", 30 * 60 * 1000l);
-                            }
-                            dllink = br.getRegex("url=(http://.*?)\\&title=").getMatch(0);
-                        }
-                        if (dllink == null) {
-                            HashMap<String, String> values = new HashMap<String, String>(unWise());
-                            if (values.size() > 0) {
-                                br.getPage("/api/player.api.php?user=undefined&codes=" + values.get("cid") + "&file=" + values.get("file") + "&pass=undefined&key=" + values.get("filekey"));
-                                dllink = br.getRegex("url=(http://.*?)\\&title=").getMatch(0);
-                            }
-                        }
-                    }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            try {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+                if (!dl.getConnection().getContentType().contains("html")) {
+                    success = true;
+                    break;
+                } else {
+                    lastdllink = dllink;
+                    continue;
+                }
+            } finally {
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e) {
                 }
             }
         }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!success) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 410) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
             }
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
         dl.startDownload();
     }
 
-    private HashMap<String, String> unWise() {
+    private String unWise() {
         String result = null;
         String fn = br.getRegex("eval\\((function\\(.*?\'\\))\\);").getMatch(0);
         if (fn == null) {
             return null;
         }
-        HashMap<String, String> values = new HashMap<String, String>();
         final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         try {
@@ -185,21 +197,11 @@ public class MovShareNet extends PluginForHost {
             String res[] = result.split(";\\s;");
             engine.eval("res = " + new Regex(res[res.length - 1], "eval\\((.*?)\\);$").getMatch(0));
             result = (String) engine.get("res");
-            result = new Regex(result, "eval\\((.*?)\\)$").getMatch(0);
-            if (result.startsWith("function(p,a,c,k,e,d)")) {
-                engine.eval("res = " + result);
-                result = (String) engine.get("res");
-            }
-            String tmp = new Regex(result, "^(.*?)function").getMatch(0);
-            tmp += new Regex(result, "(var flashvars.*?)var params").getMatch(0);
-            engine.eval(tmp);
-            engine.put("map", values);
-            engine.eval("for (var i in flashvars){map.put(i,flashvars[i]);}");
         } catch (final Exception e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             return null;
         }
-        return values;
+        return result;
     }
 
     @Override
