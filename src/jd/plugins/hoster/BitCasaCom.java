@@ -54,7 +54,7 @@ public class BitCasaCom extends PluginForHost {
         } catch (final BrowserException e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("class=\"errorPage\"") || br.getRequest().getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (!br.getURL().matches(TYPE_NORMAL) && !br.getURL().matches(TYPE_SHORT)) {

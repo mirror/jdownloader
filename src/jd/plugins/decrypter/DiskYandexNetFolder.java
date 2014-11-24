@@ -93,6 +93,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 return null;
             }
             hashID = fixHash(hashID);
+            hashID = hashID.replace("+", "%20");
             parameter = protocol + "://disk.yandex.com/public/?hash=" + hashID;
             br.getPage(parameter);
         }
@@ -141,11 +142,9 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 String name = getJson("name", singleData);
                 if (singleData.length() > 30 && hash != null) {
                     hash = unescape(hash);
+                    hash = hash.replace("/public/", "");
+                    hash = fixHash(hash);
                     if ("dir".equals(type)) {
-                        hash = hash.replace("/public/", "");
-                        hash = Encoding.urlEncode(hash);
-                        /* Correct encoding, space issues */
-                        hash = hash.replace("+", "%20");
                         final String folderlink = "https://disk.yandex.com/public/?hash=" + hash;
                         decryptedLinks.add(createDownloadlink(folderlink));
                     } else {
@@ -157,7 +156,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                         name = unescape(name);
                         final DownloadLink dl = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
                         dl.setFinalFileName(name);
-                        final String filesize = new Regex(singleData, "class=\"file__size\">([^<>\"]*?)</span>").getMatch(0);
+                        final String filesize = new Regex(singleData, "\"size\":(\\d+)").getMatch(0);
                         if (filesize != null) {
                             dl.setDownloadSize(SizeFormatter.getSize(filesize));
                             dl.setProperty("plain_size", filesize);
@@ -222,12 +221,19 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
 
     private static String fixHash(final String input) {
         /* First fully decode it */
-        String hashID = Encoding.htmlDecode(input);
-        hashID = hashID.replace("/", "%2F");
-        hashID = hashID.replace("+", "%2B");
-        hashID = hashID.replace("=", "%3D");
-        hashID = hashID.replace(" ", "-");
-        return hashID;
+        String hash = input;
+        if (hash.contains("+") || hash.contains(" ")) {
+            hash = Encoding.htmlDecode(hash);
+            hash = hash.replace("+", "%2B");
+            hash = hash.replace("=", "%3D");
+            hash = hash.replace(" ", "-");
+            hash = hash.replace("/", "%2F");
+        } else {
+            // hash = hash.replace("%20", "+");
+            // hash = hash.replace("%2F", "_");
+            // hash = hash.replace("/", "_");
+        }
+        return hash;
     }
 
     private String fixFilesize(String filesize) {

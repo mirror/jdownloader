@@ -71,7 +71,7 @@ public class ArabLoadsCom extends PluginForHost {
     private static final boolean VIDEOHOSTER                  = false;
     private static final boolean SUPPORTSHTTPS                = false;
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(10);
     // don't touch the following!
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
@@ -79,7 +79,7 @@ public class ArabLoadsCom extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.2.5
-    // mods:
+    // mods: scanInfo[Added another filesize RegEx]
     // non account: chunks * maxdls
     // free account: chunks * maxdls
     // premium account: chunks * maxdls
@@ -99,6 +99,16 @@ public class ArabLoadsCom extends PluginForHost {
         String desiredHost = new Regex(COOKIE_HOST, "https?://([^/]+)").getMatch(0);
         String importedHost = new Regex(link.getDownloadURL(), "https?://([^/]+)").getMatch(0);
         link.setUrlDownload(link.getDownloadURL().replaceAll(importedHost, desiredHost));
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("arabloads.com".equals(getHost())) {
+            if (host == null || "arabloads.com".equals(host)) {
+                return "arabloads.net";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     @Override
@@ -200,6 +210,10 @@ public class ArabLoadsCom extends PluginForHost {
             }
         }
         if (fileInfo[1] == null) {
+            /* Special: Use BR here as this information is in outcommented html */
+            fileInfo[1] = br.getRegex("\\&filesize=([^<>\"]*?)\\&").getMatch(0);
+        }
+        if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
             if (fileInfo[1] == null) {
                 fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
@@ -217,7 +231,7 @@ public class ArabLoadsCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, "freelink");
+        doFree(downloadLink, true, 1, "freelink");
     }
 
     @SuppressWarnings("unused")
@@ -426,13 +440,13 @@ public class ArabLoadsCom extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlFree
      *            (+1|-1)
      */
@@ -570,7 +584,7 @@ public class ArabLoadsCom extends PluginForHost {
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
-     * 
+     *
      * @param key
      * @param value
      * @return
@@ -790,7 +804,7 @@ public class ArabLoadsCom extends PluginForHost {
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Registered (free) User");
             try {
-                maxPrem.set(20);
+                maxPrem.set(10);
                 // free accounts can still have captcha.
                 totalMaxSimultanFreeDownload.set(maxPrem.get());
                 account.setMaxSimultanDownloads(maxPrem.get());

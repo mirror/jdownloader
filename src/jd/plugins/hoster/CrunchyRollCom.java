@@ -87,7 +87,7 @@ public class CrunchyRollCom extends PluginForHost {
 
     /**
      * Decrypt and convert the downloaded file from CrunchyRoll's own encrypted xml format into its .ass equivalent.
-     * 
+     *
      * @param downloadLink
      *            The DownloadLink to convert to .ass
      */
@@ -110,7 +110,7 @@ public class CrunchyRollCom extends PluginForHost {
                 in.close();
             }
             if (xmltext.toString().contains("<error>No Permission</error>")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'No permission'");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
 
             // Create the XML Parser
@@ -259,7 +259,7 @@ public class CrunchyRollCom extends PluginForHost {
 
     /**
      * Download the given file using the HTTP Android method. The file will be mp4 and have subtitles hardcoded.
-     * 
+     *
      * @param downloadLink
      *            The DownloadLink to try and download using RTMP
      */
@@ -280,7 +280,7 @@ public class CrunchyRollCom extends PluginForHost {
     /**
      * Attempt to download the given file using RTMP (rtmpdump). Needs to use the properties "valid", "rtmphost", "rtmpfile", "rtmpswf",
      * "swfdir". These are set by jd.plugins.decrypter.CrchyRollCom.setRMP() through requestFileInformation()
-     * 
+     *
      * @param downloadLink
      *            The DownloadLink to try and download using RTMP
      */
@@ -308,7 +308,7 @@ public class CrunchyRollCom extends PluginForHost {
 
     /**
      * Download subtitles and convert them to .ass
-     * 
+     *
      * @param downloadLink
      *            The DownloadLink to try and download convert to .ass
      */
@@ -391,7 +391,7 @@ public class CrunchyRollCom extends PluginForHost {
 
     /**
      * Attempt to log into crunchyroll.com using the given account. Cookies are cached to 'loginCookies'.
-     * 
+     *
      * @param account
      *            The account to use to log in.
      * @param br
@@ -467,7 +467,7 @@ public class CrunchyRollCom extends PluginForHost {
     /**
      * Pad and format version numbers so that the String.compare() method can be used simply. ("9.10.2", ".", 4) would result in
      * "000900100002".
-     * 
+     *
      * @param version
      *            The version number string to format (e.g. '9.10.2')
      * @param sep
@@ -537,6 +537,7 @@ public class CrunchyRollCom extends PluginForHost {
             } else if (downloadLink.getFinalFileName() == null) {
                 downloadLink.setFinalFileName(downloadLink.getStringProperty("filename") + ".ass");
             }
+            /* Get xml page here to find possible errors */
             br.getPage(downloadLink.getDownloadURL());
             if (br.containsHTML("<error>No Permission</error>")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -598,7 +599,7 @@ public class CrunchyRollCom extends PluginForHost {
 
     /**
      * Generate the AES decryption key based on the subtitle's id using some obfuscation and SHA-1 hashing.
-     * 
+     *
      * @param id
      *            The id of the subtitles to generate the key for
      * @param size
