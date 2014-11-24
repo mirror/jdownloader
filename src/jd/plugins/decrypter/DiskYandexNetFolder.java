@@ -220,7 +220,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    public static String fixHash(final String input) {
+    private static String fixHash(final String input) {
         /* First fully decode it */
         String hashID = Encoding.htmlDecode(input);
         hashID = hashID.replace("/", "%2F");
