@@ -292,10 +292,11 @@ public class RapiduNet extends PluginForHost {
             // (string) password - Hasło
             // (string) id - Identyfikator pliku ( np: 7464459120 )
             int userPremium = Integer.parseInt(getJson("userPremium", loginInfo));
+            // requested by hoster admin
             if (userPremium == 0) {
                 MAXCHUNKSFORPREMIUM = 1;
             } else {
-                MAXCHUNKSFORPREMIUM = 2;
+                MAXCHUNKSFORPREMIUM = 5;
             }
 
             br.setFollowRedirects(true);
