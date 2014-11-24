@@ -243,7 +243,7 @@ public class PremiumRapeitNet extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getPage(MAINPAGE);
+                br.getPage("http://premium.rapeit.net/?login");
                 String postData = "emailaddress=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
@@ -253,7 +253,7 @@ public class PremiumRapeitNet extends PluginForHost {
                 final DownloadLink dummyLink = new DownloadLink(this, "Account", NICE_HOST, MAINPAGE, true);
                 final String code = getCaptchaCode("recaptcha", cf, dummyLink);
                 postData += "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(code);
-                br.postPage("http://premium.rapeit.net/", postData);
+                br.postPage("http://premium.rapeit.net/?login", postData);
                 if (br.getCookie(MAINPAGE, "session") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder Login-Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort (und Captcha) stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);

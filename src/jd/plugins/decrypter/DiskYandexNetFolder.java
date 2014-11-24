@@ -129,9 +129,10 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             data = linktext.split("\\},\\{");
         }
 
-        hashID = Encoding.htmlDecode(hashID);
+        main.setProperty("hash_encoded", hashID);
         // stored hash should not be urldecoded as this is what we need in host plugin
         main.setProperty("hash_plain", hashID);
+        hashID = Encoding.htmlDecode(hashID);
 
         if (data != null && data.length != 0) {
             for (final String singleData : data) {
@@ -169,6 +170,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                         }
                         dl.setProperty("plain_filename", name);
                         dl.setProperty("hash_plain", hash);
+                        dl.setProperty("hash_encoded", fixHash(hash));
                         dl.setProperty("mainlink", parameter);
                         dl.setAvailable(true);
                         decryptedLinks.add(dl);
@@ -218,12 +220,13 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private String fixHash(final String input) {
+    public static String fixHash(final String input) {
         /* First fully decode it */
         String hashID = Encoding.htmlDecode(input);
         hashID = hashID.replace("/", "%2F");
         hashID = hashID.replace("+", "%2B");
         hashID = hashID.replace("=", "%3D");
+        hashID = hashID.replace(" ", "-");
         return hashID;
     }
 

@@ -55,7 +55,7 @@ public class DiskYandexNet extends PluginForHost {
         super(wrapper);
         this.enablePremium("https://passport.yandex.ru/passport?mode=register&from=cloud&retpath=https%3A%2F%2Fdisk.yandex.ru%2F%3Fauth%3D1&origin=face.en");
         setConfigElements();
-        this.setStartIntervall(10 * 1000);
+        this.setStartIntervall(5 * 1000);
     }
 
     @Override
@@ -364,7 +364,15 @@ public class DiskYandexNet extends PluginForHost {
 
         if (dllink == null) {
             br.getPage(getMainLink(link));
-            final String hash = link.getStringProperty("hash_plain", null);
+            String hash = link.getStringProperty("hash_encoded", null);
+            /* TODO: Remove this compatibility early in 2015 */
+            if (hash == null) {
+                hash = link.getStringProperty("hash_plain", null);
+                hash = hash.replace("/", "%2F");
+                hash = hash.replace("+", "%2B");
+                hash = hash.replace("=", "%3D");
+                hash = hash.replace(" ", "-");
+            }
             /* This should never happen */
             if (ACCOUNT_SK == null) {
                 logger.warning("ACCOUNT_SK is null");
@@ -390,22 +398,22 @@ public class DiskYandexNet extends PluginForHost {
                         }
                     }
                     if (dllink == null) {
-                        postPage("https://disk.yandex.com/models/?_m=do-save-resource-public", "_model.0=do-save-resource-public&id.0=%2Fpublic%2F" + Encoding.urlEncode(hash) + "&async.0=0&idClient=" + this.CLIENT_ID + "&version=" + this.VERSION + "&sk=" + ACCOUNT_SK);
+                        postPage("https://disk.yandex.com/models/?_m=do-save-resource-public", "_model.0=do-save-resource-public&id.0=%2Fpublic%2F" + hash + "&async.0=0&idClient=" + this.CLIENT_ID + "&version=" + this.VERSION + "&sk=" + ACCOUNT_SK);
                         /* TODO: Maybe add/find a way to verify if the file really has been moved to the account. */
                         if (br.containsHTML("\"code\":85")) {
                             logger.info("No free space available, failed to move file to account");
                             throw new PluginException(LinkStatus.ERROR_FATAL, "No free space available, failed to move file to account");
                         }
-                        file_moved = true;
-                        link.setProperty("file_moved", true);
                         dllink = getLinkFromFileInAccount(link, br);
                         if (dllink == null) {
                             /*
-                             * Possible errors (which should never occur:
-                             * "id":"HTTP_404 == File could not be found in the account --> Probably move handling failed or is broken"
+                             * Possible errors (which should never occur: "id":"HTTP_404 == File could not be found in the account -->
+                             * Probably move handling failed or is broken
                              */
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
+                        file_moved = true;
+                        link.setProperty("file_moved", true);
                         if (this.getPluginConfig().getBooleanProperty(DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD, false)) {
                             try {
                                 logger.info("Successfully grabbed dllink via move_to_Account_handling -> Move file to trash -> Trying to delete file from account");
@@ -428,7 +436,16 @@ public class DiskYandexNet extends PluginForHost {
             } else {
                 logger.info("MoveToAccount handling is inactive -> Starting free account download handling");
                 br.getPage(getMainLink(link));
-                br.postPage("https://disk.yandex.ru/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + Encoding.urlEncode(hash) + "&idClient=" + this.CLIENT_ID + "&version=" + this.VERSION + "&sk=" + this.ACCOUNT_SK);
+                br.postPage("https://disk.yandex.ru/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + hash + "&idClient=" + this.CLIENT_ID + "&version=" + this.VERSION + "&sk=" + this.ACCOUNT_SK);
+                /** TODO: Find out why we have the wrong SK here and remove this workaround! */
+                if (br.containsHTML("\"id\":\"WRONG_SK\"")) {
+                    String sk = br.getRegex("\"sk\":\"([^<>\"]*?)\"").getMatch(0);
+                    if (sk == null) {
+                        logger.warning("sk in account handling (without move) is null");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    br.postPage("https://disk.yandex.ru/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + hash + "&idClient=" + this.CLIENT_ID + "&version=" + this.VERSION + "&sk=" + sk);
+                }
                 dllink = br.getRegex("\"file\":\"(http[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
