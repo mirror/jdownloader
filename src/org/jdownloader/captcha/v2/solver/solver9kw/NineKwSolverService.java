@@ -150,12 +150,16 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
 
     @Override
     public boolean isEnabled() {
-        return config.isEnabledGlobally();
+        return config.isEnabledGlobally() && (config.ismouse() || config.isEnabled());
     }
 
     @Override
     public void setEnabled(boolean b) {
         config.setEnabledGlobally(b);
+        if (isEnabled() != b) {
+            config.setmouse(b);
+            config.setEnabled(b);
+        }
     }
 
     private Captcha9kwSettings    config;

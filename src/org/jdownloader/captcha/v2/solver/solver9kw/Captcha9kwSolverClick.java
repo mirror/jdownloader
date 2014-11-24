@@ -56,13 +56,7 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
 
     @Override
     public boolean isEnabled() {
-        return config.ismouse() || config.isEnabled();
-    }
-
-    @Override
-    public void setEnabled(boolean b) {
-        config.setmouse(b);
-        config.setEnabled(b);
+        return config.ismouse() && config.isEnabledGlobally();
     }
 
     @Override
