@@ -96,7 +96,7 @@ public class SolverPropertiesDialog extends AbstractDialog<Object> {
                 sbp.setVerticalScrollbarVisible(sp.getVerticalScrollBar().isVisible());
 
             }
-
+            //
         });
         setMinimumSize(new Dimension(200, 200));
         // sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
