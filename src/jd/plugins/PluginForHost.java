@@ -1158,6 +1158,20 @@ public abstract class PluginForHost extends Plugin {
         return false;
     }
 
+    public static boolean implementsSortDownloadLink(PluginForHost plugin) {
+        try {
+            if (plugin != null) {
+                final Method method = plugin.getClass().getMethod("sortDownloadLinks", new Class[] { Account.class, List.class });
+                final boolean implementsSortDownloadLink = method.getDeclaringClass() != PluginForHost.class;
+                return implementsSortDownloadLink;
+            }
+        } catch (NoSuchMethodException e) {
+        } catch (Throwable e) {
+            LogController.CL().log(e);
+        }
+        return false;
+    }
+
     public String getCustomFavIconURL(DownloadLink link) {
         return getHost();
     }
@@ -1728,12 +1742,27 @@ public abstract class PluginForHost extends Plugin {
     /**
      * JD2 ONLY
      * 
+     * sort accounts for best order to download downloadLink
+     * 
      * @param accounts
      * @param downloadLink
      * @return
      */
-    public List<Account> sort(List<Account> accounts, DownloadLink downloadLink) {
+    public List<Account> sortAccounts(DownloadLink downloadLink, List<Account> accounts) {
         return accounts;
+    }
+
+    /**
+     * JD2 ONLY
+     * 
+     * sort downloadLinks for best order to download via account
+     * 
+     * @param accounts
+     * @param downloadLink
+     * @return
+     */
+    public List<DownloadLink> sortDownloadLinks(Account account, List<DownloadLink> downloadLinks) {
+        return downloadLinks;
     }
 
     /**

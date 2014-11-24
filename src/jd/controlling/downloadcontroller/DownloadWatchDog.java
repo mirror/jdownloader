@@ -747,8 +747,37 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         while (newDLStartAllowed(currentSession)) {
             final List<DownloadLinkCandidate> nextCandidates = nextDownloadLinkCandidates(selector);
             if (nextCandidates != null && nextCandidates.size() > 0) {
-                final DownloadLinkCandidate nextCandidate = findFinalCandidate(selector, nextCandidates);
+                DownloadLinkCandidate nextCandidate = findFinalCandidate(selector, nextCandidates);
                 if (nextCandidate != null) {
+                    try {
+                        if (PluginForHost.implementsSortDownloadLink(nextCandidate.getCachedAccount().getPlugin())) {
+                            final ArrayList<DownloadLink> mirrors = new ArrayList<DownloadLink>();
+                            mirrors.add(0, nextCandidate.getLink());
+                            for (final DownloadLink mirror : findDownloadLinkMirrors(nextCandidate.getLink())) {
+                                if (nextCandidate.getCachedAccount().canHandle(mirror) && (mirror.getFinalLinkState() == null || !FinalLinkState.OFFLINE.equals(mirror.getFinalLinkState()))) {
+                                    final DownloadLinkCandidate candidate = new DownloadLinkCandidate(nextCandidate.getLink(), nextCandidate.isForced(), nextCandidate.getCachedAccount(), nextCandidate.getProxySelector(), nextCandidate.isCustomizedAccount());
+                                    final DownloadLinkCandidatePermission permission = selector.getDownloadLinkCandidatePermission(candidate);
+                                    switch (permission) {
+                                    case OK:
+                                    case OK_FORCED:
+                                    case OK_SPEED_EXTENSION:
+                                        if (selector.validateDownloadLinkCandidate(candidate)) {
+                                            mirrors.add(mirror);
+                                        }
+                                        break;
+                                    default:
+                                        break;
+                                    }
+                                }
+                            }
+                            final List<DownloadLink> sortedMirrors = nextCandidate.getCachedAccount().getPlugin().sortDownloadLinks(nextCandidate.getCachedAccount().getAccount(), mirrors);
+                            if (sortedMirrors != null && sortedMirrors.size() > 0 && sortedMirrors.get(0) != nextCandidate.getLink()) {
+                                nextCandidate = new DownloadLinkCandidate(sortedMirrors.get(0), nextCandidate.isForced(), nextCandidate.getCachedAccount(), nextCandidate.getProxySelector(), nextCandidate.isCustomizedAccount());
+                            }
+                        }
+                    } catch (final Throwable e) {
+                        logger.log(e);
+                    }
                     selector.setExcluded(nextCandidate.getLink());
                     final MirrorLoading condition = new MirrorLoading(nextCandidate.getLink());
                     for (DownloadLink mirror : findDownloadLinkMirrors(nextCandidate.getLink())) {
@@ -807,7 +836,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             accMap.put(candidate.getCachedAccount().getAccount(), candidate);
                             accList.add(candidate.getCachedAccount().getAccount());
                         }
-                        for (Account account : list.get(0).getCachedAccount().getPlugin().sort(accList, downloadLink)) {
+                        for (Account account : list.get(0).getCachedAccount().getPlugin().sortAccounts(downloadLink, accList)) {
                             final DownloadLinkCandidate candidate = accMap.remove(account);
                             if (candidate != null) {
                                 newList.add(candidate);
@@ -826,9 +855,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
 
         final LinkedHashMap<DownloadLink, DownloadLinkCandidate> bestCandidates = new LinkedHashMap<DownloadLink, DownloadLinkCandidate>();
-        for (DownloadLinkCandidate nextCandidate : candidates) {
+        for (final DownloadLinkCandidate nextCandidate : candidates) {
             final DownloadLink candidateLink = nextCandidate.getLink();
-            DownloadLinkCandidate bestCandidate = bestCandidates.get(candidateLink);
+            final DownloadLinkCandidate bestCandidate = bestCandidates.get(candidateLink);
             if (bestCandidate == null) {
                 /* no bestCandidate yet */
                 bestCandidates.put(candidateLink, nextCandidate);
@@ -927,7 +956,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
             });
         } catch (final Throwable e) {
-            LogController.CL(true).log(e);
+            logger.log(e);
         }
         return finalCandidates.get(0);
     }
