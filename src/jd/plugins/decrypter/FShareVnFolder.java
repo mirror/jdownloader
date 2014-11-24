@@ -24,11 +24,12 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fshare.vn" }, urls = { "http://(www\\.)?(mega\\.1280\\.com|fshare\\.vn)/folder/[A-Z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fshare.vn" }, urls = { "http://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/folder/([A-Z0-9]+)" }, flags = { 0 })
 public class FShareVnFolder extends PluginForDecrypt {
 
     public FShareVnFolder(PluginWrapper wrapper) {
@@ -44,26 +45,45 @@ public class FShareVnFolder extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        String[] linkinformation = br.getRegex("(=\"http://(www\\.)?fshare\\.vn/file/[A-Z0-9]+/\"[^>]+><span class=\"filename\">[^<]+</span></a><br[^>]+>[\n\t\r ]+<span class=\"filesize\">[\\d\\.]+[^<]+</span>)").getColumn(0);
+        final String uid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        final String fpName = br.getRegex("data-id=\"" + uid + "\" data-path=\"/(.*?)\"").getMatch(0);
+        String[] linkinformation = br.getRegex("<li>(\\s*<div[^>]+class=\"[^\"]+file_name[^\"]*.*?)</li>").getColumn(0);
+        linkinformation = null;
         if (linkinformation == null || linkinformation.length == 0) {
             failed = true;
             linkinformation = br.getRegex("(https?://(www\\.)?fshare\\.vn/file/[A-Z0-9]+)").getColumn(0);
         }
-        if (linkinformation == null || linkinformation.length == 0) return null;
+        if (linkinformation == null || linkinformation.length == 0) {
+            return null;
+        }
         for (String data : linkinformation) {
             if (failed) {
                 decryptedLinks.add(createDownloadlink(data));
             } else {
-                String filename = new Regex(data, "class=\"filename\">(.*?)</span").getMatch(0);
-                String filesize = new Regex(data, "class=\"filesize\">(.*?)</span>").getMatch(0);
-                String dlink = new Regex(data, "(http://(www\\.)?fshare\\.vn/file/[A-Z0-9]+)").getMatch(0);
-                if (dlink == null) return null;
-                DownloadLink aLink = createDownloadlink(dlink);
-                if (filename != null) aLink.setName(filename.trim());
-                if (filesize != null) aLink.setDownloadSize(SizeFormatter.getSize(filesize));
-                if (filename != null && filesize != null) aLink.setAvailable(true);
+                final String filename = new Regex(data, "title=\"(.*?)\"").getMatch(0);
+                final String filesize = new Regex(data, "file_size align-right\">(.*?)</div>").getMatch(0);
+                final String dlink = new Regex(data, "(http://(www\\.)?fshare\\.vn/file/[A-Z0-9]+)").getMatch(0);
+                if (filename == null && filesize == null && dlink == null) {
+                    continue;
+                }
+                if (dlink == null) {
+                    return null;
+                }
+                final DownloadLink aLink = createDownloadlink(dlink);
+                if (filename != null) {
+                    aLink.setName(filename.trim());
+                    aLink.setAvailable(true);
+                }
+                if (filesize != null) {
+                    aLink.setDownloadSize(SizeFormatter.getSize(filesize));
+                }
                 decryptedLinks.add(aLink);
             }
+        }
+        if (!decryptedLinks.isEmpty() && fpName != null) {
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName.trim());
+            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }
