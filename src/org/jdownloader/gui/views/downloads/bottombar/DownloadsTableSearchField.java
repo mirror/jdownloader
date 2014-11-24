@@ -40,7 +40,6 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
             public void keyReleased(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
                     setText("");
-
                 }
             }
 
