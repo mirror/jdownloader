@@ -274,9 +274,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             }
             if ("VOF-STF".equals(versionCode) || "VOF-STMF".equals(versionCode)) {
                 l = "3";
-            } else if (versionCode.equals("VO") && parameter.matches(TYPE_CONCERT)) {
-                /* Special case for concert.arte.tv links */
-                l = "2";
             } else if (versionCode.equals("VA") || versionCode.equals("VA-STA") || versionCode.equals("VO")) {
                 l = "1";
             } else if (versionCode.startsWith("VF") || versionCode.equals("VOF")) {
