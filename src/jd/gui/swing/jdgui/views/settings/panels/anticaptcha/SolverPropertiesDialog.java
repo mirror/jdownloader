@@ -101,6 +101,7 @@ public class SolverPropertiesDialog extends AbstractDialog<Object> {
         setMinimumSize(new Dimension(200, 200));
         // sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         ;
+        // sp.setPreferredSize(new Dimension(2000, 8000));
         return sp;
     }
 
@@ -112,8 +113,8 @@ public class SolverPropertiesDialog extends AbstractDialog<Object> {
     public SolverPropertiesDialog(SolverService editing, AbstractCaptchaSolverConfigPanel configPanel) {
         super(UIOManager.BUTTONS_HIDE_CANCEL | Dialog.STYLE_HIDE_ICON, _GUI._.SolverPropertiesDialog_SolverPropertiesDialog_object_(editing.getName(), editing.getType()), null, _GUI._.lit_close(), null);
         this.configPanel = configPanel;
-        setLocator(new RememberAbsoluteDialogLocator(getClass().getSimpleName() + "." + editing.getName()));
-        setDimensor(new RememberLastDialogDimension(getClass().getSimpleName() + "." + editing.getName()));
+        setLocator(new RememberAbsoluteDialogLocator(getClass().getSimpleName()));
+        setDimensor(new RememberLastDialogDimension(getClass().getSimpleName()));
     }
 
     @Override

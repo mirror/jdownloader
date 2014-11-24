@@ -6,24 +6,22 @@
 var Envjs=envjsGlobals.Envjs;
 
 /*
- * Envjs console.1.3.pre03 
- * Pure JavaScript Browser Environment
- * By John Resig <http://ejohn.org/> and the Envjs Team
- * Copyright 2008-2010 John Resig, under the MIT License
+ * Envjs console.1.3.pre03 Pure JavaScript Browser Environment By John Resig
+ * <http://ejohn.org/> and the Envjs Team Copyright 2008-2010 John Resig, under
+ * the MIT License
  */
 
-//CLOSURE_START
+// CLOSURE_START
 (function(){
     
 
 
 
 /**
- * @author envjs team
- * borrowed 99%-ish with love from firebug-lite
+ * @author envjs team borrowed 99%-ish with love from firebug-lite
  */
 
-//leaked globally on purpose;
+// leaked globally on purpose;
 try{
     console.log();
 }catch(e){
@@ -187,15 +185,19 @@ function parseFormat(format)
 
 
 
-function logFormatted(objects, className)
-{
+function logFormatted(objects, className){
+    Envjs.log(Envjs.toLoggerString(objects));    
+}
+Envjs.toLoggerString = function(objects){
+
+
     var html = [],
         i= 0,
         object;
 
     var format = objects[0];
     var objIndex = 0;
-
+  
     if (typeof(format) != "string")
     {
         format = "";
@@ -203,6 +205,8 @@ function logFormatted(objects, className)
     }
 
     var parts = parseFormat(format);
+    
+
     for (i = 0; i < parts.length; ++i)
     {
         var part = parts[i];
@@ -228,7 +232,8 @@ function logFormatted(objects, className)
         }
     }
 
-    Envjs.log(html.join(' '));
+    return html.join(' ');
+   
 }
 
 
@@ -273,5 +278,5 @@ exports.console = console;
  * @copyright 2008-2010
  * @license MIT
  */
-//CLOSURE_END
+// CLOSURE_END
 }());

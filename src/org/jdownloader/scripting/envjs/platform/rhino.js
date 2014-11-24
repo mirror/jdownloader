@@ -589,12 +589,12 @@ var urlReference=java.net.URL;
 	};
 	Envjs.log = function(message) {
 
-		javaInstance.log(message);
+		javaInstance.logToConsole(message);
 
 	};
 
 	Envjs.eval = function(context, source, name) {
-		console.log("eval:\r\n" + source);
+
 		__context__.evaluateString(context, source, name, 0, null);
 	};
 	Envjs.setCookie = function(url, cookie) {

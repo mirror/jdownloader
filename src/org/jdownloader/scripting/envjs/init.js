@@ -13,7 +13,7 @@
 
 
        var  getCurrentContext=net.sourceforge.htmlunit.corejs.javascript.Context.getCurrentContext;
-       var javaInstance=Packages.org.jdownloader.scripting.envjs.EnvJS.get(%EnvJSinstanceID%);   
+       var javaInstance=Packages.org.jdownloader.scripting.envjs.EnvJSBrowser.get(%EnvJSinstanceID%);   
 //       javaInstance.preInitBoolean(true,true);
 //       javaInstance.preInitInteger(0,0);
 //       javaInstance.preInitLong(0,0);

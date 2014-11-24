@@ -6,7 +6,7 @@
  */
 
 
-  var  DEBUG_LEVEL = 'INFO';
+  var  DEBUG_LEVEL = 'DEBUG';
 
 
 envjsGlobals.Envjs = function() {
@@ -509,6 +509,7 @@ envjsGlobals.Envjs.exit = function() {
      *            message
      */
     Envjs.log = function(message) {
+        print(message);
     };
 
     /**
@@ -664,15 +665,18 @@ envjsGlobals.Envjs.exit = function() {
         // All logging calls are chainable
         __extend__($$Log.Logger.prototype, {
             /**
-             * Describe what this method does
-             * 
+             * Describe what this method does          
              * @private
              * @param {String}
              *            paramName Describe this parameter
              * @returns Describe what it returns
-             * @type String
              */
             debug : function() {
+               
+                if( javaInstance.logger("DEBUG",this.category,Envjs.toLoggerString(arguments))){
+                    return this;
+                }
+              
                 if (this.level <= $$Log.Level.DEBUG) {
                     this.appender.append("DEBUG", this.category, arguments);
                     return this;
@@ -693,6 +697,9 @@ envjsGlobals.Envjs.exit = function() {
              * @type String
              */
             info : function() {
+                if( javaInstance.logger("INFO",this.category,Envjs.toLoggerString(arguments))){
+                    return this;
+                }
                 if (this.level <= $$Log.Level.INFO) {
                     this.appender.append("INFO", this.category, arguments);
                     return this;
@@ -713,6 +720,10 @@ envjsGlobals.Envjs.exit = function() {
              * @type String
              */
             warn : function() {
+                if( javaInstance.logger("WARN",this.category,Envjs.toLoggerString(arguments))){
+                    return this;
+                }
+             
                 if (this.level <= $$Log.Level.WARN) {
                     this.appender.append("WARN", this.category, arguments);
                     return this;
@@ -733,6 +744,9 @@ envjsGlobals.Envjs.exit = function() {
              * @type String
              */
             error : function() {
+                if( javaInstance.logger("ERROR",this.category,Envjs.toLoggerString(arguments))){
+                    return this;
+                }
                 if (this.level <= $$Log.Level.ERROR) {
                     this.appender.append("ERROR", this.category, arguments);
                     return this;
@@ -753,6 +767,10 @@ envjsGlobals.Envjs.exit = function() {
              * @type String
              */
             exception : function(e) {
+             
+                if( javaInstance.logger("EXCEPTION",this.category,   Envjs.toLoggerString(e.message ? [ e.message ] : []))){
+                    return this;
+                }
                 if (this.level < $$Log.Level.NONE) {
                     if (e) {
                         this.appender.append("EXCEPTION", this.category, e);
@@ -796,7 +814,8 @@ envjsGlobals.Envjs.exit = function() {
             append : function(level, category, message) {
                 switch (level) {
                     case ("DEBUG"):
-                        console.log.apply(console, this.formatter.format(level, category, message));
+                      var  d=this.formatter.format(level, category, message);                   
+                        console.log.apply(console, d);
                         break;
                     case ("INFO"):
                         console.info.apply(console, this.formatter.format(level, category, message));
@@ -843,14 +862,19 @@ envjsGlobals.Envjs.exit = function() {
              * @type String
              */
             format : function(level, category, objects) {
+               
                 var msgPrefix = category + " " + level + ": " + this.getDateString();
                 objects = (objects && objects.length && (objects.length > 0)) ? objects : [];
                 var msgFormat = (objects.length > 0) ? objects[0] : null;
-                if (typeof (msgFormat) != "string") {
+            
+                if (typeof (msgFormat) != "string"&&objects.unshift) {
+                
                     objects.unshift(msgPrefix);
+                    
                 } else {
                     objects[0] = msgPrefix + msgFormat;
                 }
+               
                 return objects;
             }
         });
@@ -1205,7 +1229,7 @@ envjsGlobals.Envjs.exit = function() {
                     // console.log('serialized %s', serialized);
                     method = target.method ? target.method.toUpperCase() : "GET";
 
-                    action = Envjs.uri(target.action !== "" ? target.action : target.ownerDocument.baseURI, target.ownerDocument.baseURI);
+                    action = Envjs.uri((target.action&&target.action !== "") ? target.action : target.ownerDocument.baseURI, target.ownerDocument.baseURI);
                     if (method == 'GET' && !action.match(/^file:/)) {
                         action = action + "?" + serialized;
                     }
@@ -1268,6 +1292,8 @@ envjsGlobals.Envjs.exit = function() {
 
         Envjs.once('tick', function() {
             log = Envjs.logger('Envjs.Platform.HTML').debug('Platform Core HTML API available');
+            
+      
         });
 
         /**
@@ -1315,6 +1341,9 @@ envjsGlobals.Envjs.exit = function() {
                 }
                 if (script.ownerDocument.ownerWindow) {
                     log.debug('evaulating inline in window %s', script.ownerDocument.ownerWindow);
+                    log.debug(script.ownerDocument.ownerWindow);
+                    log.debug(js);
+                    log.debug(id);
                     Envjs['eval'](script.ownerDocument.ownerWindow, js, id);
                 } else {
                     log.debug('evaulating inline in global %s', __this__);
@@ -2888,8 +2917,8 @@ envjsGlobals.Envjs.exit = function() {
          *            above
          */
         Envjs.uri = function(path, base) {
-            // console.log('constructing uri from path %s and base %s', path,
-            // base);
+             console.log('constructing uri from path %s and base %s', path,
+             base);
             path = path + '';
             // Semi-common trick is to make an iframe with
             // src='javascript:false'

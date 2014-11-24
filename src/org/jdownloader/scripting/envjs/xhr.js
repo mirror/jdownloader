@@ -116,6 +116,7 @@ Envjs.once('tick', function(){
 exports.Location = Location = function(url, doc, history) {
     log = log||Envjs.logger('Envjs.Location');
     log.debug('Location url %s', url);
+  
     var $url = url,
         $document = doc ? doc : null,
         $history = history ? history : null;
@@ -263,13 +264,15 @@ exports.Location = Location = function(url, doc, history) {
                 event;
             method = method||"GET";
             data = data||null;
+            
+    
             log.debug('assigning %s',url);
 
             //we can only assign if this Location is associated with a document
             if ($document) {
                 log.debug('fetching %s (async? %s)', url, $document.async);
                 xhr = new XMLHttpRequest();
-                console.log("Referer: "+$document.location);
+             
                 xhr.setRequestHeader('Referer', $document.location);
                 log.debug("REFERER: %s", $document.location);
                 // TODO: make async flag a Envjs paramter

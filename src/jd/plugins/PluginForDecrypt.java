@@ -340,7 +340,7 @@ public abstract class PluginForDecrypt extends Plugin {
      * 
      * @param links
      */
-    protected void distribute(DownloadLink... links) {
+    public void distribute(DownloadLink... links) {
         LinkCrawlerDistributer dist = distributer;
         if (dist == null || links == null || links.length == 0) {
             return;
@@ -360,7 +360,7 @@ public abstract class PluginForDecrypt extends Plugin {
         return 5000;
     }
 
-    protected String getCaptchaCode(String captchaAddress, CryptedLink param) throws Exception {
+    public String getCaptchaCode(String captchaAddress, CryptedLink param) throws Exception {
         return getCaptchaCode(getHost(), captchaAddress, param);
     }
 
