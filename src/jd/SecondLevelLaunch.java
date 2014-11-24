@@ -1053,6 +1053,7 @@ public class SecondLevelLaunch {
             } catch (Throwable e1) {
                 LOG.log(e1);
             }
+            break;
         case WINDOWS_7:
         case WINDOWS_8:
         case WINDOWS_VISTA:
@@ -1074,6 +1075,9 @@ public class SecondLevelLaunch {
             } catch (Throwable e1) {
                 LOG.log(e1);
             }
+            break;
+        default:
+            break;
         }
 
         // init Filechooser. filechoosers may freeze the first time the get initialized. maybe this helps
