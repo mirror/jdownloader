@@ -151,15 +151,17 @@ public class FShareVn extends PluginForHost {
         }
         String filesize = br.getRegex("<p><b>Dung lượng: </b>(.*?)</p>").getMatch(0);
         if (filesize == null) {
-            filesize = br.getRegex("10px\">(.*?[K|M|G]B)<").getMatch(0);
+            filesize = br.getRegex("10px\">([\\d\\.]+ [K|M|G]B)<").getMatch(0);
         }
-        if (filename == null || filesize == null) {
+        if (filename == null) {
             logger.info("filename = " + filename + ", filesize = " + filesize);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // Server sometimes sends bad filenames
         link.setFinalFileName(Encoding.htmlDecode(filename));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
