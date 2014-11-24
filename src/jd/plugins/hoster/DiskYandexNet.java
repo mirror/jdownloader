@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -72,7 +71,7 @@ public class DiskYandexNet extends PluginForHost {
 
     /* Some constants which they used in browser */
     private final String          CLIENT_ID                          = "883aacd8d0b882b2e379506a55fb6b0f";
-    private final String          VERSION                            = "2.0.102";
+    private final String          VERSION                            = "2.1.18";
     private static final String   STANDARD_FREE_SPEED                = "64 kbit/s";
 
     /* Different languages == different 'downloads' directory names */
@@ -97,11 +96,7 @@ public class DiskYandexNet extends PluginForHost {
     private static final String   TYPE_VIDEO                         = "http://video\\.yandex\\.ru/(iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+|users/[A-Za-z0-9]+/view/\\d+)";
     private static final String   TYPE_VIDEO_USER                    = "http://video\\.yandex\\.ru/users/[A-Za-z0-9]+/view/\\d+";
     private static final String   TYPE_DISK                          = "http://yandexdecrypted\\.net/\\d+";
-
-    private static AtomicInteger  totalMaxSimultanFreeAccDownload    = new AtomicInteger(ACCOUNT_FREE_MAXDOWNLOADS);
-    /* don't touch the following! */
-    private static AtomicInteger  maxFreeAcc                         = new AtomicInteger(1);
-
+    private static final String   ACCOUNTONLYTEXT                    = "class=\"nb-panel__warning aside\\-public__warning\\-speed\"|>File download limit exceeded";
     private Account               currAcc                            = null;
 
     /* Make sure we always use our main domain */
@@ -169,6 +164,12 @@ public class DiskYandexNet extends PluginForHost {
             }
         }
         link.setName(filename);
+        /* Important for account download handling */
+        if (br.containsHTML(ACCOUNTONLYTEXT)) {
+            link.setProperty("premiumonly", true);
+        } else {
+            link.setProperty("premiumonly", false);
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -182,7 +183,7 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks) throws Exception, PluginException {
-        if (br.containsHTML("class=\"text text_download\\-blocked\"")) {
+        if (downloadableViaAccountOnly(downloadLink)) {
             /*
              * link is only downloadable via account because the public overall download limit (traffic limit) is exceeded. In this case the
              * user can only download the link by importing it into his account and downloading it "from there".
@@ -229,26 +230,26 @@ public class DiskYandexNet extends PluginForHost {
             resumable = true;
             maxchunks = 0;
         } else {
-            final String hash = downloadLink.getStringProperty("hash_plain", null);
+            final String hash = getHash(downloadLink);
+            String sk = br.getRegex("\"sk\":\"([^<>\"]+)\"").getMatch(0);
+            if (sk == null) {
+                logger.warning("sk in account handling (without move) is null");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            final Browser br2 = br.cloneBrowser();
-            br2.postPage("https://disk.yandex.com/secret-key.jsx", "");
-            String ckey = br2.getRegex("\"([a-z0-9]+)\"").getMatch(0);
-            if (ckey == null) {
-                logger.info("Getting ckey via html code --> Could lead to problems");
-                ckey = getCkey();
+            br.postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + hash + "&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + sk);
+            /** TODO: Find out why we have the wrong SK here and remove this workaround! */
+            if (br.containsHTML("\"id\":\"WRONG_SK\"")) {
+                sk = br.getRegex("\"sk\":\"([^<>\"]*?)\"").getMatch(0);
+                if (sk == null || sk.equals("")) {
+                    logger.warning("sk in account handling (without move) is null");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br.postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + hash + "&idClient=" + this.CLIENT_ID + "&version=" + this.VERSION + "&sk=" + sk);
             }
-            br.postPage("https://disk.yandex.com/handlers.jsx", "tld=com&_ckey=" + ckey + "&_name=getLinkFileDownload&hash=" + hash);
-            if (br.containsHTML("\"title\":\"invalid ckey\"")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'invalid ckey'", 5 * 60 * 1000l);
-            } else if (br.containsHTML("\"code\":69")) {
-                /* Usually this does not happen. Happens also if you actually try to download a "premiumonly" link via this method. */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.containsHTML("\"code\":88")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 88 'Decryption error'", 5 * 60 * 1000l);
-            }
-            dllink = parse("url", this.br);
+            handleFreeErrors();
+            dllink = br.getRegex("\"file\":\"(http[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -265,6 +266,34 @@ public class DiskYandexNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void handleFreeErrors() throws PluginException {
+        if (br.containsHTML("\"title\":\"invalid ckey\"")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'invalid ckey'", 5 * 60 * 1000l);
+        } else if (br.containsHTML("\"code\":21")) {
+            /* Happens when we send a very wrong hash - usually shouldn't happen! */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 21 'bad formed path'", 1 * 60 * 60 * 1000l);
+        } else if (br.containsHTML("\"code\":69")) {
+            /* Usually this does not happen. Happens also if you actually try to download a "premiumonly" link via this method. */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("\"code\":77")) {
+            /* Happens when we send a very wrong hash - usually shouldn't happen! */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 88 'Wrong path'", 1 * 60 * 60 * 1000l);
+        } else if (br.containsHTML("\"code\":88")) {
+            /* Happens when we send a wrong hash - usually shouldn't happen! */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 88 'Decryption error'", 10 * 60 * 1000l);
+        }
+    }
+
+    private String getHash(final DownloadLink dl) {
+        String hash = dl.getStringProperty("hash_encoded", null);
+        /* TODO: Remove this compatibility early in 2015 */
+        if (hash == null) {
+            hash = dl.getStringProperty("hash_plain", null);
+        }
+        hash = fixHash(hash);
+        return hash;
     }
 
     private String getCkey() throws PluginException {
@@ -364,26 +393,19 @@ public class DiskYandexNet extends PluginForHost {
 
         if (dllink == null) {
             br.getPage(getMainLink(link));
-            String hash = link.getStringProperty("hash_encoded", null);
-            /* TODO: Remove this compatibility early in 2015 */
-            if (hash == null) {
-                hash = link.getStringProperty("hash_plain", null);
-                hash = hash.replace("/", "%2F");
-                hash = hash.replace("+", "%2B");
-                hash = hash.replace("=", "%3D");
-                hash = hash.replace(" ", "-");
-            }
+            final String hash = getHash(link);
             /* This should never happen */
             if (ACCOUNT_SK == null) {
                 logger.warning("ACCOUNT_SK is null");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            /*
-             * TODO: Maybe force this handling if a link is only downloadable via account because the public overall download limit (traffic
-             * limit) is exceeded. In this case the user can only download the link by importing it into his account and downloading it
-             * "from there".
-             */
-            if (this.getPluginConfig().getBooleanProperty(MOVE_FILES_TO_ACCOUNT, false)) {
+            final boolean moveIntoAccHandlingActive = this.getPluginConfig().getBooleanProperty(MOVE_FILES_TO_ACCOUNT, false);
+            final boolean forcedmoveIntoAccHandling = downloadableViaAccountOnly(link);
+            final boolean forcedmoveIntoAccHandlingAgainstUserSelection = downloadableViaAccountOnly(link) && !moveIntoAccHandlingActive;
+            if (moveIntoAccHandlingActive || forcedmoveIntoAccHandling) {
+                if (forcedmoveIntoAccHandling) {
+                    logger.info("forcedmoveIntoAccHandling active");
+                }
                 boolean file_moved = link.getBooleanProperty("file_moved", false);
                 try {
                     logger.info("MoveToAccount handling is active -> Starting account download handling");
@@ -418,8 +440,11 @@ public class DiskYandexNet extends PluginForHost {
                             try {
                                 logger.info("Successfully grabbed dllink via move_to_Account_handling -> Move file to trash -> Trying to delete file from account");
                                 moveFileToTrash(link);
-                                logger.info("Successfully grabbed dllink via move_to_Account_handling -> Empty trash -> Trying to empty trash inside account");
-                                emptyTrash();
+                                /* Only empty trash if desired by user */
+                                if (!forcedmoveIntoAccHandlingAgainstUserSelection) {
+                                    logger.info("Successfully grabbed dllink via move_to_Account_handling -> Empty trash -> Trying to empty trash inside account");
+                                    emptyTrash();
+                                }
                             } catch (final Throwable e) {
                             }
                         }
@@ -429,23 +454,18 @@ public class DiskYandexNet extends PluginForHost {
                     if (file_moved) {
                         logger.info("MoveToAccount download-handling failed (dllink == null) -> Deleting moved file and emptying trash, then falling back to free download handling");
                         moveFileToTrash(link);
-                        emptyTrash();
+                        /* Only empty trash if desired by user */
+                        if (!forcedmoveIntoAccHandlingAgainstUserSelection) {
+                            emptyTrash();
+                        }
                     }
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } else {
                 logger.info("MoveToAccount handling is inactive -> Starting free account download handling");
                 br.getPage(getMainLink(link));
-                br.postPage("https://disk.yandex.ru/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + hash + "&idClient=" + this.CLIENT_ID + "&version=" + this.VERSION + "&sk=" + this.ACCOUNT_SK);
-                /** TODO: Find out why we have the wrong SK here and remove this workaround! */
-                if (br.containsHTML("\"id\":\"WRONG_SK\"")) {
-                    String sk = br.getRegex("\"sk\":\"([^<>\"]*?)\"").getMatch(0);
-                    if (sk == null) {
-                        logger.warning("sk in account handling (without move) is null");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    br.postPage("https://disk.yandex.ru/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + hash + "&idClient=" + this.CLIENT_ID + "&version=" + this.VERSION + "&sk=" + sk);
-                }
+                br.postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + hash + "&idClient=" + this.CLIENT_ID + "&version=" + this.VERSION + "&sk=" + this.ACCOUNT_SK);
+                handleFreeErrors();
                 dllink = br.getRegex("\"file\":\"(http[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -469,6 +489,10 @@ public class DiskYandexNet extends PluginForHost {
         }
         link.setProperty("directlink_account", dllink);
         dl.startDownload();
+    }
+
+    private boolean downloadableViaAccountOnly(final DownloadLink dl) {
+        return dl.getBooleanProperty("premiumonly", false);
     }
 
     private void handleServerErrors(final DownloadLink link) throws PluginException {
@@ -598,6 +622,24 @@ public class DiskYandexNet extends PluginForHost {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
+    }
+
+    /* TODO: Remove this compatibility early in 2015 */
+    private static String fixHash(final String input) {
+        /* First fully decode it */
+        String hash = input;
+        if (hash.contains("+") || hash.contains(" ")) {
+            hash = Encoding.htmlDecode(hash);
+            hash = hash.replace("+", "%2B");
+            hash = hash.replace("=", "%3D");
+            hash = hash.replace(" ", "-");
+            hash = hash.replace("/", "%2F");
+        } else {
+            hash = hash.replace("%20", "+");
+            hash = hash.replace("%2F", "_");
+            hash = hash.replace("/", "_");
+        }
+        return hash;
     }
 
     private void getPage(final String url) throws Exception {

@@ -296,7 +296,7 @@ public class RapiduNet extends PluginForHost {
             if (userPremium == 0) {
                 MAXCHUNKSFORPREMIUM = 1;
             } else {
-                MAXCHUNKSFORPREMIUM = 5;
+                MAXCHUNKSFORPREMIUM = -5;
             }
 
             br.setFollowRedirects(true);
