@@ -51,7 +51,11 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidu.net" }, urls = { "https?://rapidu\\.(net|pl)/(\\d+)(/)?" }, flags = { 2 })
 public class RapiduNet extends PluginForHost {
 
-    private String userAgent = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.149 Safari/537.36 OPR/20.0.1387.77";
+    private String userAgent        = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.149 Safari/537.36 OPR/20.0.1387.77";
+
+    // requested by admin of the hoster due to high traffic
+    private int    MAXCHUNKSFORFREE = 1;
+    private int    MAXCHUNKSFORPREMIUM;
 
     public RapiduNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -184,7 +188,7 @@ public class RapiduNet extends PluginForHost {
         br.setCookiesExclusive(true);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.setAcceptLanguage("pl-PL,pl;q=0.9,en;q=0.8");
-        br.getHeaders().put("User-Agent", userAgent);
+        // br.getHeaders().put("User-Agent", userAgent);
         br.postPage(MAINPAGE + "/ajax.php?a=getLoadTimeToDownload", "_go=");
         String response = br.toString();
         if (response == null) {
@@ -249,7 +253,7 @@ public class RapiduNet extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Can't find final download link/Captcha errors!", -1l);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, MAXCHUNKSFORFREE);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -287,6 +291,12 @@ public class RapiduNet extends PluginForHost {
             // (string) login - Login użytkownika
             // (string) password - Hasło
             // (string) id - Identyfikator pliku ( np: 7464459120 )
+            int userPremium = Integer.parseInt(getJson("userPremium", loginInfo));
+            if (userPremium == 0) {
+                MAXCHUNKSFORPREMIUM = 1;
+            } else {
+                MAXCHUNKSFORPREMIUM = 2;
+            }
 
             br.setFollowRedirects(true);
             br.postPage(MAINPAGE + "/api/getFileDownload/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&id=" + downloadLink.getProperty("FILEID"));
@@ -300,8 +310,6 @@ public class RapiduNet extends PluginForHost {
             // errorAccountNotFound - Konto użytkownika nie zostało znalezione
             // errorAccountBan - Konto użytkownika zostało zbanowane i nie ma możliwości zalogowania się na nie
             // errorAccountNotHaveDayTransfer - Użytkownik nie posiada wystarczającej ilości transferu dziennego, aby pobrać dany plik
-            // (Premium
-            // 30Gb/dzień, Free 5Gb/dzień)
             // errorDateNextDownload - Czas, po którym użytkownik Free może pobrać kolejny plik
             // errorEmptyFileId - Brak parametru id lub parametr jest pusty
             // errorFileNotFound - Nie znaleziono pliku
@@ -361,7 +369,7 @@ public class RapiduNet extends PluginForHost {
 
         String dllink = fileLocation.replace("\\", "");
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, MAXCHUNKSFORPREMIUM);
         if (dl.getConnection().getContentType().contains("html")) {
 
             logger.warning("The final dllink seems not to be a file!" + "Response: " + dl.getConnection().getResponseMessage() + ", code: " + dl.getConnection().getResponseCode() + "\n" + dl.getConnection().getContentType());
@@ -455,18 +463,20 @@ public class RapiduNet extends PluginForHost {
         // (int) [userFileNum] - Łączna liczba plików
         // (int) [userFileSize] - Łączny rozmiar plików ( w bajtach )
         // (int) [userDirectDownload] - 1 - Directdownload włączony, 0 - Directdownload wyłączony
-        // (int) [userTraffic] - Dostępny transfer (w ramach dziennego limitu transferu)
+        // (int) [userTrafficDay] - Dostępny transfer (w ramach dziennego limitu transferu)
+        // (int) [userTraffic] - Dostępny, maksymalny transfer w ciągu dnia
         // (datetime) [userDateRegister] - Data rejestracji
 
         int userPremium = Integer.parseInt(getJson("userPremium", accountResponse));
         String userPremiumDateEnd = getJson("userPremiumDateEnd", accountResponse);
-        String userTraffic = getJson("userTrafficDay", accountResponse);
-        ai.setTrafficLeft(userTraffic);
+        String userTrafficDay = getJson("userTrafficDay", accountResponse);
+        long userTraffic = Long.parseLong(getJson("userTraffic", accountResponse));
+        ai.setTrafficLeft(userTrafficDay);
+        // available daily user traffic
+        ai.setTrafficMax(userTraffic);
         if (userPremium == 0) {
-            ai.setTrafficMax(SizeFormatter.getSize("5 GB"));
             ai.setStatus("Registered (free) user");
         } else {
-            ai.setTrafficMax(SizeFormatter.getSize("30 GB"));
             ai.setStatus("Premium user");
 
             final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.getDefault());
@@ -495,7 +505,8 @@ public class RapiduNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        // requested by the hoster admin
+        return 2;
     }
 
     @Override
@@ -504,7 +515,8 @@ public class RapiduNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        // requested by the hoster admin
+        return 1;
     }
 
     @Override
