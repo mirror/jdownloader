@@ -241,6 +241,9 @@ public class OBoomCom extends PluginForHost {
                     br.getPage("https://www.oboom.com/1.0/guestsession?source=" + APPID);
                     String guestSession = br.getRegex("200,.*?\"(.*?)\"").getMatch(0);
                     if (guestSession == null) {
+                        if (br.containsHTML("<h1>OBOOM.com is currently under heavy attack</h1>")) {
+                            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "OBOOM.com is currently under heavy attack", 15 * 60 * 1000l);
+                        }
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     infos = new HashMap<String, String>();
