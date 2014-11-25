@@ -238,7 +238,8 @@ public class EnvJSBrowser implements ContextCallback {
     }
 
     public void exit() {
-        throw new WTFException("EXIT");
+        // parser stopped
+        // throw new WTFException("EXIT");
     }
 
     public String readRequire(String path) throws IOException {

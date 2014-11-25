@@ -192,12 +192,7 @@ var localSleepReference=java.lang.Thread.sleep;
 var urlReference=java.net.URL;
 		var log = Envjs.logger('Envjs.XMLHttpRequest.Rhino');
 
-		/**
-		 * Get 'Current Working Directory'
-		 */
-		Envjs.getcwd = function() {
-			return java.lang.System.getProperty('user.dir');
-		}
+	
 
 		/**
 		 * Used to write to a local file
