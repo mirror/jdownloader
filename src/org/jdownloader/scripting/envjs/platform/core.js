@@ -2953,13 +2953,13 @@ envjsGlobals.Envjs.exit = function() {
 
             // if base is still empty, then we are in QA mode loading local
             // files. Get current working directory
-            if (!base) {
-                base = 'file://' + Envjs.getcwd() + '/';
-            }
+//            if (!base) {
+//                base = 'file://' + Envjs.getcwd() + '/';
+//            }
             // handles all cases if path is abosulte or relative to base
             // 3rd arg is "false" --> remove fragments
             var newurl = urlparse.urlnormalize(urlparse.urljoin(base, path, false));
-            // console.log('uri %s %s = %s', base, path, newurl);
+             console.log('uri %s %s = %s', base, path, newurl);
             return newurl;
         };
 
