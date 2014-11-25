@@ -54,10 +54,14 @@ public class BornCashOrg extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("borncash\\.org/dw/del") || br.containsHTML("redirectfiles\\.ru/error/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("File name:.*?title=\"([^<>\"]+)\" >").getMatch(0);
-        final String filesize = br.getRegex("title=\"Размер файла\" >([^<>\"]*?)</a>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML("borncash\\.org/dw/del") || br.containsHTML("redirectfiles\\.ru/error/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String filename = br.getRegex("file\"><b>([^<>]+)</b> \\([\\d\\.]+ [K|M|G]B\\)<").getMatch(0);
+        final String filesize = br.getRegex("file\"><b>[^<>]+</b> \\(([\\d\\.]+ [K|M|G]B)\\)<").getMatch(0);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -73,20 +77,30 @@ public class BornCashOrg extends PluginForHost {
             br.postPage(br.getURL(), "off_free=");
             int wait = 60;
             final String waittime = br.getRegex("sec=(\\d+);").getMatch(0);
-            if (waittime != null) wait = Integer.parseInt(waittime);
+            if (waittime != null) {
+                wait = Integer.parseInt(waittime);
+            }
             dllink = br.getRegex("\"(http://(www\\.)?borncash\\.org/dw/zagruska\\.php\\?url=http://[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             // sleep(wait * 1001l, downloadLink);
             br.getPage(dllink);
             dllink = br.getRegex("HTTP\\-EQUIV=\\'Refresh\\' CONTENT=\\'\\d+; URL=(http://[^<>\"]*?)\\'>").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("Скачивать файлы без VIP доступа Вы можете не чаще")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1001l);
+            if (br.containsHTML("Скачивать файлы без VIP доступа Вы можете не чаще")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1001l);
+            }
             // This should never happen
-            if (br.containsHTML("There is a limit on the number of <b>simultaneous</b>")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 2 * 60 * 1000l);
+            if (br.containsHTML("There is a limit on the number of <b>simultaneous</b>")) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 2 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("directlink", dllink);
