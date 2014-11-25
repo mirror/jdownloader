@@ -128,6 +128,9 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
 
             @Override
             public void onChanged() {
+                if (item == null) {
+                    return;
+                }
                 item.setName(name.getText());
 
                 updateResetButtons(item);
