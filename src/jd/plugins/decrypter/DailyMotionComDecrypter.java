@@ -170,7 +170,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
 
     private void decryptUser() throws IOException {
         logger.info("Decrypting user: " + PARAMETER);
-        String username = new Regex(PARAMETER, "dailymotion\\.com/user/([A-Za-z0-9]+)").getMatch(0);
+        String username = new Regex(PARAMETER, "dailymotion\\.com/user/([A-Za-z0-9\\-_]+)").getMatch(0);
         if (username == null) {
             username = new Regex(PARAMETER, "dailymotion\\.com/([A-Za-z0-9_\\-]+)").getMatch(0);
         }

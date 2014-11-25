@@ -106,8 +106,8 @@ public class UlozTo extends PluginForHost {
         }
         // not sure if this is still needed with 2012/02/01 changes
         handleRedirect(downloadLink);
-        // For age restricted links
-        final String ageFormToken = br.getRegex("id=\"frmaskAgeForm\\-_token_\" value=\"([^<>\"]*?)\"").getMatch(0);
+        /* For age restricted links */
+        final String ageFormToken = br.getRegex("id=\"frm-askAgeForm-_token_\" value=\"([^<>\"]*?)\"").getMatch(0);
         if (ageFormToken != null) {
             br.postPage(br.getURL() + "?do=askAgeForm-submit", "agree=Souhlas%C3%ADm&_token_=" + ageFormToken);
             handleRedirect(downloadLink);

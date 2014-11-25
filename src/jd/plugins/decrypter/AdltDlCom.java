@@ -47,18 +47,30 @@ public class AdltDlCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         // Offline1
-        if (br.containsHTML("404 Not Found<|Sorry, the page could not be found")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("404 Not Found<|Sorry, the page could not be found")) {
             logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         // Offline2
         if (br.containsHTML("<title> \\| AdultDDL</title>")) {
             logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         // Offline3
         if (parameter.contains("adultddl.ws/1970/")) {
             logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         String fpName = br.getRegex(" title=\"Comment on ([^<>\"\\']+)\"").getMatch(0);

@@ -77,6 +77,7 @@ public class VideoPremiumNet extends PluginForHost {
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
     private static Object        LOCK                         = new Object();
+    private static final boolean SUPPORTS_ALT_AVAILABLECHECK  = true;
 
     // DEV NOTES
     /**
@@ -139,6 +140,8 @@ public class VideoPremiumNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        String[] fileInfo = new String[3];
+        final Browser altbr = br.cloneBrowser();
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         // Correct previously added links
@@ -162,7 +165,6 @@ public class VideoPremiumNet extends PluginForHost {
         if (correctedBR.contains("No htmlCode read")) {
             return AvailableStatus.UNCHECKABLE;
         }
-        String[] fileInfo = new String[3];
         // scan the first page
         scanInfo(fileInfo);
         // scan the second page. filesize[1] and md5hash[2] are not mission
@@ -188,6 +190,15 @@ public class VideoPremiumNet extends PluginForHost {
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
         link.setFinalFileName(fileInfo[0].trim());
+        if (fileInfo[1] == null && SUPPORTS_ALT_AVAILABLECHECK) {
+            /* Do alt availablecheck here but don't check availibility because we already know that the file must be online! */
+            logger.info("Filesize not available, trying altAvailablecheck");
+            try {
+                altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
+                fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
+            } catch (final Throwable e) {
+            }
+        }
         if (fileInfo[1] != null && !fileInfo[1].equals("")) {
             link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         }

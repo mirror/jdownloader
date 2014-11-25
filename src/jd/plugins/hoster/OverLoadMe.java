@@ -119,30 +119,9 @@ public class OverLoadMe extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("Download not available at the moment")) {
-                int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_notavailable", 0);
-                link.getLinkStatus().setRetryCount(0);
-                if (timesFailed <= 2) {
-                    timesFailed++;
-                    link.setProperty(NICE_HOSTproperty + "timesfailed_notavailable", timesFailed);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Download not available at the moment");
-                } else {
-                    link.setProperty(NICE_HOSTproperty + "timesfailed_notavailable", Property.NULL);
-                    logger.info(NICE_HOST + ": Download not available at the moment - disabling current host!");
-                    tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-                }
+                handleErrorRetries(account, link, "download_not_available", 5);
             }
-            logger.info(NICE_HOST + ": Unknown download error");
-            int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_unknowndlerror", 0);
-            link.getLinkStatus().setRetryCount(0);
-            if (timesFailed <= 2) {
-                timesFailed++;
-                link.setProperty(NICE_HOSTproperty + "timesfailed_unknowndlerror", timesFailed);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
-            } else {
-                link.setProperty(NICE_HOSTproperty + "timesfailed_unknowndlerror", Property.NULL);
-                logger.info(NICE_HOST + ": Unknown error - disabling current host!");
-                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-            }
+            handleErrorRetries(account, link, "unknowndlerror", 5);
         }
         try {
             if (!this.dl.startDownload()) {
@@ -162,24 +141,11 @@ public class OverLoadMe extends PluginForHost {
             /* This may happen if the downloads stops at 99,99% - a few retries usually help in this case */
             if (e.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
                 logger.info(NICE_HOST + ": DOWNLOAD_INCOMPLETE");
-
                 logger.info("DOWNLOAD_INCOMPLETE -> Maybe re-trying with only 1 chunk");
                 /* unknown error, we disable multiple chunks */
                 disableChunkload(link);
                 logger.info("DOWNLOAD_INCOMPLETE -> Retry with 1 chunk did not solve the problem");
-
-                int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_dl_incomplete", 0);
-                link.getLinkStatus().setRetryCount(0);
-                if (timesFailed <= 5) {
-                    timesFailed++;
-                    link.setProperty(NICE_HOSTproperty + "timesfailed_dl_incomplete", timesFailed);
-                    logger.info(NICE_HOST + ": UDOWNLOAD_INCOMPLETE - Retrying!");
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "timesfailed_dl_incomplete");
-                } else {
-                    link.setProperty(NICE_HOSTproperty + "timesfailed_dl_incomplete", Property.NULL);
-                    logger.info(NICE_HOST + ": UDOWNLOAD_INCOMPLETE - disabling current host!");
-                    tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-                }
+                handleErrorRetries(account, link, "dl_incomplete", 5);
             }
             // New V2 errorhandling
             /* unknown error, we disable multiple chunks */
@@ -201,18 +167,7 @@ public class OverLoadMe extends PluginForHost {
             this.accessAPISafe(account, link, DOMAIN + "getdownload.php?auth=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
             dllink = getJson("downloadlink");
             if (dllink == null) {
-                logger.info(NICE_HOST + ": Unknown error");
-                int timesFailed = link.getIntegerProperty("NICE_HOSTproperty + timesfailed_dllinknull", 0);
-                link.getLinkStatus().setRetryCount(0);
-                if (timesFailed <= 2) {
-                    timesFailed++;
-                    link.setProperty(NICE_HOSTproperty + "timesfailed_dllinknull", timesFailed);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
-                } else {
-                    link.setProperty(NICE_HOSTproperty + "timesfailed_dllinknull", Property.NULL);
-                    logger.info(NICE_HOST + ": Unknown error - disabling current host!");
-                    tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-                }
+                handleErrorRetries(account, link, "dllinknull", 5);
             }
             dllink = dllink.replaceAll("\\\\/", "/");
         }
@@ -237,6 +192,32 @@ public class OverLoadMe extends PluginForHost {
             }
         }
         return dllink;
+    }
+
+    /**
+     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
+     * from the host list.
+     *
+     * @param dl
+     *            : The DownloadLink
+     * @param error
+     *            : The name of the error
+     * @param maxRetries
+     *            : Max retries before out of date error is thrown
+     */
+    private void handleErrorRetries(final Account acc, final DownloadLink dl, final String error, final int maxRetries) throws PluginException {
+        int timesFailed = dl.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
+        dl.getLinkStatus().setRetryCount(0);
+        if (timesFailed <= maxRetries) {
+            logger.info(NICE_HOST + ": " + error + " -> Retrying");
+            timesFailed++;
+            dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
+            throw new PluginException(LinkStatus.ERROR_RETRY, error);
+        } else {
+            dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
+            logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
+            tempUnavailableHoster(acc, dl, 1 * 60 * 60 * 1000l);
+        }
     }
 
     private void disableChunkload(final DownloadLink dl) throws PluginException {
@@ -303,7 +284,7 @@ public class OverLoadMe extends PluginForHost {
             supportedHosts.add(domain);
         }
         ai.setMultiHostSupport(this, supportedHosts);
-        ai.setStatus("Account valid");
+        ai.setStatus("Premium User");
         return ai;
     }
 

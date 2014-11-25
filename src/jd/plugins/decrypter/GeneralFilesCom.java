@@ -116,7 +116,7 @@ public class GeneralFilesCom extends PluginForDecrypt {
             br.getPage("http://www." + currenthost + "/go/" + goLink + "?ajax=1");
         }
         /* First try ajax regex */
-        String finallink = br.getRegex("\"link\":\"(http:[^<>\"]*?)\"").getMatch(0);
+        String finallink = br.getRegex("\"link\":\"(https?:[^<>\"]*?)\"").getMatch(0);
         if (finallink == null) {
             finallink = br.getRegex("window\\.location\\.replace\\(\\'(http[^<>\"]*?)\\'\\)").getMatch(0);
         }
