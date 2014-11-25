@@ -61,7 +61,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             parameter = parameter.replace("mail.yandex.ru/", "disk.yandex.net/").replace("#", "?hash=");
         }
         final DownloadLink main = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
-        String hashID = null;
+        String mainhashID = null;
         if (parameter.matches(shortURLs)) {
             br.getPage(parameter);
             if (br.containsHTML(OFFLINE_TEXT)) {
@@ -76,34 +76,35 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 parameter = new Regex(newUrl, primaryURLs).getMatch(-1);
             } else {
                 /* URL has not changed - try to manually change it to our basic url format */
-                hashID = br.getRegex("\"hash\":\"([^<>\"]*?)\"").getMatch(0);
-                if (hashID == null) {
+                mainhashID = br.getRegex("\"hash\":\"([^<>\"]*?)\"").getMatch(0);
+                if (mainhashID == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                hashID = fixHash(hashID);
-                parameter = "https://disk.yandex.com/public/?hash=" + hashID;
+                mainhashID = fixHash(mainhashID);
+                parameter = "https://disk.yandex.com/public/?hash=" + mainhashID;
             }
         }
         if (parameter.matches(primaryURLs)) {
             String protocol = new Regex(parameter, "(https?)://").getMatch(0);
-            hashID = new Regex(parameter, "hash=(.+)$").getMatch(0);
-            if (protocol == null || hashID == null) {
+            mainhashID = new Regex(parameter, "hash=(.+)$").getMatch(0);
+            if (protocol == null || mainhashID == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            hashID = fixHash(hashID);
-            parameter = protocol + "://disk.yandex.com/public/?hash=" + hashID;
+            mainhashID = fixHash(mainhashID);
+            parameter = protocol + "://disk.yandex.com/public/?hash=" + mainhashID;
             br.getPage(parameter);
         }
 
         main.setProperty("mainlink", parameter);
-        main.setName(hashID);
+        main.setProperty("LINKDUPEID", "copydiskyandexcom" + mainhashID);
+        main.setName(mainhashID);
 
         if (br.containsHTML(OFFLINE_TEXT)) {
             main.setAvailable(false);
             main.setProperty("offline", true);
-            main.setFinalFileName(hashID);
+            main.setFinalFileName(mainhashID);
             decryptedLinks.add(main);
             return decryptedLinks;
         }
@@ -129,10 +130,10 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             data = linktext.split("\\},\\{");
         }
 
-        main.setProperty("hash_encoded", hashID);
+        main.setProperty("hash_encoded", mainhashID);
         // stored hash should not be urldecoded as this is what we need in host plugin
-        main.setProperty("hash_plain", hashID);
-        hashID = Encoding.htmlDecode(hashID);
+        main.setProperty("hash_plain", mainhashID);
+        mainhashID = Encoding.htmlDecode(mainhashID);
 
         if (data != null && data.length != 0) {
             for (final String singleData : data) {
@@ -142,8 +143,8 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 if (singleData.length() > 30 && hash != null) {
                     hash = unescape(hash);
                     hash = hash.replace("/public/", "");
-                    hash = fixHash(hash);
                     if ("dir".equals(type)) {
+                        hash = fixHash(hash);
                         final String folderlink = "https://disk.yandex.com/public/?hash=" + hash;
                         decryptedLinks.add(createDownloadlink(folderlink));
                     } else {
@@ -168,8 +169,9 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                         }
                         dl.setProperty("plain_filename", name);
                         dl.setProperty("hash_plain", hash);
-                        dl.setProperty("hash_encoded", fixHash(hash));
+                        dl.setProperty("hash_encoded", fixHashFileFolder(hash));
                         dl.setProperty("mainlink", parameter);
+                        dl.setProperty("LINKDUPEID", "copydiskyandexcom" + hash);
                         dl.setAvailable(true);
                         decryptedLinks.add(dl);
                     }
@@ -177,7 +179,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             }
         }
         /* Only add main .zip link if the user added the ROOT link, otherwise we get the ROOT as .zip with a wrong filename */
-        final boolean is_root_plus_zip = (!hashID.contains("/") && decryptedLinks.size() > 0);
+        final boolean is_root_plus_zip = (!mainhashID.contains("/") && decryptedLinks.size() > 0);
         /* If we did not find any other links it's probably a single link */
         final boolean is_single = (decryptedLinks.size() == 0);
         /* Empty folder --> Offline */
@@ -232,6 +234,17 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             // hash = hash.replace("%2F", "_");
             // hash = hash.replace("/", "_");
         }
+        return hash;
+    }
+
+    /* For multiple files in folders */
+    private static String fixHashFileFolder(final String input) {
+        /* First fully decode it */
+        String hash = input;
+        hash = hash.replace("=", "%3D");
+        hash = hash.replace(":", "%3A");
+        hash = hash.replace("/", "%2F");
+        hash = hash.replace(" ", "+");
         return hash;
     }
 

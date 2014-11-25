@@ -105,7 +105,7 @@ public class PremiumRapeitNet extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             logger.info("Unhandled download error on " + NICE_HOST + ": " + br.toString());
-            handlePluginBroken(acc, link, "unknownerror_download", 5);
+            handleErrorRetriesn(acc, link, "unknownerror_download", 5);
         }
         link.setProperty(NICE_HOST + "directlink", dllink);
         try {
@@ -147,7 +147,7 @@ public class PremiumRapeitNet extends PluginForHost {
      * @param maxRetries
      *            : Max retries before out of date error is thrown
      */
-    private void handlePluginBroken(final Account acc, final DownloadLink dl, final String error, final int maxRetries) throws PluginException {
+    private void handleErrorRetriesn(final Account acc, final DownloadLink dl, final String error, final int maxRetries) throws PluginException {
         int timesFailed = dl.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
         dl.getLinkStatus().setRetryCount(0);
         if (timesFailed <= maxRetries) {
@@ -284,7 +284,7 @@ public class PremiumRapeitNet extends PluginForHost {
         br.postPage("http://premium.rapeit.net/", "inputlink=" + url);
         dllink = br.getRegex("href=\"(https?://[a-z0-9]+\\.rapeit\\.net(:\\d+)?/dl/[^<>\"]*?)\" target=\"_blank\"").getMatch(0);
         if (dllink == null) {
-            handlePluginBroken(acc, link, "dllink_null", 10);
+            handleErrorRetriesn(acc, link, "dllink_null", 10);
         }
         dllink = dllink.replace("\\", "");
         return dllink;

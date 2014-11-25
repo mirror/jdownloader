@@ -230,7 +230,7 @@ public class DiskYandexNet extends PluginForHost {
             resumable = true;
             maxchunks = 0;
         } else {
-            final String hash = getHash(downloadLink);
+            String hash = getHash(downloadLink);
             String sk = br.getRegex("\"sk\":\"([^<>\"]+)\"").getMatch(0);
             if (sk == null) {
                 logger.warning("sk in account handling (without move) is null");
@@ -277,9 +277,12 @@ public class DiskYandexNet extends PluginForHost {
         } else if (br.containsHTML("\"code\":69")) {
             /* Usually this does not happen. Happens also if you actually try to download a "premiumonly" link via this method. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("\"code\":71")) {
+            /* Happens when we send a very wrong hash - usually shouldn't happen! */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 71 'Wrong path'", 1 * 60 * 60 * 1000l);
         } else if (br.containsHTML("\"code\":77")) {
             /* Happens when we send a very wrong hash - usually shouldn't happen! */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 88 'Wrong path'", 1 * 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 77 'resource not found'", 1 * 60 * 60 * 1000l);
         } else if (br.containsHTML("\"code\":88")) {
             /* Happens when we send a wrong hash - usually shouldn't happen! */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 88 'Decryption error'", 10 * 60 * 1000l);
@@ -291,8 +294,8 @@ public class DiskYandexNet extends PluginForHost {
         /* TODO: Remove this compatibility early in 2015 */
         if (hash == null) {
             hash = dl.getStringProperty("hash_plain", null);
+            hash = fixHash(hash);
         }
-        hash = fixHash(hash);
         return hash;
     }
 
