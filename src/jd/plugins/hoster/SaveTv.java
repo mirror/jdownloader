@@ -62,6 +62,7 @@ import jd.utils.locale.JDL;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ContainerDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -320,6 +321,15 @@ public class SaveTv extends PluginForHost {
             filename = fake_original_filename;
         } else {
             filename = getFormattedFilename(dl);
+        }
+        /* Cut filenames for Windows systems if necessary */
+        if (CrossSystem.isWindows() && filename.length() > 255) {
+            filename = filename.replace(EXTENSION, "");
+            if (filename.length() >= 251) {
+                filename = filename.substring(0, 250) + EXTENSION;
+            } else {
+                filename += EXTENSION;
+            }
         }
         return filename;
     }

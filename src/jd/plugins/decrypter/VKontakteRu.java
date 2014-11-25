@@ -1051,7 +1051,7 @@ public class VKontakteRu extends PluginForDecrypt {
         fp.addLinks(decryptedLinks);
     }
 
-    /** NOT using API - general method */
+    /** NOT using API - general method --> NEVER change a running system! */
     private ArrayList<String> decryptMultiplePages(final String type, final String numberOfEntries, final String[][] regexesPageOne, final String[][] regexesAllOthers, int offset, int increase, int alreadyOnPage, final String postPage, final String postData) throws Exception {
         ArrayList<String> decryptedData = new ArrayList<String>();
         logger.info("Decrypting " + numberOfEntries + " entries for linktype: " + type);
@@ -1115,7 +1115,7 @@ public class VKontakteRu extends PluginForDecrypt {
         return decryptedData;
     }
 
-    /** NOT using API - general method */
+    /** NOT using API - general method --> NEVER change a running system! */
     private ArrayList<String> decryptMultiplePagesCommunityVideo(final String parameter, final String type, final String numberOfEntries, final String[][] regexesPageOne, final String[][] regexesAllOthers, int offset, int increase, int alreadyOnPage, final String postPage, final String postData) throws IOException {
         ArrayList<String> decryptedData = new ArrayList<String>();
         logger.info("Decrypting " + numberOfEntries + " entries for linktype: " + type);
@@ -1412,6 +1412,7 @@ public class VKontakteRu extends PluginForDecrypt {
         return false;
     }
 
+    /** Log in the account of the hostplugin */
     private boolean getUserLogin(final boolean force) throws Exception {
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost("vkontakte.ru");
         final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
@@ -1453,6 +1454,7 @@ public class VKontakteRu extends PluginForDecrypt {
         return hasPassed;
     }
 
+    /** Sets basic values/cookies */
     private void prepBrowser(final Browser br) {
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:21.0) Gecko/20100101 Firefox/21.0");
         // Set english language
@@ -1462,6 +1464,7 @@ public class VKontakteRu extends PluginForDecrypt {
         br.setFollowRedirects(false);
     }
 
+    /** Correct filenames for Windows users */
     private String encodeUnicode(final String input) {
         String output = input;
         output = output.replace(":", ";");
