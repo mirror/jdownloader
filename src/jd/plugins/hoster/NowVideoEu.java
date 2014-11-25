@@ -45,8 +45,10 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowvideo.eu", "nowvideo.co" }, urls = { "http://(www\\.)?(nowvideo\\.(sx|eu|co|ch|ag|at)/(?!share\\.php)(video/|player\\.php\\?v=)|embed\\.nowvideo\\.(sx|eu|co|ch|ag|at)/embed\\.php\\?v=)[a-z0-9]+", "NEVERUSETHISSUPERDUBERREGEXATALL2013" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowvideo.eu", "nowvideo.co" }, urls = { "http://(www\\.)?(nowvideo\\.(sx|eu|co|ch|ag|at)/(video/|player\\.php\\?v=|share\\.php\\?id=)|embed\\.nowvideo\\.(sx|eu|co|ch|ag|at)/embed\\.php\\?v=)[a-z0-9]+", "NEVERUSETHISSUPERDUBERREGEXATALL2013" }, flags = { 2, 0 })
 public class NowVideoEu extends PluginForHost {
+
+    /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet */
 
     public NowVideoEu(PluginWrapper wrapper) {
         super(wrapper);
@@ -189,6 +191,8 @@ public class NowVideoEu extends PluginForHost {
         if (br.containsHTML(ISBEINGCONVERTED)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is being converted!", 2 * 60 * 60 * 1000l);
         }
+        String cid1 = br.getRegex("flashvars\\.cid=\"(\\d+)\";").getMatch(0);
+        String cid2 = br.getRegex("flashvars\\.cid2=\"(\\d+)\";").getMatch(0);
         String fKey = br.getRegex("flashvars\\.filekey=\"([^<>\"]*)\"").getMatch(0);
         if (fKey == null) {
             fKey = br.getRegex("var fkzd=\"([^<>\"]*)\"").getMatch(0);
@@ -200,7 +204,8 @@ public class NowVideoEu extends PluginForHost {
         if (fKey == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String player = "/api/player.api.php?pass=undefined&user=undefined&codes=undefined&file=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&key=" + Encoding.urlEncode(fKey) + "&cid=1&cid2=undefined&cid3=" + Browser.getHost(MAINPAGE.get()) + "&numOfErrors=";
+        final String player = "/api/player.api.php?pass=undefined&user=undefined&codes=undefined&file=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&key=" + Encoding.urlEncode(fKey) + "&cid=" + cid1 + "&cid2=" + (cid2 == null ? "undefined" : cid2) + "&cid3=" + br.getHost() + "&numOfErrors=";
+        final String host = new Regex(br.getURL(), "https?://[^/]+").getMatch(-1);
         int errCount = 0;
         br.getPage(player + errCount);
         if (br.containsHTML("The video is being transfered")) {
@@ -215,21 +220,24 @@ public class NowVideoEu extends PluginForHost {
         }
         while (true) {
             if (errCount >= 1) {
-                br.getHeaders().put("Referer", MAINPAGE.get() + "/player/cloudplayer.swf");
-                br.getPage(player + errCount + "&errorCode=404&errorUrl=" + Encoding.urlEncode(dllink));
+                br.getHeaders().put("Referer", host + "/player/cloudplayer.swf");
+                br.getPage(host + player + errCount + "&errorCode=404&errorUrl=" + Encoding.urlEncode(dllink));
                 dllink = br.getRegex("url=(http://[^<>\"]+\\.flv)\\&title").getMatch(0);
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            br.getHeaders().put("Referer", MAINPAGE.get() + "/player/cloudplayer.swf");
+            br.getHeaders().put("Referer", host + "/player/cloudplayer.swf");
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
-                if (dl.getConnection().getResponseCode() == 500) {
+                if (dl.getConnection().getResponseCode() == 500 || dl.getConnection().getResponseCode() == 404) {
+                    if (errCount > 4) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Can not connect to streaming link!", 10 * 60 * 1000l);
+                    }
                     errCount++;
                     continue;
                 }
+                br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
