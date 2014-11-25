@@ -100,15 +100,18 @@ public class VideoWeedCom extends PluginForHost {
         if (br.containsHTML("(>This file no longer exists on our servers\\.<|The video file was removed)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("name=\"title\" content=\"(.*?) online \\| VideoWeed \"").getMatch(0);
+        String filename = br.getRegex("<h1 class=\"text_shadow\">(.*?)</h1>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("videoweed\\.com/file/[a-z0-9]+\\&title=(.*?)\\+\\-\\+VideoWeed\\.com\"").getMatch(0);
+            filename = br.getRegex("name=\"title\" content=\"Watch (.*?) online \\| VideoWeed \"").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<td><strong>Title: </strong>(.*?)</td>").getMatch(0);
+                filename = br.getRegex("videoweed\\.com/file/[a-z0-9]+\\&title=(.*?)\\+\\-\\+VideoWeed\\.com\"").getMatch(0);
                 if (filename == null) {
-                    filename = br.getRegex("<td width=\"580\">[\t\n\r ]+<div class=\"div_titlu\">(.*?) \\- <a").getMatch(0);
+                    filename = br.getRegex("<td><strong>Title: </strong>(.*?)</td>").getMatch(0);
                     if (filename == null) {
-                        filename = br.getRegex("colspan=\"2\"><strong>Title: </strong>(.*?)</td>").getMatch(0);
+                        filename = br.getRegex("<td width=\"580\">[\t\n\r ]+<div class=\"div_titlu\">(.*?) \\- <a").getMatch(0);
+                        if (filename == null) {
+                            filename = br.getRegex("colspan=\"2\"><strong>Title: </strong>(.*?)</td>").getMatch(0);
+                        }
                     }
                 }
             }
