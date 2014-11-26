@@ -1039,46 +1039,60 @@ public class SecondLevelLaunch {
 
         // init statsmanager
         StatsManager.I();
-        switch (CrossSystem.getOS()) {
-        case WINDOWS_XP:
-            try {
-                LOG.info("AntiVirusProduct");
-                LOG.info(ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter", "path", "AntiVirusProduct").getStdOutString("UTF-8"));
-            } catch (Throwable e1) {
-                LOG.log(e1);
-            }
-            try {
-                LOG.info("FirewallProduct");
-                LOG.info(ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter", "path", "FirewallProduct").getStdOutString("UTF-8"));
-            } catch (Throwable e1) {
-                LOG.log(e1);
-            }
-            break;
-        case WINDOWS_7:
-        case WINDOWS_8:
-        case WINDOWS_VISTA:
-            try {
-                LOG.info("AntiVirusProduct");
-                LOG.info(ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter2", "path", "AntiVirusProduct").getStdOutString("UTF-8"));
-            } catch (Throwable e1) {
-                LOG.log(e1);
-            }
-            try {
-                LOG.info("FirewallProduct");
-                LOG.info(ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter2", "path", "FirewallProduct").getStdOutString("UTF-8"));
-            } catch (Throwable e1) {
-                LOG.log(e1);
-            }
-            try {
-                LOG.info("AntiSpywareProduct");
-                LOG.info(ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter2", "path", "AntiSpywareProduct").getStdOutString("UTF-8"));
-            } catch (Throwable e1) {
-                LOG.log(e1);
-            }
-            break;
-        default:
-            break;
-        }
+        new Thread("Print Sec Infos") {
+            public void run() {
+                switch (CrossSystem.getOS()) {
+                case WINDOWS_XP:
+                    try {
+                        LOG.info("AntiVirusProduct START");
+                        LOG.info(ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter", "path", "AntiVirusProduct").getStdOutString("UTF-8"));
+                    } catch (Throwable e1) {
+                        LOG.log(e1);
+                    } finally {
+                        LOG.info("AntiVirusProduct END");
+                    }
+                    try {
+                        LOG.info("FirewallProduct START");
+                        LOG.info(ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter", "path", "FirewallProduct").getStdOutString("UTF-8"));
+                    } catch (Throwable e1) {
+                        LOG.log(e1);
+                    } finally {
+                        LOG.info("FirewallProduct END");
+                    }
+                    break;
+                case WINDOWS_7:
+                case WINDOWS_8:
+                case WINDOWS_VISTA:
+                    try {
+                        LOG.info("AntiVirusProduct START");
+                        LOG.info(ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter2", "path", "AntiVirusProduct").getStdOutString("UTF-8"));
+                    } catch (Throwable e1) {
+                        LOG.log(e1);
+                    } finally {
+                        LOG.info("AntiVirusProduct END");
+                    }
+                    try {
+                        LOG.info("FirewallProduct START");
+                        LOG.info(ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter2", "path", "FirewallProduct").getStdOutString("UTF-8"));
+                    } catch (Throwable e1) {
+                        LOG.log(e1);
+                    } finally {
+                        LOG.info("FirewallProduct END");
+                    }
+                    try {
+                        LOG.info("AntiSpywareProduct START");
+                        LOG.info(ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter2", "path", "AntiSpywareProduct").getStdOutString("UTF-8"));
+                    } catch (Throwable e1) {
+                        LOG.log(e1);
+                    } finally {
+                        LOG.info("AntiSpywareProduct END");
+                    }
+                    break;
+                default:
+                    break;
+                }
+            };
+        }.start();
 
         // init Filechooser. filechoosers may freeze the first time the get initialized. maybe this helps
         if (!Application.isHeadless()) {
