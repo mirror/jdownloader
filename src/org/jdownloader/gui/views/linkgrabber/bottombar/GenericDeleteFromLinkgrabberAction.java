@@ -272,12 +272,9 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
             return true;
         }
         if (isDeleteDisabled() && !cl.isEnabled()) {
-
             return true;
         }
-
         if (isDeleteOffline() && cl.getDownloadLink().isAvailabilityStatusChecked() && cl.getDownloadLink().getAvailableStatus() == AvailableStatus.FALSE) {
-
             return true;
         }
         return false;

@@ -97,7 +97,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     public static final ScheduledExecutorService    TIMINGQUEUE         = DelayedRunnable.getNewScheduledExecutorService();
 
-    private DupeManager                             dupeController;
+    private final DupeManager                       dupeController;
 
     public static SingleReachableState              DOWNLOADLIST_LOADED = new SingleReachableState("DOWNLOADLIST_COMPLETE");
 

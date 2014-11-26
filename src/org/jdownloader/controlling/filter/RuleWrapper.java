@@ -208,31 +208,29 @@ public class RuleWrapper<T extends FilterRule> {
     }
 
     public boolean checkPackageName(CrawledLink link) {
-
         if (getPackageNameRule() != null) {
             String packagename = null;
-            if (link != null && link.getParentNode() != null) {
-                packagename = link.getParentNode().getName();
-            }
-            if (StringUtils.isEmpty(packagename) && link != null && link.getDesiredPackageInfo() != null) {
-                packagename = link.getDesiredPackageInfo().getName();
+            if (link != null) {
+                if (link.getParentNode() != null) {
+                    packagename = link.getParentNode().getName();
+                }
+                if (StringUtils.isEmpty(packagename) && link.getDesiredPackageInfo() != null) {
+                    packagename = link.getDesiredPackageInfo().getName();
+                }
             }
             if (StringUtils.isEmpty(packagename)) {
                 return false;
             }
-
             return getPackageNameRule().matches(packagename);
         }
         return true;
     }
 
     public boolean checkFileName(CrawledLink link) {
-
-        if (getFileNameRule() != null) {
+        if (link != null && getFileNameRule() != null) {
             if (link.getLinkState() != AvailableLinkState.ONLINE) {
                 return false;
             }
-
             return getFileNameRule().matches(link.getName());
         }
         return true;
@@ -316,7 +314,6 @@ public class RuleWrapper<T extends FilterRule> {
     }
 
     public boolean checkConditions(CrawledLink link) {
-
         if (getConditionFilter() != null) {
             if (link == null) {
                 return false;
@@ -327,7 +324,6 @@ public class RuleWrapper<T extends FilterRule> {
     }
 
     public boolean checkOrigin(CrawledLink link) {
-
         if (getOriginFilter() != null) {
             if (link == null || link.getOrigin() == null) {
                 return false;

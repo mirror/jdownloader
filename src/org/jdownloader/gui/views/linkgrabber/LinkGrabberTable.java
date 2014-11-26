@@ -74,6 +74,7 @@ import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberT
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
@@ -81,32 +82,32 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, CrawledLink> {
 
-    private static final long          serialVersionUID = 8843600834248098174L;
+    private static final long          serialVersionUID   = 8843600834248098174L;
 
     private HashMap<KeyStroke, Action> shortCutActions;
     private LogSource                  logger;
     private static LinkGrabberTable    INSTANCE;
+    private final boolean              dupeManagerEnabled = CFG_GENERAL.CFG.isDupeManagerEnabled();
 
     public LinkGrabberTable(LinkGrabberPanel linkGrabberPanel, final LinkGrabberTableModel tableModel) {
         super(tableModel);
         INSTANCE = this;
         this.addRowHighlighter(new DropHighlighter(null, new Color(27, 164, 191, 75)));
 
-        this.addRowHighlighter(new ExtOverlayRowHighlighter(null, LAFOptions.getInstance().getColorForLinkgrabberDupeHighlighter()) {
+        if (dupeManagerEnabled) {
+            this.addRowHighlighter(new ExtOverlayRowHighlighter(null, LAFOptions.getInstance().getColorForLinkgrabberDupeHighlighter()) {
 
-            @Override
-            public boolean doHighlight(ExtTable<?> extTable, int row) {
-
-                AbstractNode object = tableModel.getObjectbyRow(row);
-                if (object instanceof CrawledLink) {
-
-                    return DownloadController.getInstance().hasDownloadLinkByID(((CrawledLink) object).getLinkID());
+                @Override
+                public boolean doHighlight(ExtTable<?> extTable, int row) {
+                    final AbstractNode object = tableModel.getObjectbyRow(row);
+                    if (object != null && object instanceof CrawledLink) {
+                        return DownloadController.getInstance().hasDownloadLinkByID(((CrawledLink) object).getLinkID());
+                    }
+                    return false;
                 }
-                return false;
-            }
 
-        });
-
+            });
+        }
         this.setTransferHandler(new LinkGrabberTableTransferHandler(this));
         this.setDragEnabled(true);
         this.setDropMode(DropMode.ON_OR_INSERT_ROWS);
@@ -265,7 +266,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
     @Override
     protected boolean onSingleClick(MouseEvent e, AbstractNode obj) {
-        if (obj instanceof CrawledLink && DownloadController.getInstance().hasDownloadLinkByID(((CrawledLink) obj).getLinkID())) {
+        if (dupeManagerEnabled && obj != null && obj instanceof CrawledLink && DownloadController.getInstance().hasDownloadLinkByID(((CrawledLink) obj).getLinkID())) {
             JDGui.help(_GUI._.LinkGrabberTable_onSingleClick_dupe_title(), _GUI._.LinkGrabberTable_onSingleClick_dupe_msg(), new AbstractIcon(IconKey.ICON_COPY, 32));
         }
         return super.onSingleClick(e, obj);
