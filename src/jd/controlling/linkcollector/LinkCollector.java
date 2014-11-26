@@ -972,6 +972,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     public LinkCrawler addCrawlerJob(final LinkCollectingJob job) {
         try {
+            logger.info("Added CrawlerJob " + job);
             if (job == null) {
                 throw new IllegalArgumentException("job is null");
             }

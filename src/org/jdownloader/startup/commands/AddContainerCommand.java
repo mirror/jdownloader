@@ -1,5 +1,7 @@
 package org.jdownloader.startup.commands;
 
+import java.util.Arrays;
+
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkOrigin;
@@ -13,6 +15,7 @@ public class AddContainerCommand extends AbstractStartupCommand {
 
     @Override
     public void run(String command, String... parameters) {
+        System.out.println("Command " + command + "- " + Arrays.toString(parameters));
         for (String s : parameters) {
             LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.START_PARAMETER, null), "file://" + s));
         }
