@@ -41,21 +41,31 @@ public class MikSeriNet extends PluginForDecrypt {
         br.setFollowRedirects(true);
         String parameter = param.toString();
         String anID = new Regex(parameter, "mikseri\\.net/artists/[^\"\\']+\\.(\\d+)").getMatch(0);
-        if (anID != null) parameter = "http://www.mikseri.net/artists/?id=" + anID;
+        if (anID != null) {
+            parameter = "http://www.mikseri.net/artists/?id=" + anID;
+        }
         br.getPage(parameter);
-        if (br.getURL().contains("/search.php")) {
-            logger.info("Link offline: " + parameter);
+        if (br.getURL().contains("/search.php") || br.containsHTML("class=\"error\"")) {
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         if (parameter.matches(".*?mikseri.net/artists/\\?id=.*?")) {
             if (br.containsHTML("Artistilla ei valitettavasti toistaiseksi ole kappaleita Mikseri\\.netissä")) {
-                logger.info("Link offline (there is no downloadable content): " + parameter);
+                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+                offline.setAvailable(false);
+                offline.setProperty("offline", true);
+                decryptedLinks.add(offline);
                 return decryptedLinks;
             }
             String fpName = br.getRegex("<meta name=\"og:title\" content=\"(.*?)\"").getMatch(0);
             if (fpName == null) {
                 fpName = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
-                if (fpName == null) fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+                if (fpName == null) {
+                    fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+                }
             }
             String[] fileIDs = br.getRegex("id=\"sharelinks_(\\d+)\"").getColumn(0);
             if (fileIDs == null || fileIDs.length == 0) {
@@ -70,7 +80,9 @@ public class MikSeriNet extends PluginForDecrypt {
                     }
                 }
             }
-            if (fileIDs == null || fileIDs.length == 0) return null;
+            if (fileIDs == null || fileIDs.length == 0) {
+                return null;
+            }
             progress.setRange(fileIDs.length);
             for (String id : fileIDs) {
                 DownloadLink fina = getSingleLink(id);
@@ -105,7 +117,9 @@ public class MikSeriNet extends PluginForDecrypt {
     private DownloadLink getSingleLink(String iD) throws IOException {
         br.getPage("http://www.mikseri.net/player/songlist.php?newsession=1&type=1&parameter=" + iD);
         String finallink = br.getRegex("<SongUrl>(http://[^<>\"]*?)</SongUrl>").getMatch(0);
-        if (finallink == null) return null;
+        if (finallink == null) {
+            return null;
+        }
         return createDownloadlink("directhttp://" + finallink);
 
     }
