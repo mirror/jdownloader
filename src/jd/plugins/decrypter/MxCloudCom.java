@@ -49,7 +49,11 @@ public class MxCloudCom extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setReadTimeout(3 * 60 * 1000);
         if (parameter.matches(INVALIDLINKS)) {
-            logger.info(" Link invalid: " + parameter);
+            logger.info("Link invalid: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
 
@@ -61,10 +65,18 @@ public class MxCloudCom extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.getRedirectLocation() != null) {
             logger.info("Unsupported or offline link: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         if (br.containsHTML("<title>404 Error page|class=\"message\\-404\"|class=\"record\\-error record\\-404") || br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Offline link: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
 

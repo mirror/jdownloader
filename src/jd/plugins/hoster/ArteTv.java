@@ -61,7 +61,7 @@ public class ArteTv extends PluginForHost {
     private Document              doc;
     private static final String   arteversions = "arteversions";
     /* The list of server values displayed to the user */
-    private static final String[] versions     = new String[] { "Without subtitle & added language", "Subtitle", "Subtitle for disabled people", "Audio description" };
+    private static final String[] versions     = new String[] { "Without subtitle & obey language selection inside url", "Subtitle", "Subtitle for disabled people", "Audio description" };
     private static final String   Q_BEST       = "Q_BEST";
     private static final String   Q_LOW        = "Q_LOW";
     private static final String   Q_HIGH       = "Q_HIGH";
