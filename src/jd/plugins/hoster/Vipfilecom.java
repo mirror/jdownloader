@@ -102,7 +102,7 @@ public class Vipfilecom extends PluginForHost {
                 br.postPage(APIPAGE, sb.toString());
                 for (final DownloadLink dllink : links) {
                     final String fid = getFID(dllink);
-                    final Regex fInfo = br.getRegex("\"name\":\"([^<>\"]*?)\",\"size\":\"(\\d+)\",\"uid\":\"" + fid + "\",\"project\":\"(letitbit\\.net|shareflare\\.net|vip\\-file\\.com)\",\"md5\":\"([a-z0-9]{32}|0)\"");
+                    final Regex fInfo = br.getRegex("\"name\":\"([^<>\"]*?)\",\"size\":\"?(\\d+)\"?,\"uid\":\"" + fid + "\",\"project\":\"(letitbit\\.net|shareflare\\.net|vip\\-file\\.com)\",\"md5\":\"([a-z0-9]{32}|0)\"");
                     if (br.containsHTML("\"data\":\\[\\[\\]\\]")) {
                         dllink.setAvailable(false);
                     } else {
