@@ -28,6 +28,7 @@ public class PackagizerRule extends FilterRule implements Storable {
         ret.setHosterURLFilter(getHosterURLFilter());
         ret.setSourceURLFilter(getSourceURLFilter());
         ret.setOriginFilter(getOriginFilter());
+        ret.setConditionFilter(getConditionFilter());
         ret.setOnlineStatusFilter(getOnlineStatusFilter());
         ret.setPluginStatusFilter(getPluginStatusFilter());
 

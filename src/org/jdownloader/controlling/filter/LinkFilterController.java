@@ -69,7 +69,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
             }
 
             ArrayList<LinkgrabberFilterRule> newList = new ArrayList<LinkgrabberFilterRule>();
-
+            boolean dupesView = false;
             boolean offlineRule = false;
             boolean directHttpView = false;
             HashSet<String> dupefinder = new HashSet<String>();
@@ -100,6 +100,15 @@ public class LinkFilterController implements LinkCrawlerFilter {
                     continue;
 
                 }
+                if (DupesView.ID.equals(rule.getId())) {
+                    DupesView r;
+                    newList.add(r = new DupesView());
+                    r.init();
+                    r.setEnabled(rule.isEnabled());
+                    dupesView = true;
+                    continue;
+
+                }
                 newList.add(rule);
             }
             if (!directHttpView) {
@@ -107,6 +116,9 @@ public class LinkFilterController implements LinkCrawlerFilter {
             }
             if (!offlineRule) {
                 newList.add(new OfflineView().init());
+            }
+            if (!dupesView) {
+                newList.add(new DupesView().init());
             }
 
             filter = newList;
@@ -288,6 +300,9 @@ public class LinkFilterController implements LinkCrawlerFilter {
                 if (!isTestInstance() && !lgr.checkOrigin(link)) {
                     continue;
                 }
+                if (!isTestInstance() && !lgr.checkConditions(link)) {
+                    continue;
+                }
                 if (!lgr.checkSource(link)) {
                     continue;
                 }
@@ -383,6 +398,9 @@ public class LinkFilterController implements LinkCrawlerFilter {
                     throw new WTFException();
                 }
                 if (!isTestInstance() && !lgr.checkOrigin(link)) {
+                    continue;
+                }
+                if (!isTestInstance() && !lgr.checkConditions(link)) {
                     continue;
                 }
                 if (!lgr.checkSource(link)) {

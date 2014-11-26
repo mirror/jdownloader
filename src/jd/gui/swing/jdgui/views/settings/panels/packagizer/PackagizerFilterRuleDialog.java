@@ -824,6 +824,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         rule.setFilesizeFilter(getFilersizeFilter());
         rule.setSourceURLFilter(getSourceFilter());
         rule.setOriginFilter(getOriginFilter());
+        rule.setConditionFilter(getConditionFilter());
         rule.setFiletypeFilter(getFiletypeFilter());
         rule.setMatchAlwaysFilter(getMatchAlwaysFilter());
         rule.setDownloadDestination(cbDest.isSelected() ? fpDest.getTxt().getText() : null);
@@ -887,6 +888,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         setOnlineStatusFilter(rule.getOnlineStatusFilter());
         setPluginStatusFilter(rule.getPluginStatusFilter());
         setOriginFilter(rule.getOriginFilter());
+        setConditionFilter(rule.getConditionFilter());
         txtPackagename.setText(rule.getPackageName());
         txtNewFilename.setText(rule.getFilename());
         txtComment.setText(rule.getComment());

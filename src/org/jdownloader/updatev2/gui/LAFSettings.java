@@ -387,4 +387,12 @@ public interface LAFSettings extends ConfigInterface {
     public void setColorForProgressbarForeground4(String color);
 
     public void setColorForProgressbarForeground5(String color);
+
+    @DescriptionForConfigEntry("Customized Color for the Linkgrabber Dupe Highlight in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @HexColorString
+    @DefaultStringValue("33FF0000")
+    public String getColorForLinkgrabberDupeHighlighter();
+
+    public void setColorForLinkgrabberDupeHighlighter(String color);
 }

@@ -58,6 +58,9 @@ public class ExceptionFilter extends Filter {
         if (!wrapperRule.checkOrigin(link)) {
             return false;
         }
+        if (!wrapperRule.checkConditions(link)) {
+            return false;
+        }
         if (!wrapperRule.checkOnlineStatus(link)) {
             return false;
         }

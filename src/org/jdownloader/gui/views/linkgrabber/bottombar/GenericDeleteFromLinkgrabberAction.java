@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.KeyStroke;
 
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -43,6 +44,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     public static final String DELETE_ALL              = "deleteAll";
     public static final String DELETE_DISABLED         = "deleteDisabled";
     public static final String DELETE_OFFLINE          = "deleteOffline";
+    public static final String DELETE_DUPES            = "deleteDupes";
     /**
      * 
      */
@@ -56,6 +58,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     private boolean            deleteOffline           = false;
     private boolean            cancelLinkcrawlerJobs   = false;
     private boolean            resetTableSorter        = false;
+    private boolean            deleteDupes;
 
     @Override
     public void loadContextSetups() {
@@ -82,6 +85,20 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
 
     public void setCancelLinkcrawlerJobs(boolean cancelLinkcrawlerJobs) {
         this.cancelLinkcrawlerJobs = cancelLinkcrawlerJobs;
+    }
+
+    public static String getTranslationForDeleteDupesEnabled() {
+        return _JDT._.GenericDeleteFromLinkgrabberAction_getTranslationForDeleteDupesEnabled();
+    }
+
+    @Customizer(link = "#getTranslationForDeleteDupesEnabled")
+    public boolean isdeleteDupes() {
+
+        return deleteDupes;
+    }
+
+    public void setdeleteDupes(boolean deleteDupes) {
+        this.deleteDupes = deleteDupes;
     }
 
     public static String getTranslationForResetTableSorter() {
@@ -251,6 +268,9 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
         if (isDeleteAll()) {
             return true;
         }
+        if (isdeleteDupes() && DownloadController.getInstance().hasDownloadLinkByID(cl.getLinkID())) {
+            return true;
+        }
         if (isDeleteDisabled() && !cl.isEnabled()) {
 
             return true;
@@ -329,6 +349,14 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
             }
 
             boolean first = true;
+            if (this.isdeleteDupes()) {
+                if (!first) {
+                    sb.append(" & ");
+                }
+
+                sb.append(_GUI._.lit_duplicates_links());
+                first = false;
+            }
 
             if (this.isDeleteDisabled()) {
                 if (!first) {

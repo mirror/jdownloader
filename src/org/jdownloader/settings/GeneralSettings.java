@@ -590,4 +590,12 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isRenameFilesIfDownloadLinkNameChangesEnabled();
 
     void setRenameFilesIfDownloadLinkNameChangesEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("If Enabled, the linkgrabber will detect links that are already in the downloadlist")
+    boolean isDupeManagerEnabled();
+
+    void setDupeManagerEnabled(boolean b);
+
 }
