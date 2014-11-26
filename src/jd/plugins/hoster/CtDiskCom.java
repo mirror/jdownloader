@@ -44,9 +44,10 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ctdisk.com" }, urls = { "http://(www\\.)?((ctdisk|400gb|pipipan|t00y)\\.com|bego\\.cc)/file/\\d+" }, flags = { 2 })
 public class CtDiskCom extends PluginForHost {
 
-    private static final String DLLINKREGEX2 = ">电信限速下载</a>[\t\n\r ]+<a href=\"(http://.*?)\"";
-    private static final String MAINPAGE     = "http://www.400gb.com/";
-    private static Object       LOCK         = new Object();
+    private static final String DLLINKREGEX2  = ">电信限速下载</a>[\t\n\r ]+<a href=\"(http://.*?)\"";
+    private static final String MAINPAGE      = "http://www.400gb.com/";
+    private static Object       LOCK          = new Object();
+    private static Object       linkcheckLOCK = new Object();
 
     public CtDiskCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -114,7 +115,7 @@ public class CtDiskCom extends PluginForHost {
             } catch (final Throwable e) {
             }
             final Form free = br.getFormbyProperty("name", "user_form");
-            String captcha = br.getRegex("((https?://[^/]+)?/randcodeV2(_login)?\\.php\\?fid=" + fid + "&rand=)").getMatch(0);
+            String captcha = br.getRegex("((https?://[^/]+)?/randcodeV2([A-Za-z0-9\\-_]+)?\\.php\\?fid=" + fid + "[^<>\"]*?\\&rand=)").getMatch(0);
             if (free == null || captcha == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

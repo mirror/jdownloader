@@ -990,7 +990,7 @@ public class XFileSharingProBasic extends PluginForHost {
             } catch (final Throwable e) {
                 /* not available in old Stable 0.9.581 */
             }
-            ai.setStatus("Registered (free) user");
+            ai.setStatus("Registered (free) account");
         } else {
             ai.setValidUntil(expire_milliseconds);
             maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
@@ -1001,7 +1001,7 @@ public class XFileSharingProBasic extends PluginForHost {
             } catch (final Throwable e) {
                 /* not available in old Stable 0.9.581 */
             }
-            ai.setStatus("Premium user");
+            ai.setStatus("Premium account");
         }
         return ai;
     }
