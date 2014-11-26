@@ -594,6 +594,7 @@ public interface GeneralSettings extends ConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("If Enabled, the linkgrabber will detect links that are already in the downloadlist")
+    @RequiresRestart("A JDownloader Restart is Required")
     boolean isDupeManagerEnabled();
 
     void setDupeManagerEnabled(boolean b);

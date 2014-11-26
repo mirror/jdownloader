@@ -888,10 +888,6 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
         cobCrawlerSource = new JComboBox(new String[] { _GUI._.ConditionDialog_layoutDialogContent_online_is_(), _GUI._.ConditionDialog_layoutDialogContent_online_isnot() });
 
-        // String[] options = new String[LinkOrigin.values().length];
-        // for (int i = 0; i < LinkOrigin.values().length; i++) {
-        // options[i] = LinkOrigin.values()[i].getTranslation();
-        // }
         cobCrawlerSourceOptions = new PseudoMultiCombo<LinkOrigin>(LinkOrigin.values()) {
             protected String getLabel(LinkOrigin sc) {
                 return sc.getTranslation();
