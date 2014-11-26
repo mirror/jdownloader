@@ -1604,6 +1604,8 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                     list.add(NewTheme.I().getImage("logo/logo_19_19", -1));
                     list.add(NewTheme.I().getImage("logo/logo_20_20", -1));
                     list.add(NewTheme.I().getImage("logo/jd_logo_64_64", -1));
+                    list.add(NewTheme.I().getImage("logo/jd_logo_128_128", -1));
+                    // list.add(NewTheme.I().getImage("logo/jd_logo_256_256", -1));
                     new EDTHelper<Object>() {
                         @Override
                         public Object edtRun() {
