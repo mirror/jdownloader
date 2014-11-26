@@ -708,8 +708,15 @@ public abstract class PluginForHost extends Plugin {
             if (ai.isUnlimitedTraffic()) {
                 return true;
             }
-            if (ai.getTrafficLeft() >= 0 && ai.getTrafficLeft() < downloadLink.getView().getBytesTotalEstimated()) {
+            final long left = ai.getTrafficLeft();
+            if (left == 0) {
                 return false;
+            } else {
+                final long size = downloadLink.getView().getBytesTotalEstimated();
+                if (size >= 0) {
+                    final long need = Math.max(0, size - downloadLink.getView().getBytesLoaded());
+                    return left - need > 0;
+                }
             }
         }
         return true;
