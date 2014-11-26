@@ -90,11 +90,10 @@ public class MultiShareCz extends PluginForHost {
         }
         final String trafficleft = getJson("credit");
         if (trafficleft != null) {
-            double traffic = Double.parseDouble(trafficleft);
             // 1 credit = 1 MB
-            traffic = traffic * 1024 * 1024;
+            long traffic = (long) Double.parseDouble(trafficleft) * (1024 * 1024l);
             if (traffic >= 0) {
-                ai.setTrafficLeft((long) traffic);
+                ai.setTrafficLeft(traffic);
             } else {
                 ai.setTrafficLeft(0);
             }
@@ -123,7 +122,7 @@ public class MultiShareCz extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from String source.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -139,7 +138,7 @@ public class MultiShareCz extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -148,7 +147,7 @@ public class MultiShareCz extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from provided Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
@@ -374,7 +373,7 @@ public class MultiShareCz extends PluginForHost {
     /**
      * Is intended to handle unknown errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
      * from the host list.
-     *
+     * 
      * @param dl
      *            : The DownloadLink
      * @param error
