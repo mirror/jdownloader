@@ -3,6 +3,7 @@ package org.jdownloader.gui.views.downloads;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 
+import jd.gui.swing.jdgui.components.toolbar.actions.PauseDownloadsAction;
 import jd.gui.swing.jdgui.menu.ChunksEditor;
 import jd.gui.swing.jdgui.menu.ParalellDownloadsEditor;
 import jd.gui.swing.jdgui.menu.ParallelDownloadsPerHostEditor;
@@ -23,6 +24,7 @@ public class QuickSettingsPopup extends JPopupMenu {
         add(new ParalellDownloadsEditor());
         add(new ParallelDownloadsPerHostEditor());
         add(new SpeedlimitEditor());
+        add(new ExtCheckBoxMenuItem(new PauseDownloadsAction()));
         this.list = new GenericConfigEventListener<Boolean>() {
 
             @Override
