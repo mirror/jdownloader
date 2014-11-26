@@ -756,7 +756,6 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
     protected void _refill() {
         if (accountManagerSettings.isShown()) {
             final java.util.List<AccountEntry> newtableData = new ArrayList<AccountEntry>(this.getRowCount());
-            boolean hasDetailsButton = false;
             List<Account> accs = AccountController.getInstance().list(null);
             if (accs != null) {
                 for (Account acc : accs) {
@@ -766,12 +765,8 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
                     }
                     AccountEntry ae;
                     newtableData.add(ae = new AccountEntry(acc));
-                    if (ae.isDetailsDialogSupported()) {
-                        hasDetailsButton = true;
-                    }
                 }
             }
-            setColumnVisible(details, hasDetailsButton);
             _fireTableStructureChanged(newtableData, true);
         }
     }
