@@ -25,6 +25,7 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.lang.reflect.Field;
+import java.nio.charset.Charset;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.text.SimpleDateFormat;
@@ -255,9 +256,9 @@ public class SecondLevelLaunch {
          * previous implementation silently ignored such a situation. If the previous behavior is desired, you can use the new system
          * property, java.util.Arrays.useLegacyMergeSort, to restore previous mergesort behavior. Nature of Incompatibility: behavioral RFE:
          * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6804124
-         * 
+         *
          * Sorting live data (values changing during sorting) violates the general contract
-         * 
+         *
          * java.lang.IllegalArgumentException: Comparison method violates its general contract!
          */
         System.setProperty("java.util.Arrays.useLegacyMergeSort", "true");
@@ -290,8 +291,8 @@ public class SecondLevelLaunch {
 
     /**
      * LÃ¤dt ein Dynamicplugin.
-     * 
-     * 
+     *
+     *
      * @throws IOException
      */
 
@@ -1041,11 +1042,12 @@ public class SecondLevelLaunch {
         StatsManager.I();
         new Thread("Print Sec Infos") {
             public void run() {
+                final String charSet = Charset.defaultCharset().displayName();
                 switch (CrossSystem.getOS()) {
                 case WINDOWS_XP:
                     try {
                         LOG.info("AntiVirusProduct START");
-                        LOG.info(ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter", "path", "AntiVirusProduct").getStdOutString("UTF-8"));
+                        LOG.info(ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter", "path", "AntiVirusProduct").getStdOutString(charSet));
                     } catch (Throwable e1) {
                         LOG.log(e1);
                     } finally {
@@ -1053,7 +1055,7 @@ public class SecondLevelLaunch {
                     }
                     try {
                         LOG.info("FirewallProduct START");
-                        LOG.info(ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter", "path", "FirewallProduct").getStdOutString("UTF-8"));
+                        LOG.info(ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter", "path", "FirewallProduct").getStdOutString(charSet));
                     } catch (Throwable e1) {
                         LOG.log(e1);
                     } finally {
@@ -1065,7 +1067,7 @@ public class SecondLevelLaunch {
                 case WINDOWS_VISTA:
                     try {
                         LOG.info("AntiVirusProduct START");
-                        LOG.info(ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter2", "path", "AntiVirusProduct").getStdOutString("UTF-8"));
+                        LOG.info(ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter2", "path", "AntiVirusProduct").getStdOutString(charSet));
                     } catch (Throwable e1) {
                         LOG.log(e1);
                     } finally {
@@ -1073,7 +1075,7 @@ public class SecondLevelLaunch {
                     }
                     try {
                         LOG.info("FirewallProduct START");
-                        LOG.info(ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter2", "path", "FirewallProduct").getStdOutString("UTF-8"));
+                        LOG.info(ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter2", "path", "FirewallProduct").getStdOutString(charSet));
                     } catch (Throwable e1) {
                         LOG.log(e1);
                     } finally {
@@ -1081,7 +1083,7 @@ public class SecondLevelLaunch {
                     }
                     try {
                         LOG.info("AntiSpywareProduct START");
-                        LOG.info(ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter2", "path", "AntiSpywareProduct").getStdOutString("UTF-8"));
+                        LOG.info(ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter2", "path", "AntiSpywareProduct").getStdOutString(charSet));
                     } catch (Throwable e1) {
                         LOG.log(e1);
                     } finally {
