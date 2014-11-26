@@ -263,7 +263,8 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                         try {
                             removeTrayIcon();
                             SystemTray systemTray = SystemTray.getSystemTray();
-                            BufferedImage img = IconIO.getScaledInstance(NewTheme.I().getImage("logo/jd_logo_64_64", -1), (int) systemTray.getTrayIconSize().getWidth(), (int) systemTray.getTrayIconSize().getHeight());
+
+                            BufferedImage img = IconIO.getScaledInstance(NewTheme.I().getImage("logo/jd_logo_128_128", -1), (int) systemTray.getTrayIconSize().getWidth(), (int) systemTray.getTrayIconSize().getHeight());
 
                             if (getSettings().isGreyIconEnabled()) {
                                 img = ImageProvider.convertToGrayScale(img);
