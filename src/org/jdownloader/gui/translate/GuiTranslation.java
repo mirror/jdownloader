@@ -5470,4 +5470,22 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "You cannot change this value. This would result in the following wait loop conflict:\r\n\r\n%s1\r\n\r\nPlease break this loop first." })
     String TimingTableModel_initColumns_waitloop_warning(String string);
 
+    @Default(lngs = { "en" }, values = { "Condition" })
+    String FilterRuleDialog_layoutDialogContent_lbl_variousflags();
+
+    @Default(lngs = { "en" }, values = { "is true:" })
+    String ConditionDialog_layoutDialogContent_is_true();
+
+    @Default(lngs = { "en" }, values = { "is false:" })
+    String ConditionDialog_layoutDialogContent_online_isnottrue();
+
+    @Default(lngs = { "en" }, values = { "Duplicate Link Detected!" })
+    String LinkGrabberTable_onSingleClick_dupe_title();
+
+    @Default(lngs = { "en" }, values = { "the this link is already in your downloadlist. That's why it has a red highlight." })
+    String LinkGrabberTable_onSingleClick_dupe_msg();
+
+    @Default(lngs = { "en" }, values = { "Duplicates" })
+    String lit_duplicates_links();
+
 }

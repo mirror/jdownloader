@@ -27,6 +27,7 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
 
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -44,6 +45,8 @@ import org.appwork.swing.exttable.DropHighlighter;
 import org.appwork.swing.exttable.ExtCheckBoxMenuItem;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
+import org.appwork.swing.exttable.ExtOverlayRowHighlighter;
+import org.appwork.swing.exttable.ExtTable;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
@@ -59,6 +62,7 @@ import org.jdownloader.controlling.contextmenu.SeparatorData;
 import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.extensions.extraction.BooleanStatus;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.KeyObserver;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -67,11 +71,13 @@ import org.jdownloader.gui.views.downloads.table.HorizontalScrollbarAction;
 import org.jdownloader.gui.views.linkgrabber.bottombar.MenuManagerLinkgrabberTabBottombar;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, CrawledLink> {
 
@@ -85,6 +91,22 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
         super(tableModel);
         INSTANCE = this;
         this.addRowHighlighter(new DropHighlighter(null, new Color(27, 164, 191, 75)));
+
+        this.addRowHighlighter(new ExtOverlayRowHighlighter(null, LAFOptions.getInstance().getColorForLinkgrabberDupeHighlighter()) {
+
+            @Override
+            public boolean doHighlight(ExtTable<?> extTable, int row) {
+
+                AbstractNode object = tableModel.getObjectbyRow(row);
+                if (object instanceof CrawledLink) {
+
+                    return DownloadController.getInstance().hasDownloadLinkByID(((CrawledLink) object).getLinkID());
+                }
+                return false;
+            }
+
+        });
+
         this.setTransferHandler(new LinkGrabberTableTransferHandler(this));
         this.setDragEnabled(true);
         this.setDropMode(DropMode.ON_OR_INSERT_ROWS);
@@ -239,6 +261,14 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
     public void sortPackageChildren(ExtDefaultRowSorter<AbstractNode> rowSorter, String nextSortIdentifier) {
         // TODO:
         // set LinkGrabberTableModel.setTRistate....to false and implement sorter here
+    }
+
+    @Override
+    protected boolean onSingleClick(MouseEvent e, AbstractNode obj) {
+        if (obj instanceof CrawledLink && DownloadController.getInstance().hasDownloadLinkByID(((CrawledLink) obj).getLinkID())) {
+            JDGui.help(_GUI._.LinkGrabberTable_onSingleClick_dupe_title(), _GUI._.LinkGrabberTable_onSingleClick_dupe_msg(), new AbstractIcon(IconKey.ICON_COPY, 32));
+        }
+        return super.onSingleClick(e, obj);
     }
 
     protected boolean onHeaderSortClick(final MouseEvent event, final ExtColumn<AbstractNode> oldColumn, final String oldIdentifier, ExtColumn<AbstractNode> newColumn) {

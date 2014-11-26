@@ -39,6 +39,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.VariousCrawledLinkFlags;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.WarnLevel;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatus;
@@ -191,6 +192,15 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         toSize.setValue(f.getTo());
     }
 
+    public void setConditionFilter(ConditionFilter filter) {
+        if (filter == null) {
+            return;
+        }
+        cobFlags.setSelectedIndex(filter.getMatchType().ordinal());
+        cbFlags.setSelected(filter.isEnabled());
+        cobFlagsOptions.setSelectedItems(filter.getConditions());
+    }
+
     public void setOriginFilter(OriginFilter originFilter) {
         if (originFilter == null) {
             return;
@@ -202,6 +212,10 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
     public OriginFilter getOriginFilter() {
         return new OriginFilter(OriginFilter.Matchtype.values()[cobCrawlerSource.getSelectedIndex()], cbCrawlerSource.isSelected(), cobCrawlerSourceOptions.getSelectedItems().toArray(new LinkOrigin[] {}));
+    }
+
+    public ConditionFilter getConditionFilter() {
+        return new ConditionFilter(ConditionFilter.Matchtype.values()[cobFlags.getSelectedIndex()], cbFlags.isSelected(), cobFlagsOptions.getSelectedItems().toArray(new VariousCrawledLinkFlags[] {}));
     }
 
     public FilesizeFilter getFilersizeFilter() {
@@ -285,74 +299,82 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         return new RegexFilter(cbHoster.isSelected(), MatchType.values()[cobHoster.getSelectedIndex()], txtHoster.getText(), cbRegHoster.isSelected());
     }
 
-    protected ExtCheckBox                  cbFilename;
+    protected ExtCheckBox                             cbFilename;
 
-    protected JComboBox                    cobFilename;
-    protected ExtTextField                 txtFilename;
+    protected JComboBox                               cobFilename;
+    protected ExtTextField                            txtFilename;
 
-    private JComponent                     size;
-    protected ExtCheckBox                  cbSize;
+    private JComponent                                size;
+    protected ExtCheckBox                             cbSize;
 
-    protected SizeSpinner                  fromSize;
-    protected SizeSpinner                  toSize;
-    private SpinnerNumberModel             minSizeModel;
-    private SpinnerNumberModel             maxSizeModel;
+    protected SizeSpinner                             fromSize;
+    protected SizeSpinner                             toSize;
+    private SpinnerNumberModel                        minSizeModel;
+    private SpinnerNumberModel                        maxSizeModel;
 
-    protected ExtCheckBox                  cbType;
+    protected ExtCheckBox                             cbType;
 
-    protected ExtTextField                 txtCustumMime;
+    protected ExtTextField                            txtCustumMime;
 
-    protected ExtCheckBox                  cbHoster;
-    protected ExtTextField                 txtHoster;
-    protected JComboBox                    cobHoster;
+    protected ExtCheckBox                             cbHoster;
+    protected ExtTextField                            txtHoster;
+    protected JComboBox                               cobHoster;
 
-    protected ExtCheckBox                  cbSource;
-    protected JComboBox                    cobSource;
-    protected ExtTextField                 txtSource;
+    protected ExtCheckBox                             cbSource;
+    protected JComboBox                               cobSource;
+    protected ExtTextField                            txtSource;
 
-    private JComboBox                      cobSize;
+    private JComboBox                                 cobSize;
 
-    private JComboBox                      cobType;
+    private JComboBox                                 cobType;
 
-    private JComboBox                      cobOnline;
+    private JComboBox                                 cobOnline;
 
-    private JComboBox                      cobOnlineOptions;
+    private JComboBox                                 cobOnlineOptions;
 
-    private ExtCheckBox                    cbOnline;
+    private ExtCheckBox                               cbOnline;
 
-    private boolean                        autoset;
+    private boolean                                   autoset;
 
-    private JButton                        btnIcon;
+    private JButton                                   btnIcon;
 
-    private String                         iconKey;
+    private String                                    iconKey;
 
-    private JComboBox                      cobPlugin;
+    private JComboBox                                 cobPlugin;
 
-    private JComboBox                      cobPluginOptions;
+    private JComboBox                                 cobPluginOptions;
 
-    private ExtCheckBox                    cbPlugin;
+    private ExtCheckBox                               cbPlugin;
 
     // private AutoScroller autoScroller;
 
-    protected JComboBox                    cobCrawlerSource;
+    protected JComboBox                               cobCrawlerSource;
 
-    protected PseudoMultiCombo<LinkOrigin> cobCrawlerSourceOptions;
+    protected PseudoMultiCombo<LinkOrigin>            cobCrawlerSourceOptions;
 
-    protected ExtCheckBox                  cbCrawlerSource;
+    protected ExtCheckBox                             cbCrawlerSource;
 
-    private PseudoMultiCombo<FileType>     cbTypeSelection;
+    private PseudoMultiCombo<FileType>                cbTypeSelection;
 
-    private JToggleButton                  cbRegPackage;
+    private JToggleButton                             cbRegPackage;
 
-    private JComboBox                      cobPackage;
+    private JComboBox                                 cobPackage;
 
-    private ExtTextField                   txtPackage;
+    private ExtTextField                              txtPackage;
 
-    private ExtCheckBox                    cbPackage;
+    private ExtCheckBox                               cbPackage;
 
-    protected JLabel                       lblSource;
+    protected JLabel                                  lblSource;
 
-    protected JLabel                       lblCrawlerSource;
+    protected JLabel                                  lblCrawlerSource;
+
+    private JComboBox                                 cobFlags;
+
+    private PseudoMultiCombo<VariousCrawledLinkFlags> cobFlagsOptions;
+
+    private ExtCheckBox                               cbFlags;
+
+    private JLabel                                    lblFlags;
 
     public String getIconKey() {
         return iconKey;
@@ -482,6 +504,43 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
         panel.add(createHeader(getIfText()), "gaptop 10,spanx,growx,pushx");
         addConditionGui(panel);
+
+        // dupe
+        cobFlags = new JComboBox(new String[] { _GUI._.ConditionDialog_layoutDialogContent_is_true(), _GUI._.ConditionDialog_layoutDialogContent_online_isnottrue() });
+
+        cobFlagsOptions = new PseudoMultiCombo<VariousCrawledLinkFlags>(VariousCrawledLinkFlags.values()) {
+            protected String getLabel(VariousCrawledLinkFlags sc) {
+                return sc.getTranslation();
+            }
+        };
+        cbFlags = new ExtCheckBox(cobFlags, cobFlagsOptions) {
+
+            @Override
+            public void updateDependencies() {
+                super.updateDependencies();
+
+            }
+
+        };
+
+        panel.add(cbFlags);
+        panel.add(lblFlags = new JLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_variousflags()));
+        panel.add(cobFlags);
+        panel.add(cobFlagsOptions, "spanx,pushx,growx");
+        MouseAdapter ml = new MouseAdapter() {
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (cbFlags.isEnabled()) {
+                    cbFlags.setSelected(true);
+                }
+
+            }
+
+        };
+        cobFlags.addMouseListener(ml);
+        cobFlagsOptions.addMouseListener(ml);
+
         cobFilename = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_contains(), _GUI._.FilterRuleDialog_layoutDialogContent_equals(), _GUI._.FilterRuleDialog_layoutDialogContent_contains_not(), _GUI._.FilterRuleDialog_layoutDialogContent_equals_not() });
         txtFilename = new ExtTextField() {
 
@@ -512,7 +571,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
             }
 
         };
-        MouseAdapter ml = new MouseAdapter() {
+        //
+
+        ml = new MouseAdapter() {
 
             @Override
             public void mousePressed(MouseEvent e) {
@@ -524,6 +585,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         txtFilename.addMouseListener(ml);
         cobFilename.addMouseListener(ml);
         cbRegFilename.addMouseListener(ml);
+
         panel.add(cbFilename);
         panel.add(lblFilename);
         panel.add(cobFilename);
@@ -826,10 +888,10 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
         cobCrawlerSource = new JComboBox(new String[] { _GUI._.ConditionDialog_layoutDialogContent_online_is_(), _GUI._.ConditionDialog_layoutDialogContent_online_isnot() });
 
-        String[] options = new String[LinkOrigin.values().length];
-        for (int i = 0; i < LinkOrigin.values().length; i++) {
-            options[i] = LinkOrigin.values()[i].getTranslation();
-        }
+        // String[] options = new String[LinkOrigin.values().length];
+        // for (int i = 0; i < LinkOrigin.values().length; i++) {
+        // options[i] = LinkOrigin.values()[i].getTranslation();
+        // }
         cobCrawlerSourceOptions = new PseudoMultiCombo<LinkOrigin>(LinkOrigin.values()) {
             protected String getLabel(LinkOrigin sc) {
                 return sc.getTranslation();
@@ -849,6 +911,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         panel.add(lblCrawlerSource = new JLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_crawlersource()));
         panel.add(cobCrawlerSource);
         panel.add(cobCrawlerSourceOptions, "spanx,pushx,growx");
+
         ml = new MouseAdapter() {
 
             @Override
@@ -862,6 +925,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         };
         cobCrawlerSource.addMouseListener(ml);
         cobCrawlerSourceOptions.addMouseListener(ml);
+
         // offline
 
         cobOnline = new JComboBox(new String[] { _GUI._.ConditionDialog_layoutDialogContent_online_is_(), _GUI._.ConditionDialog_layoutDialogContent_online_isnot() });

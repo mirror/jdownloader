@@ -586,6 +586,9 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 if (!lgr.checkOrigin(link)) {
                     continue;
                 }
+                if (!lgr.checkConditions(link)) {
+                    continue;
+                }
                 if (!lgr.checkSource(link)) {
                     continue;
                 }
@@ -635,6 +638,9 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 continue;
             }
             if (!lgr.checkOrigin(link)) {
+                continue;
+            }
+            if (!lgr.checkConditions(link)) {
                 continue;
             }
             if (!lgr.checkSource(link)) {
@@ -811,6 +817,9 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                         throw new WTFException();
                     }
                     if (!lgr.checkOrigin(link)) {
+                        continue;
+                    }
+                    if (!lgr.checkConditions(link)) {
                         continue;
                     }
                     if (!lgr.checkSource(link)) {

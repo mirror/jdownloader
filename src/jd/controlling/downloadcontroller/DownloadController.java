@@ -78,6 +78,7 @@ import org.jdownloader.controlling.download.DownloadControllerEventRemovedPackag
 import org.jdownloader.controlling.download.DownloadControllerEventSender;
 import org.jdownloader.controlling.download.DownloadControllerEventStructureRefresh;
 import org.jdownloader.controlling.download.DownloadControllerListener;
+import org.jdownloader.controlling.lists.DupeManager;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.controller.host.PluginFinder;
@@ -94,7 +95,9 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     private final DelayedRunnable                   changesSaver;
     private final CopyOnWriteArrayList<File>        downloadLists       = new CopyOnWriteArrayList<File>();
 
-    public final ScheduledExecutorService           TIMINGQUEUE         = DelayedRunnable.getNewScheduledExecutorService();
+    public static final ScheduledExecutorService    TIMINGQUEUE         = DelayedRunnable.getNewScheduledExecutorService();
+
+    private DupeManager                             dupeController;
 
     public static SingleReachableState              DOWNLOADLIST_LOADED = new SingleReachableState("DOWNLOADLIST_COMPLETE");
 
@@ -134,6 +137,8 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     }
 
     private DownloadController() {
+
+        dupeController = new DupeManager();
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
@@ -265,6 +270,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     @Override
     protected void _controllerPackageNodeAdded(FilePackage pkg, QueuePriority priority) {
+        dupeController.invalidate();
         eventSender.fireEvent(new DownloadControllerEventStructureRefresh());
         eventSender.fireEvent(new DownloadControllerEventAddedPackage(pkg));
     }
@@ -275,11 +281,13 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     @Override
     protected void _controllerPackageNodeRemoved(FilePackage pkg, QueuePriority priority) {
+
         eventSender.fireEvent(new DownloadControllerEventRemovedPackage(pkg));
     }
 
     @Override
     protected void _controllerParentlessLinks(final List<DownloadLink> links, QueuePriority priority) {
+        dupeController.invalidate();
         eventSender.fireEvent(new DownloadControllerEventRemovedLinkList(new ArrayList<DownloadLink>(links)));
     }
 
@@ -300,6 +308,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     @Override
     protected void _controllerStructureChanged(QueuePriority priority) {
+
         eventSender.fireEvent(new DownloadControllerEventStructureRefresh());
     }
 
@@ -478,6 +487,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         writeUnlock();
                     }
                     updateUniqueAlltimeIDMaps(lpackages);
+                    dupeController.invalidate();
                     eventSender.fireEvent(new DownloadControllerEventStructureRefresh());
                 } catch (final Throwable e) {
                     if (loadedList != null) {
@@ -498,6 +508,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     logger.log(e);
                 } finally {
                     DOWNLOADLIST_LOADED.setReached();
+
                 }
                 return null;
             }
@@ -1013,6 +1024,10 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             if (param instanceof DownloadLinkProperty) {
                 DownloadLinkProperty eventPropery = (DownloadLinkProperty) param;
                 switch (eventPropery.getProperty()) {
+                case VARIANT:
+                case URL_CONTENT:
+                    dupeController.invalidate();
+                    break;
                 case NAME:
                 case RESET:
                 case ENABLED:
@@ -1036,6 +1051,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     @Override
     protected void _controllerPackageNodeStructureChanged(FilePackage pkg, QueuePriority priority) {
+
         eventSender.fireEvent(new DownloadControllerEventStructureRefresh(pkg));
     }
 
@@ -1083,6 +1099,10 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     @Override
     public boolean hasNotificationListener() {
         return true;
+    }
+
+    public boolean hasDownloadLinkByID(String linkID) {
+        return dupeController.hasID(linkID);
     }
 
 }

@@ -18,6 +18,7 @@ public class RuleWrapper<T extends FilterRule> {
     private BooleanFilter              alwaysFilter;
     private CompiledOriginFilter       originFilter;
     private CompiledRegexFilter        packageNameRule;
+    private CompiledConditionFilter    conditionFilter;
 
     public CompiledPluginStatusFilter getPluginStatusFilter() {
         return pluginStatusFilter;
@@ -65,12 +66,19 @@ public class RuleWrapper<T extends FilterRule> {
             originFilter = new CompiledOriginFilter(rule.getOriginFilter());
         }
 
+        if (rule.getConditionFilter().isEnabled()) {
+            conditionFilter = new CompiledConditionFilter(rule.getConditionFilter());
+        }
         if (rule.getMatchAlwaysFilter().isEnabled()) {
             alwaysFilter = rule.getMatchAlwaysFilter();
             // overwrites all others
             requiresHoster = false;
             requiresLinkcheck = false;
         }
+    }
+
+    public CompiledConditionFilter getConditionFilter() {
+        return conditionFilter;
     }
 
     public CompiledOriginFilter getOriginFilter() {
@@ -303,6 +311,17 @@ public class RuleWrapper<T extends FilterRule> {
         }
         if (getOnlineStatusFilter() != null) {
             return getOnlineStatusFilter().matches(link.getLinkState());
+        }
+        return true;
+    }
+
+    public boolean checkConditions(CrawledLink link) {
+
+        if (getConditionFilter() != null) {
+            if (link == null) {
+                return false;
+            }
+            return getConditionFilter().matches(link);
         }
         return true;
     }

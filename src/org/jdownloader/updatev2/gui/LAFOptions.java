@@ -296,4 +296,8 @@ public class LAFOptions {
     public Color getColorForProgressbar5() {
         return createColor(cfg.getColorForProgressbarForeground5());
     }
+
+    public Color getColorForLinkgrabberDupeHighlighter() {
+        return createColor(cfg.getColorForLinkgrabberDupeHighlighter());
+    }
 }

@@ -3,6 +3,7 @@ package org.jdownloader.controlling.filter;
 import java.util.ArrayList;
 
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ConditionFilter;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OriginFilter;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.PluginStatusFilter;
@@ -20,6 +21,18 @@ public abstract class FilterRule extends AbstractJsonData implements Storable {
     private RegexFilter        sourceURLFilter;
     private OnlineStatusFilter onlineStatusFilter;
     private OriginFilter       originFilter;
+    private ConditionFilter    conditionFilter;
+
+    public ConditionFilter getConditionFilter() {
+        if (conditionFilter == null) {
+            return new ConditionFilter();
+        }
+        return conditionFilter;
+    }
+
+    public void setConditionFilter(ConditionFilter conditionFilter) {
+        this.conditionFilter = conditionFilter;
+    }
 
     public OriginFilter getOriginFilter() {
         if (originFilter == null) {
@@ -117,7 +130,7 @@ public abstract class FilterRule extends AbstractJsonData implements Storable {
      * @return
      */
     public boolean isValid() {
-        return getPackagenameFilter().isEnabled() || getMatchAlwaysFilter().isEnabled() || getFilenameFilter().isEnabled() || getFilesizeFilter().isEnabled() || getFiletypeFilter().isEnabled() || getHosterURLFilter().isEnabled() || getSourceURLFilter().isEnabled() || getOriginFilter().isEnabled() || getOnlineStatusFilter().isEnabled() || getPluginStatusFilter().isEnabled();
+        return getPackagenameFilter().isEnabled() || getMatchAlwaysFilter().isEnabled() || getFilenameFilter().isEnabled() || getFilesizeFilter().isEnabled() || getFiletypeFilter().isEnabled() || getHosterURLFilter().isEnabled() || getSourceURLFilter().isEnabled() || getOriginFilter().isEnabled() || getConditionFilter().isEnabled() || getOnlineStatusFilter().isEnabled() || getPluginStatusFilter().isEnabled();
     }
 
     public String toString(CrawledLink link) {
@@ -131,6 +144,9 @@ public abstract class FilterRule extends AbstractJsonData implements Storable {
             }
             if (getOriginFilter().isEnabled()) {
                 cond.add(originFilter.toString());
+            }
+            if (getConditionFilter().isEnabled()) {
+                cond.add(conditionFilter.toString());
             }
 
             if (getPluginStatusFilter().isEnabled()) {

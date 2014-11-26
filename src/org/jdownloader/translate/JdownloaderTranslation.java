@@ -891,4 +891,13 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Deep Decrypt" })
     String PasteContextLinksAction_getTranslationForDeepDecryptEnabled();
 
+    @Default(lngs = { "en" }, values = { "Link is already in Downloadlist" })
+    String DOWNLOAD_LIST_DUPE();
+
+    @Default(lngs = { "en" }, values = { "Already in Downloadlist" })
+    String LinkFilterSettings_DefaultFilterList_dupes();
+
+    @Default(lngs = { "en" }, values = { "Delete Duplicates" })
+    String GenericDeleteFromLinkgrabberAction_getTranslationForDeleteDupesEnabled();
+
 }
