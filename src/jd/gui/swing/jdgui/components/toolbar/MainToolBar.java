@@ -139,7 +139,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
                             @Override
                             public void mouseClicked(MouseEvent e) {
-                                if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
+                                if (true) {
                                     QuickSettingsPopup pu = new QuickSettingsPopup();
                                     pu.show((Component) e.getSource(), e.getX(), e.getY());
 
