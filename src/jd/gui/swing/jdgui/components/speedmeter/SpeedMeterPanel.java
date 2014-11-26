@@ -51,7 +51,13 @@ public class SpeedMeterPanel extends Graph {
         setTextColor(LAFOptions.getInstance().getColorForSpeedMeterText());
         setOpaque(false);
 
-        speedLimiter = new Limiter(LAFOptions.getInstance().getColorForSpeedmeterLimiterTop(), LAFOptions.getInstance().getColorForSpeedmeterLimiterBottom());
+        speedLimiter = new Limiter(LAFOptions.getInstance().getColorForSpeedmeterLimiterTop(), LAFOptions.getInstance().getColorForSpeedmeterLimiterBottom()) {
+            public String getString() {
+                return _GUI._.SpeedMeterPanel_getString_limited(SizeFormatter.formatBytes(speedLimiter.getValue()));
+
+            };
+        };
+
         config = JsonConfig.create(GeneralSettings.class);
         speedLimiter.setValue(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
         org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getEventSender().addListener(new GenericConfigEventListener<Integer>() {

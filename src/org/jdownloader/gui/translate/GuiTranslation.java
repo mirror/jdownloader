@@ -5488,4 +5488,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Duplicates" })
     String lit_duplicates_links();
 
+    @Default(lngs = { "en" }, values = { "Speedlimit: %s1/s" })
+    String SpeedMeterPanel_getString_limited(String speed);
+
 }
