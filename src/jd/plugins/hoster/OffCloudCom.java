@@ -85,7 +85,7 @@ public class OffCloudCom extends PluginForHost {
     private void setConstants(final Account acc, final DownloadLink dl) {
         this.currAcc = acc;
         this.currDownloadLink = dl;
-        final String logincookie = acc.getStringProperty("offcloudlogincookie", null);
+        final String logincookie = getLoginCookie();
         if (logincookie != null) {
             logger.info("logincookie SET");
             br.setCookie(NICE_HOST, "connect.sid", logincookie);
@@ -138,9 +138,6 @@ public class OffCloudCom extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, maxChunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
-                if (br.containsHTML("Download not available at the moment")) {
-                    handleErrorRetries(account, link, "download_not_available", 5);
-                }
                 handleErrorRetries(account, link, "unknowndlerror", 5);
             }
             try {
@@ -224,7 +221,12 @@ public class OffCloudCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        login();
+        /* Only do a full login if either we have no login cookie at all or it is expired */
+        if (getLoginCookie() != null) {
+            this.loginCheck();
+        } else {
+            login();
+        }
         /* TODO: Add account information - API call for that does not yet exist */
         account.setValid(true);
         /* Only add hosts which are listed as 'active' (working) */
@@ -236,7 +238,7 @@ public class OffCloudCom extends PluginForHost {
             final String status = getJson(domaininfo, "isActive");
             final String realhost = getJson(domaininfo, "displayName");
             if ("Active".equalsIgnoreCase(status) && realhost != null) {
-                supportedHosts.add(realhost);
+                supportedHosts.add(realhost.toLowerCase());
             } else if (!"Active".equalsIgnoreCase(status) && realhost != null) {
                 logger.info("NOT adding this host as it is inactive at the moment: " + realhost);
             }
@@ -271,6 +273,10 @@ public class OffCloudCom extends PluginForHost {
             logger.info("loginCheck failed --> re-logging in");
             login();
         }
+    }
+
+    private String getLoginCookie() {
+        return currAcc.getStringProperty("offcloudlogincookie", null);
     }
 
     private String getJson(final String parameter) {
