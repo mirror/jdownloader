@@ -19,17 +19,16 @@ package jd.controlling.reconnect.ipcheck;
 public interface IPCheckProvider {
 
     /**
-     * this method should returns current IP as String or throws an exception if
-     * an error occured
-     * 
+     * This method returns current IP as String or throws an exception if an error occurs
+     *
      * @return
      * @throws IPCheckException
      */
     public IP getExternalIP() throws IPCheckException;
 
     /**
-     * returns how often this ip check may be used
-     * 
+     * Returns how often this IP check may be used
+     *
      * @return
      */
     public int getIpCheckInterval();
