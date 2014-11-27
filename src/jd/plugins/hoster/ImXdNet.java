@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -38,7 +37,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imxd.net" }, urls = { "http://(www\\.)?imxd\\.net/file\\?id=[A-Z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imxd.net" }, urls = { "http://(www\\.)?imxd\\.(net|us)/file\\?id=[A-Z0-9]+" }, flags = { 2 })
 public class ImXdNet extends PluginForHost {
 
     public ImXdNet(PluginWrapper wrapper) {
@@ -48,20 +47,35 @@ public class ImXdNet extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://imxd.net/";
+        return "http://imxd.us/";
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        link.setUrlDownload(link.getDownloadURL().replace("imxd.us", "imxd.us"));
+
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
+        correctDownloadLink(link);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://imxd.net/file_notfound")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://imxd.us/file_notfound")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<b>檔案名稱:</b></td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) \\| ImXD Public Cloud</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?) \\| ImXD Public Cloud</title>").getMatch(0);
+        }
         String filesize = br.getRegex("<b>檔案大小:</b></td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("<b>File Size:</b></td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filesize == null) {
+            filesize = br.getRegex("<b>File Size:</b></td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
+        }
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -73,7 +87,7 @@ public class ImXdNet extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FATAL, "Download only possible via account!");
     }
 
-    private static final String MAINPAGE = "http://imxd.net";
+    private static final String MAINPAGE = "http://imxd.us";
     private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
@@ -84,7 +98,9 @@ public class ImXdNet extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -97,11 +113,13 @@ public class ImXdNet extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getPage("http://imxd.net/login");
-                final DownloadLink dummyLink = new DownloadLink(this, "Account", "imxd.net", "http://imxd.net", true);
-                final String code = getCaptchaCode("http://imxd.net/ckimg", dummyLink);
-                br.postPage("http://imxd.net/login", "n=ok&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&key=" + code);
-                if (!"http://imxd.net/member".equals(br.getURL())) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                br.getPage("http://imxd.us/login");
+                final DownloadLink dummyLink = new DownloadLink(this, "Account", "imxd.us", "http://imxd.us", true);
+                final String code = getCaptchaCode("http://imxd.us/ckimg", dummyLink);
+                br.postPage("http://imxd.us/login", "n=ok&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&key=" + code);
+                if (!"http://imxd.us/member".equals(br.getURL())) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
