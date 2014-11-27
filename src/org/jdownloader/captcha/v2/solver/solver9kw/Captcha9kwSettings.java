@@ -117,6 +117,14 @@ public interface Captcha9kwSettings extends ChallengeSolverConfig {
     void sethour(int seconds);
 
     @AboutConfig
+    @DefaultIntValue(0)
+    @SpinnerValidator(min = 0, max = 9999)
+    @DescriptionForConfigEntry("Max. Captchas per minute")
+    int getminute();
+
+    void setminute(int seconds);
+
+    @AboutConfig
     @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("Only https requests to 9kw.eu")
     boolean ishttps();
@@ -218,7 +226,8 @@ public interface Captcha9kwSettings extends ChallengeSolverConfig {
     void setlowcredits(boolean b);
 
     @AboutConfig
-    @DefaultIntValue(60000)
+    @DefaultIntValue(600000)
+    @SpinnerValidator(min = 60000, max = Integer.MAX_VALUE)
     @DescriptionForConfigEntry("Default Timeout in ms")
     int getDefaultTimeout();
 

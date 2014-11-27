@@ -88,6 +88,7 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
         ClickCaptchaChallenge captchaChallenge = (ClickCaptchaChallenge) solverJob.getChallenge();
 
         int cph = config.gethour();
+        int cpm = config.gethour();
         int priothing = config.getprio();
         long timeoutthing = config.getDefaultTimeout();
         boolean selfsolve = config.isSelfsolve();
@@ -194,6 +195,9 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
                             if (detailvalue[0].equals("cph") && detailvalue[1].matches("^[0-9]+$")) {
                                 cph = Integer.parseInt(detailvalue[1]);
                             }
+                            if (detailvalue[0].equals("cpm") && detailvalue[1].matches("^[0-9]+$")) {
+                                cpm = Integer.parseInt(detailvalue[1]);
+                            }
                             if (detailvalue[0].equals("nomd5") && detailvalue[1].matches("^[0-9]+$")) {
                                 moreoptions += "&nomd5=" + detailvalue[1];
                             }
@@ -248,7 +252,7 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
             br.setAllowedResponseCodes(new int[] { 500 });
             String ret = "";
             for (int i = 0; i <= 5; i++) {
-                ret = br.postPage(getAPIROOT() + "index.cgi", "action=usercaptchaupload&jd=2&source=jd2" + moreoptions + "&captchaperhour=" + cph + "&mouse=1&prio=" + priothing + "&selfsolve=" + selfsolve + "&confirm=" + confirm + "&oldsource=" + Encoding.urlEncode(captchaChallenge.getTypeID()) + "&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&maxtimeout=" + timeoutthing + "&version=1.2&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false)));
+                ret = br.postPage(getAPIROOT() + "index.cgi", "action=usercaptchaupload&jd=2&source=jd2" + moreoptions + "&captchaperhour=" + cph + "&captchapermin=" + cpm + "&mouse=1&prio=" + priothing + "&selfsolve=" + selfsolve + "&confirm=" + confirm + "&oldsource=" + Encoding.urlEncode(captchaChallenge.getTypeID()) + "&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&maxtimeout=" + timeoutthing + "&version=1.2&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false)));
                 if (ret.startsWith("OK-")) {
                     click9kw_counterSend.incrementAndGet();
                     break;

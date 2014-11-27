@@ -729,7 +729,7 @@ NinekwService_createPanel_feedback=Återrapport
 NinekwService_createPanel_feedback_tooltiptext=Activates to send feedback of submitted captchas to OK or NotOK as response
 NinekwService_createPanel_hosteroptions=Hosteralternativ
 NinekwService_createPanel_hosteroptions_description1=Format: pluginname:prio=1:timeout=999;pluginname2:prio=0:timeout=999:min=2:max=50;
-NinekwService_createPanel_hosteroptions_description2=Allowed values: : prio, max, min, case-sensitive, numeric, cph, phrase, math, selfsolfe, confirm, ocr, nomd5, timeout
+NinekwService_createPanel_hosteroptions_description2=Allowed values: : prio, max, min, case-sensitive, numeric, cph, cpm, phrase, math, selfsolfe, confirm, ocr, nomd5, timeout
 NinekwService_createPanel_hosteroptions_tooltiptext=Some options like a timeout hoster exactly define.
 NinekwService_createPanel_hour=Captcha per timme
 NinekwService_createPanel_hour_tooltiptext=Activates a limit per hour to not submit too many captchas.

@@ -729,7 +729,7 @@ NinekwService_createPanel_feedback=Ccomentarios
 NinekwService_createPanel_feedback_tooltiptext=Activar para enviar comentarios se captchas enviadas en una respuesta de OK o NotOk como respuesta
 NinekwService_createPanel_hosteroptions=Opciones de los Servidores
 NinekwService_createPanel_hosteroptions_description1=Formato: pluginname:prio=1:tiempo de espera=999;pluginname2:prio=0:tiempo de espera:999:min=2:max=50;
-NinekwService_createPanel_hosteroptions_description2=Valores premitidos: prio, max, min, case-sensitive, numeric, cph, phrase, math selfsolve, confirm, ocr, nomd5, timeout
+NinekwService_createPanel_hosteroptions_description2=Valores premitidos: prio, max, min, case-sensitive, numeric, cph, cpm, phrase, math selfsolve, confirm, ocr, nomd5, timeout
 NinekwService_createPanel_hosteroptions_tooltiptext=Algunas opciones como el tiempo fuera del servidor exactamente definido.
 NinekwService_createPanel_hour=Captcha por hora
 NinekwService_createPanel_hour_tooltiptext=Activar un límite por hora, para no enviar muchas captchas.

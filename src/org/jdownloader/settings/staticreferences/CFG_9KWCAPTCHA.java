@@ -77,6 +77,11 @@ public class CFG_9KWCAPTCHA {
     public static final IntegerKeyHandler                  HOUR                     = SH.getKeyHandler("hour", IntegerKeyHandler.class);
 
     /**
+     * Max. Captchas per hour
+     **/
+    public static final IntegerKeyHandler                  MINUTE                   = SH.getKeyHandler("minute", IntegerKeyHandler.class);
+
+    /**
      * Activate the blacklist with prio
      **/
     public static final BooleanKeyHandler                  BLACKLISTPRIOCHECK       = SH.getKeyHandler("blacklistpriocheck", BooleanKeyHandler.class);
