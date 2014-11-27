@@ -409,6 +409,7 @@ public class NowDownloadEu extends PluginForHost {
         login(account, false);
         if (account.getBooleanProperty("free", false)) {
             doFree(link, account);
+            return;
         }
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
