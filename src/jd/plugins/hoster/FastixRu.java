@@ -339,14 +339,14 @@ public class FastixRu extends PluginForHost {
             case 101:
                 /* No traffic left or server is full -> Disable for 1 hour */
                 statusMessage = "Unsupported filehost";
-                tempUnavailableHoster(account, downloadLink, 3 * 60 * 60 * 1000l);
+                tempUnavailableHoster(3 * 60 * 60 * 1000l);
             case 102:
                 statusMessage = "Filehost is currently unavailable";
-                tempUnavailableHoster(account, downloadLink, 15 * 60 * 60 * 1000l);
+                tempUnavailableHoster(15 * 60 * 60 * 1000l);
             case 103:
                 /* This should never happen but if, let's disable the current host for some time */
                 statusMessage = "Folderlinks of filehosts are not supported";
-                tempUnavailableHoster(account, downloadLink, 15 * 60 * 60 * 1000l);
+                tempUnavailableHoster(15 * 60 * 60 * 1000l);
             case 201:
                 /* Login or password missing -> disable account */
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -461,7 +461,7 @@ public class FastixRu extends PluginForHost {
         return result;
     }
 
-    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
+    private void tempUnavailableHoster(final long timeout) throws PluginException {
         if (downloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         }
