@@ -16,6 +16,7 @@ import org.jdownloader.controlling.Priority;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.OnDupesLinksAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.OnOfflineLinksAction;
 import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
@@ -90,12 +91,18 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
                         if (onOfflineHandler == OnOfflineLinksAction.GLOBAL) {
                             onOfflineHandler = CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction();
                         }
+
+                        OnDupesLinksAction onDupesHandler = CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction();
+                        if (onDupesHandler == OnDupesLinksAction.GLOBAL) {
+                            onDupesHandler = CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction();
+                        }
+
                         Priority priority = CFG_LINKGRABBER.CFG.getAutoConfirmManagerPiority();
                         if (!CFG_LINKGRABBER.CFG.isAutoConfirmManagerAssignPriorityEnabled()) {
                             priority = null;
                         }
                         if (list.size() > 0) {
-                            ConfirmLinksContextAction.confirmSelection(new SelectionInfo<CrawledPackage, CrawledLink>(null, list, false), autoStart, CFG_LINKGRABBER.CFG.isAutoConfirmManagerClearListAfterConfirm(), CFG_LINKGRABBER.CFG.isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), priority, CFG_LINKGRABBER.CFG.isAutoConfirmManagerForceDownloads() ? BooleanStatus.TRUE : BooleanStatus.FALSE, onOfflineHandler);
+                            ConfirmLinksContextAction.confirmSelection(new SelectionInfo<CrawledPackage, CrawledLink>(null, list, false), autoStart, CFG_LINKGRABBER.CFG.isAutoConfirmManagerClearListAfterConfirm(), CFG_LINKGRABBER.CFG.isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), priority, CFG_LINKGRABBER.CFG.isAutoConfirmManagerForceDownloads() ? BooleanStatus.TRUE : BooleanStatus.FALSE, onOfflineHandler, onDupesHandler);
                         }
 
                         // lastReset = -1;

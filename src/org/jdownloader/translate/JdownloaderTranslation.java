@@ -666,8 +666,8 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "ask me every time" })
     String ConfirmLinksContextAction_HandleOfflineLinksOptions_ASK();
 
-    @Default(lngs = { "en" }, values = { "use global (adv. config) settings" })
-    String ConfirmLinksContextAction_HandleOfflineLinksOptions_GLOBAL();
+    @Default(lngs = { "en" }, values = { "use global (adv. config) settings: %s1" })
+    String ConfirmLinksContextAction_HandleOfflineLinksOptions_GLOBAL(String str);
 
     @Default(lngs = { "en" }, values = { "Hide if downloads are not running" })
     String PauseDownloadsAction_getHideIfDownloadsAreStoppedTranslation();
@@ -899,5 +899,23 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Delete Duplicates" })
     String GenericDeleteFromLinkgrabberAction_getTranslationForDeleteDupesEnabled();
+
+    @Default(lngs = { "en" }, values = { "add them, too" })
+    String ConfirmLinksContextAction_HandleDupesLinksOptions_INCLUDE();
+
+    @Default(lngs = { "en" }, values = { "do NOT add them" })
+    String ConfirmLinksContextAction_HandleDupesLinksOptions_EXCLUDE();
+
+    @Default(lngs = { "en" }, values = { "do NOT add, but remove them from linkgrabber" })
+    String ConfirmLinksContextAction_HandleDupesLinksOptions_EXCLUDE_AND_REMOVE();
+
+    @Default(lngs = { "en" }, values = { "ask me every time" })
+    String ConfirmLinksContextAction_HandleDupesLinksOptions_ASK();
+
+    @Default(lngs = { "en" }, values = { "use global (adv. config) settings: %s1" })
+    String ConfirmLinksContextAction_HandleDupesLinksOptions_GLOBAL(String str);
+
+    @Default(lngs = { "en" }, values = { "if the selection contains duplicate links..." })
+    String ConfirmLinksContextAction_getTranslationForHandleDupes();
 
 }
