@@ -366,6 +366,8 @@ public class ShareDirCom extends PluginForHost {
                 STATUSCODE = 666;
             } else if (br.containsHTML(">Sorry, you don\\'t have enough traffic left to download this file directly")) {
                 STATUSCODE = 667;
+            } else if (br.containsHTML(">Sorry, due to excessive limitations, direct downloads from this host are only available to Premium users")) {
+                STATUSCODE = 668;
             } else {
                 STATUSCODE = 0;
             }
@@ -405,6 +407,10 @@ public class ShareDirCom extends PluginForHost {
             case 667:
                 /* No traffic available to download current file -> disable current host */
                 tempUnavailableHoster(account, downloadLink, 60 * 60 * 1000l);
+            case 668:
+                /* File too big for free accounts -> show errormessage / try without account (or use other available account(s)) */
+                statusMessage = "Error: The current host is only available for premium users";
+                tempUnavailableHoster(account, downloadLink, 3 * 60 * 60 * 1000l);
             default:
                 /* Unknown errorcode -> disable account */
                 statusMessage = "Unknown errorcode";

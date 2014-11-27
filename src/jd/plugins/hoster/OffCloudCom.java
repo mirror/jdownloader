@@ -192,17 +192,22 @@ public class OffCloudCom extends PluginForHost {
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                con = br2.openGetConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
-                con.disconnect();
             } catch (final Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
         return dllink;
@@ -283,26 +288,34 @@ public class OffCloudCom extends PluginForHost {
         return getJson(this.br.toString(), parameter);
     }
 
-    private String getJson(final String source, final String parameter) {
-        String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?((\\-)?\\d+)").getMatch(1);
+    /**
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki & psp
+     * */
+    private String getJson(final String source, final String key) {
+        String result = new Regex(source, "\"" + key + "\":(?:[ ]+)(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
         if (result == null) {
-            result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
+            result = new Regex(source, "\"" + key + "\":(?:[ ]+)\"([^\"]+)\"").getMatch(0);
+        }
+        if (result != null) {
+            result = JSonUtils.unescape(result);
         }
         return result;
     }
 
-    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
-        if (downloadLink == null) {
+    private void tempUnavailableHoster(final long timeout) throws PluginException {
+        if (this.currDownloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         }
         synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(this.currAcc);
             if (unavailableMap == null) {
                 unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(account, unavailableMap);
+                hostUnavailableMap.put(this.currAcc, unavailableMap);
             }
             /* wait 30 mins to retry this host */
-            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
+            unavailableMap.put(this.currDownloadLink.getHost(), (System.currentTimeMillis() + timeout));
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
@@ -356,7 +369,7 @@ public class OffCloudCom extends PluginForHost {
             case 2:
                 /* No premiumaccounts available for used host --> Temporarily disable it */
                 statusMessage = "There are currently no premium accounts available for this host";
-                tempUnavailableHoster(currAcc, currDownloadLink, 30 * 60 * 60 * 1000l);
+                tempUnavailableHoster(30 * 60 * 1000l);
             case 100:
                 /* Login or password invalid -> permanently disable account */
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {

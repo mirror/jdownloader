@@ -53,12 +53,12 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     private static final String Q_HIGH                = "Q_HIGH";
     private static final String Q_VERYHIGH            = "Q_VERYHIGH";
     private static final String Q_HD                  = "Q_HD";
-    private static final String HBBTV                 = "HBBTV";
+    private static final String HBBTV                 = "HBBTV_2";
     private static final String THUMBNAIL             = "THUMBNAIL";
 
     private static final String Q_LOW_INTERN          = "ld|300p";
-    private static final String Q_HIGH_INTERN         = "md|406p";
-    private static final String Q_VERYHIGH_INTERN     = "sd|400p";
+    private static final String Q_HIGH_INTERN         = "sd|400p";
+    private static final String Q_VERYHIGH_INTERN     = "md|406p";
     private static final String Q_HD_INTERN           = "hd|720p";
     private String              VRU                   = null;
 
@@ -335,13 +335,13 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     if ((cfg.getBooleanProperty(Q_HIGH, true) || BEST) == false) {
                         continue;
                     } else {
-                        fmt = "md";
+                        fmt = "sd";
                     }
                 } else if (new Regex(fmt, Q_VERYHIGH_INTERN).matches()) {
                     if ((cfg.getBooleanProperty(Q_VERYHIGH, true) || BEST) == false) {
                         continue;
                     } else {
-                        fmt = "sd";
+                        fmt = "md";
                     }
                 } else if (new Regex(fmt, Q_HD_INTERN).matches()) {
                     if ((cfg.getBooleanProperty(Q_HD, true) || BEST) == false) {

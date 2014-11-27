@@ -285,7 +285,7 @@ public class ArteTv extends PluginForHost {
         if (fileName.endsWith(".")) {
             fileName = fileName.substring(0, fileName.length() - 1);
         }
-        if ("HBBTV".equals(downloadLink.getStringProperty("streamingType", "RTMP"))) {
+        if (CLIPURL.startsWith("http")) {
             URLConnectionAdapter con = null;
             final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
