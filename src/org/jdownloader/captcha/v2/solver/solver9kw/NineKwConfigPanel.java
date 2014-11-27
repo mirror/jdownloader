@@ -407,6 +407,12 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
         hourcaptchas.setToolTipText(_GUI._.NinekwService_createPanel_hour_tooltiptext());
         toolbar8.add(hourcaptchas);
         toolbar8.add(label(_GUI._.NinekwService_createPanel_hour()));
+
+        Spinner mincaptchas = new Spinner(CFG_9KWCAPTCHA.MINUTE);
+        mincaptchas.setToolTipText(_GUI._.NinekwService_createPanel_minute_tooltiptext());
+        toolbar8.add(mincaptchas);
+        toolbar8.add(label(_GUI._.NinekwService_createPanel_minute()));
+        toolbar8.add(label(_GUI._.NinekwService_createPanel_unlimited()));
         add(toolbar8, "gapleft 33,spanx,pushx,growx");
 
         MigPanel toolbar9 = new MigPanel("ins 0", "[][][][]", "[]");
@@ -475,7 +481,7 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
 
         toolbar9a.add(label(_GUI._.NinekwService_createPanel_9kwtimeoutother()));
 
-        Spinner new9kwtimeoutcaptchas = new Spinner(CFG_9KWCAPTCHA.DEFAULT_TIMEOUT);
+        Spinner new9kwtimeoutcaptchas = new Spinner(CFG_9KWCAPTCHA.CAPTCHA_OTHER9KW_TIMEOUT);
         new9kwtimeoutcaptchas.setToolTipText(_GUI._.NinekwService_createPanel_9kwtimeoutother_tooltiptext());
         toolbar9a.add(new9kwtimeoutcaptchas);
         toolbar9a.add(label(_GUI._.NinekwService_createPanel_ms()));

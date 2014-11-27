@@ -713,6 +713,9 @@ NinekwService_createPanel_hosteroptions_description2=Erlaubte Werte: prio, max, 
 NinekwService_createPanel_hosteroptions_tooltiptext=Einzelne Optionen wie Timeout eines Hosters exakt definieren.
 NinekwService_createPanel_hour=Captchas pro Stunde
 NinekwService_createPanel_hour_tooltiptext=Aktiviert eine Grenze pro Stunde um nicht viel zu viele Captchas einzureichen.
+NinekwService_createPanel_minute=Captchas pro Minute
+NinekwService_createPanel_minute_tooltiptext=Aktiviert eine Grenze pro Minute um nicht viel zu viele Captchas einzureichen.
+NinekwService_createPanel_unlimited=(0=Unbegrenzt)
 NinekwService_createPanel_https=https
 NinekwService_createPanel_https_tooltiptext=Aktiviert verschlüsselte Verbindungen in Form von HTTPS (SSL/TLS)
 NinekwService_createPanel_logins_=Gib Deinen 9kw.eu-API-Schlüssel unten ein. Wenn Du noch keinen Account besitzt, klicke zur Erstellung eines Accounts auf den oben stehenden Link. Es ist kostenlos!

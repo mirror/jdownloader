@@ -3080,8 +3080,17 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Captchas per hour" })
     String NinekwService_createPanel_hour();
 
+    @Default(lngs = { "en" }, values = { "Captchas per minute" })
+    String NinekwService_createPanel_minute();
+
+    @Default(lngs = { "en" }, values = { "(0=Unlimited)" })
+    String NinekwService_createPanel_unlimited();
+
     @Default(lngs = { "en" }, values = { "Activates a limit per hour to not submit too many captchas." })
     String NinekwService_createPanel_hour_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "Activates a limit per minute to not submit too many captchas." })
+    String NinekwService_createPanel_minute_tooltiptext();
 
     @Default(lngs = { "en" }, values = { "Max. Captchas Parallel" })
     String NinekwService_createPanel_threadsizepool();
@@ -3122,7 +3131,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Format: pluginname:prio=1:timeout=999;pluginname2:prio=0:timeout=999:min=2:max=50;" })
     String NinekwService_createPanel_hosteroptions_description1();
 
-    @Default(lngs = { "en" }, values = { "Allowed values: : prio, max, min, case-sensitive, numeric, cph, phrase, math, selfsolve, confirm, ocr, nomd5, timeout" })
+    @Default(lngs = { "en" }, values = { "Allowed values: : prio, max, min, case-sensitive, numeric, cph, cpm, phrase, math, selfsolve, confirm, ocr, nomd5, timeout" })
     String NinekwService_createPanel_hosteroptions_description2();
 
     @Default(lngs = { "en" }, values = { "Specifies whether certain Hoster are allowed or forbidden." })
@@ -5401,7 +5410,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Semi-automatic Captcha Solving" })
     String CBSolver_getName_();
 
-    @Default(lngs = { "en" }, values = { "Fully automated remote Captcha Solving" })
+    @Default(lngs = { "en" }, values = { "Semi-automatic Captcha Solving" })
     String DeathByCaptchaSolver_getName_();
 
     @Default(lngs = { "en" }, values = { "My.JDownloader.org" })
