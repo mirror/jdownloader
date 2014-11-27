@@ -27,7 +27,6 @@ import java.awt.event.WindowFocusListener;
 import javax.swing.JComponent;
 
 import org.appwork.swing.components.ExtTextField;
-import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.DomainInfo;
@@ -71,7 +70,7 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
 
             @Override
             public void windowGainedFocus(WindowEvent windowevent) {
-                System.out.println("textfield.request");
+
                 textField.requestFocusInWindow();
             }
         });
@@ -100,19 +99,21 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
 
             @Override
             public void focusLost(FocusEvent e) {
-                System.out.println(e);
+                // System.out.println(e);
             }
 
             @Override
             public void focusGained(FocusEvent e) {
-                System.out.println(e);
+                // System.out.println(e);
                 textField.selectAll();
             }
         });
         textField.setHelpText(getHelpText());
-        if (suggest != null) textField.setText(suggest);
-        // this.textField.requestFocusInWindow();
-        // this.textField.selectAll();
+        if (suggest != null) {
+            textField.setText(suggest);
+            // this.textField.requestFocusInWindow();
+            // this.textField.selectAll();
+        }
 
         // panel.add(new JLabel("HJ dsf"));
 
@@ -132,7 +133,9 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
         if (textField != null && StringUtils.isEmpty(textField.getText())) {
             boolean hasFocus = textField.hasFocus();
             textField.setText(value);
-            if (hasFocus) textField.selectAll();
+            if (hasFocus) {
+                textField.selectAll();
+            }
         }
     }
 

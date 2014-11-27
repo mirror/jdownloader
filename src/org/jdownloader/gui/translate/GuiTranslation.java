@@ -5500,4 +5500,19 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Speedlimit: %s1/s" })
     String SpeedMeterPanel_getString_limited(String speed);
 
+    @Default(lngs = { "en" }, values = { "What about the links that are already in the downloadlist?" })
+    String ConfirmLinksContextAction_run_dupes_ask_title();
+
+    @Default(lngs = { "en" }, values = { "You are trying to add links that are already in your downloadlist. Please choose how to continue:" })
+    String ConfirmLinksContextAction_run_dupes_ask_question();
+
+    @Default(lngs = { "en" }, values = { "Do not add duplicate links to the Downloadlist" })
+    String ConfirmLinksContextAction_getListCellRendererComponent_EXCLUDE_DUPES();
+
+    @Default(lngs = { "en" }, values = { "Do not add duplicate links to the Downloadlist but remove the links from the linkgrabber anyway" })
+    String ConfirmLinksContextAction_getListCellRendererComponent_EXCLUDE_DUPES_AND_REMOVE();
+
+    @Default(lngs = { "en" }, values = { "Add duplicate links to the Downloadlist anyway" })
+    String ConfirmLinksContextAction_getListCellRendererComponent_INCLUDE_DUPES();
+
 }

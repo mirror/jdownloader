@@ -16,6 +16,7 @@ import org.jdownloader.controlling.Priority;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPath;
 import org.jdownloader.gui.packagehistorycontroller.PackageHistoryEntry;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.AutoStartOptions;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.OnDupesLinksAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.OnOfflineLinksAction;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.ConfirmIncompleteArchiveAction;
 
@@ -216,6 +217,12 @@ public interface LinkgrabberSettings extends ConfigInterface {
     void setDefaultOnAddedOfflineLinksAction(OnOfflineLinksAction value);
 
     @AboutConfig
+    @DefaultEnumValue("ASK")
+    OnDupesLinksAction getDefaultOnAddedDupesLinksAction();
+
+    void setDefaultOnAddedDupesLinksAction(OnDupesLinksAction value);
+
+    @AboutConfig
     @DefaultIntValue(25)
     @RequiresRestart("A JDownloader Restart is Required")
     @DescriptionForConfigEntry("How many entries will be in the Packagename quick selection")
@@ -268,4 +275,10 @@ public interface LinkgrabberSettings extends ConfigInterface {
     void setHandleIncompleteArchiveOnConfirmLatestSelection(ConfirmIncompleteArchiveAction handleOfflineLoc);
 
     ConfirmIncompleteArchiveAction getHandleIncompleteArchiveOnConfirmLatestSelection();
+
+    @AboutConfig
+    void setHandleDupesOnConfirmLatestSelection(OnDupesLinksAction handleDupesLoc);
+
+    OnDupesLinksAction getHandleDupesOnConfirmLatestSelection();
+
 }

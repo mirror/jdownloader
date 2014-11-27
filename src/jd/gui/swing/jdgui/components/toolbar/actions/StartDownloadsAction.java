@@ -72,7 +72,7 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
                 protected Void run() throws RuntimeException {
                     switch (CFG_GUI.CFG.getStartButtonActionInLinkgrabberContext()) {
                     case ADD_ALL_LINKS_AND_START_DOWNLOADS:
-                        ConfirmLinksContextAction.confirmSelection(LinkGrabberTable.getInstance().getSelectionInfo(false, true), true, false, true, null, BooleanStatus.FALSE, CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction());
+                        ConfirmLinksContextAction.confirmSelection(LinkGrabberTable.getInstance().getSelectionInfo(false, true), true, false, true, null, BooleanStatus.FALSE, CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction(), CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction());
 
                         break;
                     case START_DOWNLOADS_ONLY:
