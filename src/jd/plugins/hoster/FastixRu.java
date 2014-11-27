@@ -33,6 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.storage.simplejson.JSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fastix.ru" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
@@ -159,9 +160,12 @@ public class FastixRu extends PluginForHost {
                 }
                 throw e;
             }
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
             throw e;
+        } catch (final Throwable e) {
+            link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
+            throw new WTFException(e);
         }
     }
 
@@ -366,7 +370,7 @@ public class FastixRu extends PluginForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
      * from the host list.
-     *
+     * 
      * @param dl
      *            : The DownloadLink
      * @param error
