@@ -88,7 +88,7 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
         ClickCaptchaChallenge captchaChallenge = (ClickCaptchaChallenge) solverJob.getChallenge();
 
         int cph = config.gethour();
-        int cpm = config.gethour();
+        int cpm = config.getminute();
         int priothing = config.getprio();
         long timeoutthing = config.getDefaultTimeout();
         boolean selfsolve = config.isSelfsolve();
