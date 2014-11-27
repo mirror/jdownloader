@@ -18,7 +18,6 @@ package org.jdownloader.extensions.chat;
 
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
@@ -43,6 +42,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.HyperlinkEvent;
@@ -476,17 +476,29 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
             }
 
         });
-        this.textField = new JTextField();
-        this.textField.setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, Collections.EMPTY_SET);
-        this.textField.setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, Collections.EMPTY_SET);
+        this.textField = new JTextField() {
+            @Override
+            public void requestFocus() {
+                System.out.println("REQUEST");
+                super.requestFocus();
+            }
+        };
+        // this.textField.setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, Collections.EMPTY_SET);
+        // this.textField.setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, Collections.EMPTY_SET);
         this.textField.addFocusListener(new FocusListener() {
 
             public void focusGained(final FocusEvent e) {
+
+                if (e.getOppositeComponent() == null) {
+                    System.out.println(1);
+                }
                 ChatExtension.this.tabbedPane.setForegroundAt(ChatExtension.this.tabbedPane.getSelectedIndex(), Color.black);
             }
 
             public void focusLost(final FocusEvent e) {
+
                 ChatExtension.this.tabbedPane.setForegroundAt(ChatExtension.this.tabbedPane.getSelectedIndex(), Color.black);
+
             }
 
         });
@@ -498,9 +510,15 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
             public void keyPressed(final KeyEvent e) {
                 final int sel = ChatExtension.this.tabbedPane.getSelectedIndex();
                 ChatExtension.this.tabbedPane.setForegroundAt(sel, Color.black);
-            }
 
-            public void keyReleased(final KeyEvent e) {
+                // it's important to have this code here instead of the released callback.
+                // this solves this bug: http://svn.jdownloader.org/issues/58941
+                boolean hf = textField.hasFocus();
+
+                boolean wf = SwingUtilities.getWindowAncestor(textField).isActive();
+                if (!hf || !wf) {
+                    return;
+                }
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) {
 
                     if (ChatExtension.this.textField.getText().length() == 0) {
@@ -566,6 +584,9 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
                 } else {
                     this.last = null;
                 }
+            }
+
+            public void keyReleased(final KeyEvent e) {
 
             }
 
