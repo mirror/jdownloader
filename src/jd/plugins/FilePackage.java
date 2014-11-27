@@ -578,9 +578,22 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
             } else {
                 setProperty(PROPERTY_PRIORITY, priority.name());
             }
+
             if (hasNotificationListener()) {
                 nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new FilePackageProperty(this, FilePackageProperty.Property.PRIORITY, priority));
             }
+        }
+        boolean readL = getModifyLock().readLock();
+        ArrayList<DownloadLink> links;
+        try {
+            links = new ArrayList<DownloadLink>(getChildren());
+        } finally {
+            if (readL) {
+                getModifyLock().readUnlock(readL);
+            }
+        }
+        for (DownloadLink link : links) {
+            link.setPriorityEnum(priority);
         }
     }
 
