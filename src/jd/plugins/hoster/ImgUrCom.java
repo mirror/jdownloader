@@ -189,7 +189,9 @@ public class ImgUrCom extends PluginForHost {
             filetype = "jpeg";
         }
         String finalfilename;
-        if (title != null && !title.equals("")) {
+        if (title == null || title.equals("")) {
+            finalfilename = imgUID + "." + filetype;
+        } else {
             title = Encoding.htmlDecode(title);
             title = HTMLEntities.unhtmlentities(title);
             title = HTMLEntities.unhtmlAmpersand(title);
@@ -197,8 +199,6 @@ public class ImgUrCom extends PluginForHost {
             title = HTMLEntities.unhtmlSingleQuotes(title);
             title = HTMLEntities.unhtmlDoubleQuotes(title);
             finalfilename = title + "." + filetype;
-        } else {
-            finalfilename = imgUID + "." + filetype;
         }
         dl.setDownloadSize(filesize);
         dl.setProperty("decryptedfilesize", filesize);
