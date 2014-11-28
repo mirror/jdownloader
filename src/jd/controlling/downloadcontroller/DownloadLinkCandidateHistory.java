@@ -47,7 +47,7 @@ public class DownloadLinkCandidateHistory {
                 final Entry<DownloadLinkCandidate, DownloadLinkCandidateResult> next = it.next();
                 final DownloadLinkCandidate historyCandidate = next.getKey();
                 final CachedAccount historyAccount = historyCandidate.getCachedAccount();
-                if (candidate.getCachedAccount().equals(historyAccount)) {
+                if (candidate.getCachedAccount().equals(historyAccount) && next.getValue() != null) {
                     ret.add(next.getValue());
                 }
             }
