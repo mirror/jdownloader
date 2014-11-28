@@ -35,6 +35,11 @@ public class SetDownloadFolderInLinkgrabberAction extends SetDownloadFolderActio
 
     }
 
+    @Override
+    protected SelectionInfo<CrawledPackage, CrawledLink> getSelection() {
+        return super.getSelection();
+    }
+
     protected File dialog(File path) throws DialogClosedException, DialogCanceledException {
 
         CrawledPackage cp = getSelection().getFirstPackage();

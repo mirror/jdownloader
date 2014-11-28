@@ -23,8 +23,9 @@ import org.jdownloader.translate._JDT;
 
 public abstract class SetDownloadFolderAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends CustomizableTableContextAppAction<PackageType, ChildrenType> {
 
-    private File                                       path;
-    protected SelectionInfo<PackageType, ChildrenType> selection;
+    private File path;
+
+    // protected SelectionInfo<PackageType, ChildrenType> selection;
 
     public SetDownloadFolderAction() {
         super();
