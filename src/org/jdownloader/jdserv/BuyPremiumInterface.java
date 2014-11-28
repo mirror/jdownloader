@@ -27,4 +27,7 @@ public interface BuyPremiumInterface extends RemoteAPIInterface, RemoteAPISignat
     @ApiSessionRequired
     public boolean clearCache();
 
+    @ApiSessionRequired
+    public int clearPool();
+
 }
