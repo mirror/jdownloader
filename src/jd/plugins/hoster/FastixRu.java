@@ -182,6 +182,8 @@ public class FastixRu extends PluginForHost {
         try {
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
+                updatestatuscode();
+                handleAPIErrors();
                 handleErrorRetries("unknowndlerror", 5);
             }
             try {

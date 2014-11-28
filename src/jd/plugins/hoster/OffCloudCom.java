@@ -16,16 +16,28 @@
 
 package jd.plugins.hoster;
 
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
+
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextArea;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -33,14 +45,23 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.swing.dialog.ContainerDialog;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.DomainInfo;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "offcloud.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class OffCloudCom extends PluginForHost {
 
     /** Using API: https://github.com/offcloud/offcloud-api */
+    private static final String                            CLEAR_DOWNLOAD_HISTORY       = "CLEAR_DOWNLOAD_HISTORY";
     private static final String                            NOCHUNKS                     = "NOCHUNKS";
+    private static final String                            NORESUME                     = "NORESUME";
     private static final String                            DOMAIN                       = "https://offcloud.com/api/";
     private static final String                            NICE_HOST                    = "offcloud.com";
     private static final String                            NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
@@ -58,6 +79,7 @@ public class OffCloudCom extends PluginForHost {
     public OffCloudCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://offcloud.com/");
+        this.setConfigElements();
     }
 
     @Override
@@ -127,17 +149,32 @@ public class OffCloudCom extends PluginForHost {
     }
 
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
+        final String requestID = link.getStringProperty("offcloudrequestId", null);
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
         int maxChunks = ACCOUNT_PREMIUM_MAXCHUNKS;
         if (link.getBooleanProperty(NOCHUNKS, false)) {
             maxChunks = 1;
         }
+        boolean resume = ACCOUNT_PREMIUM_RESUME;
+        if (link.getBooleanProperty(OffCloudCom.NORESUME, false)) {
+            resume = false;
+            link.setProperty(OffCloudCom.NORESUME, Boolean.valueOf(false));
+        }
         link.setProperty(NICE_HOSTproperty + "directlink", dllink);
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, maxChunks);
-            if (dl.getConnection().getContentType().contains("html")) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
+            if (dl.getConnection().getResponseCode() == 416) {
+                logger.info("Resume impossible, disabling it for the next try");
+                link.setChunksProgress(null);
+                link.setProperty(OffCloudCom.NORESUME, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            final String contenttype = dl.getConnection().getContentType();
+            if (contenttype.contains("html") || contenttype.contains("json")) {
                 br.followConnection();
+                updatestatuscode();
+                handleAPIErrors(this.br);
                 handleErrorRetries(account, link, "unknowndlerror", 5);
             }
             try {
@@ -152,6 +189,25 @@ public class OffCloudCom extends PluginForHost {
                     if (link.getBooleanProperty(OffCloudCom.NOCHUNKS, false) == false) {
                         link.setProperty(OffCloudCom.NOCHUNKS, Boolean.valueOf(true));
                         throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
+                } else if (this.getPluginConfig().getBooleanProperty(CLEAR_DOWNLOAD_HISTORY, default_clear_download_history)) {
+                    try {
+                        boolean success = false;
+                        try {
+                            logger.info("Trying to clear download history");
+                            br.getPage("https://offcloud.com/instant/remove/" + requestID);
+                            if (getJson("success").equals("true")) {
+                                success = true;
+                            }
+                        } catch (final Throwable e) {
+                            success = false;
+                        }
+                        if (success) {
+                            logger.info("Succeeded to clear download history");
+                        } else {
+                            logger.warning("Failed to clear download history");
+                        }
+                    } catch (final Throwable ex) {
                     }
                 }
             } catch (final PluginException e) {
@@ -176,12 +232,15 @@ public class OffCloudCom extends PluginForHost {
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
             this.postAPISafe(DOMAIN + "instant/download", "proxyId=&url=" + JSonUtils.escape(link.getDownloadURL()));
-            final String status = getJson("status");
-            if (!status.equals("created")) {
-                logger.warning("WTF: " + link.getDownloadURL());
+            final String requestId = getJson("requestId");
+            if (requestId == null) {
+                /* Should never happen */
+                handleErrorRetries(account, link, "requestIdnull", 5);
             }
+            link.setProperty("offcloudrequestId", requestId);
             dllink = getJson("url");
             if (dllink == null) {
+                /* Should never happen */
                 handleErrorRetries(account, link, "dllinknull", 5);
             }
             dllink = dllink.replaceAll("\\\\/", "/");
@@ -232,7 +291,42 @@ public class OffCloudCom extends PluginForHost {
         } else {
             login();
         }
-        /* TODO: Add account information - API call for that does not yet exist */
+        postAPISafe("https://offcloud.com/stats/addons", "");
+        String userpackage = null;
+        final String jsonarraypackages = br.getRegex("\"data\": \\[(.*?)\\]").getMatch(0);
+        final String[] packages = jsonarraypackages.split("\\},([\t\r\n ]+)?\\{");
+        if (packages.length == 1) {
+            userpackage = packages[0];
+        } else {
+            for (final String singlepackage : packages) {
+                final String type = getJson(singlepackage, "type");
+                if (type.contains("link-unlimited")) {
+                    userpackage = singlepackage;
+                    break;
+                }
+            }
+        }
+        final String packagetype = getJson(userpackage, "type");
+        if (packagetype.equals("premium-link-increase")) {
+            account.setType(AccountType.FREE);
+            ai.setStatus("Registered (free) account");
+            final String remaininglinksnum = getJson(userpackage, "remainingLinksCount");
+            account.setProperty("accinfo_linksleft", remaininglinksnum);
+            if (remaininglinksnum.equals("0")) {
+                /* No links downloadable anymore --> No traffic left */
+                ai.setTrafficLeft(0);
+            }
+        } else {
+            account.setType(AccountType.PREMIUM);
+            ai.setStatus("Premium account");
+            ai.setUnlimitedTraffic();
+            String expiredate = getJson(userpackage, "activeTill");
+            expiredate = expiredate.replaceAll("Z$", "+0000");
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate, "yyyy-MM-dd'T'HH:mm:ss.S", Locale.ENGLISH));
+            postAPISafe("https://offcloud.com/stats/usage-left", "");
+            final String linksleft = getJson("links");
+            account.setProperty("accinfo_linksleft", linksleft);
+        }
         account.setValid(true);
         /* Only add hosts which are listed as 'active' (working) */
         postAPISafe("https://offcloud.com/stats/sites", "");
@@ -249,8 +343,6 @@ public class OffCloudCom extends PluginForHost {
             }
         }
         ai.setMultiHostSupport(this, supportedHosts);
-        /* All accounts are 'premium' but free accounts simply have ZERO traffic (points) */
-        ai.setStatus("Premium account");
         return ai;
     }
 
@@ -338,15 +430,23 @@ public class OffCloudCom extends PluginForHost {
         if (error == null) {
             error = getJson("not_available");
         }
-        if (error == null) {
-            statuscode = 0;
-        } else {
+        if (error != null) {
             if (error.equals("Please enter a valid email address.")) {
                 statuscode = 1;
             } else if (error.equals("NOPREMIUMACCOUNTS")) {
                 statuscode = 2;
+            } else if (error.equals("User not authorized")) {
+                statuscode = 3;
+            } else if (error.equals("Purchase a premium downloading addon to continue with this operation.")) {
+                statuscode = 4;
             } else if (error.equals("premium")) {
                 statuscode = 100;
+            }
+        } else {
+            if (br.containsHTML("We\\'re sorry but your download ticket couldn\\'t have been found, please repeat the download process\\.")) {
+                statuscode = 200;
+            } else {
+                statuscode = 0;
             }
         }
     }
@@ -370,14 +470,41 @@ public class OffCloudCom extends PluginForHost {
                 /* No premiumaccounts available for used host --> Temporarily disable it */
                 statusMessage = "There are currently no premium accounts available for this host";
                 tempUnavailableHoster(30 * 60 * 1000l);
-            case 100:
-                /* Login or password invalid -> permanently disable account */
+            case 3:
+                /* Free account limits reached and an additional download-try failed -> permanently disable account */
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                     statusMessage = "\r\nFree Account Limits erreicht. Kaufe dir einen premium Account um weiter herunterladen zu können.";
                 } else {
                     statusMessage = "\r\nFree account limits reached. Buy a premium account to continue downloading.";
                 }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case 4:
+                /*
+                 * Free account limits reached and an additional download-try failed or account cookie is invalid -> permanently disable
+                 * account
+                 */
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    statusMessage = "\r\nFree Account Limits erreicht. Kaufe dir einen premium Account um weiter herunterladen zu können.";
+                } else {
+                    statusMessage = "\r\nFree account limits reached. Buy a premium account to continue downloading.";
+                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case 100:
+                /* Free account limits reached -> permanently disable account */
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    statusMessage = "\r\nFree Account Limits erreicht. Kaufe dir einen premium Account um weiter herunterladen zu können.";
+                } else {
+                    statusMessage = "\r\nFree account limits reached. Buy a premium account to continue downloading.";
+                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case 200:
+                /* Free account limits reached -> permanently disable account */
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    statusMessage = "\r\nDownloadticket defekt --> Neuversuch";
+                } else {
+                    statusMessage = "\r\nDownload ticket broken --> Retry link";
+                }
+                handleErrorRetries(this.currAcc, this.currDownloadLink, "downloadticketBroken", 10);
             default:
                 /* Unknown error */
                 statusMessage = "Unknown error";
@@ -418,9 +545,181 @@ public class OffCloudCom extends PluginForHost {
         }
     }
 
+    private final boolean default_clear_download_history = false;
+
+    public void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEAR_DOWNLOAD_HISTORY, JDL.L("plugins.hoster.offcloudcom.clear_serverside_download_history", getPhrase("SETTING_CLEAR_DOWNLOAD_HISTORY"))).setDefaultValue(default_clear_download_history));
+    }
+
     @Override
     public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
         return ACCOUNT_PREMIUM_MAXDOWNLOADS;
+    }
+
+    private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
+        {
+            put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Delete downloaded links from the offcloud download history after successful download?");
+            put("ACCOUNT_USERNAME", "Username:");
+            put("ACCOUNT_LINKSLEFT", "Instant download inputs left:");
+            put("ACCOUNT_TYPE", "Account type:");
+            put("ACCOUNT_SIMULTANDLS", "Max. simultaneous downloads:");
+            put("ACCOUNT_CHUNKS", "Max number of chunks per file:");
+            put("ACCOUNT_RESUME", "Resume of stopped downloads:");
+            put("ACCOUNT_YES", "Yes");
+            put("ACCOUNT_NO", "No");
+            put("DETAILS_TITEL", "Account information");
+            put("LANG_GENERAL_UNLIMITED", "Unlimited");
+            put("LANG_GENERAL_CLOSE", "Close");
+        }
+    };
+
+    private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
+        {
+            put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Lösche heruntergeladene links nach jedem erfolgreichen Download aus der offcloud Download-Historie?");
+            put("ACCOUNT_USERNAME", "Account Name:");
+            put("ACCOUNT_LINKSLEFT", "Verbleibende Anzahl von Instant-Download Links:");
+            put("ACCOUNT_TYPE", "Account Typ:");
+            put("ACCOUNT_SIMULTANDLS", "Max. Anzahl gleichzeitiger Downloads:");
+            put("ACCOUNT_CHUNKS", "Max. Anzahl Verbindungen pro Datei (Chunks):");
+            put("ACCOUNT_RESUME", "Abgebrochene Downloads fortsetzbar:");
+            put("ACCOUNT_YES", "Ja");
+            put("ACCOUNT_NO", "Nein");
+            put("DETAILS_TITEL", "Additional account information");
+            put("LANG_GENERAL_UNLIMITED", "Unlimitiert");
+            put("LANG_GENERAL_CLOSE", "Schließen");
+        }
+    };
+
+    /**
+     * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
+     * English.
+     *
+     * @param key
+     * @return
+     */
+    private String getPhrase(String key) {
+        if ("de".equals(System.getProperty("user.language")) && phrasesDE.containsKey(key)) {
+            return phrasesDE.get(key);
+        } else if (phrasesEN.containsKey(key)) {
+            return phrasesEN.get(key);
+        }
+        return "Translation not found!";
+    }
+
+    public void showAccountDetailsDialog(final Account account) {
+        final AccountInfo ai = account.getAccountInfo();
+        if (ai != null) {
+            final String windowTitleLangText = getPhrase("DETAILS_TITEL");
+            final String accType = account.getStringProperty("acc_type", "Premium Account");
+            final String accUsername = account.getUser();
+            String linksleft = account.getStringProperty("accinfo_linksleft", "?");
+            if (linksleft.equals("-1")) {
+                linksleft = getPhrase("LANG_GENERAL_UNLIMITED");
+            }
+
+            /* it manages new panel */
+            final PanelGenerator panelGenerator = new PanelGenerator();
+
+            JLabel hostLabel = new JLabel("<html><b>" + account.getHoster() + "</b></html>");
+            hostLabel.setIcon(DomainInfo.getInstance(account.getHoster()).getFavIcon());
+            panelGenerator.addLabel(hostLabel);
+
+            String revision = "$Revision$";
+            try {
+                String[] revisions = revision.split(":");
+                revision = revisions[1].replace('$', ' ').trim();
+            } catch (final Exception e) {
+                logger.info(this.getHost() + " revision number error: " + e);
+            }
+
+            panelGenerator.addCategory("Account");
+            panelGenerator.addEntry(getPhrase("ACCOUNT_USERNAME"), accUsername);
+            panelGenerator.addEntry(getPhrase("ACCOUNT_TYPE"), accType);
+
+            panelGenerator.addCategory("Download");
+            panelGenerator.addEntry(getPhrase("ACCOUNT_LINKSLEFT"), linksleft);
+            panelGenerator.addEntry(getPhrase("ACCOUNT_SIMULTANDLS"), "20");
+            panelGenerator.addEntry(getPhrase("ACCOUNT_CHUNKS"), "2");
+            panelGenerator.addEntry(getPhrase("ACCOUNT_RESUME"), getPhrase("ACCOUNT_YES"));
+
+            panelGenerator.addEntry("Plugin Revision:", revision);
+
+            ContainerDialog dialog = new ContainerDialog(UIOManager.BUTTONS_HIDE_CANCEL + UIOManager.LOGIC_COUNTDOWN, windowTitleLangText, panelGenerator.getPanel(), null, getPhrase("LANG_GENERAL_CLOSE"), "");
+            try {
+                Dialog.getInstance().showDialog(dialog);
+            } catch (DialogNoAnswerException e) {
+            }
+        }
+
+    }
+
+    public class PanelGenerator {
+        private JPanel panel = new JPanel();
+        private int    y     = 0;
+
+        public PanelGenerator() {
+            panel.setLayout(new GridBagLayout());
+            panel.setMinimumSize(new Dimension(270, 200));
+        }
+
+        public void addLabel(JLabel label) {
+            GridBagConstraints c = new GridBagConstraints();
+            c.fill = GridBagConstraints.HORIZONTAL;
+            c.gridx = 0;
+            c.gridwidth = 2;
+            c.gridy = y;
+            c.insets = new Insets(0, 5, 0, 5);
+            panel.add(label, c);
+            y++;
+        }
+
+        public void addCategory(String categoryName) {
+            JLabel category = new JLabel("<html><u><b>" + categoryName + "</b></u></html>");
+
+            GridBagConstraints c = new GridBagConstraints();
+            c.fill = GridBagConstraints.HORIZONTAL;
+            c.gridx = 0;
+            c.gridwidth = 2;
+            c.gridy = y;
+            c.insets = new Insets(10, 5, 0, 5);
+            panel.add(category, c);
+            y++;
+        }
+
+        public void addEntry(String key, String value) {
+            GridBagConstraints c = new GridBagConstraints();
+            JLabel keyLabel = new JLabel(key);
+            // keyLabel.setFont(keyLabel.getFont().deriveFont(Font.BOLD));
+            c.fill = GridBagConstraints.HORIZONTAL;
+            c.weightx = 0.9;
+            c.gridx = 0;
+            c.gridy = y;
+            c.insets = new Insets(0, 5, 0, 5);
+            panel.add(keyLabel, c);
+
+            JLabel valueLabel = new JLabel(value);
+            c.fill = GridBagConstraints.HORIZONTAL;
+            c.gridx = 1;
+            panel.add(valueLabel, c);
+
+            y++;
+        }
+
+        public void addTextField(JTextArea textfield) {
+            GridBagConstraints c = new GridBagConstraints();
+            c.fill = GridBagConstraints.HORIZONTAL;
+            c.gridx = 0;
+            c.gridwidth = 2;
+            c.gridy = y;
+            c.insets = new Insets(0, 5, 0, 5);
+            panel.add(textfield, c);
+            y++;
+        }
+
+        public JPanel getPanel() {
+            return panel;
+        }
+
     }
 
     @Override
