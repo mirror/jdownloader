@@ -19,7 +19,6 @@ import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.ChallengeSolver;
-import org.jdownloader.statistics.StatsManager;
 
 public class SolverJob<T> {
 
@@ -355,7 +354,6 @@ public class SolverJob<T> {
      * call to tell the job, that the result has been correct
      */
     public void validate() {
-        StatsManager.I().logCaptcha(this);
         final ResponseList<T> returnedResponseList = this.getResponse();
         if (returnedResponseList != null && returnedResponseList.size() > 0) {
             final AbstractResponse<?> returnedResponse = returnedResponseList.get(0);
