@@ -150,65 +150,95 @@ public class Tb7Pl extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
+        boolean resume = true;
         showMessage(link, "Phase 1/3: Login");
+
         login(acc, false);
         br.setConnectTimeout(90 * 1000);
         br.setReadTimeout(90 * 1000);
         dl = null;
-        /* generate new downloadlink */
-        String url = Encoding.urlEncode(link.getDownloadURL());
-        String postData = "step=1" + "&content=" + url;
-        showMessage(link, "Phase 2/3: Generating Link");
-        br.postPage(MAINPAGE + "mojekonto/sciagaj", postData);
-        if (br.containsHTML("Wymagane dodatkowe [0-9.]+ MB limitu")) {
-            logger.severe("Tb7.pl(Error): " + br.getRegex("(Wymagane dodatkowe [0-9.]+ MB limitu)"));
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download limit exceeded!", 1 * 60 * 1000l);
-        }
-        postData = "step=2" + "&0=on";
-        br.postPage(MAINPAGE + "mojekonto/sciagaj", postData);
+        // each time new download link is generated
+        // (so even after user interrupted download) - transfer
+        // is reduced, so:
+        // first check if the property generatedLink was previously generated
+        // if so, then try to use it, generated link store in link properties
+        // for future usage (broken download etc)
+        String generatedLinkTb7 = (String) link.getProperty("generatedLinkTb7");
 
-        // New Regex, but not tested if it works for all files (not video)
-        // String generatedLink =
-        // br.getRegex("<div class=\"download\">(<a target=\"_blank\" href=\"mojekonto/ogladaj/[0-9A-Za-z]*?\">Oglądaj online</a> / )*?<a href=\"([^\"<>]+)\" target=\"_blank\">Pobierz</a>").getMatch(1);
-        // Old Regex
-        String generatedLink = br.getRegex("<div class=\"download\"><a href=\"([^\"<>]+)\" target=\"_blank\">Pobierz</a>").getMatch(0);
+        String generatedLink = (generatedLinkTb7 == null) ? null : generatedLinkTb7;
+
         if (generatedLink == null) {
-            // New Regex (works with video files)
-            generatedLink = br.getRegex("<div class=\"download\">(<a target=\"_blank\" href=\"mojekonto/ogladaj/[0-9A-Za-z]*?\">Oglądaj online</a> / )<a href=\"([^\"<>]+)\" target=\"_blank\">Pobierz</a>").getMatch(1);
-        }
-        if (generatedLink == null) {
-            logger.severe("Tb7.pl(Error): " + generatedLink);
-            //
-            // after x retries we disable this host and retry with normal plugin
-            // but because transfer is decreased even if there's a problem
-            // with download (seems like bug) - we limit retries to 2
-            //
-            if (link.getLinkStatus().getRetryCount() >= 2) {
-                try {
-                    // disable hoster for 30min
-                    tempUnavailableHoster(acc, link, 30 * 60 * 1000l);
-                } catch (Exception e) {
-                }
-                /* reset retrycounter */
-                link.getLinkStatus().setRetryCount(0);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+
+            /* generate new downloadlink */
+            String url = Encoding.urlEncode(link.getDownloadURL());
+            String postData = "step=1" + "&content=" + url;
+            showMessage(link, "Phase 2/3: Generating Link");
+            br.postPage(MAINPAGE + "mojekonto/sciagaj", postData);
+            if (br.containsHTML("Wymagane dodatkowe [0-9.]+ MB limitu")) {
+                logger.severe("Tb7.pl(Error): " + br.getRegex("(Wymagane dodatkowe [0-9.]+ MB limitu)"));
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download limit exceeded!", 1 * 60 * 1000l);
             }
-            String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 2 + ")";
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 20 * 1000l);
+            postData = "step=2" + "&0=on";
+            br.postPage(MAINPAGE + "mojekonto/sciagaj", postData);
+
+            // New Regex, but not tested if it works for all files (not video)
+            // String generatedLink =
+            // br.getRegex("<div class=\"download\">(<a target=\"_blank\" href=\"mojekonto/ogladaj/[0-9A-Za-z]*?\">Oglądaj online</a> / )*?<a href=\"([^\"<>]+)\" target=\"_blank\">Pobierz</a>").getMatch(1);
+            // Old Regex
+            generatedLink = br.getRegex("<div class=\"download\"><a href=\"([^\"<>]+)\" target=\"_blank\">Pobierz</a>").getMatch(0);
+            if (generatedLink == null) {
+                // New Regex (works with video files)
+                generatedLink = br.getRegex("<div class=\"download\">(<a target=\"_blank\" href=\"mojekonto/ogladaj/[0-9A-Za-z]*?\">Oglądaj online</a> / )<a href=\"([^\"<>]+)\" target=\"_blank\">Pobierz</a>").getMatch(1);
+            }
+            if (generatedLink == null) {
+                logger.severe("Tb7.pl(Error): " + generatedLink);
+                //
+                // after x retries we disable this host and retry with normal plugin
+                // but because traffic limit is decreased even if there's a problem
+                // with download (seems like bug) - we limit retries to 2
+                //
+                if (link.getLinkStatus().getRetryCount() >= 2) {
+                    try {
+                        // disable hoster for 30min
+                        tempUnavailableHoster(acc, link, 30 * 60 * 1000l);
+                    } catch (Exception e) {
+                    }
+                    /* reset retrycounter */
+                    link.getLinkStatus().setRetryCount(0);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                }
+                String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 2 + ")";
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 20 * 1000l);
+            }
+            link.setProperty("generatedLinkTb7", generatedLink);
         }
+
         // wait, workaround
         sleep(1 * 1000l, link);
         int chunks = 0;
 
         // generated fileshark link allows only 1 chunk
+        // because download doesn't support more chunks and
+        // and resume (header response has no: "Content-Range" info)
         if (link.getBrowserUrl().contains("fileshark.pl") || link.getDownloadURL().contains("fileshark.pl")) {
             chunks = 1;
+            resume = false;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, generatedLink, true, chunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, generatedLink, resume, chunks);
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) // unknown
-            // error
+        // error
         {
             br.followConnection();
+            if (br.containsHTML("<div id=\"message\">Ważność linka wygasła.</div>")) {
+                // previously generated link expired,
+                // clear the property and restart the download
+                // and generate new link
+                sleep(10 * 1000l, link, "Previously generated Link expired!");
+                logger.info("Tb7.pl: previously generated link expired - removing it and restarting download process.");
+                link.setProperty("generatedLinkTb7", null);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+
             if (br.getBaseURL().contains("notransfer")) {
                 /* No traffic left */
                 acc.getAccountInfo().setTrafficLeft(0);
@@ -230,6 +260,11 @@ public class Tb7Pl extends PluginForHost {
             if (br.getBaseURL().contains("notfound")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            if (br.containsHTML("Wymagane dodatkowe [0-9.]+ MB limitu")) {
+                logger.severe("Tb7.pl(Error): " + br.getRegex("(Wymagane dodatkowe [0-9.]+ MB limitu)"));
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download limit exceeded!", 1 * 60 * 1000l);
+            }
+
         }
 
         if (dl.getConnection().getResponseCode() == 404) {
