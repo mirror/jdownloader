@@ -868,6 +868,12 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setSpecialDealsEnabled(boolean b);
 
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isSponsorUploadedEnabled();
+
+    void setSponsorUploadedEnabled(boolean b);
+
     //
     @AboutConfig
     @DefaultBooleanValue(true)

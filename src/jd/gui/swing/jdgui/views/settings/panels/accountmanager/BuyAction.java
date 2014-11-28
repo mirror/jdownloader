@@ -4,7 +4,6 @@ import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -31,6 +30,8 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.gui.sponsor.Sponsor;
+import org.jdownloader.gui.sponsor.SponsorUtils;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.host.HostPluginController;
@@ -61,8 +62,10 @@ public class BuyAction extends AbstractAction {
     }
 
     public static String getPreselectedHoster() {
-        if ("Europe/Berlin".equalsIgnoreCase(Calendar.getInstance().getTimeZone().getID())) {
-            return "oboom.com";
+        Sponsor sp = SponsorUtils.getSponsor();
+        String host = sp.getPreSelectedInAddAccountDialog();
+        if (host != null) {
+            return host;
         } else {
             return "rapidgator.net";
         }

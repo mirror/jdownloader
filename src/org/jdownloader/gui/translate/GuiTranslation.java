@@ -5515,4 +5515,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Add duplicate links to the Downloadlist anyway" })
     String ConfirmLinksContextAction_getListCellRendererComponent_INCLUDE_DUPES();
 
+    @Default(lngs = { "en" }, values = { "Hide Special offers?" })
+    String Sponsor_run_hide_title();
+
+    @Default(lngs = { "en" }, values = { "Are you sure that you want to hide this offer?" })
+    String Sponsor_run_hide_msg();
+
 }
