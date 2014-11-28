@@ -31,21 +31,27 @@ public class TextArea extends JScrollPane implements SettingsComponent {
         this.txt.getDocument().addDocumentListener(new DocumentListener() {
 
             public void removeUpdate(DocumentEvent e) {
-                if (!setting) eventSender.fireEvent(new StateUpdateEvent<TextArea>(TextArea.this));
+                if (!setting) {
+                    eventSender.fireEvent(new StateUpdateEvent<TextArea>(TextArea.this));
+                }
             }
 
             public void insertUpdate(DocumentEvent e) {
-                if (!setting) eventSender.fireEvent(new StateUpdateEvent<TextArea>(TextArea.this));
+                if (!setting) {
+                    eventSender.fireEvent(new StateUpdateEvent<TextArea>(TextArea.this));
+                }
             }
 
             public void changedUpdate(DocumentEvent e) {
-                if (!setting) eventSender.fireEvent(new StateUpdateEvent<TextArea>(TextArea.this));
+                if (!setting) {
+                    eventSender.fireEvent(new StateUpdateEvent<TextArea>(TextArea.this));
+                }
             }
         });
     }
 
     public String getConstraints() {
-        return "wmin 10,height 60:n:n";
+        return "wmin 10,height 60:600:n";
     }
 
     public String getText() {
