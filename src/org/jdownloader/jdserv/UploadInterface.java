@@ -25,6 +25,9 @@ public interface UploadInterface extends RemoteAPIInterface, RemoteAPISignatureH
     public LogCollection getLogByID(String id);
 
     @ApiSignatureRequired
+    public void logunsorted(String id, RemoteAPIResponse response) throws InternalApiException;
+
+    @ApiSignatureRequired
     public void log(String id, RemoteAPIResponse response) throws InternalApiException;
 
     @ApiSignatureRequired
