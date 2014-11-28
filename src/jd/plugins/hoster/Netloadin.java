@@ -179,7 +179,7 @@ public class Netloadin extends PluginForHost {
                     c++;
                 }
                 br.postPage("http://api.netload.in/info.php", sb.toString());
-                String infos[][] = br.getRegex(Pattern.compile("([^;]*);([^;]*);(\\d+);([^;]*);([0-9a-f]{32})[\r\n]*")).getMatches();
+                String infos[][] = br.getRegex("([^;]*);([^;]*);(\\d+|unknown);([^;]*);([0-9a-f]{32}|unknown)[\r\n]*").getMatches();
                 for (DownloadLink dl : links) {
                     String id = Netloadin.getID(dl.getDownloadURL());
                     int hit = -1;
