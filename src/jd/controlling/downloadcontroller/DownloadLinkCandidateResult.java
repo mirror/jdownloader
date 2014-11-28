@@ -113,17 +113,6 @@ public class DownloadLinkCandidateResult {
     }
 
     public DownloadLinkCandidateResult(RESULT result, Throwable throwable, String lastPluginHost) {
-        // if (result == RESULT.PLUGIN_DEFECT) {
-        // try {
-        // LogSource logger = LogController.getInstance().getPreviousThreadLogSource();
-        // if (logger == null) {
-        // logger = LogController.getInstance().getLogger(DownloadLinkCandidateResult.class.getName());
-        // }
-        // logger.log(new Exception("Created Plugin_defect linkresult"));
-        // } catch (Throwable e) {
-        // e.printStackTrace();
-        // }
-        // }
         this.result = result;
         this.lastPluginHost = lastPluginHost;
         this.skipReason = null;
@@ -133,7 +122,6 @@ public class DownloadLinkCandidateResult {
     }
 
     private void updateErrorID(Throwable throwable) {
-
         errorID = null;
         this.throwable = throwable;
         if (throwable != null) {
@@ -229,7 +217,7 @@ public class DownloadLinkCandidateResult {
 
     @Override
     public String toString() {
-        return "TODO";
+        return "RESULT:" + getResult() + "|SkipReason:" + getSkipReason() + "|Message:" + getMessage() + "|Wait:" + getWaitTime();
     }
 
     /**

@@ -2325,7 +2325,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             };
                         };
                     }
-                    DownloadLinkCandidate candidate = singleDownloadController.getDownloadLinkCandidate();
+                    final DownloadLinkCandidate candidate = singleDownloadController.getDownloadLinkCandidate();
                     final DownloadLink link = candidate.getLink();
                     if (candidate.getProxySelector() != null) {
                         candidate.getProxySelector().remove(singleDownloadController);
@@ -2336,8 +2336,12 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             result = handleReturnState(logger, singleDownloadController, returnState);
                             result.setStartTime(singleDownloadController.getStartTimestamp());
                             result.setFinishTime(returnState.getTimeStamp());
+                            final DownloadLinkCandidateHistory existingHistory = currentSession.getHistory(link);
+                            if (existingHistory != null) {
+                                List<DownloadLinkCandidateResult> results = existingHistory.getResults(candidate);
+                                int xy = 1;
+                            }
                             setFinalLinkStatus(candidate, result, singleDownloadController);
-                            DownloadLinkCandidateHistory existingHistory = currentSession.getHistory(link);
                             if (existingHistory != null && !existingHistory.dettach(candidate, result)) {
                                 DownloadWatchDog.this.logger.severe("Could not detach from History: " + candidate);
                             }
