@@ -1,4 +1,4 @@
-package jd.gui.swing.jdgui;
+package org.jdownloader.gui.sponsor;
 
 import java.awt.Color;
 import java.awt.Cursor;
@@ -20,7 +20,8 @@ import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
-import jd.gui.swing.jdgui.oboom.OboomDialog;
+import jd.gui.swing.jdgui.MainTabbedPane;
+import jd.gui.swing.jdgui.TopRightPainter;
 import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -51,7 +52,7 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.statistics.StatsManager;
 
-public class OboomController implements TopRightPainter, AccountControllerListener {
+public class OboomController implements AccountControllerListener, Sponsor {
 
     private final AtomicBoolean          enabledByAPI            = new AtomicBoolean(false);
     private final AtomicBoolean          enabledInAdvancedConfig = new AtomicBoolean(false);
@@ -531,5 +532,10 @@ public class OboomController implements TopRightPainter, AccountControllerListen
         if (d.isDontShowAgainSelected()) {
             StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/DONT_SHOW_AGAIN");
         }
+    }
+
+    @Override
+    public String getPreSelectedInAddAccountDialog() {
+        return null;
     }
 }

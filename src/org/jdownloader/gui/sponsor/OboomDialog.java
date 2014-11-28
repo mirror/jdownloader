@@ -1,4 +1,4 @@
-package jd.gui.swing.jdgui.oboom;
+package org.jdownloader.gui.sponsor;
 
 import java.awt.Component;
 import java.awt.Cursor;
@@ -32,7 +32,6 @@ import javax.swing.JPanel;
 import jd.controlling.AccountController;
 import jd.gui.swing.dialog.AddAccountDialog;
 import jd.gui.swing.jdgui.MainTabbedPane;
-import jd.gui.swing.jdgui.OboomController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;

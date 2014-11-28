@@ -120,6 +120,8 @@ import org.jdownloader.gui.KeyObserver;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.jdtrayicon.TrayExtension;
 import org.jdownloader.gui.notify.BubbleNotify;
+import org.jdownloader.gui.sponsor.Sponsor;
+import org.jdownloader.gui.sponsor.SponsorUtils;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuManagerDownloadTableContext;
@@ -1243,6 +1245,10 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         return false;
     }
 
+    public static void main(String[] args) {
+
+    }
+
     private void layoutComponents() {
         final JPanel contentPane = new JPanel(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]0[shrink]"));
         contentPane.add(this.mainTabbedPane);
@@ -1301,7 +1307,13 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                     @Override
                     protected void runInEDT() {
 
-                        MainTabbedPane.getInstance().setTopRightPainter(OboomController.getInstance().start());
+                        Sponsor sp = SponsorUtils.getSponsor();
+
+                        if (sp != null) {
+                            MainTabbedPane.getInstance().setTopRightPainter(sp);
+
+                        }
+
                     }
 
                 };

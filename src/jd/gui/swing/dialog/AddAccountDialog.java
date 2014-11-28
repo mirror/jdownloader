@@ -22,7 +22,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Locale;
@@ -56,6 +55,8 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.gui.sponsor.Sponsor;
+import org.jdownloader.gui.sponsor.SponsorUtils;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.accounts.AccountFactory;
@@ -361,8 +362,10 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
     }
 
     public static String getPreselectedHoster() {
-        if ("Europe/Berlin".equalsIgnoreCase(Calendar.getInstance().getTimeZone().getID())) {
-            return "oboom.com";
+        Sponsor sp = SponsorUtils.getSponsor();
+        String host = sp.getPreSelectedInAddAccountDialog();
+        if (host != null) {
+            return host;
         } else {
             return "rapidgator.net";
         }
