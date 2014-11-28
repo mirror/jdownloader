@@ -298,7 +298,7 @@ public class SmoozedCom extends PluginForHost {
                 if (con.isContentDisposition()) {
                     con.disconnect();
                     br.setFollowRedirects(true);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, con.getRequest().getUrl(), maxChunks > 0, Math.max(1, maxChunks));
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, con.getRequest().getUrl(), maxChunks > 0, Math.max(1, -maxChunks));
                     if (!dl.getConnection().isContentDisposition()) {
                         br.followConnection();
                         errorHandling(br.getRequest(), account, session_Key, "/api/download");
