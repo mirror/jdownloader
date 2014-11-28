@@ -48,9 +48,9 @@ public class PremiumaxNet extends PluginForHost {
     private static final String                            MAINPAGE           = "http://premiumax.net";
     private static final String                            NICE_HOST          = "premiumax.net";
     private static final String                            NICE_HOSTproperty  = "premiumaxnet";
-    private static final String[][]                        HOSTS              = { { "fileboom", "fileboom.me" }, { "oboom", "oboom.com" }, { "share-online", "share-online.biz" }, { "fileparadox", "fileparadox.in" }, { "4shared", "4shared.com" }, { "asfile", "asfile.com" }, { "bitshare", "bitshare.com" }, { "datafile", "datafile.com," }, { "ddlstorage", "ddlstorage.com" }, { "depfile", "depfile.com" }, { "depositfiles", "depositfiles.com" }, { "easybytez", "easybytez.com" }, { "extmatrix", "extmatrix.com" }, { "fayloobmennik", "fayloobmennik.net" }, { "filecloud", "filecloud.io" }, { "filefactory", "filefactory.com" }, { "filemonkey", "filemonkey.in" }, { "fileom", "fileom.com" }, { "filepost", "filepost.com" }, { "filesflash", "filesflash.com" }, { "filesmonster", "filesmonster.com" }, { "firedrive", "firedrive.com" }, { "freakshare", "freakshare.com" },
-            { "hugefiles", "hugefiles.net" }, { "hulkfile", "hulkfile.eu" }, { "k2share", "keep2share.cc" }, { "kingfiles", "kingfiles.net" }, { "letitbit", "letitbit.net" }, { "luckyshare", "luckyshare.net" }, { "lumfile", "lumfile.com" }, { "mediafire", "mediafire.com" }, { "megairon", "megairon.net" }, { "megashares", "megashares.com" }, { "mightyupload", "mightyupload.com" }, { "netload", "netload.in" }, { "novafile", "novafile.com" }, { "putlocker", "putlocker.com" }, { "rapidgator", "rapidgator.net" }, { "rapidshare", "rapidshare.com" }, { "ryushare", "ryushare.com" }, { "sendspace", "sendspace.com" }, { "shareflare", "shareflare.net" }, { "terafile", "terafile.co" }, { "turbobit", "turbobit.net" }, { "ultramegabit", "ultramegabit.com" }, { "uploadable", "uploadable.ch" }, { "uploaded", "uploaded.net" }, { "uppit", "uppit.com" }, { "videomega", "videomega.tv" },
-            { "zippyshare", "zippyshare.com" }                               };
+    private static final String[][]                        HOSTS              = { { "sendspace", "sendspace.com" }, { "mightyupload", "mightyupload.com" }, { "uploadto.us", "uploadto.us" }, { "xerver", "xerver.co" }, { "mega.co", "mega.co.nz" }, { "datafile", "datafile.com" }, { "1fichier", "1fichier.com" }, { "2shared", "2shared.com" }, { "privatefiles", "privatefiles.com" }, { "fileboom", "fileboom.me" }, { "oboom", "oboom.com" }, { "share-online", "share-online.biz" }, { "fileparadox", "fileparadox.in" }, { "4shared", "4shared.com" }, { "asfile", "asfile.com" }, { "bitshare", "bitshare.com" }, { "datafile", "datafile.com," }, { "ddlstorage", "ddlstorage.com" }, { "depfile", "depfile.com" }, { "depositfiles", "depositfiles.com" }, { "easybytez", "easybytez.com" }, { "extmatrix", "extmatrix.com" }, { "fayloobmennik", "fayloobmennik.net" }, { "filecloud", "filecloud.io" },
+        { "filefactory", "filefactory.com" }, { "filemonkey", "filemonkey.in" }, { "fileom", "fileom.com" }, { "filepost", "filepost.com" }, { "filesflash", "filesflash.com" }, { "filesmonster", "filesmonster.com" }, { "firedrive", "firedrive.com" }, { "freakshare", "freakshare.com" }, { "hugefiles", "hugefiles.net" }, { "hulkfile", "hulkfile.eu" }, { "uptobox", "uptobox.com" }, { "k2share", "keep2share.cc" }, { "kingfiles", "kingfiles.net" }, { "letitbit", "letitbit.net" }, { "luckyshare", "luckyshare.net" }, { "lumfile", "lumfile.com" }, { "mediafire", "mediafire.com" }, { "megairon", "megairon.net" }, { "megashares", "megashares.com" }, { "mightyupload", "mightyupload.com" }, { "netload", "netload.in" }, { "novafile", "novafile.com" }, { "putlocker", "putlocker.com" }, { "rapidgator", "rapidgator.net" }, { "rapidshare", "rapidshare.com" }, { "ryushare", "ryushare.com" },
+        { "sendspace", "sendspace.com" }, { "shareflare", "shareflare.net" }, { "terafile", "terafile.co" }, { "turbobit", "turbobit.net" }, { "ultramegabit", "ultramegabit.com" }, { "uploadable", "uploadable.ch" }, { "uploaded", "uploaded.net" }, { "uppit", "uppit.com" }, { "videomega", "videomega.tv" }, { "zippyshare", "zippyshare.com" } };
 
     public PremiumaxNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -222,17 +222,22 @@ public class PremiumaxNet extends PluginForHost {
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                con = br2.openGetConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
-                con.disconnect();
             } catch (final Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
         return dllink;

@@ -124,7 +124,10 @@ public class ImgUrCom extends PluginForHost {
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                final String api_like_json = br.getRegex("image[\t\n\r ]+:[\t\n\r ]+\\{(.*?)\\}").getMatch(0);
+                String api_like_json = br.getRegex("image[\t\n\r ]+:[\t\n\r ]+\\{(.*?)\\}").getMatch(0);
+                if (api_like_json == null) {
+                    api_like_json = br.getRegex("bind\\(analytics\\.popAndLoad, analytics, \\{(.*?)\\}").getMatch(0);
+                }
                 /* This would usually mean out of date but we keep it simple in this case */
                 if (api_like_json == null) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -186,7 +189,7 @@ public class ImgUrCom extends PluginForHost {
             filetype = "jpeg";
         }
         String finalfilename;
-        if (title != null) {
+        if (title != null && !title.equals("")) {
             title = Encoding.htmlDecode(title);
             title = HTMLEntities.unhtmlentities(title);
             title = HTMLEntities.unhtmlAmpersand(title);
