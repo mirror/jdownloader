@@ -214,6 +214,7 @@ public class ImgurCom extends PluginForDecrypt {
             }
             dl.setProperty("directlink", directlink);
             dl.setProperty("decryptedfilesize", filesize);
+            dl.setDownloadSize(filesize);
             /* No need to hide directlinks */
             try {/* JD2 only */
                 dl.setContentUrl("http://imgur.com/download/" + imgUID);
@@ -227,6 +228,9 @@ public class ImgurCom extends PluginForDecrypt {
     private void site_decrypt() throws DecrypterException {
         /* Removed differentiation between two linktypes AFTER revision 26468 */
         String jsonarray = br.getRegex("\"images\":\\[(\\{.*?\\})\\]").getMatch(0);
+        if (jsonarray == null) {
+            jsonarray = br.getRegex("\"items\":\\[(.*?)\\]").getMatch(0);
+        }
         /* Maybe it's just a single image in a gallery */
         if (jsonarray == null) {
             jsonarray = br.getRegex("image[\t\n\r ]+:[\t\n\r ]+(\\{.*?\\})").getMatch(0);

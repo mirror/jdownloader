@@ -54,6 +54,10 @@ public class VKontakteRu extends PluginForDecrypt {
         super(wrapper);
     }
 
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
+    }
+
     private static final String     EXCEPTION_ACCPROBLEM                 = "EXCEPTION_ACCPROBLEM";
     private static final String     EXCEPTION_LINKOFFLINE                = "EXCEPTION_LINKOFFLINE";
     private static final String     EXCEPTION_API_UNKNOWN                = "EXCEPTION_LINKOFFLINE";

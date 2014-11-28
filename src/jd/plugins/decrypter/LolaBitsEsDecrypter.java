@@ -107,6 +107,13 @@ public class LolaBitsEsDecrypter extends PluginForDecrypt {
             dl.setProperty("mainlink", parameter);
             dl.setProperty("LINKDUPEID", fid + filename);
 
+            try {
+                dl.setContentUrl(parameter);
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+                dl.setBrowserUrl(parameter);
+            }
+
             dl.setName(filename);
             dl.setDownloadSize(SizeFormatter.getSize(filesize));
             dl.setAvailable(true);
@@ -120,17 +127,19 @@ public class LolaBitsEsDecrypter extends PluginForDecrypt {
                 return null;
             }
             for (final String lnkinfo : linkinfo) {
+                String contenturl = new Regex(lnkinfo, "\"(/[^<>\"]*?)\"").getMatch(0);
                 final String fid = new Regex(lnkinfo, "rel=\"(\\d+)\"").getMatch(0);
                 final Regex finfo = new Regex(lnkinfo, "<span class=\"bold\">([^<>\"]*?)</span>([^<>\"]*?)</a>");
                 String filename = finfo.getMatch(0);
                 final String ext = finfo.getMatch(1);
                 String filesize = new Regex(lnkinfo, "<li><span>([^<>\"]*?)</span></li>").getMatch(0);
-                if (fid == null || filename == null || ext == null || filesize == null) {
+                if (fid == null || filename == null || ext == null || filesize == null || contenturl == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
                 filesize = Encoding.htmlDecode(filesize).trim();
                 filename = Encoding.htmlDecode(filename).trim() + Encoding.htmlDecode(ext).trim();
+                contenturl = "http://lolabits.es" + contenturl;
 
                 final DownloadLink dl = createDownloadlink("http://lolabitsdecrypted.es/" + System.currentTimeMillis() + new Random().nextInt(1000000));
 
@@ -139,6 +148,13 @@ public class LolaBitsEsDecrypter extends PluginForDecrypt {
                 dl.setProperty("plain_fid", fid);
                 dl.setProperty("mainlink", parameter);
                 dl.setProperty("LINKDUPEID", fid + filename);
+
+                try {
+                    dl.setContentUrl(contenturl);
+                } catch (final Throwable e) {
+                    /* Not available in old 0.9.581 Stable */
+                    dl.setBrowserUrl(contenturl);
+                }
 
                 dl.setName(filename);
                 dl.setDownloadSize(SizeFormatter.getSize(filesize));

@@ -1959,7 +1959,7 @@ public class SaveTv extends PluginForHost {
                 String[] revisions = revision.split(":");
                 revision = revisions[1].replace('$', ' ').trim();
             } catch (final Exception e) {
-                logger.info("save.tv revision number error: " + e);
+                logger.info(this.getHost() + " revision number error: " + e);
             }
 
             panelGenerator.addCategory("Account");

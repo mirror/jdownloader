@@ -156,7 +156,7 @@ public class SpaceForFilesCom extends PluginForHost {
 
     public void prepBrowser(final Browser br) {
         // define custom browser headers and language settings.
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
+        br.getHeaders().put("Accept-Language", "en-US;q=0.7,en;q=0.3");
         br.setCookie(COOKIE_HOST, "lang", "english");
         if (ENABLE_RANDOM_UA) {
             if (agent.get() == null) {
@@ -164,7 +164,7 @@ public class SpaceForFilesCom extends PluginForHost {
                 JDUtilities.getPluginForHost("mediafire.com");
                 agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
             }
-            br.getHeaders().put("User-Agent", agent.get());
+            br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:33.0) Gecko/20100101 Firefox/33.0");
         }
     }
 
@@ -340,7 +340,6 @@ public class SpaceForFilesCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-        dllink = null;
         // Fourth, continue like normal.
         if (dllink == null) {
             checkErrors(downloadLink, false);
@@ -361,7 +360,7 @@ public class SpaceForFilesCom extends PluginForHost {
                 download1.remove("lck");
                 download1.remove("method_premium");
                 download1.remove("method_free");
-                download1.put("method_free", "Free Download");
+                download1.put("method_free", "Free+Download");
                 download1.setAction(br.getURL());
                 sendForm(download1);
                 checkErrors(downloadLink, false);
