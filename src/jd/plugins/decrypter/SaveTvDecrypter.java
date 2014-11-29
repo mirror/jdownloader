@@ -54,7 +54,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     /* Settings stuff */
     private final SubConfiguration cfg                      = SubConfiguration.getConfig("save.tv");
     private final String           USEAPI                   = "USEAPI";
-    private final String           CRAWLER_ENABLE_FASTER    = "CRAWLER_ENABLE_FASTER";
+    private final String           CRAWLER_ENABLE_FASTER    = "CRAWLER_ENABLE_FASTER_2";
     private final boolean          FAST_LINKCHECK           = cfg.getBooleanProperty(CRAWLER_ENABLE_FASTER, false);
     private final String           CRAWLER_ACTIVATE         = "CRAWLER_ACTIVATE";
     private final String           CRAWLER_DISABLE_DIALOGS  = "CRAWLER_DISABLE_DIALOGS";
