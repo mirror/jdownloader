@@ -148,6 +148,30 @@ public class OffCloudCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
+    @Override
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+        this.br = newBrowser();
+        setConstants(account, link);
+        loginCheck();
+        String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
+        if (dllink == null) {
+            this.postAPISafe(DOMAIN + "instant/download", "proxyId=&url=" + JSonUtils.escape(link.getDownloadURL()));
+            final String requestId = getJson("requestId");
+            if (requestId == null) {
+                /* Should never happen */
+                handleErrorRetries(account, link, "requestIdnull", 5);
+            }
+            link.setProperty("offcloudrequestId", requestId);
+            dllink = getJson("url");
+            if (dllink == null) {
+                /* Should never happen */
+                handleErrorRetries(account, link, "dllinknull", 5);
+            }
+            dllink = dllink.replaceAll("\\\\/", "/");
+        }
+        handleDL(account, link, dllink);
+    }
+
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
         final String requestID = link.getStringProperty("offcloudrequestId", null);
         /* we want to follow redirects in final stage */
@@ -194,7 +218,7 @@ public class OffCloudCom extends PluginForHost {
                     try {
                         boolean success = false;
                         try {
-                            logger.info("Trying to clear download history");
+                            logger.info("Trying to delete downloaded link from history");
                             br.getPage("https://offcloud.com/instant/remove/" + requestID);
                             if (getJson("success").equals("true")) {
                                 success = true;
@@ -222,30 +246,6 @@ public class OffCloudCom extends PluginForHost {
         } catch (final Throwable e) {
             link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
         }
-    }
-
-    @Override
-    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        this.br = newBrowser();
-        setConstants(account, link);
-        loginCheck();
-        String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
-        if (dllink == null) {
-            this.postAPISafe(DOMAIN + "instant/download", "proxyId=&url=" + JSonUtils.escape(link.getDownloadURL()));
-            final String requestId = getJson("requestId");
-            if (requestId == null) {
-                /* Should never happen */
-                handleErrorRetries(account, link, "requestIdnull", 5);
-            }
-            link.setProperty("offcloudrequestId", requestId);
-            dllink = getJson("url");
-            if (dllink == null) {
-                /* Should never happen */
-                handleErrorRetries(account, link, "dllinknull", 5);
-            }
-            dllink = dllink.replaceAll("\\\\/", "/");
-        }
-        handleDL(account, link, dllink);
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -278,7 +278,7 @@ public class OffCloudCom extends PluginForHost {
         setConstants(account, null);
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
-        if (!account.getUser().matches(".+@.+")) {
+        if (!account.getUser().matches(".+@.+\\..+")) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
@@ -307,15 +307,26 @@ public class OffCloudCom extends PluginForHost {
             }
         }
         final String packagetype = getJson(userpackage, "type");
-        if (packagetype.equals("premium-link-increase")) {
+        String remaininglinksnum = null;
+        if (userpackage.equals("")) {
+            /* Workaround for a serverside bug that happens if the user generates more free downloadlinks than usually possible. */
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
-            final String remaininglinksnum = getJson(userpackage, "remainingLinksCount");
+            remaininglinksnum = "0";
+            account.setProperty("accinfo_linksleft", "0");
+            /* No links downloadable anymore --> No traffic left --> Free account limit reached */
+            ai.setTrafficLeft(0);
+            freeAccountLimitReached();
+        } else if (packagetype.equals("premium-link-increase")) {
+            account.setType(AccountType.FREE);
+            ai.setStatus("Registered (free) account");
+            remaininglinksnum = getJson(userpackage, "remainingLinksCount");
             account.setProperty("accinfo_linksleft", remaininglinksnum);
             if (remaininglinksnum.equals("0")) {
-                /* No links downloadable anymore --> No traffic left */
+                /* No links downloadable anymore --> No traffic left --> Free account limit reached */
                 ai.setTrafficLeft(0);
             }
+            freeAccountLimitReached();
         } else {
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium account");
@@ -425,6 +436,7 @@ public class OffCloudCom extends PluginForHost {
         handleAPIErrors(this.br);
     }
 
+    /** 0 = everything ok, 1-99 = "error"-errors, 100-199 = "not_available"-errors, 200-299 = Other (html) [download] errors */
     private void updatestatuscode() {
         String error = getJson("error");
         if (error == null) {
@@ -439,6 +451,8 @@ public class OffCloudCom extends PluginForHost {
                 statuscode = 3;
             } else if (error.equals("Purchase a premium downloading addon to continue with this operation.")) {
                 statuscode = 4;
+            } else if (error.equals("The credentials entered are wrong.")) {
+                statuscode = 5;
             } else if (error.equals("premium")) {
                 statuscode = 100;
             }
@@ -459,7 +473,7 @@ public class OffCloudCom extends PluginForHost {
                 /* Everything ok */
                 break;
             case 1:
-                /* Login or password invalid -> permanently disable account */
+                /* No email entered --> Should never happen as we validate user-input before -> permanently disable account */
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                     statusMessage = "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.";
                 } else {
@@ -477,16 +491,16 @@ public class OffCloudCom extends PluginForHost {
                 } else {
                     statusMessage = "\r\nFree account limits reached. Buy a premium account to continue downloading.";
                 }
+                this.currAcc.getAccountInfo().setTrafficLeft(0);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 4:
-                /*
-                 * Free account limits reached and an additional download-try failed or account cookie is invalid -> permanently disable
-                 * account
-                 */
+                freeAccountLimitReached();
+            case 5:
+                /* Username or password invalid -> permanently disable account */
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    statusMessage = "\r\nFree Account Limits erreicht. Kaufe dir einen premium Account um weiter herunterladen zu können.";
+                    statusMessage = "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.";
                 } else {
-                    statusMessage = "\r\nFree account limits reached. Buy a premium account to continue downloading.";
+                    statusMessage = "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.";
                 }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 100:
@@ -515,6 +529,19 @@ public class OffCloudCom extends PluginForHost {
             logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
             throw e;
         }
+    }
+
+    private void freeAccountLimitReached() throws PluginException {
+        /*
+         * Free account limits reached and an additional download-try failed or account cookie is invalid -> permanently disable account
+         */
+        String statusMessage;
+        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+            statusMessage = "\r\nFree Account Limits erreicht. Kaufe dir einen premium Account um weiter herunterladen zu können.";
+        } else {
+            statusMessage = "\r\nFree account limits reached. Buy a premium account to continue downloading.";
+        }
+        throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     /**
@@ -557,38 +584,38 @@ public class OffCloudCom extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Delete downloaded links from the offcloud download history after successful download?");
-            put("ACCOUNT_USERNAME", "Username:");
-            put("ACCOUNT_LINKSLEFT", "Instant download inputs left:");
-            put("ACCOUNT_TYPE", "Account type:");
-            put("ACCOUNT_SIMULTANDLS", "Max. simultaneous downloads:");
-            put("ACCOUNT_CHUNKS", "Max number of chunks per file:");
-            put("ACCOUNT_RESUME", "Resume of stopped downloads:");
-            put("ACCOUNT_YES", "Yes");
-            put("ACCOUNT_NO", "No");
-            put("DETAILS_TITEL", "Account information");
-            put("LANG_GENERAL_UNLIMITED", "Unlimited");
-            put("LANG_GENERAL_CLOSE", "Close");
-        }
-    };
+                                                  {
+                                                      put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Delete downloaded links from the offcloud download history after successful download?");
+                                                      put("ACCOUNT_USERNAME", "Username:");
+                                                      put("ACCOUNT_LINKSLEFT", "Instant download inputs left:");
+                                                      put("ACCOUNT_TYPE", "Account type:");
+                                                      put("ACCOUNT_SIMULTANDLS", "Max. simultaneous downloads:");
+                                                      put("ACCOUNT_CHUNKS", "Max number of chunks per file:");
+                                                      put("ACCOUNT_RESUME", "Resume of stopped downloads:");
+                                                      put("ACCOUNT_YES", "Yes");
+                                                      put("ACCOUNT_NO", "No");
+                                                      put("DETAILS_TITEL", "Account information");
+                                                      put("LANG_GENERAL_UNLIMITED", "Unlimited");
+                                                      put("LANG_GENERAL_CLOSE", "Close");
+                                                  }
+                                              };
 
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-        {
-            put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Lösche heruntergeladene links nach jedem erfolgreichen Download aus der offcloud Download-Historie?");
-            put("ACCOUNT_USERNAME", "Account Name:");
-            put("ACCOUNT_LINKSLEFT", "Verbleibende Anzahl von Instant-Download Links:");
-            put("ACCOUNT_TYPE", "Account Typ:");
-            put("ACCOUNT_SIMULTANDLS", "Max. Anzahl gleichzeitiger Downloads:");
-            put("ACCOUNT_CHUNKS", "Max. Anzahl Verbindungen pro Datei (Chunks):");
-            put("ACCOUNT_RESUME", "Abgebrochene Downloads fortsetzbar:");
-            put("ACCOUNT_YES", "Ja");
-            put("ACCOUNT_NO", "Nein");
-            put("DETAILS_TITEL", "Additional account information");
-            put("LANG_GENERAL_UNLIMITED", "Unlimitiert");
-            put("LANG_GENERAL_CLOSE", "Schließen");
-        }
-    };
+                                                  {
+                                                      put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Lösche heruntergeladene links nach jedem erfolgreichen Download aus der offcloud Download-Historie?");
+                                                      put("ACCOUNT_USERNAME", "Account Name:");
+                                                      put("ACCOUNT_LINKSLEFT", "Verbleibende Anzahl von Instant-Download Links:");
+                                                      put("ACCOUNT_TYPE", "Account Typ:");
+                                                      put("ACCOUNT_SIMULTANDLS", "Max. Anzahl gleichzeitiger Downloads:");
+                                                      put("ACCOUNT_CHUNKS", "Max. Anzahl Verbindungen pro Datei (Chunks):");
+                                                      put("ACCOUNT_RESUME", "Abgebrochene Downloads fortsetzbar:");
+                                                      put("ACCOUNT_YES", "Ja");
+                                                      put("ACCOUNT_NO", "Nein");
+                                                      put("DETAILS_TITEL", "Additional account information");
+                                                      put("LANG_GENERAL_UNLIMITED", "Unlimitiert");
+                                                      put("LANG_GENERAL_CLOSE", "Schließen");
+                                                  }
+                                              };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and

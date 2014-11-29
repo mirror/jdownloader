@@ -24,8 +24,10 @@ import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -163,9 +165,7 @@ public class Tb7Pl extends PluginForHost {
         // first check if the property generatedLink was previously generated
         // if so, then try to use it, generated link store in link properties
         // for future usage (broken download etc)
-        String generatedLinkTb7 = (String) link.getProperty("generatedLinkTb7");
-
-        String generatedLink = (generatedLinkTb7 == null) ? null : generatedLinkTb7;
+        String generatedLink = checkDirectLink(link, "generatedLinkTb7");
 
         if (generatedLink == null) {
 
@@ -226,7 +226,7 @@ public class Tb7Pl extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, generatedLink, resume, chunks);
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) // unknown
-        // error
+            // error
         {
             br.followConnection();
             if (br.containsHTML("<div id=\"message\">Ważność linka wygasła.</div>")) {
@@ -274,6 +274,30 @@ public class Tb7Pl extends PluginForHost {
         }
         showMessage(link, "Phase 3/3: Begin download");
         dl.startDownload();
+    }
+
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+            } catch (final Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
+        return dllink;
     }
 
     @Override

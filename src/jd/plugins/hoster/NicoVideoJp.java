@@ -209,6 +209,7 @@ public class NicoVideoJp extends PluginForHost {
     }
 
     private String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
+        final String videoid = new Regex(downloadLink.getDownloadURL(), "/watch/(.+)").getMatch(0);
         String videoName = downloadLink.getStringProperty("plainfilename", null);
         final SubConfiguration cfg = SubConfiguration.getConfig("nicovideo.jp");
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
@@ -248,6 +249,7 @@ public class NicoVideoJp extends PluginForHost {
                 formattedFilename = formattedFilename.replace("*date*", "");
             }
         }
+        formattedFilename = formattedFilename.replace("*videoid*", videoid);
         if (formattedFilename.contains("*channelname*")) {
             if (channelName != null) {
                 formattedFilename = formattedFilename.replace("*channelname*", channelName);
@@ -280,6 +282,7 @@ public class NicoVideoJp extends PluginForHost {
         sb.append("*channelname* = name of the channel/uploader\r\n");
         sb.append("*date* = date when the video was posted - appears in the user-defined format above\r\n");
         sb.append("*videoname* = name of the video without extension\r\n");
+        sb.append("*videoid* = ID of the video e.g. 'sm12345678'\r\n");
         sb.append("*ext* = the extension of the file, in this case usually '.flv'");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
     }

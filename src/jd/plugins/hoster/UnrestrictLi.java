@@ -24,7 +24,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -32,6 +35,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -41,21 +45,25 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "unrestrict.li" }, urls = { "http://\\w+\\.(unrestrict|unr)\\.li/dl/\\w+/.+" }, flags = { 2 })
 public class UnrestrictLi extends PluginForHost {
 
-    private static Object                                  LOCK                  = new Object();
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap    = new HashMap<Account, HashMap<String, Long>>();
-    private static final int                               MAXRETRY_503_ERROR    = 50;
-    private static final int                               MAXRETRY_OTHER_ERRORS = 5;
-    private static final String                            MAINPAGE              = "http://unrestrict.li";
-    private static final String                            NICE_HOST             = MAINPAGE.replaceAll("(https://|http://)", "");
-    private static final String                            NICE_HOSTproperty     = MAINPAGE.replaceAll("(https://|http://|\\.|\\-)", "");
+    private static Object                                  LOCK                   = new Object();
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap     = new HashMap<Account, HashMap<String, Long>>();
+
+    private static final int                               MAXRETRY_503_ERROR     = 50;
+    private static final int                               MAXRETRY_OTHER_ERRORS  = 5;
+    private static final String                            MAINPAGE               = "http://unrestrict.li";
+    private static final String                            NICE_HOST              = MAINPAGE.replaceAll("(https://|http://)", "");
+    private static final String                            NICE_HOSTproperty      = MAINPAGE.replaceAll("(https://|http://|\\.|\\-)", "");
+    private static final String                            CLEAR_DOWNLOAD_HISTORY = "CLEAR_DOWNLOAD_HISTORY";
 
     public UnrestrictLi(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://unrestrict.li");
+        this.setConfigElements();
     }
 
     @Override
@@ -147,78 +155,174 @@ public class UnrestrictLi extends PluginForHost {
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
         setBrowser();
         login(acc, false);
-        showMessage(link, "Task 1: Generating Link");
-        br.setCookie("http://unrestrict.li", "lang", "EN");
-        br.setCookie("http://unrestrict.li", "ssl", "0");
-        br.postPage("http://unrestrict.li/unrestrict.php", "jdownloader=1&domain=long&link=" + Encoding.urlEncode(link.getDownloadURL()) + (link.getStringProperty("pass", null) != null ? "&download_password=" + Encoding.urlEncode(link.getStringProperty("pass", null)) : ""));
-        String generated = br.getRegex("\\{\"(.*?)\":\\{\"").getMatch(0);
-        // Get and set chunks to use
-        String cons = br.getRegex("\"cons\":(.*?)\\}").getMatch(0);
-        if (cons != null) {
-            try {
-                link.setProperty("cons", Integer.parseInt(cons));
-            } catch (NumberFormatException e) {
-            }
-        }
-        /* START Possible Error Messages */
-        if (br.containsHTML("invalid\":\"File offline")) {
-            logger.info("File offline");
-            MessageDialog("Error", "File offline", false);
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("invalid\":\"Host is not supported or unknown link format")) {
-            logger.info("Unknown link format");
-            MessageDialog("Error", "Unknown link format", false);
-            tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-        } else if (br.containsHTML("invalid\":\"You are not allowed to download from this host")) {
-            logger.info("You are not allowed to download from this host");
-            MessageDialog("Error", "You are not allowed to download from this host", false);
-            tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-        } else if (br.containsHTML("invalid\":\"Host is down")) {
-            logger.info("Host is down");
-            MessageDialog("Error", "Host is down", false);
-            tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-        } else if (br.containsHTML("invalid\":\"You have reached your total daily limit\\. \\(Fair Use\\)")) {
-            logger.info("You have reached your total daily limit. (Fair Use)");
-            MessageDialog("Error", "You have reached your total daily limit. (Fair Use)", false);
-            tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-        } else if (br.containsHTML("invalid\":\"You have reached your daily limit for this host")) {
-            logger.info("You have reached your daily limit for this host");
-            MessageDialog("Error", "You have reached your daily limit for this host", false);
-            tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-        } else if (br.containsHTML("invalid\":\"This link has been reported and blocked")) {
-            logger.info("This link has been reported and blocked");
-            MessageDialog("Error", "This link has been reported and blocked", false);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-        } else if (br.containsHTML("invalid\":\"Error receiving page") || br.containsHTML("\"errormessage\":\"Error receiving page")) {
-            logger.info("Error receiving page");
-            if (link.getLinkStatus().getRetryCount() <= 3) {
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
-            }
-            tempUnavailableHoster(acc, link, 10 * 60 * 1000l);
-        } else if (br.containsHTML("Expired session\\. Please sign in")) {
-            if (link.getLinkStatus().getRetryCount() >= 3) {
-                link.getLinkStatus().setRetryCount(0);
-                MessageDialog("Error", "Error signing in", false);
-                handlePluginBroken(acc, link, "expiredsessionsignin", MAXRETRY_OTHER_ERRORS);
-            }
-            logger.info("Invalid/Expired session.");
-            fetchAccountInfo(acc);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-        }
+        String generated = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (generated == null) {
-            handlePluginBroken(acc, link, "generated_null", MAXRETRY_OTHER_ERRORS);
+            showMessage(link, "Task 1: Generating Link");
+            br.setCookie("http://unrestrict.li", "lang", "EN");
+            br.setCookie("http://unrestrict.li", "ssl", "0");
+            br.postPage("http://unrestrict.li/unrestrict.php", "jdownloader=1&domain=long&link=" + Encoding.urlEncode(link.getDownloadURL()) + (link.getStringProperty("pass", null) != null ? "&download_password=" + Encoding.urlEncode(link.getStringProperty("pass", null)) : ""));
+            /* START Possible Error Messages */
+            handlePreDownloadErrors(acc, link);
+            generated = br.getRegex("\\{\"(.*?)\":\\{\"").getMatch(0);
+            // Get and set chunks to use
+            String cons = br.getRegex("\"cons\":(.*?)\\}").getMatch(0);
+            if (cons != null) {
+                try {
+                    link.setProperty("cons", Integer.parseInt(cons));
+                } catch (NumberFormatException e) {
+                }
+            }
+            if (generated == null) {
+                handlePluginBroken(acc, link, "generated_null", MAXRETRY_OTHER_ERRORS);
+            }
+            generated = generated.replaceAll("\\\\/", "/");
+            if (acc.getType() == AccountType.FREE) {
+                final String dlid = new Regex(generated, "dl/([A-Za-z0-9]+)/?").getMatch(0);
+                if (dlid == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                showMessage(link, "Task 1.2: Handle free download captcha!");
+                boolean captchafailed = true;
+                for (int i = 1; i <= 3; i++) {
+                    br.getPage(generated);
+                    final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                    final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+                    File cf = null;
+                    try {
+                        cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                    } catch (final Exception e) {
+                        if (jd.plugins.decrypter.LnkCrptWs.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                            throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                        }
+                        throw e;
+                    }
+                    final String code = getCaptchaCode(cf, link);
+                    final String chid = sm.getChallenge(code);
+                    br.postPage("https://unrestrict.li/download.php", "link=" + dlid + "&challenge=" + Encoding.urlEncode(chid) + "&response=" + Encoding.urlEncode(code));
+                    if (br.containsHTML("Incorrect captcha entered")) {
+                        logger.info("Wrong captcha");
+                        continue;
+                    }
+                    captchafailed = false;
+                    break;
+                }
+                if (captchafailed) {
+                    logger.info("unrestrict.li free download failed because of too many wrong captcha attempts");
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                handlePreDownloadErrors(acc, link);
+                generated = br.getRegex("\"link\":\"(https?:[^<>\"]*?)\"").getMatch(0);
+                if (generated == null) {
+                    handlePluginBroken(acc, link, "generated_FREE_null", MAXRETRY_OTHER_ERRORS);
+                }
+                generated = generated.replaceAll("\\\\/", "/");
+            }
         }
-        /* END Possible Error Messages */
         showMessage(link, "Task 2: Download begins!");
-        generated = generated.replaceAll("\\\\/", "/");
+        handleDL(acc, link, generated);
+
+    }
+
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+            } catch (final Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
+        return dllink;
+    }
+
+    private void handleDL(final Account acc, final DownloadLink link, String generated) throws Exception {
         try {
-            handleDL(acc, link, generated);
-            return;
+            link.setProperty(NICE_HOSTproperty + "directlink", generated);
+            if (generated.startsWith("https://")) {
+                generated = generated.replace("https://", "http://");
+            }
+            // Get and set chunks, default = 1
+            int maxchunks = 1;
+            try {
+                maxchunks = link.hasProperty("cons") ? -((Integer) link.getProperty("cons")) : 1;
+            } catch (final Throwable e) {
+            }
+            if (link.getBooleanProperty(UnrestrictLi.NOCHUNKS, false)) {
+                maxchunks = 1;
+            }
+            // Set JDownloader User-Agent
+            br.getHeaders().put("User-Agent", "JDownloader");
+            // Chunks is negative to set max number of chunks
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, generated, true, maxchunks);
+            if (dl.getConnection().isContentDisposition()) {
+                try {
+                    if (!this.dl.startDownload()) {
+                        try {
+                            if (dl.externalDownloadStop()) {
+                                return;
+                            }
+                        } catch (final Throwable e) {
+                        }
+                        /* unknown error, we disable multiple chunks */
+                        if (link.getBooleanProperty(UnrestrictLi.NOCHUNKS, false) == false) {
+                            link.setProperty(UnrestrictLi.NOCHUNKS, Boolean.valueOf(true));
+                            throw new PluginException(LinkStatus.ERROR_RETRY);
+                        }
+                    } else if (this.getPluginConfig().getBooleanProperty(CLEAR_DOWNLOAD_HISTORY, default_clear_download_history)) {
+                        try {
+                            boolean success = false;
+                            try {
+                                logger.info("Trying to clear download history");
+                                br.getPage("https://unrestrict.li/history/&delete=all");
+                                if (br.containsHTML(">No data")) {
+                                    success = true;
+                                }
+                            } catch (final Throwable e) {
+                                success = false;
+                            }
+                            if (success) {
+                                logger.info("Succeeded to clear download history");
+                            } else {
+                                logger.warning("Failed to clear download history");
+                            }
+                        } catch (final Throwable ex) {
+                        }
+                    }
+                } catch (final PluginException e) {
+                    // New V2 chunk errorhandling
+                    /* unknown error, we disable multiple chunks */
+                    if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(UnrestrictLi.NOCHUNKS, false) == false) {
+                        link.setProperty(UnrestrictLi.NOCHUNKS, Boolean.valueOf(true));
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
+
+                    throw e;
+                }
+                return;
+            } else {
+                if (dl.getConnection().getResponseCode() == 503) {
+                    logger.info("unrestrict.li: 503 server error");
+                    if (acc == null) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "503 server error", 10 * 60 * 1000l);
+                    }
+                    handlePluginBroken(acc, link, "unknown_dl_error", MAXRETRY_503_ERROR);
+                }
+                br.followConnection();
+            }
+            logger.info("unrestrict.li: Unknown error");
+            handlePluginBroken(acc, link, "unknown_dl_error", MAXRETRY_OTHER_ERRORS);
         } catch (PluginException e1) {
             try {
                 dl.getConnection().disconnect();
@@ -264,64 +368,6 @@ public class UnrestrictLi extends PluginForHost {
             throw e1;
             // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
-    }
-
-    private void handleDL(final Account acc, final DownloadLink link, String generated) throws Exception {
-        if (generated.startsWith("https")) {
-            generated = generated.replace("https://", "http://");
-        }
-        // Get and set chunks, default = 1
-        int maxchunks = 1;
-        try {
-            maxchunks = link.hasProperty("cons") ? -((Integer) link.getProperty("cons")) : 1;
-        } catch (final Throwable e) {
-        }
-        if (link.getBooleanProperty(UnrestrictLi.NOCHUNKS, false)) {
-            maxchunks = 1;
-        }
-        // Set JDownloader User-Agent
-        br.getHeaders().put("User-Agent", "JDownloader");
-        // Chunks is negative to set max number of chunks
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, generated, true, maxchunks);
-        if (dl.getConnection().isContentDisposition()) {
-            try {
-                if (!this.dl.startDownload()) {
-                    try {
-                        if (dl.externalDownloadStop()) {
-                            return;
-                        }
-                    } catch (final Throwable e) {
-                    }
-                    /* unknown error, we disable multiple chunks */
-                    if (link.getBooleanProperty(UnrestrictLi.NOCHUNKS, false) == false) {
-                        link.setProperty(UnrestrictLi.NOCHUNKS, Boolean.valueOf(true));
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
-                    }
-                }
-            } catch (final PluginException e) {
-                // New V2 chunk errorhandling
-                /* unknown error, we disable multiple chunks */
-                if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(UnrestrictLi.NOCHUNKS, false) == false) {
-                    link.setProperty(UnrestrictLi.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-
-                throw e;
-            }
-            return;
-        } else {
-            if (dl.getConnection().getResponseCode() == 503) {
-                logger.info("unrestrict.li: 503 server error");
-                if (acc == null) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "503 server error", 10 * 60 * 1000l);
-                }
-                handlePluginBroken(acc, link, "unknown_dl_error", MAXRETRY_503_ERROR);
-            }
-            br.followConnection();
-        }
-        logger.info("unrestrict.li: Unknown error");
-        handlePluginBroken(acc, link, "unknown_dl_error", MAXRETRY_OTHER_ERRORS);
     }
 
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
@@ -362,7 +408,7 @@ public class UnrestrictLi extends PluginForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
      * from the host list.
-     * 
+     *
      * @param dl
      *            : The DownloadLink
      * @param error
@@ -400,7 +446,7 @@ public class UnrestrictLi extends PluginForHost {
         // To do: Reporting errors
         /*
          * if(report && UserIO.getInstance().requestConfirmDialog(0, "Error", "Do you want to report this error?") == 2){
-         * 
+         *
          * }
          */
     }
@@ -434,19 +480,23 @@ public class UnrestrictLi extends PluginForHost {
         String expires = br.getRegex("<expires>(\\d+)</expires>").getMatch(0);
         String traffic = br.getRegex("<traffic>(-?\\d+)</traffic>").getMatch(0);
         if (expires != null) {
+            account.setType(AccountType.PREMIUM);
+            account.setConcurrentUsePossible(true);
+            ai.setStatus("Premium account");
             account.setValid(true);
             ai.setValidUntil(Long.parseLong(expires) * 1000);
-            // Max. 75 GB/day
-            ai.setTrafficMax(80530636800l);
-            ai.setTrafficLeft(Long.parseLong(traffic));
-            ai.setStatus("VIP");
         } else {
-            // Not a VIP member
-            account.setValid(false);
-            // MessageDialog("Error", " Please upgrade to VIP to use this plugin", false);
-            ai.setStatus("only VIP members can use this plugin");
-            ai.setProperty("multiHostSupport", Property.NULL);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nThis service only accepts VIP accounts!\r\nDieser Anbieter akzeptiert nur VIP accounts!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            account.setType(AccountType.FREE);
+            /* Free account downloads can still need captchas */
+            account.setConcurrentUsePossible(false);
+            ai.setStatus("Registered (free) account");
+        }
+        /* Max. 75 GB/day */
+        ai.setTrafficMax(80530636800l);
+        if (traffic != null) {
+            ai.setTrafficLeft(Long.parseLong(traffic));
+        } else {
+            ai.setUnlimitedTraffic();
         }
         try {
             String apihosts = br.cloneBrowser().getPage("http://unrestrict.li/api/jdownloader/hosts.php");
@@ -510,6 +560,64 @@ public class UnrestrictLi extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    private void handlePreDownloadErrors(final Account acc, final DownloadLink link) throws Exception {
+        if (br.containsHTML("invalid\":\"File offline")) {
+            logger.info("File offline");
+            MessageDialog("Error", "File offline", false);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("invalid\":\"Host is not supported or unknown link format")) {
+            logger.info("Unknown link format");
+            MessageDialog("Error", "Unknown link format", false);
+            tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        } else if (br.containsHTML("invalid\":\"You are not allowed to download from this host")) {
+            logger.info("You are not allowed to download from this host");
+            MessageDialog("Error", "You are not allowed to download from this host", false);
+            tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        } else if (br.containsHTML("invalid\":\"Host is down")) {
+            logger.info("Host is down");
+            MessageDialog("Error", "Host is down", false);
+            tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        } else if (br.containsHTML("invalid\":\"You have reached your total daily limit\\. \\(Fair Use\\)")) {
+            logger.info("You have reached your total daily limit. (Fair Use)");
+            MessageDialog("Error", "You have reached your total daily limit. (Fair Use)", false);
+            tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        } else if (br.containsHTML("invalid\":\"You have reached your daily limit for this host")) {
+            logger.info("You have reached your daily limit for this host");
+            MessageDialog("Error", "You have reached your daily limit for this host", false);
+            tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        } else if (br.containsHTML("invalid\":\"This link has been reported and blocked")) {
+            logger.info("This link has been reported and blocked");
+            MessageDialog("Error", "This link has been reported and blocked", false);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        } else if (br.containsHTML("invalid\":\"Error receiving page") || br.containsHTML("\"errormessage\":\"Error receiving page")) {
+            logger.info("Error receiving page");
+            if (link.getLinkStatus().getRetryCount() <= 3) {
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
+            }
+            tempUnavailableHoster(acc, link, 10 * 60 * 1000l);
+        } else if (br.containsHTML("Expired session\\. Please sign in")) {
+            if (link.getLinkStatus().getRetryCount() >= 3) {
+                link.getLinkStatus().setRetryCount(0);
+                MessageDialog("Error", "Error signing in", false);
+                handlePluginBroken(acc, link, "expiredsessionsignin", MAXRETRY_OTHER_ERRORS);
+            }
+            logger.info("Invalid/Expired session.");
+            fetchAccountInfo(acc);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
+    }
+
+    private final boolean default_clear_download_history = false;
+
+    public void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEAR_DOWNLOAD_HISTORY, JDL.L("plugins.hoster.UnrestrictLi.clear_serverside_download_history", "Clear download history in unrestrict account after each successful download?")).setDefaultValue(default_clear_download_history));
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
