@@ -60,11 +60,11 @@ public class OffCloudCom extends PluginForHost {
 
     /** Using API: https://github.com/offcloud/offcloud-api */
     private static final String                            CLEAR_DOWNLOAD_HISTORY       = "CLEAR_DOWNLOAD_HISTORY";
-    private static final String                            NOCHUNKS                     = "NOCHUNKS";
-    private static final String                            NORESUME                     = "NORESUME";
     private static final String                            DOMAIN                       = "https://offcloud.com/api/";
     private static final String                            NICE_HOST                    = "offcloud.com";
     private static final String                            NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private static final String                            NOCHUNKS                     = NICE_HOSTproperty + "NOCHUNKS";
+    private static final String                            NORESUME                     = NICE_HOSTproperty + "NORESUME";
 
     /* Connection limits */
     private static final boolean                           ACCOUNT_PREMIUM_RESUME       = true;

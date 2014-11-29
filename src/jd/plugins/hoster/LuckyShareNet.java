@@ -314,7 +314,7 @@ public class LuckyShareNet extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                int trycount = 1;
+                int trycount = 0;
                 do {
                     logger.info("Login try: " + trycount);
                     /* Don't use old/invalid cookies on retry */
@@ -330,7 +330,7 @@ public class LuckyShareNet extends PluginForHost {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
                     }
-                    postPage(this.br, "http://luckyshare.net/auth/login", "token=" + Encoding.urlEncode(token) + "&remember=&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    postPageRaw(this.br, "http://luckyshare.net/auth/login", "token=" + Encoding.urlEncode(token) + "&remember=&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                     trycount++;
                 } while (br.getHttpConnection().getResponseCode() == 403 && trycount <= 3);
                 if (!br.containsHTML(">Logout</a>")) {
@@ -482,6 +482,10 @@ public class LuckyShareNet extends PluginForHost {
 
     private void postPage(final Browser br, final String url, final String postData) throws IOException {
         br.postPage(fixLinkSSL(url), postData);
+    }
+
+    private void postPageRaw(final Browser br, final String url, final String postData) throws IOException {
+        br.postPageRaw(fixLinkSSL(url), postData);
     }
 
     private boolean checkSsl() {

@@ -152,6 +152,7 @@ public class UnrestrictLi extends PluginForHost {
         handleDL(account, link, link.getDownloadURL());
     }
 
+    @SuppressWarnings("deprecation")
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
         setBrowser();
         login(acc, false);
@@ -565,36 +566,25 @@ public class UnrestrictLi extends PluginForHost {
     private void handlePreDownloadErrors(final Account acc, final DownloadLink link) throws Exception {
         if (br.containsHTML("invalid\":\"File offline")) {
             logger.info("File offline");
-            MessageDialog("Error", "File offline", false);
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("invalid\":\"Host is not supported or unknown link format")) {
             logger.info("Unknown link format");
-            MessageDialog("Error", "Unknown link format", false);
             tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
         } else if (br.containsHTML("invalid\":\"You are not allowed to download from this host")) {
             logger.info("You are not allowed to download from this host");
-            MessageDialog("Error", "You are not allowed to download from this host", false);
             tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
         } else if (br.containsHTML("invalid\":\"Host is down")) {
             logger.info("Host is down");
             MessageDialog("Error", "Host is down", false);
             tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
         } else if (br.containsHTML("invalid\":\"You have reached your total daily limit\\. \\(Fair Use\\)")) {
             logger.info("You have reached your total daily limit. (Fair Use)");
-            MessageDialog("Error", "You have reached your total daily limit. (Fair Use)", false);
-            tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         } else if (br.containsHTML("invalid\":\"You have reached your daily limit for this host")) {
             logger.info("You have reached your daily limit for this host");
-            MessageDialog("Error", "You have reached your daily limit for this host", false);
             tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
         } else if (br.containsHTML("invalid\":\"This link has been reported and blocked")) {
             logger.info("This link has been reported and blocked");
-            MessageDialog("Error", "This link has been reported and blocked", false);
             throw new PluginException(LinkStatus.ERROR_RETRY);
         } else if (br.containsHTML("invalid\":\"Error receiving page") || br.containsHTML("\"errormessage\":\"Error receiving page")) {
             logger.info("Error receiving page");
@@ -611,6 +601,15 @@ public class UnrestrictLi extends PluginForHost {
             logger.info("Invalid/Expired session.");
             fetchAccountInfo(acc);
             throw new PluginException(LinkStatus.ERROR_RETRY);
+        } else if (br.toString().replace("\\", "").contains("\"invalid\":\"<a href=\"/verify_sms\">Verify</a> your account to download")) {
+            /*
+             * Will e.g. happen if you try to downloaded uploaded.to links with a free UNVERIFIED (SMS verify) account.
+             */
+            logger.info("Current host is not available for unverified free account users");
+            tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
+        } else if (br.containsHTML("\"invalid\":\"Host has been disabled\\.\"")) {
+            logger.info("Current host has been disabled");
+            tempUnavailableHoster(acc, link, 6 * 60 * 60 * 1000l);
         }
     }
 
