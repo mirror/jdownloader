@@ -238,8 +238,14 @@ public class Netloadin extends PluginForHost {
     }
 
     @Override
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://netload.in/datei" + Netloadin.getID(link.getDownloadURL()) + ".htm");
+    public void correctDownloadLink(final DownloadLink link) {
+        final String contenturl = "http://netload.in/datei" + Netloadin.getID(link.getDownloadURL()) + ".htm";
+        try {
+            link.setContentUrl(contenturl);
+        } catch (final Throwable e) {
+            /* Not available in old 0.9.581 Stable */
+            link.setUrlDownload(contenturl);
+        }
     }
 
     @Override

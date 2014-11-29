@@ -51,11 +51,11 @@ public class MyMailRu extends PluginForDecrypt {
             logger.info("Password protected my.mail.ry links are not (yet) supported: " + parameter);
             return decryptedLinks;
         } else if (br.containsHTML("class=\"photo\\-catalog_nofound\"")) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            offline.setFinalFileName(new Regex(parameter, "my\\.mail\\.ru/(.+)").getMatch(0));
-            decryptedLinks.add(offline);
+            decryptedLinks.add(getOffline(parameter));
+            return decryptedLinks;
+        } else if (br.containsHTML("class=\"b-catalog__photo-notfound\"")) {
+            /* Album is not public */
+            decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }
         final String username = new Regex(parameter, "http://(www\\.)?my\\.mail\\.ru/[^<>/\"]+/([^<>/\"]+)/.+").getMatch(1);
@@ -140,6 +140,14 @@ public class MyMailRu extends PluginForDecrypt {
 
     private String getData(final String parameter) {
         return br.getRegex("\"" + parameter + "\": (\")?([^<>\"]*?)(\"|,)").getMatch(1);
+    }
+
+    private DownloadLink getOffline(final String parameter) {
+        final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+        offline.setAvailable(false);
+        offline.setProperty("offline", true);
+        offline.setFinalFileName(new Regex(parameter, "my\\.mail\\.ru/(.+)").getMatch(0));
+        return offline;
     }
 
     /** old album decrypt */
