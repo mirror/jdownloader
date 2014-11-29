@@ -24,6 +24,7 @@ import jd.config.Property;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -108,6 +109,7 @@ public class MultihostersCom extends PluginForHost {
             ac.setMultiHostSupport(this, supportedHosts);
         }
         ac.setStatus("Premium account");
+        account.setType(AccountType.PREMIUM);
         return ac;
     }
 
