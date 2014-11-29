@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 //xvideos.com by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvideos.com" }, urls = { "http://((www\\.)?xvideos\\.com/video[0-9]+|\\w+\\.xvideos\\.com/embedframe/\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvideos.com" }, urls = { "http://((www\\.)?xvideos\\.com/video[0-9]+/|\\w+\\.xvideos\\.com/embedframe/\\d+)" }, flags = { 0 })
 public class XvideosCom extends PluginForHost {
 
     public XvideosCom(PluginWrapper wrapper) {
