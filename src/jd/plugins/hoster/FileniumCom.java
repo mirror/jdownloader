@@ -80,6 +80,7 @@ public class FileniumCom extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
+        br.setAllowedResponseCodes(401);
         return br;
     }
 
@@ -321,7 +322,7 @@ public class FileniumCom extends PluginForHost {
         synchronized (LOCK) {
             try {
                 SELECTEDDOMAIN = getConfiguredDomain();
-                /** Load cookies */
+                /* Load cookies */
                 br = newBrowser();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
@@ -348,7 +349,7 @@ public class FileniumCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                /** Save cookies */
+                /* Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies("http://filenium.com");
                 for (final Cookie c : add.getCookies()) {
