@@ -74,9 +74,13 @@ public class MultihostersCom extends PluginForHost {
         String endSubscriptionDate = new Regex(infos[1], "EndSubscriptionDate:(.+)").getMatch(0);
         ac.setValidUntil(TimeFormatter.getMilliSeconds(endSubscriptionDate, "yyyy/MM/dd HH:mm:ss", null));
 
-        String availableTodayTraffic = new Regex(infos[3], "AvailableTodayTraffic:(.+)").getMatch(0);
+        String dayTrafficLimit = new Regex(infos[0], "DayTrafficLimit:(\\d+)").getMatch(0);
+        String availableTodayTraffic = new Regex(infos[3], "AvailableTodayTraffic:(\\d+)").getMatch(0);
+        String availableExtraTraffic = new Regex(infos[4], "AvailableExtraTraffic:(\\d+)").getMatch(0);
         logger.info("Multihosters: AvailableTodayTraffic=" + availableTodayTraffic);
-        if (availableTodayTraffic.equals("0")) {
+        if (dayTrafficLimit.equals("0") && availableTodayTraffic.equals("0") && availableExtraTraffic.equals("0")) {
+            ac.setTrafficLeft(0);
+        } else if (availableTodayTraffic.equals("0")) {
             ac.setUnlimitedTraffic();
         } else {
             ac.setTrafficLeft(SizeFormatter.getSize(availableTodayTraffic + "MiB"));
@@ -87,7 +91,6 @@ public class MultihostersCom extends PluginForHost {
         if (loginPage == null || trafficLeft < 0) {
             account.setValid(false);
             account.setTempDisabled(false);
-            ac.setStatus("Account invalid");
         } else {
             ArrayList<String> supportedHosts = new ArrayList<String>();
             if (!"0".equals(hosts.trim())) {
@@ -103,8 +106,8 @@ public class MultihostersCom extends PluginForHost {
             }
             account.setValid(true);
             ac.setMultiHostSupport(this, supportedHosts);
-            ac.setStatus("Account valid");
         }
+        ac.setStatus("Premium account");
         return ac;
     }
 
@@ -133,12 +136,11 @@ public class MultihostersCom extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
-        String user = Encoding.urlEncode(acc.getUser());
-        String pw = Encoding.urlEncode(acc.getPass());
-        String url = Encoding.urlEncode(link.getDownloadURL());
-        showMessage(link, "Phase 1/1: Get Link and begin Download");
-        String dllink = "http://www.multihosters.com/jDownloader.ashx?cmd=generatedownloaddirect&login=" + user + "&pass=" + pw + "&olink=" + url + "&FilePass=";
+    public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
+        final String user = Encoding.urlEncode(acc.getUser());
+        final String pw = Encoding.urlEncode(acc.getPass());
+        final String url = Encoding.urlEncode(link.getDownloadURL());
+        final String dllink = "http://www.multihosters.com/jDownloader.ashx?cmd=generatedownloaddirect&login=" + user + "&pass=" + pw + "&olink=" + url + "&FilePass=";
 
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
@@ -158,6 +160,17 @@ public class MultihostersCom extends PluginForHost {
         if (br.containsHTML("No trafic")) {
             // account has no traffic, disable hoster for 1h
             tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l);
+        } else if (br.containsHTML(">You have exceeded the maximum amount of fair usage of our service")) {
+            /*
+             * Free account limits reached and an additional download-try failed or account cookie is invalid -> permanently disable account
+             */
+            String statusMessage;
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                statusMessage = "\r\nFree Account Limits erreicht. Kaufe dir einen premium Account um weiter herunterladen zu können.";
+            } else {
+                statusMessage = "\r\nFree account limits reached. Buy a premium account to continue downloading.";
+            }
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else if (br.containsHTML("Error")) {
             // stupid error msg
             /*

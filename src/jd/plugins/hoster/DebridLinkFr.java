@@ -29,6 +29,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -89,11 +90,13 @@ public class DebridLinkFr extends PluginForHost {
         if ("0".equals(accountType)) {
             // free account
             ac.setStatus("Free Account");
+            account.setType(AccountType.FREE);
             ac.setValidUntil(-1);
             account.setProperty("free", true);
         } else if ("1".equals(accountType)) {
             // premium account
             ac.setStatus("Premium Account");
+            account.setType(AccountType.PREMIUM);
             if (premiumLeft != null) {
                 ac.setValidUntil(System.currentTimeMillis() + (Long.parseLong(premiumLeft) * 1000));
             }
@@ -101,6 +104,7 @@ public class DebridLinkFr extends PluginForHost {
         } else if ("2".equals(accountType)) {
             // life account
             ac.setStatus("Life Account");
+            account.setType(AccountType.PREMIUM);
             ac.setValidUntil(-1);
             account.setProperty("free", false);
         }
@@ -342,7 +346,7 @@ public class DebridLinkFr extends PluginForHost {
                         // what todo here? revert to another plugin **
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     } else if ("notFreeHost".equals(error)) {
-                        /* Filehost is disabled for current FREE account --> Disablew it "forever" */
+                        /* Filehost is disabled for current FREE account --> Disable it "forever" */
                         tempUnavailableHoster(account, downloadLink, 10 * 60 * 60 * 1000l);
                     }
                 }
@@ -454,6 +458,7 @@ public class DebridLinkFr extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
+    @SuppressWarnings("deprecation")
     public void handleMultiHost(final DownloadLink downloadLink, final Account account) throws Exception {
         showMessage(downloadLink, "Phase 1/2: Generating link");
         getPage(account, downloadLink, "addLink", true, "link=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
