@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tnaflix.com" }, urls = { "http://(www\\.)?tnaflix\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|.*?video\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tnaflix.com" }, urls = { "https?://(www\\.)?tnaflix\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|.*?video\\d+)" }, flags = { 0 })
 public class TnaFlixCom extends PluginForHost {
 
     public TnaFlixCom(PluginWrapper wrapper) {
@@ -51,13 +51,16 @@ public class TnaFlixCom extends PluginForHost {
         requestFileInformation(downloadLink);
         String configLink = br.getRegex("addVariable\\(\\'config\\', \\'(http.*?)\\'").getMatch(0);
         if (configLink == null) {
-            configLink = br.getRegex("flashvars.config.*?escape\\(.*?(http.*?)\"").getMatch(0);
+            configLink = br.getRegex("flashvars.config.*?escape\\(.*?(cdn.*?)\"").getMatch(0);
         }
         if (configLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage(Encoding.htmlDecode(configLink));
+        br.getPage(Encoding.htmlDecode("http://" + configLink));
         String dllink = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("360p</res>\\s*<videolink>(http://.*?)</videoLink>").getMatch(0);
+        }
         if (dllink == null) {
             dllink = br.getRegex("<videolink>(http://.*?)</videoLink>").getMatch(0);
         }
@@ -113,7 +116,7 @@ public class TnaFlixCom extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setFinalFileName(filename.trim() + ".flv");
+        downloadLink.setFinalFileName(filename.trim() + ".mp4");
         return AvailableStatus.TRUE;
     }
 
