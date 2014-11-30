@@ -190,6 +190,9 @@ public class ShareBeastCom extends PluginForHost {
         if (CHECKFAILED) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error (503)", 10 * 60 * 1000l);
         }
+        if (br.getRedirectLocation() != null) {
+            br.getPage(br.getRedirectLocation());
+        }
         br.setFollowRedirects(false);
         String passCode = null;
         // First, bring up saved final links

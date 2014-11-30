@@ -66,14 +66,19 @@ public class NowVideoEu extends PluginForHost {
     public String rewriteHost(String host) {
         if ("nowvideo.co".equals(getHost())) {
             if (host == null || host.startsWith("nowvideo.")) {
-                return "nowvideo.eu";
+                return "nowvideo.ch";
             }
         }
         return super.rewriteHost(host);
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(MAINPAGE.get() + "/player.php?v=" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+    public void correctDownloadLink(final DownloadLink link) {
+        final String newlink = MAINPAGE.get() + "/player.php?v=" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+        try {
+            link.setContentUrl(newlink);
+        } catch (final Throwable e) {
+            link.setUrlDownload(newlink);
+        }
     }
 
     private static void workAroundTimeOut(final Browser br) {
@@ -108,7 +113,7 @@ public class NowVideoEu extends PluginForHost {
     }
 
     private String validateHost() {
-        final String[] ccTLDs = { "sx", "eu", "co", "ch", "ag", "at" };
+        final String[] ccTLDs = { "ch", "sx", "eu", "co", "ag", "at" };
 
         for (int i = 0; i < ccTLDs.length; i++) {
             String CCtld = ccTLDs[i];
@@ -133,13 +138,13 @@ public class NowVideoEu extends PluginForHost {
 
     private static Object                  LOCK               = new Object();
 
-    private static AtomicReference<String> MAINPAGE           = new AtomicReference<String>("http://www.nowvideo.sx");
+    private static AtomicReference<String> MAINPAGE           = new AtomicReference<String>("http://www.nowvideo.ch");
     private static AtomicReference<String> ccTLD              = new AtomicReference<String>("sx");
     private final String                   ISBEINGCONVERTED   = ">The file is being converted.";
     private final String                   domains            = "nowvideo\\.(sx|eu|co|ch|ag|at)";
     private static AtomicBoolean           AVAILABLE_PRECHECK = new AtomicBoolean(false);
 
-    private static AtomicReference<String> agent              = new AtomicReference<String>("http://www.nowvideo.sx");
+    private static AtomicReference<String> agent              = new AtomicReference<String>("http://www.nowvideo.ch");
 
     private Browser prepBrowser(Browser prepBr) {
         if (agent.get() == null) {
@@ -334,7 +339,7 @@ public class NowVideoEu extends PluginForHost {
         }
     }
 
-    private final String expire = ">You are a premium user\\. Your membership expires on (\\d{4}-[A-Za-z]+-\\d+)";
+    private final String expire = "Your premium membership expires on: (\\d{4}-[A-Za-z]+-\\d+)";
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
@@ -360,8 +365,9 @@ public class NowVideoEu extends PluginForHost {
         return ai;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
@@ -371,7 +377,10 @@ public class NowVideoEu extends PluginForHost {
             return;
         }
         br.getPage(link.getDownloadURL());
-        final String dllink = br.getRegex("\"(http://[a-z0-9]+\\." + domains + "/dl/[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("\"(https?://[a-z0-9]+\\." + domains + "/dl/[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(https?://[a-z0-9\\.]+/dl/[^<>\"]*?)\"").getMatch(0);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");

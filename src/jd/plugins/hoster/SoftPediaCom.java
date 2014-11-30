@@ -91,6 +91,10 @@ public class SoftPediaCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        /* Happens when they block your IP */
+        if (br.containsHTML("No htmlCode read")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error");
+        }
         int server = getConfiguredServer();
         final String fileID = br.getRegex("var spjs_prog_id=(\\d+);").getMatch(0);
         if (fileID == null) {
@@ -155,6 +159,9 @@ public class SoftPediaCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        if (br.containsHTML("No htmlCode read")) {
+            return AvailableStatus.UNCHECKABLE;
+        }
         String filename = br.getRegex("google_ad_section_start \\-\\-><h1>(.*?)<br/></h1><").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("style=\"padding\\-top: 15px;\">Softpedia guarantees that <b>(.*?)</b> is <b").getMatch(0);
@@ -170,6 +177,9 @@ public class SoftPediaCom extends PluginForHost {
         }
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?) Free Download \\- Softpedia</title>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?) Download\"").getMatch(0);
         }
         // For fre trail programms
         if (filename == null) {

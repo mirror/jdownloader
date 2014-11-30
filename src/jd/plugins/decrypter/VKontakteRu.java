@@ -253,7 +253,6 @@ public class VKontakteRu extends PluginForDecrypt {
                 }
                 if (newLink.equals(CRYPTEDLINK_FUNCTIONAL)) {
                     logger.info("Link was not changed, continuing with: " + CRYPTEDLINK_FUNCTIONAL);
-                    getPageSafe(CRYPTEDLINK_FUNCTIONAL);
                 } else {
                     logger.info("Link was changed!");
                     logger.info("Old link: " + CRYPTEDLINK_FUNCTIONAL);
@@ -365,40 +364,44 @@ public class VKontakteRu extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    /** Using API */
+    /**
+     * NOT Using API
+     *
+     * @throws Exception
+     */
     private void decryptAudioAlbum() throws Exception {
-        final String fpName = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/(.+)").getMatch(0);
-        final String ownerID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "((\\-)?\\d+)$").getMatch(0);
-        this.apiPostPageSafe("https://vk.com/api.php", "v=" + api_version + "&format=json&uid=" + ownerID + "&access_token=" + Encoding.Base64Decode(api_access_token_vkopt) + "&method=audio.get&oauth=1");
-        final String completeData = br.getRegex("\"items\":\\[(.*?)\\]\\}").getMatch(0);
+        this.getPageSafe(this.CRYPTEDLINK_FUNCTIONAL);
+        String fpName = br.getRegex("\"htitle\":\"([^<>\"]*?)\"").getMatch(0);
+        if (fpName == null) {
+            fpName = "vk.com audio - " + new Regex(this.CRYPTEDLINK_FUNCTIONAL, "(\\d+)$").getMatch(0);
+        }
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        String postData = null;
+        if (new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/audio\\?id=\\-\\d+").matches()) {
+            postData = "act=load_audios_silent&al=1&edit=0&id=0&gid=" + new Regex(this.CRYPTEDLINK_FUNCTIONAL, "(\\d+)$").getMatch(0);
+        } else {
+            postData = "act=load_audios_silent&al=1&edit=0&gid=0&id=" + new Regex(this.CRYPTEDLINK_FUNCTIONAL, "((\\-)?\\d+)$").getMatch(0) + "&please_dont_ddos=2";
+        }
+        br.postPage("http://vk.com/audio", postData);
+        final String completeData = br.getRegex("\\{\"all\":\\[(\\[.*?\\])\\]\\}").getMatch(0);
         if (completeData == null) {
             decryptedLinks = null;
             return;
         }
-        final String[] audioData = completeData.split("\\},\\{");
+        final String[] audioData = completeData.split(",\\[");
         if (audioData == null || audioData.length == 0) {
             decryptedLinks = null;
             return;
         }
         for (final String singleAudioData : audioData) {
-            final String owner_id = getJson(singleAudioData, "owner_id");
-            final String content_id = getJson(singleAudioData, "id");
-            final String artist = getJson(singleAudioData, "artist");
-            final String title = getJson(singleAudioData, "title");
-            String directlink = getJson(singleAudioData, "url");
-            if (owner_id == null || content_id == null || artist == null || title == null) {
-                logger.warning("FATAL error occured in audios decryption");
-                decryptedLinks = null;
-                return;
-            }
-
-            directlink = directlink.replace("\\", "");
-
-            final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/audiolink/" + owner_id + "_" + content_id);
-            dl.setProperty("directlink", Encoding.htmlDecode(directlink));
+            final String[] singleAudioDataAsArray = new Regex(singleAudioData, "\\'(.*?)\\'").getColumn(0);
+            final String owner_id = singleAudioDataAsArray[0];
+            final String content_id = singleAudioDataAsArray[1];
+            final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/audiolink/" + owner_id.replace("-", "") + "_" + content_id);
+            dl.setProperty("directlink", Encoding.htmlDecode(singleAudioDataAsArray[2]));
             dl.setProperty("content_id", content_id);
             dl.setProperty("owner_id", owner_id);
-            dl.setFinalFileName(Encoding.htmlDecode(artist.trim()) + " - " + Encoding.htmlDecode(title.trim()) + ".mp3");
+            dl.setFinalFileName(Encoding.htmlDecode(singleAudioDataAsArray[5].trim()) + " - " + Encoding.htmlDecode(singleAudioDataAsArray[6].trim()) + ".mp3");
             if (fastcheck_audio) {
                 dl.setAvailable(true);
             }

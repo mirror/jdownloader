@@ -44,8 +44,9 @@ public class HulkShareComFolder extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replaceFirst("hu\\.lk/", "hulkshare\\.com/");
         final String fuid = getUID(parameter);
-        if (parameter.matches("https?://(www\\.)?(hulkshare\\.com|hu\\/lk)/(dl/|static|browse|images|terms|contact|audible|search|people|upload|featured|mobile|group|explore).*?")) {
+        if (parameter.matches("https?://(www\\.)?(hulkshare\\.com|hu\\/lk)/(dl/|static|browse|images|terms|contact|audible|search|people|upload|featured|mobile|group|explore|sitemaps).*?")) {
             logger.info("Invalid link: " + parameter);
+            decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }
         br.setFollowRedirects(false);
@@ -59,44 +60,35 @@ public class HulkShareComFolder extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.getHttpConnection().getContentType().equals("text/javascript") || br.getHttpConnection().getContentType().equals("text/css")) {
             logger.info("Invalid link: " + parameter);
+            decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }
         String argh = br.getRedirectLocation();
         if (br.containsHTML("class=\"bigDownloadBtn") || br.containsHTML(">The owner of this file doesn\\'t allow downloading") || argh != null) {
             logger.info("Link offline: " + parameter);
             decryptedLinks.add(createDownloadlink(parameter.replace("hulkshare.com/", "hulksharedecrypted.com/")));
+            decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }
         if (br.containsHTML("You have reached the download\\-limit")) {
             logger.info("Link offline: " + parameter);
-            final DownloadLink dl = createDownloadlink(parameter.replace("hulkshare.com/", "hulksharedecrypted.com/"));
-            dl.setAvailable(false);
-            decryptedLinks.add(dl);
+            decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }
         if (br.containsHTML(">Page not found") || br.containsHTML(">This file has been subject to a DMCA notice") || br.containsHTML("<h2>Error</h2>") || br.containsHTML(">We\\'re sorry but this page is not accessible") || br.containsHTML(">Error<")) {
             logger.info("Link offline: " + parameter);
-            final DownloadLink dl = createDownloadlink(parameter.replace("hulkshare.com/", "hulksharedecrypted.com/"));
-            dl.setProperty("fileoffline", true);
-            dl.setAvailable(false);
-            decryptedLinks.add(dl);
+            decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }
         // Mainpage
         if (br.containsHTML("<title>Online Music, Free Internet Radio, Discover Artists \\- Hulkshare")) {
             logger.info("Link offline: " + parameter);
-            final DownloadLink dl = createDownloadlink(parameter.replace("hulkshare.com/", "hulksharedecrypted.com/"));
-            dl.setProperty("fileoffline", true);
-            dl.setAvailable(false);
-            decryptedLinks.add(dl);
+            decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }
         if (br.containsHTML("class=\"nhsUploadLink signupPopLink\">Sign up for Hulkshare<")) {
             logger.info("Link doesn't contain any downloadable content: " + parameter);
-            final DownloadLink dl = createDownloadlink(parameter.replace("hulkshare.com/", "hulksharedecrypted.com/"));
-            dl.setProperty("fileoffline", true);
-            dl.setAvailable(false);
-            decryptedLinks.add(dl);
+            decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }
         if (parameter.matches(TYPE_PLAYLIST)) {
@@ -216,6 +208,13 @@ public class HulkShareComFolder extends PluginForDecrypt {
             return null;
         }
         return new Regex(s, HULKSHAREDOWNLOADLINK).getMatch(2);
+    }
+
+    private DownloadLink getOffline(final String parameter) {
+        final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+        offline.setAvailable(false);
+        offline.setProperty("offline", true);
+        return offline;
     }
 
     /* NO OVERRIDE!! */
