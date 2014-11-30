@@ -50,7 +50,7 @@ public class MyzukaRuDecrypter extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        final String[] info = br.getRegex("(<tr id=\"trSong_\\d+\">.*?)</tr>").getColumn(0);
+        final String[] info = br.getRegex("(<div id=\"playerDiv\\d+\".*?)class=\"player\\-controls\"").getColumn(0);
         if (info == null || info.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

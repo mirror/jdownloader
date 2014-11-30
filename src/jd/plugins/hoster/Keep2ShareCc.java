@@ -76,7 +76,7 @@ public class Keep2ShareCc extends K2SApi {
 
     @Override
     public String rewriteHost(String host) {
-        if (host == null || "keep2share.cc".equals(host) || "k2s.cc".equals(host) || "keep2s.cc".equals(host) || "keep2.cc".equals(host) || "k2share.cc".equals(host)) {
+        if (host == null || "keep2share.cc".equals(host) || "k2s.cc".equals(host) || "keep2s.cc".equals(host) || "keep2.cc".equals(host) || "k2share.cc".equals(host) || "keep2share.com".equals(host)) {
             return "keep2share.cc";
         }
         return super.rewriteHost(host);
@@ -96,7 +96,7 @@ public class Keep2ShareCc extends K2SApi {
 
     /**
      * easiest way to set variables, without the need for multiple declared references
-     * 
+     *
      * @param account
      */
     private void setConstants(final Account account) {
