@@ -347,7 +347,9 @@ public class OffCloudCom extends PluginForHost {
         for (final String domaininfo : hostDomainsInfo) {
             final String status = getJson(domaininfo, "isActive");
             final String realhost = getJson(domaininfo, "displayName");
-            if ("Active".equalsIgnoreCase(status) && realhost != null) {
+            if ("Active".equalsIgnoreCase(status) && "180upload.com".equals(realhost)) {
+                logger.info("NOT adding 180upload.com to the list of supported hosts as it will require captcha via multihost also");
+            } else if ("Active".equalsIgnoreCase(status) && realhost != null) {
                 supportedHosts.add(realhost.toLowerCase());
             } else if (!"Active".equalsIgnoreCase(status) && realhost != null) {
                 logger.info("NOT adding this host as it is inactive at the moment: " + realhost);
@@ -589,38 +591,38 @@ public class OffCloudCom extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Delete downloaded links from the offcloud download history after successful download?");
-            put("ACCOUNT_USERNAME", "Username:");
-            put("ACCOUNT_LINKSLEFT", "Instant download inputs left:");
-            put("ACCOUNT_TYPE", "Account type:");
-            put("ACCOUNT_SIMULTANDLS", "Max. simultaneous downloads:");
-            put("ACCOUNT_CHUNKS", "Max number of chunks per file:");
-            put("ACCOUNT_RESUME", "Resume of stopped downloads:");
-            put("ACCOUNT_YES", "Yes");
-            put("ACCOUNT_NO", "No");
-            put("DETAILS_TITEL", "Account information");
-            put("LANG_GENERAL_UNLIMITED", "Unlimited");
-            put("LANG_GENERAL_CLOSE", "Close");
-        }
-    };
+                                                  {
+                                                      put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Delete downloaded links from the offcloud download history after successful download?");
+                                                      put("ACCOUNT_USERNAME", "Username:");
+                                                      put("ACCOUNT_LINKSLEFT", "Instant download inputs left:");
+                                                      put("ACCOUNT_TYPE", "Account type:");
+                                                      put("ACCOUNT_SIMULTANDLS", "Max. simultaneous downloads:");
+                                                      put("ACCOUNT_CHUNKS", "Max number of chunks per file:");
+                                                      put("ACCOUNT_RESUME", "Resume of stopped downloads:");
+                                                      put("ACCOUNT_YES", "Yes");
+                                                      put("ACCOUNT_NO", "No");
+                                                      put("DETAILS_TITEL", "Account information");
+                                                      put("LANG_GENERAL_UNLIMITED", "Unlimited");
+                                                      put("LANG_GENERAL_CLOSE", "Close");
+                                                  }
+                                              };
 
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-        {
-            put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Lösche heruntergeladene links nach jedem erfolgreichen Download aus der offcloud Download-Historie?");
-            put("ACCOUNT_USERNAME", "Account Name:");
-            put("ACCOUNT_LINKSLEFT", "Verbleibende Anzahl von Instant-Download Links:");
-            put("ACCOUNT_TYPE", "Account Typ:");
-            put("ACCOUNT_SIMULTANDLS", "Max. Anzahl gleichzeitiger Downloads:");
-            put("ACCOUNT_CHUNKS", "Max. Anzahl Verbindungen pro Datei (Chunks):");
-            put("ACCOUNT_RESUME", "Abgebrochene Downloads fortsetzbar:");
-            put("ACCOUNT_YES", "Ja");
-            put("ACCOUNT_NO", "Nein");
-            put("DETAILS_TITEL", "Additional account information");
-            put("LANG_GENERAL_UNLIMITED", "Unlimitiert");
-            put("LANG_GENERAL_CLOSE", "Schließen");
-        }
-    };
+                                                  {
+                                                      put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Lösche heruntergeladene links nach jedem erfolgreichen Download aus der offcloud Download-Historie?");
+                                                      put("ACCOUNT_USERNAME", "Account Name:");
+                                                      put("ACCOUNT_LINKSLEFT", "Verbleibende Anzahl von Instant-Download Links:");
+                                                      put("ACCOUNT_TYPE", "Account Typ:");
+                                                      put("ACCOUNT_SIMULTANDLS", "Max. Anzahl gleichzeitiger Downloads:");
+                                                      put("ACCOUNT_CHUNKS", "Max. Anzahl Verbindungen pro Datei (Chunks):");
+                                                      put("ACCOUNT_RESUME", "Abgebrochene Downloads fortsetzbar:");
+                                                      put("ACCOUNT_YES", "Ja");
+                                                      put("ACCOUNT_NO", "Nein");
+                                                      put("DETAILS_TITEL", "Additional account information");
+                                                      put("LANG_GENERAL_UNLIMITED", "Unlimitiert");
+                                                      put("LANG_GENERAL_CLOSE", "Schließen");
+                                                  }
+                                              };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
