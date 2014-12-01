@@ -52,7 +52,7 @@ public class UploadedController implements AccountControllerListener, Sponsor {
     private final AtomicBoolean             enabledInAdvancedConfig = new AtomicBoolean(false);
     private boolean                         mouseover;
     private AbstractIcon                    icon;
-    private AbstractIcon                    close;
+    private final AbstractIcon              close;
     private Rectangle                       closeBounds;
 
     private HashMap<String, Long>           expireNotifies;
