@@ -121,7 +121,10 @@ public class LolaBitsEsDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
         } else {
             final String fpName = br.getRegex("class=\"T_selected\">([^<>\"]*?)<").getMatch(0);
-            final String[] linkinfo = br.getRegex("<div class=\"fileinfo tab\">(.*?)<span class=\"filedescription\"").getColumn(0);
+            String[] linkinfo = br.getRegex("<div class=\"fileinfo tab\">(.*?)<span class=\"filedescription\"").getColumn(0);
+            if (linkinfo == null || linkinfo.length == 0) {
+                linkinfo = br.getRegex("<li class=\"fileItemContainer\">(.*?)class=\"directFileLink\"").getColumn(0);
+            }
             if (linkinfo == null || linkinfo.length == 0 || fpName == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -130,9 +133,12 @@ public class LolaBitsEsDecrypter extends PluginForDecrypt {
                 String contenturl = new Regex(lnkinfo, "\"(/[^<>\"]*?)\"").getMatch(0);
                 final String fid = new Regex(lnkinfo, "rel=\"(\\d+)\"").getMatch(0);
                 final Regex finfo = new Regex(lnkinfo, "<span class=\"bold\">([^<>\"]*?)</span>([^<>\"]*?)</a>");
-                String filename = finfo.getMatch(0);
+                String filename = new Regex(lnkinfo, "alt=\"([^<>\"]*?)\" style=\"\"").getMatch(0);
+                if (filename == null || filename.equals("")) {
+                    filename = finfo.getMatch(0);
+                }
                 final String ext = finfo.getMatch(1);
-                String filesize = new Regex(lnkinfo, "<li><span>([^<>\"]*?)</span></li>").getMatch(0);
+                String filesize = new Regex(lnkinfo, "(\\d+(,\\d+)? (B|KB|MB|GB))[\t\n\r ]+<").getMatch(0);
                 if (fid == null || filename == null || ext == null || filesize == null || contenturl == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;

@@ -100,6 +100,10 @@ public class EsouboryCz extends PluginForHost {
             link.setDownloadSize(Long.parseLong(filesize));
             return AvailableStatus.TRUE;
         } else {
+            br.getPage(link.getDownloadURL());
+            if (br.containsHTML(">soubor byl již odstraněný<")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             link.getLinkStatus().setStatusText("Account needed to check links");
             return AvailableStatus.UNCHECKABLE;
         }
