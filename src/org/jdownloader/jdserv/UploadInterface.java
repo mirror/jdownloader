@@ -1,7 +1,5 @@
 package org.jdownloader.jdserv;
 
-import java.util.HashMap;
-
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
@@ -30,6 +28,7 @@ public interface UploadInterface extends RemoteAPIInterface, RemoteAPISignatureH
     @ApiSignatureRequired
     public void log(String id, RemoteAPIResponse response) throws InternalApiException;
 
-    @ApiSignatureRequired
-    public HashMap<String, String> getTotalLogByID(String id);
+    // @ApiSignatureRequired
+    // public HashMap<String, String> getTotalLogByID(String id);
+
 }
