@@ -177,9 +177,7 @@ public class UploadedController implements AccountControllerListener, Sponsor {
 
         new Thread("OSR") {
             public void run() {
-
-                CrossSystem.openURL("http://uploaded.net/register");
-
+                CrossSystem.openURL("http://ul.to/ref/12859436");
                 UploadedController.track("TabbedClick");
             }
         }.start();
@@ -376,7 +374,7 @@ public class UploadedController implements AccountControllerListener, Sponsor {
         try {
             Dialog.getInstance().showDialog(d);
             StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/OK");
-            CrossSystem.openURL("http://uploaded.net/register");
+            CrossSystem.openURL("http://ul.to/ref/12859436");
         } catch (DialogNoAnswerException e) {
             e.printStackTrace();
             StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/CANCELED");
