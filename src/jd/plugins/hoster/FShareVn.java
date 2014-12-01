@@ -47,6 +47,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fshare.vn", "mega.1280.com" }, urls = { "https?://(www\\.)?(mega\\.1280\\.com|fshare\\.vn)/file/[0-9A-Z]+", "dgjediz65854twsdfbtzoi6UNUSED_REGEX" }, flags = { 2, 0 })
@@ -153,6 +154,9 @@ public class FShareVn extends PluginForHost {
                 }
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     br.followConnection();
+                    if (con.getRequestMethod() == RequestMethod.HEAD) {
+                        br.getPage(redirect);
+                    }
                 } else {
                     link.setName(getFileNameFromHeader(con));
                     try {
