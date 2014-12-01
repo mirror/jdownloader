@@ -87,6 +87,7 @@ public class EsouboryCz extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, Exception {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         final Account aa = AccountController.getInstance().getValidAccount(this);
         link.setName(new Regex(link.getDownloadURL(), "esoubory\\.cz/soubor/([a-z0-9]+)/").getMatch(0));
         if (aa != null) {
@@ -101,7 +102,7 @@ public class EsouboryCz extends PluginForHost {
             return AvailableStatus.TRUE;
         } else {
             br.getPage(link.getDownloadURL());
-            if (br.containsHTML(">soubor byl již odstraněný<")) {
+            if (br.containsHTML(">soubor byl již odstraněný<") || br.getURL().contains("/search/")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             link.getLinkStatus().setStatusText("Account needed to check links");
@@ -142,8 +143,6 @@ public class EsouboryCz extends PluginForHost {
             finallink = finallink.replace("\\", "");
             link.setProperty("esouborydirectlink", finallink);
         }
-        /* we want to follow redirects in final stage */
-        br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

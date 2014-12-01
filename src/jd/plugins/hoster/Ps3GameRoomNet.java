@@ -35,7 +35,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ps3gameroom.net" }, urls = { "http://(www\\.)?ps3gameroom\\.net/(?!account_home|account_folders|account_edit|logout)[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ps3gameroom.net" }, urls = { "http://(www\\.)?ps3gameroom\\.net/[a-z0-9]+" }, flags = { 2 })
 public class Ps3GameRoomNet extends PluginForHost {
 
     public Ps3GameRoomNet(PluginWrapper wrapper) {
@@ -55,8 +55,9 @@ public class Ps3GameRoomNet extends PluginForHost {
         return MAINPAGE + "/terms." + TYPE;
     }
 
-    private final String MAINPAGE = "http://ps3gameroom.net";
-    private final String TYPE     = "html";
+    private final String        MAINPAGE     = "http://ps3gameroom.net";
+    private final String        TYPE         = "html";
+    private static final String INVALIDLINKS = "http://(www\\.)?ps3gameroom\\.net/(account_home|account_folders|account_edit|logout)";
 
     /**
      * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
@@ -67,6 +68,9 @@ public class Ps3GameRoomNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (link.getDownloadURL().matches(INVALIDLINKS)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.setBrowserExclusive();
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {

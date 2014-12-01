@@ -138,7 +138,7 @@ public class LolaBitsEsDecrypter extends PluginForDecrypt {
                     filename = finfo.getMatch(0);
                 }
                 final String ext = finfo.getMatch(1);
-                String filesize = new Regex(lnkinfo, "(\\d+(,\\d+)? (B|KB|MB|GB))[\t\n\r ]+<").getMatch(0);
+                String filesize = new Regex(lnkinfo, "(\\d+(,\\d+)? (B|KB|MB|GB))([\t\n\r ]+)?<").getMatch(0);
                 if (fid == null || filename == null || ext == null || filesize == null || contenturl == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
