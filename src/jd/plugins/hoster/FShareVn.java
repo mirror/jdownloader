@@ -138,7 +138,7 @@ public class FShareVn extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         prepBrowser();
-        br.setFollowRedirects(true);
+        br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         String redirect = br.getRedirectLocation();
         if (redirect != null) {
