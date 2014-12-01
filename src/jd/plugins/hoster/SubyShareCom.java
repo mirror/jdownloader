@@ -895,7 +895,10 @@ public class SubyShareCom extends PluginForHost {
             ai.setUsedSpace(space[0] + "Mb");
         }
         account.setValid(true);
-        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
+        String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
+        if (availabletraffic == null) {
+            availabletraffic = new Regex(correctedBR, "Traffic available today <strong>([^<>\"]*?)</strong>").getMatch(0);
+        }
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
             /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
@@ -924,16 +927,29 @@ public class SubyShareCom extends PluginForHost {
             }
             ai.setStatus("Registered (free) user");
         } else {
-            ai.setValidUntil(expire_milliseconds);
-            maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            try {
-                account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
+            if (expire_milliseconds == 0) {
+                account.setProperty("nopremium", true);
+                maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
+                try {
+                    account.setType(AccountType.FREE);
+                    account.setMaxSimultanDownloads(maxPrem.get());
+                    account.setConcurrentUsePossible(false);
+                } catch (final Throwable e) {
+                    /* not available in old Stable 0.9.581 */
+                }
+                ai.setStatus("Registered (free) user");
+            } else {
+                ai.setValidUntil(expire_milliseconds);
+                maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+                try {
+                    account.setType(AccountType.PREMIUM);
+                    account.setMaxSimultanDownloads(maxPrem.get());
+                    account.setConcurrentUsePossible(true);
+                } catch (final Throwable e) {
+                    /* not available in old Stable 0.9.581 */
+                }
+                ai.setStatus("Premium user");
             }
-            ai.setStatus("Premium user");
         }
         return ai;
     }

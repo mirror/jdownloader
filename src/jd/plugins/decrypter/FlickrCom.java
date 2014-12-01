@@ -305,8 +305,9 @@ public class FlickrCom extends PluginForDecrypt {
                     if (better_link != null) {
                         parameter = better_link;
                     }
-                    if (picCount == null) {
-                        picCount = br.getRegex("<h1>(\\d+(,\\d+)?)</h1>[\t\n\r ]+<h2>Photos</h2>").getMatch(0);
+                    final String groupphotocount = br.getRegex("class=\"stat group\\-photos\">[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
+                    if (groupphotocount != null) {
+                        picCount = groupphotocount;
                     }
                 }
                 if (picCount == null) {
@@ -377,7 +378,7 @@ public class FlickrCom extends PluginForDecrypt {
                 }
                 for (final String[] aLink : addLinks) {
                     final DownloadLink dl = createDownloadlink("http://www.flickrdecrypted.com" + aLink[1]);
-                    dl.setName(aLink[0] == null ? null : (aLink[0] + ".jpg"));
+                    dl.setName(aLink[0] == null ? null : (Encoding.htmlDecode(aLink[0]) + ".jpg"));
                     dl.setAvailable(true);
                     /* No need to hide decrypted single links */
                     try {/* JD2 only */
