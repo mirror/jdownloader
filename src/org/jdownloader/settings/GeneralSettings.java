@@ -290,10 +290,6 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isHashCheckEnabled();
 
     @AboutConfig
-    @DefaultBooleanValue(true)
-    boolean isLinkcheckEnabled();
-
-    @AboutConfig
     @DefaultBooleanValue(false)
     boolean isMaxDownloadsPerHostEnabled();
 
@@ -370,8 +366,6 @@ public interface GeneralSettings extends ConfigInterface {
     void setHashCheckEnabled(boolean b);
 
     void setIfFileExistsAction(IfFileExistsAction action);
-
-    void setLinkcheckEnabled(boolean b);
 
     void setMaxBufferSize(int num);
 

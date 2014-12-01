@@ -76,8 +76,6 @@ public class CFG_GENERAL {
      **/
     public static final BooleanKeyHandler               CLOSED_WITH_RUNNING_DOWNLOADS                                    = SH.getKeyHandler("ClosedWithRunningDownloads", BooleanKeyHandler.class);
 
-    public static final BooleanKeyHandler               LINKCHECK_ENABLED                                                = SH.getKeyHandler("LinkcheckEnabled", BooleanKeyHandler.class);
-
     /**
      * Use available Accounts?
      **/
