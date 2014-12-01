@@ -353,10 +353,10 @@ public class NowVideoEu extends PluginForHost {
         if (account.getBooleanProperty("free", false)) {
             ai.setStatus("Free Account");
         } else {
-            String expire_time = br.getRegex(expire).getMatch(0);
+            final String expire_time = br.getRegex(expire).getMatch(0);
             // 2014-Mar-22.
             if (expire_time != null) {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MMM-d", Locale.UK));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire_time, "yyyy-MMM-dd", Locale.ENGLISH));
             }
             ai.setStatus("Premium Account");
         }
