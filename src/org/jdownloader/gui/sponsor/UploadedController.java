@@ -18,7 +18,6 @@ import javax.swing.Icon;
 import jd.SecondLevelLaunch;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
-import jd.controlling.AccountControllerEvent.Types;
 import jd.controlling.AccountControllerListener;
 import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.TopRightPainter;
@@ -226,125 +225,123 @@ public class UploadedController implements AccountControllerListener, Sponsor {
     @Override
     public void onAccountControllerEvent(AccountControllerEvent event) {
         try {
-            if (event == null || event.getAccount() != null && "uploaded.to".equals(event.getAccount().getHoster())) {
+            // if (event == null || event.getAccount() != null && "uploaded.to".equals(event.getAccount().getHoster())) {
 
-                // boolean hasOtherAccountToRenewAlreadyExpired = false;
-                // boolean hasOtherAccountToRenew = false;
-                // boolean hasPremium = false;
-                // boolean hasDealAccount = false;
-                // Account renew = null;
-                // Account renewDeal = null;
-                // for (Account acc : AccountController.getInstance().list("uploaded.to")) {
-                //
-                // long dealTime = acc.getLongProperty("DEAL", -1l);
-                // if (dealTime > 0) {
-                // hasDealAccount = true;
-                // AccountInfo accountInfo = acc.getAccountInfo();
-                // if (accountInfo != null) {
-                // long validUntil = accountInfo.getValidUntil();
-                // if (validUntil <= 0) {
-                // validUntil = acc.getLongProperty("PREMIUM_UNIX", -1);
-                // }
-                // long restPremium = validUntil - System.currentTimeMillis();
-                // if (restPremium < 24 * 60 * 60 * 1000l) {
-                // if (renewDeal == null) {
-                // renewDeal = acc;
-                // }
-                // if (restPremium < 0) {
-                // // hasDealAccountToRenewAlreadyExpired = true;
-                // }
-                // // on day or less valid
-                //
-                // } else {
-                // hasPremium = true;
-                // }
-                // }
-                // } else {
-                //
-                // AccountInfo accountInfo = acc.getAccountInfo();
-                // if (accountInfo != null) {
-                // long validUntil = accountInfo.getValidUntil();
-                // if (validUntil <= 0) {
-                // validUntil = acc.getLongProperty("PREMIUM_UNIX", -1);
-                // }
-                // long restPremium = validUntil - System.currentTimeMillis();
-                // if (restPremium < 24 * 60 * 60 * 1000l) {
-                // if (renew == null) {
-                // renew = acc;
-                // }
-                // if (restPremium < 0) {
-                // hasOtherAccountToRenewAlreadyExpired = true;
-                // }
-                // // on day or less valid
-                // hasOtherAccountToRenew = true;
-                // } else {
-                // hasPremium = true;
-                // }
-                // }
-                // }
-                //
-                // }
-                // if (renewDeal != null) {
-                // renew = renewDeal;
-                // }
+            // boolean hasOtherAccountToRenewAlreadyExpired = false;
+            // boolean hasOtherAccountToRenew = false;
+            // boolean hasPremium = false;
+            // boolean hasDealAccount = false;
+            // Account renew = null;
+            // Account renewDeal = null;
+            // for (Account acc : AccountController.getInstance().list("uploaded.to")) {
+            //
+            // long dealTime = acc.getLongProperty("DEAL", -1l);
+            // if (dealTime > 0) {
+            // hasDealAccount = true;
+            // AccountInfo accountInfo = acc.getAccountInfo();
+            // if (accountInfo != null) {
+            // long validUntil = accountInfo.getValidUntil();
+            // if (validUntil <= 0) {
+            // validUntil = acc.getLongProperty("PREMIUM_UNIX", -1);
+            // }
+            // long restPremium = validUntil - System.currentTimeMillis();
+            // if (restPremium < 24 * 60 * 60 * 1000l) {
+            // if (renewDeal == null) {
+            // renewDeal = acc;
+            // }
+            // if (restPremium < 0) {
+            // // hasDealAccountToRenewAlreadyExpired = true;
+            // }
+            // // on day or less valid
+            //
+            // } else {
+            // hasPremium = true;
+            // }
+            // }
+            // } else {
+            //
+            // AccountInfo accountInfo = acc.getAccountInfo();
+            // if (accountInfo != null) {
+            // long validUntil = accountInfo.getValidUntil();
+            // if (validUntil <= 0) {
+            // validUntil = acc.getLongProperty("PREMIUM_UNIX", -1);
+            // }
+            // long restPremium = validUntil - System.currentTimeMillis();
+            // if (restPremium < 24 * 60 * 60 * 1000l) {
+            // if (renew == null) {
+            // renew = acc;
+            // }
+            // if (restPremium < 0) {
+            // hasOtherAccountToRenewAlreadyExpired = true;
+            // }
+            // // on day or less valid
+            // hasOtherAccountToRenew = true;
+            // } else {
+            // hasPremium = true;
+            // }
+            // }
+            // }
+            //
+            // }
+            // if (renewDeal != null) {
+            // renew = renewDeal;
+            // }
 
-                // this.accountToRenew = renew;
-                // this.hasOtherAccountToRenewAlreadyExpired = hasOtherAccountToRenewAlreadyExpired;
-                //
-                // this.hasOtherAccountToRenew = hasOtherAccountToRenew;
-                // this.hasDealAccountToRenew = hasDealAccountToRenew;
-                // boolean showPro = !isOfferActiveByAPI() && (hasOtherAccountToRenew || hasDealAccountToRenew) && !hasPremium;
-                // if (!isOfferActiveByAPI() && !hasPremium && !hasOtherAccountToRenew && !hasDealAccountToRenew) {
-                // showPro = true;
-                // }
-                // if (getProMode.compareAndSet(!showPro, showPro)) {
-                // new EDTRunner() {
-                //
-                // @Override
-                // protected void runInEDT() {
-                // MainTabbedPane.getInstance().repaint();
-                // }
-                // };
-                // }
+            // this.accountToRenew = renew;
+            // this.hasOtherAccountToRenewAlreadyExpired = hasOtherAccountToRenewAlreadyExpired;
+            //
+            // this.hasOtherAccountToRenew = hasOtherAccountToRenew;
+            // this.hasDealAccountToRenew = hasDealAccountToRenew;
+            // boolean showPro = !isOfferActiveByAPI() && (hasOtherAccountToRenew || hasDealAccountToRenew) && !hasPremium;
+            // if (!isOfferActiveByAPI() && !hasPremium && !hasOtherAccountToRenew && !hasDealAccountToRenew) {
+            // showPro = true;
+            // }
+            // if (getProMode.compareAndSet(!showPro, showPro)) {
+            // new EDTRunner() {
+            //
+            // @Override
+            // protected void runInEDT() {
+            // MainTabbedPane.getInstance().repaint();
+            // }
+            // };
+            // }
 
+            if (event != null && event.getAccount() != null && event.getAccount().getPlugin() != null && AccountControllerEvent.Types.ACCOUNT_CHECKED.equals(event.getType()) && CFG_GUI.CFG.isPremiumExpireWarningEnabled()) {
                 long premiumUntil = -1;
                 premiumUntil = event.getAccount().getValidPremiumUntil();
-                Types type = event.getType();
-                if (event != null && event.getAccount() != null && event.getAccount().getPlugin() != null && AccountControllerEvent.Types.ACCOUNT_CHECKED.equals(event.getType()) && CFG_GUI.CFG.isPremiumExpireWarningEnabled()) {
-
-                    final Account account = event.getAccount();
-                    final long rest = premiumUntil - System.currentTimeMillis();
-                    if (rest > 0 && rest < 1 * 24 * 60 * 60 * 1000l) {
-                        boolean notify = false;
-                        synchronized (this) {
-                            final Long lastNotify = expireNotifies.get(account.getHoster());
-                            // ask at max once a month
-                            if (lastNotify == null || System.currentTimeMillis() - lastNotify > 30 * 24 * 60 * 60 * 1000l) {
-                                notify = true;
-                                expireNotifies.put(account.getHoster(), System.currentTimeMillis());
-                                CFG_GUI.CFG.setPremiumExpireWarningMapV2(expireNotifies);
-                            }
-                        }
-                        if (notify) {
-                            notify(account, _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_still_premium_title(account.getHoster()), _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_still_premium_msg(account.getUser(), account.getHoster()));
-                        }
-                    } else if (rest < 0 && rest > -7 * 24 * 60 * 60 * 1000l) {
-                        boolean notify = false;
-                        synchronized (this) {
-                            final Long lastNotify = expireNotifies.get(account.getHoster());
-                            // ask at max once a month
-                            if (lastNotify == null || System.currentTimeMillis() - lastNotify > 30 * 24 * 60 * 60 * 1000l) {
-                                notify = true;
-                                expireNotifies.put(account.getHoster(), System.currentTimeMillis());
-                                CFG_GUI.CFG.setPremiumExpireWarningMapV2(expireNotifies);
-                            }
-                        }
-                        if (notify) {
-                            notify(account, _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_expired_premium_title(account.getHoster()), _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_expired_premium_msg(account.getUser(), account.getHoster()));
+                final Account account = event.getAccount();
+                final long rest = premiumUntil - System.currentTimeMillis();
+                if (rest > 0 && rest < 1 * 24 * 60 * 60 * 1000l) {
+                    boolean notify = false;
+                    synchronized (this) {
+                        final Long lastNotify = expireNotifies.get(account.getHoster());
+                        // ask at max once a month
+                        if (lastNotify == null || System.currentTimeMillis() - lastNotify > 30 * 24 * 60 * 60 * 1000l) {
+                            notify = true;
+                            expireNotifies.put(account.getHoster(), System.currentTimeMillis());
+                            CFG_GUI.CFG.setPremiumExpireWarningMapV2(expireNotifies);
                         }
                     }
-
+                    if (notify) {
+                        notify(account, _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_still_premium_title(account.getHoster()), _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_still_premium_msg(account.getUser(), account.getHoster()));
+                    }
+                } else if (rest < 0 && rest > -7 * 24 * 60 * 60 * 1000l) {
+                    boolean notify = false;
+                    synchronized (this) {
+                        final Long lastNotify = expireNotifies.get(account.getHoster());
+                        // ask at max once a month
+                        if (lastNotify == null || System.currentTimeMillis() - lastNotify > 30 * 24 * 60 * 60 * 1000l) {
+                            notify = true;
+                            expireNotifies.put(account.getHoster(), System.currentTimeMillis());
+                            CFG_GUI.CFG.setPremiumExpireWarningMapV2(expireNotifies);
+                        }
+                    }
+                    if (notify) {
+                        notify(account, _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_expired_premium_title(account.getHoster()), _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_expired_premium_msg(account.getUser(), account.getHoster()));
+                    }
                 }
+
+                // }
             }
         } catch (final Throwable e) {
             LogController.CL().log(e);
