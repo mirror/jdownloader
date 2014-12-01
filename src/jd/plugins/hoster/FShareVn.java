@@ -29,6 +29,7 @@ import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -48,7 +49,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fshare.vn", "mega.1280.com" }, urls = { "http://(www\\.)?(mega\\.1280\\.com|fshare\\.vn)/file/[0-9A-Z]+", "dgjediz65854twsdfbtzoi6UNUSED_REGEX" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fshare.vn", "mega.1280.com" }, urls = { "https?://(www\\.)?(mega\\.1280\\.com|fshare\\.vn)/file/[0-9A-Z]+", "dgjediz65854twsdfbtzoi6UNUSED_REGEX" }, flags = { 2, 0 })
 public class FShareVn extends PluginForHost {
 
     private static final String  SERVERERROR = "Tài nguyên bạn yêu cầu không tìm thấy";
@@ -137,6 +138,7 @@ public class FShareVn extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         prepBrowser();
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         String redirect = br.getRedirectLocation();
         if (redirect != null) {
@@ -206,18 +208,21 @@ public class FShareVn extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
             if (!dl.getConnection().getContentType().contains("html")) {
                 dl.startDownload();
+                return;
+            } else {
+                dllink = null;
             }
-        } else {
+        }
+        if (dllink == null) {
             if (br.containsHTML(IPBLOCKED)) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
             }
-            br.setFollowRedirects(true);
-            final String fid = br.getRegex("name=\"file_id\" value=\"(\\d+)\"").getMatch(0);
-            if (fid == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.postPage(downloadLink.getDownloadURL(), "special=&action=download_file&file_id=" + fid);
-            if (br.containsHTML(IPBLOCKED)) {
+            Browser ajax = br.cloneBrowser();
+            ajax.getHeaders().put("Accept", "*/*");
+            ajax.getHeaders().put("x-requested-with", "XMLHttpRequest");
+            ajax.getPage("/download/index");
+            dllink = ajax.getRegex("(https?://download[^/]*fshare\\.vn/dl/.+)").getMatch(0);
+            if (dllink != null && br.containsHTML(IPBLOCKED) || ajax.containsHTML(IPBLOCKED)) {
                 final String nextDl = br.getRegex("LÆ°á»£t táº£i xuá»‘ng káº¿ tiáº¿p lÃ : ([^<>]+)<").getMatch(0);
                 logger.info("Next download: " + nextDl);
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
@@ -234,11 +239,13 @@ public class FShareVn extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
             }
-            dllink = br.getRegex("window\\.location=\\'(.*?)\\'").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("value=\"Download\" name=\"btn_download\" value=\"Download\"  onclick=\"window\\.location=\\'(http://.*?)\\'\"").getMatch(0);
+                dllink = br.getRegex("window\\.location=\\'(.*?)\\'").getMatch(0);
                 if (dllink == null) {
-                    dllink = br.getRegex("<form action=\"(http://download[^\\.]+\\.fshare\\.vn/download/[^<>]+/.*?)\"").getMatch(0);
+                    dllink = br.getRegex("value=\"Download\" name=\"btn_download\" value=\"Download\"  onclick=\"window\\.location=\\'(http://.*?)\\'\"").getMatch(0);
+                    if (dllink == null) {
+                        dllink = br.getRegex("<form action=\"(http://download[^\\.]+\\.fshare\\.vn/download/[^<>]+/.*?)\"").getMatch(0);
+                    }
                 }
             }
             logger.info("downloadURL = " + dllink);
@@ -273,7 +280,7 @@ public class FShareVn extends PluginForHost {
     private void prepBrowser() {
         // Sometime the page is extremely slow!
         br.setReadTimeout(120 * 1000);
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:16.0) Gecko/20100101 Firefox/16.0");
+        // br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:16.0) Gecko/20100101 Firefox/16.0");
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
