@@ -42,7 +42,9 @@ public class Formatter {
     }
 
     public static String formatSeconds(long eta, boolean showsec) {
-        if (eta < 0) return "~";
+        if (eta < 0) {
+            return "~";
+        }
         long days = eta / (24 * 60 * 60);
         eta -= days * 24 * 60 * 60;
         long hours = eta / (60 * 60);
@@ -50,17 +52,25 @@ public class Formatter {
         long minutes = eta / 60;
         long seconds = eta - minutes * 60;
         StringBuilder ret = new StringBuilder();
-        if (days != 0) ret.append(days).append('d');
+        if (days != 0) {
+            ret.append(days).append('d');
+        }
         if (hours != 0 || ret.length() != 0) {
-            if (ret.length() != 0) ret.append(':');
+            if (ret.length() != 0) {
+                ret.append(':');
+            }
             ret.append(hours).append('h');
         }
         if (minutes != 0 || ret.length() != 0) {
-            if (ret.length() != 0) ret.append(':');
+            if (ret.length() != 0) {
+                ret.append(':');
+            }
             ret.append(Formatter.fillInteger(minutes, 2, "0")).append('m');
         }
         if (showsec) {
-            if (ret.length() != 0) ret.append(':');
+            if (ret.length() != 0) {
+                ret.append(':');
+            }
             ret.append(Formatter.fillInteger(seconds, 2, "0")).append('s');
         }
         return ret.toString();
@@ -97,12 +107,22 @@ public class Formatter {
     }
 
     public static String formatReadable(long fileSize) {
-        if (fileSize < 0) fileSize = 0;
+        if (fileSize < 0) {
+            fileSize = 0;
+        }
         DecimalFormat c = new DecimalFormat("0.00");
-        if (fileSize >= (1024 * 1024 * 1024 * 1024l)) return c.format(fileSize / (1024 * 1024 * 1024 * 1024.0)) + " TiB";
-        if (fileSize >= (1024 * 1024 * 1024l)) return c.format(fileSize / (1024 * 1024 * 1024.0)) + " GiB";
-        if (fileSize >= (1024 * 1024l)) return c.format(fileSize / (1024 * 1024.0)) + " MiB";
-        if (fileSize >= 1024l) return c.format(fileSize / 1024.0) + " KiB";
+        if (fileSize >= (1024 * 1024 * 1024 * 1024l)) {
+            return c.format(fileSize / (1024 * 1024 * 1024 * 1024.0)) + " TiB";
+        }
+        if (fileSize >= (1024 * 1024 * 1024l)) {
+            return c.format(fileSize / (1024 * 1024 * 1024.0)) + " GiB";
+        }
+        if (fileSize >= (1024 * 1024l)) {
+            return c.format(fileSize / (1024 * 1024.0)) + " MiB";
+        }
+        if (fileSize >= 1024l) {
+            return c.format(fileSize / 1024.0) + " KiB";
+        }
         return fileSize + " B";
     }
 
@@ -158,11 +178,25 @@ public class Formatter {
      * @return
      */
     public static long getRevision(String rev) {
-        if (rev == null) return -1;
+        if (rev == null) {
+            return -1;
+        }
         try {
+            int ret = 0;
+            if (!rev.startsWith("$")) {
+                String base = new Regex(rev, "Base:\\s*(\\d+)").getMatch(0);
+
+                if (base != null) {
+                    ret += Long.parseLong(base);
+                }
+            }
             String number = new Regex(rev, "Revision:.*?(\\d+)").getMatch(0);
-            if (number != null) return Long.parseLong(number);
+            if (number != null) {
+                ret += Long.parseLong(number);
+                return ret;
+            }
         } catch (Throwable e) {
+            e.printStackTrace();
         }
         return -1;
     }

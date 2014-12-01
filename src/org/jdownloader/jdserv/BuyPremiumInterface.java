@@ -25,9 +25,9 @@ public interface BuyPremiumInterface extends RemoteAPIInterface, RemoteAPISignat
     public void listCache(RemoteAPIResponse response) throws InternalApiException;
 
     @ApiSessionRequired
-    public boolean clearCache();
+    public int clearPool();
 
     @ApiSessionRequired
-    public int clearPool();
+    public boolean clearCache();
 
 }
