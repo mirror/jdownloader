@@ -153,6 +153,7 @@ import org.jdownloader.plugins.controller.container.ContainerPluginController;
 import org.jdownloader.settings.CleanAfterDownloadAction;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
+import org.jdownloader.settings.MirrorDetectionDecision;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
@@ -753,7 +754,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         if (PluginForHost.implementsSortDownloadLink(nextCandidate.getCachedAccount().getPlugin())) {
                             final ArrayList<DownloadLink> mirrors = new ArrayList<DownloadLink>();
                             mirrors.add(0, nextCandidate.getLink());
-                            for (final DownloadLink mirror : findDownloadLinkMirrors(nextCandidate.getLink())) {
+                            for (final DownloadLink mirror : findDownloadLinkMirrors(nextCandidate.getLink(), MirrorDetectionDecision.SAFE)) {
                                 if (nextCandidate.getCachedAccount().canHandle(mirror) && (mirror.getFinalLinkState() == null || !FinalLinkState.OFFLINE.equals(mirror.getFinalLinkState()))) {
                                     final DownloadLinkCandidate candidate = new DownloadLinkCandidate(nextCandidate.getLink(), nextCandidate.isForced(), nextCandidate.getCachedAccount(), nextCandidate.getProxySelector(), nextCandidate.isCustomizedAccount());
                                     final DownloadLinkCandidatePermission permission = selector.getDownloadLinkCandidatePermission(candidate);
@@ -780,7 +781,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     }
                     selector.setExcluded(nextCandidate.getLink());
                     final MirrorLoading condition = new MirrorLoading(nextCandidate.getLink());
-                    for (DownloadLink mirror : findDownloadLinkMirrors(nextCandidate.getLink())) {
+                    for (DownloadLink mirror : findDownloadLinkMirrors(nextCandidate.getLink(), config.getMirrorDetectionDecision())) {
                         selector.setExcluded(mirror);
                         if (mirror.getFinalLinkState() == null || FinalLinkState.CheckFailed(mirror.getFinalLinkState())) {
                             mirror.setConditionalSkipReason(condition);
@@ -961,19 +962,15 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         return finalCandidates.get(0);
     }
 
-    private boolean isMirrorCandidate(DownloadLink linkCandidate, String cachedLinkCandidateName, DownloadLink mirrorCandidate) {
-
+    private boolean isMirrorCandidate(DownloadLink linkCandidate, String cachedLinkCandidateName, DownloadLink mirrorCandidate, MirrorDetectionDecision mirrorDetectionDecision) {
         String cachedLinkMirrorID = linkCandidate.getDefaultPlugin().getMirrorID(linkCandidate);
         String mirrorCandidateMirrorID = mirrorCandidate.getDefaultPlugin().getMirrorID(mirrorCandidate);
         if (cachedLinkMirrorID != null && mirrorCandidateMirrorID != null) {
-
             return StringUtils.equals(cachedLinkMirrorID, mirrorCandidateMirrorID);
         }
-
         if (cachedLinkCandidateName == null) {
             cachedLinkCandidateName = linkCandidate.getView().getDisplayName();
         }
-        Boolean sameSizeResult = null;
         final boolean sameName;
         String mirrorCandidateName = mirrorCandidate.getView().getDisplayName();
         if (CrossSystem.isWindows() || isForceMirrorDetectionCaseInsensitive()) {
@@ -981,47 +978,60 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         } else {
             sameName = cachedLinkCandidateName.equals(mirrorCandidateName);
         }
-        switch (config.getMirrorDetectionDecision()) {
-        case AUTO:
-            Boolean sameHashResult = hasSameHash(linkCandidate, mirrorCandidate);
-            if (sameHashResult != null) {
-                return sameHashResult;
-            }
-            sameSizeResult = hasSameSize(linkCandidate, mirrorCandidate);
+        switch (mirrorDetectionDecision) {
+        case SAFE: {
+            final Boolean sameSizeResult = hasSameSize(linkCandidate, mirrorCandidate, mirrorDetectionDecision);
             if (sameSizeResult != null && Boolean.FALSE.equals(sameSizeResult)) {
                 return false;
             }
+            final Boolean sameHashResult = hasSameHash(linkCandidate, mirrorCandidate);
+            if (sameHashResult != null && Boolean.FALSE.equals(sameHashResult)) {
+                return sameHashResult;
+            }
             return sameName;
+        }
+        case AUTO: {
+            final Boolean sameSizeResult = hasSameSize(linkCandidate, mirrorCandidate, mirrorDetectionDecision);
+            if (sameSizeResult != null && Boolean.FALSE.equals(sameSizeResult)) {
+                return false;
+            }
+            final Boolean sameHashResult = hasSameHash(linkCandidate, mirrorCandidate);
+            if (sameHashResult != null) {
+                return sameHashResult;
+            }
+            return sameName;
+        }
         case FILENAME:
             return sameName;
-        case FILENAME_FILESIZE:
-            sameSizeResult = hasSameSize(linkCandidate, mirrorCandidate);
+        case FILENAME_FILESIZE: {
+            final Boolean sameSizeResult = hasSameSize(linkCandidate, mirrorCandidate, mirrorDetectionDecision);
             return sameName && sameSizeResult != null && Boolean.TRUE.equals(sameSizeResult);
+        }
         }
         return false;
     }
 
-    private Boolean hasSameSize(DownloadLink linkCandidate, DownloadLink mirrorCandidate) {
-        int fileSizeEquality = config.getMirrorDetectionFileSizeEquality();
-        long sizeA = linkCandidate.getView().getBytesTotalVerified();
-        long sizeB = mirrorCandidate.getView().getBytesTotalVerified();
-        if (fileSizeEquality == 10000) {
+    private Boolean hasSameSize(DownloadLink linkCandidate, DownloadLink mirrorCandidate, MirrorDetectionDecision mirrorDetectionDecision) {
+        final int fileSizeEquality = config.getMirrorDetectionFileSizeEquality();
+        final long verifiedFileSizeA = linkCandidate.getView().getBytesTotalVerified();
+        final long verifiedFileSizeB = mirrorCandidate.getView().getBytesTotalVerified();
+        if (fileSizeEquality == 10000 || MirrorDetectionDecision.SAFE.equals(mirrorDetectionDecision)) {
             /* 100 percent sure, only use verifiedFileSizes */
-            if (sizeA >= 0 && sizeB >= 0) {
-                return sizeA == sizeB;
+            if (verifiedFileSizeA >= 0 && verifiedFileSizeB >= 0) {
+                return verifiedFileSizeA == verifiedFileSizeB;
             }
         } else {
             /* we use knownDownloadSize for check */
-            sizeA = linkCandidate.getView().getBytesTotal();
-            sizeB = mirrorCandidate.getView().getBytesTotal();
+            final long sizeA = linkCandidate.getView().getBytesTotal();
+            final long sizeB = mirrorCandidate.getView().getBytesTotal();
             if (sizeA >= 0 && sizeB >= 0) {
-                long diff = Math.abs(sizeA - sizeB);
-                int maxDiffPercent = 10000 - fileSizeEquality;
-                long maxDiff = (sizeA * maxDiffPercent) / 10000;
+                final long diff = Math.abs(sizeA - sizeB);
+                final int maxDiffPercent = 10000 - Math.min(1, Math.max(9999, fileSizeEquality));
+                final long maxDiff = (sizeA * maxDiffPercent) / 10000;
                 return diff <= maxDiff;
             }
         }
-        if (config.isForceMirrorDetectionFileSizeCheck()) {
+        if (config.isForceMirrorDetectionFileSizeCheck() || MirrorDetectionDecision.SAFE.equals(mirrorDetectionDecision)) {
             return false;
         } else {
             return null;
@@ -1029,20 +1039,20 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     }
 
     private Boolean hasSameHash(DownloadLink linkCandidate, DownloadLink mirrorCandidate) {
-        String hashA = linkCandidate.getMD5Hash();
-        String hashB = mirrorCandidate.getMD5Hash();
-        if (hashA != null && hashB != null) {
-            return hashA.equalsIgnoreCase(hashB);
+        final String md5A = linkCandidate.getMD5Hash();
+        final String md5B = mirrorCandidate.getMD5Hash();
+        if (md5A != null && md5B != null) {
+            return md5A.equalsIgnoreCase(md5B);
         }
-        hashA = linkCandidate.getSha1Hash();
-        hashB = mirrorCandidate.getSha1Hash();
-        if (hashA != null && hashB != null) {
-            return hashA.equalsIgnoreCase(hashB);
+        final String sha1A = linkCandidate.getSha1Hash();
+        final String sha1B = mirrorCandidate.getSha1Hash();
+        if (sha1A != null && sha1B != null) {
+            return sha1A.equalsIgnoreCase(sha1B);
         }
         return null;
     }
 
-    private List<DownloadLink> findDownloadLinkMirrors(final DownloadLink link) {
+    private List<DownloadLink> findDownloadLinkMirrors(final DownloadLink link, final MirrorDetectionDecision mirrorDetectionDecision) {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final FilePackage fp = link.getFilePackage();
         final String name = link.getView().getDisplayName();
@@ -1051,7 +1061,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             @Override
             public void run() {
                 for (DownloadLink mirror : fp.getChildren()) {
-                    if (mirror != link && isMirrorCandidate(link, name, mirror)) {
+                    if (mirror != link && isMirrorCandidate(link, name, mirror, mirrorDetectionDecision)) {
                         ret.add(mirror);
                     }
                 }
@@ -1490,14 +1500,15 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     }
 
     private List<DownloadLinkCandidate> findDownloadLinkCandidateMirrors(DownloadLinkCandidateSelector selector, DownloadLinkCandidate candidate) {
-        List<DownloadLinkCandidate> ret = new ArrayList<DownloadLinkCandidate>();
+        final List<DownloadLinkCandidate> ret = new ArrayList<DownloadLinkCandidate>();
         if (candidate.isForced()) {
             return ret;
         }
-        DownloadLink link = candidate.getLink();
-        FilePackage filePackage = link.getFilePackage();
-        String name = link.getView().getDisplayName();
-        ArrayList<DownloadLink> removeList = new ArrayList<DownloadLink>();
+        final DownloadLink link = candidate.getLink();
+        final FilePackage filePackage = link.getFilePackage();
+        final String name = link.getView().getDisplayName();
+        final ArrayList<DownloadLink> removeList = new ArrayList<DownloadLink>();
+        final MirrorDetectionDecision mirrorDetectionDecision = config.getMirrorDetectionDecision();
         for (DownloadLink next : getSession().getActivationRequests()) {
             if (next == link) {
                 continue;
@@ -1514,7 +1525,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 removeList.add(next);
                 continue;
             }
-            if (isMirrorCandidate(link, name, next)) {
+            if (isMirrorCandidate(link, name, next, mirrorDetectionDecision)) {
                 ret.add(new DownloadLinkCandidate(next, false));
             }
         }
@@ -2349,7 +2360,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             DownloadWatchDog.this.logger.log(e);
                         }
                         currentSession.getControllers().remove(singleDownloadController);
-                        for (DownloadWatchDogJob job : singleDownloadController.getJobsAfterDetach()) {
+                        for (final DownloadWatchDogJob job : singleDownloadController.getJobsAfterDetach()) {
                             try {
                                 job.execute(currentSession);
                             } catch (Throwable e) {
@@ -2369,7 +2380,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         } catch (final Throwable e) {
                             DownloadWatchDog.this.logger.log(e);
                         }
-                        HashSet<DownloadLink> finalLinkStateLinks = finalizeConditionalSkipReasons(currentSession);
+                        final HashSet<DownloadLink> finalLinkStateLinks = finalizeConditionalSkipReasons(currentSession);
                         /* after each download, the order/position of next downloadCandidate could have changed */
                         currentSession.refreshCandidates();
                         try {
@@ -3639,6 +3650,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
                 boolean fileInProgress = false;
                 if (!fileExists) {
+                    final MirrorDetectionDecision mirrorDetectionDecision = config.getMirrorDetectionDecision();
                     for (SingleDownloadController downloadController : session.getControllers()) {
                         if (downloadController == controller) {
                             continue;
@@ -3651,7 +3663,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         final String localCheck = fileOutput.getAbsolutePath();
                         if (session.getFileAccessManager().isLockedBy(fileOutput, downloadController)) {
                             /* fileOutput is already locked */
-                            if (block.getFilePackage() == downloadLink.getFilePackage() && isMirrorCandidate(downloadLink, localCheck, block)) {
+                            if (block.getFilePackage() == downloadLink.getFilePackage() && isMirrorCandidate(downloadLink, localCheck, block, mirrorDetectionDecision)) {
                                 /* only throw ConditionalSkipReasonException when file is from same package */
                                 throw new ConditionalSkipReasonException(new MirrorLoading(block));
                             } else {
