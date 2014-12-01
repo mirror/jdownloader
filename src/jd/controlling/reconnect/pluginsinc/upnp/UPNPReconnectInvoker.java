@@ -21,7 +21,7 @@ import org.appwork.utils.net.httpconnection.HTTPConnectionImpl;
 
 public class UPNPReconnectInvoker extends ReconnectInvoker {
 
-    private String serviceType;
+    private final String serviceType;
 
     public UPNPReconnectInvoker(UPNPRouterPlugin upnpRouterPlugin, String serviceType2, String controlURL2) {
         super(upnpRouterPlugin);
@@ -95,14 +95,6 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
 
     }
 
-    public void setServiceType(String serviceType) {
-        this.serviceType = serviceType;
-    }
-
-    public void setControlURL(String controlURL) {
-        this.controlURL = controlURL;
-    }
-
     public String getServiceType() {
         return serviceType;
     }
@@ -111,7 +103,7 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
         return controlURL;
     }
 
-    private String controlURL;
+    private final String controlURL;
 
     public String getName() {
         return T._.UPNPReconnectInvoker_getName_();

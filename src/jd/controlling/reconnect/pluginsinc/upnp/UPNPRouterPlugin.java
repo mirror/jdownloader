@@ -1,5 +1,6 @@
 package jd.controlling.reconnect.pluginsinc.upnp;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,6 +30,7 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.ProcessCallBack;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
@@ -171,8 +173,14 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
 
             @Override
             public void onChanged() {
-                settings.setServiceType(UPNPRouterPlugin.this.serviceTypeTxt.getText());
-                UPNPRouterPlugin.this.setCanCheckIP(true);
+                final String serviceType = UPNPRouterPlugin.this.serviceTypeTxt.getText();
+                try {
+                    if (StringUtils.isNotEmpty(serviceType) && serviceType.toLowerCase(java.util.Locale.ENGLISH).startsWith("urn:schemas-upnp-org:service:")) {
+                        settings.setServiceType(serviceType);
+                        UPNPRouterPlugin.this.setCanCheckIP(true);
+                    }
+                } catch (final Throwable e) {
+                }
             }
 
         };
@@ -180,12 +188,17 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
 
             @Override
             public void onChanged() {
-                settings.setControlURL(UPNPRouterPlugin.this.controlURLTxt.getText());
-                UPNPRouterPlugin.this.setCanCheckIP(true);
+                final String controlURL = UPNPRouterPlugin.this.controlURLTxt.getText();
+                try {
+                    if (StringUtils.isNotEmpty(controlURL) && new URL(controlURL).getHost() != null) {
+                        settings.setControlURL(controlURL);
+                        UPNPRouterPlugin.this.setCanCheckIP(true);
+                    }
+                } catch (final Throwable e) {
+                }
             }
 
         };
-
         serviceTypeTxt.setHelpText(T._.servicetype_help());
         controlURLTxt.setHelpText(T._.controlURLTxt_help());
 
@@ -250,15 +263,11 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
             settings.setWANService(null);
         } else {
             LogController.CL().info(upnpRouterDevice + "");
-
             settings.setControlURL(upnpRouterDevice.getControlURL());
             settings.setModelName(upnpRouterDevice.getModelname());
-
             settings.setServiceType(upnpRouterDevice.getServiceType());
             settings.setWANService(upnpRouterDevice.getWanservice());
-
             this.setCanCheckIP(true);
-
             this.updateGUI();
         }
     }
@@ -268,7 +277,6 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
 
             @Override
             protected void runInEDT() {
-
                 if (UPNPRouterPlugin.this.wanType != null) {
                     try {
                         UPNPRouterPlugin.this.wanType.setText(settings.getModelName() + (settings.getWANService().length() > 0 ? " (" + settings.getWANService() + ")" : ""));
@@ -282,12 +290,6 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
                         UPNPRouterPlugin.this.controlURLTxt.setText(settings.getControlURL());
                     } catch (final Throwable e) {
                     }
-                    // final String ipcheckEnabled =
-                    // UPNPRouterPlugin.this.isIPCheckEnabled() ?
-                    // Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.text.yes",
-                    // "Yes") :
-                    // Loc.L("jd.controlling.reconnect.plugins.upnp.UPNPRouterPlugin.text.no",
-                    // "No");
 
                 }
             }
