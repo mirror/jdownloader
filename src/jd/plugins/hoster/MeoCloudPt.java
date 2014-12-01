@@ -45,10 +45,16 @@ public class MeoCloudPt extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("class=\"error type404\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("class=\"error type404\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("/dl/zipdir/[a-z0-9\\-]+/.*?/([^<>\"/]*?)\\?(public|download)=").getMatch(0);
-        if (filename == null) filename = br.getRegex("class=\"pick_file\" value=\"/([^<>\"]*?)\">").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            filename = br.getRegex("class=\"pick_file\" value=\"/([^<>\"]*?)\">").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
     }
@@ -56,7 +62,7 @@ public class MeoCloudPt extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex("\"(https?://[a-z0-9\\.]+/dl/zipdir/[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("\"(https?://[a-z0-9\\.]+/dl/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             final String publ = new Regex(downloadLink.getDownloadURL(), "meocloud\\.pt/link/([a-z0-9\\-]+)/").getMatch(0);
             dllink = "https://cld.pt/dl/download/" + publ + "/" + Encoding.urlEncode(downloadLink.getName()) + "?public=" + publ + "&download=true";

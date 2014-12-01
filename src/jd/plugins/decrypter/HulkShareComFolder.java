@@ -48,6 +48,9 @@ public class HulkShareComFolder extends PluginForDecrypt {
             logger.info("Invalid link: " + parameter);
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
+        } else if (parameter.matches(HULKSHAREDOWNLOADLINK)) {
+            decryptedLinks.add(createDownloadlink(parameter.replace("hulkshare.com/", "hulksharedecrypted.com/")));
+            return decryptedLinks;
         }
         br.setFollowRedirects(false);
         br.setCookie("http://hulkshare.com/", "lang", "english");
@@ -64,7 +67,10 @@ public class HulkShareComFolder extends PluginForDecrypt {
             return decryptedLinks;
         }
         String argh = br.getRedirectLocation();
-        if (br.containsHTML("class=\"bigDownloadBtn") || br.containsHTML(">The owner of this file doesn\\'t allow downloading") || argh != null) {
+        if (argh != null) {
+            br.getPage(argh);
+        }
+        if (br.containsHTML("class=\"bigDownloadBtn") || br.containsHTML(">The owner of this file doesn\\'t allow downloading")) {
             logger.info("Link offline: " + parameter);
             decryptedLinks.add(createDownloadlink(parameter.replace("hulkshare.com/", "hulksharedecrypted.com/")));
             decryptedLinks.add(getOffline(parameter));

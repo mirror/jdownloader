@@ -65,6 +65,7 @@ public class HitFileNet extends PluginForHost {
         this.enablePremium("http://hitfile.net/premium/emoney/5");
     }
 
+    /** 01.12.14: turbobit.net & hitfile.net Linkchecker is broken - will hopefully be back soon! */
     // @Override
     // public boolean checkLinks(final DownloadLink[] urls) {
     // if (urls == null || urls.length == 0) {
@@ -530,12 +531,10 @@ public class HitFileNet extends PluginForHost {
         /** Old linkcheck code can be found in rev 16195 */
         correctDownloadLink(downloadLink);
         br.setCookie(MAINPAGE, "user_lang", "en");
-        // br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.setCookiesExclusive(true);
-        String id = new Regex(downloadLink.getDownloadURL(), ".*/(.+?)$").getMatch(0);
-        br.getPage("http://hitfile.net/download/free/" + id);
-        String filename = br.getRegex("<span class='file-icon1 unknown'>(.*?)</span>").getMatch(0);
-        String filesize = br.getRegex("<b>File size:</b>(.*?)</div>").getMatch(0);
+        br.getPage(downloadLink.getDownloadURL());
+        final String filename = br.getRegex("You download: \\&nbsp; <span class=\\'[a-z0-9\\- ]+\\'></span><span>([^<>\"]*?)</span>").getMatch(0);
+        final String filesize = br.getRegex("\\((\\d+(,\\d+)? (b|Kb|Mb|Gb))\\)").getMatch(0);
         if (filename == null) {
             return AvailableStatus.FALSE;
         }

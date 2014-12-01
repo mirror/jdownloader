@@ -21,6 +21,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -36,7 +37,8 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divxstage.to", "divxstage.net" }, urls = { "http://(www\\.)?(divxstage\\.(net|eu|to)/video/|embed\\.divxstage\\.(net|eu|to)/embed\\.php\\?v=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 0, 0 })
 public class DivxStageNet extends PluginForHost {
 
-    public String DLLINK = null;
+    /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet, DivxStageNet */
+    private static final String DOMAIN = "divxstage.to";
 
     public DivxStageNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -68,18 +70,6 @@ public class DivxStageNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        if (br.containsHTML("The file is beeing transfered to our other servers")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        dl.startDownload();
-    }
-
-    // This plugin is 99,99% copy the same as the MovShareNet plugin, if this
-    // gets broken please also check the other one!
-    @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         setBrowserExclusive();
@@ -99,31 +89,7 @@ public class DivxStageNet extends PluginForHost {
         }
         String filename = br.getRegex("class=\"video_det\">.*?<strong>(.*?)</strong>").getMatch(0);
         if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (!br.containsHTML("The file is beeing transfered to our other servers")) {
-            String fkey = br.getRegex("filekey=\"([^<>\"]*?)\"").getMatch(0);
-            if (fkey == null && br.containsHTML("w,i,s,e")) {
-                String result = unWise();
-                fkey = new Regex(result, "(\"\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}-[a-f0-9]{32})\"").getMatch(0);
-            }
-            if (fkey == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.getPage("http://divxstage.to/api/player.api.php?file=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&user=undefined&key=" + Encoding.urlEncode(fkey) + "&pass=undefined&codes=1");
-            DLLINK = br.getRegex("url=(http://[^<>\"]*?)\\&").getMatch(0);
-            if (DLLINK == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final Browser br2 = br.cloneBrowser();
-            // In case the link redirects to the finallink
-            br2.setFollowRedirects(true);
-            URLConnectionAdapter con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (filename.trim().equals("Untitled")) {
             downloadLink.setFinalFileName("Video " + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + ".avi");
@@ -131,6 +97,72 @@ public class DivxStageNet extends PluginForHost {
             downloadLink.setFinalFileName(filename + ".flv");
         }
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        String dllink = checkDirectLink(downloadLink, "divxstagedirectlink");
+        if (dllink == null) {
+            if (br.containsHTML("error_msg=The video is being transfered")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not downloadable at the moment, try again later...", 60 * 60 * 1000l);
+            } else if (br.containsHTML("error_msg=The video has failed to convert")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not downloadable at the moment, try again later...", 60 * 60 * 1000l);
+            } else if (br.containsHTML("error_msg=The video is converting")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server says: This video is converting", 60 * 60 * 1000l);
+            }
+            String cid2 = br.getRegex("flashvars\\.cid2=\"(\\d+)\";").getMatch(0);
+            String key = br.getRegex("flashvars\\.filekey=\"(.*?)\"").getMatch(0);
+            if (key == null && br.containsHTML("w,i,s,e")) {
+                String result = unWise();
+                key = new Regex(result, "(\"\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}-[a-f0-9]{32})\"").getMatch(0);
+            }
+            if (key == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (cid2 == null) {
+                cid2 = "undefined";
+            }
+            key = Encoding.urlEncode(key);
+            final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+            String lastdllink = null;
+            boolean success = false;
+            for (int i = 0; i <= 3; i++) {
+                if (i > 0) {
+                    br.getPage("http://www." + DOMAIN + "/api/player.api.php?user=undefined&errorUrl=" + Encoding.urlEncode(lastdllink) + "&pass=undefined&cid3=undefined&errorCode=404&cid=1&cid2=" + cid2 + "&key=" + key + "&file=" + fid + "&numOfErrors=" + i);
+                } else {
+                    br.getPage("http://www." + DOMAIN + "/api/player.api.php?cid2=" + cid2 + "&numOfErrors=0&user=undefined&cid=1&pass=undefined&key=" + key + "&file=" + fid + "&cid3=undefined");
+                }
+                dllink = br.getRegex("url=(http://.*?)\\&title").getMatch(0);
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                try {
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+                    if (!dl.getConnection().getContentType().contains("html")) {
+                        success = true;
+                        break;
+                    } else {
+                        lastdllink = dllink;
+                        continue;
+                    }
+                } finally {
+                    try {
+                        dl.getConnection().disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
+            }
+            if (!success) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+            }
+        }
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        }
+        downloadLink.setProperty("divxstagedirectlink", dllink);
+        dl.startDownload();
     }
 
     private String unWise() {
@@ -155,6 +187,26 @@ public class DivxStageNet extends PluginForHost {
             return null;
         }
         return result;
+    }
+
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            try {
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+                con.disconnect();
+            } catch (final Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            }
+        }
+        return dllink;
     }
 
     @Override
