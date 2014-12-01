@@ -205,6 +205,7 @@ public class HulkShareCom extends PluginForHost {
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
+        link.setAvailable(true);
         return AvailableStatus.TRUE;
     }
 

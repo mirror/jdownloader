@@ -63,6 +63,10 @@ public class MyzukaRu extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 400) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        /* Abused */
+        if (br.containsHTML("Трек удален по просьбе правообладателя")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         final String filesize = br.getRegex("(\\d{1,2},\\d{1,2}) Мб").getMatch(0);
         if (filename == null || filesize == null) {

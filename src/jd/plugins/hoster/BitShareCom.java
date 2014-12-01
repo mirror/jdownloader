@@ -459,6 +459,7 @@ public class BitShareCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, InterruptedException {
         correctDownloadLink(link);
         this.setBrowserExclusive();
+        link.setName(new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
         prepBR();
         br.postPage("http://bitshare.com/api/openapi/general.php", "action=getFileStatus&files=" + Encoding.urlEncode(link.getDownloadURL()));
         // http://svn.jdownloader.org/issues/21377
@@ -475,7 +476,7 @@ public class BitShareCom extends PluginForHost {
 
         }
 
-        if (br.containsHTML("#offline#")) {
+        if (br.containsHTML("#offline#|No input file specified")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 

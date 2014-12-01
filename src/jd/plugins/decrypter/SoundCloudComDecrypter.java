@@ -152,14 +152,14 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 fp.setName(fpName);
                 fp.addLinks(decryptedLinks);
             } else {
-                /* If the user wants to download the thumbnail also it's a bit more complicated */
+                /* If the user wants to download the thumbnail as well it's a bit more complicated */
                 if (decrypt500Thumb || decryptOriginalThumb) {
                     try {
                         br.getPage(parameter);
                         if (br.containsHTML("\"404 \\- Not Found\"")) {
                             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
                         }
-                        resolve(null);
+                        resolve(parameter);
                         /* Add soundcloud link */
                         DownloadLink dl = createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted"));
                         dl = setDlData(dl, br.toString());
