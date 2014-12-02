@@ -58,6 +58,14 @@ public class FotoLogComBr extends PluginForDecrypt {
             return decryptedLinks;
         }
         if (br.containsHTML(">Error 404 :") || br.getRedirectLocation() != null || br.containsHTML(">Account closed or deactivated<|>Conta encerrada ou desativada<")) {
+            /* Given link is offline */
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
+        } else if (br.containsHTML("id=\"fotohead\"")) {
+            /* User did not upload any photos */
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setAvailable(false);
             offline.setProperty("offline", true);
