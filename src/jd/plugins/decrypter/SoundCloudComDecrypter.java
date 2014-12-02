@@ -42,6 +42,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.storage.simplejson.JSonUtils;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "https?://((www\\.|m\\.)?(soundcloud\\.com/[^<>\"\\']+(\\?format=html\\&page=\\d+|\\?page=\\d+)?|snd\\.sc/[A-Za-z0-9]+)|api\\.soundcloud\\.com/tracks/\\d+(\\?secret_token=[A-Za-z0-9\\-_]+)?|api\\.soundcloud\\.com/playlists/\\d+\\?secret_token=[A-Za-z0-9\\-_]+)" }, flags = { 0 })
 public class SoundCloudComDecrypter extends PluginForDecrypt {
 
@@ -162,7 +164,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                         resolve(parameter);
                         /* Add soundcloud link */
                         DownloadLink dl = createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted"));
-                        dl = setDlData(dl, br.toString());
+                        dl = setDlDataJson(dl, br.toString());
                         decryptedLinks.add(dl);
 
                         get500Thumbnail(dl, this.br.toString());
@@ -173,7 +175,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                     }
                 } else {
                     DownloadLink dl = createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted"));
-                    dl = setDlData(dl, null);
+                    dl = setDlDataXML(dl, null);
                     decryptedLinks.add(dl);
                 }
             }
@@ -286,7 +288,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             }
             DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/" + song_username + "/" + permalink);
             dl.setProperty("setsposition", counter + ".");
-            dl = setDlData(dl, item);
+            dl = setDlDataXML(dl, item);
             decryptedLinks.add(dl);
             get500Thumbnail(dl, item);
             getOriginalThumbnail(dl, item);
@@ -448,7 +450,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 }
                 final String song_username = new Regex(item, "<kind>user</kind>[\t\n\r ]+<permalink>([^<>\"]*?)</permalink>").getMatch(0);
                 DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/" + song_username + "/" + permalink);
-                dl = setDlData(dl, item);
+                dl = setDlDataXML(dl, item);
                 decryptedLinks.add(dl);
                 get500Thumbnail(dl, item);
                 getOriginalThumbnail(dl, item);
@@ -512,7 +514,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 }
                 final String song_username = new Regex(item, "<kind>user</kind>[\t\n\r ]+<permalink>([^<>\"]*?)</permalink>").getMatch(0);
                 DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/" + song_username + "/" + permalink);
-                dl = setDlData(dl, item);
+                dl = setDlDataXML(dl, item);
                 decryptedLinks.add(dl);
                 get500Thumbnail(dl, item);
                 getOriginalThumbnail(dl, item);
@@ -567,7 +569,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 } else {
                     final String track_url = permalink_url.replace("http://", "https://").replace("soundcloud.com", "soundclouddecrypted.com") + "/" + url;
                     dl = createDownloadlink(track_url);
-                    dl = setDlData(dl, item);
+                    dl = setDlDataXML(dl, item);
                     get500Thumbnail(dl, item);
                     getOriginalThumbnail(dl, item);
                 }
@@ -600,12 +602,16 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         return jd.plugins.hoster.SoundcloudCom.getXML(parameter, source);
     }
 
+    /** Creates DownloadLink of current 500x500 thumbnail if existant - works forjson- and XML input. */
     private DownloadLink get500Thumbnail(final DownloadLink audiolink, final String source) throws ParseException {
         DownloadLink thumb = null;
         if (decrypt500Thumb) {
             try {
                 // Handle thumbnail stuff
                 String artworkurl = new Regex(source, "<artwork\\-url>(https?://[^<>\"]*?\\-large\\.jpg(\\?[a-z0-9]+)?)</artwork\\-url>").getMatch(0);
+                if (artworkurl == null) {
+                    artworkurl = getJson(source, "artwork_url");
+                }
                 if (artworkurl != null) {
                     artworkurl = artworkurl.replace("-large.jpg", "-t500x500.jpg");
                     thumb = createDownloadlink("directhttp://" + artworkurl);
@@ -628,12 +634,16 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         return thumb;
     }
 
+    /** Creates DownloadLink of current original thumbnail if existant - works forjson- and XML input. */
     private DownloadLink getOriginalThumbnail(final DownloadLink audiolink, final String source) throws ParseException {
         DownloadLink thumb = null;
         if (decryptOriginalThumb) {
             try {
                 // Handle thumbnail stuff
                 String artworkurl = new Regex(source, "<artwork\\-url>(https?://[^<>\"]*?\\-large\\.jpg(\\?[a-z0-9]+)?)</artwork\\-url>").getMatch(0);
+                if (artworkurl == null) {
+                    artworkurl = getJson(source, "artwork_url");
+                }
                 if (artworkurl != null) {
                     artworkurl = artworkurl.replace("-large.jpg", "-original.jpg");
                     thumb = createDownloadlink("directhttp://" + artworkurl);
@@ -671,14 +681,6 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         if (br.containsHTML("\"404 \\- Not Found\"")) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
-    }
-
-    private String getJson(final String parameter) {
-        String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
-        if (result == null) {
-            result = br.getRegex("\"" + parameter + "\":\"([^\"]+)").getMatch(0);
-        }
-        return result;
     }
 
     private final static String defaultCustomPackagename = "*channelname* - *playlistname*";
@@ -731,13 +733,43 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     }
 
     /** Sets data on a DoiwnloadLink - if source parameter is given, link will be checked and additional parameters will be set */
-    private DownloadLink setDlData(final DownloadLink dl, final String source) throws ParseException, IOException {
+    private DownloadLink setDlDataXML(final DownloadLink dl, final String source) throws ParseException, IOException {
         dl.setProperty("plain_url_username", url_username);
         if (source != null) {
-            final AvailableStatus status = jd.plugins.hoster.SoundcloudCom.checkStatus(dl, source, false);
+            final AvailableStatus status = jd.plugins.hoster.SoundcloudCom.checkStatusXML(dl, source, false);
             dl.setAvailableStatus(status);
         }
         return dl;
+    }
+
+    /** Sets data on a DoiwnloadLink - if source parameter is given, link will be checked and additional parameters will be set */
+    private DownloadLink setDlDataJson(final DownloadLink dl, final String source) throws ParseException, IOException {
+        dl.setProperty("plain_url_username", url_username);
+        if (source != null) {
+            final AvailableStatus status = jd.plugins.hoster.SoundcloudCom.checkStatusJson(dl, source, false);
+            dl.setAvailableStatus(status);
+        }
+        return dl;
+    }
+
+    private String getJson(final String parameter) {
+        return getJson(this.br.toString(), parameter);
+    }
+
+    /**
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki & psp
+     * */
+    private static String getJson(final String source, final String key) {
+        String result = new Regex(source, "\"" + key + "\":(?:[ ]+)?(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
+        if (result == null) {
+            result = new Regex(source, "\"" + key + "\":(?:[ ]+)?\"([^\"]+)\"").getMatch(0);
+        }
+        if (result != null) {
+            result = JSonUtils.unescape(result);
+        }
+        return result;
     }
 
     /* NO OVERRIDE!! */
