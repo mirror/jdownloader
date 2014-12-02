@@ -101,10 +101,19 @@ public class EsouboryCz extends PluginForHost {
             if (!br.containsHTML("\"exists\":true")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = getJson("filename");
+            /* Basically just a workaround for "\"" in json response */
+            filename = br.getRegex("\"filename\":\"([^<>]+)\",").getMatch(0);
+            if (filename == null) {
+                filename = getJson("filename");
+            }
             filename = unescape(filename);
+            filename = Encoding.htmlDecode(filename).trim();
+            filename = filename.replace("\\", "");
+            /* Basically just a workaround for "\"" in json response */
+            filename = encodeUnicode(filename);
             filesize = getJson("filesize");
             link.setDownloadSize(Long.parseLong(filesize));
+            link.setFinalFileName(filename);
         } else {
             br.getPage(link.getDownloadURL());
             if (br.getURL().contains("/search/")) {
@@ -119,8 +128,9 @@ public class EsouboryCz extends PluginForHost {
             filename = Encoding.htmlDecode(filename).trim();
             filesize = filesize.replace(",", ".");
             link.setDownloadSize(SizeFormatter.getSize(filesize));
+            /* Do not set the final filename here as we'll have the API when downloading via account anyways! */
+            link.setName(filename);
         }
-        link.setName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
     }
 
@@ -146,6 +156,7 @@ public class EsouboryCz extends PluginForHost {
         handleDL(link, account);
     }
 
+    @SuppressWarnings("deprecation")
     private void handleDL(final DownloadLink link, final Account account) throws Exception {
         String finallink = checkDirectLink(link, "esouborydirectlink");
         if (finallink == null) {
@@ -170,6 +181,7 @@ public class EsouboryCz extends PluginForHost {
         handleDL(link, acc);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -237,6 +249,7 @@ public class EsouboryCz extends PluginForHost {
         return result;
     }
 
+    @SuppressWarnings("unused")
     private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
         if (downloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
@@ -263,8 +276,20 @@ public class EsouboryCz extends PluginForHost {
         return jd.plugins.hoster.Youtube.unescape(s);
     }
 
-    private void showMessage(DownloadLink link, String message) {
-        link.getLinkStatus().setStatusText(message);
+    /** Avoid chars which are not allowed in filenames under certain OS' */
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     @Override
