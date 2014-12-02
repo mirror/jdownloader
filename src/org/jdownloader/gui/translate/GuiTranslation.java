@@ -5521,4 +5521,16 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Are you sure that you want to hide this offer?" })
     String Sponsor_run_hide_msg();
 
+    @Default(lngs = { "en" }, values = { "%s1 %s2-Video" })
+    String YoutubeVariant_name_generic_video(String res, String codec);
+
+    @Default(lngs = { "en" }, values = { "%s1" })
+    String YoutubeVariant_nametag_generic_video(String res, String codec);
+
+    @Default(lngs = { "en" }, values = { "%s1/s %s2-Audio" })
+    String YoutubeVariant_name_generic_audio(String string, String string2);
+
+    @Default(lngs = { "en" }, values = { "%s1" })
+    String YoutubeVariant_nametag_generic_audio(String string, String string2);
+
 }

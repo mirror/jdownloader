@@ -1282,7 +1282,8 @@ public class YoutubeDashV2 extends PluginForHost {
                         progress.setProgressSource(this);
                         try {
                             downloadLink.addPluginProgress(progress);
-                            if (variant.toString().startsWith("WEBM")) {
+                            String codec = variant.getiTagVideo().getCodecVideo();
+                            if (codec.equalsIgnoreCase("vp9") || codec.equalsIgnoreCase("vp8") || variant.toString().startsWith("WEBM")) {
                                 if (ffmpeg.muxToWebm(progress, downloadLink.getFileOutput(), videoStreamPath, getAudioStreamPath(downloadLink))) {
                                     downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
                                     new File(videoStreamPath).delete();
@@ -1333,6 +1334,24 @@ public class YoutubeDashV2 extends PluginForHost {
                                     downloadLink.addPluginProgress(progress);
 
                                     if (ffmpeg.generateM4a(progress, downloadLink.getFileOutput(), getAudioStreamPath(downloadLink))) {
+                                        downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
+                                        new File(getAudioStreamPath(downloadLink)).delete();
+                                    } else {
+                                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
+
+                                    }
+                                } finally {
+                                    downloadLink.removePluginProgress(progress);
+                                }
+
+                            } else if (ytVariant.getFileExtension().toLowerCase(Locale.ENGLISH).equals("ogg")) {
+
+                                final FFMpegProgress progress = new FFMpegProgress();
+                                progress.setProgressSource(this);
+                                try {
+                                    downloadLink.addPluginProgress(progress);
+
+                                    if (ffmpeg.generateOggAudio(progress, downloadLink.getFileOutput(), getAudioStreamPath(downloadLink))) {
                                         downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
                                         new File(getAudioStreamPath(downloadLink)).delete();
                                     } else {

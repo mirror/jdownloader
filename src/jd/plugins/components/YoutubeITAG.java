@@ -4,6 +4,10 @@ import java.util.Date;
 
 public enum YoutubeITAG {
 
+    DASH_VIDEO_ITAG313_VP9_2160P_30FPS(313, "vp9", "2160p", null, null, YoutubeITAG.VIDEO_RESOLUTION_2160P + YoutubeITAG.VIDEO_CODEC_VP9),
+    DASH_AUDIO_OPUS_64KBIT(250, null, null, "Opus", "64kbit", YoutubeITAG.AUDIO_CODEC_OPUS_64),
+    DASH_AUDIO_OPUS_48KBIT(249, null, null, "Opus", "48kbit", YoutubeITAG.AUDIO_CODEC_OPUS_48),
+    DASH_AUDIO_OPUS_160KBIT(251, null, null, "Opus", "160kbit", YoutubeITAG.AUDIO_CODEC_OPUS_160),
     // fake id
     SUBTITLE(10002, "srt", null, null, null, 0.1),
     // fake id
@@ -15,7 +19,7 @@ public enum YoutubeITAG {
     // fake id
     IMAGE_LQ(10004, "jpg", "120x90", null, null, 0.1),
     DASH_AUDIO_128K_AAC(140, null, null, "AAC", "128kbit", YoutubeITAG.AAC_128),
-    DASH_AUDIO_48K_OPUS(249, null, null, "Opus", "38kbit", YoutubeITAG.OPUS_48),
+    // DASH_AUDIO_48K_OPUS(249, null, null, "Opus", "38kbit", YoutubeITAG.AUDIO_CODEC_OPUS_48),
     DASH_AUDIO_128K_WEBM(171, null, null, "Vorbis", "128kbit", YoutubeITAG.VORBIS_128),
     DASH_AUDIO_192K_WEBM(172, null, null, "Vorbis", "192kbit", YoutubeITAG.VORBIS_192),
     DASH_AUDIO_256K_AAC(141, null, null, "AAC", "256kbit", YoutubeITAG.AAC_256),
@@ -239,31 +243,36 @@ public enum YoutubeITAG {
     private String             codecVideo;
 
     private String             qualityVideo;
-    public static final double OPUS_48         = 0.048;
-    public static final double VORBIS_96       = 0.0963;
 
-    public static final double VORBIS_192      = 0.1923;
+    public static final double VORBIS_96              = 0.0963;
 
-    public static final double VORBIS_128      = 0.1283;
+    public static final double VORBIS_192             = 0.1923;
+
+    public static final double VORBIS_128             = 0.1283;
 
     // mp3 64 bit is lower than aac48bit
-    public static final double MP3_64          = 0.0442;
+    public static final double MP3_64                 = 0.0442;
 
-    public static final double AAC32_ESTIMATE  = 0.0324;
+    public static final double AAC32_ESTIMATE         = 0.0324;
 
-    public static final double AAC_64          = 0.0644;
+    public static final double AAC_64                 = 0.0644;
 
-    public static final double AAC_48_ESTIMATE = 0.0474;
+    public static final double AAC_48_ESTIMATE        = 0.0474;
 
-    public static final double AAC_48          = 0.0484;
+    public static final double AAC_48                 = 0.0484;
 
-    public static final double AAC_256         = 0.2564;
+    public static final double AAC_256                = 0.2564;
 
-    public static final double AAC_192         = 0.1924;
+    public static final double AAC_192                = 0.1924;
 
-    public static final double AAC_128         = 0.1284;
-    public static final double AAC_152         = 0.1524;
-    public static final double AAC_96          = 0.0964;
+    public static final double AAC_128                = 0.1284;
+    public static final double AAC_152                = 0.1524;
+    public static final double AAC_96                 = 0.0964;
+    public static final double VIDEO_RESOLUTION_2160P = 2160.0;
+    public static final double VIDEO_CODEC_VP9        = 0.3;
+    public static final double AUDIO_CODEC_OPUS_64    = 0.064;
+    public static final double AUDIO_CODEC_OPUS_48    = 0.048;
+    public static final double AUDIO_CODEC_OPUS_160   = 0.160;
 
     private YoutubeITAG(final int itag, String codecTagVideo, String qualityTagVideo, String codecTagAudio, String qualityTagAudio, final double quality) {
         this.itag = itag;
