@@ -1383,12 +1383,15 @@ public class FileFactory extends PluginForHost {
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
-        String result = new Regex(source, "\"" + key + "\":(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
+        String result = new Regex(source, "\"" + key + "\"\\s*:\\s*(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
         if (result == null) {
-            result = new Regex(source, "\"" + key + "\":\"([^\"]+)\"").getMatch(0);
+            result = new Regex(source, "\"" + key + "\"\\s*:\\s*\"([^\"]+)\"").getMatch(0);
         }
         if (result != null) {
-            result = result.replaceAll("\\\\/", "/");
+            result = jd.plugins.hoster.K2SApi.JSonUtils.unescape(result);
+            if ("null".equals(result)) {
+                result = null;
+            }
         }
         return result;
     }
