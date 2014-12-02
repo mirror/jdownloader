@@ -34,6 +34,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -55,8 +56,6 @@ public class FlickrCom extends PluginForDecrypt {
     private static final String TYPE_SINGLE_PHOTO = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/\\d+.+";
 
     private static final String INVALIDLINKS      = "https?://(www\\.)?flickr\\.com/(photos/(me|upload|tags.*?)|groups/[^<>\"/]+/rules|groups/[^<>\"/]+/discuss.*?)";
-
-    private static final String api_key           = "44044129d5965db8c39819e54274917b";
 
     private String getFilename() {
         String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
@@ -177,6 +176,10 @@ public class FlickrCom extends PluginForDecrypt {
         final boolean useapi = false;
         if (useapi) {
             maxEntriesPerPage = 500;
+            final String api_key = br.getRegex("root.YUI_config.flickr.api.site_key\\s*?=\\s*?\"(.*?)\"").getMatch(0);
+            if (api_key != null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final String username = new Regex(parameter, "flickr\\.com/photos/([^<>\"/]+)").getMatch(0);
             /* TODO: 1. Get correct csrf values 2. Implement support for single photo links */
             final String csrf = "1405808633%3Ai01dgnb1q25wxw29%3Ac82715e60f008b97cb7e8fa3529ce156";
