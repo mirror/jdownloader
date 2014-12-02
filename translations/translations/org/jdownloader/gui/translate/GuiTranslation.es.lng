@@ -1684,6 +1684,7 @@ proxyDetailsDialog_combo_blacklist=Lista Negra - No utilizar este proxy para los
 proxyDetailsDialog_combo_whitelist=Lista Blanca - Solo usar este proxy para los dominios siguientes.
 proxyDetailsDialog_filter_title=Filtro de Dominio para %s1
 proxyDetailsDialog_white_blacklist=Lista de Filtros
+proxyDetailsDialog_white_blacklist_explain=Ingrese una lista (Cada línea nueva separada) de dominios para utilizar este proxy, ya sea solo para estos dominios (lista blanca), o nunca utilizarlo para estos dominios (lista negra)
 proxytable_edit_btn_blacklist=Editar (B%s1)
 proxytable_edit_btn_whitelist=Editar (W%s1)
 proxytablemodel_problems=%s1
