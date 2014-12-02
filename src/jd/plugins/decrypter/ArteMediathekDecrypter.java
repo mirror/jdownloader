@@ -244,7 +244,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         }
 
         /* Needed for checks later - only set languageVersion user selected value if we know that it's actually available! */
-        if (preferredversion == 1 && vsr.contains("\"versionCode\":\"VOF-STMF\"")) {
+        if (preferredversion == 1 && vsr.matches(".+\"versionCode\":\"(VOF-STMF|VOF-STF|VA-STMA)\".+")) {
             logger.info("Subtitled versions available!");
             languageVersion = 3;
         } else if (preferredversion == 2 && vsr.contains("\"versionCode\":\"VOA-STMA\"")) {
@@ -284,7 +284,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 l = "1";
             } else if (versionCode.startsWith("VF") || versionCode.equals("VOF")) {
                 l = "2";
-            } else if ("VOF-STF".equals(versionCode) || "VOF-STMF".equals(versionCode)) {
+            } else if ("VOF-STF".equals(versionCode) || "VOF-STMF".equals(versionCode) || "VA-STMA".equals(versionCode)) {
                 l = "3";
             } else if (versionCode.equals("VOA-STMA")) {
                 l = "4";
