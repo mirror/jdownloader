@@ -431,6 +431,8 @@ public class NitroFlareCom extends PluginForHost {
             if (br.containsHTML(err1)) {
                 // I don't see why this would happening logs contain no proxy!
                 throw new PluginException(LinkStatus.ERROR_FATAL, err1);
+            } else if (br.containsHTML("ERROR: link expired. Please unlock the file again")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'link expired'", 2 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

@@ -46,7 +46,7 @@ public class ILookTo extends PluginForHost {
 
     // For sites which use this script: http://www.yetishare.com/
     // YetiShareBasic Version 0.3.6-psp
-    // mods: requestFileInformation[Added one extra filename RegEx to normal linkcheck handling although it is unused]
+    // heavily modified, do NOT upgrade!
     // limit-info:
     // protocol: no https
     // captchatype: null
@@ -114,10 +114,16 @@ public class ILookTo extends PluginForHost {
             }
             filename = br.getRegex("Filename:[\t\n\r ]+</td>[\t\n\r ]+<td>([^<>\"]*?)<").getMatch(0);
             if (filename == null || inValidate(Encoding.htmlDecode(filename).trim()) || Encoding.htmlDecode(filename).trim().equals("  ")) {
+                filename = br.getRegex("Filename:[\t\n\r ]+</td>[\t\n\r ]+<td class=\"responsiveInfoTable\">([^<>\"]*?)<a").getMatch(0);
+            }
+            if (filename == null || inValidate(Encoding.htmlDecode(filename).trim()) || Encoding.htmlDecode(filename).trim().equals("  ")) {
                 /* Filename might not be available here either */
                 filename = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
             }
             filesize = br.getRegex("Filesize:[\t\n\r ]+</td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("Filesize:[\t\n\r ]+</td>[\t\n\r ]+<td class=\"responsiveInfoTable\">([^<>\"]*?)</td>").getMatch(0);
+            }
         } else {
             br.getPage(link.getDownloadURL());
             handleErrors();
@@ -205,7 +211,11 @@ public class ILookTo extends PluginForHost {
                 logger.info("Handling pre-download page #" + i);
                 continue_link = br.getRegex("\\$\\(\\'\\.download\\-timer\\'\\)\\.html\\(\"<a href=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
                 if (continue_link == null) {
-                    continue_link = br.getRegex("\"(https?://" + domains + "/[A-Za-z0-9]+\\?download_token=[A-Za-z0-9]+)\"").getMatch(0);
+                    // "http://ilook.to/3uv/Penny.Dreadful.S01E01.Night.Work.GERMAN.DUBBED.HDTVRiP.x264-SOF.mp4?download_token=248d977faa3b39e92f446631256e51f1e1cc3cbe64c3c9533de7cb5649f51aa1"
+                    continue_link = br.getRegex("\"(https?://" + domains + "/[^<>\"]+\\?download_token=[A-Za-z0-9]+)\"").getMatch(0);
+                }
+                if (continue_link == null) {
+                    continue_link = br.getRegex("(?:\"|\\')(https?://(www\\.)?" + domains + "/[^<>\"]*?pt=[^<>\"]*?)(\"|\\')").getMatch(0);
                 }
                 if (continue_link == null && i == 0) {
                     continue_link = downloadLink.getDownloadURL() + "?d=1";
