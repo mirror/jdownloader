@@ -73,20 +73,31 @@ public class WrzutaPl extends PluginForHost {
             linkurl = br.getRegex("<fileId><\\!\\[CDATA\\[(http://.*?)\\]\\]></fileId>").getMatch(0);
             addext = false;
             if (linkurl == null) {
-                // try to get final link via wrzuta player
-                String[][] matches = new Regex(wrzutaPlayerSource, "\"[a-zA-Z:/\\.0-9]*\"").getMatches();
-                String playerUrl = concatenate(matches);
-                br.getPage(playerUrl);
+                if (wrzutaPlayerSource == null) {
+                    // try with simple player
+                    br.getPage("http://" + host + "/u/" + fileid);
+                    String getVar = br.getRegex("context\\.setOption\\(options, 'flashSrc', encodeURIComponent\\((.*)\\)\\);").getMatch(0);
+                    // probably better Regex is needed, less greedy
+                    String match = br.getRegex("(var " + getVar + ".*;)").getMatch(0);
+                    match = match.substring(0, match.indexOf(";"));
+                    linkurl = getURLFromVar(match);
+                    logger.info(linkurl);
+                } else {
+                    // try to get final link via wrzuta player
+                    String[][] matches = new Regex(wrzutaPlayerSource, "\"[a-zA-Z:/\\.0-9]*\"").getMatches();
+                    String playerUrl = concatenate(matches);
+                    br.getPage(playerUrl);
 
-                String flashSrcUrl = br.getRegex("var __flashSrcUrl = (.*)var __htmlSrcUrl ").getMatch(0);
-                if (flashSrcUrl == null) {
-                    String encodeURIComponent = br.getRegex("'flashSrc', encodeURIComponent\\((.*?)\\)").getMatch(0);
+                    String flashSrcUrl = br.getRegex("var __flashSrcUrl = (.*)var __htmlSrcUrl ").getMatch(0);
+                    if (flashSrcUrl == null) {
+                        String encodeURIComponent = br.getRegex("'flashSrc', encodeURIComponent\\((.*?)\\)").getMatch(0);
 
-                    flashSrcUrl = br.getRegex("var " + encodeURIComponent + " = (.*?);").getMatch(0);
+                        flashSrcUrl = br.getRegex("var " + encodeURIComponent + " = (.*?);").getMatch(0);
+                    }
+                    matches = new Regex(flashSrcUrl, "\"[a-zA-z\\d:/\\.\\?=%&]*\"").getMatches();
+
+                    linkurl = concatenate(matches);
                 }
-                matches = new Regex(flashSrcUrl, "\"[a-zA-z\\d:/\\.\\?=%&]*\"").getMatches();
-
-                linkurl = concatenate(matches);
             }
         } else if (filetype.equalsIgnoreCase("film")) {
             String xmlFilmPage = "http://" + host + "/xml/kontent/" + fileid + "/wrztua.pl/sa/" + new Random().nextInt(100000);
@@ -153,6 +164,22 @@ public class WrzutaPl extends PluginForHost {
         }
         concatenatedString = concatenatedString.replace("\"", "");
         return concatenatedString;
+    }
+
+    private String getURLFromVar(String m) {
+        String URL = "";
+        int start = -1;
+        int end = -1;
+        do {
+            start = m.indexOf("\"", end + 1);
+            if (start != -1) {
+                end = m.indexOf("\"", start + 1);
+                URL = URL + m.substring(start + 1, end);
+            }
+
+        } while (start != -1);
+
+        return URL;
     }
 
     @Override
