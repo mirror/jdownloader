@@ -39,6 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginCache;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.YoutubeClipData;
 import jd.plugins.components.YoutubeCustomConvertVariant;
 import jd.plugins.components.YoutubeCustomVariantStorable;
@@ -50,6 +51,7 @@ import jd.plugins.components.YoutubeVariantInterface;
 import jd.plugins.decrypter.YoutubeHelper.Replacer.DataSource;
 import jd.plugins.hoster.YoutubeDashV2.SubtitleVariant;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.exceptions.WTFException;
@@ -57,6 +59,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.txtresource.TranslationFactory;
+import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
@@ -65,6 +68,7 @@ import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.statistics.StatsManager;
 
 public class YoutubeHelper {
 
@@ -713,12 +717,12 @@ public class YoutubeHelper {
 
     /**
      * *
-     *
+     * 
      * @param html5PlayerJs
      *            TODO
      * @param br
      * @param s
-     *
+     * 
      * @return
      * @throws IOException
      * @throws PluginException
@@ -1193,12 +1197,26 @@ public class YoutubeHelper {
                     logger.info(Encoding.urlDecode(JSonStorage.toString(query), false));
                     if (url != null && itag != null) {
 
-                        ret.put(itag, new YoutubeStreamData(vid, url, itag));
+                        YoutubeStreamData vsd;
+                        ret.put(itag, vsd = new YoutubeStreamData(vid, url, itag));
+                        onITag(vsd, br, query, url);
                     } else {
 
-                        this.logger.info("Unkown Line: " + r);
+                        this.logger.info("Unknown Line: " + r);
+                        this.logger.info("Unknown ITAG: " + query.get("itag"));
                         this.logger.info(url + "");
                         this.logger.info(query + "");
+                        try {
+                            PluginForHost plg = JDUtilities.getPluginForHost("youtube.com");
+                            // dummy log to collect new itags
+                            StatsManager.I().logDownloadException(new DownloadLink(plg, vid.videoID, "youtube.com", "youtube.com", true), plg, new Exception("Unknown ITAG: " + query.get("itag")));
+
+                            if (!Application.isJared(null)) {
+                                new ItagHelper(vid, br, query, url).run();
+                            }
+                        } catch (Exception e) {
+                            logger.log(e);
+                        }
                     }
 
                 }
@@ -1672,13 +1690,39 @@ public class YoutubeHelper {
         final String quality = Encoding.urlDecode(query.get("quality"), false);
         logger.info(Encoding.urlDecode(JSonStorage.toString(query), false));
         if (url != null && itag != null) {
-            return new YoutubeStreamData(vid, url, itag);
+
+            YoutubeStreamData vsd;
+            vsd = new YoutubeStreamData(vid, url, itag);
+            onITag(vsd, br, query, url);
+            return vsd;
         } else {
-            this.logger.info("Unkown Line: " + line);
+            this.logger.info("Unknown Line: " + line);
             this.logger.info(url + "");
             this.logger.info(query + "");
+            try {
+                PluginForHost plg = JDUtilities.getPluginForHost("youtube.com");
+                // dummy log to collect new itags
+                StatsManager.I().logDownloadException(new DownloadLink(plg, vid.videoID, "youtube.com", "youtube.com", true), plg, new Exception("Unknown ITAG: " + query.get("itag")));
+
+                if (!Application.isJared(null)) {
+                    new ItagHelper(vid, br, query, url).run();
+                }
+            } catch (Exception e) {
+                logger.log(e);
+            }
         }
         return null;
+    }
+
+    private void onITag(YoutubeStreamData vsd, Browser br, LinkedHashMap<String, String> query, String url) {
+        // System.out.println(1);
+        // if (vsd.getItag().getItag() == 272) {
+        // try {
+        // new ItagHelper(vsd.getClip(), br, query, url).run();
+        // } catch (IOException e) {
+        // e.printStackTrace();
+        // }
+        // }
     }
 
     private String replaceHttps(final String s) {

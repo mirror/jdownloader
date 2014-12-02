@@ -269,4 +269,23 @@ public class FFmpeg extends AbstractFFmpegBinary {
 
     }
 
+    public boolean generateOggAudio(FFMpegProgress progress, String out, String audioIn) throws IOException, InterruptedException, FFMpegException {
+        long lastModifiedAudio = new File(audioIn).lastModified();
+
+        ArrayList<String> commandLine = fillCommand(out, null, audioIn, null, config.getDash2OggAudioCommand());
+        if (runCommand(progress, commandLine) != null) {
+
+            try {
+
+                if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
+                    new File(out).setLastModified(lastModifiedAudio);
+                }
+            } catch (final Throwable e) {
+                LogSource.exception(logger, e);
+            }
+            return true;
+        }
+        return false;
+    }
+
 }
