@@ -123,8 +123,8 @@ public class FotoLogComBr extends PluginForDecrypt {
                 }
                 final String[] links = br.getRegex("class=\"wall_img_container\" href=\"http://[^<>\"]*?\"><img alt=\"[^<>\"]*?\" src=\"(http://[^<>\"]*?_t\\.jpg)\"").getColumn(0);
                 if (links == null || links.length == 0) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
+                    /* Site is buggy sometimes */
+                    logger.info("Skipping correct offset --> Nothing found");
                 } else {
                     for (final String singleLink : links) {
                         final DownloadLink dl = createDownloadlink("directhttp://" + singleLink.replace("_t.jpg", "_f.jpg"));
@@ -139,9 +139,9 @@ public class FotoLogComBr extends PluginForDecrypt {
                         counter++;
                     }
                     picsPerPageGrabbed = links.length;
-                    offset += picsPerPageMax;
-                    logger.info("Decrypted offset " + offset + " / " + maxOffset);
                 }
+                offset += picsPerPageMax;
+                logger.info("Decrypted offset " + offset + " / " + maxOffset);
             }
             if (!decryptedLinks.isEmpty()) {
                 final FilePackage fp = FilePackage.getInstance();

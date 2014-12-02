@@ -134,6 +134,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         return false;
     }
 
+    /* TODO: Simplify language handling so that the code is easier to read/develop */
     @SuppressWarnings("deprecation")
     private ArrayList<DownloadLink> getDownloadLinks(final String parameter, final Browser ibr) throws DecrypterException, IOException, ParseException {
         ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
@@ -149,7 +150,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         final boolean preferHBBTV = cfg.getBooleanProperty(HBBTV, false);
         final int preferredversion = cfg.getIntegerProperty(arteversions, 0);
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        /* 1 = German, 2 = French, 3 = Subtitled version, 4 = Subtitled version for disabled people, 5 = Hörfilm */
+        /* 1 = German, 2 = French, 3 = Subtitled version, 4 = Subtitled version for disabled people, 5 = Audio description */
         int languageVersion = 1;
         String lang = new Regex(parameter, "(concert\\.arte\\.tv|guide)/(\\w+)/.+").getMatch(1);
         if (lang != null) {
@@ -157,7 +158,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 languageVersion = 2;
             }
         }
-        lang = language(languageVersion);
+        lang = api_language(languageVersion);
 
         String vsrRegex = "\"VSR\":\\{(.*?\\})\\}";
 
@@ -175,14 +176,19 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             if (ID == null || lang == null) {
                 return ret;
             }
-            String tv_channel = br.getRegex("data\\-vid=(\"|\\')" + ID + "(_[A-Za-z0-9_\\-]+)\\-[A-Za-z]+(\"|\\')>").getMatch(1);
-            if (tv_channel == null) {
+            /* Make sure not to download trailers or announcements to movies by grabbing the whole section of the videoplayer! */
+            final String video_section = br.getRegex("(<section class=\\'focus\\' data-action=.*?</section>)").getMatch(0);
+            if (video_section == null) {
+                return null;
+            }
+            String id_channel_lang = new Regex(video_section, "/stream/player/[A-Za-z]{1,5}/([^<>\"/]*?)/").getMatch(0);
+            if (id_channel_lang == null) {
                 if (!br.containsHTML("arte_vp_config=")) {
                     throw new DecrypterException(EXCEPTION_LINKOFFLINE);
                 }
                 return null;
             }
-            tvguideUrl = "http://org-www.arte.tv/papi/tvguide/videos/stream/player/" + lang + "/" + ID + tv_channel + "-" + lang + "/ALL/ALL.json";
+            tvguideUrl = "http://org-www.arte.tv/papi/tvguide/videos/stream/player/" + lang + "/" + id_channel_lang + "/ALL/ALL.json";
             /* Old but useful code */
             // if (preferHBBTV) {
             // br.getHeaders().put("User-Agent", "HbbTV/1.1.1 (;;;;;) jd-arte.tv-plugin");
@@ -271,13 +277,15 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             String l;
             if (versionCode == null) {
                 continue;
-            }
-            if ("VOF-STF".equals(versionCode) || "VOF-STMF".equals(versionCode)) {
-                l = "3";
+            } else if (versionCode.equals("VO") && parameter.matches(TYPE_CONCERT)) {
+                /* Special case */
+                l = "2";
             } else if (versionCode.equals("VA") || versionCode.equals("VA-STA") || versionCode.equals("VO")) {
                 l = "1";
             } else if (versionCode.startsWith("VF") || versionCode.equals("VOF")) {
                 l = "2";
+            } else if ("VOF-STF".equals(versionCode) || "VOF-STMF".equals(versionCode)) {
+                l = "3";
             } else if (versionCode.equals("VOA-STMA")) {
                 l = "4";
             } else if (versionCode.equals("VAAUD")) {
@@ -352,7 +360,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 }
             }
 
-            final String name = title + "@" + quality + "_" + language(languageVersion) + extension;
+            final String name = title + "@" + quality + "_" + api_language(languageVersion) + "_" + this.user_language_version(langint) + extension;
             final DownloadLink link;
             if (parameter.contains("?")) {
                 link = createDownloadlink(parameter.replace("http://", "decrypted://") + "&quality=" + quality);
@@ -422,6 +430,24 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         return newRet;
     }
 
+    /* 1 = German, 2 = French, 3 = Subtitled version, 4 = Subtitled version for disabled people, 5 = Audio description */
+    private String user_language_version(final int version) {
+        switch (version) {
+        case 1:
+            return "german";
+        case 2:
+            return "french";
+        case 3:
+            return "subtitled";
+        case 4:
+            return "subtitled_handicapped";
+        case 5:
+            return "audio_description";
+        default:
+            return "german";
+        }
+    }
+
     private String getJson(final String source, final String parameter) {
         String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.]+)").getMatch(1);
         if (result == null) {
@@ -430,7 +456,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         return result;
     }
 
-    private String language(int id) {
+    private String api_language(int id) {
         if (id == 1) {
             return "D";
         }
@@ -442,22 +468,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         offline.setAvailable(false);
         offline.setProperty("offline", true);
         return offline;
-    }
-
-    private String hbbtv(String s) {
-        if (s == null) {
-            return null;
-        }
-        if ("SQ".equals(s)) {
-            return "HD";
-        }
-        if ("EQ".equals(s)) {
-            return "MD";
-        }
-        if ("HQ".equals(s)) {
-            return "SD";
-        }
-        return "unknown";
     }
 
     private String convertDateFormat(String s) {

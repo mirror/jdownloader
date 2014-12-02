@@ -86,31 +86,42 @@ public class EsouboryCz extends PluginForHost {
         return false;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final Account aa = AccountController.getInstance().getValidAccount(this);
         link.setName(new Regex(link.getDownloadURL(), "esoubory\\.cz/soubor/([a-z0-9]+)/").getMatch(0));
+        String filename;
+        String filesize;
         if (aa != null) {
+            /* Prefer API */
             br.getPage("http://www.esoubory.cz/api/exists?token=" + getToken(aa) + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
             if (!br.containsHTML("\"exists\":true")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String filename = getJson("filename");
+            filename = getJson("filename");
             filename = unescape(filename);
-            final String filesize = getJson("filesize");
-            link.setName(Encoding.htmlDecode(filename.trim()));
+            filesize = getJson("filesize");
             link.setDownloadSize(Long.parseLong(filesize));
-            return AvailableStatus.TRUE;
         } else {
             br.getPage(link.getDownloadURL());
-            if (br.containsHTML(">soubor byl již odstraněný<") || br.getURL().contains("/search/")) {
+            if (br.getURL().contains("/search/")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            link.getLinkStatus().setStatusText("Account needed to check links");
-            return AvailableStatus.UNCHECKABLE;
+            final Regex linkinfo = br.getRegex("<h1>([^<>\"]*?)<span class=\"bluetext upper\">\\(([^<>\"]*?)\\)</span>");
+            filename = linkinfo.getMatch(0);
+            filesize = linkinfo.getMatch(1);
+            if (filename == null || filesize == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            filename = Encoding.htmlDecode(filename).trim();
+            filesize = filesize.replace(",", ".");
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
+        link.setName(Encoding.htmlDecode(filename.trim()));
+        return AvailableStatus.TRUE;
     }
 
     @Override
