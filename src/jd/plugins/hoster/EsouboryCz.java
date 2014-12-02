@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -36,6 +37,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -95,7 +97,8 @@ public class EsouboryCz extends PluginForHost {
             if (!br.containsHTML("\"exists\":true")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String filename = getJson("filename");
+            String filename = getJson("filename");
+            filename = unescape(filename);
             final String filesize = getJson("filesize");
             link.setName(Encoding.htmlDecode(filename.trim()));
             link.setDownloadSize(Long.parseLong(filesize));
@@ -237,6 +240,16 @@ public class EsouboryCz extends PluginForHost {
             unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
+    }
+
+    private static AtomicBoolean yt_loaded = new AtomicBoolean(false);
+
+    private String unescape(final String s) {
+        /* we have to make sure the youtube plugin is loaded */
+        if (!yt_loaded.getAndSet(true)) {
+            JDUtilities.getPluginForHost("youtube.com");
+        }
+        return jd.plugins.hoster.Youtube.unescape(s);
     }
 
     private void showMessage(DownloadLink link, String message) {
