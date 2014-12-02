@@ -57,7 +57,6 @@ public class FlickrCom extends PluginForHost {
     private static final String MAINPAGE  = "http://flickr.com";
     private static final String intl      = "us";
     private static final String lang_post = "en-US";
-    private static final String api_key   = "a9823cb30086af802708b39e005668d0";
     private String              user      = null;
     private String              id        = null;
 
@@ -117,15 +116,15 @@ public class FlickrCom extends PluginForHost {
              * TODO: Add correct API csrf cookie handling so we can use this while being logged in to download videos and do not have to
              * remove the cookies here - that's just a workaround!
              */
+            final String api_key = br.getRegex("root.YUI_config.flickr.api.site_key\\s*?=\\s*?\"(.*?)\"").getMatch(0);
             br.clearCookies("htto://flickr.com");
             final String secret = br.getRegex("\"secret\":\"([^<>\"]*)\"").getMatch(0);
-            br.getPage("https://api.flickr.com/services/rest?photo_id=" + id + "&secret=" + secret + "&method=flickr.video.getStreamInfo&csrf=&api_key=" + api_key + "&format=json&hermes=1&hermesClient=1&reqId=&nojsoncallback=1");
-            final String lq = createGuid();
-            final String nodeID = br.getRegex("data\\-comment\\-id=\"(\\d+\\-\\d+)\\-").getMatch(0);
-            if (secret == null || filename == null) {
+            if (api_key == null || secret == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            DLLINK = br.getRegex("\"type\":\"orig\", \"_content\":\"(https[^<>\"]*?)\"").getMatch(0);
+            br.getPage("https://api.flickr.com/services/rest?photo_id=" + id + "&secret=" + secret + "&method=flickr.video.getStreamInfo&csrf=&api_key=" + api_key + "&format=json&hermes=1&hermesClient=1&reqId=&nojsoncallback=1");
+
+            DLLINK = br.getRegex("\"type\":\"orig\",\\s*?\"_content\":\"(https[^<>\"]*?)\"").getMatch(0);
             if (DLLINK == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -163,7 +162,11 @@ public class FlickrCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
+                con = br.openHeadConnection(DLLINK);
+            } else {
+                con = br.openGetConnection(DLLINK);
+            }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
