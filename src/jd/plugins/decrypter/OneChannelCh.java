@@ -71,7 +71,7 @@ public class OneChannelCh extends PluginForDecrypt {
                     fpName = fpName + " - " + Encoding.htmlDecode(seasonAndEpisode.getMatch(0)) + " - " + Encoding.htmlDecode(seasonAndEpisode.getMatch(1));
                 }
             }
-            final String[] links = br.getRegex("\"(/external\\.php[^<>\"]*?)\"").getColumn(0);
+            final String[] links = br.getRegex("(/external\\.php[^<>\"]*?)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 if (br.containsHTML("\\'HD Sponsor\\'")) {
                     logger.info("Found no downloadlink in link: " + parameter);
@@ -82,10 +82,16 @@ public class OneChannelCh extends PluginForDecrypt {
             }
             br.setFollowRedirects(false);
             for (final String singleLink : links) {
-                br.getPage("http://www.primewire.ag" + singleLink);
-                String finallink = br.getRedirectLocation();
-                if (finallink == null) {
-                    finallink = br.getRegex("<frame src=\"(http[^<>\"]*?)\"").getMatch(0);
+                String finallink;
+                final String b64link = new Regex(singleLink, "url=([^<>\"]+)\\&").getMatch(0);
+                if (b64link != null) {
+                    finallink = Encoding.Base64Decode(b64link);
+                } else {
+                    br.getPage(singleLink);
+                    finallink = br.getRedirectLocation();
+                    if (finallink == null) {
+                        finallink = br.getRegex("<frame src=\"(http[^<>\"]*?)\"").getMatch(0);
+                    }
                 }
                 if (finallink == null) {
                     logger.warning("Decrypter broken for link: " + parameter);

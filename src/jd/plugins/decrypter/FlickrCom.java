@@ -283,9 +283,11 @@ public class FlickrCom extends PluginForDecrypt {
                 final String csrf = "1405808633%3Ai01dgnb1q25wxw29%3Ac82715e60f008b97cb7e8fa3529ce156";
                 br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
                 String apilink = null;
+                String path_alias = null;
                 if (parameter.matches(GROUPSLINK)) {
+                    path_alias = br.getRegex("\"pathAlias\":\"([^<>\"/]*?)\"").getMatch(0);
                     final String group_id = br.getRegex("name=\"w\" value=\"([^<>\"]*?)\"").getMatch(0);
-                    if (group_id == null) {
+                    if (group_id == null || path_alias == null) {
                         logger.warning("Decrypter broken for link: " + parameter);
                         return null;
                     }
@@ -293,10 +295,13 @@ public class FlickrCom extends PluginForDecrypt {
                     getPage(apilink.replace("GETJDPAGE", "1"));
                     fpName = "flickr.com images of group " + group_id;
                 } else {
+                    path_alias = username;
                     apilink = "https://api.flickr.com/services/rest?extras=?per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&get_user_info=1&path_alias=" + username + "&method=flickr.people.getPhotos&csrf=" + csrf + "&api_key=" + api_key + "&format=json&hermes=1&hermesClient=1&reqId=19et3hbx&nojsoncallback=1";
                     getPage(apilink.replace("GETJDPAGE", "1"));
                     fpName = "flickr.com images of user " + username;
                 }
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(fpName);
                 final int totalimgs = Integer.parseInt(getJson(br.toString(), "total"));
                 final int totalpages = Integer.parseInt(getJson(br.toString(), "pages"));
                 for (int i = 1; i <= totalpages; i++) {
@@ -325,14 +330,23 @@ public class FlickrCom extends PluginForDecrypt {
                             } catch (Throwable e) {
                             }
                         }
+                        final String contenturl = "https://www.flickr.com/photos/" + path_alias + "/" + photoid;
+                        try {
+                            fina.setContentUrl(contenturl);
+                        } catch (final Throwable e) {
+                            /* Not available in old 0.9.591 Stable */
+                            fina.setBrowserUrl(contenturl);
+                        }
                         fina.setName(username + "_" + photoid + "_" + title + ".jpg");
                         fina.setProperty("LINKDUPEID", "flickrcom_" + username + "_" + photoid);
                         fina.setAvailable(true);
+                        fina._setFilePackage(fp);
                         try {
                             distribute(fina);
                         } catch (final Throwable e) {
                             /* Not available in old 0.9.581 Stable */
                         }
+                        fp.addLinks(decryptedLinks);
                         decryptedLinks.add(fina);
                     }
                 }

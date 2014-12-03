@@ -106,18 +106,33 @@ public class TnaFlixCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
-        String filename = br.getRegex("<title>(.*?), Free Porn.*?</title>").getMatch(0);
+        String filename = br.getRegex("<title>([^<>]*?) \\- TNAFlix Porn Videos</title>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("playIcon\">(.*?)</h2>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-            }
+            filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>]*?)\"").getMatch(0);
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setFinalFileName(filename.trim() + ".mp4");
+        filename = Encoding.htmlDecode(filename).trim();
+        filename = encodeUnicode(filename);
+        downloadLink.setFinalFileName(filename + ".mp4");
         return AvailableStatus.TRUE;
+    }
+
+    /** Avoid chars which are not allowed in filenames under certain OS' */
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */

@@ -279,7 +279,14 @@ public class SoundcloudCom extends PluginForHost {
     }
 
     public static AvailableStatus checkStatusJson(final DownloadLink parameter, final String source, final boolean fromHostplugin) throws ParseException, IOException {
-        String filename = getJson(source, "title");
+        /* First try workaround for """ in json values */
+        String filename = new Regex(source, "\"title\":\"([^<>]*?)\",\"description\"").getMatch(0);
+        if (filename == null) {
+            filename = getJson(source, "title");
+        }
+        filename = unescape(filename);
+        filename = filename.replace("\\", "");
+        filename = encodeUnicode(filename);
         if (filename == null) {
             if (fromHostplugin) {
                 parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.pluginBroken", "The host plugin is broken!"));
@@ -686,6 +693,22 @@ public class SoundcloudCom extends PluginForHost {
 
     public static String getXML(final String parameter, final String source) {
         return new Regex(source, "<" + parameter + "( type=\"[^<>\"/]*?\")?>([^<>]*?)</" + parameter + ">").getMatch(1);
+    }
+
+    /** Avoid chars which are not allowed in filenames under certain OS' */
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     @Override
