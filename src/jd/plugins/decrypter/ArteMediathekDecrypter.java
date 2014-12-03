@@ -63,16 +63,17 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     private String              VRU                   = null;
 
     private static boolean      pluginloaded          = false;
+    private int                 languageVersion       = 1;
+    private String              parameter;
 
     public ArteMediathekDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /* TODO: Add support for subtitled version + RTMP */
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        parameter = param.toString();
         setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(parameter);
@@ -104,7 +105,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         }
 
         try {
-            decryptedLinks.addAll(getDownloadLinks(parameter, br));
+            decryptedLinks.addAll(getDownloadLinks(this.br));
         } catch (final Exception e) {
             if (e instanceof DecrypterException && e.getMessage().equals(EXCEPTION_LINKOFFLINE)) {
                 decryptedLinks.add(createofflineDownloadLink(parameter));
@@ -134,9 +135,8 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         return false;
     }
 
-    /* TODO: Simplify language handling so that the code is easier to read/develop */
     @SuppressWarnings("deprecation")
-    private ArrayList<DownloadLink> getDownloadLinks(final String parameter, final Browser ibr) throws DecrypterException, IOException, ParseException {
+    private ArrayList<DownloadLink> getDownloadLinks(final Browser ibr) throws DecrypterException, IOException, ParseException {
         ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
         HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
         String vsr;
@@ -147,11 +147,12 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
 
         final SubConfiguration cfg = SubConfiguration.getConfig("arte.tv");
         final boolean BEST = cfg.getBooleanProperty(Q_BEST, false);
-        final boolean preferHBBTV = cfg.getBooleanProperty(HBBTV, false);
+        /* Force HBBTV for stable version */
+        final boolean preferHBBTV = cfg.getBooleanProperty(HBBTV, false) || isStableEnviroment();
         final int preferredversion = cfg.getIntegerProperty(arteversions, 0);
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         /* 1 = German, 2 = French, 3 = Subtitled version, 4 = Subtitled version for disabled people, 5 = Audio description */
-        int languageVersion = 1;
+        languageVersion = 1;
         String lang = new Regex(parameter, "(concert\\.arte\\.tv|guide)/(\\w+)/.+").getMatch(1);
         if (lang != null) {
             if ("fr".equalsIgnoreCase(lang)) {
@@ -243,17 +244,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             return ret;
         }
 
-        /* Needed for checks later - only set languageVersion user selected value if we know that it's actually available! */
-        if (preferredversion == 1 && vsr.matches(".+\"versionCode\":\"(VOF-STMF|VOF-STF|VA-STMA)\".+")) {
-            logger.info("Subtitled versions available!");
-            languageVersion = 3;
-        } else if (preferredversion == 2 && vsr.contains("\"versionCode\":\"VOA-STMA\"")) {
-            logger.info("Subtitled versions available!");
-            languageVersion = 4;
-        } else if (preferredversion == 3 && vsr.contains("\"versionCode\":\"VAAUD\"")) {
-            logger.info("Subtitled versions available!");
-            languageVersion = 5;
-        }
+        setAvailableVersion(vsr, preferredversion);
 
         final String[][] qualities = new Regex(vsr, "\"([^<>\"/]*?)\":\\{(.*?)\\}").getMatches();
         String extension = ".mp4";
@@ -277,25 +268,8 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             String l;
             if (versionCode == null) {
                 continue;
-            } else if (versionCode.equals("VO") && parameter.matches(TYPE_CONCERT)) {
-                /* Special case */
-                l = "2";
-            } else if (versionCode.equals("VA") || versionCode.equals("VA-STA") || versionCode.equals("VO")) {
-                l = "1";
-            } else if (versionCode.startsWith("VF") || versionCode.equals("VOF")) {
-                l = "2";
-            } else if ("VOF-STF".equals(versionCode) || "VOF-STMF".equals(versionCode) || "VA-STMA".equals(versionCode)) {
-                l = "3";
-            } else if (versionCode.equals("VOA-STMA")) {
-                l = "4";
-            } else if (versionCode.equals("VAAUD")) {
-                l = "5";
-            } else {
-                /* Unknown - use language inside the link */
-                /* Unknown language Strings so far: VOF-STF, VOA */
-                l = Integer.toString(languageVersion);
             }
-            final int langint = Integer.parseInt(l);
+            final int langint = getLanguageInt(versionCode);
             if (langint != languageVersion) {
                 continue;
             }
@@ -428,6 +402,47 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             fp.addLinks(newRet);
         }
         return newRet;
+    }
+
+    private int getLanguageInt(final String versionCode) {
+        int lint;
+        if (versionCode.equals("VO") && parameter.matches(TYPE_CONCERT)) {
+            /* Special case */
+            lint = 2;
+        } else if (versionCode.equals("VA") || versionCode.equals("VA-STA") || versionCode.equals("VO")) {
+            lint = 1;
+        } else if (versionCode.startsWith("VF") || versionCode.equals("VOF")) {
+            lint = 2;
+        } else if ("VOF-STF".equals(versionCode) || "VOF-STMF".equals(versionCode) || "VA-STMA".equals(versionCode)) {
+            lint = 3;
+        } else if (versionCode.equals("VOA-STMA")) {
+            lint = 4;
+        } else if (versionCode.equals("VAAUD")) {
+            lint = 5;
+        } else {
+            /* Unknown - use language inside the link */
+            /* Unknown language Strings so far: VOA */
+            lint = languageVersion;
+        }
+        return lint;
+    }
+
+    /**
+     * Set available version based on whats available and the users' settings - languageVersion will only change if the user wants the
+     * subtitled version or any version for disabled peopleF
+     */
+    private void setAvailableVersion(final String vsr, final int preferredversion) {
+        /* Needed for checks later - only set languageVersion user selected value if we know that it's actually available! */
+        if (preferredversion == 1 && vsr.matches(".+\"versionCode\":\"(VOF-STMF|VOF-STF|VA-STMA)\".+")) {
+            logger.info("Subtitled versions available!");
+            languageVersion = 3;
+        } else if (preferredversion == 2 && vsr.contains("\"versionCode\":\"VOA-STMA\"")) {
+            logger.info("Subtitled versions available!");
+            languageVersion = 4;
+        } else if (preferredversion == 3 && vsr.contains("\"versionCode\":\"VAAUD\"")) {
+            logger.info("Subtitled versions available!");
+            languageVersion = 5;
+        }
     }
 
     /* 1 = German, 2 = French, 3 = Subtitled version, 4 = Subtitled version for disabled people, 5 = Audio description */
