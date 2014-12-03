@@ -30,6 +30,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -211,6 +212,7 @@ public class FlickrCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
+        account.setType(AccountType.FREE);
         ai.setStatus("Registered (free) User");
         ai.setUnlimitedTraffic();
         account.setValid(true);

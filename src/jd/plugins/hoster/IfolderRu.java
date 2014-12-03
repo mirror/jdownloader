@@ -48,7 +48,7 @@ public class IfolderRu extends PluginForHost {
 
     /**
      * sets primary domain to be used throughout JDownloader!
-     * 
+     *
      * @author raztoki
      */
     private final String primaryHost = "rusfolder.com";
@@ -250,7 +250,7 @@ public class IfolderRu extends PluginForHost {
                 downloadLink.setProperty("pass", passCode);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

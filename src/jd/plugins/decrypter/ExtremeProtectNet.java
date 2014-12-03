@@ -65,8 +65,9 @@ public class ExtremeProtectNet extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String dl : links)
+        for (String dl : links) {
             decryptedLinks.add(createDownloadlink(dl));
+        }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());
@@ -79,7 +80,6 @@ public class ExtremeProtectNet extends PluginForDecrypt {
         int nb = 32;
         final String chars = "azertyupqsdfghjkmwxcvbn23456789AZERTYUPQSDFGHJKMWXCVBN_-#@";
         String pass = "";
-
         for (int i = 0; i < nb; i++) {
             long wpos = Math.round(Math.random() * (chars.length() - 1));
             int lool = (int) wpos;

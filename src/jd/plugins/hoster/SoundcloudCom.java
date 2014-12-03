@@ -289,12 +289,12 @@ public class SoundcloudCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename.trim().replace("\"", "'"));
         final String id = getJson(source, "id");
         final String filesize = getJson(source, "original_content_size");
-        final String description = getJson(source, "description");
-        if (description != null) {
-            try {
+        try {
+            final String description = getJson(source, "description");
+            if (description != null) {
                 parameter.setComment(Encoding.htmlDecode(description));
-            } catch (Throwable e) {
             }
+        } catch (Throwable e) {
         }
         final String date = getJson(source, "created_at");
         String username = getJson(source, "username");

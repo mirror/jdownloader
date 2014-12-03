@@ -1469,7 +1469,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /** Sets basic values/cookies */
     private void prepBrowser(final Browser br) {
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:21.0) Gecko/20100101 Firefox/21.0");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:33.0) Gecko/20100101 Firefox/33.0");
         // Set english language
         br.setCookie("http://vk.com/", "remixlang", "3");
         br.setReadTimeout(3 * 60 * 1000);

@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Locale;
 
 import javax.script.ScriptEngine;
@@ -67,61 +68,64 @@ public class HitFileNet extends PluginForHost {
 
     /** 01.12.14: turbobit.net & hitfile.net Linkchecker is broken - will hopefully be back soon! */
     // @Override
-    // public boolean checkLinks(final DownloadLink[] urls) {
-    // if (urls == null || urls.length == 0) {
-    // return false;
-    // }
-    // try {
-    // final Browser br = new Browser();
-    // br.setCookie(MAINPAGE, "user_lang", "en");
-    // br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-    // br.setCookiesExclusive(true);
-    // final StringBuilder sb = new StringBuilder();
-    // final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-    // int index = 0;
-    // while (true) {
-    // links.clear();
-    // while (true) {
-    // /* we test 50 links at once */
-    // if (index == urls.length || links.size() > 49) {
-    // break;
-    // }
-    // links.add(urls[index]);
-    // index++;
-    // }
-    // sb.delete(0, sb.capacity());
-    // sb.append("links_to_check=");
-    // for (final DownloadLink dl : links) {
-    // sb.append(dl.getDownloadURL());
-    // sb.append("%0A");
-    // }
-    // br.postPage("http://" + getHost() + "/linkchecker/csv", sb.toString());
-    // for (final DownloadLink dllink : links) {
-    // final String linkID = getID(dllink.getDownloadURL());
-    // final Regex fileInfo = br.getRegex("<td>" + linkID +
-    // "</td>[\t\n\r ]+<td>([^<>/\"]*?)</td>[\t\n\r ]+<td style=\"text\\-align:center;\"><img src=\"/img/icon/(done|error)\\.png\"");
-    // if (fileInfo.getMatches() == null || fileInfo.getMatches().length == 0) {
-    // dllink.setAvailable(false);
-    // logger.warning("Linkchecker broken for " + getHost());
-    // } else {
-    // if (fileInfo.getMatch(1).equals("error")) {
-    // dllink.setAvailable(false);
-    // } else {
-    // final String name = fileInfo.getMatch(0);
-    // dllink.setAvailable(true);
-    // dllink.setFinalFileName(Encoding.htmlDecode(name.trim()));
-    // }
-    // }
-    // }
-    // if (index == urls.length) {
-    // break;
-    // }
-    // }
-    // } catch (final Exception e) {
-    // return false;
-    // }
-    // return true;
-    // }
+    public boolean checkLinks(final DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
+        try {
+            final Browser br = new Browser();
+            br.setCookie(MAINPAGE, "user_lang", "en");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.setCookiesExclusive(true);
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 50 links at once */
+                    if (index == urls.length || links.size() > 49) {
+                        break;
+                    }
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("links_to_check=");
+                for (final DownloadLink dl : links) {
+                    sb.append(dl.getDownloadURL());
+                    sb.append("%0A");
+                }
+                /*
+                 * '/linkchecker/csv' is the official "API" method but this will only return fileID and online/offline - not even the
+                 * filename
+                 */
+                br.postPage("http://" + getHost() + "/linkchecker/check", sb.toString());
+                for (final DownloadLink dllink : links) {
+                    final String linkID = getID(dllink.getDownloadURL());
+                    final Regex fileInfo = br.getRegex("<td>" + linkID + "</td>[\t\n\r ]+<td>([^<>/\"]*?)</td>[\t\n\r ]+<td style=\"text\\-align:center;\">(?:[\t\n\r ]+)<img src=\"(?:[^<>\"]+)?/img/icon/(done|error)\\.png\"");
+                    if (fileInfo.getMatches() == null || fileInfo.getMatches().length == 0) {
+                        dllink.setAvailable(false);
+                        logger.warning("Linkchecker broken for " + getHost());
+                    } else {
+                        if (fileInfo.getMatch(1).equals("error")) {
+                            dllink.setAvailable(false);
+                        } else {
+                            final String name = fileInfo.getMatch(0);
+                            dllink.setAvailable(true);
+                            dllink.setFinalFileName(Encoding.htmlDecode(name.trim()));
+                        }
+                    }
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            return false;
+        }
+        return true;
+    }
 
     private String escape(final String s) {
         /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
@@ -140,12 +144,7 @@ public class HitFileNet extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
+        login(account);
         account.setValid(true);
         ai.setUnlimitedTraffic();
         final String expire = br.getRegex("Account: <b>premium</b> \\(<a href=\\'/premium\\'>(.*?)</a>\\)").getMatch(0);
@@ -489,10 +488,18 @@ public class HitFileNet extends PluginForHost {
         br.setCookie(MAINPAGE, "user_lang", "en");
         br.postPage("http://hitfile.net/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&user%5Bmemory%5D=on&user%5Bsubmit%5D=");
         if (br.getCookie(MAINPAGE, "kohanasession") == null && br.getCookie(MAINPAGE, "sid") == null) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         }
         if (!br.containsHTML("Account: <b>premium</b>")) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         }
     }
 
