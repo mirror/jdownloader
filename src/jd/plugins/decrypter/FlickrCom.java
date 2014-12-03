@@ -18,9 +18,7 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -28,7 +26,6 @@ import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -40,6 +37,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.storage.simplejson.JSonUtils;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(www\\.)?(secure\\.)?flickr\\.com/(photos|groups)/.+" }, flags = { 0 })
 public class FlickrCom extends PluginForDecrypt {
 
@@ -47,17 +46,21 @@ public class FlickrCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String MAINPAGE                 = "http://flickr.com/";
-    private static final String FAVORITELINK             = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/favorites";
-    private static final String GROUPSLINK               = "https?://(www\\.)?flickr\\.com/groups/[^<>\"/]+([^<>\"]+)?";
-    private static final String PHOTOLINK                = "https?://(www\\.)?flickr\\.com/photos/.*?";
-    private static final String SETLINK                  = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/sets/\\d+";
+    private static final String     MAINPAGE                 = "http://flickr.com/";
+    private static final String     FAVORITELINK             = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/favorites";
+    private static final String     GROUPSLINK               = "https?://(www\\.)?flickr\\.com/groups/[^<>\"/]+([^<>\"]+)?";
+    private static final String     PHOTOLINK                = "https?://(www\\.)?flickr\\.com/photos/.*?";
+    private static final String     SETLINK                  = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/sets/\\d+";
 
-    private static final String TYPE_SINGLE_PHOTO        = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/\\d+.+";
+    private static final String     TYPE_SINGLE_PHOTO        = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/\\d+.+";
 
-    private static final String INVALIDLINKS             = "https?://(www\\.)?flickr\\.com/(photos/(me|upload|tags.*?)|groups/[^<>\"/]+/rules|groups/[^<>\"/]+/discuss.*?)";
+    private static final String     INVALIDLINKS             = "https?://(www\\.)?flickr\\.com/(photos/(me|upload|tags.*?)|groups/[^<>\"/]+/rules|groups/[^<>\"/]+/discuss.*?)";
 
-    private int                 api_max_entries_per_page = 500;
+    private static final String     api_format               = "json";
+    private int                     api_max_entries_per_page = 500;
+    private ArrayList<DownloadLink> decryptedLinks           = new ArrayList<DownloadLink>();
+    private String                  api_apikey               = null;
+    private String                  parameter                = null;
 
     private String getFilename() {
         String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
@@ -93,7 +96,6 @@ public class FlickrCom extends PluginForDecrypt {
 
     /* TODO: Implement API: https://api.flickr.com/services/rest?photo_id=&extras=can_ ... */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String[]> addLinks = new ArrayList<String[]>();
         HashSet<String> dupeCheckMap = new HashSet<String>();
         br.setFollowRedirects(true);
@@ -101,7 +103,7 @@ public class FlickrCom extends PluginForDecrypt {
         br.setCookie(MAINPAGE, "localization", "en-us%3Bus%3Bde");
         br.setCookie(MAINPAGE, "fldetectedlang", "en-us");
 
-        String parameter = correctParameter(param.toString());
+        parameter = correctParameter(param.toString());
 
         int lastPage = 1;
         /* Check if link is for hosterplugin */
@@ -223,30 +225,7 @@ public class FlickrCom extends PluginForDecrypt {
             if (fpName == null) {
                 fpName = br.getRegex("\"search_default\":\"Search ([^<>\"]*)\"").getMatch(0);
             }
-            if (parameter.endsWith("/sets/") && !parameter.matches(SETLINK)) {
-                LinkedHashSet<String> set_ids = new LinkedHashSet<String>();
-                logger.info("Decrypting all set links (albums) of a user...");
-                while (true) {
-                    final String[] set_id = br.getRegex("class=\"Seta\" data\\-setid=\"(\\d+)\"").getColumn(0);
-                    if (set_id == null || set_id.length == 0) {
-                        logger.warning("Decrypter broken for link: " + parameter);
-                        return null;
-                    }
-                    set_ids.addAll(Arrays.asList(set_id));
-                    String next_page = br.getRegex("<a data-track=\"next\" href=\"(/photos/[^/]+/sets/\\?(?:&(?:amp;)?)?page=\\d+)\" class=\"Next rapidnofollow\">next &rarr;</a>").getMatch(0);
-                    if (next_page != null) {
-                        next_page = HTMLEntities.unhtmlentities(next_page);
-                        br.getPage(next_page);
-                        continue;
-                    } else {
-                        break;
-                    }
-                }
-                for (final String set_id : set_ids) {
-                    decryptedLinks.add(createDownloadlink(parameter + set_id));
-                }
-                return decryptedLinks;
-            } else if (parameter.matches(SETLINK)) {
+            if (parameter.matches(SETLINK)) {
                 if (picCount == null) {
                     picCount = br.getRegex("class=\"Results\">\\((\\d+) in set\\)</div>").getMatch(0);
                 }
@@ -263,18 +242,19 @@ public class FlickrCom extends PluginForDecrypt {
                 }
             } else if (parameter.matches(FAVORITELINK)) {
                 fpName = br.getRegex("<title>([^<>\"]*?) \\| Flickr</title>").getMatch(0);
-            } else if (parameter.matches(GROUPSLINK) || useapi) {
-                String api_key = br.getRegex("root.YUI_config.flickr.api.site_key\\s*?=\\s*?\"(.*?)\"").getMatch(0);
+            } else if (parameter.matches(PHOTOLINK) && !true) {
+            } else {
+                br.getPage(parameter);
                 if (parameter.matches(GROUPSLINK)) {
-                    api_key = br.getRegex("root.YUI_config.flickr.api.site_key\\s*?=\\s*?\"(.*?)\"").getMatch(0);
+                    api_apikey = br.getRegex("root.YUI_config.flickr.api.site_key\\s*?=\\s*?\"(.*?)\"").getMatch(0);
                 } else {
                     final Browser br2 = br.cloneBrowser();
                     br2.getPage("https://www.flickr.com/groups");
-                    api_key = br2.getRegex("root.YUI_config.flickr.api.site_key\\s*?=\\s*?\"(.*?)\"").getMatch(0);
+                    api_apikey = br2.getRegex("root.YUI_config.flickr.api.site_key\\s*?=\\s*?\"(.*?)\"").getMatch(0);
                 }
                 /* Handle API decryption for GROUPS and complete users here */
                 maxEntriesPerPage = api_max_entries_per_page;
-                if (api_key == null) {
+                if (api_apikey == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
@@ -284,26 +264,31 @@ public class FlickrCom extends PluginForDecrypt {
                 br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
                 String apilink = null;
                 String path_alias = null;
-                if (parameter.matches(GROUPSLINK)) {
-                    path_alias = br.getRegex("\"pathAlias\":\"([^<>\"/]*?)\"").getMatch(0);
-                    final String group_id = br.getRegex("name=\"w\" value=\"([^<>\"]*?)\"").getMatch(0);
-                    if (group_id == null || path_alias == null) {
+                if (parameter.endsWith("/sets/") && !parameter.matches(SETLINK)) {
+                    apiGetSetsOfUser();
+                    return decryptedLinks;
+                } else if (parameter.matches(GROUPSLINK)) {
+                    br.getPage("https://api.flickr.com/services/rest?format=" + api_format + "&method=flickr.urls.lookupGroup&csrf=&api_key=" + api_apikey + "&url=" + Encoding.urlEncode(parameter));
+                    final String group_id = getJson("id");
+                    final String groupname = br.getRegex("\"groupname\":\\{\"_content\":\"([^<>\"]*?)\"\\}").getMatch(0);
+                    path_alias = new Regex(parameter, "flickr\\.com/groups/([^<>\"/]+)").getMatch(0);
+                    if (group_id == null || path_alias == null || groupname == null) {
                         logger.warning("Decrypter broken for link: " + parameter);
                         return null;
                     }
-                    apilink = "https://api.flickr.com/services/rest?extras=&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&get_group_info=1&group_id=" + Encoding.urlEncode(group_id) + "&method=flickr.groups.pools.getPhotos&csrf=&api_key=" + api_key + "&format=json&hermes=1&hermesClient=1&reqId=9my34ua&nojsoncallback=1";
+                    apilink = "https://api.flickr.com/services/rest?format=" + api_format + "&extras=&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&get_group_info=1&group_id=" + Encoding.urlEncode(group_id) + "&method=flickr.groups.pools.getPhotos&csrf=&api_key=" + api_apikey + "&hermes=1&hermesClient=1&nojsoncallback=1";
                     getPage(apilink.replace("GETJDPAGE", "1"));
                     fpName = "flickr.com images of group " + group_id;
                 } else {
                     path_alias = username;
-                    apilink = "https://api.flickr.com/services/rest?extras=?per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&get_user_info=1&path_alias=" + username + "&method=flickr.people.getPhotos&csrf=" + csrf + "&api_key=" + api_key + "&format=json&hermes=1&hermesClient=1&reqId=19et3hbx&nojsoncallback=1";
+                    apilink = "https://api.flickr.com/services/rest?extras=?format=" + api_format + "&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&get_user_info=1&path_alias=" + username + "&method=flickr.people.getPhotos&csrf=" + csrf + "&api_key=" + api_apikey + "&hermes=1&hermesClient=1&nojsoncallback=1";
                     getPage(apilink.replace("GETJDPAGE", "1"));
                     fpName = "flickr.com images of user " + username;
                 }
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(fpName);
-                final int totalimgs = Integer.parseInt(getJson(br.toString(), "total"));
-                final int totalpages = Integer.parseInt(getJson(br.toString(), "pages"));
+                final int totalimgs = Integer.parseInt(getJson("total"));
+                final int totalpages = Integer.parseInt(getJson("pages"));
                 for (int i = 1; i <= totalpages; i++) {
                     logger.info("Progress: Page " + i + " of " + totalpages + " || Images: " + decryptedLinks.size() + " of " + totalimgs);
                     try {
@@ -467,15 +452,64 @@ public class FlickrCom extends PluginForDecrypt {
         return parameter;
     }
 
+    private void apiGetSetsOfUser() throws IOException {
+        br.getPage("https://api.flickr.com/services/rest?format=" + api_format + "&method=flickr.urls.lookupUser&csrf=&api_key=" + api_apikey + "&url=" + Encoding.urlEncode(parameter));
+        final String username = new Regex(parameter, "photos/([^<>\"/]*?)/sets").getMatch(0);
+        final String nsid = getJson("id");
+        if (nsid == null) {
+            decryptedLinks = null;
+            return;
+        }
+        String apilink = "https://api.flickr.com/services/rest?extras=&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&user_id=" + Encoding.urlEncode(nsid) + "&method=flickr.photosets.getList&csrf=&api_key=" + api_apikey + "&format=json&hermes=1&hermesClient=1&reqId=9my34ua&nojsoncallback=1";
+        getPage(apilink.replace("GETJDPAGE", "1"));
+        final int totalimgs = Integer.parseInt(getJson("total"));
+        final int totalpages = Integer.parseInt(getJson("pages"));
+        for (int i = 1; i <= totalpages; i++) {
+            logger.info("Progress: Page " + i + " of " + totalpages + " || Images: " + decryptedLinks.size() + " of " + totalimgs);
+            try {
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted by user: " + parameter);
+                    decryptedLinks = null;
+                    return;
+                }
+            } catch (final Throwable e) {
+                // Not available in old 0.9.581 Stable
+            }
+            if (i > 1) {
+                getPage(apilink.replace("GETJDPAGE", Integer.toString(i)));
+            }
+            final String jsontext = br.getRegex("\"photoset\":\\[(\\{.*?\\})\\]").getMatch(0);
+            final String[] jsonarray = jsontext.split("\\},\\{");
+            for (final String jsonentry : jsonarray) {
+                final String setid = getJson(jsonentry, "id");
+                final String contenturl = "https://www.flickr.com/photos/" + username + "/sets/" + setid + "/";
+                final DownloadLink fina = createDownloadlink(contenturl);
+                decryptedLinks.add(fina);
+            }
+        }
+    }
+
     private void getPage(final String url) throws IOException {
         br.getPage(url);
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
     }
 
-    private String getJson(final String source, final String parameter) {
-        String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.]+)").getMatch(1);
+    private String getJson(final String parameter) {
+        return getJson(this.br.toString(), parameter);
+    }
+
+    /**
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki & psp
+     * */
+    private String getJson(final String source, final String key) {
+        String result = new Regex(source, "\"" + key + "\":(?:[ ]+)?(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
         if (result == null) {
-            result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
+            result = new Regex(source, "\"" + key + "\":(?:[ ]+)?\"([^\"]+)\"").getMatch(0);
+        }
+        if (result != null) {
+            result = JSonUtils.unescape(result);
         }
         return result;
     }
