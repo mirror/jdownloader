@@ -44,8 +44,12 @@ public class ExtremeProtectNet extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.getPage(parameter);
-        if (br.getURL().equals("http://extreme-protect.net/404")) {
+        if (br.getHttpConnection().getResponseCode() == 403 || !br.containsHTML("class=\"contenu_liens\"")) {
             logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         final String pass = generatePass();

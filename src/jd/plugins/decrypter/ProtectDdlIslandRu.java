@@ -38,6 +38,14 @@ public class ProtectDdlIslandRu extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getContentType().matches("(application/javascript|text/css)")) {
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
+        }
         final String captchapass = Encoding.urlEncode(generatePass());
         br.postPage("http://protect.ddl-island.ru/php/Qaptcha.jquery.php", "action=qaptcha&qaptcha_key=" + captchapass);
         br.postPage(parameter, captchapass + "=&submit=Submit+form");
