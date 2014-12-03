@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
@@ -61,7 +62,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
 //When adding new domains here also add them to the turbobit.net decrypter (TurboBitNetFolder)
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://(www\\.|new\\.)?(maxisoc\\.ru|turo\\-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|sharephile\\.com|filesmail\\.ru|hotshare\\.biz|bluetooths\\.pp\\.ru|speed-file\\.ru|turbobit\\.pl|dz-files\\.ru|file\\.alexforum\\.ws|file\\.grad\\.by|file\\.krut-warez\\.ru|filebit\\.org|files\\.best-trainings\\.org\\.ua|files\\.wzor\\.ws|gdefile\\.ru|letitshare\\.ru|mnogofiles\\.com|share\\.uz|sibit\\.net|turbo-bit\\.ru|turbobit\\.net|upload\\.mskvn\\.by|vipbit\\.ru|files\\.prime-speed\\.ru|filestore\\.net\\.ru|turbobit\\.ru|upload\\.dwmedia\\.ru|upload\\.uz|xrfiles\\.ru|unextfiles\\.com|e-flash\\.com\\.ua|turbobax\\.net|zharabit\\.net|download\\.uzhgorod\\.name|trium-club\\.ru|alfa-files\\.com|turbabit\\.net|filedeluxe\\.com|turbobit\\.name|files\\.uz\\-translations\\.uz|turboblt\\.ru|fo\\.letitbook\\.ru|freefo\\.ru|bayrakweb\\.com|savebit\\.net|filemaster\\.ru|файлообменник\\.рф|vipgfx\\.net|turbovit\\.com\\.ua|turboot\\.ru)/([A-Za-z0-9]+(/[^<>\"/]*?)?\\.html|download/free/[a-z0-9]+|/?download/redirect/[A-Za-z0-9]+/[a-z0-9]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://(www\\.|new\\.|m\\.)?(maxisoc\\.ru|turo\\-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|sharephile\\.com|filesmail\\.ru|hotshare\\.biz|bluetooths\\.pp\\.ru|speed-file\\.ru|turbobit\\.pl|dz-files\\.ru|file\\.alexforum\\.ws|file\\.grad\\.by|file\\.krut-warez\\.ru|filebit\\.org|files\\.best-trainings\\.org\\.ua|files\\.wzor\\.ws|gdefile\\.ru|letitshare\\.ru|mnogofiles\\.com|share\\.uz|sibit\\.net|turbo-bit\\.ru|turbobit\\.net|upload\\.mskvn\\.by|vipbit\\.ru|files\\.prime-speed\\.ru|filestore\\.net\\.ru|turbobit\\.ru|upload\\.dwmedia\\.ru|upload\\.uz|xrfiles\\.ru|unextfiles\\.com|e-flash\\.com\\.ua|turbobax\\.net|zharabit\\.net|download\\.uzhgorod\\.name|trium-club\\.ru|alfa-files\\.com|turbabit\\.net|filedeluxe\\.com|turbobit\\.name|files\\.uz\\-translations\\.uz|turboblt\\.ru|fo\\.letitbook\\.ru|freefo\\.ru|bayrakweb\\.com|savebit\\.net|filemaster\\.ru|файлообменник\\.рф|vipgfx\\.net|turbovit\\.com\\.ua|turboot\\.ru)/([A-Za-z0-9]+(/[^<>\"/]*?)?\\.html|download/free/[a-z0-9]+|/?download/redirect/[A-Za-z0-9]+/[a-z0-9]+)" }, flags = { 2 })
 public class TurboBitNet extends PluginForHost {
 
     private static final String RECAPTCHATEXT                         = "api\\.recaptcha\\.net";
@@ -80,6 +81,7 @@ public class TurboBitNet extends PluginForHost {
         enablePremium(MAINPAGE + "/turbo/emoney/12");
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) throws PluginException {
         // changing to temp hosts (subdomains causes issues with multihosters.
         final String protocol = new Regex(link.getDownloadURL(), "https?://").getMatch(-1);
@@ -101,65 +103,67 @@ public class TurboBitNet extends PluginForHost {
     }
 
     /** 01.12.14: turbobit.net & hitfile.net Linkchecker is broken - will hopefully be back soon! */
-    // @Override
-    // public boolean checkLinks(final DownloadLink[] urls) {
-    // if (urls == null || urls.length == 0) {
-    // return false;
-    // }
-    // try {
-    // final Browser br = new Browser();
-    // prepBrowser(br, null);
-    // br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-    // br.setCookiesExclusive(true);
-    // final StringBuilder sb = new StringBuilder();
-    // final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-    // int index = 0;
-    // while (true) {
-    // links.clear();
-    // while (true) {
-    // /* we test 50 links at once */
-    // if (index == urls.length || links.size() > 49) {
-    // break;
-    // }
-    // links.add(urls[index]);
-    // index++;
-    // }
-    // sb.delete(0, sb.capacity());
-    // sb.append("links_to_check=");
-    // for (final DownloadLink dl : links) {
-    // correctDownloadLink(dl);
-    // sb.append(Encoding.urlEncode(MAINPAGE + "/" + getFUID(dl) + ".html"));
-    // sb.append("%0A");
-    // }
-    // // remove last
-    // sb.delete(sb.length() - 3, sb.length());
-    // // without new, can cause issue every now and then
-    // br.postPage("http://" + NICE_HOST + "/linkchecker/check", sb.toString());
-    // for (final DownloadLink dllink : links) {
-    // final Regex fileInfo = br.getRegex("<td>" + getFUID(dllink) +
-    // "</td>[\t\n\r ]*<td>([^<]*)</td>[\t\n\r ]*<td style=\"text-align:center;\">[\t\n\r ]*<img src=\"[^\"]+/(done|error)\\.png\"");
-    // if (fileInfo.getMatches() == null || fileInfo.getMatches().length == 0) {
-    // dllink.setAvailable(false);
-    // logger.warning("Linkchecker broken for " + getHost() + " Example link: " + dllink.getDownloadURL());
-    // } else {
-    // if (fileInfo.getMatch(1).equals("error")) {
-    // dllink.setAvailable(false);
-    // } else {
-    // final String name = fileInfo.getMatch(0);
-    // dllink.setAvailable(true);
-    // dllink.setFinalFileName(Encoding.htmlDecode(name.trim()));
-    // }
-    // }
-    // }
-    // if (index == urls.length) {
-    // break;
-    // }
-    // }
-    // } catch (final Exception e) {
-    // return false;
-    // }
-    // return true;
-    // }
+    @Override
+    public boolean checkLinks(final DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
+        try {
+            final Browser br = new Browser();
+            prepBrowser(br, null);
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.setCookiesExclusive(true);
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 50 links at once */
+                    if (index == urls.length || links.size() > 49) {
+                        break;
+                    }
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("links_to_check=");
+                for (final DownloadLink dl : links) {
+                    correctDownloadLink(dl);
+                    sb.append(Encoding.urlEncode(MAINPAGE + "/" + getFUID(dl) + ".html"));
+                    sb.append("%0A");
+                }
+                // remove last
+                sb.delete(sb.length() - 3, sb.length());
+                /*
+                 * '/linkchecker/csv' is the official "API" method but this will only return fileID and online/offline - not even the
+                 * filename
+                 */
+                br.postPage("http://" + NICE_HOST + "/linkchecker/check", sb.toString());
+                for (final DownloadLink dllink : links) {
+                    final Regex fileInfo = br.getRegex("<td>" + getFUID(dllink) + "</td>[\t\n\r ]*<td>([^<]*)</td>[\t\n\r ]*<td style=\"text-align:center;\">(?:[\t\n\r ]*)?<img src=\"(?:[^\"]+)?/(done|error)\\.png\"");
+                    if (fileInfo.getMatches() == null || fileInfo.getMatches().length == 0) {
+                        dllink.setAvailable(false);
+                        logger.warning("Linkchecker broken for " + getHost() + " Example link: " + dllink.getDownloadURL());
+                    } else {
+                        if (fileInfo.getMatch(1).equals("error")) {
+                            dllink.setAvailable(false);
+                        } else {
+                            final String name = fileInfo.getMatch(0);
+                            dllink.setAvailable(true);
+                            dllink.setFinalFileName(Encoding.htmlDecode(name.trim()));
+                        }
+                    }
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            return false;
+        }
+        return true;
+    }
 
     private String escape(final String s) {
         /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */

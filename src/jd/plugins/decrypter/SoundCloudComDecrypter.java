@@ -540,6 +540,9 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             userID = br.getRegex("id type=\"integer\">(\\d+)").getMatch(0);
         }
         if (userID == null) {
+            userID = getJson("id");
+        }
+        if (userID == null) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
         // seems to be a limit of the API (12.02.14)
@@ -547,7 +550,11 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         int offset = 0;
         while (true) {
             br.getPage("https://api.sndcdn.com/e1/users/" + userID + "/sounds?limit=" + maxPerCall + "&offset=" + offset + "&linked_partitioning=1&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID);
-            final String[] items = br.getRegex("<stream\\-item>(.*?)</stream\\-item>").getColumn(0);
+            final String jsontext = br.getRegex("\"collection\":\\[(.*?)\\]\\}").getMatch(0);
+            if (jsontext == null) {
+                return;
+            }
+            final String[] items = jsontext.split("\\},\\{\"playlist\":");
             if (items == null || items.length == 0) {
                 if (br.containsHTML("<stream\\-items type=\"array\"/>")) {
                     throw new DecrypterException(EXCEPTION_LINKOFFLINE);
@@ -557,9 +564,9 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             }
             for (final String item : items) {
                 DownloadLink dl = null;
-                final String type = getXML("type", br.toString());
-                final String permalink_url = getXML("permalink-url", item);
-                final String url = getXML("permalink", item);
+                final String type = getJson(item, "type");
+                final String permalink_url = getJson(item, "permalink_url");
+                final String url = getJson(item, "permalink");
                 if (type == null || permalink_url == null || url == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     throw new DecrypterException("null");
@@ -569,7 +576,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 } else {
                     final String track_url = permalink_url.replace("http://", "https://").replace("soundcloud.com", "soundclouddecrypted.com") + "/" + url;
                     dl = createDownloadlink(track_url);
-                    dl = setDlDataXML(dl, item);
+                    dl = setDlDataJson(dl, item);
                     get500Thumbnail(dl, item);
                     getOriginalThumbnail(dl, item);
                 }
