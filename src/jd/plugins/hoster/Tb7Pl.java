@@ -226,7 +226,7 @@ public class Tb7Pl extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, generatedLink, resume, chunks);
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) // unknown
-            // error
+        // error
         {
             br.followConnection();
             if (br.containsHTML("<div id=\"message\">Ważność linka wygasła.</div>")) {
@@ -283,9 +283,23 @@ public class Tb7Pl extends PluginForHost {
             try {
                 final Browser br2 = br.cloneBrowser();
                 con = br2.openGetConnection(dllink);
+
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                    // try redirected link
+                    boolean resetGeneratedLink = true;
+                    String redirectConnection = br2.getRedirectLocation();
+                    if (redirectConnection != null) {
+                        con = br2.openGetConnection(redirectConnection);
+                        if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                            resetGeneratedLink = true;
+                        } else {
+                            resetGeneratedLink = false;
+                        }
+                    }
+                    if (resetGeneratedLink) {
+                        downloadLink.setProperty(property, Property.NULL);
+                        dllink = null;
+                    }
                 }
             } catch (final Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
