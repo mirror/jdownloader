@@ -151,10 +151,10 @@ public class EuroShareEu extends PluginForHost {
         // Not sure if this behaviour is correct
         final String availableTraffic = getJson("credit");
         if (expire.equals("0") && availableTraffic.equals("0")) {
-            ai.setStatus("Free (registered) User");
+            ai.setStatus("Registered User");
             try {
                 maxPrem.set(1);
-                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setMaxSimultanDownloads(1);
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
             }
@@ -165,18 +165,20 @@ public class EuroShareEu extends PluginForHost {
             if (!expire.equals("0")) {
                 ai.setValidUntil(Long.parseLong(expire) * 1000);
                 if (ai.isExpired()) {
+                    ai.setStatus("Premium User (Credit)");
                     ai.setValidUntil(-1);
                     ai.setTrafficLeft(Long.parseLong(availableTraffic));
                 } else {
+                    ai.setStatus("Premium User (Time)");
                     ai.setUnlimitedTraffic();
                 }
             } else {
+                ai.setStatus("Premium User (Credit)");
                 ai.setTrafficLeft(Long.parseLong(availableTraffic));
             }
-            ai.setStatus("Premium User");
             try {
                 maxPrem.set(-1);
-                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setMaxSimultanDownloads(-1);
                 account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
             }
