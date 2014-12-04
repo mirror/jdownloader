@@ -36,4 +36,49 @@ public interface EventScripterTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "JDownloader started" })
     String ON_JDOWNLOADER_STARTED();
 
+    @Default(lngs = { "en" }, values = { "JavaScript Syntax Error" })
+    String syntax_error();
+
+    @Default(lngs = { "en" }, values = { "Event Scripter" })
+    String title();
+
+    @Default(lngs = { "en" }, values = { "Example" })
+    String example_script_name();
+
+    @Default(lngs = { "en" }, values = { "Trigger" })
+    String event_trigger();
+
+    @Default(lngs = { "en" }, values = { "Edit Script" })
+    String edit_script();
+
+    @Default(lngs = { "en" }, values = { "Loading Editor..." })
+    String loading_editor_title();
+
+    @Default(lngs = { "en" }, values = { "// ========= Properties for the EventTrigger '%s1'  =========" })
+    String properties_for_eventtrigger(String label);
+
+    @Default(lngs = { "en" }, values = { "// DownloadLink" })
+    String downloadLink();
+
+    @Default(lngs = { "en" }, values = { "// Filepackage" })
+    String filepackage();
+
+    @Default(lngs = { "en" }, values = { "// This Event will never be triggered." })
+    String none_trigger();
+
+    @Default(lngs = { "en" }, values = { "//Add your script here. Feel free to use the available api properties and methods" })
+    String emptyScript();
+
+    @Default(lngs = { "en" }, values = { "Show/Hide Help" })
+    String editor_showhelp();
+
+    @Default(lngs = { "en" }, values = { "Auto Format" })
+    String editor_autoformat();
+
+    @Default(lngs = { "en" }, values = { "Test Compile" })
+    String editor_testcompile();
+
+    @Default(lngs = { "en" }, values = { "Test Run" })
+    String editor_testrun();
+
 }

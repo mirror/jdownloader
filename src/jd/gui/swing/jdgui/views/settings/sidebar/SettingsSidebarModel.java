@@ -424,6 +424,7 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                                     };
                                 }
                             }
+
                         }
                     }
                 } finally {

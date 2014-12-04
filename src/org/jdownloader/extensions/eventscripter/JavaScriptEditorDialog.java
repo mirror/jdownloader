@@ -116,7 +116,7 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
 
         String txt = entry.getScript();
         if (StringUtils.isEmpty(txt)) {
-            txt = "//Add your script here. Feel free to use the available api properties and methods";
+            txt = T._.emptyScript();
         }
         editor.setText(txt);
         delayer.resetAndStart();
@@ -126,7 +126,7 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
             {
                 // setIconKey(IconKey.ICON_TEXT);
                 setSelected(CFG_EVENT_CALLER.CFG.isAPIPanelVisible());
-                setName("Show/Hide Help");
+                setName(T._.editor_showhelp());
             }
 
             @Override
@@ -140,7 +140,7 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
         toolbar.add(new ExtButton(new AppAction() {
             {
 
-                setName("Auto Format");
+                setName(T._.editor_autoformat());
             }
 
             @Override
@@ -154,7 +154,7 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
         toolbar.add(new ExtButton(new AppAction() {
             {
 
-                setName("Test Compile");
+                setName(T._.editor_testcompile());
             }
 
             @Override
@@ -166,8 +166,8 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
 
         toolbar.add(new ExtButton(new AppAction() {
             {
+                setName(T._.editor_testrun());
 
-                setName("Test Run");
             }
 
             @Override

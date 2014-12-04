@@ -18,7 +18,6 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.Application;
-import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -29,7 +28,6 @@ import org.jdownloader.gui.views.components.AbstractAddAction;
 import org.jdownloader.gui.views.components.AbstractRemoveAction;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
-import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class EventScripterConfigPanel extends ExtensionConfigPanel<EventScripterExtension> {
 
@@ -74,8 +72,6 @@ public class EventScripterConfigPanel extends ExtensionConfigPanel<EventScripter
         super(extension);
 
         JLabel lbl;
-        add(SwingUtils.toBold(lbl = new JLabel("THIS EXTENSION IS STILL UNDER CONSTRUCTION. Feel free to test it and to give Feedback. ")));
-        lbl.setForeground(LAFOptions.getInstance().getColorForErrorForeground());
 
         add(new JScrollPane(table = new EventScripterTable(model = new EventScripterTableModel(extension)) {
             @Override
