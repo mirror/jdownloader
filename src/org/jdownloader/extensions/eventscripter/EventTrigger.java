@@ -25,15 +25,15 @@ public enum EventTrigger implements LabelInterface {
 
         public String getAPIDescription() {
             StringBuilder sb = new StringBuilder();
-            sb.append("// ========= Properties for the EventTrigger '" + getLabel() + "'  =========\r\n");
-            sb.append("// DownloadLink\r\n");
+            sb.append(T._.properties_for_eventtrigger(getLabel()));
+            sb.append(T._.downloadLink()).append("\r\n");
             SimpleMapper mapper = new SimpleMapper();
             for (Entry<String, Object> es : mapper.convert(new DownloadLinkAPIStorableV2(), TypeRef.HASHMAP).entrySet()) {
-                sb.append("link." + es.getKey() + ";\r\n");
+                sb.append("link." + es.getKey() + ";").append("\r\n");
             }
-            sb.append("// FilePackage \r\n");
+            sb.append(T._.filepackage()).append("\r\n");
             for (Entry<String, Object> es : mapper.convert(new FilePackageAPIStorableV2(), TypeRef.HASHMAP).entrySet()) {
-                sb.append("package." + es.getKey() + ";\r\n");
+                sb.append("package." + es.getKey() + ";").append("\r\n");
             }
 
             return sb.toString();
@@ -79,7 +79,7 @@ public enum EventTrigger implements LabelInterface {
     };
 
     public String getAPIDescription() {
-        return "//This Event will never be Triggered.";
+        return T._.none_trigger();
     }
 
     public HashMap<String, Object> getTestProperties() {

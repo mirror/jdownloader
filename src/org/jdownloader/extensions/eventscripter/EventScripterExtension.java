@@ -53,6 +53,7 @@ import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
 
 public class EventScripterExtension extends AbstractExtension<EventScripterConfig, EventScripterTranslation> implements MenuExtenderHandler, DownloadWatchdogListener, GenericConfigEventListener<Object> {
 
@@ -70,7 +71,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
     }
 
     public EventScripterExtension() throws StartException {
-        setTitle("Event Caller");
+        setTitle(T._.title());
 
     }
 
@@ -97,11 +98,13 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
             @Override
             public void run() {
-                for (ScriptEntry script : entries) {
-                    if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_JDOWNLOADER_STARTED == script.getEventTrigger()) {
-                        HashMap<String, Object> props = new HashMap<String, Object>();
-                        runScript(script, props);
+                if (entries != null) {
+                    for (ScriptEntry script : entries) {
+                        if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_JDOWNLOADER_STARTED == script.getEventTrigger()) {
+                            HashMap<String, Object> props = new HashMap<String, Object>();
+                            runScript(script, props);
 
+                        }
                     }
                 }
             }
@@ -296,9 +299,9 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
             // cx.compileString(source, sourceName, lineno, securityDomain)
             Script fcn = cx.compileString(script, "", 1, null);
 
-            Dialog.getInstance().showMessageDialog("Successful");
+            Dialog.getInstance().showMessageDialog(_GUI._.lit_successfull());
         } catch (Throwable e1) {
-            Dialog.getInstance().showExceptionDialog("JavaScript Syntax Error", e1.getMessage(), e1);
+            Dialog.getInstance().showExceptionDialog(T._.syntax_error(), e1.getMessage(), e1);
         } finally {
             Context.exit();
         }

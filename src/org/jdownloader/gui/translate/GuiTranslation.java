@@ -5533,4 +5533,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "%s1" })
     String YoutubeVariant_nametag_generic_audio(String string, String string2);
 
+    @Default(lngs = { "en" }, values = { "Enabled" })
+    String lit_enabled();
+
+    @Default(lngs = { "en" }, values = { "Name" })
+    String lit_name();
+
 }
