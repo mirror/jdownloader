@@ -20,12 +20,15 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.simplejson.JSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiomack.com" }, urls = { "http://(www\\.)?audiomack\\.com/(song/[a-z0-9\\-_]+/[a-z0-9\\-_]+|api/music/url/album/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/\\d+)" }, flags = { 0 })
 public class AudioMa extends PluginForHost {
@@ -39,14 +42,27 @@ public class AudioMa extends PluginForHost {
         return "http://www.audiomack.com/about/terms-of-service";
     }
 
-    private static final String TYPE_API = "http://(www\\.)?audiomack\\.com/api/music/url/album/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/\\d+";
+    private static final String  TYPE_API       = "http://(www\\.)?audiomack\\.com/api/music/url/album/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/\\d+";
+    private static final boolean use_oembed_api = true;
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String filename;
-        if (link.getDownloadURL().matches(TYPE_API)) {
+        if (use_oembed_api) {
+            br.getPage("http://www.audiomack.com/oembed?format=json&url=" + Encoding.urlEncode(link.getDownloadURL()));
+            if (br.containsHTML(">Did not find any music with url")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String artist = getJson("author_name");
+            final String songname = getJson("title");
+            if (artist == null || songname == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            filename = artist + " - " + songname;
+        } else if (link.getDownloadURL().matches(TYPE_API)) {
             br.getPage(link.getStringProperty("mainlink", null));
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -75,6 +91,10 @@ public class AudioMa extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        /* Access real link here in case we used the oembed API above */
+        if (use_oembed_api) {
+            br.getPage(downloadLink.getDownloadURL());
+        }
         /* Prefer downloadlink --> Higher quality version */
         String dllink = br.getRegex("\"(http://(www\\.)?music\\.audiomack\\.com/tracks/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
@@ -100,6 +120,26 @@ public class AudioMa extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getJson(final String parameter) {
+        return getJson(this.br.toString(), parameter);
+    }
+
+    /**
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki & psp
+     * */
+    private String getJson(final String source, final String key) {
+        String result = new Regex(source, "\"" + key + "\":(?:[ ]+)?(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
+        if (result == null) {
+            result = new Regex(source, "\"" + key + "\":(?:[ ]+)?\"([^\"]+)\"").getMatch(0);
+        }
+        if (result != null) {
+            result = JSonUtils.unescape(result);
+        }
+        return result;
     }
 
     @Override
