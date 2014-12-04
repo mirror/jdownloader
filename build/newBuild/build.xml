@@ -409,7 +409,8 @@
 	<target name="jarOptionals" description="Creates the Optional Plugins">
 		<manifest file="${dist}/Manifest.MF">
 			<attribute name="Created-By" value="JD-Team and Friends" />
-		</manifest>
+		</manifest>	
+		<buildAddon package="EventScripter" include="eventscripter" />
 		<buildAddon package="JDChat" include="chat" />
 		<buildAddon package="infobar" include="infobar" />
 		<buildAddon package="FolderWatch" include="folderwatchV2" />

@@ -99,5 +99,6 @@
 			<attribute name="javadoc_location" value="jar:platform:/resource/JDownloader/dev/libs/DJNativeSwing-SWT-1-0-2/DJNativeSwing-SWT-1-0-2.docs.zip!/api/"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="ressourcen/libs/jsyntaxpane.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

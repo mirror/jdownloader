@@ -363,7 +363,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         try {
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, "image/x-icon", false));
             out = RemoteAPI.getOutputStream(response, null, false, false);
-            Icon logo = NewTheme.I().getIcon("logo/jd_ logo_128_128", 32);
+            Icon logo = NewTheme.I().getIcon("logo/jd_logo_128_128", 32);
             ICOEncoder.write(IconIO.toBufferedImage(logo), out);
         } catch (Throwable e) {
             throw new InternalApiException(e);
