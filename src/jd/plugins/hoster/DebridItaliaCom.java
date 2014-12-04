@@ -39,8 +39,6 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debriditalia.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOMasdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class DebridItaliaCom extends PluginForHost {
 
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-
     public DebridItaliaCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.debriditalia.com/premium.php");
@@ -56,17 +54,29 @@ public class DebridItaliaCom extends PluginForHost {
         return maxPrem.get();
     }
 
-    private static final String  NOCHUNKS                                          = "NOCHUNKS";
-    // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static AtomicInteger totalMaxSimultanFreeDownload                      = new AtomicInteger(20);
-    // don't touch the following!
-    private static AtomicInteger maxPrem                                           = new AtomicInteger(1);
+    private static final String                            NICE_HOST                                         = "debriditalia.com";
+    private static final String                            NICE_HOSTproperty                                 = NICE_HOST.replaceAll("(\\.|\\-)", "");
 
-    private static final int     MAXRETRIES_timesfaileddebriditalia_not_available  = 30;
-    private static final int     MAXRETRIES_timesfaileddebriditalia_unknowndlerror = 50;
+    private static final String                            NOCHUNKS                                          = "NOCHUNKS";
+    // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
+    private static AtomicInteger                           totalMaxSimultanFreeDownload                      = new AtomicInteger(20);
+    // don't touch the following!
+    private static AtomicInteger                           maxPrem                                           = new AtomicInteger(1);
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap                                = new HashMap<Account, HashMap<String, Long>>();
+    private Account                                        currAcc                                           = null;
+    private DownloadLink                                   currDownloadLink                                  = null;
+
+    private static final int                               MAXRETRIES_timesfaileddebriditalia_not_available  = 30;
+    private static final int                               MAXRETRIES_timesfaileddebriditalia_unknowndlerror = 50;
+
+    private void setConstants(final Account acc, final DownloadLink dl) {
+        this.currAcc = acc;
+        this.currDownloadLink = dl;
+    }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        setConstants(account, null);
         final AccountInfo ac = new AccountInfo();
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
@@ -98,7 +108,7 @@ public class DebridItaliaCom extends PluginForHost {
         hosts = br.getRegex("\"([^<>\"]*?)\"").getColumn(0);
         final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
         ac.setMultiHostSupport(this, supportedHosts);
-        ac.setStatus("Account valid");
+        ac.setStatus("Premium account");
         return ac;
     }
 
@@ -114,6 +124,7 @@ public class DebridItaliaCom extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
+        setConstants(acc, link);
         showMessage(link, "Generating link");
         String dllink = checkDirectLink(link, "debriditaliadirectlink");
         if (dllink == null) {
@@ -129,9 +140,12 @@ public class DebridItaliaCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
                 } else {
                     link.setProperty("timesfaileddebriditalia_not_available", Property.NULL);
-                    tempUnavailableHoster(acc, link, 15 * 60 * 1000l);
+                    tempUnavailableHoster(15 * 60 * 1000l);
                 }
 
+            } else if (br.containsHTML("ERROR: not_supported")) {
+                logger.info("Current host is not supported");
+                tempUnavailableHoster(3 * 60 * 60 * 1000l);
             }
             dllink = br.getRegex("(https?://(\\w+\\.)?debriditalia\\.com/dl/.+)").getMatch(0);
             if (dllink == null) {
@@ -145,7 +159,7 @@ public class DebridItaliaCom extends PluginForHost {
                 } else {
                     logger.info("debriditalia.com: Unknown error - final downloadlink is missing -> Disabling current host");
                     link.setProperty("timesfaileddebriditalia_unknownerror_dllink_missing", Property.NULL);
-                    tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+                    tempUnavailableHoster(60 * 60 * 1000l);
                 }
             }
         }
@@ -160,32 +174,10 @@ public class DebridItaliaCom extends PluginForHost {
             br.followConnection();
             if (br.containsHTML("No htmlCode read")) {
                 logger.info("debriditalia.com: Unknown download error");
-                int timesFailed = link.getIntegerProperty("timesfaileddebriditalia_unknowndlerror", 1);
-                link.getLinkStatus().setRetryCount(0);
-                if (timesFailed <= MAXRETRIES_timesfaileddebriditalia_unknowndlerror) {
-                    timesFailed++;
-                    link.setProperty("timesfaileddebriditalia_unknowndlerror", timesFailed);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
-                } else {
-                    link.setProperty("timesfaileddebriditalia_unknowndlerror", Property.NULL);
-                    logger.info("debriditalia.com: Unknown download error -> Disabling current host");
-                    tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
-                }
+                handleErrorRetries("unknowndlerror", MAXRETRIES_timesfaileddebriditalia_unknowndlerror);
             }
             logger.info("debriditalia.com: Unknown download error 2" + br.toString());
-
-            int timesFailed = link.getIntegerProperty("timesfaileddebriditalia_unknowndlerror2", 0);
-            link.getLinkStatus().setRetryCount(0);
-            if (timesFailed <= 2) {
-                timesFailed++;
-                link.setProperty("timesfaileddebriditalia_unknowndlerror2", timesFailed);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
-            } else {
-                logger.info("debriditalia.com: Unknown download error 2: Disabling current host");
-                link.setProperty("timesfaileddebriditalia_unknowndlerror2", Property.NULL);
-                tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
-            }
-
+            handleErrorRetries("unknowndlerror2", MAXRETRIES_timesfaileddebriditalia_unknowndlerror);
         }
         // Directlinks can be used for up to 2 days
         link.setProperty("debriditaliadirectlink", dllink);
@@ -237,18 +229,18 @@ public class DebridItaliaCom extends PluginForHost {
         return true;
     }
 
-    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) {
+    private void tempUnavailableHoster(long timeout) throws PluginException {
+        if (this.currDownloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         }
         synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(this.currAcc);
             if (unavailableMap == null) {
                 unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(account, unavailableMap);
+                hostUnavailableMap.put(this.currAcc, unavailableMap);
             }
             /* wait to retry this host */
-            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
+            unavailableMap.put(this.currDownloadLink.getHost(), (System.currentTimeMillis() + timeout));
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
@@ -296,6 +288,30 @@ public class DebridItaliaCom extends PluginForHost {
             }
         }
         return dllink;
+    }
+
+    /**
+     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
+     * from the host list.
+     *
+     * @param error
+     *            : The name of the error
+     * @param maxRetries
+     *            : Max retries before out of date error is thrown
+     */
+    private void handleErrorRetries(final String error, final int maxRetries) throws PluginException {
+        int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
+        this.currDownloadLink.getLinkStatus().setRetryCount(0);
+        if (timesFailed <= maxRetries) {
+            logger.info(NICE_HOST + ": " + error + " -> Retrying");
+            timesFailed++;
+            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
+            throw new PluginException(LinkStatus.ERROR_RETRY, error);
+        } else {
+            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
+            logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
+            tempUnavailableHoster(1 * 60 * 60 * 1000l);
+        }
     }
 
     /**

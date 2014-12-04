@@ -60,9 +60,9 @@ public class MyzukaRuDecrypter extends PluginForDecrypt {
             fpName = new Regex(br.getURL(), "myzuka\\.ru/Album/\\d+/(.+)").getMatch(0);
         }
         for (final String singleLink : info) {
-            final String url = new Regex(singleLink, "href=\"(/Song/\\d+/[A-Za-z0-9\\-_]+)\"").getMatch(0);
-            final String title = new Regex(singleLink, "href=\"/Song/\\d+/[A-Za-z0-9\\-_]+\">([^<>\"]*?)</a>").getMatch(0);
-            final String artist = new Regex(singleLink, "href=\"/Artist/\\d+/[A-Za-z0-9\\-_]+\">([^<>\"]*?)</a>").getMatch(0);
+            final String url = new Regex(singleLink, "href=\"(/Song/\\d+/[^<>\"/]+)\"").getMatch(0);
+            final String title = new Regex(singleLink, "href=\"/Song/\\d+/[^<>\"/]+\">([^<>\"]*?)</a>").getMatch(0);
+            final String artist = new Regex(singleLink, "href=\"/Artist/\\d+/[^<>\"/]+\">([^<>\"]*?)</a>").getMatch(0);
             final String filesize = new Regex(singleLink, "(\\d{1,2}(,\\d{1,2})?) Мб").getMatch(0);
             if (url == null || title == null || artist == null || filesize == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
