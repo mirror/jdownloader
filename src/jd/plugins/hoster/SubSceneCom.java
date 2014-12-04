@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -40,15 +41,24 @@ public class SubSceneCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>An error occurred while processing your request|>Server Error|>Page Not Found<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if ((br.containsHTML("<li class=\"deleted\">")) && (!br.containsHTML("mac"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>An error occurred while processing your request|>Server Error|>Page Not Found<)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if ((br.containsHTML("<li class=\"deleted\">")) && (!br.containsHTML("mac"))) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String subtitleid = new Regex(link.getDownloadURL(), "subtitles/[a-z0-9\\-]+/[a-z0-9\\-]+/(\\d+)").getMatch(0);
         String filename = br.getRegex("<strong>Release info[^<>\"]+</strong>([^\"]*?)</li>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<span itemprop=\"name\">([^<>\"]*?)</span>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            filename = br.getRegex("<span itemprop=\"name\">([^<>\"]*?)</span>").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final String rlses[] = filename.split("\r\n\t\t\t\t\t\t\t<div>");
         if (rlses != null && rlses.length != 0) {
             for (String release : rlses) {
@@ -63,15 +73,22 @@ public class SubSceneCom extends PluginForHost {
         filename = filename.replace("\t", "");
         filename = filename.replace("\n", "");
         filename = filename.replace("<div>", "").replace("</div>", "");
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".zip");
+        filename = Encoding.htmlDecode(filename.trim());
+        if (subtitleid != null) {
+            filename += "_" + subtitleid;
+        }
+        filename += ".zip";
+        link.setName(filename);
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         final String dllink = br.getRegex("\"(/subtitle/download\\?mac=[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // Resume and chunks disabled, not needed for such small files & can't
         // test
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://subscene.com" + dllink, false, 1);
@@ -79,6 +96,7 @@ public class SubSceneCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
     }
 

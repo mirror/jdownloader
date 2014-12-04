@@ -407,8 +407,8 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     private int getLanguageInt(final String versionCode) {
         int lint;
         if (versionCode.equals("VO") && parameter.matches(TYPE_CONCERT)) {
-            /* Special case */
-            lint = 2;
+            /* Special case - no different versions available --> We already got the version we want */
+            lint = languageVersion;
         } else if (versionCode.equals("VA") || versionCode.equals("VA-STA") || versionCode.equals("VO")) {
             lint = 1;
         } else if (versionCode.startsWith("VF") || versionCode.equals("VOF")) {

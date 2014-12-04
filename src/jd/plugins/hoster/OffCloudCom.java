@@ -159,13 +159,13 @@ public class OffCloudCom extends PluginForHost {
             final String requestId = getJson("requestId");
             if (requestId == null) {
                 /* Should never happen */
-                handleErrorRetries(account, link, "requestIdnull", 5);
+                handleErrorRetries("requestIdnull", 5);
             }
             link.setProperty("offcloudrequestId", requestId);
             dllink = getJson("url");
             if (dllink == null) {
                 /* Should never happen */
-                handleErrorRetries(account, link, "dllinknull", 5);
+                handleErrorRetries("dllinknull", 5);
             }
             dllink = dllink.replaceAll("\\\\/", "/");
         }
@@ -199,7 +199,7 @@ public class OffCloudCom extends PluginForHost {
                 br.followConnection();
                 updatestatuscode();
                 handleAPIErrors(this.br);
-                handleErrorRetries(account, link, "unknowndlerror", 5);
+                handleErrorRetries("unknowndlerror", 5);
             }
             try {
                 if (!this.dl.startDownload()) {
@@ -525,12 +525,12 @@ public class OffCloudCom extends PluginForHost {
                 } else {
                     statusMessage = "\r\nDownload ticket broken --> Retry link";
                 }
-                handleErrorRetries(this.currAcc, this.currDownloadLink, "downloadticketBroken", 10);
+                handleErrorRetries("downloadticketBroken", 10);
             default:
                 /* Unknown error */
                 statusMessage = "Unknown error";
                 logger.info(NICE_HOST + ": Unknown API error");
-                handleErrorRetries(this.currAcc, this.currDownloadLink, "unknownAPIerror", 10);
+                handleErrorRetries("unknownAPIerror", 10);
             }
         } catch (final PluginException e) {
             logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
@@ -555,23 +555,21 @@ public class OffCloudCom extends PluginForHost {
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
      * from the host list.
      *
-     * @param dl
-     *            : The DownloadLink
      * @param error
      *            : The name of the error
      * @param maxRetries
      *            : Max retries before out of date error is thrown
      */
-    private void handleErrorRetries(final Account acc, final DownloadLink dl, final String error, final int maxRetries) throws PluginException {
-        int timesFailed = dl.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
-        dl.getLinkStatus().setRetryCount(0);
+    private void handleErrorRetries(final String error, final int maxRetries) throws PluginException {
+        int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
+        this.currDownloadLink.getLinkStatus().setRetryCount(0);
         if (timesFailed <= maxRetries) {
             logger.info(NICE_HOST + ": " + error + " -> Retrying");
             timesFailed++;
-            dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
+            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
             throw new PluginException(LinkStatus.ERROR_RETRY, error);
         } else {
-            dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
+            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
             logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
             // tempUnavailableHoster(acc, dl, 1 * 60 * 60 * 1000l);
             /* TODO: Remove plugin defect once all known errors are correctly handled */

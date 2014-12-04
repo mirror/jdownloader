@@ -80,6 +80,12 @@ public class FlickrCom extends PluginForHost {
         return false;
     }
 
+    /**
+     * Keep in mind that there is this nice oauth API which might be useful in the future: https://www.flickr.com/services/oembed?url=
+     *
+     * Other calls of the normal API which might be useful in the future: https://www.flickr.com/services/api/flickr.photos.getInfo.html
+     * https://www.flickr.com/services/api/flickr.photos.getSizes.html
+     * */
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
@@ -87,6 +93,8 @@ public class FlickrCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         correctDownloadLink(downloadLink);
+        id = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+        user = new Regex(downloadLink.getDownloadURL(), "flickr\\.com/photos/([^<>\"/]+)/").getMatch(0);
         br.clearCookies(MAINPAGE);
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
@@ -95,6 +103,7 @@ public class FlickrCom extends PluginForHost {
             logger.info("No account available, continuing without account...");
         }
         br.setFollowRedirects(true);
+
         br.getPage(downloadLink.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("div class=\"Four04Case\">") || br.containsHTML(">This member is no longer active on Flickr") || br.containsHTML("class=\"Problem\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -104,8 +113,6 @@ public class FlickrCom extends PluginForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         String filename = getFilename();
-        id = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
-        user = new Regex(downloadLink.getDownloadURL(), "flickr\\.com/photos/([^<>\"/]+)/").getMatch(0);
         if (filename == null) {
             downloadLink.getLinkStatus().setStatusText("Only downloadable for registered users [Add a flickt account to download such links!]");
             logger.warning("Filename not found, plugin must be broken...");
@@ -117,9 +124,10 @@ public class FlickrCom extends PluginForHost {
              * TODO: Add correct API csrf cookie handling so we can use this while being logged in to download videos and do not have to
              * remove the cookies here - that's just a workaround!
              */
-            final String api_key = br.getRegex("root.YUI_config.flickr.api.site_key\\s*?=\\s*?\"(.*?)\"").getMatch(0);
             br.clearCookies("htto://flickr.com");
+            br.getPage(downloadLink.getDownloadURL());
             final String secret = br.getRegex("\"secret\":\"([^<>\"]*)\"").getMatch(0);
+            final String api_key = jd.plugins.decrypter.FlickrCom.getPublicAPIKey(this.br);
             if (api_key == null || secret == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
