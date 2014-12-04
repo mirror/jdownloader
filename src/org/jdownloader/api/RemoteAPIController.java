@@ -3,6 +3,7 @@ package org.jdownloader.api;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,6 +19,8 @@ import jd.nutils.DiffMatchPatch.Patch;
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.InterfaceHandler;
+import org.appwork.remoteapi.RemoteAPI;
+import org.appwork.remoteapi.RemoteAPI.RemoteAPIMethod;
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
@@ -28,6 +31,7 @@ import org.appwork.remoteapi.events.EventPublisher;
 import org.appwork.remoteapi.events.EventsAPI;
 import org.appwork.remoteapi.events.EventsAPIInterface;
 import org.appwork.remoteapi.events.json.EventObjectStorable;
+import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
@@ -522,4 +526,45 @@ public class RemoteAPIController {
         return deviceMap;
     }
 
+    public Object call(final String namespace, final String methodName, Object... params) throws BasicRemoteAPIException, IllegalArgumentException, IllegalAccessException, InvocationTargetException {
+        RemoteAPIMethod dummyMethod = this.rapi.getRemoteAPIMethod(new HttpRequest(null) {
+            @Override
+            public String getRequestedPath() {
+                return "/" + namespace + "/" + methodName;
+            }
+
+            @Override
+            public String getParameterbyKey(String key) throws IOException {
+                return null;
+            }
+        });
+
+        InterfaceHandler<?> iface = dummyMethod.getInterfaceHandler();
+        Method method = iface.getMethod(methodName, params.length);
+        ArrayList<String> stringParams = new ArrayList<String>();
+        for (Object o : params) {
+            stringParams.add(JSonStorage.serializeToJson(o));
+        }
+
+        final Object[] parameters = new Object[method.getParameterTypes().length];
+
+        int count = 0;
+        for (int i = 0; i < parameters.length; i++) {
+            if (RemoteAPIRequest.class.isAssignableFrom(method.getParameterTypes()[i])) {
+                throw new BasicRemoteAPIException("Not Found", ResponseCode.ERROR_NOT_FOUND);
+            } else if (RemoteAPIResponse.class.isAssignableFrom(method.getParameterTypes()[i])) {
+                throw new BasicRemoteAPIException("Not Found", ResponseCode.ERROR_NOT_FOUND);
+            } else {
+                try {
+                    parameters[i] = RemoteAPI.convert(stringParams.get(count), method.getGenericParameterTypes()[i]);
+                } catch (final Throwable e) {
+                    throw new BadParameterException(e, stringParams.get(count));
+                }
+                count++;
+            }
+        }
+
+        return iface.invoke(method, parameters);
+
+    }
 }

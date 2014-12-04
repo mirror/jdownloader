@@ -122,8 +122,9 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
     private MainToolBar() {
         super();
         logger = LogController.getInstance().getLogger("MainToolbar");
-        this.setRollover(true);
+
         this.addMouseListener(this);
+        this.setRollover(true);
         this.setFloatable(false);
         setPreferredSize(new Dimension(-1, 38));
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {

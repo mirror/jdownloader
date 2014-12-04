@@ -303,4 +303,15 @@ public class JSHtmlUnitPermissionRestricter {
         return CONTEXT_FACTORY.makeContext(contextCallback);
     }
 
+    public static Script compileTrustedString(Context cx, Global scope, String source, String sourceName, int lineno, Object securityDomain) {
+        try {
+            TRUSTED_THREAD.put(Thread.currentThread(), true);
+            return cx.compileString(source, sourceName, lineno, securityDomain);
+
+        } finally {
+
+            TRUSTED_THREAD.remove(Thread.currentThread());
+        }
+    }
+
 }
