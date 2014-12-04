@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "subscene.com" }, urls = { "http://(www\\.)?subscene\\.com/(subtitles/[a-z0-9\\-]+/[a-z0-9\\-]+/\\d+|[a-z0-9]+/[a-z0-9\\-]+/subtitle\\-\\d+\\.aspx)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "subscene.com" }, urls = { "http://(www\\.)?subscene\\.com/(subtitles/[a-z0-9\\-_]+/[a-z0-9\\-_]+/\\d+|[a-z0-9]+/[a-z0-9\\-]+/subtitle\\-\\d+\\.aspx)" }, flags = { 0 })
 public class SubSceneCom extends PluginForHost {
 
     public SubSceneCom(PluginWrapper wrapper) {
@@ -51,7 +51,8 @@ public class SubSceneCom extends PluginForHost {
         if ((br.containsHTML("<li class=\"deleted\">")) && (!br.containsHTML("mac"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String subtitleid = new Regex(link.getDownloadURL(), "subtitles/[a-z0-9\\-]+/[a-z0-9\\-]+/(\\d+)").getMatch(0);
+        final String subtitleid = new Regex(link.getDownloadURL(), "subtitles/[a-z0-9\\-_]+/[a-z0-9\\-_]+/(\\d+)").getMatch(0);
+        final String language = new Regex(link.getDownloadURL(), "subtitles/[a-z0-9\\-_]+/([a-z0-9\\-_]+)/").getMatch(0);
         String filename = br.getRegex("<strong>Release info[^<>\"]+</strong>([^\"]*?)</li>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<span itemprop=\"name\">([^<>\"]*?)</span>").getMatch(0);
@@ -74,6 +75,9 @@ public class SubSceneCom extends PluginForHost {
         filename = filename.replace("\n", "");
         filename = filename.replace("<div>", "").replace("</div>", "");
         filename = Encoding.htmlDecode(filename.trim());
+        if (language != null) {
+            filename += "_" + language;
+        }
         if (subtitleid != null) {
             filename += "_" + subtitleid;
         }
