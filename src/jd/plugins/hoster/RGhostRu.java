@@ -61,14 +61,20 @@ public class RGhostRu extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (br.getHttpConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server maintenance");
+        if (br.getHttpConnection().getResponseCode() == 503) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server maintenance");
+        }
         br.setFollowRedirects(false);
         String dllink = br.getRegex("class=\"header_link\">.*?<a href=\"([^\"]*?/download/(private/)?\\d+.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("<a href=\"([^\"]*?/download/(private/)?\\d+.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("<a href=\"([^\"]*?/download/(private/)?\\d+.*?)\"").getMatch(0);
+        }
         String passCode = null;
         if (dllink == null && br.containsHTML(PWTEXT)) {
             Form pwform = br.getForm(2);
-            if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (pwform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
 
             if (link.getStringProperty("pass", null) == null) {
                 passCode = Plugin.getUserInput("Password?", link);
@@ -79,14 +85,18 @@ public class RGhostRu extends PluginForHost {
             pwform.put("password", passCode);
             br.submitForm(pwform);
             dllink = br.getRegex("class=\"header_link\">.*?<a href=\"([^\"]*?/download/\\d+.*?)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("<a href=\"([^\"]*?/download/\\d+.*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("<a href=\"([^\"]*?/download/\\d+.*?)\"").getMatch(0);
+            }
             if (dllink == null) {
                 link.setProperty("pass", null);
                 logger.info("DownloadPW wrong!");
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
@@ -96,12 +106,16 @@ public class RGhostRu extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (passCode != null) link.setProperty("pass", passCode);
+        if (passCode != null) {
+            link.setProperty("pass", passCode);
+        }
         dl.startDownload();
     }
 
     private void offlineCheck() throws PluginException {
-        if (br.containsHTML("(Access to the file (is|was) restricted|the action is prohibited, this is a private file and your key is incorrect|<title>404|File was deleted)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(Access to the file (is|was) restricted|the action is prohibited, this is a private file and your key is incorrect|<title>404|File was deleted|>File is deleted<)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 
     @Override
@@ -118,27 +132,45 @@ public class RGhostRu extends PluginForHost {
             throw e;
         }
         // error clause for offline links
-        if (br.containsHTML(">[\r\n]+File is deleted\\.[\r\n]+<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">[\r\n]+File is deleted\\.[\r\n]+<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("rel=\"alternate\" title=\"Comments for the file ([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) filename = br.getRegex("title=\"Comments for the file (.*?)\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("title=\"Comments for the file (.*?)\"").getMatch(0);
+        }
         String filesize = br.getRegex("<small>([\r\n]+)?\\((.*?)\\)([\r\n]+)?</small>").getMatch(1);
-        if (filesize == null) filesize = br.getRegex("class=\"filesize\">\\((.*?)\\)</span>").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("class=\"filesize\">\\((.*?)\\)</span>").getMatch(0);
+        }
         // will pick up the first filesize mentioned.. as last resort fail over.
-        if (filesize == null) filesize = br.getRegex("(?i)([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("(?i)([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
+        }
         if (filename == null) {
             offlineCheck();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String md5 = br.getRegex("<b>MD5</b></td><td>(.*?)</td></tr>").getMatch(0);
-        if (md5 == null) md5 = br.getRegex("(?i)MD5((<[^>]+>)+?([\r\n\t ]+)?)+?([a-z0-9]{32})").getMatch(3);
-        if (md5 != null) link.setMD5Hash(md5.trim());
+        if (md5 == null) {
+            md5 = br.getRegex("(?i)MD5((<[^>]+>)+?([\r\n\t ]+)?)+?([a-z0-9]{32})").getMatch(3);
+        }
+        if (md5 != null) {
+            link.setMD5Hash(md5.trim());
+        }
         String sha1 = br.getRegex("<b>SHA1</b></td><td>(.*?)</td></tr>").getMatch(0);
-        if (sha1 == null) sha1 = br.getRegex("(?i)SHA1((<[^>]+>)+?([\r\n\t ]+)?)+?([a-z0-9]{40})").getMatch(3);
-        if (sha1 != null) link.setSha1Hash(sha1.trim());
+        if (sha1 == null) {
+            sha1 = br.getRegex("(?i)SHA1((<[^>]+>)+?([\r\n\t ]+)?)+?([a-z0-9]{40})").getMatch(3);
+        }
+        if (sha1 != null) {
+            link.setSha1Hash(sha1.trim());
+        }
         link.setName(filename);
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         offlineCheck();
-        if (br.containsHTML(PWTEXT)) link.getLinkStatus().setStatusText("This file is password protected");
+        if (br.containsHTML(PWTEXT)) {
+            link.getLinkStatus().setStatusText("This file is password protected");
+        }
         return AvailableStatus.TRUE;
     }
 

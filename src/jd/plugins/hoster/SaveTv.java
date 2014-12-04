@@ -1937,6 +1937,8 @@ public class SaveTv extends PluginForHost {
                         message += "- Eigene Dateinamen auch bei aktiviertem schnellen Linkcheck (eingeschränkt)\r\n";
                         message += "- Die Möglichkeit, wahlweise alle oder nur Aufnahmen der letzten X Stunden zu crawlen\r\n";
                         message += "\r\n";
+                        message += "Um den Crawler nutzen zu können, musst du ihn erst in den Plugin Einstellungen aktivieren.\r\n";
+                        message += "\r\n";
                         message += "Die Crawler Einstellungen sind nur in der Version JDownloader 2 BETA verfügbar unter:\r\nEinstellungen -> Plugin Einstellungen -> save.tv";
                         message += getMessageEnd();
                         JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
