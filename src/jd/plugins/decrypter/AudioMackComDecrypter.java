@@ -53,8 +53,8 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
             final Regex paraminfo = new Regex(parameter, "audiomack\\.com/album/([A-Za-z0-9\\-_]+)/([A-Za-z0-9\\-_]+)");
             fpName = paraminfo.getMatch(0) + " - " + paraminfo.getMatch(1);
         }
-        final String plaintable = br.getRegex("<div id=\"playlist\" class=\"plwrapper\" for=\"audiomack\\-embed\">(.*?</div>[\t\n\r ]+</div>[\t\n\r ]+</div>)[\t\n\r ]+</div>[\t\n\r ]+</div>").getMatch(0);
-        final String[] links = plaintable.split("<div class=\"song\">");
+        final String plaintable = br.getRegex("<div id=\"playlist\" class=\"plwrapper\" for=\"audiomack\\-embed\">(.*?</div>[\t\n\r ]+</div>[\t\n\r ]+</div>(<\\!\\-\\-/\\.song\\-wrap\\-\\->)?)[\t\n\r ]+</div>[\t\n\r ]+</div>").getMatch(0);
+        final String[] links = plaintable.split("<div class=\"song\"");
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
