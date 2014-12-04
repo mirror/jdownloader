@@ -70,7 +70,10 @@ public class FlickrCom extends PluginForDecrypt {
     private boolean                 loggedin                 = false;
     private int                     statuscode               = 0;
 
-    /* Using API: https://www.flickr.com/services/api/ - without our own apikey. Site is still used for */
+    /**
+     * Using API: https://www.flickr.com/services/api/ - without our own apikey. Site is still used for /* TODO API: Get correct csrf values
+     * so we can make requests as a logged-in user
+     */
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
@@ -147,7 +150,7 @@ public class FlickrCom extends PluginForDecrypt {
         return parameter;
     }
 
-    /* Handles decryption via API */
+    /** Handles decryption via API */
     @SuppressWarnings("deprecation")
     private void api_handleAPI() throws IOException, DecrypterException {
         String fpName = null;
@@ -156,7 +159,6 @@ public class FlickrCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
-        /* TODO: 1. Get correct csrf values 2. Implement support for as many other linktypes as possible */
         csrf = "1405808633%3Ai01dgnb1q25wxw29%3Ac82715e60f008b97cb7e8fa3529ce156";
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         String apilink = null;

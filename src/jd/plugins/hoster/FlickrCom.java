@@ -61,6 +61,7 @@ public class FlickrCom extends PluginForHost {
     private String              user      = null;
     private String              id        = null;
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload("https://www.flickr.com/" + new Regex(link.getDownloadURL(), "\\.com/(.+)").getMatch(0));
         try {
@@ -84,7 +85,8 @@ public class FlickrCom extends PluginForHost {
      * Keep in mind that there is this nice oauth API which might be useful in the future: https://www.flickr.com/services/oembed?url=
      *
      * Other calls of the normal API which might be useful in the future: https://www.flickr.com/services/api/flickr.photos.getInfo.html
-     * https://www.flickr.com/services/api/flickr.photos.getSizes.html
+     * https://www.flickr.com/services/api/flickr.photos.getSizes.html TODO API: Get correct csrf values so we can make requests as a
+     * logged-in user
      * */
     @SuppressWarnings("deprecation")
     @Override
