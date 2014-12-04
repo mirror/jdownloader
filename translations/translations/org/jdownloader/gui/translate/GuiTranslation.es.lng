@@ -156,6 +156,7 @@ CaptchaAPISolver_getName=Resolución manual remota de Captchas
 CaptchaAPISolver_gettypeName=My.JDownloader.org, Aplicaciones Móviles...
 CaptchaBrotherhoodService_getDescription_tt_=Captchas resueltos por el Sistema de Intercambio de Captchas Captchabrotherhood
 CaptchaConfigPanel_order=Prioridad del Resolutor de Captchas
+CaptchaConfigPanel_order_description=Hay varias formas de solucionar un Captcha en JDownloader. Usted puede cambiar el orden general y la prioridad de lso "Resolutores" y el tiempo que los resolutores esperan entre los predecesores.\nPor ejemplo:\nPor defecto, los cuadros de diálogo de los resolutores esperan 60 segundos para todos los resolutores automatizados
 CaptchaDialog_getDefaultButtonPanel_premium=¿Odias los Captchas? ¡Haz clic aquí!
 CaptchaDialog_layoutDialogContent_header=Archivo '%s1' (%s2) desde %s3
 CaptchaDialog_layoutDialogContent_header2=Archivo '%s1' de %s2
