@@ -38,7 +38,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "apple.com" }, urls = { "http://[\\w\\.]*?apple\\.com/trailers/(disney|dreamworks|filmdistrict|focus_features|fox|fox_searchlight|independent|lions_gate|magnolia|marvel|paramount|picturehouse|sony|sony_pictures|summit|(universial|universal)|wb|(weinstein|weinstien))/[a-zA-Z0-9_]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "apple.com" }, urls = { "http://[\\w\\.]*?apple\\.com/trailers/(disney|dreamworks|filmdistrict|focus_features|fox|fox_searchlight|independent|lions_gate|lucasfilm|magnolia|marvel|paramount|picturehouse|sony|sony_pictures|summit|(universial|universal)|wb|(weinstein|weinstien))/[a-zA-Z0-9_]+/" }, flags = { 0 })
 public class AppleTrailer extends PluginForDecrypt {
 
     /**
@@ -94,7 +94,9 @@ public class AppleTrailer extends PluginForDecrypt {
             // itunes page layout!
             if (title == null) {
                 title = br1.getRegex("<title>(.*) - Movie Trailers - iTunes</title>").getMatch(0);
-                if (title != null) itunes = true;
+                if (title != null) {
+                    itunes = true;
+                }
             }
         }
 
@@ -110,13 +112,17 @@ public class AppleTrailer extends PluginForDecrypt {
             poster = true;
 
             title = br1.getRegex("<title>Apple - Trailers - (.*?)( - In Theaters.*)?</title>").getMatch(0);
-            if (title == null) title = br1.getRegex("<meta name=\"Keywords\" content=\"(.*?) Trailer").getMatch(0);
+            if (title == null) {
+                title = br1.getRegex("<meta name=\"Keywords\" content=\"(.*?) Trailer").getMatch(0);
+            }
 
             String[] results = br1.getRegex("<a href=\"(\\w+\\.html|([^\"]+)?hd/)\"([^>]+)?><img[^>]+").getColumn(0);
 
             if (results != null && results.length != 0) {
                 for (String result : results) {
-                    if (dupe.add(br1.getURL() + result) == false) continue;
+                    if (dupe.add(br1.getURL() + result) == false) {
+                        continue;
+                    }
 
                     // goto each page! find the final video link!
                     br2 = br1.cloneBrowser();
@@ -125,13 +131,21 @@ public class AppleTrailer extends PluginForDecrypt {
                         processItunes();
                     } else {
                         String url = br2.getRegex("href','(https?://[^/]+apple\\.com/[^\"']+\\d+\\.mov)").getMatch(0);
-                        if (url == null) url = br2.getRegex("(https?://[^/]+apple\\.com/[^\"']+\\d+\\.mov)").getMatch(0);
+                        if (url == null) {
+                            url = br2.getRegex("(https?://[^/]+apple\\.com/[^\"']+\\d+\\.mov)").getMatch(0);
+                        }
                         if (url != null) {
-                            if (dupe.add(url) == false) continue;
+                            if (dupe.add(url) == false) {
+                                continue;
+                            }
                             String name = br2.getRegex("<title>Apple - Trailers - .*? - (.*?)( - (low|medium|high|small|medium|large))?</title>").getMatch(0);
-                            if (name != null && name.matches("(?i-)(low|medium|high|small|medium|large)") || name == null) name = "Trailer";
+                            if (name != null && name.matches("(?i-)(low|medium|high|small|medium|large)") || name == null) {
+                                name = "Trailer";
+                            }
                             String psize = new Regex(url, "(\\d+)\\.mov$").getMatch(0);
-                            if (name != null) name = title + " - " + name + " (" + psize + "p_SD).mov";
+                            if (name != null) {
+                                name = title + " - " + name + " (" + psize + "p_SD).mov";
+                            }
                             url = url.replace("/trailers.apple.com/", "/trailers.appledecrypted.com/");
                             DownloadLink dlLink = createDownloadlink(url);
                             dlLink.setFinalFileName(name);
@@ -161,7 +175,9 @@ public class AppleTrailer extends PluginForDecrypt {
                 } catch (Throwable e) {
                     // remove when jd2 goes stable
                     int selectedMirror = UserIO.getInstance().requestComboDialog(0, JDL.L("plugins.decrypter.appletraider.SelectHostersHeadline", "Please select the definition format you desire"), JDL.L("plugins.decrypter.appletrailer.SelectHosters", "Please select the definition format you prefer\r\n" + parameter), mirrors, 0, null, null, null, null);
-                    if (selectedMirror < 0) return null;
+                    if (selectedMirror < 0) {
+                        return null;
+                    }
                     selectedMirrorsIndices = new int[] { selectedMirror };
                 }
                 if (selectedMirrorsIndices == null) {
@@ -210,7 +226,9 @@ public class AppleTrailer extends PluginForDecrypt {
             return;
         }
 
-        if (title == null) title = br2.getRegex("var trailerTitle = '(.*?)';").getMatch(0);
+        if (title == null) {
+            title = br2.getRegex("var trailerTitle = '(.*?)';").getMatch(0);
+        }
         if (title == null) {
             logger.warning("Plugin defect, could not find 'title' : " + parameter);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -250,18 +268,26 @@ public class AppleTrailer extends PluginForDecrypt {
                 for (String oldHit : oldHits) {
                     /* correct url */
                     String url = oldHit.replaceFirst("movies\\.", "www.");
-                    if (dupe.add(url) == false) continue;
+                    if (dupe.add(url) == false) {
+                        continue;
+                    }
                     /* get format */
                     String format = new Regex(url, "_h?(\\d+)p").getMatch(0);
                     /* get filename */
                     String fname = filename + " (" + format + "p_HD)" + url.substring(url.lastIndexOf("."));
-                    if (fname == null || format == null) continue;
+                    if (fname == null || format == null) {
+                        continue;
+                    }
                     /* get size */
                     String size = new Regex(hit, "class=\"hd\".*?>.*?" + oldHit + ".*?" + format + "p \\((\\d+ ?MB)\\)").getMatch(0);
                     /* correct url if its relative */
-                    if (!url.startsWith("http")) url = "http://trailers.apple.com" + url;
+                    if (!url.startsWith("http")) {
+                        url = "http://trailers.apple.com" + url;
+                    }
                     DownloadLink dlLink = createDownloadlink(url.replace(".apple.com", ".appledecrypted.com"));
-                    if (size != null) dlLink.setDownloadSize(SizeFormatter.getSize(size));
+                    if (size != null) {
+                        dlLink.setDownloadSize(SizeFormatter.getSize(size));
+                    }
                     dlLink.setFinalFileName(fname);
                     dlLink.setProperty("Referer", br1.getURL());
                     dlLink.setAvailable(true);
@@ -273,7 +299,9 @@ public class AppleTrailer extends PluginForDecrypt {
                     // 20131007
                     String url = new Regex(hit, "href=\"([^\"]+)#[^>]+>").getMatch(0);
                     if (url != null) {
-                        if (dupe.add(url) == false) continue;
+                        if (dupe.add(url) == false) {
+                            continue;
+                        }
                         br2 = br1.cloneBrowser();
                         prepAjax(br2);
                         br2.getHeaders().put("Accept", "text/xml");
@@ -284,7 +312,9 @@ public class AppleTrailer extends PluginForDecrypt {
                             // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             continue;
                         }
-                        if (dupe.add(url) == false) continue;
+                        if (dupe.add(url) == false) {
+                            continue;
+                        }
                         String extension = url.substring(url.lastIndexOf("."));
                         url = url.replace("apple.com/", "appledecrypted.com/");
                         String pSize = new Regex(url, "(\\d+)p?\\.(mov|m4v)").getMatch(0);
@@ -300,7 +330,9 @@ public class AppleTrailer extends PluginForDecrypt {
                         while (p.size() != 0) {
                             final String n = p.get(0);
                             final String u = url.replace(pSize, n);
-                            if (dupe.add(u) == false) continue;
+                            if (dupe.add(u) == false) {
+                                continue;
+                            }
                             DownloadLink d = createDownloadlink(u);
                             d.setFinalFileName(filename + " (" + p_q(n) + ")" + extension);
                             d.setAvailable(true);
@@ -326,7 +358,9 @@ public class AppleTrailer extends PluginForDecrypt {
                             String video_name = filename + " (" + match[1].replaceFirst("<span>", "_").replaceFirst("</span>", "") + ")";
                             br2 = br1.cloneBrowser();
                             url = url.replace("includes/", "includes/" + hitname.toLowerCase().replace(" ", "").replaceAll("[^a-zA-Z0-9]", "") + "/");
-                            if (dupe.add(url) == false) continue;
+                            if (dupe.add(url) == false) {
+                                continue;
+                            }
                             br2.getPage(url);
                             url = br2.getRegex("href=\"([^\\?\"]+).*?\">Click to Play</a>").getMatch(0);
                             if (url == null) {
@@ -334,7 +368,9 @@ public class AppleTrailer extends PluginForDecrypt {
                                 // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                                 continue;
                             }
-                            if (dupe.add(url) == false) continue;
+                            if (dupe.add(url) == false) {
+                                continue;
+                            }
                             url = url.replace("apple.com/", "appledecrypted.com/");
                             String extension = url.substring(url.lastIndexOf("."));
                             DownloadLink dlLink = createDownloadlink(url);
@@ -351,7 +387,9 @@ public class AppleTrailer extends PluginForDecrypt {
 
     private void processItunes() throws IOException, PluginException {
 
-        if (!br2.getURL().endsWith("includes/playlists/web.inc")) br2.getPage("includes/playlists/web.inc");
+        if (!br2.getURL().endsWith("includes/playlists/web.inc")) {
+            br2.getPage("includes/playlists/web.inc");
+        }
 
         String[] names = br2.getRegex("<span class=\"text\">(.*?)</span></li>").getColumn(0);
         // from when it comes from a poster
@@ -379,7 +417,9 @@ public class AppleTrailer extends PluginForDecrypt {
             if (sdFilter != null && sdFilter.length != 0) {
                 for (String sd : sdFilter) {
                     String[] url = new Regex(sd, "(https?://[^/]+apple\\.com/[^\\?'\"]+\\.(mov|m4v))").getRow(0);
-                    if (dupe.add(url[0]) == false) continue;
+                    if (dupe.add(url[0]) == false) {
+                        continue;
+                    }
                     String pSize = new Regex(url[0], "(\\d+)\\." + url[1]).getMatch(0);
                     String name = title + " - " + names[h] + " (" + p_q(pSize) + ")." + url[1];
                     DownloadLink dlLink = createDownloadlink(url[0].replace(".apple.com", ".appledecrypted.com"));
@@ -394,12 +434,16 @@ public class AppleTrailer extends PluginForDecrypt {
                 for (String hd : hdFilter) {
                     z++;
                     String[] url = new Regex(hd, "(https?://[^/]+apple\\.com/[^\\?'\"]+\\.(mov|m4v))").getRow(0);
-                    if (dupe.add(url[0]) == false) continue;
+                    if (dupe.add(url[0]) == false) {
+                        continue;
+                    }
                     String pSize = new Regex(url[0], "(\\d+)p\\." + url[1]).getMatch(0);
                     String name = title + " - " + names[h] + " (" + p_q(pSize) + ")." + url[1];
                     String size = hdSizes[z];
                     DownloadLink dlLink = createDownloadlink(url[0].replace(".apple.com", ".appledecrypted.com"));
-                    if (size != null) dlLink.setDownloadSize(SizeFormatter.getSize(size));
+                    if (size != null) {
+                        dlLink.setDownloadSize(SizeFormatter.getSize(size));
+                    }
                     dlLink.setFinalFileName(name);
                     dlLink.setProperty("Referer", br1.getURL());
                     dlLink.setAvailable(true);
@@ -411,10 +455,11 @@ public class AppleTrailer extends PluginForDecrypt {
 
     private String p_q(final String p) {
         final int dd = Integer.parseInt(p);
-        if (dd >= 720)
+        if (dd >= 720) {
             return p + "p_HD";
-        else
+        } else {
             return p + "p_SD";
+        }
     }
 
     /* NO OVERRIDE!! */
