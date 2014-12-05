@@ -10,4 +10,8 @@ public class EnvironmentException extends Exception {
         super(Exceptions.getStackTrace(ScriptRuntime.constructError("Stacktrace", null)), e);
     }
 
+    public EnvironmentException(String string) {
+        super(string, ScriptRuntime.constructError("Stacktrace", null));
+    }
+
 }

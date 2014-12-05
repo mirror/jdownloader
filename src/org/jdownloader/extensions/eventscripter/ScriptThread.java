@@ -23,6 +23,7 @@ import org.appwork.uio.CloseReason;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.reflection.Clazz;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.IconKey;
@@ -64,8 +65,8 @@ public class ScriptThread extends Thread {
             // required by some libraries
             evalTrusted("global=this;");
 
-            cleanupClasses();
             initEnvironment();
+            cleanupClasses();
             evalUNtrusted(script.getScript());
             // ProcessBuilderFactory.runCommand(commandline);
         } catch (Throwable e) {
@@ -82,20 +83,68 @@ public class ScriptThread extends Thread {
     }
 
     private String preInitClasses() {
+        HashSet<String> dupes = new HashSet<String>();
+        dupes.add("net.sourceforge.htmlunit.corejs.javascript.Function");
+        dupes.add("void");
         Class[] classes = new Class[] { Boolean.class, Integer.class, Long.class, String.class, Double.class, Float.class, net.sourceforge.htmlunit.corejs.javascript.EcmaError.class, ScriptEnvironment.class, EnvironmentException.class };
 
         String preloadClasses = "";
         for (Class c : classes) {
+            if (c.isArray()) {
+                c = c.getComponentType();
+            }
+            if (!dupes.add(c.getName())) {
+                continue;
+            }
+            if (Clazz.isPrimitive(c)) {
+                continue;
+            }
             preloadClasses += "load=" + c.getName() + ";\r\n";
-        }
-        for (Entry<String, Object> es : props.entrySet()) {
-            preloadClasses += "load=" + es.getValue().getClass().getName() + ";\r\n";
 
         }
 
         for (Method f : ScriptEnvironment.class.getDeclaredMethods()) {
             if (f.getAnnotation(GlobalField.class) != null) {
-                preloadClasses += "var " + f.getName() + "=" + ScriptEnvironment.class.getName() + "." + f.getName() + ";";
+                for (Class<?> c : f.getParameterTypes()) {
+                    if (c.isArray()) {
+                        c = c.getComponentType();
+                    }
+                    if (!dupes.add(c.getName())) {
+                        continue;
+                    }
+                    if (Clazz.isPrimitive(c) || Clazz.isPrimitiveWrapper(c) || Clazz.isString(c)) {
+                        continue;
+                    }
+                    preloadClasses += "load=" + c.getName() + ";\r\n";
+                }
+                Class<?> c = f.getReturnType();
+                if (c.isArray()) {
+                    c = c.getComponentType();
+                }
+                if (!dupes.add(c.getName())) {
+                    continue;
+                }
+                if (Clazz.isPrimitive(c)) {
+                    continue;
+                }
+                preloadClasses += "load=" + c.getName() + ";\r\n";
+
+            }
+        }
+        for (Field f : ScriptEnvironment.class.getDeclaredFields()) {
+            if (f.getAnnotation(GlobalField.class) != null) {
+                Class<?> c = f.getType();
+                if (c.isArray()) {
+                    c = c.getComponentType();
+                }
+                if (!dupes.add(c.getName())) {
+                    continue;
+                }
+                if (Clazz.isPrimitive(c)) {
+                    continue;
+                }
+                preloadClasses += "load=" + c.getName() + ";\r\n";
+
             }
         }
         preloadClasses += "delete load;";
@@ -103,6 +152,13 @@ public class ScriptThread extends Thread {
     }
 
     private void initEnvironment() throws IllegalAccessException {
+        for (Method f : ScriptEnvironment.class.getDeclaredMethods()) {
+            if (f.getAnnotation(GlobalField.class) != null) {
+                evalTrusted(f.getName() + "=" + ScriptEnvironment.class.getName() + "." + f.getName() + ";");
+
+            }
+        }
+
         for (Field f : ScriptEnvironment.class.getDeclaredFields()) {
             if (f.getAnnotation(GlobalField.class) != null) {
                 evalTrusted(f.getName() + " = " + new SimpleMapper().objectToString(f.get(null)) + ";");
@@ -141,7 +197,7 @@ public class ScriptThread extends Thread {
         ScriptableObject.deleteProperty(scope, "Packages");
         for (String s : list) {
             while (true) {
-                System.out.println("Delete " + s);
+
                 try {
                     ScriptableObject.deleteProperty(scope, s);
 
@@ -158,13 +214,13 @@ public class ScriptThread extends Thread {
         }
     }
 
-    public void requireJavascript(String fileOrUrl) throws IOException {
+    public void requireJavascript(final String fileOrUrl) throws IOException {
         ConfirmDialog d = new ConfirmDialog(0 | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, T._.securityLoading_title(), T._.securityLoading(fileOrUrl), new AbstractIcon(IconKey.ICON_SERVER, 32), null, null) {
 
             @Override
             public String getDontShowAgainKey() {
 
-                return super.getDontShowAgainKey();
+                return "ASK_TO_REQUIRE_JS_" + fileOrUrl;
 
             }
 

@@ -1,5 +1,7 @@
 package org.jdownloader.extensions.eventscripter;
 
+import java.awt.event.WindowEvent;
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -7,16 +9,21 @@ import java.util.Locale;
 
 import javax.swing.JTextPane;
 
+import jd.http.Browser;
 import net.sourceforge.htmlunit.corejs.javascript.Function;
 import net.sourceforge.htmlunit.corejs.javascript.NativeJSON;
 import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.jackson.JacksonMapper;
+import org.appwork.uio.CloseReason;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
+import org.appwork.utils.Files;
+import org.appwork.utils.Hash;
+import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OSFamily;
@@ -24,6 +31,7 @@ import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.processes.ProcessOutput;
 import org.appwork.utils.reflection.Clazz;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
@@ -34,6 +42,8 @@ public class ScriptEnvironment {
 
     @GlobalField(description = "Call the MyJDownloader API", parameters = { "\"namespace\"", "\"methodname\"", "parameter1", "parameter2", "..." }, example = "callAPI(\"downloadsV2\", \"queryLinks\", { \"name\": true})")
     public static Object callAPI(String namespace, String method, Object... parameters) throws EnvironmentException {
+
+        askForPermission("call the Remote API: " + namespace + "/" + method);
         String js;
         try {
             Object ret = RemoteAPIController.getInstance().call(namespace, method, parameters);
@@ -110,8 +120,114 @@ public class ScriptEnvironment {
         });
     }
 
+    @GlobalField(description = "Loads a website (Method: GET) and returns the source code", parameters = { "URL" }, example = "var myhtmlSourceString=getPage(\"http://jdownloader.org\");")
+    public static String getPage(String fileOrUrl) throws EnvironmentException {
+
+        askForPermission("load resources from the internet");
+
+        try {
+            return new Browser().getPage(fileOrUrl);
+        } catch (Throwable e) {
+            throw new EnvironmentException(e);
+        }
+    }
+
+    private static void askForPermission(final String string) throws EnvironmentException {
+        final ScriptThread env = getScriptThread();
+        final String md5 = Hash.getMD5(env.getScript().getScript());
+        ConfirmDialog d = new ConfirmDialog(0 | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, T._.permission_title(), T._.permission_msg(env.getScript().getName(), env.getScript().getEventTrigger().getLabel(), string), new AbstractIcon(IconKey.ICON_SERVER, 32), T._.allow(), T._.deny()) {
+
+            @Override
+            public String getDontShowAgainKey() {
+
+                return "ASK_FOR_PERMISSION_" + md5 + "_" + string;
+
+            }
+
+            @Override
+            protected int getPreferredWidth() {
+                return 600;
+            }
+
+            public void windowClosing(final WindowEvent arg0) {
+                setReturnmask(false);
+                this.dispose();
+            }
+
+        };
+
+        d.setDoNotShowAgainSelected(true);
+
+        // Integer ret = JSonStorage.getPlainStorage("Dialogs").get(d.getDontShowAgainKey(), -1);
+        // if (ret != null && ret > 0) {
+        // return;
+        // }
+        if (d.show().getCloseReason() != CloseReason.OK) {
+            throw new EnvironmentException("Security Warning: User Denied Access to " + string);
+        }
+
+    }
+
+    @GlobalField(description = "Loads a website (METHOD: POST) and returns the source code", parameters = { "URL", "PostData" }, example = "var myhtmlSourceString=postPage(\"http://support.jdownloader.org/index.php\",\"searchquery=captcha\");")
+    public static String postPage(String url, String post) throws EnvironmentException {
+        askForPermission("send data to the internet and request resources");
+        try {
+            return new Browser().postPage(url, post);
+        } catch (Throwable e) {
+            throw new EnvironmentException(e);
+        }
+    }
+
+    @GlobalField(description = "Read a text file", parameters = { "filepath" }, example = "var myString=readFile(JD_HOME+\"/license.txt\");")
+    public static String readFile(String filepath) throws EnvironmentException {
+        askForPermission("read a local file");
+        try {
+            return IO.readFileToString(new File(filepath));
+        } catch (Throwable e) {
+            throw new EnvironmentException(e);
+        }
+    }
+
+    @GlobalField(description = "Create a directory", parameters = { "path" }, example = "var myBooleanResult=mkdirs(JD_HOME+\"/mydirectory/\");")
+    public static boolean mkdirs(String filepath) throws EnvironmentException {
+        askForPermission("create a directory");
+        try {
+            return new File(filepath).mkdirs();
+        } catch (Throwable e) {
+            throw new EnvironmentException(e);
+        }
+    }
+
+    @GlobalField(description = "Delete a file or a directory", parameters = { "path", "recursive" }, example = "var myBooleanResult=deleteFile(JD_HOME+\"/mydirectory/\",false);")
+    public static boolean deleteFile(String filepath, boolean recursive) throws EnvironmentException {
+        askForPermission("delete a local fole or directory");
+
+        try {
+            if (recursive) {
+
+                Files.deleteRecursiv(new File(filepath), true);
+            } else {
+                new File(filepath).delete();
+            }
+            return !new File(filepath).exists();
+        } catch (Throwable e) {
+            throw new EnvironmentException(e);
+        }
+    }
+
+    @GlobalField(description = "Write a text file", parameters = { "filepath", "myText", "append" }, example = "writeFile(JD_HOME+\"/log.txt\",JSON.stringify(this)+\"\\r\\n\",true);")
+    public static void writeFile(String filepath, String string, boolean append) throws EnvironmentException {
+        askForPermission("create a local file and write to it");
+        try {
+            IO.writeStringToFile(new File(filepath), string, append);
+        } catch (Throwable e) {
+            throw new EnvironmentException(e);
+        }
+    }
+
     @GlobalField(description = "Loads a Javascript file or url. ATTENTION. The loaded script can access the API as well.", parameters = { "myFilePathOrUrl" }, example = "require(\"https://raw.githubusercontent.com/douglascrockford/JSON-js/master/json.js\");")
     public static void require(String fileOrUrl) throws EnvironmentException {
+        askForPermission("load external JavaScript");
         try {
             getScriptThread().requireJavascript(fileOrUrl);
         } catch (Throwable e) {
@@ -121,6 +237,9 @@ public class ScriptEnvironment {
 
     @GlobalField(description = "Call a local Process asynchronous", parameters = { "\"myCallBackFunction\"|null", "\"commandline1\"", "\"commandline2\"", "\"...\"" }, example = "callAsync(function(exitCode,stdOut,errOut){ alert(\"Closed Notepad\");},\"notepad.exe\",JD_HOME+\"\\\\license.txt\");")
     public static void callAsync(final Function callback, final String... commands) throws EnvironmentException {
+
+        askForPermission("Execute a local process");
+
         try {
             final ScriptThread env = getScriptThread();
             if (commands != null && commands.length > 0) {
@@ -174,8 +293,10 @@ public class ScriptEnvironment {
 
     }
 
-    @GlobalField(description = "Call a local Process. Blocks Until the process returns", parameters = { "\"commandline1\"", "\"commandline2\"", "\"...\"" }, example = "var pingResult = callSync(\"ping\",\"jdownloader.org\");")
+    @GlobalField(description = "Call a local Process. Blocks Until the process returns", parameters = { "\"commandline1\"", "\"commandline2\"", "\"...\"" }, example = "var pingResultString = callSync(\"ping\",\"jdownloader.org\");")
     public static String callSync(final String... commands) throws EnvironmentException {
+        askForPermission("Execute a local process");
+
         try {
             ProcessBuilder pb = ProcessBuilderFactory.create(commands);
             pb.redirectErrorStream();
@@ -229,9 +350,10 @@ public class ScriptEnvironment {
         for (Field f : ScriptEnvironment.class.getDeclaredFields()) {
             GlobalField ann = f.getAnnotation(GlobalField.class);
             if (ann != null) {
+                sb.append("//").append(ann.description()).append(";\r\n");
                 sb.append("var my").append(f.getType().getSimpleName().substring(0, 1).toUpperCase(Locale.ENGLISH)).append(f.getType().getSimpleName().substring(1)).append(" = ");
+                sb.append(f.getName()).append(";\r\n");
 
-                sb.append(ann.description()).append(";\r\n");
                 if (StringUtils.isNotEmpty(ann.example())) {
                     sb.append(ann.example()).append("\r\n");
                 }

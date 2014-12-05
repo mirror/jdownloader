@@ -53,6 +53,7 @@ import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.LazyExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.extensions.UninstalledExtension;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
@@ -85,7 +86,9 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
                     g2.setComposite(ac5);
                     int index = locationToIndex(lmouse);
 
-                    if (index >= 0 && getModel().getElementAt(index) instanceof ExtensionHeader) { return; }
+                    if (index >= 0 && getModel().getElementAt(index) instanceof ExtensionHeader) {
+                        return;
+                    }
                     if (index >= 0 && getModel().getElementAt(index) instanceof AdvancedSettings) {
                         Point p = indexToLocation(index);
                         if (p != null) {
@@ -200,7 +203,9 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
 
             public Dimension getMinimumSize() {
                 Dimension pref = getPreferredSize();
-                if (pref.height == 0) return pref;
+                if (pref.height == 0) {
+                    return pref;
+                }
                 pref = new Dimension(pref);
                 pref.height = 0;
                 super.setMinimumSize(pref);
@@ -217,13 +222,16 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
             private String lastE;
 
             public void valueChanged(ListSelectionEvent e) {
-                if (e.getValueIsAdjusting()) { return; }
+                if (e.getValueIsAdjusting()) {
+                    return;
+                }
 
                 if (lastE != null) {
 
                     if (lastE.equals(e.toString())) {
 
-                    return; }
+                        return;
+                    }
                 }
 
                 lastE = e.toString();
@@ -252,10 +260,14 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
         for (int i = 0; i < list.getModel().getSize(); i++) {
             Object el = list.getModel().getElementAt(i);
             if (el instanceof LazyExtension) {
-                if (class1.getName().equals(((LazyExtension) el).getClassname())) { throw new WTFException("Not Implemented"); }
+                if (class1.getName().equals(((LazyExtension) el).getClassname())) {
+                    throw new WTFException("Not Implemented");
+                }
             } else {
                 Class<? extends Object> cl = el.getClass();
-                if (class1 == cl) { return (T) list.getModel().getElementAt(i); }
+                if (class1 == cl) {
+                    return (T) list.getModel().getElementAt(i);
+                }
             }
         }
         return null;
@@ -324,7 +336,9 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
 
                     CheckBoxedEntry object = ((CheckBoxedEntry) list.getModel().getElementAt(index));
                     boolean value = !((CheckBoxedEntry) list.getModel().getElementAt(index))._isEnabled();
-                    if (value == object._isEnabled()) return;
+                    if (value == object._isEnabled()) {
+                        return;
+                    }
                     // ugly...
                     // we should refactor the CheckBoxedEntry pretty soon..
                     if (object instanceof LazyExtension) {
@@ -367,7 +381,9 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
     }
 
     public synchronized SwitchPanel getSelectedPanel() {
-        if (list.getSelectedValue() instanceof AbstractExtension) {
+        if (list.getSelectedValue() instanceof UninstalledExtension) {
+            return ((UninstalledExtension) list.getSelectedValue()).getPanel();
+        } else if (list.getSelectedValue() instanceof AbstractExtension) {
             AbstractExtension<?, ?> ext = ((AbstractExtension) list.getSelectedValue());
             if (ext.hasConfigPanel()) {
                 return ext.getConfigPanel();

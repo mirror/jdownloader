@@ -81,4 +81,16 @@ public interface EventScripterTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Test Run" })
     String editor_testrun();
 
+    @Default(lngs = { "en" }, values = { "Event Scripter permissions required!" })
+    String permission_title();
+
+    @Default(lngs = { "en" }, values = { "The Event Script '%s1' requires permissions for the trigger '%s2'.\r\nThe script tries to \r\n%s3. \r\nDo you want to allow this? If you are not sure, please check your script!" })
+    String permission_msg(String name, String label, String string);
+
+    @Default(lngs = { "en" }, values = { "allow" })
+    String allow();
+
+    @Default(lngs = { "en" }, values = { "deny" })
+    String deny();
+
 }

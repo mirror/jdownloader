@@ -36,6 +36,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.ColorUtils;
 import org.appwork.utils.swing.renderer.RenderLabel;
+import org.jdownloader.extensions.UninstalledExtension;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
@@ -109,6 +110,13 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
 
         if (value == null) {
             ret = this;
+        } else if (value instanceof UninstalledExtension) {
+            ret = (JComponent) extension.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+            ret.setPreferredSize(null);
+
+            // ret.setBorder(matteBorder);
+            TreeRenderer.DIMENSION.width = (int) Math.max(TreeRenderer.DIMENSION.width, ret.getPreferredSize().width * _1_15);
+            ret.setPreferredSize(TreeRenderer.DIMENSION);
         } else if (value instanceof CheckBoxedEntry) {
             ret = (JComponent) extension.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             ret.setPreferredSize(null);

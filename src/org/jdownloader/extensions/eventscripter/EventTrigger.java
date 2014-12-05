@@ -25,7 +25,7 @@ public enum EventTrigger implements LabelInterface {
 
         public String getAPIDescription() {
             StringBuilder sb = new StringBuilder();
-            sb.append(T._.properties_for_eventtrigger(getLabel()));
+            sb.append(T._.properties_for_eventtrigger(getLabel())).append("\r\n");
             sb.append(T._.downloadLink()).append("\r\n");
             SimpleMapper mapper = new SimpleMapper();
             for (Entry<String, Object> es : mapper.convert(new DownloadLinkAPIStorableV2(), TypeRef.HASHMAP).entrySet()) {
