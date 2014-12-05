@@ -217,12 +217,20 @@ public class FlickrCom extends PluginForDecrypt {
             final String[] jsonarray = jsontext.split("\\},\\{");
             for (final String jsonentry : jsonarray) {
                 final String photoid = getJson(jsonentry, "id");
-                final String title = getJson(jsonentry, "title");
-                final String description = new Regex(jsonentry, "\"description\":\\{\"_content\":\"(.+)\"\\}").getMatch(0);
+                /* Workaround for "\"" in the filename */
+                String title = new Regex(jsonentry, "\"title\":\"([^<>]*?)\",\"ispublic\"").getMatch(0);
+                if (title != null) {
+                    title = JSonUtils.unescape(title);
+                } else {
+                    title = getJson(jsonentry, "title");
+                }
+                title = encodeUnicode(title);
+                String description = new Regex(jsonentry, "\"description\":\\{\"_content\":\"(.+)\"\\}").getMatch(0);
                 final DownloadLink fina = createDownloadlink("http://www.flickrdecrypted.com/photos/" + username + "/" + photoid);
                 if (description != null) {
                     try {
-                        fina.setComment(Encoding.htmlDecode(description));
+                        description = Encoding.htmlDecode(description);
+                        fina.setComment(description);
                     } catch (Throwable e) {
                     }
                 }
@@ -526,6 +534,22 @@ public class FlickrCom extends PluginForDecrypt {
             }
         }
         return filename;
+    }
+
+    /** Avoid chars which are not allowed in filenames under certain OS' */
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     private boolean getUserLogin() throws Exception {

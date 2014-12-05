@@ -101,7 +101,7 @@ public class EsouboryCz extends PluginForHost {
             if (!br.containsHTML("\"exists\":true")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            /* Basically just a workaround for "\"" in json response */
+            /* Basically just a workaround for "\"" in json response - should not happen anymore after the 04.12.14 */
             filename = br.getRegex("\"filename\":\"([^<>]+)\",").getMatch(0);
             if (filename == null) {
                 filename = getJson("filename");
