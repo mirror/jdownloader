@@ -16,6 +16,10 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.utils.ColorUtils;
 import org.appwork.utils.swing.renderer.RenderLabel;
 import org.appwork.utils.swing.renderer.RendererCheckBox;
+import org.jdownloader.extensions.UninstalledExtension;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
@@ -28,32 +32,64 @@ public class ExtensionPanelListRenderer extends JPanel implements ListCellRender
     private Color             b2;
     private Color             a;
     private RendererCheckBox  cb;
+    private RenderLabel       downloadButton;
 
     public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-        CheckBoxedEntry ext = (CheckBoxedEntry) value;
-        // AddonConfig.getInstance(plg.getSettings(), "", true)
-
-        setText(ext.getName());
-        setIcon(ext._getIcon(32));
-        cb.setSelected(ext._isEnabled());
-        lbl.setEnabled(cb.isSelected());
-
-        if (isSelected) {
-            lbl.setFont(boldFont);
-            // lbl.setBorder(brd);
-            setBackground(b2);
-            // lbl.setForeground(b);
-            setOpaque(true);
-            // lbl.setForeground(b);
-
-        } else {
-            lbl.setFont(orgFont);
-            if (index % 2 == 0) {
-                setBackground(a);
+        if (value instanceof UninstalledExtension) {
+            UninstalledExtension ext = (UninstalledExtension) value;
+            setText(ext.getName());
+            setIcon(ext.getIcon(32));
+            cb.setVisible(false);
+            downloadButton.setVisible(true);
+            lbl.setEnabled(cb.isSelected());
+            lbl.setEnabled(true);
+            downloadButton.setIcon(new BadgeIcon(new AbstractIcon(IconKey.ICON_EXTENSION, 20), new AbstractIcon(IconKey.ICON_RUN, 14), 0, 3));
+            // downloadButton.setIcon(new AbstractIcon(IconKey.ICON_EXTENSION, 20));
+            if (isSelected) {
+                lbl.setFont(boldFont);
+                // lbl.setBorder(brd);
+                setBackground(b2);
+                // lbl.setForeground(b);
                 setOpaque(true);
+                // lbl.setForeground(b);
+
             } else {
-                setOpaque(false);
-                setBackground(null);
+                lbl.setFont(orgFont);
+                if (index % 2 == 0) {
+                    setBackground(a);
+                    setOpaque(true);
+                } else {
+                    setOpaque(false);
+                    setBackground(null);
+                }
+            }
+        } else {
+            CheckBoxedEntry ext = (CheckBoxedEntry) value;
+            // AddonConfig.getInstance(plg.getSettings(), "", true)
+            cb.setVisible(true);
+            downloadButton.setVisible(false);
+            setText(ext.getName());
+            setIcon(ext._getIcon(32));
+            cb.setSelected(ext._isEnabled());
+            lbl.setEnabled(cb.isSelected());
+
+            if (isSelected) {
+                lbl.setFont(boldFont);
+                // lbl.setBorder(brd);
+                setBackground(b2);
+                // lbl.setForeground(b);
+                setOpaque(true);
+                // lbl.setForeground(b);
+
+            } else {
+                lbl.setFont(orgFont);
+                if (index % 2 == 0) {
+                    setBackground(a);
+                    setOpaque(true);
+                } else {
+                    setOpaque(false);
+                    setBackground(null);
+                }
             }
         }
         return this;
@@ -73,7 +109,11 @@ public class ExtensionPanelListRenderer extends JPanel implements ListCellRender
 
         lbl = new RenderLabel();
         cb = new RendererCheckBox();
-        add(cb, "aligny top,width 20!,sg border");
+        downloadButton = new RenderLabel();
+        downloadButton.setIcon(new BadgeIcon(new AbstractIcon(IconKey.ICON_UPDATE, 20), new AbstractIcon(IconKey.ICON_DOWNLOAD, 20), 0, 0));
+        downloadButton.setVisible(false);
+        add(downloadButton, "aligny top,width 20!,sg border,hidemode 3");
+        add(cb, "aligny top,width 20!,sg border,hidemode 3");
         add(lbl, "");
         add(Box.createGlue(), "sg border");
 

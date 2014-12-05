@@ -1,5 +1,8 @@
 package jd.gui.swing.jdgui.views.settings.sidebar;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -32,6 +35,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.ExtensionControllerListener;
 import org.jdownloader.extensions.LazyExtension;
+import org.jdownloader.extensions.UninstalledExtension;
 import org.jdownloader.gui.notify.BubbleNotify;
 import org.jdownloader.gui.notify.gui.BubbleNotifyConfigPanel;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
@@ -388,40 +392,70 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                         edtAllElement(getAdvancedSettings());
                         if (withExtensions) {
                             final AtomicBoolean firstExtension = new AtomicBoolean(true);
-                            List<LazyExtension> pluginsOptional = ExtensionController.getInstance().getExtensions();
-                            if (pluginsOptional != null) {
-                                for (final LazyExtension plg : pluginsOptional) {
-                                    if ("org.jdownloader.extensions.extraction.ExtractionExtension".equals(plg.getClassname())) {
-                                        continue;
-                                    }
-                                    // avoid that old TrayExtension Jars will get loaded
-                                    if ("org.jdownloader.extensions.jdtrayicon.TrayExtension".equals(plg.getClassname())) {
-                                        continue;
-                                    }
-                                    if (contains(plg)) {
-                                        continue;
-                                    }
-                                    if (CrossSystem.isWindows() && !plg.isWindowsRunnable()) {
-                                        continue;
-                                    }
-                                    if (CrossSystem.isLinux() && !plg.isLinuxRunnable()) {
-                                        continue;
-                                    }
-                                    if (CrossSystem.isMac() && !plg.isMacRunnable()) {
-                                        continue;
-                                    }
-                                    plg._getSettings()._getStorageHandler().getEventSender().addListener(SettingsSidebarModel.this, true);
-                                    new EDTRunner() {
+                            List<Object> pluginsOptional = new ArrayList<Object>();
+                            pluginsOptional.addAll(ExtensionController.getInstance().getExtensions());
 
-                                        @Override
-                                        protected void runInEDT() {
-                                            if (firstExtension.get()) {
-                                                addElement(getExtensionHeader());
-                                                firstExtension.set(false);
-                                            }
-                                            addElement(plg);
+                            pluginsOptional.addAll(ExtensionController.getInstance().getUninstalledExtensions());
+                            java.util.Collections.sort(pluginsOptional, new Comparator<Object>() {
+
+                                @Override
+                                public int compare(Object a, Object b) {
+                                    String namea = (a instanceof LazyExtension) ? ((LazyExtension) a).getName() : ((UninstalledExtension) a).getName();
+                                    String nameb = (b instanceof LazyExtension) ? ((LazyExtension) b).getName() : ((UninstalledExtension) b).getName();
+                                    return namea.compareTo(nameb);
+                                }
+
+                            });
+                            HashSet<String> loadedExtensions = new HashSet<String>();
+                            if (pluginsOptional != null) {
+                                for (final Object o : pluginsOptional) {
+                                    if (o instanceof LazyExtension) {
+                                        final LazyExtension plg = (LazyExtension) o;
+
+                                        if ("org.jdownloader.extensions.extraction.ExtractionExtension".equals(plg.getClassname())) {
+                                            continue;
                                         }
-                                    };
+                                        // avoid that old TrayExtension Jars will get loaded
+                                        if ("org.jdownloader.extensions.jdtrayicon.TrayExtension".equals(plg.getClassname())) {
+                                            continue;
+                                        }
+                                        if (contains(plg)) {
+                                            continue;
+                                        }
+                                        if (CrossSystem.isWindows() && !plg.isWindowsRunnable()) {
+                                            continue;
+                                        }
+                                        if (CrossSystem.isLinux() && !plg.isLinuxRunnable()) {
+                                            continue;
+                                        }
+                                        if (CrossSystem.isMac() && !plg.isMacRunnable()) {
+                                            continue;
+                                        }
+                                        plg._getSettings()._getStorageHandler().getEventSender().addListener(SettingsSidebarModel.this, true);
+                                        loadedExtensions.add(plg.getClassname());
+                                        new EDTRunner() {
+
+                                            @Override
+                                            protected void runInEDT() {
+                                                if (firstExtension.get()) {
+                                                    addElement(getExtensionHeader());
+                                                    firstExtension.set(false);
+                                                }
+                                                addElement(plg);
+                                            }
+                                        };
+                                    } else {
+                                        // not loaded
+                                        new EDTRunner() {
+
+                                            @Override
+                                            protected void runInEDT() {
+
+                                                addElement(o);
+
+                                            }
+                                        };
+                                    }
                                 }
                             }
 

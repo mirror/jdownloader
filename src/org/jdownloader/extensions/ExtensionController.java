@@ -1,6 +1,5 @@
 package org.jdownloader.extensions;
 
-import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
@@ -45,10 +44,12 @@ import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
 import org.jdownloader.gui.mainmenu.container.OptionalContainer;
 import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.translate._JDT;
 
@@ -91,7 +92,9 @@ public class ExtensionController implements MenuExtenderHandler {
         return eventSender;
     }
 
-    private boolean cacheInvalidated = false;
+    private boolean                    cacheInvalidated = false;
+
+    private List<UninstalledExtension> uninstalledExtensions;
 
     public boolean isCacheInvalidated() {
         return cacheInvalidated;
@@ -159,6 +162,8 @@ public class ExtensionController implements MenuExtenderHandler {
                 MenuManagerMainToolbar.getInstance().registerExtender(this);
             }
             list = Collections.unmodifiableList(ret);
+
+            initUninstalledExtensions();
             SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
                 public void run() {
@@ -173,6 +178,32 @@ public class ExtensionController implements MenuExtenderHandler {
             });
         }
         getEventSender().fireEvent(new ExtensionControllerEvent(this, ExtensionControllerEvent.Type.UPDATED));
+    }
+
+    private void initUninstalledExtensions() {
+        ArrayList<UninstalledExtension> ret = new ArrayList<UninstalledExtension>();
+        HashSet<String> set = new HashSet<String>();
+        for (LazyExtension l : list) {
+            set.add(l.getClassname());
+        }
+
+        if (set.add("org.jdownloader.extensions.eventscripter.EventScripterExtension")) {
+            ret.add(new UninstalledExtension("eventscripter", IconKey.ICON_EVENT, _GUI._.ExtensionController_initUninstalledExtensions_EventScripterExtension(), _GUI._.ExtensionController_initUninstalledExtensions_EventScripterExtension_description()));
+        }
+
+        if (set.add("org.jdownloader.extensions.JDChat")) {
+            ret.add(new UninstalledExtension("chat", IconKey.ICON_CHAT, _GUI._.ExtensionController_initUninstalledExtensions_JDChat(), _GUI._.ExtensionController_initUninstalledExtensions_JDChat_description()));
+        }
+        if (set.add("org.jdownloader.extensions.folderwatchV2.FolderWatchExtension")) {
+            ret.add(new UninstalledExtension("folderwatch", IconKey.ICON_FOLDER_ADD, _GUI._.ExtensionController_initUninstalledExtensions_FolderWatchExtension(), _GUI._.ExtensionController_initUninstalledExtensions_FolderWatchExtension_description()));
+        }
+        if (set.add("org.jdownloader.extensions.schedulerV2.SchedulerExtension")) {
+            ret.add(new UninstalledExtension("scheduler", IconKey.ICON_WAIT, _GUI._.ExtensionController_initUninstalledExtensions_SchedulerExtension(), _GUI._.ExtensionController_initUninstalledExtensions_SchedulerExtension_description()));
+        }
+        if (set.add("org.jdownloader.extensions.translator.TranslatorExtension")) {
+            ret.add(new UninstalledExtension("translator", IconKey.ICON_LANGUAGE, _GUI._.ExtensionController_initUninstalledExtensions_TranslatorExtension(), _GUI._.ExtensionController_initUninstalledExtensions_TranslatorExtension_description()));
+        }
+        uninstalledExtensions = Collections.unmodifiableList(ret);
     }
 
     private java.util.List<LazyExtension> loadFromCache() throws InstantiationException, IllegalAccessException, ClassNotFoundException, StartException {
@@ -646,5 +677,10 @@ public class ExtensionController implements MenuExtenderHandler {
                 Dialog.getInstance().showExceptionDialog(_JDT._.dialog_title_exception(), e1.getMessage(), e1);
             }
         }
+    }
+
+    public List<UninstalledExtension> getUninstalledExtensions() {
+
+        return uninstalledExtensions;
     }
 }

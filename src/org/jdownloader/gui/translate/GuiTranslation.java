@@ -5539,4 +5539,46 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Name" })
     String lit_name();
 
+    @Default(lngs = { "en" }, values = { "Event Scripter" })
+    String ExtensionController_initUninstalledExtensions_EventScripterExtension();
+
+    @Default(lngs = { "en" }, values = { "Listens to internal JDownloader event, and allows to execute relevant scripts (Javascript). This makes JDownloader even more customizable." })
+    String ExtensionController_initUninstalledExtensions_EventScripterExtension_description();
+
+    @Default(lngs = { "en" }, values = { "%s1\r\n\r\nThis extension is not installed yet. Click [Install now], and JDownloader will start the installation immediately" })
+    String UninstalledExtension_getDescription_object_(String description);
+
+    @Default(lngs = { "en" }, values = { "Installation in Progress" })
+    String UninstalledExtension_getPanel_install_in_progress();
+
+    @Default(lngs = { "en" }, values = { "Install now" })
+    String UninstalledExtension_getPanel_();
+
+    @Default(lngs = { "en" }, values = { "Please restart JDownloader to finish the installation." })
+    String UninstalledExtension_waiting_for_restart();
+
+    @Default(lngs = { "en" }, values = { "JD Support Chat" })
+    String ExtensionController_initUninstalledExtensions_JDChat();
+
+    @Default(lngs = { "en" }, values = { "Contact JDownloader Developers and Supporters" })
+    String ExtensionController_initUninstalledExtensions_JDChat_description();
+
+    @Default(lngs = { "en" }, values = { "Folder Watch" })
+    String ExtensionController_initUninstalledExtensions_FolderWatchExtension();
+
+    @Default(lngs = { "en" }, values = { "Add Links to JDownloader just by putting Linklist files (*.crawljob) in a special folder on your harddisk." })
+    String ExtensionController_initUninstalledExtensions_FolderWatchExtension_description();
+
+    @Default(lngs = { "en" }, values = { "Scheduler" })
+    String ExtensionController_initUninstalledExtensions_SchedulerExtension();
+
+    @Default(lngs = { "en" }, values = { "Define time schedules to execute actions, start downloads,..." })
+    String ExtensionController_initUninstalledExtensions_SchedulerExtension_description();
+
+    @Default(lngs = { "en" }, values = { "Translator" })
+    String ExtensionController_initUninstalledExtensions_TranslatorExtension();
+
+    @Default(lngs = { "en" }, values = { "This Extension can be used to edit JDownloader translations. You need a developer account to use this extension. If you do not want to translate, but just change the current language, please do NOT install this extension, but click on 'User Interface'->'Language' above." })
+    String ExtensionController_initUninstalledExtensions_TranslatorExtension_description();
+
 }
