@@ -5557,7 +5557,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Please restart JDownloader to finish the installation." })
     String UninstalledExtension_waiting_for_restart();
 
-    @Default(lngs = { "en" }, values = { "JD Support Chat" })
+    @Default(lngs = { "en" }, values = { "Support Chat" })
     String ExtensionController_initUninstalledExtensions_JDChat();
 
     @Default(lngs = { "en" }, values = { "Contact JDownloader Developers and Supporters" })
