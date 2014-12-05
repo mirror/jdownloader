@@ -450,7 +450,10 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
 
                                             @Override
                                             protected void runInEDT() {
-
+                                                if (firstExtension.get()) {
+                                                    addElement(getExtensionHeader());
+                                                    firstExtension.set(false);
+                                                }
                                                 addElement(o);
 
                                             }
