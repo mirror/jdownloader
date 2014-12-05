@@ -299,7 +299,9 @@ public class ClipboardMonitoring {
                                 setCurrentContent(handleThisRound);
                             }
                         } catch (final Throwable e) {
-                            Log.exception(e);
+                            if (!StringUtils.containsIgnoreCase(e.getMessage(), "Owner failed to convert data")) {
+                                Log.exception(e);
+                            }
                         }
                     }
                 }
