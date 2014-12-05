@@ -160,6 +160,8 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
             ret.setPreferredSize(TreeRenderer.DIMENSION);
         } else if (value instanceof ExtensionHeader) {
             ret = ((ExtensionHeader) value);
+        } else if (value instanceof UninstalledExtensionHeader) {
+            ret = ((UninstalledExtensionHeader) value);
 
         } else {
             ConfigPanel te = (ConfigPanel) value;

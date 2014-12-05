@@ -21,10 +21,11 @@ import org.jdownloader.updatev2.UpdaterListener;
 
 public class UninstalledExtension {
 
-    private String iconKey;
-    private String name;
-    private String id;
-    private String description;
+    private String              iconKey;
+    private String              name;
+    private String              id;
+    private String              description;
+    private AbstractConfigPanel panel;
 
     public String getIconKey() {
         return iconKey;
@@ -43,7 +44,10 @@ public class UninstalledExtension {
     }
 
     public SwitchPanel getPanel() {
-        return new AbstractConfigPanel() {
+        if (panel != null) {
+            return panel;
+        }
+        panel = new AbstractConfigPanel() {
 
             private ExtButton    install;
             private JProgressBar progressbar;
@@ -167,6 +171,7 @@ public class UninstalledExtension {
                 return UninstalledExtension.this.getIcon(32);
             }
         };
+        return panel;
     }
 
     public Icon getIcon(int size) {

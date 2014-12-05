@@ -19,7 +19,6 @@ import org.appwork.utils.swing.renderer.RendererCheckBox;
 import org.jdownloader.extensions.UninstalledExtension;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
@@ -43,7 +42,6 @@ public class ExtensionPanelListRenderer extends JPanel implements ListCellRender
             downloadButton.setVisible(true);
             lbl.setEnabled(cb.isSelected());
             lbl.setEnabled(true);
-            downloadButton.setIcon(new BadgeIcon(new AbstractIcon(IconKey.ICON_EXTENSION, 20), new AbstractIcon(IconKey.ICON_RUN, 14), 0, 3));
             // downloadButton.setIcon(new AbstractIcon(IconKey.ICON_EXTENSION, 20));
             if (isSelected) {
                 lbl.setFont(boldFont);
@@ -110,7 +108,7 @@ public class ExtensionPanelListRenderer extends JPanel implements ListCellRender
         lbl = new RenderLabel();
         cb = new RendererCheckBox();
         downloadButton = new RenderLabel();
-        downloadButton.setIcon(new BadgeIcon(new AbstractIcon(IconKey.ICON_UPDATE, 20), new AbstractIcon(IconKey.ICON_DOWNLOAD, 20), 0, 0));
+        downloadButton.setIcon(new AbstractIcon(IconKey.ICON_ADD, 20));
         downloadButton.setVisible(false);
         add(downloadButton, "aligny top,width 20!,sg border,hidemode 3");
         add(cb, "aligny top,width 20!,sg border,hidemode 3");
