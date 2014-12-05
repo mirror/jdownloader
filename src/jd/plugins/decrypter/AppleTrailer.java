@@ -38,7 +38,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "apple.com" }, urls = { "http://[\\w\\.]*?apple\\.com/trailers/(disney|dreamworks|filmdistrict|focus_features|fox|fox_searchlight|independent|lions_gate|lucasfilm|magnolia|marvel|paramount|picturehouse|sony|sony_pictures|summit|(universial|universal)|wb|(weinstein|weinstien))/[a-zA-Z0-9_]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "apple.com" }, urls = { "http://[\\w\\.]*?apple\\.com/trailers/(disney|dreamworks|entertainmentone|filmdistrict|focus_features|fox|fox_searchlight|independent|lions_gate|lucasfilm|magnolia|marvel|oscilloscope|paramount|picturehouse|relativity|sony|sony_pictures|summit|(universial|universal)|wb|(weinstein|weinstien))/[a-zA-Z0-9_]+/" }, flags = { 0 })
 public class AppleTrailer extends PluginForDecrypt {
 
     /**
