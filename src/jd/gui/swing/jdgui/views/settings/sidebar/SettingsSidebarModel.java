@@ -63,6 +63,7 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     protected MyJDownloaderSettingsPanel myJDownloader;
     protected BubbleNotifyConfigPanel    notifierPanel;
     protected CaptchaConfigPanel         ac;
+    protected UninstalledExtensionHeader ueh;
 
     public SettingsSidebarModel(JList list) {
         super();
@@ -304,6 +305,22 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
         }.getReturnValue();
     }
 
+    private UninstalledExtensionHeader getUninstalledExtensionHeader() {
+        if (ueh != null) {
+            return ueh;
+        }
+
+        return new EDTHelper<UninstalledExtensionHeader>() {
+            public UninstalledExtensionHeader edtRun() {
+                if (ueh != null) {
+                    return ueh;
+                }
+                ueh = new UninstalledExtensionHeader();
+                return ueh;
+            }
+        }.getReturnValue();
+    }
+
     private ExtensionHeader getExtensionHeader() {
         if (eh != null) {
             return eh;
@@ -395,7 +412,6 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                             List<Object> pluginsOptional = new ArrayList<Object>();
                             pluginsOptional.addAll(ExtensionController.getInstance().getExtensions());
 
-                            pluginsOptional.addAll(ExtensionController.getInstance().getUninstalledExtensions());
                             java.util.Collections.sort(pluginsOptional, new Comparator<Object>() {
 
                                 @Override
@@ -445,21 +461,27 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                                             }
                                         };
                                     } else {
-                                        // not loaded
-                                        new EDTRunner() {
 
-                                            @Override
-                                            protected void runInEDT() {
-                                                if (firstExtension.get()) {
-                                                    addElement(getExtensionHeader());
-                                                    firstExtension.set(false);
-                                                }
-                                                addElement(o);
-
-                                            }
-                                        };
                                     }
                                 }
+                            }
+                            final AtomicBoolean firstUninstalledExtension = new AtomicBoolean(true);
+
+                            for (final UninstalledExtension o : ExtensionController.getInstance().getUninstalledExtensions()) {
+                                // not loaded
+                                new EDTRunner() {
+
+                                    @Override
+                                    protected void runInEDT() {
+
+                                        if (firstUninstalledExtension.get()) {
+                                            addElement(getUninstalledExtensionHeader());
+                                            firstUninstalledExtension.set(false);
+                                        }
+                                        addElement(o);
+
+                                    }
+                                };
                             }
 
                         }

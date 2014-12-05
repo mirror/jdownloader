@@ -5581,4 +5581,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "This Extension can be used to edit JDownloader translations. You need a developer account to use this extension. If you do not want to translate, but just change the current language, please do NOT install this extension, but click on 'User Interface'->'Language' above." })
     String ExtensionController_initUninstalledExtensions_TranslatorExtension_description();
 
+    @Default(lngs = { "en" }, values = { "Not installed yet" })
+    String uninstalledextensionManager_title();
+
 }
