@@ -191,7 +191,7 @@ public class ExtensionController implements MenuExtenderHandler {
             ret.add(new UninstalledExtension("eventscripter", IconKey.ICON_EVENT, _GUI._.ExtensionController_initUninstalledExtensions_EventScripterExtension(), _GUI._.ExtensionController_initUninstalledExtensions_EventScripterExtension_description()));
         }
 
-        if (set.add("org.jdownloader.extensions.JDChat")) {
+        if (set.add("org.jdownloader.extensions.chat.ChatExtension")) {
             ret.add(new UninstalledExtension("chat", IconKey.ICON_CHAT, _GUI._.ExtensionController_initUninstalledExtensions_JDChat(), _GUI._.ExtensionController_initUninstalledExtensions_JDChat_description()));
         }
         if (set.add("org.jdownloader.extensions.folderwatchV2.FolderWatchExtension")) {
