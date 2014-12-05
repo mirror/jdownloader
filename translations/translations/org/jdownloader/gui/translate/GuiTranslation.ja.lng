@@ -1766,4 +1766,5 @@ system_download_triggerfileexists=ファイルが既に存在する場合:
 system_download_triggerfileexists_ask=ファイル毎に確認
 system_download_triggerfileexists_overwrite=上書き
 system_download_triggerfileexists_rename=自動リネーム
+uninstalledextensionManager_title=未インストール
 userio_errorregex=.*(エラー|失敗).*
