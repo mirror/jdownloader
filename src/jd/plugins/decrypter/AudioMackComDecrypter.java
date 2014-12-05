@@ -79,6 +79,12 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
                     } catch (Throwable e) {
                     }
                 }
+                try {
+                    fina.setContentUrl(url);
+                } catch (final Throwable e) {
+                    /* Not available in old 0.9.581 Stable */
+                    fina.setBrowserUrl(url);
+                }
                 decryptedLinks.add(fina);
             }
         }
@@ -88,6 +94,12 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
             final DownloadLink fina = createDownloadlink("directhttp://" + ziplink);
             fina.setFinalFileName(fpName + ".zip");
             fina.setAvailable(true);
+            try {
+                fina.setContentUrl(ziplink);
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+                fina.setBrowserUrl(ziplink);
+            }
             decryptedLinks.add(fina);
         }
         final FilePackage fp = FilePackage.getInstance();

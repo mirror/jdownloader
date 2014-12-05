@@ -42,7 +42,8 @@ public class MyzukaRuDecrypter extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        /* offline|abused */
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Альбом удален по просьбе правообладателя")) {
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
             offline.setAvailable(false);
@@ -63,14 +64,16 @@ public class MyzukaRuDecrypter extends PluginForDecrypt {
             final String url = new Regex(singleLink, "href=\"(/Song/\\d+/[^<>\"/]+)\"").getMatch(0);
             final String title = new Regex(singleLink, "href=\"/Song/\\d+/[^<>\"/]+\">([^<>\"]*?)</a>").getMatch(0);
             final String artist = new Regex(singleLink, "href=\"/Artist/\\d+/[^<>\"/]+\">([^<>\"]*?)</a>").getMatch(0);
-            final String filesize = new Regex(singleLink, "(\\d{1,2}(,\\d{1,2})?) Мб").getMatch(0);
+            String filesize = new Regex(singleLink, "class=\"time\">([^<>\"]*?)<").getMatch(0);
             if (url == null || title == null || artist == null || filesize == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            filesize = filesize.replace("б", "b");
+            filesize = filesize.replace(",", ".");
             final DownloadLink fina = createDownloadlink("http://myzuka.ru" + Encoding.htmlDecode(url));
             fina.setName(Encoding.htmlDecode(artist) + " - " + Encoding.htmlDecode(title) + ".mp3");
-            fina.setDownloadSize(SizeFormatter.getSize(filesize + "MB"));
+            fina.setDownloadSize(SizeFormatter.getSize(filesize));
             fina.setAvailable(true);
             decryptedLinks.add(fina);
         }

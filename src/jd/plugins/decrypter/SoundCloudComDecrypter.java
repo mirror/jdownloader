@@ -261,15 +261,16 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             playlistname = new Regex(parameter, "/sets/(.+)$").getMatch(0);
         }
         username = getXML("username", br.toString());
-        final String playlist_id = br.getRegex("<id type=\"integer\">(\\d+)</id>").getMatch(0);
-        if (playlist_id == null) {
+        final String playlist_uri = getJson("uri");
+        if (playlist_uri == null) {
             return;
         }
-        br.getPage("https://api.soundcloud.com/playlists/" + playlist_id + "?client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&app_version=" + jd.plugins.hoster.SoundcloudCom.APP_VERSION);
-        final String[] items = br.getRegex("<track>(.*?)</track>").getColumn(0);
+        br.getPage(playlist_uri + "?client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&app_version=" + jd.plugins.hoster.SoundcloudCom.APP_VERSION);
+        final String jsontext = br.getRegex("\"tracks\":\\[(.*?)\\]").getMatch(0);
+        final String[] items = jsontext.split("\\},\\{");
         final String usernameOfSet = new Regex(parameter, "soundcloud\\.com/(.*?)/sets/?").getMatch(0);
         if (items == null || items.length == 0 || usernameOfSet == null) {
-            if (br.containsHTML("<duration type=\"integer\">0</duration>")) {
+            if (getJson("duration").equals("0")) {
                 throw new DecrypterException(EXCEPTION_LINKOFFLINE);
             }
             logger.warning("Decrypter broken for link: " + parameter);
@@ -277,18 +278,18 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         }
         int counter = 1;
         for (final String item : items) {
-            final String permalink = getXML("permalink", item);
+            final String permalink = getJson(item, "permalink");
             if (permalink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 throw new DecrypterException("null");
             }
-            String song_username = new Regex(item, "<kind>user</kind>[\t\n\r ]+<permalink>([^<>\"]*?)</permalink>").getMatch(0);
+            String song_username = new Regex(item, "\"kind\":\"user\",\"permalink\":\"([^<>\"]*?)\"").getMatch(0);
             if (song_username == null) {
                 song_username = usernameOfSet;
             }
             DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/" + song_username + "/" + permalink);
             dl.setProperty("setsposition", counter + ".");
-            dl = setDlDataXML(dl, item);
+            dl = setDlDataJson(dl, item);
             decryptedLinks.add(dl);
             get500Thumbnail(dl, item);
             getOriginalThumbnail(dl, item);

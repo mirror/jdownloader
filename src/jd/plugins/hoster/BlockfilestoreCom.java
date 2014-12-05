@@ -63,7 +63,7 @@ public class BlockfilestoreCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 1 * 60 * 60 * 1000l);
             }
             br.followConnection();
-            if (br.containsHTML("<title>Error")) {
+            if (br.containsHTML("<title>Error") || br.getURL().contains("blockfilestore.com/404")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
