@@ -38,8 +38,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.storage.simplejson.JSonUtils;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(www\\.)?(secure\\.)?flickr\\.com/(photos|groups)/.+" }, flags = { 0 })
 public class FlickrCom extends PluginForDecrypt {
 
@@ -217,13 +215,7 @@ public class FlickrCom extends PluginForDecrypt {
             final String[] jsonarray = jsontext.split("\\},\\{");
             for (final String jsonentry : jsonarray) {
                 final String photoid = getJson(jsonentry, "id");
-                /* Workaround for "\"" in the filename */
-                String title = new Regex(jsonentry, "\"title\":\"([^<>]*?)\",\"ispublic\"").getMatch(0);
-                if (title != null) {
-                    title = JSonUtils.unescape(title);
-                } else {
-                    title = getJson(jsonentry, "title");
-                }
+                String title = getJson(jsonentry, "title");
                 title = encodeUnicode(title);
                 String description = new Regex(jsonentry, "\"description\":\\{\"_content\":\"(.+)\"\\}").getMatch(0);
                 final DownloadLink fina = createDownloadlink("http://www.flickrdecrypted.com/photos/" + username + "/" + photoid);
@@ -496,12 +488,12 @@ public class FlickrCom extends PluginForDecrypt {
      * @author raztoki & psp
      * */
     public static String getJson(final String source, final String key) {
-        String result = new Regex(source, "\"" + key + "\":(?:[ ]+)?(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
+        String result = new Regex(source, "\"" + key + "\"[ \t]*:[ \t]*(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
         if (result == null) {
-            result = new Regex(source, "\"" + key + "\":(?:[ ]+)?\"([^\"]+)\"").getMatch(0);
+            result = new Regex(source, "\"" + key + "\"[ \t]*:[ \t]*\"(.*?)\"(?:[,\\} ])").getMatch(0);
         }
         if (result != null) {
-            result = JSonUtils.unescape(result);
+            result = jd.plugins.hoster.K2SApi.JSonUtils.unescape(result);
         }
         return result;
     }
