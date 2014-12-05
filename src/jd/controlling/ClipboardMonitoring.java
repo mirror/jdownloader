@@ -299,7 +299,8 @@ public class ClipboardMonitoring {
                                 setCurrentContent(handleThisRound);
                             }
                         } catch (final Throwable e) {
-                            if (!StringUtils.containsIgnoreCase(e.getMessage(), "Owner failed to convert data")) {
+                            final String message = e.getMessage();
+                            if (!StringUtils.containsIgnoreCase(message, "Owner failed to convert data") && !StringUtils.containsIgnoreCase(message, "Owner timed out")) {
                                 Log.exception(e);
                             }
                         }
