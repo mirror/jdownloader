@@ -256,46 +256,47 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
                 public void run() {
                     AudioInputStream stream = null;
                     try {
-                        AudioFormat format;
-                        DataLine.Info info;
                         stream = AudioSystem.getAudioInputStream(finalSoundUrl);
-                        format = stream.getFormat();
-                        info = new DataLine.Info(Clip.class, format);
-                        final Clip clip = (Clip) AudioSystem.getLine(info);
-                        clip.open(stream);
-                        try {
-                            FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+                        final AudioFormat format = stream.getFormat();
+                        final DataLine.Info info = new DataLine.Info(Clip.class, format);
+                        if (AudioSystem.isLineSupported(info)) {
+                            final Clip clip = (Clip) AudioSystem.getLine(info);
+                            clip.open(stream);
+                            try {
+                                final FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
 
-                            float db = (20f * (float) Math.log(JsonConfig.create(SoundSettings.class).getCaptchaSoundVolume() / 100f));
+                                float db = (20f * (float) Math.log(JsonConfig.create(SoundSettings.class).getCaptchaSoundVolume() / 100f));
 
-                            gainControl.setValue(Math.max(-80f, db));
-                            BooleanControl muteControl = (BooleanControl) clip.getControl(BooleanControl.Type.MUTE);
-                            muteControl.setValue(true);
+                                gainControl.setValue(Math.max(-80f, db));
+                                BooleanControl muteControl = (BooleanControl) clip.getControl(BooleanControl.Type.MUTE);
+                                muteControl.setValue(true);
 
-                            muteControl.setValue(false);
-                        } catch (Exception e) {
-                            Log.exception(e);
-                        }
-                        clip.start();
-                        clip.addLineListener(new LineListener() {
-
-                            @Override
-                            public void update(LineEvent event) {
-                                if (event.getType() == Type.STOP) {
-                                    clip.close();
-                                }
+                                muteControl.setValue(false);
+                            } catch (Exception e) {
+                                Log.exception(e);
                             }
-                        });
-                        while (clip.isRunning()) {
-                            Thread.sleep(100);
+                            clip.start();
+                            clip.addLineListener(new LineListener() {
+
+                                @Override
+                                public void update(LineEvent event) {
+                                    if (event.getType() == Type.STOP) {
+                                        clip.close();
+                                    }
+                                }
+                            });
+                            while (clip.isRunning()) {
+                                Thread.sleep(100);
+                            }
                         }
                     } catch (Exception e) {
                         Log.exception(e);
                     } finally {
                         try {
-                            stream.close();
+                            if (stream != null) {
+                                stream.close();
+                            }
                         } catch (Throwable e) {
-
                         }
                         // try {
                         // clip.close();
