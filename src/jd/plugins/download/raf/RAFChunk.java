@@ -14,6 +14,7 @@ import jd.http.URLConnectionAdapter;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.download.Downloadable;
+import jd.plugins.download.raf.OldRAFDownload;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
@@ -254,7 +255,7 @@ public class RAFChunk extends Thread {
             long lastFlush = 0;
             long bytesRead = 0;
             long bytesWritten = 0;
-            while (!isExternalyAborted()) {
+            while (!isExternalyAborted() && !connectionclosed.get()) {
                 try {
                     buffer.reset();
                     if (reachedEOF == true) {
@@ -265,7 +266,7 @@ public class RAFChunk extends Thread {
                         towrite = 0;
                     }
                     lastFlush = System.currentTimeMillis();
-                    while (!reachedEOF && buffer.free() > 0 && buffer.size() <= flushLevel) {
+                    while (!reachedEOF && buffer.free() > 0 && buffer.size() <= flushLevel && !isExternalyAborted() && !connectionclosed.get()) {
                         if (endByte > 0) {
                             /* read only as much as needed */
                             remoteIO = true;
@@ -308,14 +309,6 @@ public class RAFChunk extends Thread {
                     }
                 } catch (NullPointerException e) {
                     LogSource.exception(logger, e);
-                    if (inputStream == null) {
-                        /* connection is closed and steam is null */
-                        if (!isExternalyAborted() && !connectionclosed.get()) {
-                            throw e;
-                        }
-                        towrite = -1;
-                        break;
-                    }
                     throw e;
                 } catch (IOException e4) {
                     LogSource.exception(logger, e4);
@@ -614,8 +607,6 @@ public class RAFChunk extends Thread {
         try {
             inputStream.close();
         } catch (Throwable e) {
-        } finally {
-            inputStream = null;
         }
         try {
             getCurrentConnection().disconnect();
