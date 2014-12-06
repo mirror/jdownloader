@@ -17,78 +17,42 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
-
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "anilinkz.com" }, urls = { "http://(www\\.)?anilinkz\\.com/[^<>\"/]+(/[^<>\"/]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anilinkz.com" }, urls = { "http://(www\\.)?anilinkz\\.com/[^<>\"/]+(/[^<>\"/]+)?" }, flags = { 0 })
+/**
+ * @author raztoki
+ * */
 @SuppressWarnings("deprecation")
-public class AniLinkzCom extends PluginForDecrypt {
+public class AniLinkzCom extends antiDDoSForDecrypt {
 
-    private final String                   supported_hoster   = "(4shared\\.com|4vid\\.me|animeuploads\\.com|auengine\\.com|chia\\-anime\\.com|cizgifilmlerizle\\.com|dailymotion\\.com|gogoanime\\.com|gorillavid\\.in|mp4upload\\.com|movreel\\.com|myspace\\.com|nowvideo\\.eu|novamov\\.com|play44\\.net|(putlocker|firedrive)\\.com|rutube\\.ru|sockshare\\.com|stagevu\\.com|upload2\\.com|uploadc\\.com|veevr\\.com|veoh\\.com|vidbox\\.yt|video44\\.net|videobb\\.com|videobam\\.com|videofun\\.me|videonest\\.net|videoweed\\.com|vidzur\\.com|vimeo\\.com|vk\\.com|yourupload\\.com|youtube\\.com|zshare\\.net|220\\.ro|videos\\.sapo\\.pt)";
-    private final String                   invalid_links      = "http://(www\\.)?anilinkz\\.com/(search|affiliates|get|img|dsa|forums|files|category|\\?page=|faqs|.*?-list|.*?-info|\\?random).*?";
-    private String                         parameter          = null;
-    private String                         fpName             = null;
-    private String                         escapeAll          = null;
-    private int                            spart              = 1;
-    private Browser                        br2                = new Browser();
-    private ArrayList<DownloadLink>        decryptedLinks     = null;
-    private static HashMap<String, String> CLOUDFLARE_COOKIES = new HashMap<String, String>();
-    private static Object                  LOCK               = new Object();
+    private final String            supported_hoster = "(4shared\\.com|4vid\\.me|animeuploads\\.com|auengine\\.com|chia\\-anime\\.com|cizgifilmlerizle\\.com|dailymotion\\.com|gogoanime\\.com|gorillavid\\.in|mp4upload\\.com|movreel\\.com|myspace\\.com|nowvideo\\.eu|novamov\\.com|play44\\.net|(putlocker|firedrive)\\.com|rutube\\.ru|sockshare\\.com|stagevu\\.com|upload2\\.com|uploadc\\.com|veevr\\.com|veoh\\.com|vidbox\\.yt|video44\\.net|videobb\\.com|videobam\\.com|videofun\\.me|videonest\\.net|videoweed\\.com|vidzur\\.com|vimeo\\.com|vk\\.com|yourupload\\.com|youtube\\.com|zshare\\.net|220\\.ro|videos\\.sapo\\.pt)";
+    private final String            invalid_links    = "http://(www\\.)?anilinkz\\.com/(search|affiliates|get|img|dsa|forums|files|category|\\?page=|faqs|.*?-list|.*?-info|\\?random).*?";
+    private String                  parameter        = null;
+    private String                  fpName           = null;
+    private String                  escapeAll        = null;
+    private int                     spart            = 1;
+    private Browser                 br2              = new Browser();
+    private ArrayList<DownloadLink> decryptedLinks   = null;
+    private static Object           LOCK             = new Object();
 
-    /**
-     * @author raztoki
-     * */
     public AniLinkzCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static AtomicReference<String> agent = new AtomicReference<String>(null);
-
-    private Browser prepBrowser(Browser prepBr) {
-        HashMap<String, String> map = null;
-        synchronized (CLOUDFLARE_COOKIES) {
-            map = new HashMap<String, String>(CLOUDFLARE_COOKIES);
-        }
-        if (!map.isEmpty()) {
-            for (final Map.Entry<String, String> cookieEntry : map.entrySet()) {
-                final String key = cookieEntry.getKey();
-                final String value = cookieEntry.getValue();
-                prepBr.setCookie(this.getHost(), key, value);
-            }
-        }
-        if (agent.get() == null) {
-            /* we first have to load the plugin, before we can reference it */
-            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
-        }
-
-        prepBr.getHeaders().put("User-Agent", agent.get());
-        prepBr.getHeaders().put("Referer", null);
-        return prepBr;
-    }
-
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        this.param = param;
         // testing purpose lets null/zero/false storables
         decryptedLinks = new ArrayList<DownloadLink>();
         escapeAll = null;
@@ -101,7 +65,6 @@ public class AniLinkzCom extends PluginForDecrypt {
         }
         // only allow one thread! To minimise/reduce loads.
         synchronized (LOCK) {
-            prepBrowser(br);
 
             getPage(parameter);
 
@@ -111,7 +74,7 @@ public class AniLinkzCom extends PluginForDecrypt {
                 offline = true;
             } else if (br.getRedirectLocation() != null) {
                 br.setFollowRedirects(true);
-                br.getPage(br.getRedirectLocation());
+                getPage(br.getRedirectLocation());
             }
             if (br.containsHTML(">Page Not Found<")) {
                 logger.info("Link offline: " + parameter);
@@ -122,7 +85,10 @@ public class AniLinkzCom extends PluginForDecrypt {
                 offline = true;
             }
             if (offline) {
-                decryptedLinks.add(createOfflinelink(parameter));
+                try {
+                    decryptedLinks.add(createOfflinelink(parameter));
+                } catch (final Throwable t) {
+                }
                 return decryptedLinks;
             }
             if (parameter.contains(".com/series/")) {
@@ -172,7 +138,7 @@ public class AniLinkzCom extends PluginForDecrypt {
                     if (links != null && links.length != 0) {
                         for (String link : links) {
                             br2 = br.cloneBrowser();
-                            br2.getPage(link);
+                            getPage(br2, link);
                             parsePage();
                         }
                     }
@@ -214,7 +180,10 @@ public class AniLinkzCom extends PluginForDecrypt {
                 } else {
                     logger.warning("Decrypter out of date for link: " + br2.getURL());
                 }
-                decryptedLinks.add(createOfflinelink(br2.getURL()));
+                try {
+                    decryptedLinks.add(createOfflinelink(br2.getURL()));
+                } catch (final Throwable t) {
+                }
                 return false;
             }
         }
@@ -301,76 +270,6 @@ public class AniLinkzCom extends PluginForDecrypt {
             }
         }
         return true;
-    }
-
-    /**
-     * Gets page <br />
-     * - natively supports silly cloudflare anti DDoS crapola
-     *
-     * @author raztoki
-     */
-    private void getPage(final String page) throws Exception {
-        if (page == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.setAllowedResponseCodes(503);
-        try {
-            br.getPage(page);
-        } finally {
-            br.setAllowedResponseCodes(new int[0]);
-        }
-        Form form = br.getFormbyKey("jschl_answer");
-        // prevention is better than cure
-        if (form != null) {
-
-            String[] line1 = br.getRegex("var t,r,a,f, (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
-            String line2 = br.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length\\;)").getMatch(0);
-            StringBuilder sb = new StringBuilder();
-            sb.append("var a={};\r\nvar t=\"" + br.getHost() + "\";\r\n");
-            sb.append("var " + line1[0] + "={\"" + line1[1] + "\":" + line1[2] + "}\r\n");
-            sb.append(line2);
-
-            ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
-            ScriptEngine engine = mgr.getEngineByName("js");
-            long answer = ((Number) engine.eval(sb.toString())).longValue();
-
-            form.getInputFieldByName("jschl_answer").setValue(answer + "");
-            br.submitForm(form);
-            if (!br.getURL().contains(page)) {
-                br.getPage(page);
-            }
-
-            // lets save cloudflare cookie to reduce the need repeat cloudFlare()
-            final HashMap<String, String> cookies = new HashMap<String, String>();
-            final Cookies add = br.getCookies(this.getHost());
-            for (final Cookie c : add.getCookies()) {
-                if (new Regex(c.getKey(), "(cfduid|cf_clearance)").matches()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-            }
-
-            synchronized (CLOUDFLARE_COOKIES) {
-                CLOUDFLARE_COOKIES.clear();
-                CLOUDFLARE_COOKIES.putAll(cookies);
-            }
-
-        }
-    }
-
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     * */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     /* NO OVERRIDE!! */

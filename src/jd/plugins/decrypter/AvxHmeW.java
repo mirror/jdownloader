@@ -24,6 +24,7 @@ import jd.http.Browser.BrowserException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 /**
@@ -81,6 +82,15 @@ public class AvxHmeW extends PluginForDecrypt {
                 for (final String coverlink : covers) {
                     decryptedLinks.add(createDownloadlink(coverlink));
                 }
+            }
+           	String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+            if (fpName == null) {
+                fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+            }
+            if (fpName != null && false) {
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName(fpName.trim());
+                fp.addLinks(decryptedLinks);
             }
         } else {
             br.setFollowRedirects(false);
