@@ -806,7 +806,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
      * @author raztoki
      * */
     private String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
     }
 
     /**
