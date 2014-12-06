@@ -51,8 +51,8 @@ public class RapideoPl extends PluginForHost {
     private static final String                            NICE_HOST          = MAINPAGE.replaceAll("(https://|http://)", "");
     private static final String                            NICE_HOSTproperty  = MAINPAGE.replaceAll("(https://|http://|\\.|\\-)", "");
     private static final String[][]                        HOSTS              = { { "vip-file", "vip-file.com" }, { "unibytes", "unibytes.com" }, { "uptobox", "uptobox.com" }, { "fileshark", "fileshark.pl" }, { "megaszafa", "megaszafa.com" }, { "nowvideo", "nowvideo.sx" }, { "divxstage", "divxstage.eu" }, { "played", "played.to" }, { "oboom", "oboom.com" }, { "firedrive", "firedrive.com" }, { "rapidu", "rapidu.net" }, { "ddlstorage", "ddlstorage.com" }, { "uploadable", "uploadable.ch" }, { "secureupload", "secureupload.eu" }, { "filemonkey", "filemonkey.in" }, { "uloz", "uloz.to" }, { "cloudstor", "cloudstor.es" }, { "1fichier", "1fichier.com" }, { "datafile", "datafile.com" }, { "terafile", "terafile.co" }, { "hugefiles", "hugefiles.net" }, { "zippyshare", "zippyshare.com" }, { "180upload", "180upload.nl" }, { "kingfiles", "kingfiles.net" }, { "fileom", "fileom.com" },
-        { "fastshare", "fastshare.cz" }, { "lunaticfiles", "lunaticfiles.com" }, { "fileparadox", "fileparadox.in" }, { "filesmonster", "filesmonster.com" }, { "hd3d", "hd3d.cc" }, { "lumfile", "lumfile.com" }, { "catshare", "catshare.org" }, { "ultramegabit", "ultramegabit.com" }, { "luckyshare", "luckyshare.net" }, { "hitfile", "hitfile.net" }, { "shareflare", "shareflare.net" }, { "letitbit", "letitbit.net" }, { "uploaded", "uploaded.to" }, { "bitshare", "bitshare.com" }, { "rapidshare", "rapidshare.com" }, { "jumbofiles", "jumbofiles.org" }, { "4shared", "4shared.com" }, { "fileom", "fileom.com" }, { "turbobit", "turbobit.net" }, { "2shared", "2shared.com" }, { "ifilez", "depfile.com" }, { "freakshare", "freakshare.com" }, { "rapidgator", "rapidgator.net" }, { "uploading", "uploading.com" }, { "netload", "netload.in" }, { "ryushare", "ryushare.com" },
-        { "easyshare", "crocko.com" }, { "mediafire", "mediafire.com" }, { "filefactory", "filefactory.com" }, { "filepost", "filepost.com" }, { "videobb", "videobb.com" }, { "megashares", "megashares.com" }, { "filevelocity", "filevelocity.com" }, { "sendspace", "sendspace.com" }, { "filevice", "filevice.com" }, { "cloudnator", "cloudnator.com" }, { "uptobox", "uptobox.com" }, { "filereactor", "filereactor.com" }, { "putlocker", "putlocker.com" }, { "ifile", "filecloud.io" }, { "share-online", "share-online.biz" }, { "glumbouploads", "glumbouploads.com" } };
+            { "fastshare", "fastshare.cz" }, { "lunaticfiles", "lunaticfiles.com" }, { "fileparadox", "fileparadox.in" }, { "filesmonster", "filesmonster.com" }, { "hd3d", "hd3d.cc" }, { "lumfile", "lumfile.com" }, { "catshare", "catshare.org" }, { "ultramegabit", "ultramegabit.com" }, { "luckyshare", "luckyshare.net" }, { "hitfile", "hitfile.net" }, { "shareflare", "shareflare.net" }, { "letitbit", "letitbit.net" }, { "uploaded", "uploaded.to" }, { "bitshare", "bitshare.com" }, { "rapidshare", "rapidshare.com" }, { "jumbofiles", "jumbofiles.org" }, { "4shared", "4shared.com" }, { "fileom", "fileom.com" }, { "turbobit", "turbobit.net" }, { "2shared", "2shared.com" }, { "ifilez", "depfile.com" }, { "freakshare", "freakshare.com" }, { "rapidgator", "rapidgator.net" }, { "uploading", "uploading.com" }, { "netload", "netload.in" }, { "ryushare", "ryushare.com" },
+            { "easyshare", "crocko.com" }, { "mediafire", "mediafire.com" }, { "filefactory", "filefactory.com" }, { "filepost", "filepost.com" }, { "videobb", "videobb.com" }, { "megashares", "megashares.com" }, { "filevelocity", "filevelocity.com" }, { "sendspace", "sendspace.com" }, { "filevice", "filevice.com" }, { "cloudnator", "cloudnator.com" }, { "uptobox", "uptobox.com" }, { "filereactor", "filereactor.com" }, { "putlocker", "putlocker.com" }, { "ifile", "filecloud.io" }, { "share-online", "share-online.biz" }, { "glumbouploads", "glumbouploads.com" } };
 
     public RapideoPl(PluginWrapper wrapper) {
         super(wrapper);
@@ -249,7 +249,7 @@ public class RapideoPl extends PluginForHost {
     /**
      * Is intended to handle errors which might occur seldom by re-tring a couple of times before we temporarily remove the host from the
      * host list.
-     *
+     * 
      * @param dl
      *            : The DownloadLink
      * @param error
@@ -303,7 +303,7 @@ public class RapideoPl extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.postPage("https://www.rapideo.pl/logowanie", "remember=on&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (!br.containsHTML("Logged in as:")) {
+                if (!br.containsHTML("Logged in as:|Zalogowany jako:")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
