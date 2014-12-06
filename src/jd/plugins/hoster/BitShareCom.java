@@ -56,6 +56,7 @@ public class BitShareCom extends PluginForHost {
     private static Object        LOCK             = new Object();
     private final char[]         FILENAMEREPLACES = new char[] { '-' };
     private static final String  LINKOFFLINE      = "(>We are sorry, but the requested file was not found in our database|>Error \\- File not available<|The file was deleted either by the uploader, inactivity or due to copyright claim)";
+    private boolean              useApi           = false;
 
     private String               agent            = null;
 
@@ -150,11 +151,13 @@ public class BitShareCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br = new Browser();
-        prepBR();
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(LINKOFFLINE)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (useApi) {
+            br = new Browser();
+            prepBR();
+            br.getPage(downloadLink.getDownloadURL());
+            if (br.containsHTML(LINKOFFLINE)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         doFree(downloadLink);
     }
@@ -461,37 +464,51 @@ public class BitShareCom extends PluginForHost {
         this.setBrowserExclusive();
         link.setName(new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
         prepBR();
-        br.postPage("http://bitshare.com/api/openapi/general.php", "action=getFileStatus&files=" + Encoding.urlEncode(link.getDownloadURL()));
-        // http://svn.jdownloader.org/issues/21377
-        final String ip = br.getRedirectLocation();
-        if (ip != null && ip.contains("http://192.168.")) {
-            // some local server fkup?
-            Thread.sleep(5000);
-            br = new Browser();
-            prepBR();
+        String filename = null, filesize = null;
+        if (useApi) {
+            // code to test for http://svn.jdownloader.org/issues/59965. download always fails in chrome and jd after recaptcha. will
+            // redirect to homepage.
             br.postPage("http://bitshare.com/api/openapi/general.php", "action=getFileStatus&files=" + Encoding.urlEncode(link.getDownloadURL()));
-            if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("http://192.168.")) {
+            // http://svn.jdownloader.org/issues/21377
+            final String ip = br.getRedirectLocation();
+            if (ip != null && ip.contains("http://192.168.")) {
+                // some local server fkup?
+                Thread.sleep(5000);
+                br = new Browser();
+                prepBR();
+                br.postPage("http://bitshare.com/api/openapi/general.php", "action=getFileStatus&files=" + Encoding.urlEncode(link.getDownloadURL()));
+                if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("http://192.168.")) {
+                    return AvailableStatus.UNCHECKABLE;
+                }
+
+            }
+
+            if (br.containsHTML("#offline#|No input file specified")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+
+            if (br.containsHTML("No htmlCode read")) {
+                link.getLinkStatus().setStatusText("Server error, uncheckable");
                 return AvailableStatus.UNCHECKABLE;
             }
 
-        }
+            final Regex fileInfo = br.getRegex("#online#[a-z0-9]{8}#([^<>\"]*?)#(\\d+)");
 
-        if (br.containsHTML("#offline#|No input file specified")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("(>We are sorry, but the requested file was not found in our database|>Error \\- File not available<|The file was deleted either by the uploader, inactivity or due to copyright claim)")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            filename = fileInfo.getMatch(0);
+            filesize = fileInfo.getMatch(1);
+        } else {
+            // non api
+            br.getPage(link.getDownloadURL());
+            if (br.containsHTML(LINKOFFLINE)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            String r = "<h1>Downloading (.*?) - (.*?)</h1>";
+            filename = br.getRegex(r).getMatch(0);
+            filesize = br.getRegex(r).getMatch(1);
         }
-
-        if (br.containsHTML("No htmlCode read")) {
-            link.getLinkStatus().setStatusText("Server error, uncheckable");
-            return AvailableStatus.UNCHECKABLE;
-        }
-
-        final Regex fileInfo = br.getRegex("#online#[a-z0-9]{8}#([^<>\"]*?)#(\\d+)");
-
-        if (br.containsHTML("(>We are sorry, but the requested file was not found in our database|>Error \\- File not available<|The file was deleted either by the uploader, inactivity or due to copyright claim)")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String filename = fileInfo.getMatch(0);
-        final String filesize = fileInfo.getMatch(1);
         if (inValidate(filename)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
