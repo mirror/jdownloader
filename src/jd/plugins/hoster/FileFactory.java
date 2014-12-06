@@ -1378,45 +1378,70 @@ public class FileFactory extends PluginForHost {
     }
 
     /**
+     * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
-        String result = new Regex(source, "\"" + key + "\"\\s*:\\s*(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
-        if (result == null) {
-            result = new Regex(source, "\"" + key + "\"\\s*:\\s*\"([^\"]+)\"").getMatch(0);
-        }
-        if (result != null) {
-            result = jd.plugins.hoster.K2SApi.JSonUtils.unescape(result);
-            if ("null".equals(result)) {
-                result = null;
-            }
-        }
-        return result;
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
     }
 
     /**
+     * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String key) {
-        return getJson(br.toString(), key);
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     /**
+     * Wrapper<br/>
      * Tries to return value of key from JSon response, from provided Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
-        return getJson(ibr.toString(), key);
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value given JSon Array of Key from JSon response provided String source.
+     *
+     * @author raztoki
+     * */
+    private String getJsonArray(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJsonArray(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return String[] value from provided JSon Array
+     *
+     * @author raztoki
+     * @param source
+     * @return
+     */
+    private String[] getJsonResultsFromArray(final String source) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
@@ -1435,13 +1460,13 @@ public class FileFactory extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlSlot
      *            (+1|-1)
      * @author raztoki

@@ -27,7 +27,6 @@ import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.http.Browser;
 import jd.http.StaticProxySelector;
 import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -393,62 +392,57 @@ public class FastixRu extends PluginForHost {
     }
 
     /**
+     * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
      *
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
-        String result = new Regex(source, "\"" + key + "\":(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
-        if (result == null) {
-            result = new Regex(source, "\"" + key + "\":\"([^\"]+)\"").getMatch(0);
-        }
-        if (result != null) {
-            result = JSonUtils.unescape(result);
-        }
-        return result;
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
     }
 
     /**
+     * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
      *
      * @author raztoki
      * */
     private String getJson(final String key) {
-        return getJson(br.toString(), key);
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     /**
+     * Wrapper<br/>
      * Tries to return value of key from JSon response, from provided Browser.
      *
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
-        return getJson(ibr.toString(), key);
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
     }
 
     /**
+     * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response provided String source.
      *
      * @author raztoki
      * */
     private String getJsonArray(final String source, final String key) {
-        String result = new Regex(source, "\"" + key + "\":(\\[[^\\]]+\\])").getMatch(0);
-        if (result != null) {
-            result = JSonUtils.unescape(result);
-        }
-        return result;
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
     }
 
     /**
+     * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
      *
      * @author raztoki
      * */
     private String getJsonArray(final String key) {
-        return getJsonArray(br.toString(), key);
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     /**
+     * Wrapper<br/>
      * Tries to return String[] value from provided JSon Array
      *
      * @author raztoki
@@ -456,11 +450,7 @@ public class FastixRu extends PluginForHost {
      * @return
      */
     private String[] getJsonResultsFromArray(final String source) {
-        if (source == null) {
-            return null;
-        }
-        final String[] result = new Regex(source, "\"([^\"]+)\"\\s*(?:,|\\])").getColumn(0);
-        return result;
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
     private void tempUnavailableHoster(final long timeout) throws PluginException {

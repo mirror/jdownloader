@@ -478,24 +478,66 @@ public class FlickrCom extends PluginForDecrypt {
         }
     }
 
-    private String getJson(final String parameter) {
-        return getJson(this.br.toString(), parameter);
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki
+     * */
+    private static String getJson(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
     }
 
     /**
-     * Tries to return value of key from JSon response, from String source.
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
      *
-     * @author raztoki & psp
+     * @author raztoki
      * */
-    public static String getJson(final String source, final String key) {
-        String result = new Regex(source, "\"" + key + "\"[ \t]*:[ \t]*(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
-        if (result == null) {
-            result = new Regex(source, "\"" + key + "\"[ \t]*:[ \t]*\"(.*?)\"(?:[,\\} ])").getMatch(0);
-        }
-        if (result != null) {
-            result = jd.plugins.hoster.K2SApi.JSonUtils.unescape(result);
-        }
-        return result;
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from provided Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final Browser ibr, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value given JSon Array of Key from JSon response provided String source.
+     *
+     * @author raztoki
+     * */
+    private String getJsonArray(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJsonArray(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return String[] value from provided JSon Array
+     *
+     * @author raztoki
+     * @param source
+     * @return
+     */
+    private String[] getJsonResultsFromArray(final String source) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
     private String getFilename() {

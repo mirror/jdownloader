@@ -193,7 +193,11 @@ public class Netloadin extends PluginForHost {
                         /* id not in response, so its offline */
                         dl.setAvailable(false);
                     } else {
-                        dl.setFinalFileName(infos[hit][1].trim());
+                        String filename = infos[hit][1].trim();
+                        if ("unknown".equals(filename)) {
+                            filename = id;
+                        }
+                        dl.setFinalFileName(id);
                         long size;
                         dl.setDownloadSize(size = SizeFormatter.getSize(infos[hit][2]));
                         if (size > 0) {

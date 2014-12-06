@@ -33,7 +33,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.Hash;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twojlimit.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
@@ -166,7 +165,7 @@ public class TwojLimitPl extends PluginForHost {
         /* generate new downloadlink */
         String username = Encoding.urlEncode(acc.getUser());
         String url = Encoding.urlEncode(link.getDownloadURL());
-        String postData = "username=" + username + "&password=" + Hash.getMD5(acc.getPass()) + "&info=0&url=" + url + "&site=twojlimit";
+        String postData = "username=" + username + "&password=" + JDHash.getMD5(acc.getPass()) + "&info=0&url=" + url + "&site=twojlimit";
         showMessage(link, "Phase 2/3: Generating Link");
         String genlink = br.postPage("http://crypt.twojlimit.pl", postData);
 

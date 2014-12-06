@@ -38,6 +38,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "http://(www\\.)?flickrdecrypted\\.com/photos/[^<>\"/]+/\\d+" }, flags = { 2 })
 public class FlickrCom extends PluginForHost {
@@ -126,9 +127,11 @@ public class FlickrCom extends PluginForHost {
              * TODO: Add correct API csrf cookie handling so we can use this while being logged in to download videos and do not have to
              * remove the cookies here - that's just a workaround!
              */
-            br.clearCookies("htto://flickr.com");
+            br.clearCookies("http://flickr.com");
             br.getPage(downloadLink.getDownloadURL());
             final String secret = br.getRegex("\"secret\":\"([^<>\"]*)\"").getMatch(0);
+            // we need to load it before calling!!
+            JDUtilities.getPluginForDecrypt("flickr.com");
             final String api_key = jd.plugins.decrypter.FlickrCom.getPublicAPIKey(this.br);
             if (api_key == null || secret == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

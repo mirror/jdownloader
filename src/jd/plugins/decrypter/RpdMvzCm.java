@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidmoviez.com" }, urls = { "https?://(www\\.)?rapidmoviez\\.com/release/[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidmoviez.com" }, urls = { "https?://(www\\.)?(?:rapidmoviez|rmz\\.rezavn)\\.com/release/[a-z0-9\\-]+" }, flags = { 0 })
 public class RpdMvzCm extends PluginForDecrypt {
 
     public RpdMvzCm(PluginWrapper wrapper) {
@@ -50,7 +50,7 @@ public class RpdMvzCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // no https
-        String parameter = param.toString().replace("https://", "http://");
+        String parameter = param.toString().replace("https://", "http://").replace("rmz.rezavn.com/", "rapidmoviez.com/");
 
         prepBrowser(br);
 
@@ -89,7 +89,9 @@ public class RpdMvzCm extends PluginForDecrypt {
             for (String result : results) {
                 StringBuilder out = new StringBuilder(results.length);
                 String[] data = new Regex(result, "txt \\+= '([^']{1,})'").getColumn(0);
-                if (data == null) continue;
+                if (data == null) {
+                    continue;
+                }
                 for (String res : data) {
                     out.append(res);
                 }
