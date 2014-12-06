@@ -27,6 +27,7 @@ import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.remoteapi.SessionRemoteAPI;
 import org.appwork.remoteapi.SessionRemoteAPIRequest;
 import org.appwork.remoteapi.annotations.ApiNamespace;
+import org.appwork.remoteapi.events.EventObject;
 import org.appwork.remoteapi.events.EventPublisher;
 import org.appwork.remoteapi.events.EventsAPI;
 import org.appwork.remoteapi.events.EventsAPIInterface;
@@ -102,6 +103,7 @@ public class RemoteAPIController {
     private AdvancedConfigManagerAPIImpl       advancedConfigAPI;
     private ContentAPIImplV2                   contentAPI;
     private DownloadsAPIV2Impl                 downloadsAPIV2;
+    private RemoteAPIInternalEventSender       eventSender;
 
     public static class MyJDownloaderEvent extends MyJDEvent implements Storable {
         public MyJDownloaderEvent() {
@@ -110,6 +112,7 @@ public class RemoteAPIController {
     }
 
     private RemoteAPIController() {
+        eventSender = new RemoteAPIInternalEventSender();
         logger = LogController.getInstance().getLogger(RemoteAPIController.class.getName());
         rids = new HashMap<String, RIDArray>();
         rapi = new SessionRemoteAPI<RemoteAPISession>() {
@@ -301,7 +304,22 @@ public class RemoteAPIController {
         } catch (Throwable e) {
             logger.log(e);
         }
-        register(eventsapi = new EventsAPI());
+        register(eventsapi = new EventsAPI() {
+            @Override
+            public List<Long> publishEvent(final EventObject event, List<Long> subscriptionids) {
+                if (subscriptionids == null || subscriptionids.size() == 0) {
+                    eventSender.fireEvent(new RemoteAPIInternalEvent() {
+
+                        @Override
+                        public void fireTo(RemoteAPIInternalEventListener listener) {
+                            listener.onRemoteAPIEvent(event);
+                        }
+
+                    });
+                }
+                return super.publishEvent(event, subscriptionids);
+            }
+        });
         validateInterfaces(EventsAPIInterface.class, EventsInterface.class);
         register(CaptchaAPISolver.getInstance());
         register(CaptchaAPISolver.getInstance().getEventPublisher());
@@ -337,6 +355,10 @@ public class RemoteAPIController {
         register(wrapper.getRemoteHandler());
 
         JDAnywhereAPI.getInstance().init(this, downloadsAPI);
+    }
+
+    public RemoteAPIInternalEventSender getEventSender() {
+        return eventSender;
     }
 
     public DownloadsAPIV2Impl getDownloadsAPIV2() {

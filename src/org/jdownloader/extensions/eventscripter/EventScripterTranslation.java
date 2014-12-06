@@ -93,4 +93,10 @@ public interface EventScripterTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "deny" })
     String deny();
 
+    @Default(lngs = { "en" }, values = { "Remote API Event fired" })
+    String ON_OUTGOING_REMOTE_API_EVENT();
+
+    @Default(lngs = { "en" }, values = { "A new file has been created" })
+    String ON_NEW_FILE();
+
 }
