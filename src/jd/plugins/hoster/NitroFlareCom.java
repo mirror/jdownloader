@@ -89,7 +89,7 @@ public class NitroFlareCom extends PluginForHost {
         } else {
             // free non account
             chunks = 1;
-            resumes = false
+            resumes = false;
             isFree = true;
             directlinkproperty = "freelink";
             logger.finer("setConstants = Guest Download :: isFree = " + isFree + ", upperChunks = " + chunks + ", Resumes = " + resumes);
