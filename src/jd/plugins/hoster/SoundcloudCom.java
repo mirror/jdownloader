@@ -277,13 +277,7 @@ public class SoundcloudCom extends PluginForHost {
     }
 
     public static AvailableStatus checkStatusJson(final DownloadLink parameter, final String source, final boolean fromHostplugin) throws ParseException, IOException {
-        /* First try workaround for """ in json values */
-        String filename = new Regex(source, "\"title\":\"([^<>]*?)\",\"description\"").getMatch(0);
-        if (filename == null) {
-            filename = getJson(source, "title");
-        }
-        filename = unescape(filename);
-        filename = filename.replace("\\", "");
+        String filename = getJson(source, "title");
         filename = encodeUnicode(filename);
         if (filename == null) {
             if (fromHostplugin) {
@@ -291,7 +285,7 @@ public class SoundcloudCom extends PluginForHost {
             }
             return AvailableStatus.FALSE;
         }
-        filename = Encoding.htmlDecode(filename.trim().replace("\"", "'"));
+        filename = Encoding.htmlDecode(filename.trim());
         final String id = getJson(source, "id");
         final String filesize = getJson(source, "original_content_size");
         try {
@@ -307,7 +301,6 @@ public class SoundcloudCom extends PluginForHost {
         if (type == null || type.equals("raw")) {
             type = "mp3";
         }
-        username = Encoding.htmlDecode(username.trim());
         final String url = getJson(source, "download_url");
         if (url != null) {
             /* we have original file downloadable */
@@ -327,7 +320,10 @@ public class SoundcloudCom extends PluginForHost {
         if (url != null) {
             parameter.setProperty("directlink", url + "?client_id=" + CLIENTID);
         }
-        parameter.setProperty("channel", username);
+        if (username != null) {
+            username = Encoding.htmlDecode(username.trim());
+            parameter.setProperty("channel", username);
+        }
         parameter.setProperty("plainfilename", filename);
         parameter.setProperty("originaldate", date);
         parameter.setProperty("linkid", id);
@@ -597,14 +593,14 @@ public class SoundcloudCom extends PluginForHost {
                 formattedFilename = formattedFilename.replace("*date*", "");
             }
         }
-        if (formattedFilename.contains("*linkid*") && linkid != null) {
-            formattedFilename = formattedFilename.replace("*linkid*", linkid);
+        if (formattedFilename.contains("*linkid*")) {
+            formattedFilename = formattedFilename.replace("*linkid*", linkid != null ? linkid : "");
         }
-        if (formattedFilename.contains("*channelname*") && channelName != null) {
-            formattedFilename = formattedFilename.replace("*channelname*", channelName);
+        if (formattedFilename.contains("*channelname*")) {
+            formattedFilename = formattedFilename.replace("*channelname*", channelName != null ? channelName : "unknown");
         }
-        if (formattedFilename.contains("*url_username*") && url_username != null) {
-            formattedFilename = formattedFilename.replace("*url_username*", url_username);
+        if (formattedFilename.contains("*url_username*")) {
+            formattedFilename = formattedFilename.replace("*url_username*", url_username != null ? url_username : "unknown");
         }
         formattedFilename = formattedFilename.replace("*ext*", ext);
         // Insert filename at the end to prevent errors with tags
