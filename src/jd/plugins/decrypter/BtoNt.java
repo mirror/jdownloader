@@ -183,6 +183,7 @@ public class BtoNt extends PluginForDecrypt {
                 final String extension = unformattedSource[1];
                 final DownloadLink link = createDownloadlink("directhttp://" + source);
                 link.setFinalFileName(title + " - Page " + pageNumber + extension);
+                link.setAvailable(true);
                 fp.add(link);
                 try {
                     distribute(link);

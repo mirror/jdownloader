@@ -866,7 +866,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * Handles a KeyCaptcha by trying to autosolve it first and use a dialog as fallback
-         * 
+         *
          * @param parameter
          *            the keycaptcha parameter as already used for showDialog
          * @param downloadLink
@@ -2398,9 +2398,9 @@ public class LnkCrptWs extends PluginForDecrypt {
     // KeyCaptcha stuff
     /**
      * Solves KeyCaptcha for us
-     * 
+     *
      * @author flubshi
-     * 
+     *
      */
     private static class KeyCaptchaSolver {
         // min line length for border detection
@@ -2462,7 +2462,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * Find vertical & horizontal borders within an image
-         * 
+         *
          * @param img
          *            the image to search in
          * @param min
@@ -2546,7 +2546,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * Gets the image and its position with highest possible probability to be correct for this puzzle piece
-         * 
+         *
          * @param keyCaptchaImages
          *            all keycaptcha images (background, sample, pieces)
          * @param borders
@@ -2597,8 +2597,8 @@ public class LnkCrptWs extends PluginForDecrypt {
         }
 
         /**
-         * Rates probaility the puzzle piece fits horizontal to this position
-         * 
+         * Rates probability the puzzle piece fits horizontal to this position
+         *
          * @param background
          *            the background image
          * @param piece
@@ -2606,7 +2606,7 @@ public class LnkCrptWs extends PluginForDecrypt {
          * @param backgroundPosition
          *            the position to rate (within background image)
          * @param pieceY
-         *            the y offset within puzzle to comapre
+         *            the y offset within puzzle to compare
          * @return a rating (smaller is better)
          */
         private int rateHorizontalLine(BufferedImage background, BufferedImage piece, Point backgroundPosition, int pieceY) {
@@ -2627,8 +2627,8 @@ public class LnkCrptWs extends PluginForDecrypt {
         }
 
         /**
-         * Rates probaility the puzzle piece fits vertical to this position
-         * 
+         * Rates probability the puzzle piece fits vertical to this position
+         *
          * @param background
          *            the background image
          * @param piece
@@ -2658,10 +2658,10 @@ public class LnkCrptWs extends PluginForDecrypt {
     }
 
     /**
-     * Represnts a border an the direction of white to 'color'
-     * 
+     * Represents a border an the direction of white to 'color'
+     *
      * @author flubshi
-     * 
+     *
      */
     private static class DirectedBorder {
         public final Point     p1;
@@ -2685,9 +2685,9 @@ public class LnkCrptWs extends PluginForDecrypt {
 
     /**
      * represents a direction
-     * 
+     *
      * @author flubshi
-     * 
+     *
      */
     private enum Direction {
         TOPDOWN,
@@ -2698,9 +2698,9 @@ public class LnkCrptWs extends PluginForDecrypt {
 
     /**
      * Datastructure to assign a position to an image
-     * 
+     *
      * @author flubshi
-     * 
+     *
      */
     private static class ImageAndPosition {
         public final BufferedImage image;
@@ -2708,7 +2708,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * Assign a position to an image
-         * 
+         *
          * @param image
          *            the image (usually a puzzle piece for KeyCaptcha)
          * @param position
@@ -2722,9 +2722,9 @@ public class LnkCrptWs extends PluginForDecrypt {
 
     /**
      * Represents a KeyCaptcha, which consists of a background image, sample image and a few puzzle pieces
-     * 
+     *
      * @author flubshi
-     * 
+     *
      */
     private static class KeyCaptchaImages {
         public BufferedImage             backgroundImage;
@@ -2733,7 +2733,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * Creates an object
-         * 
+         *
          * @param backgroundImage
          *            The background image of the KeyCaptcha
          * @param sampleImage
@@ -2749,7 +2749,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * Integrates a puzzle piece into the puzzle: removes piece from list of puzzle and draws the piece on background
-         * 
+         *
          * @param image
          *            the puzzle piece image
          * @param position
@@ -3022,7 +3022,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         /**
          * returns the Circles Bounds on the Captcha TODO geht nur bei x entlang sollte noch bei y gemacht werden um bessere ergebnisse zu
          * bekommen
-         * 
+         *
          * @param pixelObject
          * @param captcha
          * @return
@@ -3137,7 +3137,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * returns true if coordinates are out of the bounds of the image
-         * 
+         *
          * @param img
          * @param x
          * @param y
@@ -3161,7 +3161,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * expand the circle by expanding colored pixels to their neighbors
-         * 
+         *
          * @param src
          *            the image
          * @return a copy of the image
@@ -3196,7 +3196,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * returns the detected circles
-         * 
+         *
          * @return
          */
         public java.util.List<PixelObject> getCircles() {
@@ -3211,7 +3211,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * Gets the longest part of a circle which is missing
-         * 
+         *
          * @param img
          *            image containing a circle (with center in center)
          * @param r
@@ -3247,7 +3247,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * returns the open circle
-         * 
+         *
          * @return
          */
         private Letter getOpenCircle() {
@@ -3273,15 +3273,15 @@ public class LnkCrptWs extends PluginForDecrypt {
 
     /**
      * Solves a CaptX captcha (linkcrypt). That are the captcha where you have to click into the open circle
-     * 
+     *
      * @author flubshi
-     * 
+     *
      */
     public static class CaptXSolver {
 
         /**
          * Calculates coordinates of the open circle within the image
-         * 
+         *
          * @param captchaFile
          *            image with open circle drawn on it
          * @return coordinates of the circle
@@ -3309,7 +3309,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * get objects with different color
-         * 
+         *
          * @param grid
          * @return
          */

@@ -1159,59 +1159,65 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     /**
+     * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
      *
      * @author raztoki
      * */
     protected String getJson(final String source, final String key) {
-        String result = new Regex(source, "\"" + key + "\":(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
-        if (result == null) {
-            result = new Regex(source, "\"" + key + "\":\"([^\"]+)\"").getMatch(0);
-        }
-        if (result != null) {
-            result = JSonUtils.unescape(result);
-        }
-        return result;
+        return JSonUtils.getJson(source, key);
     }
 
     /**
+     * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
      *
      * @author raztoki
      * */
     protected String getJson(final String key) {
-        return getJson(br.toString(), key);
+        return JSonUtils.getJson(br.toString(), key);
     }
 
     /**
+     * Wrapper<br/>
      * Tries to return value of key from JSon response, from provided Browser.
      *
      * @author raztoki
      * */
     protected String getJson(final Browser ibr, final String key) {
-        return getJson(ibr.toString(), key);
+        return JSonUtils.getJson(ibr.toString(), key);
     }
 
     /**
+     * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response provided String source.
      *
      * @author raztoki
      * */
     protected String getJsonArray(final String source, final String key) {
-        String result = new Regex(source, "\"" + key + "\":(\\[[^\\]]+\\])").getMatch(0);
-        if (result != null) {
-            result = JSonUtils.unescape(result);
-        }
-        return result;
+        return JSonUtils.getJsonArray(source, key);
     }
 
     /**
+     * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
      *
      * @author raztoki
      * */
     protected String getJsonArray(final String key) {
-        return getJsonArray(br.toString(), key);
+        return JSonUtils.getJson(br.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return String[] value from provided JSon Array
+     *
+     * @author raztoki
+     * @param source
+     * @return
+     */
+    protected String[] getJsonResultsFromArray(final String source) {
+        return JSonUtils.getJsonResultsFromArray(source);
     }
 
     /**
@@ -1222,8 +1228,8 @@ public abstract class K2SApi extends PluginForHost {
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
      * */
-    protected boolean inValidate(final String s) {
-        if (s == null || s.matches("[\r\n\t ]+") || s.equals("")) {
+    public boolean inValidate(final String s) {
+        if (s == null || s.matches("\\s+") || s.equals("")) {
             return true;
         } else {
             return false;
@@ -1790,7 +1796,7 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     /**
-     * This is Copy&Paste of Appwork class
+     * Was Copy&Paste of Appwork class, no longer equal.
      *
      * @see org.appwork.storage.simplejson.JSonUtils
      * @author Appwork
@@ -1856,56 +1862,125 @@ public abstract class K2SApi extends PluginForHost {
             int i;
             for (i = 0; i < s.length(); i++) {
                 ch = s.charAt(i);
-                switch (ch) {
-                case '\\':
-                    ch = s.charAt(++i);
+                try {
                     switch (ch) {
-                    case '"':
-                        sb.append('"');
-                        continue;
                     case '\\':
-                        sb.append('\\');
-                        continue;
-                    case 'r':
-                        sb.append('\r');
-                        continue;
-                    case 'n':
-                        sb.append('\n');
-                        continue;
-                    case 't':
-                        sb.append('\t');
-                        continue;
-                    case 'f':
-                        sb.append('\f');
-                        continue;
-                    case 'b':
-                        sb.append('\b');
-                        continue;
+                        ch = s.charAt(++i);
+                        switch (ch) {
+                        case '"':
+                            sb.append('"');
+                            continue;
+                        case '\\':
+                            sb.append('\\');
+                            continue;
+                        case 'r':
+                            sb.append('\r');
+                            continue;
+                        case 'n':
+                            sb.append('\n');
+                            continue;
+                        case 't':
+                            sb.append('\t');
+                            continue;
+                        case 'f':
+                            sb.append('\f');
+                            continue;
+                        case 'b':
+                            sb.append('\b');
+                            continue;
 
-                    case 'u':
-                        sb2.delete(0, sb2.length());
+                        case 'u':
+                            sb2.delete(0, sb2.length());
 
-                        i++;
-                        ii = i + 4;
-                        for (; i < ii; i++) {
-                            ch = s.charAt(i);
-                            if (sb2.length() > 0 || ch != '0') {
-                                sb2.append(ch);
+                            i++;
+                            ii = i + 4;
+                            for (; i < ii; i++) {
+                                ch = s.charAt(i);
+                                if (sb2.length() > 0 || ch != '0') {
+                                    sb2.append(ch);
+                                }
                             }
+                            i--;
+                            // can not use short....
+                            // java.lang.NumberFormatException: Value out of range. Value:"8abf" Radix:16
+                            sb.append((char) Long.parseLong(sb2.toString(), 16));
+                            continue;
+                        default:
+                            sb.append(ch);
+                            continue;
                         }
-                        i--;
-                        sb.append((char) Short.parseShort(sb2.toString(), 16));
-                        continue;
-                    default:
-                        sb.append(ch);
-                        continue;
                     }
-
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
                 sb.append(ch);
             }
 
             return sb.toString();
+        }
+
+        /**
+         * Tries to return value of key from JSon response, from String source.
+         *
+         * @author raztoki
+         * */
+        public static String getJson(final String source, final String key) {
+            String result = new Regex(source, "\"" + Pattern.quote(key) + "\"[ \t]*:[ \t]*(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
+            if (result == null) {
+                result = new Regex(source, "\"" + Pattern.quote(key) + "\"[ \t]*:[ \t]*\"([^\"]+)\"").getMatch(0);
+                if (result != null) {
+                    // some rudimentary detection if we have braked at the wrong place.
+                    while (result.endsWith("\\")) {
+                        String xtraResult = new Regex(source, "\"" + Pattern.quote(key) + "\"[ \t]*:[ \t]*\"(" + Pattern.quote(result) + "\"[^\"]+\"?)\"").getMatch(0);
+                        if (xtraResult != null) {
+                            result = xtraResult;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            }
+            if (result != null) {
+                result = unescape(result);
+            }
+            return result;
+        }
+
+        /**
+         * Tries to return value of key from JSon response, from provided Browser.
+         *
+         * @author raztoki
+         * */
+        public static String getJson(final Browser ibr, final String key) {
+            return getJson(ibr.toString(), key);
+        }
+
+        /**
+         * Tries to return value given JSon Array of Key from JSon response provided String source.
+         *
+         * @author raztoki
+         * */
+        public static String getJsonArray(final String source, final String key) {
+            String result = new Regex(source, "\"" + key + "\":(\\[[^\\]]+\\])").getMatch(0);
+            if (result != null) {
+                result = unescape(result);
+            }
+            return result;
+        }
+
+        /**
+         * Tries to return String[] value from provided JSon Array
+         *
+         * @author raztoki
+         * @param source
+         * @return
+         */
+        public static String[] getJsonResultsFromArray(final String source) {
+            if (source == null) {
+                return null;
+            }
+            final String[] result = new Regex(source, "\"([^\"]+)\"\\s*(?:,|\\])").getColumn(0);
+            return result;
         }
     }
 

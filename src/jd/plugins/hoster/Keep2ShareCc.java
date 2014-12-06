@@ -64,6 +64,14 @@ public class Keep2ShareCc extends K2SApi {
     private final String DOMAINS_PLAIN    = "((keep2share|k2s|k2share|keep2s|keep2)\\.cc)";
     private final String DOMAINS_HTTP     = "(https?://(www\\.)?" + DOMAINS_PLAIN + ")";
 
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null || "keep2share.cc".equals(host) || "k2s.cc".equals(host) || "keep2s.cc".equals(host) || "keep2.cc".equals(host) || "k2share.cc".equals(host) || "keep2share.com".equals(host)) {
+            return "keep2share.cc";
+        }
+        return super.rewriteHost(host);
+    }
+
     /* abstract K2SApi class setters */
 
     /**
@@ -72,14 +80,6 @@ public class Keep2ShareCc extends K2SApi {
     @Override
     protected String getDomain() {
         return "keep2share.cc";
-    }
-
-    @Override
-    public String rewriteHost(String host) {
-        if (host == null || "keep2share.cc".equals(host) || "k2s.cc".equals(host) || "keep2s.cc".equals(host) || "keep2.cc".equals(host) || "k2share.cc".equals(host) || "keep2share.com".equals(host)) {
-            return "keep2share.cc";
-        }
-        return super.rewriteHost(host);
     }
 
     @Override
@@ -124,6 +124,8 @@ public class Keep2ShareCc extends K2SApi {
             logger.finer("setConstants = Guest Download :: isFree = " + isFree + ", upperChunks = " + chunks + ", Resumes = " + resumes);
         }
     }
+
+    /* end of abstract class setters */
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {

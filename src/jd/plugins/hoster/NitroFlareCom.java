@@ -1,4 +1,4 @@
-//jDownloader - Downloadmanager
+﻿//jDownloader - Downloadmanager
 //Copyright (C) 2010  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
@@ -89,7 +89,7 @@ public class NitroFlareCom extends PluginForHost {
         } else {
             // free non account
             chunks = 1;
-            resumes = false;
+            resumes = false
             isFree = true;
             directlinkproperty = "freelink";
             logger.finer("setConstants = Guest Download :: isFree = " + isFree + ", upperChunks = " + chunks + ", Resumes = " + resumes);
@@ -372,7 +372,10 @@ public class NitroFlareCom extends PluginForHost {
 
     private void handleDownload_API(final DownloadLink downloadLink, final Account account) throws Exception {
         setConstants(account);
-        br.setAllowedResponseCodes(500);
+        try {
+            br.setAllowedResponseCodes(500);
+        } catch (final Throwable t) {
+        }
         reqFileInformation(downloadLink);
         dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (inValidate(dllink)) {
@@ -431,9 +434,18 @@ public class NitroFlareCom extends PluginForHost {
             if (br.containsHTML(err1)) {
                 // I don't see why this would happening logs contain no proxy!
                 throw new PluginException(LinkStatus.ERROR_FATAL, err1);
+            } else if (account != null && br.getHttpConnection() != null && br.toString().equals("Your premium has reached the maximum volume for today")) {
+                synchronized (LOCK) {
+                    final AccountInfo ai = account.getAccountInfo();
+                    ai.setTrafficLeft(0);
+                    account.setAccountInfo(ai);
+                    account.setTempDisabled(true);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
             } else if (br.containsHTML("ERROR: link expired. Please unlock the file again")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'link expired'", 2 * 60 * 1000l);
             }
+
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty(directlinkproperty, dllink);
@@ -580,37 +592,65 @@ public class NitroFlareCom extends PluginForHost {
     }
 
     /**
+     * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
      *
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
-        String result = new Regex(source, "\"" + key + "\":(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
-        if (result == null) {
-            result = new Regex(source, "\"" + key + "\":\"([^\"]+)\"").getMatch(0);
-        }
-        if (result != null) {
-            result = result.replaceAll("\\\\/", "/");
-        }
-        return result;
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
     }
 
     /**
+     * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
      *
      * @author raztoki
      * */
     private String getJson(final String key) {
-        return getJson(br.toString(), key);
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     /**
+     * Wrapper<br/>
      * Tries to return value of key from JSon response, from provided Browser.
      *
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
-        return getJson(ibr.toString(), key);
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value given JSon Array of Key from JSon response provided String source.
+     *
+     * @author raztoki
+     * */
+    private String getJsonArray(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJsonArray(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return String[] value from provided JSon Array
+     *
+     * @author raztoki
+     * @param source
+     * @return
+     */
+    private String[] getJsonResultsFromArray(final String source) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
     /**

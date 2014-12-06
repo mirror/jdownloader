@@ -25,6 +25,7 @@ import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -35,7 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.Hash;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
@@ -66,7 +66,7 @@ public class NoPremiumPl extends PluginForHost {
         String hosts[] = null;
         ac.setProperty("multiHostSupport", Property.NULL);
         // check if account is valid
-        br.postPage("http://crypt.nopremium.pl", "username=" + username + "&password=" + Hash.getSHA1(Hash.getMD5(account.getPass())) + "&info=1&site=nopremium");
+        br.postPage("http://crypt.nopremium.pl", "username=" + username + "&password=" + JDHash.getSHA1(JDHash.getMD5(account.getPass())) + "&info=1&site=nopremium");
         String adres = br.toString();
         br.getPage(adres);
         adres = br.getRedirectLocation();
@@ -121,7 +121,7 @@ public class NoPremiumPl extends PluginForHost {
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
         final String url = Encoding.urlEncode(link.getDownloadURL());
 
-        String postData = "username=" + acc.getUser() + "&password=" + Hash.getSHA1(Hash.getMD5(acc.getPass())) + "&info=0&url=" + url + "&site=nopremium";
+        String postData = "username=" + acc.getUser() + "&password=" + JDHash.getSHA1(JDHash.getMD5(acc.getPass())) + "&info=0&url=" + url + "&site=nopremium";
         String response = br.postPage("http://crypt.nopremium.pl", postData);
         br.setFollowRedirects(true);
 

@@ -56,7 +56,7 @@ public class AllDebridCom extends PluginForHost {
         prepBrowser(br);
         HashMap<String, String> accDetails = new HashMap<String, String>();
         AccountInfo ac = new AccountInfo();
-        br.getPage("http://www.alldebrid.com/api.php?action=info_user&login=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
+        br.getPage("https://www.alldebrid.com/api.php?action=info_user&login=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
         handleErrors();
 
         /* parse api response in easy2handle hashmap */
@@ -69,7 +69,7 @@ public class AllDebridCom extends PluginForHost {
         String type = accDetails.get("type");
         if ("premium".equals(type)) {
             /* only platinium and premium support */
-            br.getPage("http://www.alldebrid.com/api.php?action=get_host");
+            br.getPage("https://www.alldebrid.com/api.php?action=get_host");
             String hoster[] = br.toString().split(",\\s*[\r\n]{1,2}\\s*");
             if (hoster != null) {
                 /* workaround for buggy getHost call */
@@ -233,9 +233,10 @@ public class AllDebridCom extends PluginForHost {
         showMessage(link, "Phase 1/2: Generating link");
 
         // here we can get a 503 error page, which causes an exception
-        String genlink = br.getPage("http://www.alldebrid.com/service.php?pseudo=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&link=" + Encoding.urlEncode(link.getDownloadURL()) + "&view=1");
+        String genlink = br.getPage("https://www.alldebrid.com/service.php?pseudo=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&link=" + Encoding.urlEncode(link.getDownloadURL()) + "&view=1");
 
         if (genlink == null || !genlink.matches("https?://.+")) {
+            int retry = link.getIntegerProperty("retryCount", 0);
             logger.severe("Error: " + genlink);
             handleErrors();
             if (genlink.contains("Hoster unsupported or under maintenance.")) {
@@ -251,14 +252,15 @@ public class AllDebridCom extends PluginForHost {
             /*
              * after x retries we disable this host and retry with normal plugin
              */
-            if (link.getLinkStatus().getRetryCount() >= 3) {
+            if (retry >= 3) {
                 /* reset retrycounter */
-                link.getLinkStatus().setRetryCount(0);
+                link.setProperty("retryCount", Property.NULL);
                 // disable hoster for 30min
                 tempUnavailableHoster(acc, link, 30 * 60 * 1000l);
 
             }
-            String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
+            String msg = "(" + (retry + 1) + "/" + 3 + ")";
+            link.setProperty("retryCount", (retry + 1));
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 20 * 1000l);
         }
         handleDL(acc, link, genlink);

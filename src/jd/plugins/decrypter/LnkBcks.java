@@ -48,7 +48,7 @@ urls = { "http://([a-f0-9]{8}\\.cash4files\\.com|(www\\.)?cash4files\\.com/(link
         "http://([a-f0-9]{8}\\.rqq\\.co|(www\\.)?rqq\\.co/(link/)?[a-zA-Z0-9]{4,8})", "http://([a-f0-9]{8}\\.sexpalace\\.gs|(www\\.)?sexpalace\\.gs/(link/)?[a-zA-Z0-9]{4,8})", "http://([a-f0-9]{8}\\.youfap\\.me|(www\\.)?youfap\\.me/(link/)?[a-zA-Z0-9]{4,8})", "http://([a-f0-9]{8}\\.zff\\.co|(www\\.)?zff\\.co/(link/)?[a-zA-Z0-9]{4,8})", "http://([a-f0-9]{8}\\.tubeviral\\.com|(www\\.)?tubeviral\\.com/(link/)?[a-zA-Z0-9]{4,8})", "http://([a-f0-9]{8}\\.whackyvidz\\.com|(www\\.)?whackyvidz\\.com/(link/)?[a-zA-Z0-9]{4,8})", "http://([a-f0-9]{8}\\.linkbabes\\.com|(www\\.)?linkbabes\\.com/(link/)?[a-zA-Z0-9]{4,8})", "http://([a-f0-9]{8}\\.dyo\\.gs|(www\\.)?dyo\\.gs/(link/)?[a-zA-Z0-9]{4,8})", "http://([a-f0-9]{8}\\.filesonthe\\.net|(www\\.)?filesonthe\\.net/(link/)?[a-zA-Z0-9]{4,8})", "http://([a-f0-9]{8}\\.cash4files\\.com|(www\\.)?cash4files\\.com/(link/)?[a-zA-Z0-9]{4,8})",
         "http://([a-f0-9]{8}\\.seriousdeals\\.net|(www\\.)?seriousdeals\\.net/(link/)?[a-zA-Z0-9]{4,8})", "http://([a-f0-9]{8}\\.any\\.gs|(www\\.)?any\\.gs/(link/)?[a-zA-Z0-9]{4,8})", "http://([a-f0-9]{8}\\.goneviral\\.com|(www\\.)?goneviral\\.com/(link/)?[a-zA-Z0-9]{4,8})", "http://([a-f0-9]{8}\\.ultrafiles\\.net|(www\\.)?ultrafiles\\.net/(link/)?[a-zA-Z0-9]{4,8})", "http://([a-f0-9]{8}\\.miniurls\\.co|(www\\.)?miniurls\\.co/(link/)?[a-zA-Z0-9]{4,8})", "http://([a-f0-9]{8}\\.tinylinks\\.co|(www\\.)?tinylinks\\.co/(link/)?[a-zA-Z0-9]{4,8})", "http://([a-f0-9]{8}\\.yyv\\.co|(www\\.)?yyv\\.co/(link/)?[a-zA-Z0-9]{4,8})", "http://([a-z0-9]{8}\\.allanalpass\\.com|(www\\.)?allanalpass\\.com/(link/)?[a-zA-Z0-9]{4,8})", "http://((www\\.)?linkbucks\\.com/(url/.+|[0-9a-zA-Z]{4,8}|\\d+)|[a-z0-9]{8}\\.linkbucks\\.com)" },
 
-flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+        flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class LnkBcks extends PluginForDecrypt {
 
     public LnkBcks(PluginWrapper wrapper) {
@@ -124,16 +124,18 @@ public class LnkBcks extends PluginForDecrypt {
             for (String j : jss) {
                 // cleanup
                 j = j.replaceAll("[\r\n\\s]+\\/\\/\\s*[^\r\n]+", "");
-                if (new Regex(j, "\\s*var\\s*f\\s*=\\s*window\\['init'\\s*\\+\\s*'Lb'\\s*\\+\\s*'js'\\s*\\+\\s*''\\];[\r\n\\s]+").matches())
+                if (new Regex(j, "\\s*var\\s*f\\s*=\\s*window\\['init'\\s*\\+\\s*'Lb'\\s*\\+\\s*'js'\\s*\\+\\s*''\\];[\r\n\\s]+").matches()) {
                     js = j;
+                }
             }
             if (js == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             String token = new Regex(js, "Token\\s*:\\s*'([a-f0-9]{40})'").getMatch(0);
-            if (token == null)
+            if (token == null) {
                 token = new Regex(js, "\\?t=([a-f0-9]{40})").getMatch(0);
+            }
             final String authKeyMatchStr = "A(?:'\\s*\\+\\s*')?u(?:'\\s*\\+\\s*')?t(?:'\\s*\\+\\s*')?h(?:'\\s*\\+\\s*')?K(?:'\\s*\\+\\s*')?e(?:'\\s*\\+\\s*')?y";
             final String l1 = new Regex(js, "\\s*params\\['" + authKeyMatchStr + "'\\]\\s*=\\s*(\\d+?);").getMatch(0);
             final String l2 = new Regex(js, "\\s*params\\['" + authKeyMatchStr + "'\\]\\s*=\\s?params\\['" + authKeyMatchStr + "'\\]\\s*\\+\\s*(\\d+?);").getMatch(0);
@@ -145,8 +147,9 @@ public class LnkBcks extends PluginForDecrypt {
             Browser br2 = br.cloneBrowser();
             br2.getPage("/director/?t=" + token);
             final long timeLeft = 5033 - (System.currentTimeMillis() - firstGet);
-            if (timeLeft > 0)
+            if (timeLeft > 0) {
                 sleep(timeLeft, param);
+            }
             Browser br3 = br.cloneBrowser();
             br3.getPage("/intermission/loadTargetUrl?t=" + token + "&aK=" + authKey);
             link = br3.getRegex("Url\":\"([^\"]+)").getMatch(0);
@@ -162,17 +165,18 @@ public class LnkBcks extends PluginForDecrypt {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
      * */
     private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals("") || s.equalsIgnoreCase("about:blank")))
+        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals("") || s.equalsIgnoreCase("about:blank"))) {
             return true;
-        else
+        } else {
             return false;
+        }
     }
 
     /* NO OVERRIDE!! */

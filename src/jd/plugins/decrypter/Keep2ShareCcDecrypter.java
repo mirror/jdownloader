@@ -60,7 +60,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         // Check if we have a single link or a folder
         if (br.containsHTML("class=\"summary\"")) {
             final String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-            br.getPage(br.getURL() + "?ajax=yw1&pageSize=10000");
+            ((jd.plugins.hoster.Keep2ShareCc) plugin).getPage((br.getURL() + "?ajax=yw1&pageSize=10000"));
             final String[] links = br.getRegex("target=\"_blank\" href=\"([^\"]+)?(/file/[a-z0-9]+)").getColumn(1);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
