@@ -332,7 +332,7 @@ public class LuckyShareNet extends PluginForHost {
                     }
                     postPageRaw(this.br, "http://luckyshare.net/auth/login", "token=" + Encoding.urlEncode(token) + "&remember=&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                     trycount++;
-                } while ((br.getHttpConnection().getResponseCode() == 403 && !br.containsHTML(">Logout</a>")) && trycount <= 3);
+                } while ((br.getHttpConnection().getResponseCode() == 403 || br.containsHTML(">Logout</a>")) && trycount <= 3);
                 if (!br.containsHTML(">Logout</a>")) {
                     logger.info("Login failed after " + trycount + " tries!");
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
