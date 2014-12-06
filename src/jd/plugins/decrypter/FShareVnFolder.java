@@ -55,10 +55,16 @@ public class FShareVnFolder extends PluginForDecrypt {
         if (linkinformation == null || linkinformation.length == 0) {
             return null;
         }
-        for (String data : linkinformation) {
+        for (final String data : linkinformation) {
             if (failed) {
                 decryptedLinks.add(createDownloadlink(data));
             } else {
+                // check if folder
+                final String folder = new Regex(data, "class=\"filename folder\" data-id=\"(.*?)\"").getMatch(0);
+                if (folder != null) {
+                    decryptedLinks.add(createDownloadlink(parameter.replace(uid, folder)));
+                    continue;
+                }
                 final String filename = new Regex(data, "title=\"(.*?)\"").getMatch(0);
                 final String filesize = new Regex(data, "file_size align-right\">(.*?)</div>").getMatch(0);
                 final String dlink = new Regex(data, "(http://(www\\.)?fshare\\.vn/file/[A-Z0-9]+)").getMatch(0);
