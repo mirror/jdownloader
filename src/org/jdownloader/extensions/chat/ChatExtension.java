@@ -42,7 +42,6 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.HyperlinkEvent;
@@ -513,12 +512,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
 
                 // it's important to have this code here instead of the released callback.
                 // this solves this bug: http://svn.jdownloader.org/issues/58941
-                boolean hf = textField.hasFocus();
 
-                boolean wf = SwingUtilities.getWindowAncestor(textField).isActive();
-                if (!hf || !wf) {
-                    return;
-                }
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) {
 
                     if (ChatExtension.this.textField.getText().length() == 0) {
@@ -530,7 +524,18 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
                         ChatExtension.this.sendMessage(getCurrentChannel(), "/msg " + ChatExtension.this.tabbedPane.getTitleAt(ChatExtension.this.tabbedPane.getSelectedIndex()) + " " + ChatExtension.this.textField.getText());
                     }
 
-                } else if (e.getKeyCode() == KeyEvent.VK_TAB) {
+                }
+            }
+
+            public void keyReleased(final KeyEvent e) {
+
+                final int sel = ChatExtension.this.tabbedPane.getSelectedIndex();
+                ChatExtension.this.tabbedPane.setForegroundAt(sel, Color.black);
+
+                // it's important to have this code here instead of the released callback.
+                // this solves this bug: http://svn.jdownloader.org/issues/58941
+
+                if (e.getKeyCode() == KeyEvent.VK_TAB) {
                     if (ChatExtension.this.textField.getText().length() == 0) {
                         if (ChatExtension.this.lastCommand != null) {
                             ChatExtension.this.textField.setText(ChatExtension.this.lastCommand);
@@ -584,9 +589,6 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
                 } else {
                     this.last = null;
                 }
-            }
-
-            public void keyReleased(final KeyEvent e) {
 
             }
 
