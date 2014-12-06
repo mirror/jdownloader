@@ -39,6 +39,8 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.SimpleMapper;
 import org.appwork.storage.TypeRef;
 import org.jdownloader.api.RemoteAPIController;
+import org.jdownloader.api.RemoteAPIInternalEvent;
+import org.jdownloader.api.RemoteAPIInternalEventListener;
 import org.jdownloader.api.downloads.v2.DownloadLinkAPIStorableV2;
 import org.jdownloader.api.downloads.v2.FilePackageAPIStorableV2;
 import org.jdownloader.api.downloads.v2.LinkQueryStorable;
@@ -396,7 +398,15 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
         synchronized (this) {
 
             ArrayList<Subscriber> subscribers = eventsAPI.getSubscribers();
-            SimpleEventObject eventObject = new SimpleEventObject(this, eventID, dls, collapseKey);
+            final SimpleEventObject eventObject = new SimpleEventObject(this, eventID, dls, collapseKey);
+            RemoteAPIController.getInstance().getEventSender().fireEvent(new RemoteAPIInternalEvent() {
+
+                @Override
+                public void fireTo(RemoteAPIInternalEventListener listener) {
+                    listener.onRemoteAPIEvent(eventObject);
+                }
+
+            });
             for (Subscriber subscriber : subscribers) {
 
                 pushToBuffer(subscriber, eventObject);

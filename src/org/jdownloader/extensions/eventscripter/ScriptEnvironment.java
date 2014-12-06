@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.Locale;
 
 import javax.swing.JTextPane;
@@ -38,7 +39,58 @@ import org.jdownloader.images.AbstractIcon;
 
 public class ScriptEnvironment {
     @GlobalField(description = "JDownloader Installation Directory")
-    public static String JD_HOME = Application.getResource("").getAbsolutePath();
+    public static String                                        JD_HOME           = Application.getResource("").getAbsolutePath();
+    public static HashMap<String, Object>                       GLOBAL_PROPERTIES = new HashMap<String, Object>();
+    public static HashMap<ScriptEntry, HashMap<String, Object>> SCRIPT_PROPERTIES = new HashMap<ScriptEntry, HashMap<String, Object>>();
+
+    @GlobalField(description = "Set a Property. This property will be available until JD-exit or a script overwrites it. if global is true, the property will be available for al scripts", parameters = { "\"key\"", "anyValue", "global(boolean)" }, example = "var oldValue=setProperty(\"myobject\", { \"name\": true}, false);")
+    public static Object setProperty(String key, String value, boolean global) throws EnvironmentException {
+        try {
+            synchronized (GLOBAL_PROPERTIES) {
+                if (global) {
+                    return GLOBAL_PROPERTIES.put(key, value);
+
+                } else {
+
+                    HashMap<String, Object> store = SCRIPT_PROPERTIES.get(getScriptThread().getScript());
+                    if (store == null) {
+                        store = new HashMap<String, Object>();
+                        SCRIPT_PROPERTIES.put(getScriptThread().getScript(), store);
+                    }
+                    return store.put(key, value);
+
+                }
+
+            }
+
+        } catch (Throwable e) {
+            throw new EnvironmentException(e);
+        }
+    }
+
+    @GlobalField(description = "Get a Property. Set global to true if you want to access a global property", parameters = { "\"key\"", "global(boolean)" }, example = "var value=getProperty(\"myobject\", false);")
+    public static Object getProperty(String key, boolean global) throws EnvironmentException {
+        try {
+            synchronized (GLOBAL_PROPERTIES) {
+                if (global) {
+                    return GLOBAL_PROPERTIES.get(key);
+
+                } else {
+
+                    HashMap<String, Object> store = SCRIPT_PROPERTIES.get(getScriptThread().getScript());
+                    if (store == null) {
+                        return null;
+                    }
+                    return store.get(key);
+
+                }
+
+            }
+
+        } catch (Throwable e) {
+            throw new EnvironmentException(e);
+        }
+    }
 
     @GlobalField(description = "Call the MyJDownloader API", parameters = { "\"namespace\"", "\"methodname\"", "parameter1", "parameter2", "..." }, example = "callAPI(\"downloadsV2\", \"queryLinks\", { \"name\": true})")
     public static Object callAPI(String namespace, String method, Object... parameters) throws EnvironmentException {
