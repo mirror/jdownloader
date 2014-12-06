@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -26,6 +27,7 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -43,14 +45,22 @@ public class MyFastFileCom extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private final String                                   mName              = "www.myfastfile.com";
+    private static final String                            NICE_HOST          = "offcloud.com";
+    private static final String                            NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private final String                                   mProt              = "https://";
     private int                                            count              = 0;
     private String                                         ec                 = null;
+
+    private int                                            statuscode         = 0;
+    private Account                                        currAcc            = null;
+    private DownloadLink                                   currDownloadLink   = null;
+
     // repeat is one more than desired
     private final int                                      sessionRepeat      = 4;
     private final int                                      globalRepeat       = 4;
     private final String                                   sessionRetry       = "sessionRetry";
     private final String                                   globalRetry        = "globalRetry";
+    private static final long                              maxtraffic_daily   = 32212254720l;
 
     public MyFastFileCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -63,41 +73,69 @@ public class MyFastFileCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ac = new AccountInfo();
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+    }
+
+    private void showMessage(DownloadLink link, String message) {
+        link.getLinkStatus().setStatusText(message);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+        return AvailableStatus.UNCHECKABLE;
+    }
+
+    private void setConstants(final Account acc, final DownloadLink dl) {
+        this.currAcc = acc;
+        this.currDownloadLink = dl;
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        setConstants(account, null);
+        final AccountInfo ac = new AccountInfo();
         br.setFollowRedirects(true);
         // account is valid, let's fetch account details:
-        br.getPage(mProt + mName + "/api.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-        if (inValidStatus()) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAccount is invalid. Wrong login details. Note: Password has to be APIKey, see Account Profile on " + mName + "website.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
+        getAPISafe(mProt + mName + "/api.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
         try {
-            String daysLeft = getJson("days_left");
-            long validuntil = System.currentTimeMillis() + (long) (Float.parseFloat(daysLeft) * 1000 * 60 * 60 * 24);
-            ac.setValidUntil(validuntil);
+            final float daysleft = Float.parseFloat(getJson("days_left"));
+            if (daysleft > 0) {
+                long validuntil = System.currentTimeMillis() + (long) (daysleft * 1000 * 60 * 60 * 24);
+                ac.setValidUntil(validuntil);
+                ac.setUnlimitedTraffic();
+                account.setType(AccountType.PREMIUM);
+                ac.setStatus("Premium Account");
+            } else {
+                ac.setTrafficLeft(0);
+                /* TODO: Obey this information via API and also show it for premium accounts */
+                ac.setTrafficMax(maxtraffic_daily);
+                account.setType(AccountType.FREE);
+                ac.setStatus("Registered (free) account");
+            }
         } catch (Exception e) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nCan not parse days_left!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
 
         // now it's time to get all supported hosts
-        br.getPage("/api.php?hosts");
+        getAPISafe("/api.php?hosts");
         if (inValidStatus()) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nCan not parse supported hosts!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
         String hostsArray = getJsonArray("hosts");
-        String[] hosts = new Regex(hostsArray, "\"(.*?)\"").getColumn(0);
+        final String[] hosts = new Regex(hostsArray, "\"(.*?)\"").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
         ac.setMultiHostSupport(this, supportedHosts);
         account.setValid(true);
-        ac.setStatus("Premium Account");
         return ac;
     }
 
     /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(DownloadLink link, Account account) throws Exception {
+    /* TODO: Move all-or most of the errorhandling into handleAPIErrors */
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+        setConstants(account, link);
         count = link.getIntegerProperty(sessionRetry, 0) + 1;
         ec = "(" + count + "/" + sessionRepeat + ")";
-
         // work around
         if (link.getBooleanProperty("hasFailed", false)) {
             final int hasFailedInt = link.getIntegerProperty("hasFailedWait", 60);
@@ -110,7 +148,7 @@ public class MyFastFileCom extends PluginForHost {
         // generate downloadlink:
         showMessage(link, "Phase 1/2: Generate download link");
         br.setFollowRedirects(true);
-        br.getPage(mProt + mName + "/api.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
+        getAPISafe(mProt + mName + "/api.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
 
         if (inValidStatus() && "null".equalsIgnoreCase(getJson("link"))) {
             link.setProperty(sessionRetry, count);
@@ -161,7 +199,7 @@ public class MyFastFileCom extends PluginForHost {
             if (count >= sessionRepeat) {
                 /* disable hoster for 1h */
                 link.setProperty(sessionRetry, count);
-                tempUnavailableHoster(account, link, 60 * 60 * 1000);
+                tempUnavailableHoster(60 * 60 * 1000);
             }
             showMessage(link, "Failed for unknown reason " + ec);
             // temp unavailable will ditch to next download candidate, and retry doesn't respect wait times... !
@@ -174,18 +212,111 @@ public class MyFastFileCom extends PluginForHost {
 
     }
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+    @SuppressWarnings("unused")
+    private void getAPISafe(final String accesslink) throws IOException, PluginException {
+        br.getPage(accesslink);
+        updatestatuscode();
+        handleAPIErrors(this.br);
     }
 
-    private void showMessage(DownloadLink link, String message) {
-        link.getLinkStatus().setStatusText(message);
+    /** 0 = everything ok, 1-? = possible errors */
+    private void updatestatuscode() {
+        String error = null;
+        if (inValidStatus()) {
+            error = getJson("msg");
+        }
+        if (error != null) {
+            if (error.equals("Cannot login Check your username or pass")) {
+                statuscode = 1;
+            } else if (error.equals("Your account is not premium")) {
+                statuscode = 2;
+            } else {
+                statuscode = 666;
+            }
+        } else {
+            statuscode = 0;
+        }
     }
 
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
-        return AvailableStatus.UNCHECKABLE;
+    private void handleAPIErrors(final Browser br) throws PluginException {
+        String statusMessage = null;
+        try {
+            switch (statuscode) {
+            case 0:
+                /* Everything ok */
+                break;
+            case 1:
+                /* Invalid account */
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    statusMessage = "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.\r\nWichtig: Das Passwort muss dein APIKey sein, siehe dein Profil auf der " + mName + " Webseite.";
+                } else {
+                    statusMessage = "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.\r\nNote: Password has to be APIKey, see Account Profile on " + mName + "website.";
+                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case 2:
+                /*
+                 * Free accounts have no traffic - disable them on downloadtry (should actually never happen as they're added with ZERO
+                 * trafficleft)
+                 */
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            default:
+                /* Unknown error */
+                logger.warning("Unknown API error happened!");
+                /* TODO: Implement all- or as many errors as possible, then activate the code below */
+                // statusMessage = "Unknown error";
+                // logger.info(NICE_HOST + ": Unknown API error");
+                // handleErrorRetries("unknownAPIerror", 10);
+            }
+        } catch (final PluginException e) {
+            logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
+            throw e;
+        }
+    }
+
+    private void tempUnavailableHoster(final long timeout) throws PluginException {
+        if (this.currDownloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(this.currAcc);
+            if (unavailableMap == null) {
+                unavailableMap = new HashMap<String, Long>();
+                hostUnavailableMap.put(this.currAcc, unavailableMap);
+            }
+            /* wait 30 mins to retry this host */
+            unavailableMap.put(this.currDownloadLink.getHost(), (System.currentTimeMillis() + timeout));
+        }
+        throw new PluginException(LinkStatus.ERROR_RETRY);
+    }
+
+    /**
+     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
+     * from the host list.
+     *
+     * @param error
+     *            : The name of the error
+     * @param maxRetries
+     *            : Max retries before out of date error is thrown
+     */
+    private void handleErrorRetries(final String error, final int maxRetries) throws PluginException {
+        int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
+        this.currDownloadLink.getLinkStatus().setRetryCount(0);
+        if (timesFailed <= maxRetries) {
+            logger.info(NICE_HOST + ": " + error + " -> Retrying");
+            timesFailed++;
+            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
+            throw new PluginException(LinkStatus.ERROR_RETRY, error);
+        } else {
+            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
+            logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
+            // tempUnavailableHoster(acc, dl, 1 * 60 * 60 * 1000l);
+            /* TODO: Remove plugin defect once all known errors are correctly handled */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, error);
+        }
     }
 
     private boolean inValidStatus() {
@@ -239,7 +370,7 @@ public class MyFastFileCom extends PluginForHost {
      * @author raztoki
      * */
     private String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
     }
 
     /**
