@@ -15,6 +15,7 @@ import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.controlling.FileCreationManager.DeleteOption;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.DeleteFileOptions;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -62,14 +63,16 @@ public class DownloadTabActionUtils {
 
                         switch (dialog.getMode()) {
                         case REMOVE_LINKS_ONLY:
-
+                            DownloadsTable.getInstance().updateSelectionAfterRowDeletion();
                             DownloadController.getInstance().removeChildren(si.getChildren());
                             break;
                         case REMOVE_LINKS_AND_DELETE_FILES:
+                            DownloadsTable.getInstance().updateSelectionAfterRowDeletion();
                             DownloadController.getInstance().removeChildren(si.getChildren());
                             DownloadWatchDog.getInstance().delete(si.getChildren(), DeleteOption.NULL);
                             break;
                         case REMOVE_LINKS_AND_RECYCLE_FILES:
+                            DownloadsTable.getInstance().updateSelectionAfterRowDeletion();
                             DownloadController.getInstance().removeChildren(si.getChildren());
                             DownloadWatchDog.getInstance().delete(si.getChildren(), DeleteOption.RECYCLE);
 
@@ -80,13 +83,16 @@ public class DownloadTabActionUtils {
                 } else {
                     switch (mode) {
                     case REMOVE_LINKS_ONLY:
+                        DownloadsTable.getInstance().updateSelectionAfterRowDeletion();
                         DownloadController.getInstance().removeChildren(si.getChildren());
                         break;
                     case REMOVE_LINKS_AND_DELETE_FILES:
+                        DownloadsTable.getInstance().updateSelectionAfterRowDeletion();
                         DownloadController.getInstance().removeChildren(si.getChildren());
                         DownloadWatchDog.getInstance().delete(si.getChildren(), DeleteOption.NULL);
                         break;
                     case REMOVE_LINKS_AND_RECYCLE_FILES:
+                        DownloadsTable.getInstance().updateSelectionAfterRowDeletion();
                         DownloadController.getInstance().removeChildren(si.getChildren());
                         DownloadWatchDog.getInstance().delete(si.getChildren(), JDFileUtils.isTrashSupported() ? DeleteOption.RECYCLE : DeleteOption.NULL);
 

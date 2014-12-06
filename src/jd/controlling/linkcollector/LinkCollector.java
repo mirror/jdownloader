@@ -1812,7 +1812,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /**
      * saves List of CrawledPackages to given File as ZippedJSon
-     * 
+     *
      * @param packages
      * @param file
      */
@@ -2134,7 +2134,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         /* add the converted FilePackages to DownloadController */
         /**
          * addTop = 0, to insert the packages at the top
-         * 
+         *
          * addBottom = negative number -> add at the end
          */
         DownloadController.getInstance().addAllAt(filePackagesToAdd, addTop ? 0 : -(filePackagesToAdd.size() + 10));
@@ -2156,7 +2156,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     internalRemoveChildren(removechildren);
                     cleanupMaps(removechildren);
                     _controllerStructureChanged(this.getQueuePrio());
-
                     return null;
                 }
             });
@@ -2222,8 +2221,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         }
 
                         if (dialog.isDeleteLinks()) {
+                            LinkGrabberTable.getInstance().updateSelectionAfterRowDeletion();
                             LinkCollector.getInstance().removeChildren(nodesToDelete);
-
                         }
                         if (dialog.isClearFiltered()) {
                             LinkCollector.getInstance().clearFilteredLinks();
@@ -2254,7 +2253,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         };
                     }
                     if (isClearSearchFilter) {
-
                         LinkgrabberSearchField.getInstance().setText("");
                         LinkgrabberSearchField.getInstance().onChanged();
 
@@ -2265,9 +2263,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     }
 
                     if (nodesToDelete.size() > 0) {
-
+                        LinkGrabberTable.getInstance().updateSelectionAfterRowDeletion();
                         LinkCollector.getInstance().removeChildren(nodesToDelete);
-
                     }
 
                 }
