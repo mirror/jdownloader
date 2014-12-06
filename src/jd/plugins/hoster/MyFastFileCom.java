@@ -45,7 +45,7 @@ public class MyFastFileCom extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private final String                                   mName              = "www.myfastfile.com";
-    private static final String                            NICE_HOST          = "offcloud.com";
+    private static final String                            NICE_HOST          = "myfastfile.com";
     private static final String                            NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private final String                                   mProt              = "https://";
     private int                                            count              = 0;
