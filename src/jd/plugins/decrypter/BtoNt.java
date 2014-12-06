@@ -98,8 +98,8 @@ public class BtoNt extends PluginForDecrypt {
                     t[4] = chapter;
                 }
                 if (t == null) {
-                    logger.warning("Decrypter broken for: " + parameter + " @ t");
-                    return null;
+                    logger.warning("Decrypter possibly broken for: " + parameter + " @ t, please confirm in browser!");
+                    return decryptedLinks;
                 }
             }
         }
