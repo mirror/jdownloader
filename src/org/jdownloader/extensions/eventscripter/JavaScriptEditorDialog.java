@@ -89,7 +89,7 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
 
         defaults.setEditable(false);
         defaults.setContentType("text/javascript");
-        defaults.setText(ScriptEnvironment.getAPIDescription() + "\r\n" + entry.getEventTrigger().getAPIDescription());
+        defaults.setText(ScriptEnvironment.getAPIDescription(entry.getEventTrigger().getAPIClasses()) + "\r\n" + entry.getEventTrigger().getAPIDescription());
 
         editor = new JEditorPane();
         // editor.setContentType("text/html");

@@ -18,7 +18,6 @@ import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
 import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
 
 import org.appwork.exceptions.WTFException;
-import org.appwork.storage.SimpleMapper;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.IO;
@@ -104,7 +103,7 @@ public class ScriptThread extends Thread {
         }
 
         for (Method f : ScriptEnvironment.class.getDeclaredMethods()) {
-            if (f.getAnnotation(GlobalField.class) != null) {
+            if (f.getAnnotation(ScriptAPI.class) != null) {
                 for (Class<?> c : f.getParameterTypes()) {
                     if (c.isArray()) {
                         c = c.getComponentType();
@@ -132,7 +131,7 @@ public class ScriptThread extends Thread {
             }
         }
         for (Field f : ScriptEnvironment.class.getDeclaredFields()) {
-            if (f.getAnnotation(GlobalField.class) != null) {
+            if (f.getAnnotation(ScriptAPI.class) != null) {
                 Class<?> c = f.getType();
                 if (c.isArray()) {
                     c = c.getComponentType();
@@ -153,22 +152,23 @@ public class ScriptThread extends Thread {
 
     private void initEnvironment() throws IllegalAccessException {
         for (Method f : ScriptEnvironment.class.getDeclaredMethods()) {
-            if (f.getAnnotation(GlobalField.class) != null) {
+            if (f.getAnnotation(ScriptAPI.class) != null) {
                 evalTrusted(f.getName() + "=" + ScriptEnvironment.class.getName() + "." + f.getName() + ";");
 
             }
         }
 
         for (Field f : ScriptEnvironment.class.getDeclaredFields()) {
-            if (f.getAnnotation(GlobalField.class) != null) {
-                evalTrusted(f.getName() + " = " + new SimpleMapper().objectToString(f.get(null)) + ";");
+            if (f.getAnnotation(ScriptAPI.class) != null) {
+                ScriptableObject.putProperty(scope, f.getName(), ScriptEnvironment.toJSObject(f.get(null)));
 
             }
         }
 
         for (Entry<String, Object> es : props.entrySet()) {
+            ScriptableObject.putProperty(scope, es.getKey(), es.getValue());
             // convert to real js objects
-            evalTrusted(es.getKey() + " = " + new SimpleMapper().objectToString(es.getValue()) + ";");
+            // evalTrusted(es.getKey() + " = " + new SimpleMapper().objectToString() + ";");
 
         }
     }

@@ -5,17 +5,29 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Locale;
 
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.BooleanControl;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.DataLine;
+import javax.sound.sampled.FloatControl;
+import javax.sound.sampled.LineEvent;
+import javax.sound.sampled.LineEvent.Type;
+import javax.sound.sampled.LineListener;
 import javax.swing.JTextPane;
 
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.http.Browser;
 import net.sourceforge.htmlunit.corejs.javascript.Function;
-import net.sourceforge.htmlunit.corejs.javascript.NativeJSON;
 import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -26,6 +38,7 @@ import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OSFamily;
 import org.appwork.utils.processes.ProcessBuilderFactory;
@@ -34,17 +47,76 @@ import org.appwork.utils.reflection.Clazz;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.api.RemoteAPIController;
+import org.jdownloader.extensions.eventscripter.sandboxobjects.DownloadLinkSandBox;
+import org.jdownloader.extensions.eventscripter.sandboxobjects.FilePackageSandBox;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.ArraySet;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.settings.SoundSettings;
 
 public class ScriptEnvironment {
-    @GlobalField(description = "JDownloader Installation Directory")
-    public static String                                        JD_HOME           = Application.getResource("").getAbsolutePath();
-    public static HashMap<String, Object>                       GLOBAL_PROPERTIES = new HashMap<String, Object>();
-    public static HashMap<ScriptEntry, HashMap<String, Object>> SCRIPT_PROPERTIES = new HashMap<ScriptEntry, HashMap<String, Object>>();
+    @ScriptAPI(description = "JDownloader Installation Directory")
+    public static String                                         JD_HOME           = Application.getResource("").getAbsolutePath();
+    private static HashMap<String, Object>                       GLOBAL_PROPERTIES = new HashMap<String, Object>();
+    private static HashMap<ScriptEntry, HashMap<String, Object>> SCRIPT_PROPERTIES = new HashMap<ScriptEntry, HashMap<String, Object>>();
 
-    @GlobalField(description = "Set a Property. This property will be available until JD-exit or a script overwrites it. if global is true, the property will be available for al scripts", parameters = { "\"key\"", "anyValue", "global(boolean)" }, example = "var oldValue=setProperty(\"myobject\", { \"name\": true}, false);")
-    public static Object setProperty(String key, String value, boolean global) throws EnvironmentException {
+    @ScriptAPI(description = "Get a DownloadList Link by it's uuid", parameters = { "uuid" })
+    public static DownloadLinkSandBox getDownloadLinkByUUID(long uuid) throws EnvironmentException {
+        try {
+
+            return new DownloadLinkSandBox(DownloadController.getInstance().getLinkByID(uuid));
+
+        } catch (Throwable e) {
+            throw new EnvironmentException(e);
+        }
+    }
+
+    public static String toJson(Object ret) {
+        final ScriptThread env = getScriptThread();
+        // convert to javascript object
+        String js = "(function(){ return JSON.stringify(" + JSonStorage.serializeToJson(ret) + ");}());";
+
+        return (String) env.evalTrusted(js);
+    }
+
+    public static Object toJSObject(Object ret) {
+        final ScriptThread env = getScriptThread();
+        // convert to javascript object
+        String js = "(function(){ return " + JSonStorage.serializeToJson(ret) + ";}());";
+
+        return env.evalTrusted(js);
+    }
+
+    @ScriptAPI(description = "Get a DownloadList Package by it's uuid", parameters = { "uuid" })
+    public static FilePackageSandBox getDownloadPackageByUUID(long uuid) throws EnvironmentException {
+        try {
+
+            return new FilePackageSandBox(DownloadController.getInstance().getPackageByID(uuid));
+        } catch (Throwable e) {
+            throw new EnvironmentException(e);
+        }
+    }
+
+    // @GlobalField(description = "Get a Linkgrabber Link by it's uuid", parameters = { "uuid" })
+    // public static Object getGrabbedLinkByUUID(long uuid) throws EnvironmentException {
+    // try {
+    // CrawledLink ret = LinkCollector.getInstance().getLinkByID(uuid);
+    // return JSonStorage.convert(ret, TypeRef.HASHMAP);
+    // } catch (Throwable e) {
+    // throw new EnvironmentException(e);
+    // }
+    // }
+    // @GlobalField(description = "Get a Linkgrabber Package by it's uuid", parameters = { "uuid" })
+    // public static Object getGrabbedPackageByUUID(long uuid) throws EnvironmentException {
+    // try {
+    // CrawledPackage ret = LinkCollector.getInstance().getPackageByID(uuid);
+    // return JSonStorage.convert(ret, TypeRef.HASHMAP);
+    // } catch (Throwable e) {
+    // throw new EnvironmentException(e);
+    // }
+    // }
+    @ScriptAPI(description = "Set a Property. This property will be available until JD-exit or a script overwrites it. if global is true, the property will be available for al scripts", parameters = { "\"key\"", "anyValue", "global(boolean)" }, example = "var oldValue=setProperty(\"myobject\", { \"name\": true}, false);")
+    public static Object setProperty(String key, Object value, boolean global) throws EnvironmentException {
         try {
             synchronized (GLOBAL_PROPERTIES) {
                 if (global) {
@@ -68,7 +140,7 @@ public class ScriptEnvironment {
         }
     }
 
-    @GlobalField(description = "Get a Property. Set global to true if you want to access a global property", parameters = { "\"key\"", "global(boolean)" }, example = "var value=getProperty(\"myobject\", false);")
+    @ScriptAPI(description = "Get a Property. Set global to true if you want to access a global property", parameters = { "\"key\"", "global(boolean)" }, example = "var value=getProperty(\"myobject\", false);")
     public static Object getProperty(String key, boolean global) throws EnvironmentException {
         try {
             synchronized (GLOBAL_PROPERTIES) {
@@ -92,7 +164,7 @@ public class ScriptEnvironment {
         }
     }
 
-    @GlobalField(description = "Call the MyJDownloader API", parameters = { "\"namespace\"", "\"methodname\"", "parameter1", "parameter2", "..." }, example = "callAPI(\"downloadsV2\", \"queryLinks\", { \"name\": true})")
+    @ScriptAPI(description = "Call the MyJDownloader API", parameters = { "\"namespace\"", "\"methodname\"", "parameter1", "parameter2", "..." }, example = "callAPI(\"downloadsV2\", \"queryLinks\", { \"name\": true})")
     public static Object callAPI(String namespace, String method, Object... parameters) throws EnvironmentException {
 
         askForPermission("call the Remote API: " + namespace + "/" + method);
@@ -110,7 +182,7 @@ public class ScriptEnvironment {
         }
     }
 
-    @GlobalField(description = "Show a Message Box", parameters = { "myObject1", "MyObject2", "..." }, example = "alert(JD_HOME);")
+    @ScriptAPI(description = "Show a Message Box", parameters = { "myObject1", "MyObject2", "..." }, example = "alert(JD_HOME);")
     public static void alert(Object... objects) {
         final ScriptThread env = getScriptThread();
         if (objects.length == 1) {
@@ -122,7 +194,7 @@ public class ScriptEnvironment {
                     showMessageDialog(new JacksonMapper().objectToString(objects[0]));
                 } catch (Throwable e) {
 
-                    showMessageDialog(format(NativeJSON.stringify(env.getContext(), env.getScope(), objects[0], null, null) + ""));
+                    showMessageDialog(format(toJson(objects[0])));
                 }
                 return;
             }
@@ -130,8 +202,8 @@ public class ScriptEnvironment {
         try {
             showMessageDialog(new JacksonMapper().objectToString(objects));
         } catch (Throwable e) {
+            showMessageDialog(format(toJson(objects)));
 
-            showMessageDialog(format(NativeJSON.stringify(env.getContext(), env.getScope(), objects, null, null) + ""));
         }
         return;
     }
@@ -154,10 +226,15 @@ public class ScriptEnvironment {
     private static void showMessageDialog(String string) {
         final ScriptThread env = getScriptThread();
 
-        UIOManager.I().show(ConfirmDialogInterface.class, new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL | ConfirmDialog.STYLE_SCROLLPANE, T._.showMessageDialog_title(env.getScript().getName(), env.getScript().getEventTrigger().getLabel()), string, new AbstractIcon(IconKey.ICON_INFO, 32), null, null) {
+        UIOManager.I().show(ConfirmDialogInterface.class, new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, T._.showMessageDialog_title(env.getScript().getName(), env.getScript().getEventTrigger().getLabel()), string, new AbstractIcon(IconKey.ICON_INFO, 32), null, null) {
             @Override
             protected void modifyTextPane(JTextPane textField) {
 
+            }
+
+            @Override
+            public boolean isRemoteAPIEnabled() {
+                return false;
             }
 
             @Override
@@ -172,7 +249,7 @@ public class ScriptEnvironment {
         });
     }
 
-    @GlobalField(description = "Loads a website (Method: GET) and returns the source code", parameters = { "URL" }, example = "var myhtmlSourceString=getPage(\"http://jdownloader.org\");")
+    @ScriptAPI(description = "Loads a website (Method: GET) and returns the source code", parameters = { "URL" }, example = "var myhtmlSourceString=getPage(\"http://jdownloader.org\");")
     public static String getPage(String fileOrUrl) throws EnvironmentException {
 
         askForPermission("load resources from the internet");
@@ -194,6 +271,11 @@ public class ScriptEnvironment {
 
                 return "ASK_FOR_PERMISSION_" + md5 + "_" + string;
 
+            }
+
+            @Override
+            public boolean isRemoteAPIEnabled() {
+                return true;
             }
 
             @Override
@@ -220,7 +302,7 @@ public class ScriptEnvironment {
 
     }
 
-    @GlobalField(description = "Loads a website (METHOD: POST) and returns the source code", parameters = { "URL", "PostData" }, example = "var myhtmlSourceString=postPage(\"http://support.jdownloader.org/index.php\",\"searchquery=captcha\");")
+    @ScriptAPI(description = "Loads a website (METHOD: POST) and returns the source code", parameters = { "URL", "PostData" }, example = "var myhtmlSourceString=postPage(\"http://support.jdownloader.org/index.php\",\"searchquery=captcha\");")
     public static String postPage(String url, String post) throws EnvironmentException {
         askForPermission("send data to the internet and request resources");
         try {
@@ -230,7 +312,7 @@ public class ScriptEnvironment {
         }
     }
 
-    @GlobalField(description = "Read a text file", parameters = { "filepath" }, example = "var myString=readFile(JD_HOME+\"/license.txt\");")
+    @ScriptAPI(description = "Read a text file", parameters = { "filepath" }, example = "var myString=readFile(JD_HOME+\"/license.txt\");")
     public static String readFile(String filepath) throws EnvironmentException {
         askForPermission("read a local file");
         try {
@@ -240,7 +322,7 @@ public class ScriptEnvironment {
         }
     }
 
-    @GlobalField(description = "Create a directory", parameters = { "path" }, example = "var myBooleanResult=mkdirs(JD_HOME+\"/mydirectory/\");")
+    @ScriptAPI(description = "Create a directory", parameters = { "path" }, example = "var myBooleanResult=mkdirs(JD_HOME+\"/mydirectory/\");")
     public static boolean mkdirs(String filepath) throws EnvironmentException {
         askForPermission("create a directory");
         try {
@@ -250,7 +332,7 @@ public class ScriptEnvironment {
         }
     }
 
-    @GlobalField(description = "Delete a file or a directory", parameters = { "path", "recursive" }, example = "var myBooleanResult=deleteFile(JD_HOME+\"/mydirectory/\",false);")
+    @ScriptAPI(description = "Delete a file or a directory", parameters = { "path", "recursive" }, example = "var myBooleanResult=deleteFile(JD_HOME+\"/mydirectory/\",false);")
     public static boolean deleteFile(String filepath, boolean recursive) throws EnvironmentException {
         askForPermission("delete a local fole or directory");
 
@@ -267,7 +349,7 @@ public class ScriptEnvironment {
         }
     }
 
-    @GlobalField(description = "Write a text file", parameters = { "filepath", "myText", "append" }, example = "writeFile(JD_HOME+\"/log.txt\",JSON.stringify(this)+\"\\r\\n\",true);")
+    @ScriptAPI(description = "Write a text file", parameters = { "filepath", "myText", "append" }, example = "writeFile(JD_HOME+\"/log.txt\",JSON.stringify(this)+\"\\r\\n\",true);")
     public static void writeFile(String filepath, String string, boolean append) throws EnvironmentException {
         askForPermission("create a local file and write to it");
         try {
@@ -277,7 +359,67 @@ public class ScriptEnvironment {
         }
     }
 
-    @GlobalField(description = "Loads a Javascript file or url. ATTENTION. The loaded script can access the API as well.", parameters = { "myFilePathOrUrl" }, example = "require(\"https://raw.githubusercontent.com/douglascrockford/JSON-js/master/json.js\");")
+    @ScriptAPI(description = "Play a Wav Audio file", parameters = { "myFilePathOrUrl" }, example = "playWavAudio(JD_HOME+\"/themes/standard/org/jdownloader/sounds/captcha.wav\");")
+    public static void playWavAudio(String fileOrUrl) throws EnvironmentException {
+
+        try {
+
+            AudioInputStream stream = null;
+            try {
+                stream = AudioSystem.getAudioInputStream(new File(fileOrUrl));
+                final AudioFormat format = stream.getFormat();
+                final DataLine.Info info = new DataLine.Info(Clip.class, format);
+                if (AudioSystem.isLineSupported(info)) {
+                    final Clip clip = (Clip) AudioSystem.getLine(info);
+                    clip.open(stream);
+                    try {
+                        final FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+
+                        float db = (20f * (float) Math.log(JsonConfig.create(SoundSettings.class).getCaptchaSoundVolume() / 100f));
+
+                        gainControl.setValue(Math.max(-80f, db));
+                        BooleanControl muteControl = (BooleanControl) clip.getControl(BooleanControl.Type.MUTE);
+                        muteControl.setValue(true);
+
+                        muteControl.setValue(false);
+                    } catch (Exception e) {
+                        Log.exception(e);
+                    }
+                    clip.start();
+                    clip.addLineListener(new LineListener() {
+
+                        @Override
+                        public void update(LineEvent event) {
+                            if (event.getType() == Type.STOP) {
+                                clip.close();
+                            }
+                        }
+                    });
+                    while (clip.isRunning()) {
+                        Thread.sleep(100);
+                    }
+                }
+
+            } finally {
+                try {
+                    if (stream != null) {
+                        stream.close();
+                    }
+                } catch (Throwable e) {
+                }
+                // try {
+                // clip.close();
+                // } catch (Throwable e) {
+                //
+                // }
+            }
+
+        } catch (Throwable e) {
+            throw new EnvironmentException(e);
+        }
+    }
+
+    @ScriptAPI(description = "Loads a Javascript file or url. ATTENTION. The loaded script can access the API as well.", parameters = { "myFilePathOrUrl" }, example = "require(\"https://raw.githubusercontent.com/douglascrockford/JSON-js/master/json.js\");")
     public static void require(String fileOrUrl) throws EnvironmentException {
         askForPermission("load external JavaScript");
         try {
@@ -287,7 +429,7 @@ public class ScriptEnvironment {
         }
     }
 
-    @GlobalField(description = "Call a local Process asynchronous", parameters = { "\"myCallBackFunction\"|null", "\"commandline1\"", "\"commandline2\"", "\"...\"" }, example = "callAsync(function(exitCode,stdOut,errOut){ alert(\"Closed Notepad\");},\"notepad.exe\",JD_HOME+\"\\\\license.txt\");")
+    @ScriptAPI(description = "Call a local Process asynchronous", parameters = { "\"myCallBackFunction\"|null", "\"commandline1\"", "\"commandline2\"", "\"...\"" }, example = "callAsync(function(exitCode,stdOut,errOut){ alert(\"Closed Notepad\");},\"notepad.exe\",JD_HOME+\"\\\\license.txt\");")
     public static void callAsync(final Function callback, final String... commands) throws EnvironmentException {
 
         askForPermission("Execute a local process");
@@ -345,7 +487,7 @@ public class ScriptEnvironment {
 
     }
 
-    @GlobalField(description = "Call a local Process. Blocks Until the process returns", parameters = { "\"commandline1\"", "\"commandline2\"", "\"...\"" }, example = "var pingResultString = callSync(\"ping\",\"jdownloader.org\");")
+    @ScriptAPI(description = "Call a local Process. Blocks Until the process returns", parameters = { "\"commandline1\"", "\"commandline2\"", "\"...\"" }, example = "var pingResultString = callSync(\"ping\",\"jdownloader.org\");")
     public static String callSync(final String... commands) throws EnvironmentException {
         askForPermission("Execute a local process");
 
@@ -365,42 +507,47 @@ public class ScriptEnvironment {
         }
     }
 
-    public static String getAPIDescription() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("// ========= Global Methods =========\r\n");
-        for (Method f : ScriptEnvironment.class.getDeclaredMethods()) {
-            GlobalField ann = f.getAnnotation(GlobalField.class);
-            if (ann != null) {
-                sb.append("//").append(ann.description()).append("\r\n");
-                if (!Clazz.isVoid(f.getReturnType())) {
-                    sb.append("// var my").append(f.getReturnType().getSimpleName().substring(0, 1).toUpperCase(Locale.ENGLISH)).append(f.getReturnType().getSimpleName().substring(1)).append(" = ");
+    protected static void collectClasses(Class<? extends Object> cl, ArraySet<Class<?>> clazzes) {
 
-                } else {
-                    sb.append("// ");
+        for (Method m : cl.getDeclaredMethods()) {
+            if (m.getReturnType() == Object.class || !Modifier.isPublic(m.getModifiers()) || Clazz.isPrimitive(m.getReturnType()) || Clazz.isPrimitiveWrapper(m.getReturnType()) || Clazz.isString(m.getReturnType())) {
+                continue;
+            }
+            if (clazzes.add(m.getReturnType())) {
+                collectClasses(m.getReturnType(), clazzes);
+            }
+            for (Class<?> cl2 : m.getParameterTypes()) {
+                if (cl2 == Object.class || Clazz.isPrimitive(cl2) || Clazz.isPrimitiveWrapper(cl2) || Clazz.isString(cl2)) {
+                    continue;
                 }
-                sb.append(f.getName()).append("(");
-
-                boolean first = true;
-                if (ann.parameters() != null) {
-                    for (String s : ann.parameters()) {
-                        if (!first) {
-                            sb.append(", ");
-                        }
-                        sb.append(s);
-                        first = false;
-
-                    }
+                if (clazzes.add(cl2)) {
+                    collectClasses(cl2, clazzes);
                 }
-                sb.append(");\r\n");
-                if (StringUtils.isNotEmpty(ann.example())) {
-                    sb.append(ann.example()).append("\r\n");
+
+            }
+            for (Field f : cl.getFields()) {
+                if (f.getType() == Object.class || !Modifier.isPublic(m.getModifiers()) || Clazz.isPrimitive(f.getType()) || Clazz.isPrimitiveWrapper(f.getType()) || Clazz.isString(f.getType())) {
+                    continue;
+                }
+                if (clazzes.add(f.getType())) {
+                    collectClasses(f.getType(), clazzes);
                 }
 
             }
         }
-        sb.append("// ========= Global Properties =========\r\n");
+    }
+
+    public static String getAPIDescription(ArraySet<Class<?>> triggerClazzes) {
+        StringBuilder sb = new StringBuilder();
+        //
+        ArraySet<Class<?>> clazzes = new ArraySet<Class<?>>();
+
+        sb.append("/* =============== ").append("Global API").append(" =============== */").append("\r\n");
+        getAPIDescriptionForClass(sb, ScriptEnvironment.class);
+
+        sb.append("/* =========  Properties =========*/\r\n");
         for (Field f : ScriptEnvironment.class.getDeclaredFields()) {
-            GlobalField ann = f.getAnnotation(GlobalField.class);
+            ScriptAPI ann = f.getAnnotation(ScriptAPI.class);
             if (ann != null) {
                 sb.append("//").append(ann.description()).append(";\r\n");
                 sb.append("var my").append(f.getType().getSimpleName().substring(0, 1).toUpperCase(Locale.ENGLISH)).append(f.getType().getSimpleName().substring(1)).append(" = ");
@@ -411,7 +558,123 @@ public class ScriptEnvironment {
                 }
             }
         }
+        collectClasses(ScriptEnvironment.class, clazzes);
+        clazzes.addAll(triggerClazzes);
+        sb.append("/* =============== ").append("Classes").append(" =============== */").append("\r\n");
+        for (Class<?> cl : clazzes) {
+            sb.append("/* === ").append(EventTrigger.cleanUpClass(cl.getSimpleName())).append(" === */").append("\r\n");
+            getAPIDescriptionForClass(sb, cl);
 
+        }
         return sb.toString();
+    }
+
+    // public static String getAPIDescription() {
+    // StringBuilder sb = new StringBuilder();
+    // sb.append("// ========= Global Methods =========\r\n");
+    // for (Method f : ScriptEnvironment.class.getDeclaredMethods()) {
+    // ScriptAPI ann = f.getAnnotation(ScriptAPI.class);
+    // if (ann != null) {
+    // sb.append("//").append(ann.description()).append("\r\n");
+    // if (!Clazz.isVoid(f.getReturnType())) {
+    // sb.append("// var my").append(f.getReturnType().getSimpleName().substring(0,
+    // 1).toUpperCase(Locale.ENGLISH)).append(f.getReturnType().getSimpleName().substring(1)).append(" = ");
+    //
+    // } else {
+    // sb.append("// ");
+    // }
+    // sb.append(f.getName()).append("(");
+    //
+    // boolean first = true;
+    // if (ann.parameters() != null) {
+    // for (String s : ann.parameters()) {
+    // if (!first) {
+    // sb.append(", ");
+    // }
+    // sb.append(s);
+    // first = false;
+    //
+    // }
+    // }
+    // sb.append(");\r\n");
+    // if (StringUtils.isNotEmpty(ann.example())) {
+    // sb.append(ann.example()).append("\r\n");
+    // }
+    //
+    // }
+    // }
+    // sb.append("// ========= Global Properties =========\r\n");
+    // for (Field f : ScriptEnvironment.class.getDeclaredFields()) {
+    // ScriptAPI ann = f.getAnnotation(ScriptAPI.class);
+    // if (ann != null) {
+    // sb.append("//").append(ann.description()).append(";\r\n");
+    // sb.append("var my").append(f.getType().getSimpleName().substring(0,
+    // 1).toUpperCase(Locale.ENGLISH)).append(f.getType().getSimpleName().substring(1)).append(" = ");
+    // sb.append(f.getName()).append(";\r\n");
+    //
+    // if (StringUtils.isNotEmpty(ann.example())) {
+    // sb.append(ann.example()).append("\r\n");
+    // }
+    // }
+    // }
+    //
+    // return sb.toString();
+    // }
+
+    /**
+     * @param sb
+     * @param cl
+     */
+    public static void getAPIDescriptionForClass(StringBuilder sb, Class<?> cl) {
+        ScriptAPI clazzAnn = cl.getAnnotation(ScriptAPI.class);
+
+        if (clazzAnn != null && StringUtils.isNotEmpty(clazzAnn.description())) {
+            sb.append("/* ").append(clazzAnn.description()).append("*/").append("\r\n");
+        }
+        sb.append("/* =========  Methods =========*/\r\n");
+        for (Method m : cl.getDeclaredMethods()) {
+
+            if (!Modifier.isPublic(m.getModifiers())) {
+
+                continue;
+            }
+            ScriptAPI ann = m.getAnnotation(ScriptAPI.class);
+            if (cl == ScriptEnvironment.class && ann == null) {
+                continue;
+            }
+            if (!Clazz.isVoid(m.getReturnType())) {
+                sb.append("var ").append(EventTrigger.toMy(EventTrigger.cleanUpClass(m.getReturnType().getSimpleName()))).append(" = ");
+            }
+            if (cl == ScriptEnvironment.class) {
+                sb.append(m.getName());
+            } else {
+                sb.append(EventTrigger.toMy(EventTrigger.cleanUpClass(cl.getSimpleName()))).append(".").append(m.getName());
+            }
+            sb.append("(");
+            boolean first = true;
+            int i = 0;
+            for (Class<?> p : m.getParameterTypes()) {
+                if (!first) {
+                    sb.append(", ");
+                }
+                first = false;
+                sb.append(EventTrigger.toMy(p.getSimpleName()));
+                if (ann != null && ann.parameters().length == m.getParameterTypes().length && !StringUtils.isEmpty(ann.parameters()[i])) {
+                    sb.append("/*").append(ann.parameters()[i]).append("*/");
+                }
+                i++;
+            }
+            sb.append(");");
+            if (ann != null && StringUtils.isNotEmpty(ann.description())) {
+                sb.append("/*").append(ann.description()).append("*/");
+            }
+            sb.append("\r\n");
+            if (ann != null && StringUtils.isNotEmpty(ann.example())) {
+                sb.append("/* Example: */");
+                sb.append(ann.example());
+                sb.append("\r\n");
+            }
+        }
+
     }
 }

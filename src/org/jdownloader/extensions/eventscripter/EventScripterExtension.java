@@ -58,6 +58,9 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.extensions.eventscripter.sandboxobjects.DownloadLinkSandBox;
+import org.jdownloader.extensions.eventscripter.sandboxobjects.EventSandbox;
+import org.jdownloader.extensions.eventscripter.sandboxobjects.FilePackageSandBox;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 
@@ -186,8 +189,8 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
             if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_DOWNLOAD_CONTROLLER_START == script.getEventTrigger()) {
                 try {
                     HashMap<String, Object> props = new HashMap<String, Object>();
-                    props.put("link", getLinkInfo(downloadController.getDownloadLink()));
-                    props.put("package", getPackageInfo(downloadController.getDownloadLink().getParentNode()));
+                    props.put("link", new DownloadLinkSandBox(downloadController.getDownloadLink()));
+                    props.put("package", new FilePackageSandBox(downloadController.getDownloadLink().getParentNode()));
 
                     runScript(script, props);
                 } catch (Throwable e) {
@@ -203,46 +206,14 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     }
 
-    private FilePackageAPIStorableV2 getPackageInfo(FilePackage pkg) {
+    public static FilePackageAPIStorableV2 getDownloadPackageStorable(FilePackage pkg) {
 
-        PackageQueryStorable query = new PackageQueryStorable();
-        query.setBytesLoaded(true);
-        query.setBytesTotal(true);
-        query.setComment(true);
-        query.setEnabled(true);
-        query.setEta(true);
-
-        query.setFinished(true);
-
-        query.setRunning(true);
-
-        query.setSpeed(true);
-        query.setStatus(true);
-        query.setChildCount(true);
-        query.setHosts(true);
-        query.setSaveTo(true);
-
-        return DownloadsAPIV2Impl.toStorable(query, pkg, this);
+        return DownloadsAPIV2Impl.toStorable(PackageQueryStorable.FULL, pkg, EventScripterExtension.class);
     }
 
-    private DownloadLinkAPIStorableV2 getLinkInfo(DownloadLink downloadLink) {
+    public static DownloadLinkAPIStorableV2 getDownloadLinkStorable(DownloadLink downloadLink) {
 
-        LinkQueryStorable query = new LinkQueryStorable();
-        query.setBytesLoaded(true);
-        query.setBytesTotal(true);
-        query.setComment(true);
-        query.setEnabled(true);
-        query.setEta(true);
-        query.setExtractionStatus(true);
-        query.setFinished(true);
-        query.setHost(true);
-        query.setPriority(true);
-        query.setRunning(true);
-        query.setSkipped(true);
-        query.setSpeed(true);
-        query.setStatus(true);
-        query.setUrl(true);
-        return DownloadsAPIV2Impl.toStorable(query, downloadLink, this);
+        return DownloadsAPIV2Impl.toStorable(LinkQueryStorable.FULL, downloadLink, EventScripterExtension.class);
     }
 
     @Override
@@ -254,8 +225,8 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_DOWNLOAD_CONTROLLER_STOPPED == script.getEventTrigger()) {
                 HashMap<String, Object> props = new HashMap<String, Object>();
-                props.put("link", getLinkInfo(downloadController.getDownloadLink()));
-                props.put("package", getPackageInfo(downloadController.getDownloadLink().getParentNode()));
+                props.put("link", new DownloadLinkSandBox(downloadController.getDownloadLink()));
+                props.put("package", new FilePackageSandBox(downloadController.getDownloadLink().getParentNode()));
                 runScript(script, props);
 
             }
@@ -337,9 +308,9 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_OUTGOING_REMOTE_API_EVENT == script.getEventTrigger()) {
                 HashMap<String, Object> props = new HashMap<String, Object>();
-                props.put("eventID", event.getEventid());
-                props.put("eventData", event.getEventdata());
-                props.put("eventPublisher", event.getPublisher().getPublisherName());
+
+                props.put("event", new EventSandbox(event));
+
                 // props.put("package", getPackageInfo(downloadController.getDownloadLink().getParentNode()));
                 runScript(script, props);
 
