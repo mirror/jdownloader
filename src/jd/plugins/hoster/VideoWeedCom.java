@@ -46,7 +46,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videoweed.es", "videoweed.com" }, urls = { "http://(www\\.)?(videoweed\\.(com|es)/(file/|embed\\.php\\?.*?v=)|embed\\.videoweed\\.(com|es)/embed\\.php\\?v=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videoweed.es", "videoweed.com" }, urls = { "http://(www\\.)?(videoweed\\.(com|es)/(file/|embed\\.php\\?.*?v=|share\\.php\\?id=)|embed\\.videoweed\\.(com|es)/embed\\.php\\?v=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2, 0 })
 public class VideoWeedCom extends PluginForHost {
 
     public VideoWeedCom(PluginWrapper wrapper) {
@@ -54,6 +54,7 @@ public class VideoWeedCom extends PluginForHost {
         this.enablePremium("http://www.videoweed.es/premium.php");
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
         final String fileID = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
         link.setUrlDownload("http://www.videoweed.es/file/" + fileID);

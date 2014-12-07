@@ -37,17 +37,31 @@ public class BitShareComFolder extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("Folder does not contain any files")) return decryptedLinks;
+        if (br.containsHTML("Folder does not contain any files")) {
+            return decryptedLinks;
+        }
         if (br.containsHTML("Folder can not be found")) {
             logger.info("Link offline (folder empty): " + parameter);
             return decryptedLinks;
         }
         String fpName = br.getRegex("<h1>View public folder \"(.*?)\"</h1>").getMatch(0);
         String[] links = br.getRegex("<td><a href=\"(http://.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) links = br.getRegex("\"(http://bitshare\\.com/files/[a-z0-9]+/.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        for (String dl : links)
-            decryptedLinks.add(createDownloadlink(dl));
+        if (links == null || links.length == 0) {
+            links = br.getRegex("\"(http://bitshare\\.com/files/[a-z0-9]+/.*?)\"").getColumn(0);
+        }
+        if (links == null || links.length == 0) {
+            return null;
+        }
+        for (final String dl : links) {
+            final DownloadLink fina = createDownloadlink(dl);
+            try {
+                fina.setContentUrl(dl);
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+                fina.setBrowserUrl(dl);
+            }
+            decryptedLinks.add(fina);
+        }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());
