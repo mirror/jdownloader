@@ -217,7 +217,9 @@ public class UploadableCh extends PluginForHost {
             /* Your download link has expired */
             if (br.containsHTML("error_code=1702")) {
                 downloadLink.setProperty("uploadabledirectlink", null);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download link has expired", 6 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Your download link has expired'", 1 * 60 * 1000l);
+            } else if (br.containsHTML("error_code=1703")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 406", 5 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

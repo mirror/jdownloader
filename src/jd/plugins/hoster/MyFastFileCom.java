@@ -231,7 +231,8 @@ public class MyFastFileCom extends PluginForHost {
             } else if (error.equals("Your account is not premium")) {
                 statuscode = 2;
             } else {
-                statuscode = 666;
+                /* TODO: Enable code below once all known errors are correctly handled */
+                // statuscode = 666;
             }
         } else {
             statuscode = 0;
