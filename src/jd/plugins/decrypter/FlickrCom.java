@@ -214,6 +214,7 @@ public class FlickrCom extends PluginForDecrypt {
             final String jsontext = br.getRegex("\"photo\":\\[(\\{.*?\\})\\]").getMatch(0);
             final String[] jsonarray = jsontext.split("\\},\\{");
             for (final String jsonentry : jsonarray) {
+                final String owner = getJson(jsonentry, "owner");
                 final String photoid = getJson(jsonentry, "id");
                 String title = getJson(jsonentry, "title");
                 title = encodeUnicode(title);
@@ -226,7 +227,7 @@ public class FlickrCom extends PluginForDecrypt {
                     } catch (Throwable e) {
                     }
                 }
-                final String contenturl = "https://www.flickr.com/photos/" + path_alias + "/" + photoid;
+                final String contenturl = "https://www.flickr.com/photos/" + owner + "/" + photoid;
                 try {
                     fina.setContentUrl(contenturl);
                 } catch (final Throwable e) {

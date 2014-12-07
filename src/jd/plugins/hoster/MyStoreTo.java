@@ -49,10 +49,14 @@ public class MyStoreTo extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">file not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">file not found<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = br.getRegex("class=\"download\"><h1>([^<>\"]*?)</h1>").getMatch(0);
         final String filesize = br.getRegex(">FILESIZE: ([^<>\"]*?)<br /><br").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
         return AvailableStatus.TRUE;
@@ -61,26 +65,38 @@ public class MyStoreTo extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (isStable()) throw new PluginException(LinkStatus.ERROR_FATAL, "Only supported in the JDownloader 2 BETA!");
+        if (isStable()) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Only supported in the JDownloader 2 BETA!");
+        }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage("http://mystore.to/api/download", "FID=" + getFID(downloadLink));
         final String dllink = br.toString();
-        if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
         int maxChunks = 0;
-        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
+            maxChunks = 1;
+        }
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
-            if (dl.getConnection().getResponseCode() == 416) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
+            if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+            }
+            if (dl.getConnection().getResponseCode() == 416) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
@@ -101,10 +117,11 @@ public class MyStoreTo extends PluginForHost {
     }
 
     private boolean isStable() {
-        if (System.getProperty("jd.revision.jdownloaderrevision") == null)
-            return true;
-        else
+        if (System.getProperty("jd.revision.jdownloaderrevision") == null) {
             return false;
+        } else {
+            return true;
+        }
     }
 
     private String getFID(final DownloadLink dl) {

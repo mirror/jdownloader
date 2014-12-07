@@ -37,20 +37,20 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upgaf.com" }, urls = { "https?://(www\\.)?upgaf\\.com/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upgaf.com" }, urls = { "https?://(www\\.)?upgaf\\.com/[A-Za-z0-9]+" }, flags = { 2 })
 public class UpgafCom extends PluginForHost {
 
     public UpgafCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(mainpage + "/upgrade." + type);
+        this.enablePremium(mainpage + "/upgrade." + type);
     }
 
     // For sites which use this script: http://www.yetishare.com/
-    // YetiShareBasic Version 0.4.1-psp
+    // YetiShareBasic Version 0.4.2-psp
     // mods:
     // limit-info:
     // protocol: no https
-    // captchatype: recaptcha
+    // captchatype: null recaptcha
     // other:
 
     @Override
@@ -64,11 +64,11 @@ public class UpgafCom extends PluginForHost {
     private final String         type                                         = "html";
     private static final int     wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
     private static final int     additional_WAIT_SECONDS                      = 3;
-    private static final int     directlinkfound_WAIT_SECONDS                 = 20;
+    private static final int     directlinkfound_WAIT_SECONDS                 = 10;
     private static final boolean supportshttps                                = false;
     private static final boolean supportshttps_FORCED                         = false;
     /* In case there is no information when accessing the main link */
-    private static final boolean available_CHECK_OVER_INFO_PAGE               = false;
+    private static final boolean available_CHECK_OVER_INFO_PAGE               = true;
     /* Known errors */
     private static final String  url_ERROR_SIMULTANDLSLIMIT                   = "e=You+have+reached+the+maximum+concurrent+downloads";
     private static final String  url_ERROR_SERVER                             = "e=Error%3A+Could+not+open+file+for+reading.";
@@ -113,12 +113,12 @@ public class UpgafCom extends PluginForHost {
             if (!br.getURL().contains("~i")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = br.getRegex("Filename:[\t\n\r ]+</td>[\t\n\r ]+<td>([^<>\"]*?)<").getMatch(0);
+            filename = br.getRegex("Filename:[\t\n\r ]+</td>[\t\n\r ]+<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
             if (filename == null || inValidate(Encoding.htmlDecode(filename).trim()) || Encoding.htmlDecode(filename).trim().equals("  ")) {
                 /* Filename might not be available here either */
                 filename = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
             }
-            filesize = br.getRegex("Filesize:[\t\n\r ]+</td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
+            filesize = br.getRegex("Filesize:[\t\n\r ]+</td>[\t\n\r ]+<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
         } else {
             br.getPage(link.getDownloadURL());
             if (br.getURL().contains(url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT)) {
@@ -256,7 +256,7 @@ public class UpgafCom extends PluginForHost {
             continue_link = br.getRegex("<div class=\"captchaPageTable\">[\t\n\r ]+<form method=\"POST\" action=\"(https?://[^<>\"]*?)\"").getMatch(0);
         }
         if (continue_link == null) {
-            continue_link = br.getRegex("\"(https?://(www\\.)?" + domains + "/[^<>\"]*?pt=[^<>\"]*?)\"").getMatch(0);
+            continue_link = br.getRegex("(?:\"|\\')(https?://(www\\.)?" + domains + "/[^<>\"]*?pt=[^<>\"]*?)(?:\"|\\')").getMatch(0);
         }
         if (continue_link == null) {
             continue_link = getDllink();
@@ -334,6 +334,14 @@ public class UpgafCom extends PluginForHost {
             return true;
         } else {
             return false;
+        }
+    }
+
+    private String getProtocol() {
+        if ((this.br.getURL() != null && this.br.getURL().contains("https://")) || supportshttps_FORCED) {
+            return "https://";
+        } else {
+            return "http://";
         }
     }
 
