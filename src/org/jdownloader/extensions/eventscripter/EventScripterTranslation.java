@@ -99,4 +99,7 @@ public interface EventScripterTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "A new file has been created" })
     String ON_NEW_FILE();
 
+    @Default(lngs = { "en" }, values = { "/* ===== Classes ===== */" })
+    String classes();
+
 }

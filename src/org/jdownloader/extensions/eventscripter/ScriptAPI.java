@@ -15,8 +15,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.METHOD, ElementType.FIELD })
-public @interface GlobalField {
+@Target({ ElementType.METHOD, ElementType.FIELD, ElementType.TYPE })
+public @interface ScriptAPI {
 
     String description();
 
