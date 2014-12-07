@@ -3,4 +3,4 @@ TranslatorExtensionGuiToggleAction_deselected=Otevřít Překladač
 TranslatorExtensionGuiToggleAction_deselected_tt=Otevřít kartu překladače
 TranslatorExtensionGuiToggleAction_selected=Zavřít Překladač
 TranslatorExtensionGuiToggleAction_selected_tt=Zavřít kartu překladače
-description=Toto rozšíření je možné použít pro úpravy překladů JDownloaderu, je však nutné mít developerský účet.
+description=Toto rozšíření může být použito k úpravě překladů JDownloaderu. K použití tohoto rozšíření potřebujete vývojářský účet.
