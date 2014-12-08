@@ -278,7 +278,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                             if (doAction == ConfirmIncompleteArchiveAction.ASK) {
 
                                 ConfirmIncompleteArchiveAction[] options = new ConfirmIncompleteArchiveAction[] { ConfirmIncompleteArchiveAction.DELETE, ConfirmIncompleteArchiveAction.KEEP_IN_LINKGRABBER, ConfirmIncompleteArchiveAction.MOVE_TO_DOWNLOADLIST };
-                                ComboBoxDialog d = new ComboBoxDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ConfirmAction_run_incomplete_archive_title_(a.getName()), _GUI._.ConfirmAction_run_incomplete_archive_msg(), options, 0, NewTheme.I().getIcon("stop", 32), _GUI._.lit_continue(), null, null) {
+                                ComboBoxDialog d = new ComboBoxDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ConfirmAction_run_incomplete_archive_title_(a.getName()), _GUI._.ConfirmAction_run_incomplete_archive_msg(), options, 1, NewTheme.I().getIcon("stop", 32), _GUI._.lit_continue(), null, null) {
                                     protected javax.swing.JComboBox getComboBox(Object[] options2) {
                                         ConfirmIncompleteArchiveAction s = CFG_LINKGRABBER.CFG.getHandleIncompleteArchiveOnConfirmLatestSelection();
                                         JComboBox ret = super.getComboBox(options2);
@@ -423,7 +423,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                             offline.add(cl);
                             if (handleOfflineLoc == OnOfflineLinksAction.ASK) {
                                 OnOfflineLinksAction[] options = new OnOfflineLinksAction[] { OnOfflineLinksAction.INCLUDE_OFFLINE, OnOfflineLinksAction.EXCLUDE_OFFLINE, OnOfflineLinksAction.EXCLUDE_OFFLINE_AND_REMOVE };
-                                ComboBoxDialog combo = new ComboBoxDialog(0, _GUI._.ConfirmLinksContextAction_run_offline_ask_title(), _GUI._.ConfirmLinksContextAction_run_offline_ask_question(), options, 0, null, null, null, null) {
+                                ComboBoxDialog combo = new ComboBoxDialog(0, _GUI._.ConfirmLinksContextAction_run_offline_ask_title(), _GUI._.ConfirmLinksContextAction_run_offline_ask_question(), options, 1, null, null, null, null) {
                                     protected javax.swing.JComboBox getComboBox(Object[] options2) {
                                         OnOfflineLinksAction s = CFG_LINKGRABBER.CFG.getHandleOfflineOnConfirmLatestSelection();
                                         JComboBox ret = super.getComboBox(options2);
