@@ -178,6 +178,11 @@ public abstract class PluginForHost extends Plugin {
     public void showAccountDetailsDialog(Account account) {
     }
 
+    @Deprecated
+    public void errLog(Throwable e, Browser br, DownloadLink link) {
+        errLog(e, br, null, link, null);
+    }
+
     public void errLog(Throwable e, Browser br, LogSource log, DownloadLink link, Account account) {
         if (e != null && e instanceof PluginException && ((PluginException) e).getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) {
             final LogSource errlogger = LogController.getInstance().getLogger("PluginErrors");
