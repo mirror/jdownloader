@@ -47,6 +47,9 @@ public class LinkCollectingJob {
     }
 
     public LinkCollectingJob(LinkOriginDetails origin, String jobContent) {
+        if (origin == null) {
+            throw new IllegalArgumentException("origin is null");
+        }
         this.jobContent = jobContent;
         this.origin = origin;
     }
