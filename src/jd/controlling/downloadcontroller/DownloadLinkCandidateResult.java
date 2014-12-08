@@ -196,7 +196,7 @@ public class DownloadLinkCandidateResult {
     }
 
     private DownloadLinkCandidateResult(RESULT result, ConditionalSkipReason conditionalSkip, SkipReason skipReason, Throwable throwable, String lastPluginHost, boolean reachedDownloadInterface) {
-        this.result = RESULT.SKIPPED;
+        this.result = result;
         this.skipReason = skipReason;
         this.lastPluginHost = lastPluginHost;
         this.conditionalSkip = conditionalSkip;
