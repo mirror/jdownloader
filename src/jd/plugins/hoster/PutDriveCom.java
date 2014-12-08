@@ -51,6 +51,8 @@ public class PutDriveCom extends PluginForHost {
     private static final String                            NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
 
     private int                                            STATUSCODE         = 0;
+    private Account                                        currAcc            = null;
+    private DownloadLink                                   currDownloadLink   = null;
 
     public PutDriveCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -74,8 +76,14 @@ public class PutDriveCom extends PluginForHost {
         return br;
     }
 
+    private void setConstants(final Account acc, final DownloadLink dl) {
+        this.currAcc = acc;
+        this.currDownloadLink = dl;
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        setConstants(account, null);
         String hosts[] = null;
         this.br = newBrowser();
         final AccountInfo ac = new AccountInfo();
@@ -185,6 +193,7 @@ public class PutDriveCom extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
+        setConstants(acc, link);
         this.br = newBrowser();
         br.setFollowRedirects(false);
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "finallink");
@@ -198,31 +207,11 @@ public class PutDriveCom extends PluginForHost {
             if (dllink == null) {
                 if (br.getRequest().getHttpConnection().getResponseCode() == 302) {
                     logger.info(NICE_HOST + ": 302 but no downloadlink");
-                    int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "failedtimes_dllinknull_302", 0);
-                    link.getLinkStatus().setRetryCount(0);
-                    if (timesFailed <= 2) {
-                        timesFailed++;
-                        link.setProperty(NICE_HOSTproperty + "failedtimes_dllinknull_302", timesFailed);
-                        throw new PluginException(LinkStatus.ERROR_RETRY, "Final download link not found");
-                    } else {
-                        link.setProperty(NICE_HOSTproperty + "failedtimes_dllinknull_302", Property.NULL);
-                        logger.info(NICE_HOST + ": 302 but no downloadlink --> Disabling current host");
-                        tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
-                    }
+                    handleErrorRetries("dllinknull_302", 10);
+                } else if (br.containsHTML("No htmlCode read")) {
+                    handleErrorRetries("dllinknull_no_htmlcode", 10);
                 }
-
-                logger.info(NICE_HOST + ": Final link is null");
-                int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "failedtimes_dllinknull", 0);
-                link.getLinkStatus().setRetryCount(0);
-                if (timesFailed <= 2) {
-                    timesFailed++;
-                    link.setProperty(NICE_HOSTproperty + "failedtimes_dllinknull", timesFailed);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Final download link not found");
-                } else {
-                    link.setProperty(NICE_HOSTproperty + "failedtimes_dllinknull", Property.NULL);
-                    logger.info(NICE_HOST + ": Final link is null -> Plugin is broken");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+                handleErrorRetries("dllinknull", 10);
             }
             dllink = dllink.replace("\\", "");
         }
@@ -234,18 +223,7 @@ public class PutDriveCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            logger.info(NICE_HOST + ": Unknown download error");
-            int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "failedtimes_unknowndlerror", 0);
-            link.getLinkStatus().setRetryCount(0);
-            if (timesFailed <= 2) {
-                timesFailed++;
-                link.setProperty(NICE_HOSTproperty + "failedtimes_unknowndlerror", timesFailed);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown download error");
-            } else {
-                link.setProperty(NICE_HOSTproperty + "failedtimes_unknowndlerror", Property.NULL);
-                logger.info(NICE_HOST + ": Unknown download error -> Plugin is broken");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            handleErrorRetries("unknowndlerror", 10);
         }
         link.setProperty(NICE_HOSTproperty + "finallink", dllink);
         boolean charge_ok = true;
@@ -306,10 +284,6 @@ public class PutDriveCom extends PluginForHost {
         return dllink;
     }
 
-    private void showMessage(DownloadLink link, String message) {
-        link.getLinkStatus().setStatusText(message);
-    }
-
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         return AvailableStatus.UNCHECKABLE;
@@ -329,6 +303,32 @@ public class PutDriveCom extends PluginForHost {
             unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
+    }
+
+    /**
+     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
+     * from the host list.
+     *
+     * @param error
+     *            : The name of the error
+     * @param maxRetries
+     *            : Max retries before out of date error is thrown
+     */
+    private void handleErrorRetries(final String error, final int maxRetries) throws PluginException {
+        int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
+        this.currDownloadLink.getLinkStatus().setRetryCount(0);
+        if (timesFailed <= maxRetries) {
+            logger.info(NICE_HOST + ": " + error + " -> Retrying");
+            timesFailed++;
+            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
+            throw new PluginException(LinkStatus.ERROR_RETRY, error);
+        } else {
+            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
+            logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
+            // tempUnavailableHoster(acc, dl, 1 * 60 * 60 * 1000l);
+            /* TODO: Remove plugin defect once all known errors are correctly handled */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, error);
+        }
     }
 
     /** Unused API functions */
