@@ -2398,7 +2398,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     } finally {
                         if (result != null) {
                             // cleanup
-                            result.setThrowable(null);
+                            // result.setThrowable(null);
                         }
                     }
                 } catch (final Throwable e) {

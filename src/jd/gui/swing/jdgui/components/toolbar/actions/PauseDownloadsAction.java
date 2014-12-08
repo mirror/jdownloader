@@ -41,6 +41,16 @@ public class PauseDownloadsAction extends AbstractToolBarAction implements Downl
 
     }
 
+    @Override
+    public void requestUpdate(Object requestor) {
+        super.requestUpdate(requestor);
+    }
+
+    @Override
+    public Object getValue(String key) {
+        return super.getValue(key);
+    }
+
     public void actionPerformed(ActionEvent e) {
         DownloadWatchDog.getInstance().pauseDownloadWatchDog(!DownloadWatchDog.getInstance().isPaused());
     }

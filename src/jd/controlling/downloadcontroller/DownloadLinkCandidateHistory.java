@@ -44,6 +44,16 @@ public class DownloadLinkCandidateHistory {
         return history;
     }
 
+    @Deprecated
+    /**
+     * @deprecated Use     public List<DownloadLinkCandidateResult> getResults(final CachedAccount cachedAccount) {
+     * @param candidate
+     * @return
+     */
+    public List<DownloadLinkCandidateResult> getResults(final DownloadLinkCandidate candidate) {
+        return getResults(candidate.getCachedAccount());
+    }
+
     public List<DownloadLinkCandidateResult> getResults(final CachedAccount cachedAccount) {
         return selectResults(new DownloadLinkCandidateHistorySelector() {
 
