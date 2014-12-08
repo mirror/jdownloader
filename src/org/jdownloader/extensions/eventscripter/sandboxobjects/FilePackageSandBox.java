@@ -18,6 +18,13 @@ public class FilePackageSandBox {
 
     }
 
+    public boolean isFinished() {
+        if (filePackage == null) {
+            return false;
+        }
+        return filePackage.getView().isFinished();
+    }
+
     public String getDownloadFolder() {
         if (filePackage == null) {
             return Application.getResource("").getAbsolutePath();
