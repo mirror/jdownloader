@@ -12,8 +12,6 @@ import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
-import jsyntaxpane.TokenType;
-import jsyntaxpane.lexers.SimpleRegexLexer;
 import jsyntaxpane.syntaxkits.JavaScriptSyntaxKit;
 
 import org.appwork.storage.config.ValidationException;
@@ -192,7 +190,7 @@ public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implemen
                                 @Override
                                 public void run() throws Exception {
                                     JavaScriptSyntaxKit.initKit();
-                                    new SimpleRegexLexer("").putPattern(TokenType.REGEX, "alert");
+
                                 }
 
                                 @Override

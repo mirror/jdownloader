@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.JComponent;
 
+import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcollector.LinkCollectorEvent;
@@ -147,6 +148,10 @@ public class AddFilteredStuffAction extends CustomizableAppAction implements Act
 
         @Override
         public void onLinkCrawlerStopped(LinkCollectorCrawler parameter) {
+        }
+
+        @Override
+        public void onLinkCrawlerNewJob(LinkCollectingJob job) {
         }
 
     }

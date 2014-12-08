@@ -31,8 +31,6 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
-import org.appwork.utils.event.predefined.changeevent.ChangeEventSender;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
@@ -54,7 +52,7 @@ import org.jdownloader.jd1import.JD1Importer;
 public class PackagizerController implements PackagizerInterface, FileCreationListener {
     private PackagizerSettings                    config;
     private ArrayList<PackagizerRule>             list;
-    private ChangeEventSender                     eventSender;
+    private PackagizerControllerEventSender       eventSender;
     private java.util.List<PackagizerRuleWrapper> fileFilter;
     private java.util.List<PackagizerRuleWrapper> urlFilter;
 
@@ -85,7 +83,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
 
     public PackagizerController(boolean testInstance) {
         this.testInstance = testInstance;
-        eventSender = new ChangeEventSender();
+        eventSender = new PackagizerControllerEventSender();
         if (!isTestInstance()) {
             config = JsonConfig.create(PackagizerSettings.class);
 
@@ -431,7 +429,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         this.replacers.put(replacer.getID().toLowerCase(Locale.ENGLISH), replacer);
     }
 
-    public ChangeEventSender getEventSender() {
+    public PackagizerControllerEventSender getEventSender() {
         return eventSender;
     }
 
@@ -511,7 +509,13 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         this.fileFilter = fileFilter;
         urlFilter.trimToSize();
         this.urlFilter = urlFilter;
-        getEventSender().fireEvent(new ChangeEvent(this));
+        getEventSender().fireEvent(new PackagizerControllerEvent() {
+
+            @Override
+            public void sendTo(PackagizerControllerListener listener) {
+                listener.onPackagizerUpdate();
+            }
+        });
     }
 
     public void addAll(java.util.List<PackagizerRule> all) {
@@ -561,7 +565,14 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         update();
     }
 
-    public void runByFile(CrawledLink link) {
+    public void runByFile(final CrawledLink link) {
+        getEventSender().fireEvent(new PackagizerControllerEvent() {
+
+            @Override
+            public void sendTo(PackagizerControllerListener listener) {
+                listener.onPackagizerRunAfterLinkcheck(link);
+            }
+        });
         if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) {
             return;
         }
@@ -616,7 +627,14 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
 
     }
 
-    public void runByUrl(CrawledLink link) {
+    public void runByUrl(final CrawledLink link) {
+        getEventSender().fireEvent(new PackagizerControllerEvent() {
+
+            @Override
+            public void sendTo(PackagizerControllerListener listener) {
+                listener.onPackagizerRunBeforeLinkcheck(link);
+            }
+        });
         if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) {
             return;
         }

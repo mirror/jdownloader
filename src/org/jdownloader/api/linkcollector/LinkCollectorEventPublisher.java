@@ -2,6 +2,7 @@ package org.jdownloader.api.linkcollector;
 
 import java.util.concurrent.CopyOnWriteArraySet;
 
+import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcollector.LinkCollectorEvent;
@@ -15,7 +16,7 @@ import org.appwork.remoteapi.events.SimpleEventObject;
 public class LinkCollectorEventPublisher implements EventPublisher, LinkCollectorListener {
 
     private CopyOnWriteArraySet<RemoteAPIEventsSender> eventSenders = new CopyOnWriteArraySet<RemoteAPIEventsSender>();
-    private final String[]                    eventIDs;
+    private final String[]                             eventIDs;
 
     private enum EVENTID {
         CONTENT_ADDED,
@@ -143,6 +144,10 @@ public class LinkCollectorEventPublisher implements EventPublisher, LinkCollecto
 
     @Override
     public void onLinkCrawlerStopped(LinkCollectorCrawler parameter) {
+    }
+
+    @Override
+    public void onLinkCrawlerNewJob(LinkCollectingJob job) {
     }
 
 }

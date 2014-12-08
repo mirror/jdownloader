@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -25,6 +26,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.reflection.Clazz;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.extensions.eventscripter.sandboxobjects.ScriptEnvironment;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.scripting.JSHtmlUnitPermissionRestricter;
@@ -45,6 +47,18 @@ public class ScriptThread extends Thread {
         this.script = script;
         this.props = props;
         this.logger = logSource;
+    }
+
+    @Override
+    public synchronized void start() {
+        super.start();
+        if (script.getEventTrigger().isSynchronous()) {
+            try {
+                join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
@@ -101,34 +115,21 @@ public class ScriptThread extends Thread {
             preloadClasses += "load=" + c.getName() + ";\r\n";
 
         }
+        Collection<Class<?>> clazzes = ScriptEnvironment.getRequiredClasses();
+        clazzes.addAll(script.getEventTrigger().getAPIClasses());
+        for (Class<?> c : clazzes) {
 
-        for (Method f : ScriptEnvironment.class.getDeclaredMethods()) {
-            if (f.getAnnotation(ScriptAPI.class) != null) {
-                for (Class<?> c : f.getParameterTypes()) {
-                    if (c.isArray()) {
-                        c = c.getComponentType();
-                    }
-                    if (!dupes.add(c.getName())) {
-                        continue;
-                    }
-                    if (Clazz.isPrimitive(c) || Clazz.isPrimitiveWrapper(c) || Clazz.isString(c)) {
-                        continue;
-                    }
-                    preloadClasses += "load=" + c.getName() + ";\r\n";
-                }
-                Class<?> c = f.getReturnType();
-                if (c.isArray()) {
-                    c = c.getComponentType();
-                }
-                if (!dupes.add(c.getName())) {
-                    continue;
-                }
-                if (Clazz.isPrimitive(c)) {
-                    continue;
-                }
-                preloadClasses += "load=" + c.getName() + ";\r\n";
-
+            if (c.isArray()) {
+                c = c.getComponentType();
             }
+            if (!dupes.add(c.getName())) {
+                continue;
+            }
+            if (Clazz.isPrimitive(c)) {
+                continue;
+            }
+            preloadClasses += "load=" + c.getName() + ";\r\n";
+
         }
         for (Field f : ScriptEnvironment.class.getDeclaredFields()) {
             if (f.getAnnotation(ScriptAPI.class) != null) {

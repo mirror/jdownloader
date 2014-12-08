@@ -28,9 +28,13 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollectorCrawler;
+import jd.controlling.linkcollector.LinkCollectorEvent;
+import jd.controlling.linkcollector.LinkCollectorListener;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.plugins.AddonPanel;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import net.sourceforge.htmlunit.corejs.javascript.Context;
 import net.sourceforge.htmlunit.corejs.javascript.Script;
 import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
@@ -43,28 +47,27 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.api.RemoteAPIInternalEventListener;
-import org.jdownloader.api.downloads.v2.DownloadLinkAPIStorableV2;
-import org.jdownloader.api.downloads.v2.DownloadsAPIV2Impl;
-import org.jdownloader.api.downloads.v2.FilePackageAPIStorableV2;
-import org.jdownloader.api.downloads.v2.LinkQueryStorable;
-import org.jdownloader.api.downloads.v2.PackageQueryStorable;
 import org.jdownloader.controlling.FileCreationListener;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
+import org.jdownloader.controlling.packagizer.PackagizerController;
+import org.jdownloader.controlling.packagizer.PackagizerControllerListener;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.extensions.eventscripter.sandboxobjects.PackagizerLinkSandbox;
+import org.jdownloader.extensions.eventscripter.sandboxobjects.CrawlerJobSandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.DownloadLinkSandBox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.EventSandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.FilePackageSandBox;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 
-public class EventScripterExtension extends AbstractExtension<EventScripterConfig, EventScripterTranslation> implements MenuExtenderHandler, DownloadWatchdogListener, GenericConfigEventListener<Object>, RemoteAPIInternalEventListener, FileCreationListener {
+public class EventScripterExtension extends AbstractExtension<EventScripterConfig, EventScripterTranslation> implements MenuExtenderHandler, DownloadWatchdogListener, GenericConfigEventListener<Object>, RemoteAPIInternalEventListener, FileCreationListener, LinkCollectorListener, PackagizerControllerListener {
 
     private Object                   lock = new Object();
     private EventScripterConfigPanel configPanel;
@@ -91,14 +94,18 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     @Override
     protected void stop() throws StopException {
+        PackagizerController.getInstance().getEventSender().removeListener(this);
         DownloadWatchDog.getInstance().getEventSender().removeListener(this);
         RemoteAPIController.getInstance().getEventSender().removeListener(this);
         CFG_EVENT_CALLER.SCRIPTS.getEventSender().removeListener(this);
         FileCreationManager.getInstance().getEventSender().removeListener(this);
+        LinkCollector.getInstance().getEventsender().removeListener(this);
     }
 
     @Override
     protected void start() throws StartException {
+        PackagizerController.getInstance().getEventSender().addListener(this);
+        LinkCollector.getInstance().getEventsender().addListener(this);
         FileCreationManager.getInstance().getEventSender().addListener(this);
         DownloadWatchDog.getInstance().getEventSender().addListener(this);
         RemoteAPIController.getInstance().getEventSender().addListener(this);
@@ -204,16 +211,6 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
     public void runScript(ScriptEntry script, HashMap<String, Object> props) {
         new ScriptThread(script, props, getLogger()).start();
 
-    }
-
-    public static FilePackageAPIStorableV2 getDownloadPackageStorable(FilePackage pkg) {
-
-        return DownloadsAPIV2Impl.toStorable(PackageQueryStorable.FULL, pkg, EventScripterExtension.class);
-    }
-
-    public static DownloadLinkAPIStorableV2 getDownloadLinkStorable(DownloadLink downloadLink) {
-
-        return DownloadsAPIV2Impl.toStorable(LinkQueryStorable.FULL, downloadLink, EventScripterExtension.class);
     }
 
     @Override
@@ -334,6 +331,115 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
                 }
                 props.put("files", pathes);
                 props.put("caller", caller == null ? null : caller.getClass().getName());
+
+                runScript(script, props);
+
+            }
+        }
+    }
+
+    @Override
+    public void onLinkCollectorAbort(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink link) {
+    }
+
+    @Override
+    public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink link) {
+    }
+
+    @Override
+    public void onLinkCrawlerAdded(LinkCollectorCrawler crawler) {
+    }
+
+    @Override
+    public void onLinkCrawlerStarted(LinkCollectorCrawler crawler) {
+    }
+
+    @Override
+    public void onLinkCrawlerStopped(LinkCollectorCrawler crawler) {
+    }
+
+    @Override
+    public void onLinkCrawlerNewJob(LinkCollectingJob job) {
+
+        if (entries == null) {
+            return;
+        }
+
+        for (ScriptEntry script : entries) {
+            if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_NEW_CRAWLER_JOB == script.getEventTrigger()) {
+                HashMap<String, Object> props = new HashMap<String, Object>();
+
+                props.put("job", new CrawlerJobSandbox(job));
+
+                runScript(script, props);
+
+            }
+        }
+    }
+
+    @Override
+    public void onPackagizerUpdate() {
+    }
+
+    @Override
+    public void onPackagizerRunBeforeLinkcheck(CrawledLink link) {
+        if (entries == null) {
+            return;
+        }
+
+        for (ScriptEntry script : entries) {
+            if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_PACKAGIZER == script.getEventTrigger()) {
+                HashMap<String, Object> props = new HashMap<String, Object>();
+                props.put("linkcheckDone", false);
+
+                props.put("link", new PackagizerLinkSandbox(link));
+
+                runScript(script, props);
+
+            }
+        }
+    }
+
+    @Override
+    public void onPackagizerRunAfterLinkcheck(CrawledLink link) {
+        if (entries == null) {
+            return;
+        }
+
+        for (ScriptEntry script : entries) {
+            if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_PACKAGIZER == script.getEventTrigger()) {
+                HashMap<String, Object> props = new HashMap<String, Object>();
+                props.put("linkcheckDone", true);
+
+                props.put("link", new PackagizerLinkSandbox(link));
 
                 runScript(script, props);
 

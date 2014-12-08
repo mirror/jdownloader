@@ -28,7 +28,7 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 import org.jdownloader.translate._JDT;
 
-public class ReconnectSettings extends AbstractConfigPanel {
+public class ReconnectConfigPanel extends AbstractConfigPanel {
 
     private static final long serialVersionUID = -7963763730328793139L;
 
@@ -38,10 +38,10 @@ public class ReconnectSettings extends AbstractConfigPanel {
         return _JDT._.gui_settings_reconnect_title();
     }
 
-    public ReconnectSettings() {
+    public ReconnectConfigPanel() {
         super();
         this.addHeader(_GUI._.ReconnectSettings_ReconnectSettings_settings_(), NewTheme.I().getIcon("settings", 32));
-        this.addDescription(_GUI._.ReconnectSettings_ReconnectSettings_settings_desc());
+        this.addDescription(_GUI._.ReconnectSettings_ReconnectSettings_settings_desc2());
 
         addPair(_GUI._.ReconnectSettings_ReconnectSettings_enabled_(), null, new Checkbox(CFG_RECONNECT.AUTO_RECONNECT_ENABLED));
 

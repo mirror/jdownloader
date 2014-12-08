@@ -8,6 +8,7 @@ import java.util.List;
 import javax.swing.KeyStroke;
 
 import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcollector.LinkCollectorEvent;
@@ -674,6 +675,10 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
 
         // }
 
+    }
+
+    @Override
+    public void onLinkCrawlerNewJob(LinkCollectingJob job) {
     }
 
 }

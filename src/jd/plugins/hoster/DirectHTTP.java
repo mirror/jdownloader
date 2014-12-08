@@ -455,7 +455,7 @@ public class DirectHTTP extends PluginForHost {
 
     public DirectHTTP(final PluginWrapper wrapper) {
         super(wrapper);
-        if ("DirectHTTP".equals(getHost())) {
+        if ("DirectHTTP".equalsIgnoreCase(getHost())) {
             setConfigElements();
         }
     }

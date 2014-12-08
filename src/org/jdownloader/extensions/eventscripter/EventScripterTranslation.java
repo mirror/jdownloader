@@ -102,4 +102,10 @@ public interface EventScripterTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "/* ===== Classes ===== */" })
     String classes();
 
+    @Default(lngs = { "en" }, values = { "New Crawler Job" })
+    String ON_NEW_CRAWLER_JOB();
+
+    @Default(lngs = { "en" }, values = { "Packagizer Hook" })
+    String ON_PACKAGIZER();
+
 }

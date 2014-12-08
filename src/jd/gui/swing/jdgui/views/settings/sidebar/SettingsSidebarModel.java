@@ -15,7 +15,7 @@ import jd.gui.swing.jdgui.views.settings.panels.BasicAuthentication;
 import jd.gui.swing.jdgui.views.settings.panels.GUISettings;
 import jd.gui.swing.jdgui.views.settings.panels.GeneralSettingsConfigPanel;
 import jd.gui.swing.jdgui.views.settings.panels.MyJDownloaderSettingsPanel;
-import jd.gui.swing.jdgui.views.settings.panels.ReconnectSettings;
+import jd.gui.swing.jdgui.views.settings.panels.ReconnectConfigPanel;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManagerSettings;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
 import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.CaptchaConfigPanel;
@@ -45,7 +45,7 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     private static final long            serialVersionUID = -204494527404304349L;
     private GeneralSettingsConfigPanel   cfg;
 
-    private ReconnectSettings            rcs;
+    private ReconnectConfigPanel            rcs;
     private ProxyConfig                  pc;
     private AccountManagerSettings       ams;
     private BasicAuthentication          ba;
@@ -113,17 +113,17 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
         }.getReturnValue();
     }
 
-    private ReconnectSettings getReconnectSettings() {
+    private ReconnectConfigPanel getReconnectSettings() {
         if (rcs != null) {
             return rcs;
         }
 
-        return new EDTHelper<ReconnectSettings>() {
-            public ReconnectSettings edtRun() {
+        return new EDTHelper<ReconnectConfigPanel>() {
+            public ReconnectConfigPanel edtRun() {
                 if (rcs != null) {
                     return rcs;
                 }
-                rcs = new ReconnectSettings();
+                rcs = new ReconnectConfigPanel();
                 return rcs;
             }
         }.getReturnValue();

@@ -4,6 +4,7 @@ import java.awt.Dimension;
 
 import javax.swing.JPopupMenu;
 
+import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcollector.LinkCollectorEvent;
@@ -124,5 +125,9 @@ public class LinkgrabberPropertiesHeader extends AbstractPanelHeader implements 
         // pu.setPreferredSize(new Dimension(optionsgetWidth() + insets[1] + insets[3], (int) pref.getHeight()));
 
         pu.show(options, -insets[1], -pu.getPreferredSize().height + insets[2]);
+    }
+
+    @Override
+    public void onLinkCrawlerNewJob(LinkCollectingJob job) {
     }
 }
