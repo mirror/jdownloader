@@ -1,6 +1,8 @@
 package org.jdownloader.extensions.extraction.contextmenu.downloadlist.action;
 
 import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 import org.appwork.utils.StringUtils;
@@ -10,7 +12,6 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionContextAction;
 import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.ArraySet;
 import org.jdownloader.images.NewTheme;
 
 public class SetExtractPasswordAction extends AbstractExtractionContextAction {
@@ -29,19 +30,30 @@ public class SetExtractPasswordAction extends AbstractExtractionContextAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (!isEnabled()) return;
+        if (!isEnabled()) {
+            return;
+        }
         try {
-            StringBuilder sb = new StringBuilder();
-            ArraySet<String> list = new ArraySet<String>();
-
+            final StringBuilder sb = new StringBuilder();
+            final LinkedHashSet<String> list = new LinkedHashSet<String>();
             for (Archive archive : archives) {
-                List<String> pws = archive.getSettings().getPasswords();
-                if (pws != null) list.addAll(pws);
+                final String finalPassword = archive.getSettings().getFinalPassword();
+                if (finalPassword != null) {
+                    list.add(finalPassword);
+                }
+            }
+            for (Archive archive : archives) {
+                final List<String> pws = archive.getSettings().getPasswords();
+                if (pws != null) {
+                    list.addAll(pws);
+                }
             }
 
             if (list != null && list.size() > 0) {
                 for (String s : list) {
-                    if (sb.length() > 0) sb.append("\r\n");
+                    if (sb.length() > 0) {
+                        sb.append("\r\n");
+                    }
                     sb.append(s);
                 }
             }
@@ -49,17 +61,14 @@ public class SetExtractPasswordAction extends AbstractExtractionContextAction {
 
             if (archives.size() > 1) {
                 pw = Dialog.getInstance().showInputDialog(0, org.jdownloader.extensions.extraction.translate.T._.context_password(), (list == null || list.size() == 0) ? org.jdownloader.extensions.extraction.translate.T._.context_password_msg_multi() : org.jdownloader.extensions.extraction.translate.T._.context_password_msg2_multi(sb.toString()), null, NewTheme.getInstance().getIcon("password", 32), null, null);
-
             } else {
                 pw = Dialog.getInstance().showInputDialog(0, org.jdownloader.extensions.extraction.translate.T._.context_password(), (list == null || list.size() == 0) ? org.jdownloader.extensions.extraction.translate.T._.context_password_msg(archives.get(0).getName()) : org.jdownloader.extensions.extraction.translate.T._.context_password_msg2(archives.get(0).getName(), sb.toString()), null, NewTheme.getInstance().getIcon("password", 32), null, null);
 
             }
             if (!StringUtils.isEmpty(pw)) {
-
                 list.add(pw);
                 for (Archive archive : archives) {
-                    archive.setPasswords(list);
-
+                    archive.setPasswords(new ArrayList<String>(list));
                 }
             }
 

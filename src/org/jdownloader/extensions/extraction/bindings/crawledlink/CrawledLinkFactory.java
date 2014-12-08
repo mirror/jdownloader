@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -28,24 +29,28 @@ import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.settings.GeneralSettings;
 
 public class CrawledLinkFactory extends CrawledLinkArchiveFile implements ArchiveFactory {
-    
+
     public CrawledLinkFactory(CrawledLink l) {
         super(l);
-        
+
     }
-    
+
     private CrawledLink getFirstLink() {
         return getLinks().get(0);
     }
-    
+
     private CrawledLink getFirstLink(Archive archive) {
-        if (archive.getFirstArchiveFile() instanceof CrawledLinkArchiveFile) { return ((CrawledLinkArchiveFile) archive.getFirstArchiveFile()).getLinks().get(0); }
+        if (archive.getFirstArchiveFile() instanceof CrawledLinkArchiveFile) {
+            return ((CrawledLinkArchiveFile) archive.getFirstArchiveFile()).getLinks().get(0);
+        }
         for (ArchiveFile af : archive.getArchiveFiles()) {
-            if (af instanceof CrawledLinkArchiveFile) { return ((CrawledLinkArchiveFile) af).getLinks().get(0); }
+            if (af instanceof CrawledLinkArchiveFile) {
+                return ((CrawledLinkArchiveFile) af).getLinks().get(0);
+            }
         }
         throw new WTFException("Archive should always have at least one link");
     }
-    
+
     public java.util.List<ArchiveFile> createPartFileList(String file, String pattern) {
         final Pattern pat = Pattern.compile(pattern, CrossSystem.isWindows() ? Pattern.CASE_INSENSITIVE : 0);
         java.util.List<ArchiveFile> ret = new ArrayList<ArchiveFile>();
@@ -77,14 +82,14 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
         }
         return ret;
     }
-    
+
     public Collection<? extends String> getGuessedPasswordList(Archive archive) {
         return new HashSet<String>();
     }
-    
+
     public void fireArchiveAddedToQueue(Archive archive) {
     }
-    
+
     public String createDefaultExtractToPath(Archive archive) {
         try {
             CrawledLink firstLink = getFirstLink(archive);
@@ -93,7 +98,7 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
         }
         return null;
     }
-    
+
     public String createExtractSubPath(String path, Archive archive) {
         CrawledLink link = getFirstLink(archive);
         try {
@@ -154,15 +159,15 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
         }
         return null;
     }
-    
+
     public Archive createArchive() {
         return new Archive(this);
     }
-    
+
     public File toFile(String path) {
         return new File(path);
     }
-    
+
     @Override
     public File getFolder() {
         try {
@@ -171,27 +176,33 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
             return new File(JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
         }
     }
-    
+
     private String id;
-    
+
     @Override
     public String getID() {
-        if (id != null) return id;
+        if (id != null) {
+            return id;
+        }
         synchronized (this) {
-            if (id != null) return id;
+            if (id != null) {
+                return id;
+            }
             id = getIDFromFile(this);
         }
         return id;
     }
-    
+
     private String getIDFromFile(CrawledLinkArchiveFile file) {
         for (CrawledLink link : file.getLinks()) {
             String id = link.getDownloadLink().getArchiveID();
-            if (id != null) { return id; }
+            if (id != null) {
+                return id;
+            }
         }
         return null;
     }
-    
+
     @Override
     public void onArchiveFinished(Archive archive) {
         String id = getID();
@@ -200,19 +211,23 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
                 if (af instanceof CrawledLinkArchiveFile) {
                     id = getIDFromFile((CrawledLinkArchiveFile) af);
                 }
-                if (id != null) break;
+                if (id != null) {
+                    break;
+                }
             }
         }
         if (id == null) {
             id = DownloadLinkArchiveFactory.createUniqueAlltimeID();
         }
-        HashSet<String> pws = new HashSet<String>();
+        final LinkedHashSet<String> pws = new LinkedHashSet<String>();
         // link
         for (ArchiveFile af : archive.getArchiveFiles()) {
             if (af instanceof CrawledLinkArchiveFile) {
                 for (CrawledLink link : ((CrawledLinkArchiveFile) af).getLinks()) {
                     link.getDownloadLink().setArchiveID(id);
-                    if (link.hasArchiveInfo()) pws.addAll(link.getArchiveInfo().getExtractionPasswords());
+                    if (link.hasArchiveInfo()) {
+                        pws.addAll(link.getArchiveInfo().getExtractionPasswords());
+                    }
                 }
             }
         }
@@ -221,19 +236,25 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
             archive.getSettings();
         }
         if (pws.size() > 0) {
-            List<String> storedPws = archive.getSettings().getPasswords();
+            final String finalPassword = archive.getSettings().getFinalPassword();
+            if (finalPassword != null) {
+                pws.add(finalPassword);
+            }
+            final List<String> storedPws = archive.getSettings().getPasswords();
             if (storedPws != null) {
                 pws.addAll(storedPws);
             }
             archive.getSettings().setPasswords(new ArrayList<String>(pws));
         }
     }
-    
+
     @Override
     public BooleanStatus getDefaultAutoExtract() {
         CrawledLink first = getLinks().get(0);
-        if (first.hasArchiveInfo()) return first.getArchiveInfo().getAutoExtract();
+        if (first.hasArchiveInfo()) {
+            return first.getArchiveInfo().getAutoExtract();
+        }
         return BooleanStatus.UNSET;
     }
-    
+
 }
