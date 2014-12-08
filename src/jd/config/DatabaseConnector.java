@@ -31,10 +31,10 @@ import jd.utils.JDUtilities;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.CountingInputStream;
 import org.appwork.utils.net.HexInputStream;
 import org.appwork.utils.net.LimitedInputStream;
 import org.jdownloader.logging.LogController;
-import org.tmatesoft.svn.core.internal.util.CountingInputStream;
 
 public class DatabaseConnector {
 
@@ -93,10 +93,10 @@ public class DatabaseConnector {
                             }
                             if (objectIndex == searchForObject.length() - 1) {
                                 String name = new String(bos.toByteArray(), 1, bos.size() - (searchForObject.length() + 1));
-                                objectStartIndex = fis.getBytesRead() - 3;
+                                objectStartIndex = fis.transferedBytes() - 3;
                                 while ((read = fis.read()) != -1) {
                                     if (read == '\'') {
-                                        objectStopIndex = fis.getBytesRead() - 1;
+                                        objectStopIndex = fis.transferedBytes() - 1;
                                         break;
                                     }
                                 }
