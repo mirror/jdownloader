@@ -402,30 +402,21 @@ public class Account extends Property {
         }
     }
 
-    public boolean equals(final Account account2) {
-        if (account2 == null) {
+    public boolean equals(final Account account) {
+        if (account == null) {
             return false;
         }
-        if (account2 == this) {
+        if (account == this) {
             return true;
         }
-        if (this.user == null) {
-            if (account2.user != null) {
-                return false;
-            }
-        } else {
-            if (account2.user == null || !this.user.equalsIgnoreCase(account2.user)) {
-                return false;
-            }
+        if (!StringUtils.equals(getHoster(), account.getHoster())) {
+            return false;
         }
-        if (this.pass == null) {
-            if (account2.pass != null) {
-                return false;
-            }
-        } else {
-            if (account2.pass == null || !this.pass.equalsIgnoreCase(account2.pass)) {
-                return false;
-            }
+        if (!StringUtils.equals(getUser(), account.getUser())) {
+            return false;
+        }
+        if (!StringUtils.equals(getPass(), account.getPass())) {
+            return false;
         }
         return true;
     }

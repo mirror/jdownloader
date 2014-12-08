@@ -29,7 +29,6 @@ public class AccountCache implements Iterable<CachedAccount> {
         private final Account       account;
         private final ACCOUNTTYPE   type;
         private final PluginForHost plugin;
-        private final int           hashCode;
         private final String        host;
 
         public String getHost() {
@@ -49,27 +48,10 @@ public class AccountCache implements Iterable<CachedAccount> {
             }
             this.plugin = plugin;
             this.host = host;
-            StringBuilder sb = new StringBuilder();
-            if (host != null) {
-                sb.append("HOST").append(host);
-            }
-            if (account != null) {
-                sb.append("ACC").append(account.hashCode());
-            }
-            sb.append("TYPE").append(type.name());
-            if (plugin != null) {
-                sb.append("PLUGIN").append(plugin.getLazyP().getHost());
-            }
-            hashCode = sb.toString().hashCode();
         }
 
         public final Account getAccount() {
             return account;
-        }
-
-        @Override
-        public int hashCode() {
-            return hashCode;
         }
 
         public final ACCOUNTTYPE getType() {
@@ -81,10 +63,7 @@ public class AccountCache implements Iterable<CachedAccount> {
         }
 
         public boolean hasCaptcha(DownloadLink link) {
-            if (plugin == null) {
-                return false;
-            }
-            return plugin.hasCaptcha(link, account);
+            return plugin != null && plugin.hasCaptcha(link, account);
         }
 
         public boolean canHandle(DownloadLink link) {
@@ -111,31 +90,42 @@ public class AccountCache implements Iterable<CachedAccount> {
 
         @Override
         public String toString() {
-            return "Plugin:" + plugin.getHost() + "|Version:" + plugin.getVersion() + "|Type:" + type + "|Account:" + account;
+            if (plugin == null) {
+                return "Plugin:none|Type:" + type + "|Account:" + account;
+            } else {
+                return "Plugin:" + plugin.getHost() + "|Version:" + plugin.getVersion() + "|Type:" + type + "|Account:" + account;
+            }
         }
 
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == null || !(obj instanceof CachedAccount)) {
+        public static boolean sameAccount(CachedAccount x, CachedAccount y) {
+            if (x != null && y != null) {
+                final Account xx = x.getAccount();
+                final Account yy = y.getAccount();
+                return xx != null && yy != null && xx.equals(yy);
+            }
+            return false;
+        }
+
+        public static boolean samePlugin(CachedAccount x, CachedAccount y) {
+            if (x != null && y != null) {
+                final PluginForHost xx = x.getPlugin();
+                final PluginForHost yy = y.getPlugin();
+                return xx != null && yy != null && xx.equals(yy);
+            }
+            return false;
+        }
+
+        public boolean equals(CachedAccount cachedAccount) {
+            if (cachedAccount == null) {
                 return false;
             }
-            if (obj == this) {
+            if (cachedAccount == this) {
                 return true;
             }
-            CachedAccount other = (CachedAccount) obj;
-            if (getType() != other.getType()) {
+            if (getType() != cachedAccount.getType()) {
                 return false;
             }
-            if ((getAccount() == null && other.getAccount() != null) || (other.getAccount() == null && getAccount() != null)) {
-                return false;
-            }
-            if ((other.getPlugin() == null && getPlugin() != null) || (other.getPlugin() != null && getPlugin() == null)) {
-                return false;
-            }
-            if (getPlugin() != null && !getPlugin().getLazyP().equals(other.getPlugin().getLazyP())) {
-                return false;
-            }
-            if (getAccount() != null && !getAccount().equals(other.getAccount())) {
+            if (!sameAccount(this, cachedAccount) || !samePlugin(this, cachedAccount)) {
                 return false;
             }
             return true;

@@ -454,12 +454,12 @@ public class LinkChecker<E extends CheckableLink> {
                 }
             default:
                 availableStatus = AvailableStatus.UNCHECKABLE;
-                plgToUse.errLog(e, plgToUse.getBrowser(), link);
+                plgToUse.errLog(e, plgToUse.getBrowser(), logger, link, null);
                 break;
             }
         } catch (Throwable e) {
-            plgToUse.errLog(e, plgToUse.getBrowser(), link);
             logger.log(e);
+            plgToUse.errLog(e, plgToUse.getBrowser(), logger, link, null);
             logger.flush();
             availableStatus = AvailableStatus.UNCHECKABLE;
         } finally {

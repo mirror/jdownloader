@@ -2,6 +2,7 @@ package jd.controlling.downloadcontroller;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -352,6 +353,10 @@ public class DownloadSession extends Property {
 
     public DownloadLinkCandidateHistory getHistory(DownloadLink downloadLink) {
         return candidateHistory.get(downloadLink);
+    }
+
+    public Collection<DownloadLinkCandidateHistory> getHistories() {
+        return candidateHistory.values();
     }
 
     public DownloadLinkCandidateHistory buildHistory(DownloadLink downloadLink) {

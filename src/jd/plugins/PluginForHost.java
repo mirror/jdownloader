@@ -160,6 +160,7 @@ public abstract class PluginForHost extends Plugin {
     protected transient SolverJob<?> lastSolverJob  = null;
 
     private boolean                  hasCaptchas    = false;
+    private boolean                  dlSet          = false;
 
     public void setLastSolverJob(SolverJob<?> job) {
         this.lastSolverJob = job;
@@ -177,18 +178,18 @@ public abstract class PluginForHost extends Plugin {
     public void showAccountDetailsDialog(Account account) {
     }
 
-    public void errLog(Throwable e, Browser br, DownloadLink link) {
-        LogSource errlogger = LogController.getInstance().getLogger("PluginErrors");
-        try {
-            errlogger.severe("HosterPlugin out of date: " + this + " :" + getVersion());
-
-            errlogger.severe("URL:" + link.getPluginPatternMatcher() + "|ContentUrl:" + link.getContentUrl() + "|ContainerUrl:" + link.getContainerUrl() + "|OriginUrl:" + link.getOriginUrl() + "|ReferrerUrl:" + link.getReferrerUrl());
-
-            if (e != null) {
-                errlogger.log(e);
+    public void errLog(Throwable e, Browser br, LogSource log, DownloadLink link, Account account) {
+        if (e != null && e instanceof PluginException && ((PluginException) e).getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) {
+            final LogSource errlogger = LogController.getInstance().getLogger("PluginErrors");
+            try {
+                errlogger.severe("HosterPlugin out of date: " + this + " :" + getVersion());
+                errlogger.severe("URL:" + link.getPluginPatternMatcher() + "|ContentUrl:" + link.getContentUrl() + "|ContainerUrl:" + link.getContainerUrl() + "|OriginUrl:" + link.getOriginUrl() + "|ReferrerUrl:" + link.getReferrerUrl());
+                if (e != null) {
+                    errlogger.log(e);
+                }
+            } finally {
+                errlogger.close();
             }
-        } finally {
-            errlogger.close();
         }
     }
 
@@ -452,23 +453,36 @@ public abstract class PluginForHost extends Plugin {
     public void clean() {
         lastSolverJob = null;
         try {
-            dl.getConnection().disconnect();
-        } catch (Throwable e) {
+            try {
+                final DownloadInterface dl = getDownloadInterface();
+                if (dl != null && dl.getConnection() != null) {
+                    dl.getConnection().disconnect();
+                }
+            } catch (Throwable e) {
+            } finally {
+                setDownloadInterface(null);
+            }
+            try {
+                br.disconnect();
+            } catch (Throwable e) {
+            } finally {
+                br = null;
+            }
         } finally {
-            setDownloadInterface(null);
+            super.clean();
         }
-        try {
-            br.disconnect();
-        } catch (Throwable e) {
-        } finally {
-            br = null;
-        }
-        super.clean();
     }
 
-    public void setDownloadInterface(DownloadInterface dl) {
-        DownloadInterface oldDl = this.dl;
+    public boolean gotDownloadInterface() {
+        return dlSet;
+    }
+
+    public synchronized void setDownloadInterface(DownloadInterface dl) {
+        final DownloadInterface oldDl = this.dl;
         this.dl = dl;
+        if (dlSet == false && dl != null) {
+            dlSet = true;
+        }
         if (oldDl != null && oldDl != dl) {
             try {
                 oldDl.close();
@@ -479,11 +493,10 @@ public abstract class PluginForHost extends Plugin {
     }
 
     protected void setBrowserExclusive() {
-        if (br == null) {
-            return;
+        if (br != null) {
+            br.setCookiesExclusive(true);
+            br.clearCookies(getHost());
         }
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
     }
 
     /** default fetchAccountInfo, set account valid to true */
@@ -830,16 +843,33 @@ public abstract class PluginForHost extends Plugin {
         }
     }
 
+    public void update(final DownloadLink downloadLink, final Account account, long bytesTransfered) throws PluginException {
+        if (account != null && bytesTransfered > 0) {
+            final AccountInfo ai = account.getAccountInfo();
+            if (ai != null && !ai.isUnlimitedTraffic()) {
+                final long left = Math.max(0, ai.getTrafficLeft() - bytesTransfered);
+                ai.setTrafficLeft(left);
+                if (left == 0) {
+                    if (!ai.isSpecialTraffic()) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    }
+                }
+            }
+        }
+    }
+
     private void handlePost(DownloadLink downloadLink, Account account) throws Exception {
         if (downloadLink.getBooleanProperty("GENERIC_VARIANTS", false) && downloadLink.hasVariantSupport()) {
-            GenericVariants var = downloadLink.getVariant(GenericVariants.class);
-            var.runPostDownload(this, downloadLink, account);
+            final GenericVariants var = downloadLink.getVariant(GenericVariants.class);
+            if (var != null) {
+                var.runPostDownload(this, downloadLink, account);
+            }
         }
     }
 
     public void preHandle(final DownloadLink downloadLink, Account account) throws Exception {
         if (downloadLink.getBooleanProperty("GENERIC_VARIANTS", false) && downloadLink.hasVariantSupport()) {
-            GenericVariants var = downloadLink.getVariant(GenericVariants.class);
+            final GenericVariants var = downloadLink.getVariant(GenericVariants.class);
             if (var != null) {
                 var.runPreDownload(this, downloadLink, account);
             }
@@ -873,13 +903,11 @@ public abstract class PluginForHost extends Plugin {
     public abstract void resetDownloadlink(DownloadLink link);
 
     public List<File> listProcessFiles(DownloadLink link) {
-        List<File> ret = new ArrayList<File>();
-
+        final HashSet<File> ret = new HashSet<File>();
         ret.add(new File(link.getFileOutputForPlugin(false, false) + ".part"));
         ret.add(new File(link.getFileOutputForPlugin(false, false)));
         ret.add(new File(link.getFileOutputForPlugin(false, true)));
-
-        return ret;
+        return new ArrayList<File>(ret);
     }
 
     public int getTimegapBetweenConnections() {

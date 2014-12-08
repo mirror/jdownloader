@@ -1,8 +1,12 @@
 package jd.controlling.linkcrawler;
 
+import java.util.List;
+
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.DefaultJsonObject;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
@@ -33,5 +37,17 @@ public interface LinkCrawlerConfig extends ConfigInterface {
     int getDeepDecryptLoadLimit();
 
     void setDeepDecryptLoadLimit(int l);
+
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    boolean isLinkCrawlerRulesEnabled();
+
+    void setLinkCrawlerRulesEnabled(boolean b);
+
+    @DefaultJsonObject("[]")
+    @AboutConfig
+    List<LinkCrawlerRuleStorable> getLinkCrawlerRules();
+
+    void setLinkCrawlerRules(List<LinkCrawlerRuleStorable> linkCrawlerRules);
 
 }
