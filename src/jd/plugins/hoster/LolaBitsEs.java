@@ -104,7 +104,11 @@ public class LolaBitsEs extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             /* Whatever happens here, always show server error... */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            if (dl.getConnection().getResponseCode() != 206) {
+                /* range response has text/html content..... */
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            }
         }
         String contentDisposition = dl.getConnection().getHeaderField("Content-Disposition");
         if (contentDisposition == null || !contentDisposition.contains("filename")) {
@@ -190,8 +194,11 @@ public class LolaBitsEs extends PluginForHost {
         final String dllink = get_dllink(link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dl.getConnection().getResponseCode() != 206) {
+                /* range response has text/html content..... */
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         String contentDisposition = dl.getConnection().getHeaderField("Content-Disposition");
         if (contentDisposition == null || !contentDisposition.contains("filename")) {
