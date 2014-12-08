@@ -30,6 +30,8 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -80,6 +82,7 @@ public class RealDebridCom extends PluginForHost {
     public RealDebridCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mProt + mName + "/");
+        setConfigElements();
     }
 
     @Override
@@ -362,6 +365,12 @@ public class RealDebridCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
+    private final String IGNOREMAXCHUNKS = "IGNOREMAXCHUNKS";
+
+    public void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), IGNOREMAXCHUNKS, "Ignore max chunks set by real-debrid.com?").setDefaultValue(false));
+    }
+
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
         // work around
@@ -419,7 +428,7 @@ public class RealDebridCom extends PluginForHost {
         String genLnk = getJson("main_link");
         final String chunks = getJson("max_chunks");
         if (chunks != null) {
-            if ("-1".equals(chunks)) {
+            if ("-1".equals(chunks) || getPluginConfig().getBooleanProperty(IGNOREMAXCHUNKS, false)) {
                 maxChunks = 0;
             } else if ("1".equals(chunks)) {
                 resumes = false;
@@ -794,7 +803,7 @@ public class RealDebridCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -804,7 +813,7 @@ public class RealDebridCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -814,7 +823,7 @@ public class RealDebridCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from provided Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
@@ -824,7 +833,7 @@ public class RealDebridCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
+     * 
      * @author raztoki
      * */
     private String getJsonArray(final String source, final String key) {
@@ -834,7 +843,7 @@ public class RealDebridCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJsonArray(final String key) {
@@ -844,7 +853,7 @@ public class RealDebridCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return String[] value from provided JSon Array
-     *
+     * 
      * @author raztoki
      * @param source
      * @return
