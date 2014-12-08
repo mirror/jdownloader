@@ -139,7 +139,8 @@ public class AddLinksProgress extends AbstractDialog<Object> {
                     lc.waitForCrawling();
                     if (!job.isDeepAnalyse() && lc.getProcessedLinksCounter() == 0 && lc.getUnhandledLinksFoundCounter() > 0) {
                         final List<CrawledLink> unhandledLinks = new ArrayList<CrawledLink>(lc.getUnhandledLinks());
-                        if (unhandledLinks.size() == 1 && LinkOrigin.ADD_LINKS_DIALOG.equals(job.getOrigin().getOrigin())) {
+                        final LinkOrigin origin = job.getOrigin().getOrigin();
+                        if (unhandledLinks.size() == 1 && LinkOrigin.ADD_LINKS_DIALOG.equals(origin) || LinkOrigin.PASTE_LINKS_ACTION.equals(origin)) {
                             for (CrawledLink unhandledLink : unhandledLinks) {
                                 unhandledLink.setCrawlDeep(true);
                             }
