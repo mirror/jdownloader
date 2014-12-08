@@ -197,7 +197,7 @@ public class Netloadin extends PluginForHost {
                         if ("unknown".equals(filename)) {
                             filename = id;
                         }
-                        dl.setFinalFileName(id);
+                        dl.setFinalFileName(filename);
                         long size;
                         dl.setDownloadSize(size = SizeFormatter.getSize(infos[hit][2]));
                         if (size > 0) {
