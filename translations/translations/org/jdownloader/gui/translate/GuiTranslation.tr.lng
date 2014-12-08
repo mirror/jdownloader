@@ -957,7 +957,6 @@ ReconnectSettings_ReconnectSettings_enabled_=Otomatik Yeniden Bağlanmayı etkin
 ReconnectSettings_ReconnectSettings_interrupt_resumable_allowed=Yeniden Bağlanmalar devam edebilir indirmeleri yarıda kesebilir
 ReconnectSettings_ReconnectSettings_prefer_reconnect_desc=Diğerleri Yeniden Bağlanma için bekliyorsa indirmeleri başlatma
 ReconnectSettings_ReconnectSettings_settings_=Genel Yeniden Bağlanma Seçenekleri
-ReconnectSettings_ReconnectSettings_settings_desc=Genel Yeniden Bağlanma ile ilgili seçenekler burada bulunabilir.
 ReconnectTestAction=Deneme
 ReconnectTestAction_tt_2=Yeniden bağlanmak ve yeni bir Harici IP almak için buraya tıklayın.
 RegexFilter_toString_contains=%s1 içeriyorsa

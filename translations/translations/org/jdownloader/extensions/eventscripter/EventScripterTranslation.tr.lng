@@ -2,7 +2,12 @@ NONE=Hiçbiri
 ON_DOWNLOAD_CONTROLLER_START=İndirme başladı
 ON_DOWNLOAD_CONTROLLER_STOPPED=İndirme durdu
 ON_JDOWNLOADER_STARTED=JDownloader başladı
+ON_NEW_CRAWLER_JOB=Yeni Gezici İşi
+ON_NEW_FILE=Yeni bir dosya oluşturulmuş
+ON_OUTGOING_REMOTE_API_EVENT=Uzak API Olayı atıldı
+ON_PACKAGIZER=Paketleyici Kancası
 allow=izin ver
+classes=/* ===== Class'lar ===== */
 deny=reddet
 description=Dahili JDownloader olayını dinler ve ilgili betikleri (Javascript) çalıştırmaya izin verir.
 downloadLink=// İndirmeBağlantısı
