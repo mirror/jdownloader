@@ -186,10 +186,19 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         return null;
     }
 
-    private volatile Object                         link           = null;
-    private volatile CrawledLink                    sourceLink     = null;
-    private volatile String                         name           = null;
-    private volatile FilterRule                     matchingFilter;
+    private volatile Object          link       = null;
+    private volatile CrawledLink     sourceLink = null;
+    private volatile String          name       = null;
+    private volatile FilterRule      matchingFilter;
+    private volatile LinkCrawlerRule matchingRule;
+
+    public LinkCrawlerRule getMatchingRule() {
+        return matchingRule;
+    }
+
+    public void setMatchingRule(LinkCrawlerRule matchingRule) {
+        this.matchingRule = matchingRule;
+    }
 
     private volatile ArchiveInfo                    archiveInfo;
     private volatile UniqueAlltimeID                previousParent = null;

@@ -17,10 +17,19 @@ import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.controlling.UniqueAlltimeID;
 
 public abstract class Challenge<T> {
-    private final UniqueAlltimeID id = new UniqueAlltimeID();
+    private final UniqueAlltimeID id           = new UniqueAlltimeID();
     private Class<T>              resultType;
     private long                  created;
     private int                   timeout;
+    private boolean               accountLogin = false;
+
+    public boolean isAccountLogin() {
+        return accountLogin;
+    }
+
+    public void setAccountLogin(boolean accountLogin) {
+        this.accountLogin = accountLogin;
+    }
 
     public UniqueAlltimeID getId() {
         return id;
@@ -37,7 +46,9 @@ public abstract class Challenge<T> {
         while (superClass instanceof Class) {
 
             superClass = ((Class<?>) superClass).getGenericSuperclass();
-            if (superClass == null) throw new IllegalArgumentException("Wrong Construct");
+            if (superClass == null) {
+                throw new IllegalArgumentException("Wrong Construct");
+            }
 
         }
         resultType = (Class<T>) ((ParameterizedType) superClass).getActualTypeArguments()[0];
@@ -89,38 +100,66 @@ public abstract class Challenge<T> {
     private ResponseList<T> result;
 
     public static String getHost(Challenge<?> challenge) {
-        if (challenge instanceof ImageCaptchaChallenge) { return ((ImageCaptchaChallenge) challenge).getPlugin().getHost(); }
-        if (challenge instanceof ClickCaptchaChallenge) { return ((ClickCaptchaChallenge) challenge).getPlugin().getHost(); }
-        if (challenge instanceof PrePluginCheckDummyChallenge) { return ((PrePluginCheckDummyChallenge) challenge).getLink().getHost(); }
+        if (challenge instanceof ImageCaptchaChallenge) {
+            return ((ImageCaptchaChallenge) challenge).getPlugin().getHost();
+        }
+        if (challenge instanceof ClickCaptchaChallenge) {
+            return ((ClickCaptchaChallenge) challenge).getPlugin().getHost();
+        }
+        if (challenge instanceof PrePluginCheckDummyChallenge) {
+            return ((PrePluginCheckDummyChallenge) challenge).getLink().getHost();
+        }
         return null;
     }
 
     public static DownloadLink getDownloadLink(Challenge<?> challenge) {
-        if (challenge instanceof PrePluginCheckDummyChallenge) { return ((PrePluginCheckDummyChallenge) challenge).getLink(); }
+        if (challenge instanceof PrePluginCheckDummyChallenge) {
+            return ((PrePluginCheckDummyChallenge) challenge).getLink();
+        }
         Plugin plugin = getPlugin(challenge);
-        if (plugin == null) return null;
-        if (plugin instanceof PluginForHost) { return ((PluginForHost) plugin).getDownloadLink(); }
+        if (plugin == null) {
+            return null;
+        }
+        if (plugin instanceof PluginForHost) {
+            return ((PluginForHost) plugin).getDownloadLink();
+        }
         return null;
     }
 
     public static DomainInfo getDomainInfo(Challenge<?> challenge) {
-        if (challenge instanceof PrePluginCheckDummyChallenge) { return ((PrePluginCheckDummyChallenge) challenge).getLink().getDomainInfo(); }
+        if (challenge instanceof PrePluginCheckDummyChallenge) {
+            return ((PrePluginCheckDummyChallenge) challenge).getLink().getDomainInfo();
+        }
         Plugin plugin = getPlugin(challenge);
-        if (plugin == null) throw new WTFException("no plugin for this challenge!?");
+        if (plugin == null) {
+            throw new WTFException("no plugin for this challenge!?");
+        }
         DomainInfo ret = null;
         if (plugin instanceof PluginForHost) {
             DownloadLink dl = ((PluginForHost) plugin).getDownloadLink();
-            if (dl != null) ret = dl.getDomainInfo();
+            if (dl != null) {
+                ret = dl.getDomainInfo();
+            }
         }
-        if (ret == null) ret = DomainInfo.getInstance(plugin.getHost());
-        if (ret != null) return ret;
+        if (ret == null) {
+            ret = DomainInfo.getInstance(plugin.getHost());
+        }
+        if (ret != null) {
+            return ret;
+        }
         throw new WTFException("no domaininfo for this challenge!?");
     }
 
     public static Plugin getPlugin(Challenge<?> challenge) {
-        if (challenge instanceof ImageCaptchaChallenge) { return ((ImageCaptchaChallenge) challenge).getPlugin(); }
-        if (challenge instanceof ClickCaptchaChallenge) { return ((ClickCaptchaChallenge) challenge).getPlugin(); }
-        if (challenge instanceof PrePluginCheckDummyChallenge) { return ((PrePluginCheckDummyChallenge) challenge).getLink().getDefaultPlugin(); }
+        if (challenge instanceof ImageCaptchaChallenge) {
+            return ((ImageCaptchaChallenge) challenge).getPlugin();
+        }
+        if (challenge instanceof ClickCaptchaChallenge) {
+            return ((ClickCaptchaChallenge) challenge).getPlugin();
+        }
+        if (challenge instanceof PrePluginCheckDummyChallenge) {
+            return ((PrePluginCheckDummyChallenge) challenge).getLink().getDefaultPlugin();
+        }
         return null;
     }
 }
