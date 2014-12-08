@@ -348,6 +348,12 @@ public abstract class PluginForHost extends Plugin {
                 }
             };
             c.setTimeout(getCaptchaTimeout());
+            if (Thread.currentThread() instanceof AccountCheckerThread || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
+                /**
+                 * account login -> do not use anticaptcha services
+                 */
+                c.setAccountLogin(true);
+            }
             invalidateLastChallengeResponse();
             final BlacklistEntry blackListEntry = CaptchaBlackList.getInstance().matches(c);
             if (blackListEntry != null) {

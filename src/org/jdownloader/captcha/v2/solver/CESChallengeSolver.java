@@ -6,6 +6,7 @@ import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.SolverService;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
@@ -24,6 +25,10 @@ public abstract class CESChallengeSolver<T> extends ChallengeSolver<T> {
     public CESChallengeSolver(SolverService service, int threadCount) {
         super(service, threadCount);
 
+    }
+
+    public boolean canHandle(Challenge<?> c) {
+        return c.isAccountLogin() == false && super.canHandle(c);
     }
 
     final public void solve(final SolverJob<T> job) throws InterruptedException, SolverException {

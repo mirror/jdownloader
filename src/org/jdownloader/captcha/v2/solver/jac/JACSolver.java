@@ -81,7 +81,7 @@ public class JACSolver extends ChallengeSolver<String> implements ChallengeRespo
     }
 
     public boolean canHandle(Challenge<?> c) {
-        return true;
+        return c.isAccountLogin() == false;
     }
 
     @Override

@@ -223,8 +223,7 @@ public class ChallengeResponseController {
 
     @SuppressWarnings("unchecked")
     private <T> ArrayList<ChallengeSolver<T>> createList(Challenge<T> c) {
-        ArrayList<ChallengeSolver<T>> ret = new ArrayList<ChallengeSolver<T>>();
-
+        final ArrayList<ChallengeSolver<T>> ret = new ArrayList<ChallengeSolver<T>>();
         for (ChallengeSolver<?> s : solverList) {
             try {
                 if (s.isEnabled() && s.canHandle(c)) {

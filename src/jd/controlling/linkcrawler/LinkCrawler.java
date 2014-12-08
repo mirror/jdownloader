@@ -862,7 +862,9 @@ public class LinkCrawler {
 
     protected Boolean distributeDeeper(final int generation, final String url, final CrawledLink link) {
         try {
-            if (link.isCrawlDeep() || matchesDeepDecryptRule(link)) {
+            LinkCrawlerRule rule = null;
+            if ((rule = matchesDeepDecryptRule(link)) != null || link.isCrawlDeep()) {
+                link.setMatchingRule(rule);
                 /* the link is allowed to crawlDeep */
                 if (insideCrawlerPlugin()) {
                     if (generation != this.getCrawlerGeneration(false) || !isCrawlingAllowed()) {
@@ -992,6 +994,7 @@ public class LinkCrawler {
                             }
                         } else if (isDirectHttpEnabled()) {
                             if (directPlugin != null) {
+                                LinkCrawlerRule rule = null;
                                 if (url.startsWith("directhttp://")) {
                                     /* now we will check for directPlugin links */
                                     final Boolean ret = distributePluginForHost(directPlugin, generation, url, possibleCryptedLink);
@@ -1000,9 +1003,10 @@ public class LinkCrawler {
                                     } else if (Boolean.TRUE.equals(ret)) {
                                         continue mainloop;
                                     }
-                                } else if (matchesDirectHTTPRule(possibleCryptedLink)) {
+                                } else if ((rule = matchesDirectHTTPRule(possibleCryptedLink)) != null) {
                                     final String newURL = "directhttp://" + url;
                                     final CrawledLink modifiedPossibleCryptedLink = new CrawledLink(newURL);
+                                    modifiedPossibleCryptedLink.setMatchingRule(rule);
                                     final String[] originalSourceURLS = possibleCryptedLink.getSourceUrls();
                                     final String[] sourceURLs = getAndClearSourceURLs(possibleCryptedLink);
                                     final CrawledLinkModifier parentLinkModifier = possibleCryptedLink.getCustomCrawledLinkModifier();
@@ -1077,26 +1081,26 @@ public class LinkCrawler {
         }
     }
 
-    protected boolean matchesDirectHTTPRule(CrawledLink link) {
+    protected LinkCrawlerRule matchesDirectHTTPRule(CrawledLink link) {
         if (linkCrawlerRules != null) {
-            for (LinkCrawlerRule rule : linkCrawlerRules) {
+            for (final LinkCrawlerRule rule : linkCrawlerRules) {
                 if (rule.isEnabled() && LinkCrawlerRule.RULE.DIRECTHTTP.equals(rule.getRule()) && rule.matches(link.getURL())) {
-                    return true;
+                    return rule;
                 }
             }
         }
-        return false;
+        return null;
     }
 
-    protected boolean matchesDeepDecryptRule(CrawledLink link) {
+    protected LinkCrawlerRule matchesDeepDecryptRule(CrawledLink link) {
         if (linkCrawlerRules != null) {
-            for (LinkCrawlerRule rule : linkCrawlerRules) {
+            for (final LinkCrawlerRule rule : linkCrawlerRules) {
                 if (rule.isEnabled() && LinkCrawlerRule.RULE.DEEPDECRYPT.equals(rule.getRule()) && rule.matches(link.getURL())) {
-                    return true;
+                    return rule;
                 }
             }
         }
-        return false;
+        return null;
     }
 
     protected List<LazyCrawlerPlugin> getCrawlerPlugins() {
