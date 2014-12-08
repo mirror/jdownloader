@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.WeakHashMap;
 
 import jd.controlling.downloadcontroller.DownloadLinkCandidateResult.RESULT;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
@@ -81,7 +82,7 @@ public class ProxyInfoHistory {
         String host = candidate.getCachedAccount().getPlugin().getHost();
         Map<Account, List<WaitingSkipReasonContainer>> map2 = map1.get(host);
         if (map2 == null) {
-            map2 = new HashMap<Account, List<WaitingSkipReasonContainer>>();
+            map2 = new WeakHashMap<Account, List<WaitingSkipReasonContainer>>();
             map1.put(host, map2);
         }
         Account acc = candidate.getCachedAccount().getAccount();

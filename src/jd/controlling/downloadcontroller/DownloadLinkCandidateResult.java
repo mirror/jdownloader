@@ -41,10 +41,15 @@ public class DownloadLinkCandidateResult {
     private final SkipReason skipReason;
 
     private long             startTime = -1;
-
     private long             waitTime  = -1;
+
     private String           message   = null;
     private final String     lastPluginHost;
+    private final boolean    reachedDownloadInterface;
+
+    public boolean isReachedDownloadInterface() {
+        return reachedDownloadInterface;
+    }
 
     public String getLastPluginHost() {
         return lastPluginHost;
@@ -67,14 +72,14 @@ public class DownloadLinkCandidateResult {
     }
 
     public long getRemainingTime() {
-        long waitTime = getWaitTime();
-        long finishTime = getFinishTime();
-        if (waitTime > 0 && finishTime > 0) {
-            long current = System.currentTimeMillis();
-            long ret = Math.max(0, (finishTime + waitTime) - current);
+        final long finishTime = getFinishTime();
+        final long waitTime = getWaitTime();
+        if (finishTime > 0 && waitTime > 0) {
+            final long current = System.currentTimeMillis();
+            final long ret = Math.max(0, (finishTime + waitTime) - current);
             return ret;
         }
-        return 0;
+        return -1;
     }
 
     public long getStartTime() {
@@ -97,12 +102,7 @@ public class DownloadLinkCandidateResult {
 
     private final ConditionalSkipReason conditionalSkip;
 
-    private String                      errorID;
-    private Throwable                   throwable;
-
-    public String getErrorID() {
-        return errorID;
-    }
+    private final Throwable             throwable;
 
     public ConditionalSkipReason getConditionalSkip() {
         return conditionalSkip;
@@ -112,25 +112,15 @@ public class DownloadLinkCandidateResult {
         return skipReason;
     }
 
-    public DownloadLinkCandidateResult(RESULT result, Throwable throwable, String lastPluginHost) {
-        this.result = result;
-        this.lastPluginHost = lastPluginHost;
-        this.skipReason = null;
-        conditionalSkip = null;
-        updateErrorID(throwable);
-
-    }
-
-    private void updateErrorID(Throwable throwable) {
-        errorID = null;
-        this.throwable = throwable;
+    public String getErrorID() {
+        final Throwable throwable = getThrowable();
+        final RESULT result = getResult();
         if (throwable != null) {
             StackTraceElement[] st = throwable.getStackTrace();
             if (st != null && st.length > 0) {
                 StringBuilder sb = new StringBuilder();
                 StringBuilder sb2 = new StringBuilder();
                 if (throwable instanceof PluginException) {
-
                     sb.append("PluginException: ").append(throwable.getMessage()).append("(" + LinkStatus.toString(((PluginException) throwable).getLinkStatus()) + ")");
 
                 } else if (throwable instanceof UnknownHostException) {
@@ -165,16 +155,16 @@ public class DownloadLinkCandidateResult {
                     }
                 }
                 if (found) {
-                    errorID = sb.toString();
+                    return sb.toString();
                 } else {
                     if (found2) {
-                        errorID = sb2.toString();
+                        return sb2.toString();
                     } else {
-                        errorID = st[0].toString();
+                        return st[0].toString();
                     }
                 }
             } else {
-                errorID = throwable.toString();
+                return throwable.toString();
             }
 
         } else if (result != null) {
@@ -185,39 +175,54 @@ public class DownloadLinkCandidateResult {
             case FILE_UNAVAILABLE:
             case HOSTER_UNAVAILABLE:
             case PLUGIN_DEFECT:
-                errorID = result.name();
-                break;
+                return result.name();
+            default:
+                return null;
             }
         }
+        return null;
     }
 
     public Throwable getThrowable() {
         return throwable;
     }
 
-    public void setThrowable(Throwable throwable) {
-        this.throwable = throwable;
-    }
-
     public DownloadLinkCandidateResult(ConditionalSkipReason conditionalSkip, Throwable throwable, String lastPluginHost) {
-        this.result = RESULT.CONDITIONAL_SKIPPED;
-        this.conditionalSkip = conditionalSkip;
-        this.skipReason = null;
-        this.lastPluginHost = lastPluginHost;
-        updateErrorID(throwable);
+        this(conditionalSkip, throwable, lastPluginHost, false);
     }
 
-    public DownloadLinkCandidateResult(SkipReason skipReason, Throwable throwable, String lastPluginHost) {
+    public DownloadLinkCandidateResult(ConditionalSkipReason conditionalSkip, Throwable throwable, String lastPluginHost, boolean reachedDownloadInterface) {
+        this(RESULT.CONDITIONAL_SKIPPED, conditionalSkip, null, throwable, lastPluginHost, reachedDownloadInterface);
+    }
+
+    private DownloadLinkCandidateResult(RESULT result, ConditionalSkipReason conditionalSkip, SkipReason skipReason, Throwable throwable, String lastPluginHost, boolean reachedDownloadInterface) {
         this.result = RESULT.SKIPPED;
         this.skipReason = skipReason;
         this.lastPluginHost = lastPluginHost;
-        conditionalSkip = null;
-        updateErrorID(throwable);
+        this.conditionalSkip = conditionalSkip;
+        this.throwable = throwable;
+        this.reachedDownloadInterface = reachedDownloadInterface;
+    }
+
+    public DownloadLinkCandidateResult(RESULT result, Throwable throwable, String lastPluginHost) {
+        this(result, throwable, lastPluginHost, false);
+    }
+
+    public DownloadLinkCandidateResult(RESULT result, Throwable throwable, String lastPluginHost, boolean reachedDownloadInterface) {
+        this(result, null, null, throwable, lastPluginHost, reachedDownloadInterface);
+    }
+
+    public DownloadLinkCandidateResult(SkipReason skipReason, Throwable throwable, String lastPluginHost, boolean reachedDownloadInterface) {
+        this(RESULT.SKIPPED, null, skipReason, throwable, lastPluginHost, reachedDownloadInterface);
+    }
+
+    public DownloadLinkCandidateResult(SkipReason skipReason, Throwable throwable, String lastPluginHost) {
+        this(skipReason, throwable, lastPluginHost, false);
     }
 
     @Override
     public String toString() {
-        return "RESULT:" + getResult() + "|SkipReason:" + getSkipReason() + "|Message:" + getMessage() + "|Wait:" + getWaitTime();
+        return "RESULT:" + getResult() + "|SkipReason:" + getSkipReason() + "|Message:" + getMessage() + "|Wait:" + getWaitTime() + "|ReachedDownloadInterface:" + isReachedDownloadInterface();
     }
 
     /**

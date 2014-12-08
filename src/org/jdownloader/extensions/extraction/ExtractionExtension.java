@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -640,25 +641,28 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         /* import old passwordlist */
         boolean oldPWListImported = false;
         ArchiveValidator.EXTENSION = this;
-
         try {
             if ((oldPWListImported = getSettings().isOldPWListImported()) == false) {
-                SubConfiguration oldConfig = SubConfiguration.getConfig("PASSWORDLIST", true);
-                Object oldList = oldConfig.getProperties().get("LIST2");
-                java.util.List<String> currentList = getSettings().getPasswordList();
-                if (currentList == null) {
-                    currentList = new ArrayList<String>();
-                }
-                if (oldList != null && oldList instanceof List) {
-                    for (Object item : (List<?>) oldList) {
-                        if (item != null && item instanceof String) {
-                            String pw = (String) item;
-                            currentList.remove(pw);
-                            currentList.add(pw);
+                final SubConfiguration oldConfig = SubConfiguration.getConfig("PASSWORDLIST", true);
+                if (oldConfig.getProperties() != null) {
+                    final Object oldList = oldConfig.getProperties().get("LIST2");
+                    if (oldList != null && oldList instanceof List) {
+                        final HashSet<String> dups = new HashSet<String>();
+                        List<String> currentList = getSettings().getPasswordList();
+                        if (currentList == null) {
+                            currentList = new ArrayList<String>();
                         }
+                        for (Object item : (List<?>) oldList) {
+                            if (item != null && item instanceof String) {
+                                final String pw = (String) item;
+                                if (dups.add(pw)) {
+                                    currentList.add(pw);
+                                }
+                            }
+                        }
+                        getSettings().setPasswordList(currentList);
                     }
                 }
-                getSettings().setPasswordList(currentList);
             }
         } catch (final Throwable e) {
             logger.info("Could not Restore old Database");
@@ -851,7 +855,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     public File getFinalExtractToFolder(Archive archive, boolean raw) {
         String path = null;
-
         if (StringUtils.isEmpty(path)) {
             path = archive.getSettings().getExtractPath();
             if (!StringUtils.isEmpty(path)) {
@@ -881,7 +884,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         if (!raw) {
             path = PackagizerController.replaceDynamicTags(path, ArchiveFactory.PACKAGENAME);
         }
-
         path = archive.getFactory().createExtractSubPath(path, archive);
         File ret = new File(path);
         ret = appendSubFolder(archive, ret);

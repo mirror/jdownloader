@@ -496,13 +496,13 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
             dl.setOs(CrossSystem.getOSFamily().name());
             dl.setUtcOffset(TimeZone.getDefault().getOffset(System.currentTimeMillis()));
-
-            String stacktrace = result.getErrorID();
+            final String errorID = result.getErrorID();
+            String stacktrace = errorID;
             if (stacktrace != null) {
                 stacktrace = "IDV" + STACKTRACE_VERSION + ":\r\n" + dl.getCandidate().getPlugin() + "-" + dl.getCandidate().getType() + "\r\n" + account.getPlugin().getClass().getName() + "\r\n" + cleanErrorID(stacktrace);
             }
 
-            dl.setErrorID(result.getErrorID() == null ? null : Hash.getMD5(stacktrace));
+            dl.setErrorID(errorID == null ? null : Hash.getMD5(stacktrace));
             dl.setTimestamp(System.currentTimeMillis());
             dl.setSessionStart(sessionStart);
             // this linkid is only unique for you. it is not globaly unique, thus it cannot be mapped to the actual url or anything like
@@ -1126,13 +1126,13 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         dl.setWaittime(1000);
         dl.setOs(CrossSystem.getOSFamily().name());
         dl.setUtcOffset(TimeZone.getDefault().getOffset(System.currentTimeMillis()));
-
-        String stacktrace = result.getErrorID();
+        final String errorID = result.getErrorID();
+        String stacktrace = errorID;
         if (stacktrace != null) {
             stacktrace = "IDV" + StatsManager.STACKTRACE_VERSION + ":\r\n" + dl.getCandidate().getPlugin() + "-" + dl.getCandidate().getType() + "\r\n" + getClass().getName() + "\r\n" + StatsManager.cleanErrorID(stacktrace);
         }
 
-        dl.setErrorID(result.getErrorID() == null ? null : Hash.getMD5(stacktrace));
+        dl.setErrorID(errorID == null ? null : Hash.getMD5(stacktrace));
         dl.setTimestamp(System.currentTimeMillis());
         dl.setSessionStart(StatsManager.I().getSessionStart());
         // this linkid is only unique for you. it is not globaly unique, thus it cannot be mapped to the actual url or anything like

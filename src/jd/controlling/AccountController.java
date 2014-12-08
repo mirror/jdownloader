@@ -628,22 +628,24 @@ public class AccountController implements AccountControllerListener, AccountProp
             if (account.getPlugin() == null) {
                 new PluginFinder().assignPlugin(account, true);
             }
-            synchronized (AccountController.this) {
-                final String host = account.getHoster().toLowerCase(Locale.ENGLISH);
-                List<Account> accs = ACCOUNTS.get(host);
-                if (accs == null) {
-                    accs = new ArrayList<Account>();
-                    ACCOUNTS.put(host, accs);
-                }
-                for (final Account acc : accs) {
-                    if (acc.equals(account)) {
-                        return;
+            if (account.getHoster() != null) {
+                synchronized (AccountController.this) {
+                    final String host = account.getHoster().toLowerCase(Locale.ENGLISH);
+                    List<Account> accs = ACCOUNTS.get(host);
+                    if (accs == null) {
+                        accs = new ArrayList<Account>();
+                        ACCOUNTS.put(host, accs);
                     }
+                    for (final Account acc : accs) {
+                        if (acc.equals(account)) {
+                            return;
+                        }
+                    }
+                    account.setAccountController(this);
+                    accs.add(account);
                 }
-                account.setAccountController(this);
-                accs.add(account);
+                this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ADDED, account));
             }
-            this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ADDED, account));
         }
     }
 

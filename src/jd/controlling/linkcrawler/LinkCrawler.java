@@ -100,6 +100,14 @@ public class LinkCrawler {
     private boolean                                 directHttpEnabled           = true;
     private final String                            defaultDownloadFolder;
 
+    private final List<LinkCrawlerRule>             linkCrawlerRules;
+
+    protected List<LinkCrawlerRule> getLinkCrawlerRules() {
+        return linkCrawlerRules;
+    }
+
+    private final static LinkCrawlerConfig CONFIG = JsonConfig.create(LinkCrawlerConfig.class);
+
     public void setDirectHttpEnabled(boolean directHttpEnabled) {
         this.directHttpEnabled = directHttpEnabled;
     }
@@ -122,8 +130,8 @@ public class LinkCrawler {
      */
 
     static {
-        final int maxThreads = Math.max(JsonConfig.create(LinkCrawlerConfig.class).getMaxThreads(), 1);
-        final int keepAlive = Math.max(JsonConfig.create(LinkCrawlerConfig.class).getThreadKeepAlive(), 100);
+        final int maxThreads = Math.max(CONFIG.getMaxThreads(), 1);
+        final int keepAlive = Math.max(CONFIG.getThreadKeepAlive(), 100);
         /**
          * PriorityBlockingQueue leaks last Item for some java versions
          * 
@@ -262,12 +270,29 @@ public class LinkCrawler {
             duplicateFinderCrawler = parentCrawler.duplicateFinderCrawler;
             duplicateFinderFinal = parentCrawler.duplicateFinderFinal;
             duplicateFinderDeep = parentCrawler.duplicateFinderDeep;
+            linkCrawlerRules = parentCrawler.linkCrawlerRules;
             setHandler(parentCrawler.getHandler());
         } else {
             duplicateFinderContainer = new ConcurrentHashMap<String, Object>(8, 0.9f, 1);
             duplicateFinderCrawler = new ConcurrentHashMap<String, Object>(8, 0.9f, 1);
             duplicateFinderFinal = new ConcurrentHashMap<String, Object>(8, 0.9f, 1);
             duplicateFinderDeep = new ConcurrentHashMap<String, Object>(8, 0.9f, 1);
+            if (CONFIG.isLinkCrawlerRulesEnabled()) {
+                final ArrayList<LinkCrawlerRule> linkCrawlerRules = new ArrayList<LinkCrawlerRule>();
+                final List<LinkCrawlerRuleStorable> rules = CONFIG.getLinkCrawlerRules();
+                if (rules != null) {
+                    for (LinkCrawlerRuleStorable rule : rules) {
+                        try {
+                            linkCrawlerRules.add(rule._getLinkCrawlerRule());
+                        } catch (final Throwable e) {
+                            LogController.CL().log(e);
+                        }
+                    }
+                }
+                this.linkCrawlerRules = Collections.unmodifiableList(linkCrawlerRules);
+            } else {
+                linkCrawlerRules = null;
+            }
             setHandler(defaulHandlerFactory());
             defaultDownloadFolder = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
             parentCrawler = null;
@@ -571,7 +596,7 @@ public class LinkCrawler {
                             break;
                         }
                     }
-                    int limit = Math.max(1 * 1024 * 1024, JsonConfig.create(LinkCrawlerConfig.class).getDeepDecryptLoadLimit());
+                    final int limit = Math.max(1 * 1024 * 1024, JsonConfig.create(LinkCrawlerConfig.class).getDeepDecryptLoadLimit());
                     if (br.getRedirectLocation() == null && (br.getHttpConnection().isContentDisposition() || ((br.getHttpConnection().getContentType() != null && !br.getHttpConnection().getContentType().contains("text")))) || br.getHttpConnection().getCompleteContentLength() > limit) {
                         try {
                             br.getHttpConnection().disconnect();
@@ -837,7 +862,7 @@ public class LinkCrawler {
 
     protected Boolean distributeDeeper(final int generation, final String url, final CrawledLink link) {
         try {
-            if (link.isCrawlDeep()) {
+            if (link.isCrawlDeep() || matchesDeepDecryptRule(link)) {
                 /* the link is allowed to crawlDeep */
                 if (insideCrawlerPlugin()) {
                     if (generation != this.getCrawlerGeneration(false) || !isCrawlingAllowed()) {
@@ -966,24 +991,44 @@ public class LinkCrawler {
                                 continue mainloop;
                             }
                         } else if (isDirectHttpEnabled()) {
-                            if (directPlugin != null && url.startsWith("directhttp://")) {
-                                /* now we will check for directPlugin links */
-                                final Boolean ret = distributePluginForHost(directPlugin, generation, url, possibleCryptedLink);
-                                if (Boolean.FALSE.equals(ret)) {
-                                    return;
-                                } else if (Boolean.TRUE.equals(ret)) {
-                                    continue mainloop;
+                            if (directPlugin != null) {
+                                if (url.startsWith("directhttp://")) {
+                                    /* now we will check for directPlugin links */
+                                    final Boolean ret = distributePluginForHost(directPlugin, generation, url, possibleCryptedLink);
+                                    if (Boolean.FALSE.equals(ret)) {
+                                        return;
+                                    } else if (Boolean.TRUE.equals(ret)) {
+                                        continue mainloop;
+                                    }
+                                } else if (matchesDirectHTTPRule(possibleCryptedLink)) {
+                                    final String newURL = "directhttp://" + url;
+                                    final CrawledLink modifiedPossibleCryptedLink = new CrawledLink(newURL);
+                                    final String[] originalSourceURLS = possibleCryptedLink.getSourceUrls();
+                                    final String[] sourceURLs = getAndClearSourceURLs(possibleCryptedLink);
+                                    final CrawledLinkModifier parentLinkModifier = possibleCryptedLink.getCustomCrawledLinkModifier();
+                                    possibleCryptedLink.setCustomCrawledLinkModifier(null);
+                                    forwardCrawledLinkInfos(possibleCryptedLink, modifiedPossibleCryptedLink, parentLinkModifier, sourceURLs, true);
+                                    final Boolean ret = distributePluginForHost(directPlugin, generation, newURL, modifiedPossibleCryptedLink);
+                                    if (Boolean.FALSE.equals(ret)) {
+                                        return;
+                                    } else if (Boolean.TRUE.equals(ret)) {
+                                        continue mainloop;
+                                    }
+                                    possibleCryptedLink.setSourceUrls(originalSourceURLS);
+                                    possibleCryptedLink.setCustomCrawledLinkModifier(parentLinkModifier);
                                 }
-                            } else if (httpPlugin != null) {
+                            }
+                            if (httpPlugin != null && url.startsWith("http")) {
                                 /* now we will check for normal http links */
                                 final String newURL = url.replaceFirst("https?://", (url.startsWith("https://") ? "httpsviajd://" : "httpviajd://"));
                                 try {
                                     if (canHandle(httpPlugin, newURL, possibleCryptedLink)) {
                                         /* create new CrawledLink that holds the modified CrawledLink */
+                                        final CrawledLink modifiedPossibleCryptedLink = new CrawledLink(newURL);
+                                        final String[] originalSourceURLS = possibleCryptedLink.getSourceUrls();
+                                        final String[] sourceURLs = getAndClearSourceURLs(possibleCryptedLink);
                                         final CrawledLinkModifier parentLinkModifier = possibleCryptedLink.getCustomCrawledLinkModifier();
                                         possibleCryptedLink.setCustomCrawledLinkModifier(null);
-                                        final String[] sourceURLs = getAndClearSourceURLs(possibleCryptedLink);
-                                        final CrawledLink modifiedPossibleCryptedLink = new CrawledLink(newURL);
                                         forwardCrawledLinkInfos(possibleCryptedLink, modifiedPossibleCryptedLink, parentLinkModifier, sourceURLs, true);
                                         final Boolean ret = distributePluginForHost(httpPlugin, generation, newURL, modifiedPossibleCryptedLink);
                                         if (Boolean.FALSE.equals(ret)) {
@@ -991,6 +1036,11 @@ public class LinkCrawler {
                                         } else if (Boolean.TRUE.equals(ret)) {
                                             continue mainloop;
                                         }
+                                        /**
+                                         * restore possibleCryptedLink properties because it is still unhandled
+                                         */
+                                        possibleCryptedLink.setSourceUrls(originalSourceURLS);
+                                        possibleCryptedLink.setCustomCrawledLinkModifier(parentLinkModifier);
                                     }
                                 } catch (final Throwable e) {
                                     LogController.CL().log(e);
@@ -1025,6 +1075,28 @@ public class LinkCrawler {
                 checkFinishNotify();
             }
         }
+    }
+
+    protected boolean matchesDirectHTTPRule(CrawledLink link) {
+        if (linkCrawlerRules != null) {
+            for (LinkCrawlerRule rule : linkCrawlerRules) {
+                if (rule.isEnabled() && LinkCrawlerRule.RULE.DIRECTHTTP.equals(rule.getRule()) && rule.matches(link.getURL())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    protected boolean matchesDeepDecryptRule(CrawledLink link) {
+        if (linkCrawlerRules != null) {
+            for (LinkCrawlerRule rule : linkCrawlerRules) {
+                if (rule.isEnabled() && LinkCrawlerRule.RULE.DEEPDECRYPT.equals(rule.getRule()) && rule.matches(link.getURL())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     protected List<LazyCrawlerPlugin> getCrawlerPlugins() {

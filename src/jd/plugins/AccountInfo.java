@@ -133,7 +133,7 @@ public class AccountInfo extends Property {
      * @return
      */
     public boolean isExpired() {
-        long validUntil = getValidUntil();
+        final long validUntil = getValidUntil();
         if (validUntil < 0) {
             return false;
         }
