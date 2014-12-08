@@ -515,7 +515,7 @@ public class OffCloudCom extends PluginForHost {
             }
         } else {
             if (br.containsHTML("We\\'re sorry but your download ticket couldn\\'t have been found, please repeat the download process\\.")) {
-                statuscode = 201;
+                statuscode = 200;
             } else {
                 /* No way to tell that something unpredictable happened here --> status should be fine. */
                 statuscode = 0;
@@ -591,7 +591,7 @@ public class OffCloudCom extends PluginForHost {
                     statusMessage = "\r\nFree account limits reached. Buy a premium account to continue downloading.";
                 }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            case 201:
+            case 200:
                 /* Free account limits reached -> permanently disable account */
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                     statusMessage = "\r\nDownloadticket defekt --> Neuversuch";
