@@ -1,21 +1,15 @@
 package org.jdownloader.gui.toolbar.action;
 
-import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.interfaces.View;
 
 import org.appwork.swing.exttable.ExtTableEvent;
 import org.appwork.swing.exttable.ExtTableListener;
-import org.jdownloader.controlling.contextmenu.Customizer;
-import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.downloads.DownloadsView;
-import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
-import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
-import org.jdownloader.translate._JDT;
 
 public abstract class SelectionBasedToolbarAction extends AbstractToolBarAction implements GUIListener, ExtTableListener {
 
@@ -23,8 +17,7 @@ public abstract class SelectionBasedToolbarAction extends AbstractToolBarAction 
 
     public SelectionBasedToolbarAction() {
         super();
-        GUIEventSender.getInstance().addListener(this, true);
-        onGuiMainTabSwitch(null, MainTabbedPane.getInstance().getSelectedView());
+
     }
 
     @Override
@@ -52,21 +45,7 @@ public abstract class SelectionBasedToolbarAction extends AbstractToolBarAction 
             setEnabled(false);
         }
 
-        if (isshowInAllViews()) {
-            setVisible(true);
-            return;
-        }
-        if (table != null) {
-            if (isShowInDownloadView() && table instanceof DownloadsTable) {
-                setVisible(true);
-                return;
-            }
-            if (isshowInLinkgrabberView() && table instanceof LinkGrabberTable) {
-                setVisible(true);
-                return;
-            }
-        }
-        setVisible(false);
+        super.onGuiMainTabSwitch(oldView, newView);
 
     }
 
@@ -87,48 +66,4 @@ public abstract class SelectionBasedToolbarAction extends AbstractToolBarAction 
 
     protected abstract void onSelectionUpdate();
 
-    private boolean showInAllViews        = true;
-
-    private boolean showInDownloadView    = true;
-
-    private boolean showInLinkgrabberView = true;
-
-    public static String getTranslationForShowInAllViews() {
-        return _JDT._.SelectionBasedToolbarAction_getTranslationForShowInAllViews();
-    }
-
-    public static String getTranslationForShowInDownloadView() {
-        return _JDT._.SelectionBasedToolbarAction_getTranslationForShowInDownloadView();
-    }
-
-    public static String getTranslationForShowInLinkgrabberView() {
-        return _JDT._.SelectionBasedToolbarAction_getTranslationForShowInLinkgrabberView();
-    }
-
-    @Customizer(link = "#getTranslationForShowInAllViews")
-    public boolean isshowInAllViews() {
-        return showInAllViews;
-    }
-
-    @Customizer(link = "#getTranslationForShowInDownloadView")
-    public boolean isShowInDownloadView() {
-        return showInDownloadView;
-    }
-
-    @Customizer(link = "#getTranslationForShowInLinkgrabberView")
-    public boolean isshowInLinkgrabberView() {
-        return showInLinkgrabberView;
-    }
-
-    public void setshowInAllViews(boolean clearListAfterConfirm) {
-        this.showInAllViews = clearListAfterConfirm;
-    }
-
-    public void setShowInDownloadView(boolean clearListAfterConfirm) {
-        this.showInDownloadView = clearListAfterConfirm;
-    }
-
-    public void setshowInLinkgrabberView(boolean clearListAfterConfirm) {
-        this.showInLinkgrabberView = clearListAfterConfirm;
-    }
 }

@@ -24,7 +24,9 @@ public class QuickSettingsPopup extends JPopupMenu {
         add(new ParalellDownloadsEditor());
         add(new ParallelDownloadsPerHostEditor());
         add(new SpeedlimitEditor());
-        add(new ExtCheckBoxMenuItem(new PauseDownloadsAction()));
+        PauseDownloadsAction pdl = new PauseDownloadsAction();
+        pdl.requestUpdate(this);
+        add(new ExtCheckBoxMenuItem(pdl));
         this.list = new GenericConfigEventListener<Boolean>() {
 
             @Override
