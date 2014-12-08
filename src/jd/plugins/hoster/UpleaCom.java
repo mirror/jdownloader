@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -29,6 +30,7 @@ import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -36,6 +38,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -52,6 +55,8 @@ public class UpleaCom extends PluginForHost {
     public String getAGBLink() {
         return "http://www.uplea.com/register";
     }
+
+    private static AtomicReference<String> agent = new AtomicReference<String>(null);
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -79,6 +84,10 @@ public class UpleaCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    private void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         final Browser brad = br.cloneBrowser();
         final String fid = getFID(downloadLink);
         final String free_link = "http://uplea.com/step/" + fid + "/3";
@@ -92,15 +101,15 @@ public class UpleaCom extends PluginForHost {
         }
 
         br.getPage(free_link);
-        if (br.containsHTML("class=\"premium_title_exceed\"")) {
-            final String wait_seconds = br.getRegex("timeText:(\\d+)").getMatch(0);
-            if (wait_seconds != null) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(wait_seconds) * 1001l);
-            }
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+        final String wait_seconds = br.getRegex("timeText:(\\d+)").getMatch(0);
+        if (wait_seconds != null) {
+            final int intwaitsecs = Integer.parseInt(wait_seconds);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, intwaitsecs * 1001l);
+        } else if (br.containsHTML("class=\"premium_title_exceed\"")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         }
         br.setFollowRedirects(false);
-        final String dllink = br.getRegex("\"(https?://[a-z0-9]+\\.uplea.com/anonym/[^<>\"]*?)\"").getMatch(0);
+        final String dllink = br.getRegex("\"(https?://[a-z0-9]+\\.uplea\\.com/(anonym|free)/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -129,6 +138,12 @@ public class UpleaCom extends PluginForHost {
 
     private void prepBr() {
         br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
+        if (agent.get() == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+        }
+        br.getHeaders().put("User-Agent", agent.get());
     }
 
     final String getFID(final DownloadLink dl) {
@@ -204,18 +219,17 @@ public class UpleaCom extends PluginForHost {
         br.getPage("/account");
         ai.setUnlimitedTraffic();
         final String expire = br.getRegex("premium member until <span class=\"cyan\">([^<>\"]*?) \\(\\d+ day").getMatch(0);
-        if (expire == null) {
-            final String lang = System.getProperty("user.language");
-            if ("de".equalsIgnoreCase(lang)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
+        if (expire != null) {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy", Locale.ENGLISH));
+            account.setProperty("free", false);
+            account.setType(AccountType.PREMIUM);
+            ai.setStatus("Premium User");
+        } else {
+            account.setProperty("free", true);
+            account.setType(AccountType.FREE);
+            ai.setStatus("Registered (free) account");
         }
-        ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy", Locale.ENGLISH));
         account.setValid(true);
-        account.setProperty("free", false);
-        ai.setStatus("Premium User");
         return ai;
     }
 
@@ -225,19 +239,23 @@ public class UpleaCom extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        final String dllink = br.getRegex("\"(https?://[a-z0-9]+\\.uplea.com/premium/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (account.getBooleanProperty("free", false)) {
+            doFree(link);
+        } else {
+            final String dllink = br.getRegex("\"(https?://[a-z0-9]+\\.uplea.com/premium/[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), false, 1);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                handleServerErrors();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            handleServerErrors();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
     }
 
     @Override
