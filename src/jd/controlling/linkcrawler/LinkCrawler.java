@@ -577,14 +577,15 @@ public class LinkCrawler {
                     new URL(source.getURL());
                     processedLinksCounter.incrementAndGet();
                     br = new Browser();
+                    br.setFollowRedirects(false);
                     String url = source.getURL();
                     br.openGetConnection(url);
-                    HashSet<String> loopAvoid = new HashSet<String>();
+                    final HashSet<String> loopAvoid = new HashSet<String>();
                     loopAvoid.add(url);
                     for (int i = 0; i < 10; i++) {
                         if (br.getRedirectLocation() != null) {
                             try {
-                                br.getHttpConnection().disconnect();
+                                br.followConnection();
                             } catch (Throwable e) {
                             }
                             url = br.getRedirectLocation();
@@ -1094,9 +1095,28 @@ public class LinkCrawler {
 
     protected LinkCrawlerRule matchesDeepDecryptRule(CrawledLink link) {
         if (linkCrawlerRules != null) {
+            Integer knownDepth = null;
             for (final LinkCrawlerRule rule : linkCrawlerRules) {
                 if (rule.isEnabled() && LinkCrawlerRule.RULE.DEEPDECRYPT.equals(rule.getRule()) && rule.matches(link.getURL())) {
-                    return rule;
+                    if (rule.getMaxDecryptDepth() == -1) {
+                        return rule;
+                    } else {
+                        if (knownDepth == null) {
+                            Iterator<CrawledLink> it = link.iterator();
+                            int depth = 0;
+                            while (it.hasNext()) {
+                                final CrawledLink next = it.next();
+                                final LinkCrawlerRule matchingRule = next.getMatchingRule();
+                                if (matchingRule != null && LinkCrawlerRule.RULE.DEEPDECRYPT.equals(rule.getRule())) {
+                                    depth++;
+                                }
+                            }
+                            knownDepth = depth;
+                        }
+                        if (knownDepth < rule.getMaxDecryptDepth()) {
+                            return rule;
+                        }
+                    }
                 }
             }
         }
