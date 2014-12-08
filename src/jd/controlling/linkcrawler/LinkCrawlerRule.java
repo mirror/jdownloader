@@ -11,7 +11,23 @@ public class LinkCrawlerRule {
         DEEPDECRYPT
     }
 
-    protected boolean enabled = true;
+    protected boolean enabled         = true;
+
+    protected int     maxDecryptDepth = 1;
+
+    public int getMaxDecryptDepth() {
+        return maxDecryptDepth;
+    }
+
+    public void setMaxDecryptDepth(int maxDecryptDepth) {
+        if (maxDecryptDepth < 0) {
+            this.maxDecryptDepth = -1;
+        } else if (maxDecryptDepth == 0) {
+            this.maxDecryptDepth = 1;
+        } else {
+            this.maxDecryptDepth = maxDecryptDepth;
+        }
+    }
 
     public boolean isEnabled() {
         return enabled;
