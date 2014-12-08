@@ -37,12 +37,12 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upgaf.com" }, urls = { "https?://(www\\.)?upgaf\\.com/[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upgaf.com" }, urls = { "https?://(www\\.)?upgaf\\.com/[A-Za-z0-9]+" }, flags = { 0 })
 public class UpgafCom extends PluginForHost {
 
     public UpgafCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(mainpage + "/upgrade." + type);
+        // this.enablePremium(mainpage + "/upgrade." + type);
     }
 
     // For sites which use this script: http://www.yetishare.com/
@@ -50,7 +50,7 @@ public class UpgafCom extends PluginForHost {
     // mods:
     // limit-info:
     // protocol: no https
-    // captchatype: null recaptcha
+    // captchatype: recaptcha
     // other:
 
     @Override

@@ -181,7 +181,10 @@ public class NitroFlareCom extends PluginForHost {
         if (br.containsHTML(">File doesn't exist<|This file has been removed due")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("<b>File Name: </b><span title=\"([^<>\"]*?)\"").getMatch(0);
+        String filename = br.getRegex("<b>File Name: </b><span title=\"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("alt=\"\" /><span title=\"([^<>\"]*?)\">").getMatch(0);
+        }
         final String filesize = br.getRegex("dir=\"ltr\" style=\"text-align: left;\">([^<>\"]*?)</span>").getMatch(0);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -203,16 +206,14 @@ public class NitroFlareCom extends PluginForHost {
             dllink = checkDirectLink(downloadLink, directlinkproperty);
             if (dllink == null) {
                 final Browser br2 = br.cloneBrowser();
-                final String fid = new Regex(downloadLink.getDownloadURL(), "/view/([A-Z0-9]+)/").getMatch(0);
                 br.postPage(br.getURL(), "goToFreePage=");
 
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                 rc.findID();
-
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("/ajax/freeDownload.php", "method=startTimer&fileId=" + fid);
-                if (br.containsHTML("This file is available with premium key only")) {
+                br.postPage("/ajax/freeDownload.php", "method=startTimer&fileId=" + getFUID(downloadLink));
+                if (br.containsHTML("This file is available with premium key only|﻿This file is available with Premium only")) {
                     throwPremiumRequiredException();
                 } else if (br.containsHTML("﻿Downloading is not possible")) {
                     final String waitminutes = br.getRegex("You have to wait (\\d+) minutes to download your next file").getMatch(0);
