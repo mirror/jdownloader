@@ -26,6 +26,7 @@ import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
 import jd.controlling.linkcollector.LinknameCleaner;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -103,7 +104,7 @@ public class LinkCrawler {
     private final List<LinkCrawlerRule>             linkCrawlerRules;
 
     protected List<LinkCrawlerRule> getLinkCrawlerRules() {
-        return linkCrawlerRules;
+        return listLinkCrawlerRules();
     }
 
     private final static LinkCrawlerConfig CONFIG = JsonConfig.create(LinkCrawlerConfig.class);
@@ -253,6 +254,39 @@ public class LinkCrawler {
         return classLoader;
     }
 
+    public static synchronized boolean addLinkCrawlerRule(LinkCrawlerRule rule) {
+        if (rule != null) {
+            List<LinkCrawlerRuleStorable> rules = CONFIG.getLinkCrawlerRules();
+            if (rules == null) {
+                rules = new ArrayList<LinkCrawlerRuleStorable>();
+            }
+            for (LinkCrawlerRuleStorable existingRule : rules) {
+                if (existingRule.getId() == rule.getId()) {
+                    return false;
+                }
+            }
+            rules.add(new LinkCrawlerRuleStorable(rule));
+            CONFIG.setLinkCrawlerRules(rules);
+            return true;
+        }
+        return false;
+    }
+
+    public static synchronized List<LinkCrawlerRule> listLinkCrawlerRules() {
+        final ArrayList<LinkCrawlerRule> linkCrawlerRules = new ArrayList<LinkCrawlerRule>();
+        final List<LinkCrawlerRuleStorable> rules = CONFIG.getLinkCrawlerRules();
+        if (rules != null) {
+            for (LinkCrawlerRuleStorable rule : rules) {
+                try {
+                    linkCrawlerRules.add(rule._getLinkCrawlerRule());
+                } catch (final Throwable e) {
+                    LogController.CL().log(e);
+                }
+            }
+        }
+        return linkCrawlerRules;
+    }
+
     public LinkCrawler(boolean connectParentCrawler, boolean avoidDuplicates) {
         setFilter(defaultFilterFactory());
         if (connectParentCrawler && Thread.currentThread() instanceof LinkCrawlerThread) {
@@ -278,18 +312,7 @@ public class LinkCrawler {
             duplicateFinderFinal = new ConcurrentHashMap<String, Object>(8, 0.9f, 1);
             duplicateFinderDeep = new ConcurrentHashMap<String, Object>(8, 0.9f, 1);
             if (CONFIG.isLinkCrawlerRulesEnabled()) {
-                final ArrayList<LinkCrawlerRule> linkCrawlerRules = new ArrayList<LinkCrawlerRule>();
-                final List<LinkCrawlerRuleStorable> rules = CONFIG.getLinkCrawlerRules();
-                if (rules != null) {
-                    for (LinkCrawlerRuleStorable rule : rules) {
-                        try {
-                            linkCrawlerRules.add(rule._getLinkCrawlerRule());
-                        } catch (final Throwable e) {
-                            LogController.CL().log(e);
-                        }
-                    }
-                }
-                this.linkCrawlerRules = Collections.unmodifiableList(linkCrawlerRules);
+                this.linkCrawlerRules = Collections.unmodifiableList(getLinkCrawlerRules());
             } else {
                 linkCrawlerRules = null;
             }
@@ -547,6 +570,22 @@ public class LinkCrawler {
         return false;
     }
 
+    protected List<CrawledLink> deepInspect(Browser br, URLConnectionAdapter urlConnection, final CrawledLink link) {
+        final int limit = Math.max(1 * 1024 * 1024, CONFIG.getDeepDecryptLoadLimit());
+        if (br != null) {
+            br.setLoadLimit(limit);
+        }
+        if (urlConnection.getRequest().getLocation() == null && (urlConnection.isContentDisposition() || ((urlConnection.getContentType() != null && !urlConnection.getContentType().contains("text")))) || urlConnection.getCompleteContentLength() > limit) {
+            try {
+                urlConnection.disconnect();
+            } catch (Throwable e) {
+            }
+            return _crawl("directhttp://" + urlConnection.getRequest().getUrl(), null, false);
+        } else {
+            return null;
+        }
+    }
+
     protected void crawlDeeper(final CrawledLink source) {
         final CrawledLinkModifier sourceLinkModifier = source.getCustomCrawledLinkModifier();
         source.setCustomCrawledLinkModifier(null);
@@ -573,15 +612,14 @@ public class LinkCrawler {
             try {
                 Browser br = null;
                 try {
-                    List<CrawledLink> possibleCryptedLinks = null;
                     new URL(source.getURL());
                     processedLinksCounter.incrementAndGet();
                     br = new Browser();
                     br.setFollowRedirects(false);
                     String url = source.getURL();
-                    br.openGetConnection(url);
                     final HashSet<String> loopAvoid = new HashSet<String>();
                     loopAvoid.add(url);
+                    br.openGetConnection(url);
                     for (int i = 0; i < 10; i++) {
                         if (br.getRedirectLocation() != null) {
                             try {
@@ -597,32 +635,24 @@ public class LinkCrawler {
                             break;
                         }
                     }
-                    final int limit = Math.max(1 * 1024 * 1024, JsonConfig.create(LinkCrawlerConfig.class).getDeepDecryptLoadLimit());
-                    if (br.getRedirectLocation() == null && (br.getHttpConnection().isContentDisposition() || ((br.getHttpConnection().getContentType() != null && !br.getHttpConnection().getContentType().contains("text")))) || br.getHttpConnection().getCompleteContentLength() > limit) {
-                        try {
-                            br.getHttpConnection().disconnect();
-                        } catch (Throwable e) {
+                    final List<CrawledLink> inspectedLinks = deepInspect(br, br.getHttpConnection(), source);
+                    /*
+                     * downloadable content, we use directhttp and distribute the url
+                     */
+                    if (inspectedLinks != null && inspectedLinks.size() >= 0) {
+                        final boolean singleDest = inspectedLinks.size() == 1;
+                        for (final CrawledLink possibleCryptedLink : inspectedLinks) {
+                            forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs, singleDest);
                         }
-                        /*
-                         * downloadable content, we use directhttp and distribute the url
-                         */
-                        possibleCryptedLinks = _crawl("directhttp://" + url, null, false);
-                        if (possibleCryptedLinks != null && possibleCryptedLinks.size() >= 0) {
-                            final boolean singleDest = possibleCryptedLinks.size() == 1;
-                            for (final CrawledLink possibleCryptedLink : possibleCryptedLinks) {
-                                forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs, singleDest);
-                            }
-                            crawl(possibleCryptedLinks);
-                        }
+                        crawl(inspectedLinks);
                     } else {
                         /* try to load the webpage and find links on it */
-                        br.setLoadLimit(limit);
                         br.followConnection();
                         // We need browser currentURL and not sourceURL, because of possible redirects will change domain and or relative
                         // path.
                         final String finalBaseUrl = new Regex(br.getURL(), "(https?://.*?)(\\?|$)").getMatch(0);
                         final String browserContent = br.toString();
-                        possibleCryptedLinks = _crawl(url, null, false);
+                        final List<CrawledLink> possibleCryptedLinks = _crawl(url, null, false);
                         if (possibleCryptedLinks != null) {
                             final boolean singleDest = possibleCryptedLinks.size() == 1;
                             for (final CrawledLink possibleCryptedLink : possibleCryptedLinks) {
@@ -651,7 +681,7 @@ public class LinkCrawler {
                         }
                     }
                 } catch (Throwable e) {
-                    e.printStackTrace();
+                    LogController.CL().log(e);
                 } finally {
                     try {
                         br.getHttpConnection().disconnect();
@@ -1448,7 +1478,7 @@ public class LinkCrawler {
         }
     }
 
-    private void forwardCrawledLinkInfos(final CrawledLink sourceCrawledLink, final CrawledLink destCrawledLink, final CrawledLinkModifier sourceLinkModifier, final String sourceURLs[], final Boolean singleDestCrawledLink) {
+    protected void forwardCrawledLinkInfos(final CrawledLink sourceCrawledLink, final CrawledLink destCrawledLink, final CrawledLinkModifier sourceLinkModifier, final String sourceURLs[], final Boolean singleDestCrawledLink) {
         if (sourceCrawledLink != null && destCrawledLink != null && sourceCrawledLink != destCrawledLink) {
             destCrawledLink.setSourceLink(sourceCrawledLink);
             destCrawledLink.setOrigin(sourceCrawledLink.getOrigin());

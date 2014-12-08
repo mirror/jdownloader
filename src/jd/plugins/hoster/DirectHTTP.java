@@ -548,6 +548,9 @@ public class DirectHTTP extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l);
         }
         final String auth = this.br.getHeaders().get("Authorization");
+        if (false) {
+            throw new java.net.ConnectException("urgs");
+        }
         /*
          * replace with br.setCurrentURL(null); in future (after 0.9)
          */

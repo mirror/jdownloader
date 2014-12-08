@@ -7,7 +7,9 @@ public class LinkOriginDetails {
     }
 
     public LinkOriginDetails(LinkOrigin origin, String details) {
-        super();
+        if (origin == null) {
+            throw new IllegalArgumentException("origin is null");
+        }
         this.origin = origin;
         this.details = details;
     }

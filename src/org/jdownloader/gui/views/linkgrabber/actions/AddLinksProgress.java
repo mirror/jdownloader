@@ -7,6 +7,9 @@ import java.awt.Point;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -14,13 +17,20 @@ import javax.swing.Timer;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerRule;
+import jd.controlling.linkcrawler.LinkCrawlerRule.RULE;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.components.IconedProcessIndicator;
+import jd.plugins.Plugin;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
@@ -36,19 +46,18 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class AddLinksProgress extends AbstractDialog<Object> {
 
-    private CircledProgressBar progress;
-    private JLabel             duration;
-    private JLabel             old;
+    private CircledProgressBar                 progress;
+    private JLabel                             duration;
+    private JLabel                             old;
 
-    private JLabel             header;
+    private JLabel                             header;
 
-    private Timer              updateTimer;
-    private long               startTime;
+    private Timer                              updateTimer;
+    private long                               startTime;
 
-    private LinkCollectingJob  job;
-    private Thread             thread;
-    protected LinkCrawler      lc;
-    private JLabel             filtered;
+    private final LinkCollectingJob            job;
+    private final AtomicReference<LinkCrawler> lcReference = new AtomicReference<LinkCrawler>();
+    private JLabel                             filtered;
 
     public AddLinksProgress(LinkCollectingJob crawljob) {
         super(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AddLinksProgress_AddLinksProgress_(), null, _GUI._.literally_hide(), _GUI._.literally_abort());
@@ -104,6 +113,7 @@ public class AddLinksProgress extends AbstractDialog<Object> {
 
             public void actionPerformed(ActionEvent e) {
                 duration.setText(TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - startTime, 0));
+                final LinkCrawler lc = lcReference.get();
                 old.setText("" + (lc == null ? 0 : lc.getCrawledLinksFoundCounter()));
                 filtered.setText("" + (lc == null ? 0 : lc.getFilteredLinks().size()));
 
@@ -111,48 +121,78 @@ public class AddLinksProgress extends AbstractDialog<Object> {
         });
         old.setText("0");
         filtered.setText("0");
-        thread = new Thread("AddLinksDialog") {
+        getAddLinksDialogThread(job, lcReference).start();
+        updateTimer.setRepeats(true);
+        updateTimer.start();
+        return p;
+    }
+
+    public Thread getAddLinksDialogThread(final LinkCollectingJob job, final AtomicReference<LinkCrawler> lcReference) {
+        return new Thread("AddLinksDialog:" + job.getOrigin().getOrigin()) {
             public void run() {
-
-                // LinkCollector clears the text, so we store it here to keep ot for a later deep decrypt
-                final String txt = job.getText();
-                lc = LinkCollector.getInstance().addCrawlerJob(job);
-
+                final Thread thread = Thread.currentThread();
+                LinkCrawler lc = LinkCollector.getInstance().addCrawlerJob(job);
+                if (lcReference != null) {
+                    lcReference.set(lc);
+                }
                 if (lc != null) {
                     lc.waitForCrawling();
-                    System.out.println("JOB DONE: " + lc.getCrawledLinksFoundCounter());
                     if (!job.isDeepAnalyse() && lc.getProcessedLinksCounter() == 0 && lc.getUnhandledLinksFoundCounter() > 0) {
-                        try {
-                            Dialog.getInstance().showConfirmDialog(0, _GUI._.AddLinksAction_actionPerformed_deep_title(), _GUI._.AddLinksAction_actionPerformed_deep_msg(), null, _GUI._.literally_yes(), _GUI._.literall_no());
-                            job.setDeepAnalyse(true);
-                            job.setText(txt);
-                            lc = LinkCollector.getInstance().addCrawlerJob(job);
-                            lc.waitForCrawling();
-                            System.out.println("DEEP JOB DONE: " + lc.getCrawledLinksFoundCounter());
-                        } catch (DialogClosedException e) {
-                            e.printStackTrace();
-                        } catch (DialogCanceledException e) {
-                            e.printStackTrace();
+                        final List<CrawledLink> unhandledLinks = new ArrayList<CrawledLink>(lc.getUnhandledLinks());
+                        if (unhandledLinks.size() == 1 && LinkOrigin.ADD_LINKS_DIALOG.equals(job.getOrigin().getOrigin())) {
+                            for (CrawledLink unhandledLink : unhandledLinks) {
+                                unhandledLink.setCrawlDeep(true);
+                            }
+                        } else {
+                            try {
+                                Dialog.getInstance().showConfirmDialog(0, _GUI._.AddLinksAction_actionPerformed_deep_title(), _GUI._.AddLinksAction_actionPerformed_deep_msg(), null, _GUI._.literally_yes(), _GUI._.literall_no());
+                                for (CrawledLink unhandledLink : unhandledLinks) {
+                                    unhandledLink.setCrawlDeep(true);
+                                }
+                            } catch (DialogClosedException e) {
+                                e.printStackTrace();
+                            } catch (DialogCanceledException e) {
+                                e.printStackTrace();
+                            }
                         }
-
+                        lc = LinkCollector.getInstance().addCrawlerJob(unhandledLinks, job);
+                        if (lcReference != null) {
+                            lcReference.set(lc);
+                        }
+                        lc.waitForCrawling();
+                        final List<CrawledLink> results = lc.getCrawledLinks();
+                        if (unhandledLinks.size() == 1 && results.size() == 1) {
+                            final String unhandledURL = unhandledLinks.get(0).getURL();
+                            final String fileName = Plugin.extractFileNameFromURL(unhandledURL);
+                            final String fileExtension = Files.getExtension(fileName);
+                            if (StringUtils.isNotEmpty(fileExtension)) {
+                                boolean add = true;
+                                for (LinkCrawlerRule rule : LinkCrawler.listLinkCrawlerRules()) {
+                                    if (RULE.DIRECTHTTP.equals(rule.getRule()) && rule.matches(unhandledURL)) {
+                                        add = false;
+                                        break;
+                                    }
+                                }
+                                if (add) {
+                                    final LinkCrawlerRule rule = new LinkCrawlerRule();
+                                    rule.setName("Learned file extension:" + fileExtension);
+                                    rule.setPattern("(?i).*\\." + fileExtension + "($|\\?.*$)");
+                                    rule.setRule(RULE.DIRECTHTTP);
+                                    LinkCrawler.addLinkCrawlerRule(rule);
+                                }
+                            }
+                        }
                     }
                 }
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
-                        dispose();
+                        dispose(thread);
                     }
                 };
 
             }
         };
-
-        thread.start();
-        updateTimer.setRepeats(true);
-        updateTimer.start();
-
-        return p;
     }
 
     protected String getSearchInText() {
@@ -168,13 +208,16 @@ public class AddLinksProgress extends AbstractDialog<Object> {
                 public void run() {
                     IconedProcessIndicator iconComp = JDGui.getInstance().getStatusBar().getLinkGrabberIndicator();
                     Point loc = iconComp.getLocationOnScreen();
-                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() / 2, loc.y + iconComp.getHeight() / 2), "linkcrawlerprogressdialog", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AddLinksProgress_setReturnmask_title_(), _GUI._.AddLinksProgress_setReturnmask_msg_(), NewTheme.I().getIcon("linkgrabber", 32));
+                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
+                        HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() / 2, loc.y + iconComp.getHeight() / 2), "linkcrawlerprogressdialog", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AddLinksProgress_setReturnmask_title_(), _GUI._.AddLinksProgress_setReturnmask_msg_(), NewTheme.I().getIcon("linkgrabber", 32));
+                    }
 
                 }
             }.start();
 
         } else {
             // cancel
+            final LinkCrawler lc = lcReference.get();
             if (lc != null) {
                 LinkCollector.getInstance().abort();
                 // lc.stopCrawling();
@@ -183,13 +226,18 @@ public class AddLinksProgress extends AbstractDialog<Object> {
         super.setReturnmask(b);
     }
 
+    public void dispose(Thread thread) {
+        if (thread != null) {
+            thread.interrupt();
+        }
+        dispose();
+    }
+
     @Override
     public void dispose() {
         this.setVisible(false);
         super.dispose();
-        thread.interrupt();
         updateTimer.stop();
-
     }
 
     private Component label(String lbl) {

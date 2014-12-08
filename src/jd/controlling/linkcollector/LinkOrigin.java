@@ -16,7 +16,7 @@ public enum LinkOrigin {
     DOWNLOADED_CONTAINER(_JDT._.LinkSource_DOWNLOADED_CONTAINER()),
     EXTENSION(_JDT._.LinkSource_EXTENSION());
 
-    private String translation;
+    private final String translation;
 
     private LinkOrigin(String translation) {
         this.translation = translation;
