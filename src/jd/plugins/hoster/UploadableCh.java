@@ -355,7 +355,7 @@ public class UploadableCh extends PluginForHost {
                 logger.warning("Final link is null");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

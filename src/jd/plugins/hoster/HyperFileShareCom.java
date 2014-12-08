@@ -41,14 +41,9 @@ public class HyperFileShareCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        login(account);
         account.setValid(true);
         ai.setUnlimitedTraffic();
         ai.setStatus("Registered (free) User");
@@ -70,21 +65,61 @@ public class HyperFileShareCom extends PluginForHost {
         return 5;
     }
 
+    private static final String MAINTENANCE = ">Servers Maintenance<";
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
+        br.getPage(downloadLink.getDownloadURL());
+        br.setFollowRedirects(true);
+        final String properlink = br.getRegex("The document has moved <a href=\"(.*?)\"").getMatch(0);
+        if (properlink != null) {
+            br.getPage(properlink);
+        }
+        if (br.containsHTML(MAINTENANCE)) {
+            return AvailableStatus.UNCHECKABLE;
+        }
+        if (br.containsHTML("Download URL is incorrect") || br.containsHTML("Not Found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("<title>Download (.*?)</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<span>Download(.*?)</span></div>").getMatch(0);
+        }
+        String size = br.getRegex("File size:.*?strong>(.*?)</strong>").getMatch(0);
+        if (filename == null || size == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        downloadLink.setName(filename.trim());
+        downloadLink.setDownloadSize(SizeFormatter.getSize(size + "B"));
+        return AvailableStatus.TRUE;
+    }
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(MAINTENANCE)) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is in maintenance mode!", 3 * 60 * 60 * 1000l);
+        }
         br.setFollowRedirects(false);
         String url = br.getRegex("href=\"(download\\.php\\?code=[a-f0-9]+&sid=[a-f0-9]+&s=\\d)\"").getMatch(0);
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (url == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         url = "http://download.hyperfileshare.com/" + url;
         br.getPage(url);
         url = br.getRegex("href=\"(download\\.php\\?code=[a-f0-9]+\\&sid=[a-f0-9]+\\&s=\\d)\"").getMatch(0);
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (url == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         url = "http://download.hyperfileshare.com/" + url;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("(You exceeded your download size limit|>You exceeded your download quota)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+            if (br.containsHTML("(You exceeded your download size limit|>You exceeded your download quota)")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -96,45 +131,47 @@ public class HyperFileShareCom extends PluginForHost {
         login(account);
         br.getPage(link.getDownloadURL());
         String url = br.getRegex("href=\"(download\\.php\\?code=[a-f0-9]+&sid=[a-f0-9]+&s=\\d)\"").getMatch(0);
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (url == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         url = "http://download.hyperfileshare.com/" + url;
         br.getPage(url);
         url = null;
         url = br.getRegex("href=\"(download\\.php\\?code=[a-f0-9]+&sid=[a-f0-9]+&s=\\d)\"").getMatch(0);
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (url == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         url = "http://download.hyperfileshare.com/" + url;
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("You exceeded your download size limit")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+            if (br.containsHTML("You exceeded your download size limit")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
-    private void login(Account account) throws Exception {
+    private void login(final Account account) throws Exception {
         this.setBrowserExclusive();
-        br.getPage("http://www.hyperfileshare.com/index.php");
-        br.postPage("http://www.hyperfileshare.com/index.php", "login=" + Encoding.urlEncode(account.getUser()) + "&psw=" + Encoding.urlEncode(account.getPass()) + "&rem_me=1");
-        if (br.getCookie("http://www.hyperfileshare.com", "sid") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
-        br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(true);
-        String properlink = br.getRegex("The document has moved <a href=\"(.*?)\"").getMatch(0);
-        if (properlink != null) br.getPage(properlink);
-        if (br.containsHTML("Download URL is incorrect") || br.containsHTML("Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>Download (.*?)</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<span>Download(.*?)</span></div>").getMatch(0);
-        String size = br.getRegex("File size:.*?strong>(.*?)</strong>").getMatch(0);
-        if (filename == null || size == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(size + "B"));
-        return AvailableStatus.TRUE;
+        br.getPage("http://www.hyperfileshare.com/index.php");
+        if (br.containsHTML(MAINTENANCE)) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nKann Account nicht prüfen!\r\nAnbieter befindet sich momentan im Wartungsmodus!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nCannot check account!\r\nServer is in maintenance mode!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
+        br.postPage("http://www.hyperfileshare.com/index.php", "login=" + Encoding.urlEncode(account.getUser()) + "&psw=" + Encoding.urlEncode(account.getPass()) + "&rem_me=1");
+        if (br.getCookie("http://www.hyperfileshare.com", "sid") == null) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
     }
 
     @Override

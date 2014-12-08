@@ -63,7 +63,7 @@ public class VidMe extends PluginForHost {
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         DLLINK = checkDirectLink(downloadLink, "directlink");
         if (DLLINK == null) {
-            DLLINK = br.getRegex("property=\"og:video:url\" content=\"(http[^<>\"]*?\\.[A-Za-z0-9]{2,5})\"").getMatch(0);
+            DLLINK = br.getRegex("property=\"og:video:url\" content=\"(http[^<>\"]*?/videos/[^<>\"]*?)\"").getMatch(0);
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
