@@ -479,7 +479,10 @@ public class OffCloudCom extends PluginForHost {
         handleAPIErrors(this.br);
     }
 
-    /** 0 = everything ok, 1-99 = "error"-errors, 100-199 = "not_available"-errors, 200-299 = Other (html) [download] errors */
+    /**
+     * 0 = everything ok, 1-99 = "error"-errors, 100-199 = "not_available"-errors, 200-299 = Other (html) [download] errors, sometimes mixed
+     * with the API errors.
+     */
     private void updatestatuscode() {
         String error = getJson("error");
         if (error == null) {
@@ -502,6 +505,8 @@ public class OffCloudCom extends PluginForHost {
                 statuscode = 7;
             } else if (error.equals("User is not allowed this operation.")) {
                 statuscode = 8;
+            } else if (error.equals("IP address needs to be registered. Check your email for further information.")) {
+                statuscode = 9;
             } else if (error.equals("premium")) {
                 statuscode = 100;
             } else {
@@ -510,8 +515,9 @@ public class OffCloudCom extends PluginForHost {
             }
         } else {
             if (br.containsHTML("We\\'re sorry but your download ticket couldn\\'t have been found, please repeat the download process\\.")) {
-                statuscode = 200;
+                statuscode = 201;
             } else {
+                /* No way to tell that something unpredictable happened here --> status should be fine. */
                 statuscode = 0;
             }
         }
@@ -569,6 +575,14 @@ public class OffCloudCom extends PluginForHost {
                  */
                 statusMessage = "'User is not allowed this operation.' --> Host is temporarily disabled";
                 tempUnavailableHoster(15 * 60 * 1000l);
+            case 9:
+                /* Free account limits reached -> permanently disable account */
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    statusMessage = "\r\nBitte bestätige deine aktuelle IP Adresse über den Bestätigungslink per E-Mail um den Account wieder nutzen zu können.";
+                } else {
+                    statusMessage = "\r\nPlease confirm your current IP adress via the activation link you got per mail to continue using this account.";
+                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 100:
                 /* Free account limits reached -> permanently disable account */
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -577,7 +591,7 @@ public class OffCloudCom extends PluginForHost {
                     statusMessage = "\r\nFree account limits reached. Buy a premium account to continue downloading.";
                 }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            case 200:
+            case 201:
                 /* Free account limits reached -> permanently disable account */
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                     statusMessage = "\r\nDownloadticket defekt --> Neuversuch";
