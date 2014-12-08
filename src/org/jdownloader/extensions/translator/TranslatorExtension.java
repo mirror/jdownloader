@@ -36,6 +36,7 @@ import org.appwork.txtresource.TranslationSource;
 import org.appwork.txtresource.TranslationUtils;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
+import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.locale.AWUTranslation;
 import org.appwork.utils.logging2.sendlogs.LogSenderTranslation;
@@ -510,7 +511,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     public boolean validateSvnLogin(String svnUser, String svnPass) throws InterruptedException {
 
         setLoggedIn(false);
-
+        logger.info("Login: " + svnUser + " : getSHA256 pass: " + Hash.getSHA256(svnPass));
         if (svnUser.length() >= 3 && svnPass.length() > 3) {
             String url = "svn://svn.jdownloader.org/jdownloader";
 
