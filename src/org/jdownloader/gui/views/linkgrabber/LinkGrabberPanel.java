@@ -17,6 +17,7 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcollector.LinkCollectorEvent;
@@ -222,6 +223,10 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
             @Override
             public void onLinkCrawlerStopped(LinkCollectorCrawler parameter) {
+            }
+
+            @Override
+            public void onLinkCrawlerNewJob(LinkCollectingJob job) {
             }
 
         });
@@ -709,6 +714,10 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                 sidebar.getSponsoringPanel().setVisible(true);
             }
         }
+    }
+
+    @Override
+    public void onLinkCrawlerNewJob(LinkCollectingJob job) {
     }
 
 }

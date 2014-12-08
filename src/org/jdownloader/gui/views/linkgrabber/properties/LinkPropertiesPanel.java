@@ -7,6 +7,7 @@ import java.util.List;
 import javax.swing.Icon;
 import javax.swing.JPopupMenu;
 
+import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcollector.LinkCollectorEvent;
@@ -345,5 +346,9 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
             return lcurrentPackage.getUniqueID();
         }
         return null;
+    }
+
+    @Override
+    public void onLinkCrawlerNewJob(LinkCollectingJob job) {
     }
 }

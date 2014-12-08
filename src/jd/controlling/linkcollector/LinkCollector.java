@@ -445,6 +445,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             public void onLinkCrawlerStopped(LinkCollectorCrawler parameter) {
             }
 
+            @Override
+            public void onLinkCrawlerNewJob(LinkCollectingJob job) {
+            }
+
         });
     }
 
@@ -972,6 +976,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     public LinkCrawler addCrawlerJob(final LinkCollectingJob job) {
         try {
+            getEventsender().fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.NEW_CRAWLER_JOB, job, QueuePriority.NORM));
             logger.info("Added CrawlerJob " + job);
             if (job == null) {
                 throw new IllegalArgumentException("job is null");
@@ -1812,7 +1817,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /**
      * saves List of CrawledPackages to given File as ZippedJSon
-     *
+     * 
      * @param packages
      * @param file
      */
@@ -2134,7 +2139,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         /* add the converted FilePackages to DownloadController */
         /**
          * addTop = 0, to insert the packages at the top
-         *
+         * 
          * addBottom = negative number -> add at the end
          */
         DownloadController.getInstance().addAllAt(filePackagesToAdd, addTop ? 0 : -(filePackagesToAdd.size() + 10));

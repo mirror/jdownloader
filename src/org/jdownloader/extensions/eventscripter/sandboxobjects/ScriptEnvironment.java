@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.eventscripter;
+package org.jdownloader.extensions.eventscripter.sandboxobjects;
 
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -6,6 +6,9 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Locale;
 
@@ -47,8 +50,13 @@ import org.appwork.utils.reflection.Clazz;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.api.RemoteAPIController;
-import org.jdownloader.extensions.eventscripter.sandboxobjects.DownloadLinkSandBox;
-import org.jdownloader.extensions.eventscripter.sandboxobjects.FilePackageSandBox;
+import org.jdownloader.extensions.eventscripter.EnvironmentException;
+import org.jdownloader.extensions.eventscripter.ScriptAPI;
+import org.jdownloader.extensions.eventscripter.ScriptEntry;
+import org.jdownloader.extensions.eventscripter.ScriptReferenceThread;
+import org.jdownloader.extensions.eventscripter.ScriptThread;
+import org.jdownloader.extensions.eventscripter.T;
+import org.jdownloader.extensions.eventscripter.Utils;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.ArraySet;
 import org.jdownloader.images.AbstractIcon;
@@ -510,6 +518,9 @@ public class ScriptEnvironment {
     protected static void collectClasses(Class<? extends Object> cl, ArraySet<Class<?>> clazzes) {
 
         for (Method m : cl.getDeclaredMethods()) {
+            if (cl == ScriptEnvironment.class && m.getAnnotation(ScriptAPI.class) == null) {
+                continue;
+            }
             if (m.getReturnType() == Object.class || !Modifier.isPublic(m.getModifiers()) || Clazz.isPrimitive(m.getReturnType()) || Clazz.isPrimitiveWrapper(m.getReturnType()) || Clazz.isString(m.getReturnType())) {
                 continue;
             }
@@ -537,6 +548,12 @@ public class ScriptEnvironment {
         }
     }
 
+    public static Collection<Class<?>> getRequiredClasses() {
+        ArraySet<Class<?>> clazzes = new ArraySet<Class<?>>();
+        collectClasses(ScriptEnvironment.class, clazzes);
+        return clazzes;
+    }
+
     public static String getAPIDescription(ArraySet<Class<?>> triggerClazzes) {
         StringBuilder sb = new StringBuilder();
         //
@@ -546,7 +563,7 @@ public class ScriptEnvironment {
         getAPIDescriptionForClass(sb, ScriptEnvironment.class);
 
         sb.append("/* =========  Properties =========*/\r\n");
-        for (Field f : ScriptEnvironment.class.getDeclaredFields()) {
+        for (Field f : Utils.sort(ScriptEnvironment.class.getDeclaredFields())) {
             ScriptAPI ann = f.getAnnotation(ScriptAPI.class);
             if (ann != null) {
                 sb.append("//").append(ann.description()).append(";\r\n");
@@ -560,66 +577,22 @@ public class ScriptEnvironment {
         }
         collectClasses(ScriptEnvironment.class, clazzes);
         clazzes.addAll(triggerClazzes);
+        Collections.sort(clazzes, new Comparator<Class<?>>() {
+
+            @Override
+            public int compare(Class<?> o1, Class<?> o2) {
+                return Utils.cleanUpClass(o1.getSimpleName()).compareTo(Utils.cleanUpClass(o2.getSimpleName()));
+            }
+
+        });
         sb.append("/* =============== ").append("Classes").append(" =============== */").append("\r\n");
         for (Class<?> cl : clazzes) {
-            sb.append("/* === ").append(EventTrigger.cleanUpClass(cl.getSimpleName())).append(" === */").append("\r\n");
+            sb.append("/* === ").append(Utils.cleanUpClass(cl.getSimpleName())).append(" === */").append("\r\n");
             getAPIDescriptionForClass(sb, cl);
 
         }
         return sb.toString();
     }
-
-    // public static String getAPIDescription() {
-    // StringBuilder sb = new StringBuilder();
-    // sb.append("// ========= Global Methods =========\r\n");
-    // for (Method f : ScriptEnvironment.class.getDeclaredMethods()) {
-    // ScriptAPI ann = f.getAnnotation(ScriptAPI.class);
-    // if (ann != null) {
-    // sb.append("//").append(ann.description()).append("\r\n");
-    // if (!Clazz.isVoid(f.getReturnType())) {
-    // sb.append("// var my").append(f.getReturnType().getSimpleName().substring(0,
-    // 1).toUpperCase(Locale.ENGLISH)).append(f.getReturnType().getSimpleName().substring(1)).append(" = ");
-    //
-    // } else {
-    // sb.append("// ");
-    // }
-    // sb.append(f.getName()).append("(");
-    //
-    // boolean first = true;
-    // if (ann.parameters() != null) {
-    // for (String s : ann.parameters()) {
-    // if (!first) {
-    // sb.append(", ");
-    // }
-    // sb.append(s);
-    // first = false;
-    //
-    // }
-    // }
-    // sb.append(");\r\n");
-    // if (StringUtils.isNotEmpty(ann.example())) {
-    // sb.append(ann.example()).append("\r\n");
-    // }
-    //
-    // }
-    // }
-    // sb.append("// ========= Global Properties =========\r\n");
-    // for (Field f : ScriptEnvironment.class.getDeclaredFields()) {
-    // ScriptAPI ann = f.getAnnotation(ScriptAPI.class);
-    // if (ann != null) {
-    // sb.append("//").append(ann.description()).append(";\r\n");
-    // sb.append("var my").append(f.getType().getSimpleName().substring(0,
-    // 1).toUpperCase(Locale.ENGLISH)).append(f.getType().getSimpleName().substring(1)).append(" = ");
-    // sb.append(f.getName()).append(";\r\n");
-    //
-    // if (StringUtils.isNotEmpty(ann.example())) {
-    // sb.append(ann.example()).append("\r\n");
-    // }
-    // }
-    // }
-    //
-    // return sb.toString();
-    // }
 
     /**
      * @param sb
@@ -632,7 +605,7 @@ public class ScriptEnvironment {
             sb.append("/* ").append(clazzAnn.description()).append("*/").append("\r\n");
         }
         sb.append("/* =========  Methods =========*/\r\n");
-        for (Method m : cl.getDeclaredMethods()) {
+        for (Method m : Utils.sort(cl.getDeclaredMethods())) {
 
             if (!Modifier.isPublic(m.getModifiers())) {
 
@@ -643,12 +616,12 @@ public class ScriptEnvironment {
                 continue;
             }
             if (!Clazz.isVoid(m.getReturnType())) {
-                sb.append("var ").append(EventTrigger.toMy(EventTrigger.cleanUpClass(m.getReturnType().getSimpleName()))).append(" = ");
+                sb.append("var ").append(Utils.toMy(Utils.cleanUpClass(m.getReturnType().getSimpleName()))).append(" = ");
             }
             if (cl == ScriptEnvironment.class) {
                 sb.append(m.getName());
             } else {
-                sb.append(EventTrigger.toMy(EventTrigger.cleanUpClass(cl.getSimpleName()))).append(".").append(m.getName());
+                sb.append(Utils.toMy(Utils.cleanUpClass(cl.getSimpleName()))).append(".").append(m.getName());
             }
             sb.append("(");
             boolean first = true;
@@ -658,7 +631,7 @@ public class ScriptEnvironment {
                     sb.append(", ");
                 }
                 first = false;
-                sb.append(EventTrigger.toMy(p.getSimpleName()));
+                sb.append(Utils.toMy(p.getSimpleName()));
                 if (ann != null && ann.parameters().length == m.getParameterTypes().length && !StringUtils.isEmpty(ann.parameters()[i])) {
                     sb.append("/*").append(ann.parameters()[i]).append("*/");
                 }

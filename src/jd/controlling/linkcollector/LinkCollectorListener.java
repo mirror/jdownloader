@@ -58,18 +58,20 @@ public interface LinkCollectorListener extends EventListener {
      * New link has been added and grouped.<br>
      * Parameter[0]: (CrawledLink) added Link
      */
-    void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter);
+    void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink link);
 
     /**
      * Dupe link has been added.<br>
      * Parameter[0]: (CrawledLink) added Link
      */
-    void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter);
+    void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink link);
 
-    void onLinkCrawlerAdded(LinkCollectorCrawler parameter);
+    void onLinkCrawlerAdded(LinkCollectorCrawler crawler);
 
-    void onLinkCrawlerStarted(LinkCollectorCrawler parameter);
+    void onLinkCrawlerStarted(LinkCollectorCrawler crawler);
 
-    void onLinkCrawlerStopped(LinkCollectorCrawler parameter);
+    void onLinkCrawlerStopped(LinkCollectorCrawler crawler);
+
+    void onLinkCrawlerNewJob(LinkCollectingJob job);
 
 }

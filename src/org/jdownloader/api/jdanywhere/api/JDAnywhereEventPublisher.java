@@ -16,6 +16,7 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
+import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcollector.LinkCollectorEvent;
@@ -55,8 +56,8 @@ import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 public class JDAnywhereEventPublisher implements EventPublisher, AccountControllerListener, DownloadWatchdogListener, DownloadControllerListener, StateEventListener, LinkCollectorListener, ChallengeResponseListener {
 
     private CopyOnWriteArraySet<RemoteAPIEventsSender> eventSenders       = new CopyOnWriteArraySet<RemoteAPIEventsSender>();
-    private EventsAPI                         eventsApi          = new EventsAPI();
-    HashMap<Long, String>                     linkStatusMessages = new HashMap<Long, String>();
+    private EventsAPI                                  eventsApi          = new EventsAPI();
+    HashMap<Long, String>                              linkStatusMessages = new HashMap<Long, String>();
 
     private enum EVENTID {
         ACCOUNTCHANGED,
@@ -820,6 +821,10 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
             }
             publishEvent(EVENTID.ACCOUNTCHANGED, data, "ACCOUNT_" + event.getAccount().getId().toString());
         }
+    }
+
+    @Override
+    public void onLinkCrawlerNewJob(LinkCollectingJob job) {
     }
 
 }

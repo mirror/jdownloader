@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcollector.LinkCollectorEvent;
@@ -97,7 +98,9 @@ public class ArchiveController implements LinkCollectorListener {
     private ArchiveSettings getArchiveSettings(String id, BooleanStatus defaultAutoExtract) {
         synchronized (this) {
             ArchiveSettings ret = map.get(id);
-            if (ret != null) return ret;
+            if (ret != null) {
+                return ret;
+            }
             ret = createSettingsObject(id);
             if (BooleanStatus.UNSET.equals(ret.getAutoExtract()) && !ret.getAutoExtract().equals(defaultAutoExtract)) {
                 /* only set AutoExtract value when it is UNSET */
@@ -250,5 +253,9 @@ public class ArchiveController implements LinkCollectorListener {
 
     @Override
     public void onLinkCrawlerStopped(LinkCollectorCrawler parameter) {
+    }
+
+    @Override
+    public void onLinkCrawlerNewJob(LinkCollectingJob job) {
     }
 }

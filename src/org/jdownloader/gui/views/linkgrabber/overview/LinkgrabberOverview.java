@@ -9,6 +9,7 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
 import jd.SecondLevelLaunch;
+import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcollector.LinkCollectorEvent;
@@ -346,6 +347,10 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
     @Override
     protected AggregatedCrawlerNumbers createTotal() {
         return new AggregatedCrawlerNumbers(table.getSelectionInfo(false, false));
+    }
+
+    @Override
+    public void onLinkCrawlerNewJob(LinkCollectingJob job) {
     }
 
 }

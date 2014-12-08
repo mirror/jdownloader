@@ -25,6 +25,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.dimensor.RememberLastDialogDimension;
 import org.appwork.utils.swing.dialog.locator.RememberAbsoluteDialogLocator;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.extensions.eventscripter.sandboxobjects.ScriptEnvironment;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.scripting.JSHtmlUnitPermissionRestricter;
 

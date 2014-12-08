@@ -8,18 +8,19 @@ import javax.swing.Icon;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
+import jd.controlling.linkcrawler.CrawledLink;
+
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
-import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
-import org.appwork.utils.event.predefined.changeevent.ChangeListener;
 import org.jdownloader.controlling.packagizer.PackagizerController;
+import org.jdownloader.controlling.packagizer.PackagizerControllerListener;
 import org.jdownloader.controlling.packagizer.PackagizerRule;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class FilterTableModel extends ExtTableModel<PackagizerRule> implements ChangeListener {
+public class FilterTableModel extends ExtTableModel<PackagizerRule> implements PackagizerControllerListener {
 
     private static final long serialVersionUID = -7756459932564776739L;
     private OrderColumn       prio;
@@ -119,8 +120,12 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements C
 
             @Override
             public String getStringValue(PackagizerRule value) {
-                if (!value.isValid()) { return _GUI._.FilterTableModel_getStringValue_name_invalid(value.getName()); }
-                if (value.isStaticRule()) { return _GUI._.FilterTableModel_initColumns_static_(value.getName()); }
+                if (!value.isValid()) {
+                    return _GUI._.FilterTableModel_getStringValue_name_invalid(value.getName());
+                }
+                if (value.isStaticRule()) {
+                    return _GUI._.FilterTableModel_initColumns_static_(value.getName());
+                }
                 return value.getName();
             }
         });
@@ -134,7 +139,9 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements C
 
             @Override
             public boolean isEnabled(PackagizerRule obj) {
-                if (!obj.isValid()) { return true; }
+                if (!obj.isValid()) {
+                    return true;
+                }
                 return obj.isEnabled();
             }
 
@@ -144,7 +151,9 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements C
             }
 
             protected Icon getIcon(final PackagizerRule value) {
-                if (!value.isValid()) { return NewTheme.I().getIcon("error", 18); }
+                if (!value.isValid()) {
+                    return NewTheme.I().getIcon("error", 18);
+                }
                 return null;
             }
 
@@ -156,7 +165,8 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements C
             public String getStringValue(PackagizerRule value) {
                 if (!value.isValid()) {
 
-                return _GUI._.FilterTableModel_initColumns_invalid_condition_(); }
+                    return _GUI._.FilterTableModel_initColumns_invalid_condition_();
+                }
                 return value.toString();
             }
         });
@@ -186,9 +196,16 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements C
         return false;
     }
 
-    public void onChangeEvent(ChangeEvent event) {
-
+    @Override
+    public void onPackagizerUpdate() {
         _fireTableStructureChanged(PackagizerController.getInstance().list(), true);
+    }
 
+    @Override
+    public void onPackagizerRunBeforeLinkcheck(CrawledLink link) {
+    }
+
+    @Override
+    public void onPackagizerRunAfterLinkcheck(CrawledLink link) {
     }
 }

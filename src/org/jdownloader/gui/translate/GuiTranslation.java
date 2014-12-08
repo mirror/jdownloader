@@ -2423,8 +2423,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "General Reconnect Options" })
     String ReconnectSettings_ReconnectSettings_settings_();
 
-    @Default(lngs = { "en" }, values = { "General Reconnect related options can be found here." })
-    String ReconnectSettings_ReconnectSettings_settings_desc();
+    @Default(lngs = { "en" }, values = { "General Reconnect related options can be found here. A successful Reconnect will disconnect you from the internet and re-estabilish the connection afterwards. For many connection types, this will result in a new public IP address. Thus reconnecting may help to skip blocks or waittimes that are bound to your current IP." })
+    String ReconnectSettings_ReconnectSettings_settings_desc2();
 
     @Default(lngs = { "en" }, values = { "Auto Reconnect Enabled" })
     String ReconnectSettings_ReconnectSettings_enabled_();
