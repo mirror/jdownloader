@@ -62,6 +62,11 @@ public class BitShareCom extends PluginForHost {
 
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload("http://bitshare.com/?f=" + new Regex(link.getDownloadURL(), "([a-z0-9]{8})$").getMatch(0));
+        // /files/uid are not valid without files/uid/filename
+        try {
+            link.setContentUrl(link.getDownloadURL());
+        } catch (final Throwable t) {
+        }
     }
 
     public BitShareCom(PluginWrapper wrapper) {
