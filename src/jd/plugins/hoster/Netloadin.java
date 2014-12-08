@@ -181,7 +181,7 @@ public class Netloadin extends PluginForHost {
                 br.postPage("http://api.netload.in/info.php", sb.toString());
                 String infos[][] = br.getRegex("([^;]*);([^;]*);(\\d+|unknown);([^;]*);([0-9a-f]{32}|unknown)[\r\n]*").getMatches();
                 for (DownloadLink dl : links) {
-                    String id = Netloadin.getID(dl.getDownloadURL());
+                    final String id = Netloadin.getID(dl.getDownloadURL());
                     int hit = -1;
                     for (int i = 0; i < infos.length; i++) {
                         if (infos[i][0].trim().equals(id)) {
@@ -193,11 +193,12 @@ public class Netloadin extends PluginForHost {
                         /* id not in response, so its offline */
                         dl.setAvailable(false);
                     } else {
-                        String filename = infos[hit][1].trim();
+                        final String filename = infos[hit][1].trim();
                         if ("unknown".equals(filename)) {
-                            filename = id;
+                            dl.setName(id);
+                        } else {
+                            dl.setFinalFileName(filename);
                         }
-                        dl.setFinalFileName(filename);
                         long size;
                         dl.setDownloadSize(size = SizeFormatter.getSize(infos[hit][2]));
                         if (size > 0) {
