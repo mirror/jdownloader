@@ -766,11 +766,11 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                 if (getSettings().isDeepExtractionEnabled()) {
                     ExtractionController con = (ExtractionController) caller;
                     final ArrayList<String> knownPasswords = new ArrayList<String>();
-                    String usedPassword = con.getArchiv().getFinalPassword();
+                    final String usedPassword = con.getArchiv().getFinalPassword();
                     if (StringUtils.isNotEmpty(usedPassword)) {
                         knownPasswords.add(usedPassword);
                     }
-                    List<String> archiveSettingsPasswords = con.getArchiv().getSettings().getPasswords();
+                    final List<String> archiveSettingsPasswords = con.getArchiv().getSettings().getPasswords();
                     if (archiveSettingsPasswords != null) {
                         knownPasswords.addAll(archiveSettingsPasswords);
                     }
