@@ -41,7 +41,7 @@ public class NitroFlareCom extends PluginForDecrypt {
         String parameter = param.toString();
         String userid = new Regex(parameter, this.getSupportedLinks().pattern()).getMatch(0);
         String folderid = new Regex(parameter, this.getSupportedLinks().pattern()).getMatch(1);
-        br.postPage("https://www.nitroflare.com/ajax/folder.php", "userId=" + userid + "&folder=" + Encoding.urlEncode(folderid) + "&fetchAll");
+        br.postPage("https://www.nitroflare.com/ajax/folder.php", "userId=" + userid + "&folder=" + Encoding.urlEncode(folderid) + "&fetchAll=1");
         String fpName = getJson("name");
         String filesArray = getJsonArray("files");
         if (!inValidate(filesArray)) {

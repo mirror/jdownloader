@@ -51,8 +51,8 @@ import org.appwork.utils.os.CrossSystem;
 public class NitroFlareCom extends PluginForHost {
 
     private final String         language = System.getProperty("user.language");
-    private static final String  baseURL  = "https://nitroflare.com";
-    private static final String  apiURL   = "https://www.nitroflare.com/api";
+    private final String         baseURL  = "https://nitroflare.com";
+    private final String         apiURL   = "https://www.nitroflare.com/api/v2";
     private static AtomicBoolean useAPI   = new AtomicBoolean(true);
 
     public NitroFlareCom(PluginWrapper wrapper) {
