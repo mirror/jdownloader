@@ -272,15 +272,17 @@ public class FShareVn extends PluginForHost {
         br = new Browser();
         // this should set English here...
         requestFileInformation(link);
-        // English is also set here && cache login causes problems, premium pages sometimes not returned without fresh login.
-        login(account, true);
         if (account.getBooleanProperty("free", false)) {
             // we want to keep directlink for free download
             if (dllink == null) {
+                // English is also set here && cache login causes problems, premium pages sometimes not returned without fresh login.
+                login(account, true);
                 br.getPage(link.getDownloadURL());
             }
             doFree(link);
         } else {
+            // English is also set here && cache login causes problems, premium pages sometimes not returned without fresh login.
+            login(account, true);
             // we get page again, because we do not take directlink from requestfileinfo.
             br.getPage(link.getDownloadURL());
             dllink = br.getRedirectLocation();
