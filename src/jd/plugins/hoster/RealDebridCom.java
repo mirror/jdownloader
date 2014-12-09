@@ -735,7 +735,6 @@ public class RealDebridCom extends PluginForHost {
                                 });
                             } catch (Throwable e) {
                             }
-
                         }
                         break;
                     } catch (SocketException e) {
@@ -748,7 +747,9 @@ public class RealDebridCom extends PluginForHost {
                 if (hash2.equalsIgnoreCase(JDHash.getMD5(br.toString()))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
-
+                if (br.containsHTML("MySQL Connection ERROR")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Server Error", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                }
                 if ("1".equals(getJson("error"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + getJson("message"), PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
