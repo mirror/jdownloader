@@ -48,15 +48,12 @@ public class MyFastFileCom extends PluginForHost {
     private static final String                            NICE_HOST          = "myfastfile.com";
     private static final String                            NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private final String                                   mProt              = "https://";
-    private int                                            count              = 0;
-    private String                                         ec                 = null;
 
     private int                                            statuscode         = 0;
     private Account                                        currAcc            = null;
     private DownloadLink                                   currDownloadLink   = null;
 
     // repeat is one more than desired
-    private final int                                      sessionRepeat      = 4;
     private final int                                      globalRepeat       = 4;
     private final String                                   sessionRetry       = "sessionRetry";
     private final String                                   globalRetry        = "globalRetry";
@@ -77,10 +74,6 @@ public class MyFastFileCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
-    private void showMessage(DownloadLink link, String message) {
-        link.getLinkStatus().setStatusText(message);
-    }
-
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         return AvailableStatus.UNCHECKABLE;
@@ -91,12 +84,13 @@ public class MyFastFileCom extends PluginForHost {
         this.currDownloadLink = dl;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setConstants(account, null);
         final AccountInfo ac = new AccountInfo();
         br.setFollowRedirects(true);
-        // account is valid, let's fetch account details:
+        /* account is valid, let's fetch account details */
         getAPISafe(mProt + mName + "/api.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
         try {
             final float daysleft = Float.parseFloat(getJson("days_left"));
@@ -132,10 +126,9 @@ public class MyFastFileCom extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     /* TODO: Move all-or most of the errorhandling into handleAPIErrors */
+    @SuppressWarnings("deprecation")
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         setConstants(account, link);
-        count = link.getIntegerProperty(sessionRetry, 0) + 1;
-        ec = "(" + count + "/" + sessionRepeat + ")";
         // work around
         if (link.getBooleanProperty("hasFailed", false)) {
             final int hasFailedInt = link.getIntegerProperty("hasFailedWait", 60);
@@ -145,68 +138,46 @@ public class MyFastFileCom extends PluginForHost {
             sleep(hasFailedInt * 1001, link);
         }
 
-        // generate downloadlink:
-        showMessage(link, "Phase 1/2: Generate download link");
+        /* generate downloadlink */
         br.setFollowRedirects(true);
         getAPISafe(mProt + mName + "/api.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
 
-        if (inValidStatus() && "null".equalsIgnoreCase(getJson("link"))) {
-            link.setProperty(sessionRetry, count);
-            logger.info("API error, API returned NULL, no downloadlink available...temporarily disabling current host...");
-            tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-        }
-
         // parse json
         if (br.containsHTML("Max atteint\\s*!")) {
-            link.setProperty(sessionRetry, count);
-            // max for this host reached, try again in 1h
+            /* max retries for this host reached, try again in 1h */
             tempUnavailableHoster(account, link, 60 * 60 * 1000l);
         }
 
         if (br.containsHTML("nvalidlink")) {
-            link.setProperty(sessionRetry, count);
             throw new PluginException(LinkStatus.ERROR_FATAL, "Invalid link/unsupported format");
         }
 
         String dllink = getJson("link");
         if (inValidate(dllink) || !dllink.matches("https?://.+|/.+")) {
-            link.setProperty(sessionRetry, count);
             if (!inValidate(dllink) && dllink.contains("Cannot debrid link")) {
-                logger.severe("Can not debrid link :: " + ec);
+                logger.severe("Can not debrid link --> Temporarily disabling current host");
                 tempUnavailableHoster(account, link, 20 * 60 * 1000l);
             }
-            String msg = "Unknown issue: " + ec;
-            logger.severe(msg);
-            if (count >= sessionRepeat) {
-                tempUnavailableHoster(account, link, 30 * 60 * 1000l);
-            } else {
-                // temp unavailable will ditch to next download candidate, and retry doesn't respect wait times... !
-                link.setProperty(sessionRetry, count);
-                link.setProperty("hasFailed", true);
-                link.setProperty("hasFailedWait", 15);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
+            /* temp unavailable will ditch to next download candidate, and retry doesn't respect wait times... ! */
+            link.setProperty("hasFailed", true);
+            link.setProperty("hasFailedWait", 15);
+            handleErrorRetries("unknown_dllinknull", 10);
         }
-        showMessage(link, "Phase 2/2: Download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -12);
         if (dl.getConnection().getResponseCode() == 404) {
             /* file offline */
-            dl.getConnection().disconnect();
+            try {
+                dl.getConnection().disconnect();
+            } catch (final Throwable e) {
+            }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (count >= sessionRepeat) {
-                /* disable hoster for 1h */
-                link.setProperty(sessionRetry, count);
-                tempUnavailableHoster(60 * 60 * 1000);
-            }
-            showMessage(link, "Failed for unknown reason " + ec);
-            // temp unavailable will ditch to next download candidate, and retry doesn't respect wait times... !
-            link.setProperty(sessionRetry, count);
+            /* temp unavailable will ditch to next download candidate, and retry doesn't respect wait times... ! */
             link.setProperty("hasFailed", true);
             link.setProperty("hasFailedWait", 60);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
+            handleErrorRetries("unknowndlerror_html", 10);
         }
         dl.startDownload();
 
@@ -219,7 +190,7 @@ public class MyFastFileCom extends PluginForHost {
         handleAPIErrors(this.br);
     }
 
-    /** 0 = everything ok, 1-? = possible errors */
+    /** 0 = everything ok, 1-99 = possible errors */
     private void updatestatuscode() {
         String error = null;
         if (inValidStatus()) {
@@ -235,7 +206,12 @@ public class MyFastFileCom extends PluginForHost {
                 // statuscode = 666;
             }
         } else {
-            statuscode = 0;
+            if (inValidStatus() && "null".equalsIgnoreCase(getJson("link"))) {
+                statuscode = 3;
+            } else {
+                /* Everything should be ok */
+                statuscode = 0;
+            }
         }
     }
 
@@ -264,6 +240,9 @@ public class MyFastFileCom extends PluginForHost {
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
+            case 3:
+                /* Server returns null-dllink --> Retry */
+                handleErrorRetries("serverside_error_dllink_null", 10);
             default:
                 /* Unknown error */
                 logger.warning("Unknown API error happened!");

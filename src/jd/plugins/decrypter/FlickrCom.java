@@ -151,13 +151,17 @@ public class FlickrCom extends PluginForDecrypt {
     /** Handles decryption via API */
     @SuppressWarnings("deprecation")
     private void api_handleAPI() throws IOException, DecrypterException {
+        /* TODO: Fix csrf handling to make requests as logged-in user possible. */
+        br.clearCookies(MAINPAGE);
         String fpName = null;
         api_apikey = getPublicAPIKey(this.br);
         if (api_apikey == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
+        br.getHeaders().put("Referer", "");
         csrf = "1405808633%3Ai01dgnb1q25wxw29%3Ac82715e60f008b97cb7e8fa3529ce156";
+        csrf = getJson("csrf");
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         String apilink = null;
         String path_alias = null;
@@ -300,7 +304,10 @@ public class FlickrCom extends PluginForDecrypt {
 
     /** Check for errorcode and set it if existant */
     private void updatestatuscode() {
-        final String errorcode = getJson("error");
+        String errorcode = getJson("error");
+        if (errorcode == null) {
+            errorcode = getJson("code");
+        }
         if (errorcode != null) {
             statuscode = Integer.parseInt(errorcode);
         } else {
@@ -322,6 +329,9 @@ public class FlickrCom extends PluginForDecrypt {
             case 2:
                 statusMessage = "No user specified or permission denied";
                 throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            case 98:
+                statusMessage = "Login failed";
+                throw new DecrypterException("API_LOGIN_FAILED");
             case 100:
                 statusMessage = "Invalid api key";
                 throw new DecrypterException("API_INVALID_APIKEY");

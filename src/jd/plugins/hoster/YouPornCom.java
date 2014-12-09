@@ -51,6 +51,8 @@ public class YouPornCom extends PluginForHost {
         link.setUrlDownload("http://www.youporn.com/watch/" + new Regex(link.getDownloadURL(), "youporn\\.com/watch/(\\d+)").getMatch(0) + "/" + System.currentTimeMillis() + "/");
     }
 
+    private static final String defaultEXT = ".mp4";
+
     public AvailableStatus requestFileInformation(final DownloadLink parameter) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -69,9 +71,21 @@ public class YouPornCom extends PluginForHost {
         if (br.containsHTML("404 \\- Page Not Found<|id=\"title_404\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>(.*?) \\- Free Porn Videos - YouPorn</title>").getMatch(0);
+        String filename = br.getRegex("<title>(.*?) \\- Free Porn Videos \\- YouPorn</title>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("addthis:title=\"YouPorn - (.*?)\"></a>").getMatch(0);
+            filename = br.getRegex("addthis:title=\"YouPorn \\- (.*?)\"></a>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("\\'video_title\\' : \"([^<>\"]*?)\"").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        filename = Encoding.htmlDecode(filename).trim().replaceAll("   ", "-");
+        if (br.getURL().contains("/private/") || br.containsHTML("for=\"privateLogin_password\"")) {
+            parameter.getLinkStatus().setStatusText("Password protected links are not yet supported, contact our support!");
+            parameter.setName(filename + defaultEXT);
+            return AvailableStatus.TRUE;
         }
         DLLINK = br.getRegex("\"(http://[^<>\"\\']+)\">MP4").getMatch(0);
         if (DLLINK == null) {
@@ -80,12 +94,12 @@ public class YouPornCom extends PluginForHost {
         if (DLLINK == null) {
             DLLINK = br.getRegex("<ul class=\"downloadList\">.*?href=\"(http://[^\"]+)\">.*?</ul>").getMatch(0);
         }
-        if (DLLINK == null || filename == null) {
+        if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
-        parameter.setFinalFileName(Encoding.htmlDecode(filename).trim().replaceAll("   ", "-") + ".mp4");
-        Browser br2 = br.cloneBrowser();
+        parameter.setFinalFileName(filename + defaultEXT);
+        final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
@@ -107,6 +121,9 @@ public class YouPornCom extends PluginForHost {
 
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
+        if (br.getURL().contains("/private/") || br.containsHTML("for=\"privateLogin_password\"")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected links are not yet supported, contact our support!");
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
