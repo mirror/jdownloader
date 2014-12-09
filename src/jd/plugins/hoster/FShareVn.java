@@ -286,10 +286,10 @@ public class FShareVn extends PluginForHost {
             // we get page again, because we do not take directlink from requestfileinfo.
             br.getPage(link.getDownloadURL());
             dllink = br.getRedirectLocation();
-            if (dllink != null && dllink.endsWith("/file/" + uid)) {
-                br.getPage(dllink);
-                dllink = null;
-            }
+            // if (dllink != null && dllink.endsWith("/file/" + uid)) {
+            // br.getPage(dllink);
+            // dllink = null;
+            // }
             if (dllink == null) {
                 dllink = br.getRegex("\"(http://[a-z0-9]+\\.fshare\\.vn/vip/[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null && br.containsHTML("<div id=\"dvdownload\">Download fast</div>")) {
@@ -365,6 +365,7 @@ public class FShareVn extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
+                br.setFollowRedirects(false);
                 br.postPage("/login", "fs_csrf=" + fs_csrf + "&LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&LoginForm%5BrememberMe%5D=0&LoginForm%5BrememberMe%5D=1&yt0=%C4%90%C4%83ng+nh%E1%BA%ADp");
                 if (br.containsHTML("class=\"errorMessage\"")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
