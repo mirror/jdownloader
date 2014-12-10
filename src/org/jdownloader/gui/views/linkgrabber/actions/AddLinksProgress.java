@@ -200,12 +200,12 @@ public class AddLinksProgress extends AbstractDialog<Object> {
                                                         rule.setRule(RULE.DIRECTHTTP);
                                                         LinkCrawler.addLinkCrawlerRule(rule);
                                                     }
+                                                    try {
+                                                        urlConnection.disconnect();
+                                                    } catch (Throwable e) {
+                                                    }
+                                                    return lc.find("directhttp://" + url, null, false);
                                                 }
-                                                try {
-                                                    urlConnection.disconnect();
-                                                } catch (Throwable e) {
-                                                }
-                                                return lc.find("directhttp://" + url, null, false);
                                             }
                                             return defaultDeepInspector.deepInspect(lc, br, urlConnection, link);
                                         }
