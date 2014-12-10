@@ -2,6 +2,7 @@ EXTRACTTOPATHLOGIC_ASK_FOR_EVERY_ARCHIVE=Pytaj dla każdego archiwum
 EXTRACTTOPATHLOGIC_ASK_ONCE=Zapytraj tylko raz dla wszystkich archiwów
 EXTRACTTOPATHLOGIC_EXTRACT_TO_ARCHIVE_PARENT=Nie pytaj: wypakować do lokacji archiwum
 EXTRACTTOPATHLOGIC_USE_CUSTOMEXTRACTIONPATH=Użyj własnych ustawień dla Ścieżki Wypakowywania
+ExtractAction_getTranslationForExtractToPathLogic=Logika Ścieżki Wypakowywania
 IfFileExistsDialog_layoutDialogContent_archive=Archiwum:
 IfFileExistsDialog_layoutDialogContent_newName=Nowa nazwa:
 ValidateArchiveAction_ValidateArchiveAction=Weryfikuję %s1
