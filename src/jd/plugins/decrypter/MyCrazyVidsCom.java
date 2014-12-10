@@ -121,7 +121,8 @@ public class MyCrazyVidsCom extends PluginForDecrypt {
             // 2nd handling for tnaflix
             externID = br.getRegex("tnaflix\\.com/embedding_player/player_[^<>\"]+\\.swf.*?config=(embedding_feed\\.php\\?viewkey=[a-z0-9]+)").getMatch(0);
             if (externID != null) {
-                br.getPage("http://www.tnaflix.com/embedding_player/" + externID);
+                br.setFollowRedirects(true);
+                br.getPage("https://www.tnaflix.com/embedding_player/" + externID);
                 externID = br.getRegex("fullscreen><\\!\\[CDATA\\[(https?://(www\\.)?tnaflix\\.com/view_video[^<>\"]*?)\\]\\]></fullscreen>").getMatch(0);
                 if (externID != null) {
                     decryptedLinks.add(createDownloadlink(externID));

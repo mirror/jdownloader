@@ -39,8 +39,12 @@ public class IssuuCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("http://www.", "http://").toLowerCase();
         br.getPage(parameter);
-        if (br.containsHTML(">We can\\'t find what you\\'re looking for")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         final String documentID = br.getRegex("\"documentId\":\"([^<>\"]*?)\"").getMatch(0);

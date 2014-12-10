@@ -62,6 +62,11 @@ public class TvAdbCm extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
+        final String embedurl = br.getRegex("tv\\.adobe\\.com/embed/([^<>\"]*?)\"").getMatch(0);
+        if (embedurl == null) {
+            return null;
+        }
+        br.getPage("https://tv.adobe.com/embed/" + embedurl);
         final String html5player = br.getRegex(",html5player:[^\r\n]+").getMatch(-1);
         if (html5player == null) {
             return null;

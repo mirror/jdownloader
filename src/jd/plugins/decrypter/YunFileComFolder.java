@@ -54,8 +54,8 @@ public class YunFileComFolder extends PluginForDecrypt {
             logger.info("This link contains no downloadable content: " + parameter);
             return decryptedLinks;
         }
-        final String[] links = br.getRegex("\"(http://(www\\.)?(page\\d+\\.)?yunfile\\.com/file/[a-z0-9]+/[a-z0-9]+/?)\"").getColumn(0);
-        final String[] folders = br.getRegex("(http://(www\\.)?(page\\d+\\.)?yunfile\\.com/ls/[a-z0-9]+/[a-z0-9]+)").getColumn(0);
+        final String[] links = br.getRegex("\"(http://(www\\.)?(p(age)?\\d+\\.)?yunfile\\.com/fs/[a-z0-9]+/?)\"").getColumn(0);
+        final String[] folders = br.getRegex("(http://(www\\.)?(p(age)?\\d+\\.)?yunfile\\.com/ls/[a-z0-9]+/[a-z0-9]+)").getColumn(0);
         if ((links == null || links.length == 0) && (folders == null || folders.length == 0)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
