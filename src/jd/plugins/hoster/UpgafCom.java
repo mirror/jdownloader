@@ -106,8 +106,8 @@ public class UpgafCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        String filename;
-        String filesize;
+        String filename = null;
+        String filesize = null;
         if (available_CHECK_OVER_INFO_PAGE) {
             br.getPage(link.getDownloadURL() + "~i");
             if (!br.getURL().contains("~i")) {
@@ -154,11 +154,18 @@ public class UpgafCom extends PluginForHost {
                 }
             }
         }
-        if (filename == null || filesize == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setName(Encoding.htmlDecode(filename).trim());
-        link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace(",", "")).trim()));
+        // trim() doesn't remove characters replaced from unescaping(htmldecode/htmlentities) &nbsp;
+        filename = filename.replace("&nbsp;", " ");
+        filename = Encoding.htmlDecode(filename);
+        filename = filename.trim();
+        link.setName(filename);
+        if (filesize != null) {
+            filesize = filesize.trim();
+            link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace(",", ""))));
+        }
         return AvailableStatus.TRUE;
     }
 
