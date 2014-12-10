@@ -47,18 +47,18 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "up09.com" }, urls = { "https?://(www\\.)?file\\.up09\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
-public class Up09Com extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "up07.net" }, urls = { "https?://(www\\.)?up07\\.net/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+public class Up07Net extends PluginForHost {
 
     private String                         correctedBR                  = "";
     private String                         passCode                     = null;
     private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                  = "http://up09.com";
+    private static final String            COOKIE_HOST                  = "http://up07.net";
     private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(up09\\.com|file\\.up09\\.com)";
+    private static final String            DOMAINS                      = "(up07\\.net)";
     private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -115,7 +115,7 @@ public class Up09Com extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public Up09Com(PluginWrapper wrapper) {
+    public Up07Net(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -200,7 +200,7 @@ public class Up09Com extends PluginForHost {
             /* Do alt availablecheck here but don't check availibility because we already know that the file must be online! */
             logger.info("Filesize not available, trying altAvailablecheck");
             try {
-                altbr.postPage("http://file.up09.com" + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
+                altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
                 fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
             } catch (final Throwable e) {
             }

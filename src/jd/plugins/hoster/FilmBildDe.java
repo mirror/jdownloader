@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.util.Calendar;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -28,23 +26,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "film.bild.de" }, urls = { "http://(www\\.)?film\\.bild\\.de/detail\\.aspx\\?s=detail&m=\\d+&pl=(m|t)(#s=movie&m=\\d+&pl=m)?" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "film.bild.de" }, urls = { "http://(www\\.)?bild\\.de/video/[^<>\"]+\\d+\\.bild\\.html" }, flags = { 0 })
 public class FilmBildDe extends PluginForHost {
-
-    private String clipUrl = null;
 
     public FilmBildDe(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
-    public void correctDownloadLink(final DownloadLink downloadLink) {
-        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("#s=movie&m=\\d+&pl=m", "").replace("pl=t", "pl=m"));
-    }
-
-    @Override
     public String getAGBLink() {
-        return "http://film.bild.de/agb.html";
+        return "http://www.bild.de/corporate-site/agb/bild-de/artikel-agb-2952414.bild.html";
     }
 
     @Override
@@ -52,51 +43,43 @@ public class FilmBildDe extends PluginForHost {
         return -1;
     }
 
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        final String swfUrl = "http://film.bild.de/swf/BildTvMain.swf";
-        if (clipUrl.startsWith("rtmp")) {
-            dl = new RTMPDownload(this, downloadLink, clipUrl);
-            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-            final String[][] uripart = new Regex(clipUrl, "(rtmp.*/ondemand)/(.*?)\\?(auth.*$)").getMatches();
-            if (uripart == null || uripart.length != 1 || uripart.length == 1 && uripart[0].length != 3) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-
-            rtmp.setUrl(uripart[0][0] + "?ovpfv=2.1.5&" + uripart[0][2]);
-            rtmp.setPlayPath(uripart[0][1] + "?" + uripart[0][2]);
-            rtmp.setSwfVfy(swfUrl);
-            rtmp.setResume(true);
-            ((RTMPDownload) dl).startDownload();
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-    }
-
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
-        br.getPage(downloadLink.getDownloadURL());
-        br.getHeaders().put("Referer", downloadLink.getDownloadURL());
-        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getPage("http://film.bild.de/nav.aspx?s=movie&r=" + String.valueOf(Math.random()) + "&_=" + String.valueOf(System.currentTimeMillis()));
-        String filename = br.getRegex("<div class=\"promoTitle\">(.*?)</div>").getMatch(0);
-        final String next = br.getRegex("playMovie_URL_film\\(\'(.*)\',").getMatch(0);
-        if (next != null && next.matches("http://film\\.bild\\.de:80/movie\' \\+ \\(new Date\\(\\)\\.getMilliseconds\\( ?\\)\\) \\+ Math\\.random\\(\\) \\+ \'\\.xml\\?s=xml\\d+")) {
-            final Calendar cal = Calendar.getInstance();
-            final String id = new Regex(next, "s=xml(\\d+)").getMatch(0);
-            br.getPage("http://film.bild.de/movie" + String.valueOf(cal.get(Calendar.MILLISECOND)) + String.valueOf(Math.random()) + ".xml?s=xml" + id);
-        } else {
+        final String linkpart = new Regex(downloadLink.getDownloadURL(), "video/([^<>\"]+\\d+)\\.bild").getMatch(0);
+        br.getPage("http://www.bild.de/video/" + linkpart + ",view=xml.bild.xml");
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (filename == null) {
-            filename = br.getRegex("<title\">(.*?)</title>").getMatch(0);
+        final String title = br.getRegex("ueberschrift=\"([^<>\"]*?)\"").getMatch(0);
+        final String subtitle = br.getRegex("title=\"([^<>\"]*?)\"").getMatch(0);
+        if (title == null || subtitle == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        clipUrl = br.getRegex("<enclosure url=\"(.*?)\"").getMatch(0);
-        if (filename == null || clipUrl == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        clipUrl = Encoding.htmlDecode(clipUrl);
-        downloadLink.setFinalFileName(filename.trim() + ".flv");
+        final String filename = Encoding.htmlDecode(title).trim() + " - " + Encoding.htmlDecode(subtitle).trim();
+        downloadLink.setFinalFileName(filename.trim() + ".mp4");
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        final String continuelink = br.getRegex("<video src=\"(http[^<>\"]*?)\"").getMatch(0);
+        if (continuelink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage(continuelink);
+        final String dllink = br.getRegex("http\\-equiv=\"refresh\" content=\"\\d+;URL=(http[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
