@@ -1037,13 +1037,13 @@ public class ProxyController implements ProxySelectorInterface {
     public static boolean isSpecialPlugin(Plugin plugin) {
         if (plugin instanceof PluginForHost) {
             LazyHostPlugin lazy = ((PluginForHost) plugin).getLazyP();
-            if ("ftp".equalsIgnoreCase(lazy.getHost())) {
+            if ("ftp".equals(lazy.getHost())) {
                 return true;
             }
-            if ("DirectHTTP".equalsIgnoreCase(lazy.getHost())) {
+            if ("directhttp".equals(lazy.getHost())) {
                 return true;
             }
-            if ("http links".equalsIgnoreCase(lazy.getHost())) {
+            if ("http links".equals(lazy.getHost())) {
                 return true;
             }
         }
