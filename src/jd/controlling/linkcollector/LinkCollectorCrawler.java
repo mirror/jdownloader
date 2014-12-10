@@ -26,28 +26,28 @@ public class LinkCollectorCrawler extends LinkCrawler implements LinkCollectorLi
         return eventSender;
     }
 
-    protected void crawl(LazyCrawlerPlugin lazyC, final CrawledLink cryptedLink) {
+    protected void crawl(int generation, LazyCrawlerPlugin lazyC, final CrawledLink cryptedLink) {
         if (eventSender.hasListener()) {
             eventSender.fireEvent(new LinkCollectorCrawlerEvent(this, LinkCollectorCrawlerEvent.Type.CRAWLER_PLUGIN, cryptedLink));
         }
-        super.crawl(lazyC, cryptedLink);
+        super.crawl(generation, lazyC, cryptedLink);
 
     }
 
     @Override
-    protected void processHostPlugin(LazyHostPlugin pHost, CrawledLink possibleCryptedLink) {
+    protected void processHostPlugin(int generation, LazyHostPlugin pHost, CrawledLink possibleCryptedLink) {
         if (eventSender.hasListener()) {
             eventSender.fireEvent(new LinkCollectorCrawlerEvent(this, LinkCollectorCrawlerEvent.Type.HOST_PLUGIN, possibleCryptedLink));
         }
-        super.processHostPlugin(pHost, possibleCryptedLink);
+        super.processHostPlugin(generation, pHost, possibleCryptedLink);
     }
 
     @Override
-    protected void container(PluginsC oplg, CrawledLink cryptedLink) {
+    protected void container(int generation, PluginsC oplg, CrawledLink cryptedLink) {
         if (eventSender.hasListener()) {
             eventSender.fireEvent(new LinkCollectorCrawlerEvent(this, LinkCollectorCrawlerEvent.Type.CONTAINER_PLUGIN, cryptedLink));
         }
-        super.container(oplg, cryptedLink);
+        super.container(generation, oplg, cryptedLink);
     }
 
     public void onLinkCollectorAbort(LinkCollectorEvent event) {

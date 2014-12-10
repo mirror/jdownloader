@@ -107,7 +107,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         private final LinkCollectingInformation collectingInfo;
         private final LinkCollector             linkCollector;
 
-        public JobLinkCrawler(final LinkCollector linkCollector, final LinkCollectingJob job) {
+        protected JobLinkCrawler(final LinkCollector linkCollector, final LinkCollectingJob job) {
+            linkCollector.lazyInit();
             this.job = job;
             collectingInfo = new LinkCollectingInformation(this, linkCollector.getLinkChecker(), linkCollector);
             this.linkCollector = linkCollector;
@@ -124,7 +125,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 @Override
                 public void handleFinalLink(CrawledLink link) {
                     link.setCollectingInfo(collectingInfo);
-                    link.setSourceJob(job);
+                    link.setSourceJob(getJob());
                     linkCollector.handleFinalLink(link);
                     defaultHandler.handleFinalLink(link);
                 }
@@ -132,7 +133,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 @Override
                 public void handleFilteredLink(CrawledLink link) {
                     link.setCollectingInfo(collectingInfo);
-                    link.setSourceJob(job);
+                    link.setSourceJob(getJob());
                     linkCollector.handleFilteredLink(link);
                     defaultHandler.handleFilteredLink(link);
                 }
@@ -152,8 +153,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         @Override
         protected CrawledLink crawledLinkFactorybyURL(String url) {
             final CrawledLink ret = new CrawledLink(url);
-            if (job != null) {
-                ret.setOrigin(job.getOrigin());
+            if (getJob() != null) {
+                ret.setOrigin(getJob().getOrigin());
             }
             return ret;
         }
@@ -162,14 +163,12 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         protected void crawlerStopped() {
             linkCollector.onCrawlerStopped(this);
             super.crawlerStopped();
-
         }
 
         @Override
         protected void crawlerStarted() {
             linkCollector.onCrawlerStarted(this);
             super.crawlerStarted();
-
         }
     }
 
@@ -959,37 +958,36 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     public LinkCrawler addCrawlerJob(final java.util.List<CrawledLink> links, final LinkCollectingJob job) {
+        if (ShutdownController.getInstance().isShutDownRequested()) {
+            return null;
+        }
         if (links == null || links.size() == 0) {
             throw new IllegalArgumentException("no links");
         }
-        lazyInit();
-        synchronized (shutdownLock) {
-            if (ShutdownController.getInstance().isShutDownRequested()) {
-                return null;
-            }
-            final JobLinkCrawler lc = new JobLinkCrawler(this, job);
-            java.util.List<CrawledLink> jobs = new ArrayList<CrawledLink>(links);
-            lc.crawl(jobs);
-            return lc;
-        }
+        final JobLinkCrawler lc = newJobLinkCrawler(job);
+        lc.crawl(new ArrayList<CrawledLink>(links));
+        return lc;
+    }
+
+    public JobLinkCrawler newJobLinkCrawler(final LinkCollectingJob job) {
+        return new JobLinkCrawler(this, job);
     }
 
     public LinkCrawler addCrawlerJob(final LinkCollectingJob job) {
         try {
-            getEventsender().fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.NEW_CRAWLER_JOB, job, QueuePriority.NORM));
-            logger.info("Added CrawlerJob " + job);
-            if (job == null) {
-                throw new IllegalArgumentException("job is null");
-            }
             if (ShutdownController.getInstance().isShutDownRequested()) {
                 return null;
             }
-            lazyInit();
-            final JobLinkCrawler lc = new JobLinkCrawler(this, job);
+            if (job == null) {
+                throw new IllegalArgumentException("job is null");
+            }
+            getEventsender().fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.NEW_CRAWLER_JOB, job, QueuePriority.NORM));
+            logger.info("Added CrawlerJob " + job);
+            final JobLinkCrawler lc = newJobLinkCrawler(job);
             /*
              * we don't want to keep reference on text during the whole link grabbing/checking/collecting way
              */
-            String jobText = job.getText();
+            final String jobText = job.getText();
             onCrawlerAdded(lc);
             // keep text if it is tiny.
             // if we have the text in the job, we can display it for example in the balloons

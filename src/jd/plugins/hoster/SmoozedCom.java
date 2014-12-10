@@ -1,5 +1,6 @@
 package jd.plugins.hoster;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -15,6 +16,9 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -33,6 +37,7 @@ import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.Base64OutputStream;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 
 @HostPlugin(revision = "$Revision: 27915 $", interfaceVersion = 3, names = { "smoozed.com" }, urls = { "" }, flags = { 2 })
@@ -47,6 +52,7 @@ public class SmoozedCom extends PluginForHost {
     public SmoozedCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.smoozed.com/register");
+        setConfigElements();
     }
 
     private static String PBKDF2Key(String password) throws Exception {
@@ -200,6 +206,9 @@ public class SmoozedCom extends PluginForHost {
             }
         }
         apiCheck(account, session_Key, downloadLink);
+        if (true) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Test");
+        }
         apiDownload(account, session_Key, downloadLink, maxChunks);
     }
 
@@ -275,6 +284,32 @@ public class SmoozedCom extends PluginForHost {
             }
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+    }
+
+    private final String AUTOLOG = "AUTOLOG";
+
+    public void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), AUTOLOG, "Send debug logs to Smoozed.com automatically?").setDefaultValue(false));
+    }
+
+    @Override
+    public void errLog(Throwable e, Browser br, LogSource log, DownloadLink link, Account account) {
+        super.errLog(e, br, log, link, account);
+        if (e != null && e instanceof PluginException && log != null) {
+            try {
+                if (getPluginConfig().getBooleanProperty(AUTOLOG, false) == true) {
+
+                    final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                    final Base64OutputStream os = new Base64OutputStream(bos);
+                    os.write(log.toString().getBytes("UTF-8"));
+                    os.close();
+                    final String postString = "api_key=x12GiLzH2bM069rxmLpCcto69&caption=errorLog&content=" + Encoding.urlEncode(bos.toString("UTF-8"));
+                    new Browser().postPage("https://www.smoozed.com/api/debuglog/add/jd", postString);
+                }
+            } catch (final Throwable ignore) {
+                LogSource.exception(logger, ignore);
+            }
         }
     }
 

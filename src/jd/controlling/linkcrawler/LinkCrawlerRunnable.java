@@ -85,12 +85,16 @@ public abstract class LinkCrawlerRunnable implements Runnable {
      */
     protected void run_now() {
         try {
-            if (crawler.getCrawlerGeneration(false) == this.generation || !crawler.isCrawlingAllowed()) {
+            if (crawler.checkAllowStart(getGeneration())) {
                 crawling();
             }
         } finally {
             crawler.checkFinishNotify();
         }
+    }
+
+    public int getGeneration() {
+        return generation;
     }
 
     abstract void crawling();
