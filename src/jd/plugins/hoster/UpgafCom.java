@@ -157,8 +157,6 @@ public class UpgafCom extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // trim() doesn't remove characters replaced from unescaping(htmldecode/htmlentities) &nbsp;
-        filename = filename.replace("&nbsp;", " ");
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         link.setName(filename);
