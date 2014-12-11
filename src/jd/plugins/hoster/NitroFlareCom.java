@@ -96,7 +96,13 @@ public class NitroFlareCom extends PluginForHost {
         }
     }
 
+    @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
+        if (downloadLink != null) {
+            if (account == null || account.getBooleanProperty("free", false)) {
+                return !(downloadLink.getBooleanProperty("premiumRequired", false));
+            }
+        }
         return true;
     }
 
