@@ -3,10 +3,6 @@ package org.jdownloader.plugins.controller;
 import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -19,45 +15,18 @@ import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.storage.config.MinTimeWeakReferenceCleanup;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 
 public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferenceCleanup {
 
-    private static final class SharedPluginObjects extends HashMap<String, Object> {
+    private final byte[]                                   patternBytes;
+    private volatile MinTimeWeakReference<Pattern>         compiledPattern = null;
+    private final String                                   displayName;
+    protected volatile WeakReference<Class<T>>             pluginClass;
 
-        private SharedPluginObjects() {
-        }
-
-    }
-
-    private static final HashMap<String, SharedPluginObjects> sharedPluginObjectsPool = new HashMap<String, SharedPluginObjects>();
-    private static final HashSet<String>                      immutableClasses        = new HashSet<String>() {
-                                                                                          {
-                                                                                              add("java.lang.Boolean");
-                                                                                              add("java.lang.Byte");
-                                                                                              add("java.lang.String");
-                                                                                              add("java.lang.Double");
-                                                                                              add("java.lang.Integer");
-                                                                                              add("java.lang.Long");
-                                                                                              add("java.lang.Float");
-                                                                                              add("java.lang.Short");
-                                                                                              add("java.math.BigInteger");
-                                                                                              add("java.math.BigDecimal");
-                                                                                          }
-                                                                                      };
-
-    private final byte[]                                      patternBytes;
-    private volatile MinTimeWeakReference<Pattern>            compiledPattern         = null;
-    private final String                                      displayName;
-    protected volatile WeakReference<Class<T>>                pluginClass;
-
-    private static final LogSource                            LOGGER                  = LogController.getInstance().getCurrentClassLogger();
-
-    protected volatile WeakReference<T>                       prototypeInstance;
+    protected volatile WeakReference<T>                    prototypeInstance;
     /* PluginClassLoaderChild used to load this Class */
-    private volatile WeakReference<PluginClassLoaderChild>    classLoader;
+    private volatile WeakReference<PluginClassLoaderChild> classLoader;
 
     public PluginWrapper getPluginWrapper() {
         return new PluginWrapper(this) {
@@ -163,72 +132,6 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
             }
         } catch (final Throwable e) {
             handleUpdateRequiredClassNotFoundException(e, true);
-        }
-        Class<?> currentClass = ret.getClass();
-        try {
-            while (currentClass != null && currentClass.getClassLoader() instanceof PluginClassLoaderChild) {
-                final String currentClassName = currentClass.getName();
-                final SharedPluginObjects sharedPluginObjects;
-                synchronized (sharedPluginObjectsPool) {
-                    SharedPluginObjects contains = sharedPluginObjectsPool.get(currentClassName);
-                    if (contains == null) {
-                        contains = new SharedPluginObjects();
-                        sharedPluginObjectsPool.put(currentClassName, contains);
-                    }
-                    sharedPluginObjects = contains;
-                }
-                final Field[] fields = currentClass.getDeclaredFields();
-                synchronized (sharedPluginObjects) {
-                    final HashSet<String> knownFields = new HashSet<String>(sharedPluginObjects.keySet());
-                    for (Field field : fields) {
-                        final String fieldName = field.getName();
-                        if (!field.isSynthetic()) {
-                            final int modifiers = field.getModifiers();
-                            final boolean isStatic = (modifiers & Modifier.STATIC) != 0;
-                            final boolean isFinal = (modifiers & Modifier.FINAL) != 0;
-                            if (isStatic && !isFinal) {
-                                if (field.getType().isEnum() || field.isEnumConstant()) {
-                                    LOGGER.info("Class " + currentClassName + " has static enum: " + fieldName);
-                                    continue;
-                                }
-                                if (field.getType().isPrimitive()) {
-                                    LOGGER.info("Class " + currentClassName + " has static primitive field: " + fieldName);
-                                    continue;
-                                }
-                                if (immutableClasses.contains(field.getType().getName())) {
-                                    LOGGER.info("Class " + currentClassName + " has static immutable field: " + fieldName);
-                                    continue;
-                                }
-                                /* we only share static objects */
-                                field.setAccessible(true);
-                                if (knownFields.contains(fieldName)) {
-                                    final Object fieldObject = sharedPluginObjects.get(fieldName);
-                                    try {
-                                        field.set(null, fieldObject);
-                                        knownFields.remove(fieldName);
-                                        continue;
-                                    } catch (final Throwable e) {
-                                        LOGGER.severe("Cant modify Field " + fieldName + " for " + currentClassName);
-                                    }
-                                }
-                                final Object fieldObject = field.get(null);
-                                if (fieldObject != null) {
-                                    sharedPluginObjects.put(fieldName, fieldObject);
-                                } else {
-                                    LOGGER.info("Class " + currentClassName + " has static field: " + fieldName + " with null content!");
-                                }
-                            }
-                        }
-                    }
-                    for (final String missingField : knownFields) {
-                        LOGGER.info("Class " + currentClassName + " no longer has static field: " + missingField);
-                        sharedPluginObjects.remove(missingField);
-                    }
-                }
-                currentClass = currentClass.getSuperclass();
-            }
-        } catch (final Throwable e) {
-            LOGGER.log(e);
         }
         return ret;
     }
