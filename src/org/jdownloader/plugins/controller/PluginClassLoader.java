@@ -47,19 +47,18 @@ public class PluginClassLoader extends URLClassLoader {
 
     public static class PluginClassLoaderChild extends URLClassLoader {
 
-        private static final byte       _0XCA                    = (byte) 0xca;
-        private static final byte       _0XFE                    = (byte) 0xfe;
-        private static final byte       _0XBA                    = (byte) 0xba;
-        private static final byte       _0XBE                    = (byte) 0xbe;
-        private boolean                 createDummyLibs          = true;
-        private boolean                 jared                    = Application.isJared(PluginClassLoader.class);
-        private final PluginClassLoader parent;
-        private boolean                 checkStableCompatibility = false;
-        private String                  pluginClass              = null;
+        private static final byte _0XCA                    = (byte) 0xca;
+        private static final byte _0XFE                    = (byte) 0xfe;
+        private static final byte _0XBA                    = (byte) 0xba;
+        private static final byte _0XBE                    = (byte) 0xbe;
+        private boolean           createDummyLibs          = true;
+        private boolean           jared                    = Application.isJared(PluginClassLoader.class);
+
+        private boolean           checkStableCompatibility = false;
+        private String            pluginClass              = null;
 
         public PluginClassLoaderChild(PluginClassLoader parent) {
             super(new URL[] { Application.getRootUrlByClass(jd.SecondLevelLaunch.class, null) }, parent);
-            this.parent = parent;
         }
 
         /**
@@ -326,25 +325,11 @@ public class PluginClassLoader extends URLClassLoader {
                     return super.loadClass(name);
                 }
                 Class<?> c = null;
-                final boolean sharedClass = false;
-                if (sharedClass) {
-                    c = findSharedClass(name);
-                } else {
-                    c = findLoadedClass(name);
-                }
-                if (c != null) {
-                    // System.out.println("Class has already been loaded by this PluginClassLoaderChild");
-                    return c;
-                }
                 synchronized (this) {
                     /*
                      * we have to synchronize this because concurrent defineClass for same class throws exception
                      */
-                    if (sharedClass) {
-                        c = findSharedClass(name);
-                    } else {
-                        c = findLoadedClass(name);
-                    }
+                    c = findLoadedClass(name);
                     if (c != null) {
                         return c;
                     }
@@ -352,18 +337,7 @@ public class PluginClassLoader extends URLClassLoader {
                     if (myUrl == null) {
                         throw new ClassNotFoundException("Class does not exist(anymore): " + name);
                     }
-                    if (sharedClass) {
-                        synchronized (sharedClasses) {
-                            c = findSharedClass(name);
-                            if (c == null) {
-                                c = loadAndDefineClass(myUrl, name, parent);
-                                sharedClasses.put(c, name);
-                            }
-                        }
-                    } else {
-                        c = loadAndDefineClass(myUrl, name, null);
-                    }
-                    c = mapStaticFields(c);
+                    c = mapStaticFields(loadAndDefineClass(myUrl, name, null));
                 }
                 return c;
             } catch (Exception e) {
@@ -403,7 +377,6 @@ public class PluginClassLoader extends URLClassLoader {
         }
     }
 
-    private static final WeakHashMap<Class<?>, String>                                                    sharedClasses                = new WeakHashMap<Class<?>, String>();
     private static final WeakHashMap<PluginClassLoaderChild, WeakReference<LazyPlugin<? extends Plugin>>> sharedLazyPluginClassLoader  = new WeakHashMap<PluginClassLoaderChild, WeakReference<LazyPlugin<? extends Plugin>>>();
 
     private static final WeakHashMap<PluginClassLoaderChild, String>                                      sharedPluginClassLoader      = new WeakHashMap<PluginClassLoaderChild, String>();
@@ -460,20 +433,6 @@ public class PluginClassLoader extends URLClassLoader {
         if (putIfAbsent != null) {
             sharedPluginClassLoader.put(putIfAbsent, cacheID);
             return putIfAbsent;
-        }
-        return null;
-    }
-
-    public static Class<?> findSharedClass(String name) {
-        synchronized (sharedClasses) {
-            Iterator<Entry<Class<?>, String>> it = sharedClasses.entrySet().iterator();
-            while (it.hasNext()) {
-                Entry<Class<?>, String> next = it.next();
-                Class<?> ret = null;
-                if (name.equals(next.getValue()) && (ret = next.getKey()) != null) {
-                    return ret;
-                }
-            }
         }
         return null;
     }
