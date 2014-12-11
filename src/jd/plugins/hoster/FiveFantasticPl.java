@@ -62,22 +62,19 @@ public class FiveFantasticPl extends PluginForHost {
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.getHeaders().put("Accept-Encoding", "gzip, deflate, lzma, sdch");
+        final String downloadUrl = link.getDownloadURL();
 
         try {
-            br.getPage(link.getDownloadURL());
-
+            br.getPage(downloadUrl);
         } catch (Exception e) {
-            if (e.getCause().getMessage().contains("Content-length too big")) {
-                logger.severe("FiveFantastic: the link: " + link.getDownloadURL() + " seems to be folder. Folders are not supported!");
-                // link.setFinalLinkState(FinalLinkState.FAILED_FATAL);
-                // link.setSkipReason(SkipReason.INVALID_DESTINATION);
-                link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+            final String errorMessage = e.getCause().getMessage();
+            link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+            if (errorMessage.contains("Content-length too big")) {
+                logger.severe("FiveFantastic: the link: " + downloadUrl + " seems to be folder. Folders are not supported!");
                 throw new PluginException(LinkStatus.ERROR_FATAL, "folders are not supported!");
-                //
-
             }
-
-            return AvailableStatus.UNCHECKABLE;
+            logger.severe("FiveFantastic: trying to get page for link: " + downloadUrl + ",  got error: " + errorMessage);
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Error: " + errorMessage);
         }
 
         if (br.containsHTML("Plik jest plikiem prywatnym.")) {
@@ -107,7 +104,7 @@ public class FiveFantasticPl extends PluginForHost {
 
                 }
             }
-            br.getPage(link.getDownloadURL());
+            br.getPage(downloadUrl);
 
             if (br.containsHTML("Plik jest plikiem prywatnym.")) {
 
