@@ -23,6 +23,7 @@ public abstract class PluginController<T extends Plugin> {
         IGNORELIST.add("YoutubeHelper");
         IGNORELIST.add("K2SApi");
         IGNORELIST.add("antiDDoSForDecrypt");
+        IGNORELIST.add("XFileSharingProBasic");
 
     }
 
