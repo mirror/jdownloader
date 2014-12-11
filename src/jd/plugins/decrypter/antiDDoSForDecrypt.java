@@ -53,8 +53,11 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    protected CryptedLink                         param           = null;
-    protected final boolean                       useRUA          = true;
+    protected CryptedLink param = null;
+
+    protected boolean useRUA() {
+        return false;
+    }
 
     // cloudflare
 
@@ -63,7 +66,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
     protected static AtomicReference<String>      agent           = new AtomicReference<String>(null);
     private boolean                               prepBrSet       = false;
 
-    private Browser prepBrowser(final Browser prepBr) {
+    protected Browser prepBrowser(final Browser prepBr) {
         // define custom browser headers and language settings.
         // required for native cloudflare support, without the need to repeat requests.
         try {
@@ -82,14 +85,14 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 }
             }
         }
-        if (useRUA) {
+        if (useRUA()) {
             if (agent.get() == null) {
                 /* we first have to load the plugin, before we can reference it */
                 JDUtilities.getPluginForHost("mediafire.com");
                 agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
             }
+            prepBr.getHeaders().put("User-Agent", agent.get());
         }
-        prepBr.getHeaders().put("User-Agent", agent.get());
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         prepBr.getHeaders().put("Accept-Charset", null);
         prepBr.getHeaders().put("Pragma", null);
@@ -178,19 +181,19 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (!prepBrSet) {
-            prepBrowser(br);
+            prepBrowser(ibr);
         }
         // stable sucks && lame to the max, lets try and send a form outside of desired protocol. (works with oteupload)
         if (Form.MethodType.POST.equals(form.getMethod())) {
             // if the form doesn't contain an action lets set one based on current br.getURL().
             if (form.getAction() == null || form.getAction().equals("")) {
-                form.setAction(br.getURL());
+                form.setAction(ibr.getURL());
             }
             if (isJava7nJDStable() && (form.getAction().contains("https://") || /* relative path */(!form.getAction().startsWith("http")))) {
-                if (!form.getAction().startsWith("http") && br.getURL().contains("https://")) {
+                if (!form.getAction().startsWith("http") && ibr.getURL().contains("https://")) {
                     // change relative path into full path, with protocol correction
-                    String basepath = new Regex(br.getURL(), "(https?://.+)/[^/]+$").getMatch(0);
-                    String basedomain = new Regex(br.getURL(), "(https?://[^/]+)").getMatch(0);
+                    String basepath = new Regex(ibr.getURL(), "(https?://.+)/[^/]+$").getMatch(0);
+                    String basedomain = new Regex(ibr.getURL(), "(https?://[^/]+)").getMatch(0);
                     String path = form.getAction();
                     String finalpath = null;
                     if (path.startsWith("/")) {
@@ -210,7 +213,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                     showSSLWarning(this.getHost());
                 }
             }
-            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+            ibr.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         }
         URLConnectionAdapter con = null;
         try {
@@ -222,7 +225,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 con.disconnect();
             } catch (Throwable e) {
             }
-            br.getHeaders().put("Content-Type", null);
+            ibr.getHeaders().put("Content-Type", null);
         }
     }
 
@@ -247,7 +250,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 con.disconnect();
             } catch (Throwable e) {
             }
-            br.getHeaders().put("Content-Type", null);
+            ibr.getHeaders().put("Content-Type", null);
         }
     }
 
@@ -368,7 +371,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                             }
                         }
                         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(ibr);
                         rc.setId(apiKey);
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -383,10 +386,10 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                     }
                 } else if (responseCode == 503 && cloudflare != null) {
                     // 503 response code with javascript math section
-                    final String[] line1 = br.getRegex("var t,r,a,f, (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
-                    String line2 = br.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length\\;)").getMatch(0);
+                    final String[] line1 = ibr.getRegex("var t,r,a,f, (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
+                    String line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length\\;)").getMatch(0);
                     StringBuilder sb = new StringBuilder();
-                    sb.append("var a={};\r\nvar t=\"" + br.getHost() + "\";\r\n");
+                    sb.append("var a={};\r\nvar t=\"" + ibr.getHost() + "\";\r\n");
                     sb.append("var " + line1[0] + "={\"" + line1[1] + "\":" + line1[2] + "}\r\n");
                     sb.append(line2);
 
@@ -457,10 +460,10 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                     // //]]>
                     // </script>
 
-                } else if (ibr.containsHTML("<p>The owner of this website \\(" + Pattern.quote(br.getHost()) + "\\) has banned your IP address") && ibr.containsHTML("<title>Access denied \\| " + Pattern.quote(br.getHost()) + " used CloudFlare to restrict access</title>")) {
+                } else if (ibr.containsHTML("<p>The owner of this website \\(" + Pattern.quote(br.getHost()) + "\\) has banned your IP address") && ibr.containsHTML("<title>Access denied \\| " + Pattern.quote(ibr.getHost()) + " used CloudFlare to restrict access</title>")) {
                     // common when proxies are used?? see keep2share.cc jdlog://5562413173041
                     String ip = ibr.getRegex("your IP address \\((.*?)\\)\\.</p>").getMatch(0);
-                    String message = br.getHost() + " has banned your IP Address" + (inValidate(ip) ? "!" : "! " + ip);
+                    String message = ibr.getHost() + " has banned your IP Address" + (inValidate(ip) ? "!" : "! " + ip);
                     logger.warning(message);
                     throw new PluginException(LinkStatus.ERROR_FATAL, message);
                 } else {
@@ -615,7 +618,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      * @author raztoki
      * */
     protected boolean inValidate(final String s) {
-        if (s == null || s.matches("[\r\n\t ]+") || s.equals("")) {
+        if (s == null || s.matches("\\s+") || s.equals("")) {
             return true;
         } else {
             return false;

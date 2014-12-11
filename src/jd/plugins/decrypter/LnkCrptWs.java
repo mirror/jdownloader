@@ -523,12 +523,8 @@ public class LnkCrptWs extends PluginForDecrypt {
             smBr.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
 
             // this prevents solvemedia group from seeing referrer
-            try {
-                if (clearReferer) {
-                    smBr.setCurrentURL(null);
-                }
-            } catch (final Throwable e) {
-                /* 09581 will break here */
+            if (clearReferer) {
+                smBr.setRequest(null);
             }
             // end of privacy protection
 
@@ -1381,10 +1377,10 @@ public class LnkCrptWs extends PluginForDecrypt {
                 private Point loc;
 
                 private Timer mArrayTimer = new Timer(1000, new ActionListener() {
-                                              public void actionPerformed(ActionEvent e) {
-                                                  marray(loc);
-                                              }
-                                          });
+                    public void actionPerformed(ActionEvent e) {
+                        marray(loc);
+                    }
+                });
 
                 @Override
                 public void mouseDragged(final MouseEvent e) {
@@ -2918,23 +2914,23 @@ public class LnkCrptWs extends PluginForDecrypt {
          */
         Comparator<Integer> isElementColor = new Comparator<Integer>() {
 
-                                               public int compare(Integer o1, Integer o2) {
-                                                   int c = o1;
-                                                   int c2 = o2;
-                                                   if (isBackground(o1) || isBackground(o2)) {
-                                                       return 0;
-                                                   }
-                                                   if (c == 0x000000 || c2 == 0x000000) {
-                                                       return c == c2 ? 1 : 0;
-                                                   }
-                                                   int[] hsvC = Colors.rgb2hsv(c);
-                                                   int[] hsvC2 = Colors.rgb2hsv(c2);
-                                                   // TODO The "hsvC[1] / hsvC2[2] == 1" is repeated twice
-                                                   // Is it a typo? Was a different comparison meant in the second place?
-                                                   return ((hsvC[0] == hsvC2[0] && (hsvC[1] == hsvC2[1] || hsvC[2] == hsvC2[2] || hsvC[1] / hsvC2[2] == 1 || hsvC[1] / hsvC2[2] == 1)) && Colors.getRGBColorDifference2(c, c2) < 80) ? 1 : 0;
-                                               }
+            public int compare(Integer o1, Integer o2) {
+                int c = o1;
+                int c2 = o2;
+                if (isBackground(o1) || isBackground(o2)) {
+                    return 0;
+                }
+                if (c == 0x000000 || c2 == 0x000000) {
+                    return c == c2 ? 1 : 0;
+                }
+                int[] hsvC = Colors.rgb2hsv(c);
+                int[] hsvC2 = Colors.rgb2hsv(c2);
+                // TODO The "hsvC[1] / hsvC2[2] == 1" is repeated twice
+                        // Is it a typo? Was a different comparison meant in the second place?
+                                return ((hsvC[0] == hsvC2[0] && (hsvC[1] == hsvC2[1] || hsvC[2] == hsvC2[2] || hsvC[1] / hsvC2[2] == 1 || hsvC[1] / hsvC2[2] == 1)) && Colors.getRGBColorDifference2(c, c2) < 80) ? 1 : 0;
+            }
 
-                                           };
+        };
 
         private boolean equalElements(int c, int c2) {
             return isElementColor.compare(c, c2) == 1;
