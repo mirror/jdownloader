@@ -144,7 +144,7 @@ public class CatShareNet extends PluginForHost {
         // if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             logger.info("5 reCaptcha tryouts for <" + downloadLink.getDownloadURL() + "> were incorrect");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "reCaptcha error", 1 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "reCaptcha error or server doesn't accept reCaptcha challenges", 1 * 60 * 1000l);
         }
 
         doSomething();
@@ -393,7 +393,11 @@ public class CatShareNet extends PluginForHost {
             if (br.containsHTML("Twój dzienny limit transferu")) {
                 UserIO.getInstance().requestMessageDialog(0, "CatShare.net Premium Error", "Daily Limit exceeded!" + "\r\nPremium disabled, will continue downloads as Free User");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            } else {
+            } else if (br.containsHTML("Plik chwilowo niedostępny z powodu awarii")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "file unavailabe - hoster reports crash", 60 * 60 * 1000l);
+            }
+
+            else {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -432,7 +436,7 @@ public class CatShareNet extends PluginForHost {
 
     // limit for number of chunks, more cause "service temporarily unavailable"
     public int getMaxChunksPremiumDownload() {
-        return 4;
+        return -4;
     }
 
     @Override
