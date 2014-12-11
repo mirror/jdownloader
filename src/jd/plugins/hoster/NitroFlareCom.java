@@ -155,9 +155,13 @@ public class NitroFlareCom extends PluginForHost {
                     }
                     if (prem != null) {
                         dl.setProperty("premiumRequired", Boolean.parseBoolean(prem));
+                    } else {
+                        dl.setProperty("premiumRequired", Property.NULL);
                     }
                     if (pass != null) {
                         dl.setProperty("passwordRequired", Boolean.parseBoolean(pass));
+                    } else {
+                        dl.setProperty("passwordRequired", Property.NULL);
                     }
                     dl.setProperty("apiInfo", Boolean.TRUE);
                 }
@@ -173,10 +177,14 @@ public class NitroFlareCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:30.0) Gecko/20100101 Firefox/30.0");
-        br.setCookie("http://nitroflare.com/", "lang", "en");
+        if (useAPI.get()) {
+            return reqFileInformation(link);
+        } else {
+            return requestFile(link);
+        }
+    }
+
+    private AvailableStatus requestFile(final DownloadLink link) throws IOException, PluginException {
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">File doesn't exist<|This file has been removed due")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -199,30 +207,39 @@ public class NitroFlareCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        if (useAPI.get()) {
+        if (useAPI.get() && false) {
             handleDownload_API(downloadLink, null);
         } else {
+            setConstants(null);
+            this.setBrowserExclusive();
+            br.setFollowRedirects(true);
+            br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:30.0) Gecko/20100101 Firefox/30.0");
+            br.setCookie("http://nitroflare.com/", "lang", "en");
             requestFileInformation(downloadLink);
+            if (downloadLink.getBooleanProperty("premiumRequired", false)) {
+                throwPremiumRequiredException(downloadLink);
+            }
             dllink = checkDirectLink(downloadLink, directlinkproperty);
             if (dllink == null) {
+                if (br.getURL() == null) {
+                    requestFile(downloadLink);
+                }
                 final Browser br2 = br.cloneBrowser();
                 br.postPage(br.getURL(), "goToFreePage=");
-
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                 rc.findID();
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.postPage("/ajax/freeDownload.php", "method=startTimer&fileId=" + getFUID(downloadLink));
                 if (br.containsHTML("This file is available with premium key only|﻿This file is available with Premium only")) {
-                    throwPremiumRequiredException();
-                } else if (br.containsHTML("﻿Downloading is not possible")) {
-                    final String waitminutes = br.getRegex("You have to wait (\\d+) minutes to download your next file").getMatch(0);
+                    throwPremiumRequiredException(downloadLink);
+                } else if (br.containsHTML("﻿Downloading is not possible") || br.containsHTML("downloading is not possible")) {
+                    final String waitminutes = br.getRegex("You have to wait (\\d+) minutes to download").getMatch(0);
                     if (waitminutes != null) {
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitminutes) * 60 * 1001l);
                     }
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
                 }
-
                 br2.getPage("/js/downloadFree.js?v=1.0.1");
                 final String waittime = br2.getRegex("var time = (\\d+);").getMatch(0);
                 int wait = 30;
@@ -230,7 +247,6 @@ public class NitroFlareCom extends PluginForHost {
                     wait = Integer.parseInt(waittime);
                 }
                 this.sleep(wait * 1001l, downloadLink);
-
                 for (int i = 1; i <= 5; i++) {
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -247,7 +263,15 @@ public class NitroFlareCom extends PluginForHost {
                 if (br.containsHTML("File doesn't exist")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-
+                if (br.containsHTML("This file is available with premium key only|﻿This file is available with Premium only")) {
+                    throwPremiumRequiredException(downloadLink);
+                } else if (br.containsHTML("﻿Downloading is not possible") || br.containsHTML("downloading is not possible")) {
+                    final String waitminutes = br.getRegex("You have to wait (\\d+) minutes to download").getMatch(0);
+                    if (waitminutes != null) {
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitminutes) * 60 * 1001l);
+                    }
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+                }
                 dllink = br.getRegex("\"(https?://[a-z0-9\\-_]+\\.nitroflare\\.com/[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -258,7 +282,9 @@ public class NitroFlareCom extends PluginForHost {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            downloadLink.setProperty(directlinkproperty, dllink);
+            if (directlinkproperty != null) {
+                downloadLink.setProperty(directlinkproperty, dllink);
+            }
             dl.startDownload();
         }
     }
@@ -268,7 +294,7 @@ public class NitroFlareCom extends PluginForHost {
     /**
      * Validates account and returns correct account info, when user has provided incorrect user pass fields to JD client. Or Throws
      * exception indicating users mistake, when it's a irreversible mistake.
-     *
+     * 
      * @param account
      * @return
      * @throws PluginException
@@ -382,7 +408,7 @@ public class NitroFlareCom extends PluginForHost {
         if (inValidate(dllink)) {
             // links that require premium...
             if (downloadLink.getBooleanProperty("premiumRequired", false) && account == null) {
-                throwPremiumRequiredException();
+                throwPremiumRequiredException(downloadLink);
             }
             final String req = apiURL + "/getDownloadLink?file=" + getFUID(downloadLink) + (account != null ? "&" + validateAccount(account) : "");
             // needed for when dropping to frame, the cookie session seems to carry over current position in download sequence and you get
@@ -407,19 +433,33 @@ public class NitroFlareCom extends PluginForHost {
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                         final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                        if (!inValidate(delay) && i == 1) {
+                        if (!inValidate(delay)) {
                             sleep((Long.parseLong(delay) * 1000) - (System.currentTimeMillis() - startTime), downloadLink);
                         }
                         br.getPage(req + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
                         if ("error".equalsIgnoreCase(getJson("type")) && "6".equalsIgnoreCase(getJson("code")) && i + 1 != repeat) {
+                            startTime = System.currentTimeMillis();
                             continue;
                         } else if ("error".equalsIgnoreCase(getJson("type")) && "6".equalsIgnoreCase(getJson("code")) && i + 1 == repeat) {
                             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         } else {
+                            String accessLink = getJson("accessLink");
+                            if (!inValidate(accessLink)) {
+                                /* UNTESTED/NOT WORKING in free?! */
+                                if (!accessLink.startsWith("http")) {
+                                    if (accessLink.startsWith("/")) {
+                                        accessLink = apiURL + accessLink;
+                                    } else {
+                                        accessLink = apiURL + "/" + accessLink;
+                                    }
+                                }
+                                br.getPage(accessLink);
+                            }
                             break;
                         }
                     }
                 }
+
             }
             // some times error 4 is found here
             handleApiErrors(account, downloadLink);
@@ -430,6 +470,9 @@ public class NitroFlareCom extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
         if (!dl.getConnection().isContentDisposition()) {
+            if (directlinkproperty != null) {
+                downloadLink.setProperty(directlinkproperty, dllink);
+            }
             br.followConnection();
             final String err1 = "ERROR: Wrong IP. If you are using proxy, please turn it off / Or buy premium key to remove the limitation";
             if (br.containsHTML(err1)) {
@@ -446,10 +489,11 @@ public class NitroFlareCom extends PluginForHost {
             } else if (br.containsHTML("ERROR: link expired. Please unlock the file again")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'link expired'", 2 * 60 * 1000l);
             }
-
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
+        if (directlinkproperty != null) {
+            downloadLink.setProperty(directlinkproperty, dllink);
+        }
         dl.startDownload();
     }
 
@@ -508,8 +552,9 @@ public class NitroFlareCom extends PluginForHost {
         }
     }
 
-    private void throwPremiumRequiredException() throws PluginException {
+    private void throwPremiumRequiredException(DownloadLink link) throws PluginException {
         try {
+            link.setProperty("premiumRequired", Boolean.TRUE);
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } catch (final Throwable e) {
             if (e instanceof PluginException) {
@@ -520,22 +565,35 @@ public class NitroFlareCom extends PluginForHost {
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            try {
-                final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+        if (property != null) {
+            final String dllink = downloadLink.getStringProperty(property);
+            if (dllink != null) {
+                URLConnectionAdapter con = null;
+                try {
+                    final Browser br2 = br.cloneBrowser();
+                    br2.setFollowRedirects(true);
+                    try {
+                        // @since JD2
+                        con = br2.openHeadConnection(dllink);
+                    } catch (final Throwable t) {
+                        con = br2.openGetConnection(dllink);
+                    }
+                    if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                        downloadLink.setProperty(property, Property.NULL);
+                    } else {
+                        return dllink;
+                    }
+                } catch (final Exception e) {
                     downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
                 }
-                con.disconnect();
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
             }
         }
-        return dllink;
+        return null;
     }
 
     private AvailableStatus reqFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -578,6 +636,9 @@ public class NitroFlareCom extends PluginForHost {
     public void resetDownloadlink(final DownloadLink link) {
         if (link != null) {
             link.setProperty("apiInfo", Property.NULL);
+            link.setProperty("freelink2", Property.NULL);
+            link.setProperty("freelink", Property.NULL);
+            link.setProperty("premlink", Property.NULL);
         }
     }
 
@@ -595,7 +656,7 @@ public class NitroFlareCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -605,7 +666,7 @@ public class NitroFlareCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -615,7 +676,7 @@ public class NitroFlareCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from provided Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
@@ -625,7 +686,7 @@ public class NitroFlareCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
+     * 
      * @author raztoki
      * */
     private String getJsonArray(final String source, final String key) {
@@ -635,7 +696,7 @@ public class NitroFlareCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJsonArray(final String key) {
@@ -645,7 +706,7 @@ public class NitroFlareCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return String[] value from provided JSon Array
-     *
+     * 
      * @author raztoki
      * @param source
      * @return
@@ -656,7 +717,7 @@ public class NitroFlareCom extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
+     * 
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
