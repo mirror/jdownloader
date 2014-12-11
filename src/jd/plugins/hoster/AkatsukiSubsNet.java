@@ -16,9 +16,12 @@
 
 package jd.plugins.hoster;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.imageio.ImageIO;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -28,7 +31,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+
+import org.jdownloader.captcha.utils.recaptcha.api2.Recaptcha2Helper;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "akatsuki-subs.net" }, urls = { "http://(www\\.)?(downloads|archiv)\\.akatsuki\\-subs\\.net/file\\-\\d+\\.htm" }, flags = { 0 })
 public class AkatsukiSubsNet extends PluginForHost {
@@ -88,32 +92,33 @@ public class AkatsukiSubsNet extends PluginForHost {
         if (br.containsHTML(SERVEROVERLOADED)) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server overloaded", 5 * 60 * 1000l);
         }
-        final boolean plugin_broken = true;
-        if (plugin_broken) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         br.setFollowRedirects(false);
-        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-        final String rcid = br.getRegex("data\\-sitekey=\"([^<>\"]*?)\"").getMatch(0);
-        rc.setId(rcid);
-        rc.load();
-        for (int i = 1; i <= 5; i++) {
-            final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-            final String postData = "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&submit=Download";
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getURL(), postData, false, 1);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
-                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/)")) {
-                    rc.reload();
-                    continue;
-                }
-            }
-            break;
-        }
-        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/)")) {
+        boolean success = false;
+        int counter = 0;
+        String responseToken = null;
+        do {
+            Recaptcha2Helper rchelp = new Recaptcha2Helper();
+            rchelp.init(this.br);
+            final BufferedImage image = rchelp.loadImage();
+            final File outputfile = new File("image.jpg");
+            ImageIO.write(image, "jpg", outputfile);
+            outputfile.deleteOnExit();
+
+            // String response = org.appwork.utils.swing.dialog.Dialog.getInstance().showInputDialog(0, "Recaptcha", "", null, new
+            // ImageIcon(image), null, null);
+            String code = getCaptchaCode(outputfile, downloadLink);
+            success = rchelp.sendResponse(code);
+            responseToken = rchelp.getResponseToken();
+            counter++;
+        } while (!success && counter <= 3);
+        if (!success) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        final String postData = "submit=Download&g-recaptcha-response=" + Encoding.urlEncode(responseToken);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getURL(), postData, false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (dl.getConnection().getContentType().contains("html")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

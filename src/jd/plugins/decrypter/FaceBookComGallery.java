@@ -228,9 +228,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 dynamicLoadAlreadyDecrypted = true;
             } else {
                 links = br.getRegex("class=\"photoTextTitle\" href=\"(https?://(www\\.)?facebook\\.com/[^<>\"]*?)\"").getColumn(0);
-                if (links == null || links.length == 0) {
-                    links = br.getRegex("class=\"albumThumbLink uiMediaThumb uiScrollableThumb\" href=\"(https?://(www\\.)?facebook\\.com/[^<>\"]*?)\"").getColumn(0);
-                }
             }
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for the following link or account needed: " + PARAMETER);
@@ -1004,6 +1001,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             br.getPage(scriptRedirect);
         }
         String normal_redirect = br.getRegex("<meta http\\-equiv=\"refresh\" content=\"0; URL=(/[^<>\"]*?)\"").getMatch(0);
+        /* Do not access the noscript versions of links - this will cause out of date errors! */
         if (normal_redirect != null && !normal_redirect.contains("fb_noscript=1")) {
             normal_redirect = Encoding.htmlDecode(normal_redirect);
             normal_redirect = normal_redirect.replace("u00253A", "%3A");
