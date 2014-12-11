@@ -5,12 +5,9 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Locale;
-import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -21,7 +18,6 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.storage.config.MinTimeWeakReferenceCleanup;
 import org.appwork.utils.Application;
-import org.appwork.utils.ModifyLock;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
@@ -30,21 +26,10 @@ import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChi
 public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferenceCleanup {
 
     private static final class SharedPluginObjects extends HashMap<String, Object> {
-        protected final long version;
 
-        private SharedPluginObjects(final long version) {
-            this.version = version;
+        private SharedPluginObjects() {
         }
 
-        protected final ModifyLock modifyLock = new ModifyLock();
-
-        protected final ModifyLock getModifyLock() {
-            return modifyLock;
-        }
-
-        protected final long getVersion() {
-            return version;
-        }
     }
 
     private static final HashMap<String, SharedPluginObjects> sharedPluginObjectsPool = new HashMap<String, SharedPluginObjects>();
@@ -179,124 +164,68 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         } catch (final Throwable e) {
             handleUpdateRequiredClassNotFoundException(e, true);
         }
+        Class<?> currentClass = ret.getClass();
         try {
-            final String cacheID = getClassName();
-            SharedPluginObjects savedSharedObjects = null;
-            synchronized (sharedPluginObjectsPool) {
-                /* fetch SharedPluginObjects from cache */
-                savedSharedObjects = sharedPluginObjectsPool.get(cacheID);
-                if (savedSharedObjects != null && savedSharedObjects.getVersion() < getVersion()) {
-                    /* TODO: do not trash old cache, instead update it to newer version! */
-                    LOGGER.info("Remove outdated objectPool version " + savedSharedObjects.getVersion() + " for class " + cacheID + " because version is now " + getVersion());
-                    sharedPluginObjectsPool.remove(cacheID);
-                    savedSharedObjects = null;
-                }
-            }
-            if (savedSharedObjects == null) {
-                /* no cache available */
-                HashMap<String, Object> currentSharedObjects = new HashMap<String, Object>();
-                Field[] fields = ret.getClass().getDeclaredFields();
-                for (Field field : fields) {
-                    if (field.isSynthetic()) {
-                        /* we ignore synthetic fields */
-                        continue;
-                    }
-                    final int modifiers = field.getModifiers();
-                    final boolean isStatic = (modifiers & Modifier.STATIC) != 0;
-                    if (isStatic) {
-                        if ((modifiers & Modifier.FINAL) != 0) {
-                            /* we ignore final objects */
-                            continue;
-                        }
-                        if (field.getType().isEnum() || field.isEnumConstant()) {
-                            LOGGER.info("Class " + cacheID + " has static enum: " + field.getName());
-                            continue;
-                        }
-                        if (field.getType().isPrimitive()) {
-                            LOGGER.info("Class " + cacheID + " has static primitive field: " + field.getName());
-                            continue;
-                        }
-                        if (immutableClasses.contains(field.getType().getName())) {
-                            LOGGER.info("Class " + cacheID + " has static immutable field: " + field.getName());
-                            continue;
-                        }
-                        /* we only share static objects */
-                        field.setAccessible(true);
-                        Object fieldObject = field.get(null);
-                        if (fieldObject != null) {
-                            currentSharedObjects.put(field.getName(), fieldObject);
-                        } else {
-                            LOGGER.info("Class " + cacheID + " has static field: " + field.getName() + " with null content!");
-                        }
-                    }
-                }
-                final SharedPluginObjects newSavedSharedObjects = new SharedPluginObjects(getVersion());
-                newSavedSharedObjects.putAll(currentSharedObjects);
+            while (currentClass != null && currentClass.getClassLoader() instanceof PluginClassLoaderChild) {
+                final String currentClassName = currentClass.getName();
+                final SharedPluginObjects sharedPluginObjects;
                 synchronized (sharedPluginObjectsPool) {
-                    /* put SharedPluginObjects into cache if not set yet */
-                    savedSharedObjects = sharedPluginObjectsPool.get(cacheID);
-                    if (savedSharedObjects == null) {
-                        savedSharedObjects = newSavedSharedObjects;
-                        sharedPluginObjectsPool.put(cacheID, savedSharedObjects);
-                        return ret;
+                    SharedPluginObjects contains = sharedPluginObjectsPool.get(currentClassName);
+                    if (contains == null) {
+                        contains = new SharedPluginObjects();
+                        sharedPluginObjectsPool.put(currentClassName, contains);
                     }
+                    sharedPluginObjects = contains;
                 }
-            }
-            ArrayList<String> removeList = null;
-            boolean readL = savedSharedObjects.modifyLock.readLock();
-            try {
-                Iterator<Entry<String, Object>> it = savedSharedObjects.entrySet().iterator();
-                Class<?> c = ret.getClass();
-                while (it.hasNext()) {
-                    Entry<String, Object> next = it.next();
-                    String fieldID = next.getKey();
-                    Object fieldObject = next.getValue();
-                    Field setField = null;
-                    try {
-                        /* restore shared Object */
-                        setField = c.getDeclaredField(fieldID);
-                        setField.setAccessible(true);
-                        if ((setField.getModifiers() & Modifier.FINAL) != 0) {
-                            /* field seems to be final now, dont change it */
-                            if (getVersion() > savedSharedObjects.version) {
-                                /* remove from pool */
-                                LOGGER.severe("Class " + cacheID + " has final Field " + next.getKey() + " now->remove from pool");
-                                if (removeList == null) {
-                                    removeList = new ArrayList<String>();
+                final Field[] fields = currentClass.getDeclaredFields();
+                synchronized (sharedPluginObjects) {
+                    final HashSet<String> knownFields = new HashSet<String>(sharedPluginObjects.keySet());
+                    for (Field field : fields) {
+                        final String fieldName = field.getName();
+                        if (!field.isSynthetic()) {
+                            final int modifiers = field.getModifiers();
+                            final boolean isStatic = (modifiers & Modifier.STATIC) != 0;
+                            final boolean isFinal = (modifiers & Modifier.FINAL) != 0;
+                            if (isStatic && !isFinal) {
+                                if (field.getType().isEnum() || field.isEnumConstant()) {
+                                    LOGGER.info("Class " + currentClassName + " has static enum: " + fieldName);
+                                    continue;
                                 }
-                                removeList.add(fieldID);
+                                if (field.getType().isPrimitive()) {
+                                    LOGGER.info("Class " + currentClassName + " has static primitive field: " + fieldName);
+                                    continue;
+                                }
+                                if (immutableClasses.contains(field.getType().getName())) {
+                                    LOGGER.info("Class " + currentClassName + " has static immutable field: " + fieldName);
+                                    continue;
+                                }
+                                /* we only share static objects */
+                                field.setAccessible(true);
+                                if (knownFields.contains(fieldName)) {
+                                    final Object fieldObject = sharedPluginObjects.get(fieldName);
+                                    try {
+                                        field.set(null, fieldObject);
+                                        knownFields.remove(fieldName);
+                                        continue;
+                                    } catch (final Throwable e) {
+                                        LOGGER.severe("Cant modify Field " + fieldName + " for " + currentClassName);
+                                    }
+                                }
+                                final Object fieldObject = field.get(null);
+                                if (fieldObject != null) {
+                                    sharedPluginObjects.put(fieldName, fieldObject);
+                                } else {
+                                    LOGGER.info("Class " + currentClassName + " has static field: " + fieldName + " with null content!");
+                                }
                             }
-                            continue;
                         }
-                        setField.set(null, fieldObject);
-                    } catch (final NoSuchFieldException e) {
-                        LOGGER.log(e);
-                        if (getVersion() > savedSharedObjects.version) {
-                            /* field is gone, remove it from pool */
-                            LOGGER.severe("Class " + cacheID + " no longer has Field " + next.getKey() + "->remove from pool");
-                            if (removeList == null) {
-                                removeList = new ArrayList<String>();
-                            }
-                            removeList.add(fieldID);
-                        }
-                    } catch (final Throwable e) {
-                        LOGGER.log(e);
-                        LOGGER.severe("Cant modify Field " + setField.getName() + " for " + cacheID);
-                        e.printStackTrace();
+                    }
+                    for (final String missingField : knownFields) {
+                        LOGGER.info("Class " + currentClassName + " no longer has static field: " + missingField);
+                        sharedPluginObjects.remove(missingField);
                     }
                 }
-            } finally {
-                savedSharedObjects.modifyLock.readUnlock(readL);
-            }
-            if (removeList != null) {
-                try {
-                    savedSharedObjects.modifyLock.writeLock();
-                    for (String fieldID : removeList) {
-                        savedSharedObjects.remove(fieldID);
-                    }
-                } finally {
-                    savedSharedObjects.modifyLock.writeUnlock();
-                }
+                currentClass = currentClass.getSuperclass();
             }
         } catch (final Throwable e) {
             LOGGER.log(e);
