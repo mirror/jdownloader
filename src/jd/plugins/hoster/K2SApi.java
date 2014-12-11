@@ -211,8 +211,8 @@ public abstract class K2SApi extends PluginForHost {
                 JDUtilities.getPluginForHost("mediafire.com");
                 agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
             }
+            prepBr.getHeaders().put("User-Agent", agent.get());
         }
-        prepBr.getHeaders().put("User-Agent", agent.get());
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         prepBr.getHeaders().put("Accept-Charset", null);
         // prepBr.getHeaders().put("Cache-Control", null);
@@ -1205,7 +1205,7 @@ public abstract class K2SApi extends PluginForHost {
      * @author raztoki
      * */
     protected String getJsonArray(final String key) {
-        return JSonUtils.getJson(br.toString(), key);
+        return JSonUtils.getJsonArray(br.toString(), key);
     }
 
     /**
@@ -1438,19 +1438,19 @@ public abstract class K2SApi extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (!prepBrSet) {
-            prepBrowser(br);
+            prepBrowser(ibr);
         }
         // stable sucks && lame to the max, lets try and send a form outside of desired protocol. (works with oteupload)
         if (Form.MethodType.POST.equals(form.getMethod())) {
             // if the form doesn't contain an action lets set one based on current br.getURL().
             if (form.getAction() == null || form.getAction().equals("")) {
-                form.setAction(br.getURL());
+                form.setAction(ibr.getURL());
             }
             if (isJava7nJDStable() && (form.getAction().contains("https://") || /* relative path */(!form.getAction().startsWith("http")))) {
-                if (!form.getAction().startsWith("http") && br.getURL().contains("https://")) {
+                if (!form.getAction().startsWith("http") && ibr.getURL().contains("https://")) {
                     // change relative path into full path, with protocol correction
-                    String basepath = new Regex(br.getURL(), "(https?://.+)/[^/]+$").getMatch(0);
-                    String basedomain = new Regex(br.getURL(), "(https?://[^/]+)").getMatch(0);
+                    String basepath = new Regex(ibr.getURL(), "(https?://.+)/[^/]+$").getMatch(0);
+                    String basedomain = new Regex(ibr.getURL(), "(https?://[^/]+)").getMatch(0);
                     String path = form.getAction();
                     String finalpath = null;
                     if (path.startsWith("/")) {
@@ -1470,7 +1470,7 @@ public abstract class K2SApi extends PluginForHost {
                     showSSLWarning(this.getHost());
                 }
             }
-            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+            ibr.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         }
         URLConnectionAdapter con = null;
         try {
@@ -1482,7 +1482,7 @@ public abstract class K2SApi extends PluginForHost {
                 con.disconnect();
             } catch (Throwable e) {
             }
-            br.getHeaders().put("Content-Type", null);
+            ibr.getHeaders().put("Content-Type", null);
         }
     }
 
@@ -1507,7 +1507,7 @@ public abstract class K2SApi extends PluginForHost {
                 con.disconnect();
             } catch (Throwable e) {
             }
-            br.getHeaders().put("Content-Type", null);
+            ibr.getHeaders().put("Content-Type", null);
         }
     }
 
@@ -1571,7 +1571,7 @@ public abstract class K2SApi extends PluginForHost {
                         }
                         final DownloadLink dllink = new DownloadLink(null, "antiDDoS Provider 'Clouldflare' requires Captcha", getDomain(), getProtocol() + getDomain(), true);
                         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(ibr);
                         rc.setId(apiKey);
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -1586,10 +1586,10 @@ public abstract class K2SApi extends PluginForHost {
                     }
                 } else if (responseCode == 503 && cloudflare != null) {
                     // 503 response code with javascript math section
-                    final String[] line1 = br.getRegex("var t,r,a,f, (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
-                    String line2 = br.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length\\;)").getMatch(0);
+                    final String[] line1 = ibr.getRegex("var t,r,a,f, (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
+                    String line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length\\;)").getMatch(0);
                     StringBuilder sb = new StringBuilder();
-                    sb.append("var a={};\r\nvar t=\"" + br.getHost() + "\";\r\n");
+                    sb.append("var a={};\r\nvar t=\"" + ibr.getHost() + "\";\r\n");
                     sb.append("var " + line1[0] + "={\"" + line1[1] + "\":" + line1[2] + "}\r\n");
                     sb.append(line2);
 

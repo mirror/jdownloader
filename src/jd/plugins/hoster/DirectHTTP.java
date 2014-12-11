@@ -193,14 +193,9 @@ public class DirectHTTP extends PluginForHost {
                 this.rcBr.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
 
                 // this prevents google/recaptcha group from seeing referrer
-                try {
-                    if (this.clearReferer) {
-                        this.rcBr.setCurrentURL(null);
-                    }
-                } catch (final Throwable e) {
-                    /* 09581 will break here */
+                if (this.clearReferer) {
+                    this.rcBr.setRequest(null);
                 }
-
                 // end of privacy protection
             }
         }
@@ -210,7 +205,10 @@ public class DirectHTTP extends PluginForHost {
 
             /* follow redirect needed as google redirects to another domain */
             this.rcBr.setFollowRedirects(true);
-            this.rcBr.getPage("http://api.recaptcha.net/challenge?k=" + this.id);
+            // new primary. 20141211
+            this.rcBr.getPage("http://www.google.com/recaptcha/api/challenge?k=" + this.id);
+            // old
+            // this.rcBr.getPage("http://api.recaptcha.net/challenge?k=" + this.id);
             this.challenge = this.rcBr.getRegex("challenge.*?:.*?'(.*?)',").getMatch(0);
             this.server = this.rcBr.getRegex("server.*?:.*?'(.*?)',").getMatch(0);
             if (this.challenge == null || this.server == null) {
@@ -460,15 +458,15 @@ public class DirectHTTP extends PluginForHost {
         }
     }
 
-    private final String SSLTRUSTALL = "SSLTRUSTALL";
+    private final String  SSLTRUSTALL        = "SSLTRUSTALL";
+    private final boolean SSLTRUSTAL_default = true;
 
     private void setConfigElements() {
-        final ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SSLTRUSTALL, JDL.L("plugins.hoster.http.ssltrustall", "Ignore SSL issues?")).setDefaultValue(true);
-        getConfig().addEntry(cond);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SSLTRUSTALL, JDL.L("plugins.hoster.http.ssltrustall", "Ignore SSL issues?")).setDefaultValue(SSLTRUSTAL_default));
     }
 
     private boolean isSSLTrustALL() {
-        return SubConfiguration.getConfig("DirectHTTP").getBooleanProperty(SSLTRUSTALL, true);
+        return SubConfiguration.getConfig("DirectHTTP").getBooleanProperty(SSLTRUSTALL, SSLTRUSTAL_default);
     }
 
     @Override
@@ -660,9 +658,9 @@ public class DirectHTTP extends PluginForHost {
         }
         // if (true) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 60 * 1000l);
         this.setBrowserExclusive();
+        this.br.setDefaultSSLTrustALL(isSSLTrustALL());
         /* disable gzip, because current downloadsystem cannot handle it correct */
         // identity can have adverse effects also!
-        this.br.setDefaultSSLTrustALL(isSSLTrustALL());
         this.br.getHeaders().put("Accept-Encoding", "identity");
         final String authinURL = new Regex(downloadLink.getDownloadURL(), "https?://(.+)@.*?($|/)").getMatch(0);
         String authSaved = null;
@@ -920,7 +918,7 @@ public class DirectHTTP extends PluginForHost {
 
     /**
      * update this map to your needs
-     * 
+     *
      * @param mimeType
      * @return
      */
