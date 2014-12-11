@@ -61,8 +61,24 @@ public class FiveFantasticPl extends PluginForHost {
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:23.0) Gecko/20100101 Firefox/23.0");
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
+        br.getHeaders().put("Accept-Encoding", "gzip, deflate, lzma, sdch");
 
-        br.getPage(link.getDownloadURL());
+        try {
+            br.getPage(link.getDownloadURL());
+
+        } catch (Exception e) {
+            if (e.getCause().getMessage().contains("Content-length too big")) {
+                logger.severe("FiveFantastic: the link: " + link.getDownloadURL() + " seems to be folder. Folders are not supported!");
+                // link.setFinalLinkState(FinalLinkState.FAILED_FATAL);
+                // link.setSkipReason(SkipReason.INVALID_DESTINATION);
+                link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+                throw new PluginException(LinkStatus.ERROR_FATAL, "folders are not supported!");
+                //
+
+            }
+
+            return AvailableStatus.UNCHECKABLE;
+        }
 
         if (br.containsHTML("Plik jest plikiem prywatnym.")) {
             // check if the link is user's private file
