@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linx.li" }, urls = { "https?://(www\\.)?linx\\.li/(?!paste|meta)[^<>\"/]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linx.li" }, urls = { "https?://(www\\.)?linx\\.li/[^<>\"/]+" }, flags = { 0 })
 public class LinxLi extends PluginForHost {
 
     public LinxLi(PluginWrapper wrapper) {
@@ -46,9 +46,14 @@ public class LinxLi extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
     }
 
+    private static final String INVALIDLINKS = "https?://(www\\.)?linx\\.li/(paste|meta)[^<>\"/]+";
+
     /* Uses API: https://linx.li/meta/API */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (link.getDownloadURL().matches(INVALIDLINKS)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.setBrowserExclusive();
         br.getHeaders().put("Accept", "application/json");
         br.setFollowRedirects(true);

@@ -191,7 +191,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         String fpName = br.getRegex("<title id=\"pageTitle\">([^<>\"]*?)\\- Photos \\| Facebook</title>").getMatch(0);
         final String profileID = getProfileID();
         final String user = getUser();
-        if (user == null || profileID == null) {
+        if (user == null) {
             logger.warning("Decrypter broken for link: " + PARAMETER);
             throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
         }
@@ -228,22 +228,21 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 dynamicLoadAlreadyDecrypted = true;
             } else {
                 links = br.getRegex("class=\"photoTextTitle\" href=\"(https?://(www\\.)?facebook\\.com/[^<>\"]*?)\"").getColumn(0);
+                if (links == null || links.length == 0) {
+                    links = br.getRegex("class=\"albumThumbLink uiMediaThumb uiScrollableThumb\" href=\"(https?://(www\\.)?facebook\\.com/[^<>\"]*?)\"").getColumn(0);
+                }
             }
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for the following link or account needed: " + PARAMETER);
                 throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
             }
-            boolean stop = false;
             logger.info("Decrypting page " + i + " of ??");
             for (String link : links) {
                 link = Encoding.htmlDecode(link);
                 decryptedLinks.add(createDownloadlink(link));
             }
             // currentMaxPicCount = max number of links per segment
-            if (links.length < currentMaxPicCount) {
-                stop = true;
-            }
-            if (stop) {
+            if (links.length < currentMaxPicCount || profileID == null) {
                 logger.info("Seems like we're done and decrypted all links, stopping at page: " + i);
                 break;
             }
@@ -1005,7 +1004,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             br.getPage(scriptRedirect);
         }
         String normal_redirect = br.getRegex("<meta http\\-equiv=\"refresh\" content=\"0; URL=(/[^<>\"]*?)\"").getMatch(0);
-        if (normal_redirect != null) {
+        if (normal_redirect != null && !normal_redirect.contains("fb_noscript=1")) {
             normal_redirect = Encoding.htmlDecode(normal_redirect);
             normal_redirect = normal_redirect.replace("u00253A", "%3A");
             br.getPage("https://www.facebook.com" + normal_redirect);

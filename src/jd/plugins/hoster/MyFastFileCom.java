@@ -88,6 +88,7 @@ public class MyFastFileCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setConstants(account, null);
+        prepBR();
         final AccountInfo ac = new AccountInfo();
         br.setFollowRedirects(true);
         /* account is valid, let's fetch account details */
@@ -129,6 +130,7 @@ public class MyFastFileCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         setConstants(account, link);
+        prepBR();
         // work around
         if (link.getBooleanProperty("hasFailed", false)) {
             final int hasFailedInt = link.getIntegerProperty("hasFailedWait", 60);
@@ -171,6 +173,13 @@ public class MyFastFileCom extends PluginForHost {
             } catch (final Throwable e) {
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (dl.getConnection().getResponseCode() == 500) {
+            /* file offline */
+            try {
+                dl.getConnection().disconnect();
+            } catch (final Throwable e) {
+            }
+            handleErrorRetries("unknown_servererror_500", 10);
         }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -422,6 +431,11 @@ public class MyFastFileCom extends PluginForHost {
             }
         }
         return true;
+    }
+
+    private void prepBR() {
+        br.setConnectTimeout(3 * 60 * 1000);
+        br.setReadTimeout(3 * 60 * 1000);
     }
 
     @Override

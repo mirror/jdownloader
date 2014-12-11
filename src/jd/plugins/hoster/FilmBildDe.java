@@ -47,9 +47,12 @@ public class FilmBildDe extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
-        final String linkpart = new Regex(downloadLink.getDownloadURL(), "video/([^<>\"]+\\d+)\\.bild").getMatch(0);
+        br.setFollowRedirects(true);
+        final String linkpart = Encoding.htmlDecode(new Regex(downloadLink.getDownloadURL(), "video/([^<>\"]+\\d+)\\.bild").getMatch(0));
         br.getPage("http://www.bild.de/video/" + linkpart + ",view=xml.bild.xml");
         if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.containsHTML("<video src=")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String title = br.getRegex("ueberschrift=\"([^<>\"]*?)\"").getMatch(0);
