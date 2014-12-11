@@ -45,13 +45,12 @@ var Envjs=envjsGlobals.Envjs;
 
 
 /*
- * Envjs dom.1.3.pre03 
- * Pure JavaScript Browser Environment
- * By John Resig <http://ejohn.org/> and the Envjs Team
- * Copyright 2008-2010 John Resig, under the MIT License
+ * Envjs dom.1.3.pre03 Pure JavaScript Browser Environment By John Resig
+ * <http://ejohn.org/> and the Envjs Team Copyright 2008-2010 John Resig, under
+ * the MIT License
  */
 
-//CLOSURE_START
+// CLOSURE_START
 (function(){
 
 
@@ -80,7 +79,7 @@ function __extend__(a,b) {
 /**
  * @author john resig
  */
-//from jQuery
+// from jQuery
 function __setArray__( target, array ) {
     // Resetting the length to 0, then using the native Array push
     // is a super-fast way to populate an object with array-like properties
@@ -96,7 +95,7 @@ var __findItemIndex__,
 	__removeFromIndexes__,
 	__cloneNodes__;
 	
-//see namednodemap for these implementations
+// see namednodemap for these implementations
 var __addToNamedIndexes__, 
 	__removeFromNamedIndexes__;
 	
@@ -108,11 +107,12 @@ Envjs.once('tick', function(){
    log = Envjs.logger('Envjs.DOM.NodeList').debug('available'); 
 });
 /**
- * @class  NodeList -
- *      provides the abstraction of an ordered collection of nodes
- *
- * @param  ownerDocument : Document - the ownerDocument
- * @param  parentNode    : Node - the node that the NodeList is attached to (or null)
+ * @class NodeList - provides the abstraction of an ordered collection of nodes
+ * 
+ * @param ownerDocument :
+ *            Document - the ownerDocument
+ * @param parentNode :
+ *            Node - the node that the NodeList is attached to (or null)
  */
 exports.NodeList = NodeList = function(ownerDocument, parentNode) {
     this.parentNode = parentNode;
@@ -134,12 +134,13 @@ __extend__(NodeList.prototype, {
         var ret = "",
             j;
 
-        // create string containing the concatenation of the string values of each child
+        // create string containing the concatenation of the string values of
+        // each child
         for (j=0; j < this.length; j++) {
             if(this[j] !== null){
                 if(this[j].nodeType == Node.TEXT_NODE && j>0 &&
                    this[j-1].nodeType == Node.TEXT_NODE){
-                    //add a single space between adjacent text nodes
+                    // add a single space between adjacent text nodes
                     ret += " "+this[j].xml;
                 }else{
                     ret += this[j].xml;
@@ -158,10 +159,10 @@ __extend__(NodeList.prototype, {
 
 
 /**
- * @method __findItemIndex__
- *      find the item index of the node
+ * @method __findItemIndex__ find the item index of the node
  * @author Jon van Noort (jon@webarcana.com.au)
- * @param  node : Node
+ * @param node :
+ *            Node
  * @return : int
  */
 __findItemIndex__ = function (nodelist, node) {
@@ -171,13 +172,14 @@ __findItemIndex__ = function (nodelist, node) {
 };
 
 /**
- * @method __insertBefore__
- *      insert the specified Node into the NodeList before the specified index
- *      Used by Node.insertBefore(). Note: Node.insertBefore() is responsible
- *      for Node Pointer surgery __insertBefore__ simply modifies the internal
- *      data structure (Array).
- * @param  newChild      : Node - the Node to be inserted
- * @param  refChildIndex : int     - the array index to insert the Node before
+ * @method __insertBefore__ insert the specified Node into the NodeList before
+ *         the specified index Used by Node. (). Note: Node.insertBefore() is
+ *         responsible for Node Pointer surgery __insertBefore__ simply modifies
+ *         the internal data structure (Array).
+ * @param newChild :
+ *            Node - the Node to be inserted
+ * @param refChildIndex :
+ *            int - the array index to insert the Node before
  */
 __insertBefore__ = function(nodelist, newChild, refChildIndex) {
     if ((refChildIndex >= 0) && (refChildIndex <= nodelist.length)) {
@@ -196,14 +198,15 @@ __insertBefore__ = function(nodelist, newChild, refChildIndex) {
 };
 
 /**
- * @method __replaceChild__
- *      replace the specified Node in the NodeList at the specified index
- *      Used by Node.replaceChild(). Note: Node.replaceChild() is responsible
- *      for Node Pointer surgery __replaceChild__ simply modifies the internal
- *      data structure (Array).
- *
- * @param  newChild      : Node - the Node to be inserted
- * @param  refChildIndex : int     - the array index to hold the Node
+ * @method __replaceChild__ replace the specified Node in the NodeList at the
+ *         specified index Used by Node.replaceChild(). Note:
+ *         Node.replaceChild() is responsible for Node Pointer surgery
+ *         __replaceChild__ simply modifies the internal data structure (Array).
+ * 
+ * @param newChild :
+ *            Node - the Node to be inserted
+ * @param refChildIndex :
+ *            int - the array index to hold the Node
  */
 __replaceChild__ = function(nodelist, newChild, refChildIndex) {
     var ret = null;
@@ -230,12 +233,12 @@ __replaceChild__ = function(nodelist, newChild, refChildIndex) {
 };
 
 /**
- * @method __removeChild__
- *      remove the specified Node in the NodeList at the specified index
- *      Used by Node.removeChild(). Note: Node.removeChild() is responsible
- *      for Node Pointer surgery __removeChild__ simply modifies the internal
- *      data structure (Array).
- * @param  refChildIndex : int - the array index holding the Node to be removed
+ * @method __removeChild__ remove the specified Node in the NodeList at the
+ *         specified index Used by Node.removeChild(). Note: Node.removeChild()
+ *         is responsible for Node Pointer surgery __removeChild__ simply
+ *         modifies the internal data structure (Array).
+ * @param refChildIndex :
+ *            int - the array index holding the Node to be removed
  */
 __removeChild__ = function(nodelist, refChildIndex) {
     var ret = null;
@@ -253,11 +256,12 @@ __removeChild__ = function(nodelist, refChildIndex) {
 };
 
 /**
- * @method __appendChild__
- *      append the specified Node to the NodeList. Used by Node.appendChild().
- *      Note: Node.appendChild() is responsible for Node Pointer surgery
- *      __appendChild__ simply modifies the internal data structure (Array).
- * @param  newChild      : Node - the Node to be inserted
+ * @method __appendChild__ append the specified Node to the NodeList. Used by
+ *         Node.appendChild(). Note: Node.appendChild() is responsible for Node
+ *         Pointer surgery __appendChild__ simply modifies the internal data
+ *         structure (Array).
+ * @param newChild :
+ *            Node - the Node to be inserted
  */
 __appendChild__ = function(nodelist, newChild) {
 	log.debug('Appending child %s to nodelist %s', newChild.nodeName, nodelist.length);
@@ -266,13 +270,19 @@ __appendChild__ = function(nodelist, newChild) {
         // newChild is a DocumentFragment
         // append the children of DocumentFragment
         Array.prototype.push.apply(nodelist, newChild.childNodes.toArray() );
-		for(i=0;i< newChild.childNodes.length;i++){
-			__addToIndexes__(newChild.childNodes[i], nodelist.parentNode);
+        if(nodelist.parentNode){
+    		for(i=0;i< newChild.childNodes.length;i++){
+    			__addToIndexes__(newChild.childNodes[i], nodelist.parentNode);
+    		}
 		}
+    
     } else {
-        // simply add node to array (links between Nodes are made at higher level)
+        // simply add node to array (links between Nodes are made at higher
+        // level)
         Array.prototype.push.apply(nodelist, [newChild]);
-		__addToIndexes__(newChild, nodelist.parentNode);
+		if(nodelist.parentNode){
+		    __addToIndexes__(newChild, nodelist.parentNode);
+		}
     }
 
 };
@@ -281,17 +291,18 @@ __addToIndexes__ = function(node, ancestor){
 	var indexes, index, normalizedName, i, j, descendingIndex, offset, sibling, children, id, name;
 	if(node.nodeType == Node.ELEMENT_NODE){
 		log.debug('updating node indexes for node %s ancestor %s', node.tagName, ancestor.nodeName);
-		//now we need to walk up all ancestors updating nodelist indexes
+		// now we need to walk up all ancestors updating nodelist indexes
 		normalizedName = (node.tagName+'').toLowerCase();
 		
-		//if the node doesnt have a parentNode yet then it has been imported
-		//into the document, but it is just now being appended.  This means we
-		//need to merge the nodes indexes into the ancestors (which will become
-		//the parentNode just after this operation completes)
+		// if the node doesnt have a parentNode yet then it has been imported
+		// into the document, but it is just now being appended. This means we
+		// need to merge the nodes indexes into the ancestors (which will become
+		// the parentNode just after this operation completes)
 		if(!node.parentNode){
 			indexes = node._indexes_;
 			for(name in indexes){
-				//this is the index of all descendants of the ancestor with the given tagname
+				// this is the index of all descendants of the ancestor with the
+                // given tagname
 				if(!ancestor._indexes_.hasOwnProperty(name) && name != normalizedName ){
 					
 					ancestor._indexes_[name] = [];
@@ -302,20 +313,23 @@ __addToIndexes__ = function(node, ancestor){
 				}else if(name != '*' && name != normalizedName){
 					
 					offset = 0;
-					//this is the index of all descendants with the given tagname
+					// this is the index of all descendants with the given
+                    // tagname
 					index = ancestor._indexes_[name];
 					children = ancestor.childNodes;
 					for(i=0;i<children.length;i++){
 						sibling = children[i];
 						if(sibling !== node && sibling.nodeType === Node.ELEMENT_NODE && sibling.tagName === node.tagName){
-							//find the first child, if any, that exist in this index so we can determine
-							//the document offset at which to update this index
+							// find the first child, if any, that exist in this
+                            // index so we can determine
+							// the document offset at which to update this index
 							offset += (sibling._indexes_[name]?sibling._indexes_[name].length:0)+1;
 						}else if(sibling === node){
 							break;
 						}
 					}
-					//the descending index is additively a part of the new index
+					// the descending index is additively a part of the new
+                    // index
 					descendingIndex = node._indexes_[name]?node._indexes_[name]:[];
 					Array.prototype.splice.apply(	
 						index, 
@@ -329,32 +343,34 @@ __addToIndexes__ = function(node, ancestor){
 				}
 			}
 		}
-		//now we basically need to crawl up the ancestor chain, merging indexes
-		//using some smarts
+		
+		// now we basically need to crawl up the ancestor chain, merging indexes
+		// using some smarts
 		while(ancestor){
-			//these are all the indexes already built on the ancestor
+			// these are all the indexes already built on the ancestor
 			indexes = ancestor._indexes_;
 			if(!(normalizedName in indexes)){
-				//make sure we have an index for this particular tagname
+				// make sure we have an index for this particular tagname
 				indexes[normalizedName] = 
 					new NodeList(node.ownerDocument, ancestor);
 			}
 			
 			offset = 1;
-			//this is the index of all descendants with the given tagname
+			// this is the index of all descendants with the given tagname
 			index = indexes[normalizedName];
 			children = ancestor.childNodes;
 			for(i=0;i<children.length;i++){
 				sibling = children[i];
 				if(sibling !== node && sibling.nodeType === Node.ELEMENT_NODE && sibling.tagName === node.tagName){
-					//find the first child, if any, that exist in this index so we can determine
-					//the document offset at which to update this index
+					// find the first child, if any, that exist in this index so
+                    // we can determine
+					// the document offset at which to update this index
 					offset += (sibling._indexes_[normalizedName]?sibling._indexes_[normalizedName].length:0)+1;
 				}else if(sibling === node){
 					break;
 				}
 			}
-			//the descending index is additively a part of the new index
+			// the descending index is additively a part of the new index
 			descendingIndex = node._indexes_[normalizedName]?node._indexes_[normalizedName]:[];
 			Array.prototype.splice.apply(	
 				index, 
@@ -366,8 +382,9 @@ __addToIndexes__ = function(node, ancestor){
 			
 			
 			offset = 0;
-			//this is the index of all descendants with the given tagname, so simply follow
-			//the same procedure as above but use the '*' index
+			// this is the index of all descendants with the given tagname, so
+            // simply follow
+			// the same procedure as above but use the '*' index
 			index = indexes['*'];
 			children = ancestor.childNodes;
 			for(i=0;i<children.length;i++){
@@ -385,10 +402,11 @@ __addToIndexes__ = function(node, ancestor){
 					descendingIndex.slice(0,descendingIndex.length)
 				)
 			);
-			//console.log('added %s to index * -> %s', node.tagName,  offset);
+			// console.log('added %s to index * -> %s', node.tagName, offset);
 			
-			//handle input type elements and their ancestor form elements
-			//So far we dont bother with maintaining document order for this index
+			// handle input type elements and their ancestor form elements
+			// So far we dont bother with maintaining document order for this
+            // index
 			if('FORM' == ancestor.nodeName){
 				switch (node.nodeName) {
 	            case 'BUTTON':
@@ -400,19 +418,20 @@ __addToIndexes__ = function(node, ancestor){
 	            case 'SELECT':
 	            case 'TEXTAREA':
 					if(!indexes.hasOwnProperty('$elements')){
-						//make sure we have an index for the form.elements
+						// make sure we have an index for the form.elements
 						indexes.$elements = 
 							new NodeList(node.ownerDocument, ancestor);
 					}
 					Array.prototype.push.apply(indexes.$elements, [node]);
 					name = node.getAttribute('name');
 					if( name && !ancestor[name] ){
-						//<form name='foo'><input name='bar' is available via document.foo.bar
+						// <form name='foo'><input name='bar' is available via
+                        // document.foo.bar
 						ancestor[name] = node;
 					}
 	            }
 			}
-			//walk straight up the dom updating other indexes
+			// walk straight up the dom updating other indexes
 			log.debug('walking up node chain, node %s has parentNode %s', ancestor.nodeName, ancestor.parentNode);
 			ancestor = ancestor.parentNode;
 			
@@ -425,7 +444,8 @@ __removeFromIndexes__ = function(node, ancestor){
 	
 	if(node.nodeType == Node.ELEMENT_NODE){
 		normalizedName = (node.tagName+'').toLowerCase();
-		//console.log('removing node from live indexes for node %s', node.tagName);
+		// console.log('removing node from live indexes for node %s',
+        // node.tagName);
 		id = node.getAttribute('id');
 		if(id){
 			node.ownerDocument._indexes_["#"+id] = null;
@@ -439,8 +459,8 @@ __removeFromIndexes__ = function(node, ancestor){
 			if(!(normalizedName in indexes)){
 				indexes[normalizedName] = 
 					new NodeList(node.ownerDocument, ancestor);
-				//the index did not exist on the ancestor until now so
-				//dont bother cleaning it, just move up the ancestor chain
+				// the index did not exist on the ancestor until now so
+				// dont bother cleaning it, just move up the ancestor chain
 				ancestor = ancestor.parentNode;
 				continue;
 			}
@@ -450,7 +470,8 @@ __removeFromIndexes__ = function(node, ancestor){
 				offset = node._indexes_[normalizedName];
 				offset = offset?offset.length:0;
 				length = 1+offset;
-				//console.log('removing %s[%s] from index %s -> %s', node.tagName, i, ancestor.tagName, index.toArray());
+				// console.log('removing %s[%s] from index %s -> %s',
+                // node.tagName, i, ancestor.tagName, index.toArray());
 				Array.prototype.splice.apply(index, [i,length]); 
 			}
 			
@@ -460,12 +481,14 @@ __removeFromIndexes__ = function(node, ancestor){
 				offset = node._indexes_['*'];
 				offset = offset?offset.length:0;
 				length = 1+offset;
-				//console.log('removing %s from index * -> %s', node.tagName,  index.toArray());
+				// console.log('removing %s from index * -> %s', node.tagName,
+                // index.toArray());
 				Array.prototype.splice.apply(index, [i,length]); 
 			}
 			
-			//handle input type elements and their ancestor form elements
-			//So far we dont bother with maintaining document order for this index
+			// handle input type elements and their ancestor form elements
+			// So far we dont bother with maintaining document order for this
+            // index
 			if('FORM' == ancestor.nodeName){
 				switch (node.nodeName) {
 	            case 'BUTTON':
@@ -478,7 +501,7 @@ __removeFromIndexes__ = function(node, ancestor){
 	            case 'TEXTAREA':
 	                doc = node.ownerDocument;
 					if(!indexes.hasOwnProperty('$elements')){
-						//make sure we have an index for the form.elements
+						// make sure we have an index for the form.elements
 						indexes.$elements = 
 							new NodeList(node.ownerDocument, ancestor);
 					}
@@ -488,7 +511,8 @@ __removeFromIndexes__ = function(node, ancestor){
 					}
 					name = node.getAttribute('name');
 					if( name && ancestor[name] == node ){
-						//<form name='foo'><input name='bar' is no longer available via document.foo.bar
+						// <form name='foo'><input name='bar' is no longer
+                        // available via document.foo.bar
 						delete ancestor[name];
 					}
 	            }
@@ -499,13 +523,14 @@ __removeFromIndexes__ = function(node, ancestor){
 };
 
 /**
- * @method __cloneNodes__ -
- *      Returns a NodeList containing clones of the Nodes in this NodeList
- * @param  deep : boolean -
- *      If true, recursively clone the subtree under each of the nodes;
- *      if false, clone only the nodes themselves (and their attributes,
- *      if it is an Element).
- * @param  parentNode : Node - the new parent of the cloned NodeList
+ * @method __cloneNodes__ - Returns a NodeList containing clones of the Nodes in
+ *         this NodeList
+ * @param deep :
+ *            boolean - If true, recursively clone the subtree under each of the
+ *            nodes; if false, clone only the nodes themselves (and their
+ *            attributes, if it is an Element).
+ * @param parentNode :
+ *            Node - the new parent of the cloned NodeList
  * @return : NodeList - NodeList containing clones of the Nodes in this NodeList
  */
 __cloneNodes__ = function(nodelist, deep, parentNode) {
@@ -519,7 +544,7 @@ __cloneNodes__ = function(nodelist, deep, parentNode) {
     return cloneNodeList;
 };
 
-}(/*Envjs.DOM.Nodelist*/));
+}(/* Envjs.DOM.Nodelist */));
 
 
 
@@ -543,11 +568,11 @@ Envjs.once('tick', function(){
    log = Envjs.logger('Envjs.DOM.Node').debug('available'); 
 });
 /**
- * @class  Node -
- *      The Node interface is the primary datatype for the entire
- *      Document Object Model. It represents a single node in the
- *      document tree.
- * @param  ownerDocument : Document - The Document object associated with this node.
+ * @class Node - The Node interface is the primary datatype for the entire
+ *        Document Object Model. It represents a single node in the document
+ *        tree.
+ * @param ownerDocument :
+ *            Document - The Document object associated with this node.
  */
 
 exports.Node = Node = function(ownerDocument) {
@@ -557,7 +582,7 @@ exports.Node = Node = function(ownerDocument) {
     this.nodeValue = null;
 
     // A NodeList that contains all children of this node. If there are no
-    // children, this is a NodeList containing no nodes.  The content of the
+    // children, this is a NodeList containing no nodes. The content of the
     // returned NodeList is "live" in the sense that, for instance, changes to
     // the children of the node object that it was created from are immediately
     // reflected in the nodes returned by the NodeList accessors; it is not a
@@ -582,11 +607,11 @@ exports.Node = Node = function(ownerDocument) {
     this._readonly = false;
 
 
-    //IMPORTANT: These must come last so rhino will not iterate parent
-    //           properties before child properties.  (qunit.equiv issue)
+    // IMPORTANT: These must come last so rhino will not iterate parent
+    // properties before child properties. (qunit.equiv issue)
 
     // The parent of this node. All nodes, except Document, DocumentFragment,
-    // and Attr may have a parent.  However, if a node has just been created
+    // and Attr may have a parent. However, if a node has just been created
     // and not yet added to the tree, or if it has been removed from the tree,
     // this is null
     this.parentNode      = null;
@@ -916,7 +941,7 @@ __extend__(Node.prototype, {
         var newChildParent = newChild.parentNode;
         if (newChildParent) {
             // remove it
-           //console.debug('removing node %s', newChild);
+           // console.debug('removing node %s', newChild);
             newChildParent.removeChild(newChild);
         }
 
@@ -959,11 +984,11 @@ __extend__(Node.prototype, {
     cloneNode: function(deep) {
 		log.debug('cloneNode  %s', deep);
         // use importNode to clone this Node
-        //do not throw any exceptions
+        // do not throw any exceptions
         try {
             return __ownerDocument__(this).importNode(this, deep);
         } catch (e) {
-            //there shouldn't be any exceptions, but if there are, return null
+            // there shouldn't be any exceptions, but if there are, return null
             // may want to warn: $debug("could not clone node: "+e.code);
             return null;
         }
@@ -1015,18 +1040,24 @@ __extend__(Node.prototype, {
         }
     },
     isSupported : function(feature, version) {
-        // use Implementation.hasFeature to determine if this feature is supported
+        // use Implementation.hasFeature to determine if this feature is
+        // supported
+
         return __ownerDocument__(this).implementation.hasFeature(feature, version);
     },
     getElementsByTagName : function(tagname) {
+        log.debug('getElementsByTagName %s',tagname);
         // delegate to _getElementsByTagNameRecursive
+        var nodeList=new NodeList(__ownerDocument__(this));
+        __getElementsByTagNameRecursive__(document,tagname,nodeList);
+        return nodeList;
         // recurse childNodes
-		log.debug('getElementsByTagName %s',tagname);
-		var normalizedName = (tagname+'').toLowerCase();
-		if(!this._indexes_[normalizedName]){
-			this._indexes_[normalizedName] = new NodeList(__ownerDocument__(this));
-		}
-        return this._indexes_[normalizedName];
+//		
+// var normalizedName = (tagname+'').toLowerCase();
+// if(!this._indexes_[normalizedName]){
+// this._indexes_[normalizedName] = new NodeList(__ownerDocument__(this));
+// }
+// return this._indexes_[normalizedName];
     },
     getElementsByTagNameNS : function(namespaceURI, localName) {
         // delegate to _getElementsByTagNameNSRecursive
@@ -1047,9 +1078,11 @@ __extend__(Node.prototype, {
         var i,
 			importNode;
 
-        //there is no need to perform namespace checks since everything has already gone through them
-        //in order to have gotten into the DOM in the first place. The following line
-        //turns namespace checking off in ._isValidNamespace
+        // there is no need to perform namespace checks since everything has
+        // already gone through them
+        // in order to have gotten into the DOM in the first place. The
+        // following line
+        // turns namespace checking off in ._isValidNamespace
         __ownerDocument__(this).importing = true;
 
         if (importedNode.nodeType == Node.ELEMENT_NODE) {
@@ -1062,7 +1095,8 @@ __extend__(Node.prototype, {
                     importNode.setAttribute(importedNode.attributes.item(i).name, importedNode.attributes.item(i).value);
                 }
             } else {
-                // create a local Element (with the name & namespaceURI of the importedNode)
+                // create a local Element (with the name & namespaceURI of the
+                // importedNode)
                 importNode = __ownerDocument__(this).createElementNS(importedNode.namespaceURI, importedNode.nodeName);
 
                 // create attributes matching those of the importedNode
@@ -1071,7 +1105,8 @@ __extend__(Node.prototype, {
                         importedNode.attributes.item(i).name, importedNode.attributes.item(i).value);
                 }
 
-                // create namespace definitions matching those of the importedNode
+                // create namespace definitions matching those of the
+                // importedNode
                 for(i = 0; i < importedNode._namespaces.length; i++) {
                     importNode._namespaces[i] = __ownerDocument__(this).createNamespace(importedNode._namespaces.item(i).localName);
                     importNode._namespaces[i].value = importedNode._namespaces.item(i).value;
@@ -1079,27 +1114,32 @@ __extend__(Node.prototype, {
             }
         } else if (importedNode.nodeType == Node.ATTRIBUTE_NODE) {
             if (!__ownerDocument__(this).implementation.namespaceAware) {
-                // create a local Attribute (with the name of the importedAttribute)
+                // create a local Attribute (with the name of the
+                // importedAttribute)
                 importNode = __ownerDocument__(this).createAttribute(importedNode.name);
             } else {
-                // create a local Attribute (with the name & namespaceURI of the importedAttribute)
+                // create a local Attribute (with the name & namespaceURI of the
+                // importedAttribute)
                 importNode = __ownerDocument__(this).createAttributeNS(importedNode.namespaceURI, importedNode.nodeName);
 
-                // create namespace definitions matching those of the importedAttribute
+                // create namespace definitions matching those of the
+                // importedAttribute
                 for(i = 0; i < importedNode._namespaces.length; i++) {
                     importNode._namespaces[i] = __ownerDocument__(this).createNamespace(importedNode._namespaces.item(i).localName);
                     importNode._namespaces[i].value = importedNode._namespaces.item(i).value;
                 }
             }
 
-            // set the value of the local Attribute to match that of the importedAttribute
+            // set the value of the local Attribute to match that of the
+            // importedAttribute
             importNode.value = importedNode.value;
 
         } else if (importedNode.nodeType == Node.DOCUMENT_FRAGMENT_NODE) {
             // create a local DocumentFragment
             importNode = __ownerDocument__(this).createDocumentFragment();
         } else if (importedNode.nodeType == Node.NAMESPACE_NODE) {
-            // create a local NamespaceNode (with the same name & value as the importedNode)
+            // create a local NamespaceNode (with the same name & value as the
+            // importedNode)
             importNode = __ownerDocument__(this).createNamespace(importedNode.nodeName);
             importNode.value = importedNode.value;
         } else if (importedNode.nodeType == Node.TEXT_NODE) {
@@ -1109,7 +1149,8 @@ __extend__(Node.prototype, {
             // create a local CDATANode (with the same data as the importedNode)
             importNode = __ownerDocument__(this).createCDATASection(importedNode.data);
         } else if (importedNode.nodeType == Node.PROCESSING_INSTRUCTION_NODE) {
-            // create a local ProcessingInstruction (with the same target & data as the importedNode)
+            // create a local ProcessingInstruction (with the same target & data
+            // as the importedNode)
             importNode = __ownerDocument__(this).createProcessingInstruction(importedNode.target, importedNode.data);
         } else if (importedNode.nodeType == Node.COMMENT_NODE) {
             // create a local Comment (with the same data as the importedNode)
@@ -1125,7 +1166,7 @@ __extend__(Node.prototype, {
             }
         }
 
-        //reset importing
+        // reset importing
         __ownerDocument__(this).importing = false;
         return importNode;
 
@@ -1145,7 +1186,7 @@ __extend__(Node.prototype, {
             parent,
             aparents,
             bparents;
-        //handle a couple simpler case first
+        // handle a couple simpler case first
         if(a === b) {
             return Node.DOCUMENT_POSITION_EQUAL;
         }
@@ -1188,13 +1229,13 @@ __extend__(Node.prototype, {
                 bparents[bparents.length] = parent;
                 parent = parent.parentNode;
             }else{
-                //i cant be 0 since we already checked for equal parentNode
+                // i cant be 0 since we already checked for equal parentNode
                 if(bparents.length > aparents.length){
                     return Node.DOCUMENT_POSITION_FOLLOWING;
                 }else if(bparents.length < aparents.length){
                     return Node.DOCUMENT_POSITION_PRECEDING;
                 }else{
-                    //common ancestor diverge point
+                    // common ancestor diverge point
                     if (i === 0) {
                         return Node.DOCUMENT_POSITION_FOLLOWING;
                     } else {
@@ -1216,15 +1257,19 @@ __extend__(Node.prototype, {
 });
 
 
-}(/*Envjs.DOM.Node*/));
+}(/* Envjs.DOM.Node */));
 
 
 /**
  * @method __getElementsByTagNameRecursive__ - implements getElementsByTagName()
- * @param  elem     : Element  - The element which are checking and then recursing into
- * @param  tagname  : string      - The name of the tag to match on. The special value "*" matches all tags
- * @param  nodeList : NodeList - The accumulating list of matching nodes
- *
+ * @param elem :
+ *            Element - The element which are checking and then recursing into
+ * @param tagname :
+ *            string - The name of the tag to match on. The special value "*"
+ *            matches all tags
+ * @param nodeList :
+ *            NodeList - The accumulating list of matching nodes
+ * 
  * @return : NodeList
  */
 __getElementsByTagNameRecursive__ = function (elem, tagname, nodeList) {
@@ -1248,14 +1293,17 @@ __getElementsByTagNameRecursive__ = function (elem, tagname, nodeList) {
 };
 
 /**
- * @method __getElementsByTagNameNSRecursive__
- *      implements getElementsByTagName()
- *
- * @param  elem     : Element  - The element which are checking and then recursing into
- * @param  namespaceURI : string - the namespace URI of the required node
- * @param  localName    : string - the local name of the required node
- * @param  nodeList     : NodeList - The accumulating list of matching nodes
- *
+ * @method __getElementsByTagNameNSRecursive__ implements getElementsByTagName()
+ * 
+ * @param elem :
+ *            Element - The element which are checking and then recursing into
+ * @param namespaceURI :
+ *            string - the namespace URI of the required node
+ * @param localName :
+ *            string - the local name of the required node
+ * @param nodeList :
+ *            NodeList - The accumulating list of matching nodes
+ * 
  * @return : NodeList
  */
 __getElementsByTagNameNSRecursive__ = function(elem, namespaceURI, localName, nodeList) {
@@ -1279,8 +1327,10 @@ __getElementsByTagNameNSRecursive__ = function(elem, namespaceURI, localName, no
 
 /**
  * @method __isAncestor__ - returns true if node is ancestor of target
- * @param  target         : Node - The node we are using as context
- * @param  node         : Node - The candidate ancestor node
+ * @param target :
+ *            Node - The node we are using as context
+ * @param node :
+ *            Node - The candidate ancestor node
  * @return : boolean
  */
 __isAncestor__ = function(target, node) {
@@ -1308,7 +1358,9 @@ __recursivelyGatherText__ = function(aNode) {
 
 /**
  * function __escapeXML__
- * @param  str : string - The string to be escaped
+ * 
+ * @param str :
+ *            string - The string to be escaped
  * @return : string - The escaped string
  */
 var escAmpRegEx = /&(?!(amp;|lt;|gt;|quot|apos;))/g;
@@ -1328,7 +1380,9 @@ __escapeXML__ = function(str) {
 
 /**
  * function __unescapeXML__
- * @param  str : string - The string to be unescaped
+ * 
+ * @param str :
+ *            string - The string to be unescaped
  * @return : string - The unescaped string
  */
 var unescAmpRegEx = /&amp;/g;
@@ -1351,9 +1405,10 @@ var __findNamedItemIndex__,
     __hasAttribute__,
     __hasAttributeNS__,
     __cloneNamedNodes__;
-//see nodelist for these declarations
-/*var __addToNamedIndexes__, 
-    __removeFromNamedIndexes__;*/
+// see nodelist for these declarations
+/*
+ * var __addToNamedIndexes__, __removeFromNamedIndexes__;
+ */
 
 (function(){
     
@@ -1363,15 +1418,15 @@ Envjs.once('tick', function(){
    log = Envjs.logger('Envjs.DOM.NamedNodeMap').debug('available'); 
 });
 /**
- * @class  NamedNodeMap -
- *      used to represent collections of nodes that can be accessed by name
- *      typically a set of Element attributes
- *
- * @extends NodeList -
- *      note W3C spec says that this is not the case, but we need an item()
- *      method identical to NodeList's, so why not?
- * @param  ownerDocument : Document - the ownerDocument
- * @param  parentNode    : Node - the node that the NamedNodeMap is attached to (or null)
+ * @class NamedNodeMap - used to represent collections of nodes that can be
+ *        accessed by name typically a set of Element attributes
+ * 
+ * @extends NodeList - note W3C spec says that this is not the case, but we need
+ *          an item() method identical to NodeList's, so why not?
+ * @param ownerDocument :
+ *            Document - the ownerDocument
+ * @param parentNode :
+ *            Node - the node that the NamedNodeMap is attached to (or null)
  */
 exports.NamedNodeMap = NamedNodeMap = function(ownerDocument, parentNode) {
     NodeList.apply(this, arguments);
@@ -1388,7 +1443,7 @@ __extend__(NamedNodeMap.prototype, {
         var itemIndex = __findNamedItemIndex__(this, name);
 
         if (itemIndex > -1) {
-            //console.log('found it!');
+            // console.log('found it!');
             ret = this[itemIndex];
         }
         // if node is not found, default value null is returned
@@ -1409,7 +1464,8 @@ __extend__(NamedNodeMap.prototype, {
                 throw (new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
             }
 
-            // throw Exception if arg is already an attribute of another Element object
+            // throw Exception if arg is already an attribute of another Element
+            // object
             if (arg.ownerElement && (arg.ownerElement != this.parentNode)) {
                 throw (new DOMException(DOMException.INUSE_ATTRIBUTE_ERR));
             }
@@ -1420,7 +1476,7 @@ __extend__(NamedNodeMap.prototype, {
         var itemIndex = __findNamedItemIndex__(this, arg.name);
         var ret = null;
 
-        //console.log('setNamedItem __findNamedItemIndex__ %s', itemIndex);
+        // console.log('setNamedItem __findNamedItemIndex__ %s', itemIndex);
         if (itemIndex > -1) {
             // found it!
             ret = this[itemIndex];
@@ -1435,7 +1491,7 @@ __extend__(NamedNodeMap.prototype, {
             }
         } else {
             // add new NamedNode
-            //console.log('setNamedItem add new named node map (by index)');
+            // console.log('setNamedItem add new named node map (by index)');
             Array.prototype.push.apply(this, [arg]);
             this[arg.name] = arg;
 
@@ -1445,7 +1501,7 @@ __extend__(NamedNodeMap.prototype, {
         // update ownerElement
         // return old node or new node
         
-        //add to named node indexes on the document
+        // add to named node indexes on the document
         __addToNamedIndexes__(arg.name, arg.value, arg.ownerElement);
         
         return ret;
@@ -1469,13 +1525,13 @@ __extend__(NamedNodeMap.prototype, {
 
         // get Node
         var oldNode = this[itemIndex];
-        //this[oldNode.name] = undefined;
+        // this[oldNode.name] = undefined;
         // throw Exception if Node is readonly
         if (doc.implementation.errorChecking && oldNode._readonly) {
             throw (new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
         }
         
-        //remove from named node indexes on the document
+        // remove from named node indexes on the document
         __removeFromNamedIndexes__(name, oldNode.value, oldNode.ownerElement);
         
         // return removed node
@@ -1508,7 +1564,8 @@ __extend__(NamedNodeMap.prototype, {
                 throw (new DOMException(DOMException.WRONG_DOCUMENT_ERR));
             }
 
-            // throw Exception if arg is already an attribute of another Element object
+            // throw Exception if arg is already an attribute of another Element
+            // object
             if (arg.ownerElement && (arg.ownerElement != this.parentNode)) {
                 throw (new DOMException(DOMException.INUSE_ATTRIBUTE_ERR));
             }
@@ -1535,7 +1592,7 @@ __extend__(NamedNodeMap.prototype, {
         }
         arg.ownerElement = this.parentNode;
         
-        //add to named node indexes on the document
+        // add to named node indexes on the document
         __addToNamedIndexes__(
             arg.namespaceURI?arg.namespaceURI+':'+arg.localName:arg.localName, 
             arg.value, 
@@ -1565,7 +1622,7 @@ __extend__(NamedNodeMap.prototype, {
         // get Node
         var oldNode = this[itemIndex];
 
-        //remove from named node indexes on the document
+        // remove from named node indexes on the document
         __removeFromNamedIndexes__(
             namespaceURI?namespaceURI+'::'+localName:localName, 
             oldNode.value, 
@@ -1578,7 +1635,7 @@ __extend__(NamedNodeMap.prototype, {
     get xml() {
         var ret = "";
 
-        // create string containing concatenation of all (but last) 
+        // create string containing concatenation of all (but last)
         // Attribute string values (separated by spaces)
         for (var i = 0; i < this.length - 1; i++) {
             ret += this[i].xml + " ";
@@ -1611,11 +1668,11 @@ __addToNamedIndexes__ = function(name, value, element){
             }
             if(element.tagName.toLowerCase() === 'form'){
                 if( !doc[value] ){
-                    //<form name='foo' is available via document.foo
+                    // <form name='foo' is available via document.foo
                     doc[value] = element;
                 }
             }
-            //also add to general name index for getElementsByName
+            // also add to general name index for getElementsByName
             Array.prototype.push.apply(doc._indexes_["@"+value],[element]);
             break;
     }
@@ -1623,10 +1680,11 @@ __addToNamedIndexes__ = function(name, value, element){
 
 __removeFromNamedIndexes__ = function(name, value, element){
     var index, doc = __ownerDocument__(element);
-    //console.log('checking named index for removing %s=%s', name, value);
+    // console.log('checking named index for removing %s=%s', name, value);
     switch(name.toLowerCase()){
         case "id": 
-            //console.log('(%s) replacing id index value #%s = %s', doc, value, element?element.tagName:'no parent');
+            // console.log('(%s) replacing id index value #%s = %s', doc, value,
+            // element?element.tagName:'no parent');
             doc._indexes_["#"+value] = null; break;
         case "name":
             if(!(doc._indexes_['@'+value])){
@@ -1634,11 +1692,11 @@ __removeFromNamedIndexes__ = function(name, value, element){
             }
             if(element.tagName.toLowerCase() === 'form'){
                 if(doc[value]){
-                    //<form name='foo' is no longer available via document.foo
+                    // <form name='foo' is no longer available via document.foo
                     delete doc[value];
                 }
             }
-            //also remove from general name index for getElementsByName
+            // also remove from general name index for getElementsByName
             index = Array.prototype.indexOf.apply(doc._indexes_["@"+value], [element]);
             if(index > -1){
                 Array.prototype.splice.apply(doc._indexes_["@"+value],[index,1]);
@@ -1647,24 +1705,26 @@ __removeFromNamedIndexes__ = function(name, value, element){
     }
 };
 
-}(/*Envjs.DOM.NamedNodeMap*/));
+}(/* Envjs.DOM.NamedNodeMap */));
 
 
 
 /**
- * @method __findNamedItemIndex__
- *      find the item index of the node with the specified name
- *
- * @param  name : string - the name of the required node
- * @param  isnsmap : if its a NamespaceNodeMap
+ * @method __findNamedItemIndex__ find the item index of the node with the
+ *         specified name
+ * 
+ * @param name :
+ *            string - the name of the required node
+ * @param isnsmap :
+ *            if its a NamespaceNodeMap
  * @return : int
  */
 __findNamedItemIndex__ = function(namednodemap, name, isnsmap) {
     var ret = -1;
     // loop through all nodes
     for (var i = 0; i < namednodemap.length; i++) {
-        //console.log("namednodemap (local %s, name %s), name %s, isnsmap %s",
-        //      namednodemap.localName, namednodemap.name, name, isnsmap)
+        // console.log("namednodemap (local %s, name %s), name %s, isnsmap %s",
+        // namednodemap.localName, namednodemap.name, name, isnsmap)
         // compare name to each node's nodeName
         if (namednodemap[i].localName && name && isnsmap) {
             if (namednodemap[i].localName.toLowerCase() == name.toLowerCase()) {
@@ -1688,12 +1748,13 @@ __findNamedItemIndex__ = function(namednodemap, name, isnsmap) {
 
 
 /**
- * @method __findNamedItemNSIndex__
- *      find the item index of the node with the specified
- *      namespaceURI and localName
- *
- * @param  namespaceURI : string - the namespace URI of the required node
- * @param  localName    : string - the local name of the required node
+ * @method __findNamedItemNSIndex__ find the item index of the node with the
+ *         specified namespaceURI and localName
+ * 
+ * @param namespaceURI :
+ *            string - the namespace URI of the required node
+ * @param localName :
+ *            string - the local name of the required node
  * @return : int
  */
 __findNamedItemNSIndex__ = function(namednodemap, namespaceURI, localName) {
@@ -1719,10 +1780,10 @@ __findNamedItemNSIndex__ = function(namednodemap, namespaceURI, localName) {
 
 
 /**
- * @method __hasAttribute__
- *      Returns true if specified node exists
- *
- * @param  name : string - the name of the required node
+ * @method __hasAttribute__ Returns true if specified node exists
+ * 
+ * @param name :
+ *            string - the name of the required node
  * @return : boolean
  */
 __hasAttribute__ = function(namednodemap, name) {
@@ -1738,11 +1799,12 @@ __hasAttribute__ = function(namednodemap, name) {
 };
 
 /**
- * @method __hasAttributeNS__
- *      Returns true if specified node exists
- *
- * @param  namespaceURI : string - the namespace URI of the required node
- * @param  localName    : string - the local name of the required node
+ * @method __hasAttributeNS__ Returns true if specified node exists
+ * 
+ * @param namespaceURI :
+ *            string - the namespace URI of the required node
+ * @param localName :
+ *            string - the local name of the required node
  * @return : boolean
  */
 __hasAttributeNS__ = function(namednodemap, namespaceURI, localName) {
@@ -1758,11 +1820,13 @@ __hasAttributeNS__ = function(namednodemap, namespaceURI, localName) {
 };
 
 /**
- * @method __cloneNamedNodes__
- *      Returns a NamedNodeMap containing clones of the Nodes in this NamedNodeMap
- *
- * @param  parentNode : Node - the new parent of the cloned NodeList
- * @param  isnsmap : bool - is this a NamespaceNodeMap
+ * @method __cloneNamedNodes__ Returns a NamedNodeMap containing clones of the
+ *         Nodes in this NamedNodeMap
+ * 
+ * @param parentNode :
+ *            Node - the new parent of the cloned NodeList
+ * @param isnsmap :
+ *            bool - is this a NamespaceNodeMap
  * @return NamedNodeMap containing clones of the Nodes in this NamedNodeMap
  */
 __cloneNamedNodes__ = function(namednodemap, parentNode, isnsmap) {
@@ -1780,14 +1844,15 @@ __cloneNamedNodes__ = function(namednodemap, parentNode, isnsmap) {
 
 
 /**
- * @class  NamespaceNodeMap -
- *      used to represent collections of namespace nodes that can be
- *      accessed by name typically a set of Element attributes
- *
+ * @class NamespaceNodeMap - used to represent collections of namespace nodes
+ *        that can be accessed by name typically a set of Element attributes
+ * 
  * @extends NamedNodeMap
- *
- * @param  ownerDocument : Document - the ownerDocument
- * @param  parentNode    : Node - the node that the NamespaceNodeMap is attached to (or null)
+ * 
+ * @param ownerDocument :
+ *            Document - the ownerDocument
+ * @param parentNode :
+ *            Node - the node that the NamespaceNodeMap is attached to (or null)
  */
 NamespaceNodeMap = function(ownerDocument, parentNode) {
     NamedNodeMap.apply(this, arguments);
@@ -1800,9 +1865,11 @@ __extend__(NamespaceNodeMap.prototype, {
             ind,
             namespaces,
             i;
-        // identify namespaces declared local to this Element (ie, not inherited)
+        // identify namespaces declared local to this Element (ie, not
+        // inherited)
         for (ind = 0; ind < this.length; ind++) {
-            // if namespace declaration does not exist in the containing node's, parentNode's namespaces
+            // if namespace declaration does not exist in the containing node's,
+            // parentNode's namespaces
             ns = this[ind];
             namespaces = this.parentNode.parentNode._namespaces;
             for(i=0;i<namespaces.length;i++){
@@ -1833,10 +1900,11 @@ Envjs.once('tick', function(){
 });
 
 /**
- * @class  Namespace -
- *      The Namespace interface represents an namespace in an Element object
- *
- * @param  ownerDocument : The Document object associated with this node.
+ * @class Namespace - The Namespace interface represents an namespace in an
+ *        Element object
+ * 
+ * @param ownerDocument :
+ *            The Document object associated with this node.
  */
 exports.Namespace = Namespace = function(ownerDocument) {
     Node.apply(this, arguments);
@@ -1845,7 +1913,8 @@ exports.Namespace = Namespace = function(ownerDocument) {
 
     // If this attribute was explicitly given a value in the original document,
     // this is true; otherwise, it is false.
-    // Note that the implementation is in charge of this attribute, not the user.
+    // Note that the implementation is in charge of this attribute, not the
+    // user.
     // If the user changes the value of the attribute (even if it ends up having
     // the same value as the default value) then the specified flag is
     // automatically flipped to true
@@ -1882,7 +1951,7 @@ __extend__(Namespace.prototype, {
     }
 });
 
-}(/*Envjs.DOM.Namespace*/));
+}(/* Envjs.DOM.Namespace */));
 
 
 
@@ -1894,9 +1963,10 @@ Envjs.once('tick', function(){
    log = Envjs.logger('Envjs.DOM.CharacterData').debug('available'); 
 });
 /**
- * @class  CharacterData - parent abstract class for Text and Comment
+ * @class CharacterData - parent abstract class for Text and Comment
  * @extends Node
- * @param  ownerDocument : The Document object associated with this node.
+ * @param ownerDocument :
+ *            The Document object associated with this node.
  */
 exports.CharacterData = CharacterData = function(ownerDocument) {
     Node.apply(this, arguments);
@@ -1930,7 +2000,8 @@ __extend__(CharacterData.prototype,{
             throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
         }
         if (this.data) {
-            // throw Exception if offset is negative or greater than the data length,
+            // throw Exception if offset is negative or greater than the data
+            // length,
             if (__ownerDocument__(this).implementation.errorChecking &&
                 ((offset < 0) || (offset >  this.data.length) || (count < 0))) {
                 throw(new DOMException(DOMException.INDEX_SIZE_ERR));
@@ -1952,7 +2023,8 @@ __extend__(CharacterData.prototype,{
         }
 
         if(this.data){
-            // throw Exception if offset is negative or greater than the data length,
+            // throw Exception if offset is negative or greater than the data
+            // length,
             if (__ownerDocument__(this).implementation.errorChecking &&
                 ((offset < 0) || (offset >  this.data.length))) {
                 throw(new DOMException(DOMException.INDEX_SIZE_ERR));
@@ -1961,7 +2033,8 @@ __extend__(CharacterData.prototype,{
             // insert data
             this.data =  this.data.substring(0, offset).concat(arg, this.data.substring(offset));
         }else {
-            // throw Exception if offset is negative or greater than the data length,
+            // throw Exception if offset is negative or greater than the data
+            // length,
             if (__ownerDocument__(this).implementation.errorChecking && (offset !== 0)) {
                throw(new DOMException(DOMException.INDEX_SIZE_ERR));
             }
@@ -1977,7 +2050,8 @@ __extend__(CharacterData.prototype,{
         }
 
         if (this.data) {
-            // throw Exception if offset is negative or greater than the data length,
+            // throw Exception if offset is negative or greater than the data
+            // length,
             if (__ownerDocument__(this).implementation.errorChecking &&
                 ((offset < 0) || (offset >  this.data.length) || (count < 0))) {
                 throw(new DOMException(DOMException.INDEX_SIZE_ERR));
@@ -1994,7 +2068,8 @@ __extend__(CharacterData.prototype,{
     substringData: function(offset, count){
         var ret = null;
         if (this.data) {
-            // throw Exception if offset is negative or greater than the data length,
+            // throw Exception if offset is negative or greater than the data
+            // length,
             // or the count is negative
             if (__ownerDocument__(this).implementation.errorChecking &&
                 ((offset < 0) || (offset > this.data.length) || (count < 0))) {
@@ -2002,7 +2077,8 @@ __extend__(CharacterData.prototype,{
             }
             // if count is not specified
             if (!count) {
-                ret = this.data.substring(offset); // default to 'end of string'
+                ret = this.data.substring(offset); // default to 'end of
+                                                    // string'
             }else{
                 ret = this.data.substring(offset, offset + count);
             }
@@ -2014,7 +2090,7 @@ __extend__(CharacterData.prototype,{
     }
 });
 
-}(/*Envjs.DOM.CharacterData*/));
+}(/* Envjs.DOM.CharacterData */));
 
 (function(){
     
@@ -2024,16 +2100,15 @@ Envjs.once('tick', function(){
    log = Envjs.logger('Envjs.DOM.Text').debug('available'); 
 });
 /**
- * @class  Text
- *      The Text interface represents the textual content (termed
- *      character data in XML) of an Element or Attr.
- *      If there is no markup inside an element's content, the text is
- *      contained in a single object implementing the Text interface that
- *      is the only child of the element. If there is markup, it is
- *      parsed into a list of elements and Text nodes that form the
- *      list of children of the element.
+ * @class Text The Text interface represents the textual content (termed
+ *        character data in XML) of an Element or Attr. If there is no markup
+ *        inside an element's content, the text is contained in a single object
+ *        implementing the Text interface that is the only child of the element.
+ *        If there is markup, it is parsed into a list of elements and Text
+ *        nodes that form the list of children of the element.
  * @extends CharacterData
- * @param  ownerDocument The Document object associated with this node.
+ * @param ownerDocument
+ *            The Document object associated with this node.
  */
 exports.Text = Text = function(ownerDocument) {
     CharacterData.apply(this, arguments);
@@ -2046,7 +2121,7 @@ __extend__(Text.prototype,{
     },
     // Breaks this Text node into two Text nodes at the specified offset,
     // keeping both in the tree as siblings. This node then only contains
-    // all the content up to the offset point.  And a new Text node, which
+    // all the content up to the offset point. And a new Text node, which
     // is inserted as the next sibling of this node, contains all the
     // content at and after the offset point.
     splitText : function(offset) {
@@ -2058,7 +2133,8 @@ __extend__(Text.prototype,{
             if (this._readonly) {
               throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
             }
-            // throw Exception if offset is negative or greater than the data length,
+            // throw Exception if offset is negative or greater than the data
+            // length,
             if ((offset < 0) || (offset > this.data.length)) {
               throw(new DOMException(DOMException.INDEX_SIZE_ERR));
             }
@@ -2090,7 +2166,7 @@ __extend__(Text.prototype,{
     }
 });
 
-}(/*Envjs.DOM.Text*/));
+}(/* Envjs.DOM.Text */));
 
 (function(){
     
@@ -2100,13 +2176,13 @@ Envjs.once('tick', function(){
    log = Envjs.logger('Envjs.DOM.CDATASection').debug('available'); 
 });
 /**
- * @class CDATASection 
- *      CDATA sections are used to escape blocks of text containing 
- *      characters that would otherwise be regarded as markup.
- *      The only delimiter that is recognized in a CDATA section is 
- *      the "\]\]\>" string that ends the CDATA section
+ * @class CDATASection CDATA sections are used to escape blocks of text
+ *        containing characters that would otherwise be regarded as markup. The
+ *        only delimiter that is recognized in a CDATA section is the "\]\]\>"
+ *        string that ends the CDATA section
  * @extends Text
- * @param  ownerDocument : The Document object associated with this node.
+ * @param ownerDocument :
+ *            The Document object associated with this node.
  */
 exports.CDATASection = CDATASection = function(ownerDocument) {
     Text.apply(this, arguments);
@@ -2125,7 +2201,7 @@ __extend__(CDATASection.prototype,{
     }
 });
 
-}(/*Envjs.DOM.CDATASection*/));
+}(/* Envjs.DOM.CDATASection */));
 
 (function(){
     
@@ -2135,11 +2211,11 @@ Envjs.once('tick', function(){
    log = Envjs.logger('Envjs.DOM.Comment').debug('available'); 
 });
 /**
- * @class  Comment
- *      This represents the content of a comment, i.e., all the
- *      characters between the starting '<!--' and ending '-->'
+ * @class Comment This represents the content of a comment, i.e., all the
+ *        characters between the starting '<!--' and ending '-->'
  * @extends CharacterData
- * @param  ownerDocument :  The Document object associated with this node.
+ * @param ownerDocument :
+ *            The Document object associated with this node.
  */
 exports.Comment = Comment = function(ownerDocument) {
     CharacterData.apply(this, arguments);
@@ -2161,7 +2237,7 @@ __extend__(Comment.prototype, {
     }
 });
 
-}(/*Envjs.DOM.Comment*/));
+}(/* Envjs.DOM.Comment */));
 
 (function(){
     
@@ -2171,11 +2247,10 @@ Envjs.once('tick', function(){
    log = Envjs.logger('Envjs.DOM.DOMImplementation').debug('available'); 
 });
 /**
- * @class  DOMImplementation -
- *      provides a number of methods for performing operations
- *      that are independent of any particular instance of the
- *      document object model.
- *
+ * @class DOMImplementation - provides a number of methods for performing
+ *        operations that are independent of any particular instance of the
+ *        document object model.
+ * 
  * @author Jon van Noort (jon@webarcana.com.au)
  */
 exports.DOMImplementation = DOMImplementation = function() {
@@ -2185,10 +2260,10 @@ exports.DOMImplementation = DOMImplementation = function() {
 };
 
 __extend__(DOMImplementation.prototype,{
-    // @param  feature : string - The package name of the feature to test.
-    //      the legal only values are "XML" and "HTML" (case-insensitive).
-    // @param  version : string - This is the version number of the package
-    //       name to test. In Level 1, this is the string "1.0".*
+    // @param feature : string - The package name of the feature to test.
+    // the legal only values are "XML" and "HTML" (case-insensitive).
+    // @param version : string - This is the version number of the package
+    // name to test. In Level 1, this is the string "1.0".*
     // @return : boolean
     hasFeature : function(feature, version) {
         var ret = false;
@@ -2244,7 +2319,7 @@ __extend__(DOMImplementation.prototype,{
         return doc;
     },
     translateErrCode : function(code) {
-        //convert DOMException Code to human readable error message;
+        // convert DOMException Code to human readable error message;
       var msg = "";
 
       switch (code) {
@@ -2320,15 +2395,17 @@ __extend__(DOMImplementation.prototype,{
     }
 });
 
-}(/*Envjs.DOM.DOMImplementation*/));
+}(/* Envjs.DOM.DOMImplementation */));
 
 
 
 
 /**
- * @method DOMImplementation._isNamespaceDeclaration - Return true, if attributeName is a namespace declaration
+ * @method DOMImplementation._isNamespaceDeclaration - Return true, if
+ *         attributeName is a namespace declaration
  * @author Jon van Noort (jon@webarcana.com.au)
- * @param  attributeName : string - the attribute name
+ * @param attributeName :
+ *            string - the attribute name
  * @return : boolean
  */
 function __isNamespaceDeclaration__(attributeName) {
@@ -2337,9 +2414,11 @@ function __isNamespaceDeclaration__(attributeName) {
 }
 
 /**
- * @method DOMImplementation._isIdDeclaration - Return true, if attributeName is an id declaration
+ * @method DOMImplementation._isIdDeclaration - Return true, if attributeName is
+ *         an id declaration
  * @author Jon van Noort (jon@webarcana.com.au)
- * @param  attributeName : string - the attribute name
+ * @param attributeName :
+ *            string - the attribute name
  * @return : boolean
  */
 function __isIdDeclaration__(attributeName) {
@@ -2348,10 +2427,11 @@ function __isIdDeclaration__(attributeName) {
 }
 
 /**
- * @method DOMImplementation._isValidName - Return true,
- *   if name contains no invalid characters
+ * @method DOMImplementation._isValidName - Return true, if name contains no
+ *         invalid characters
  * @author Jon van Noort (jon@webarcana.com.au)
- * @param  name : string - the candidate name
+ * @param name :
+ *            string - the candidate name
  * @return : boolean
  */
 var re_validName = /^[a-zA-Z_:][a-zA-Z0-9\.\-_:]*$/;
@@ -2361,12 +2441,14 @@ function __isValidName__(name) {
 }
 
 /**
- * @method DOMImplementation._isValidString - Return true, if string does not contain any illegal chars
- *  All of the characters 0 through 31 and character 127 are nonprinting control characters.
- *  With the exception of characters 09, 10, and 13, (Ox09, Ox0A, and Ox0D)
- *  Note: different from _isValidName in that ValidStrings may contain spaces
+ * @method DOMImplementation._isValidString - Return true, if string does not
+ *         contain any illegal chars All of the characters 0 through 31 and
+ *         character 127 are nonprinting control characters. With the exception
+ *         of characters 09, 10, and 13, (Ox09, Ox0A, and Ox0D) Note: different
+ *         from _isValidName in that ValidStrings may contain spaces
  * @author Jon van Noort (jon@webarcana.com.au)
- * @param  name : string - the candidate string
+ * @param name :
+ *            string - the candidate string
  * @return : boolean
  */
 var re_invalidStringChars = /\x01|\x02|\x03|\x04|\x05|\x06|\x07|\x08|\x0B|\x0C|\x0E|\x0F|\x10|\x11|\x12|\x13|\x14|\x15|\x16|\x17|\x18|\x19|\x1A|\x1B|\x1C|\x1D|\x1E|\x1F|\x7F/;
@@ -2376,14 +2458,13 @@ function __isValidString__(name) {
 }
 
 /**
- * @method DOMImplementation._parseNSName - parse the namespace name.
- *  if there is no colon, the
+ * @method DOMImplementation._parseNSName - parse the namespace name. if there
+ *         is no colon, the
  * @author Jon van Noort (jon@webarcana.com.au)
- * @param  qualifiedName : string - The qualified name
- * @return : NSName - [
-         .prefix        : string - The prefix part of the qname
-         .namespaceName : string - The namespaceURI part of the qname
-    ]
+ * @param qualifiedName :
+ *            string - The qualified name
+ * @return : NSName - [ .prefix : string - The prefix part of the qname
+ *         .namespaceName : string - The namespaceURI part of the qname ]
  */
 function __parseNSName__(qualifiedName) {
     var resultNSName = {};
@@ -2404,7 +2485,8 @@ function __parseNSName__(qualifiedName) {
 /**
  * @method DOMImplementation._parseQName - parse the qualified name
  * @author Jon van Noort (jon@webarcana.com.au)
- * @param  qualifiedName : string - The qualified name
+ * @param qualifiedName :
+ *            string - The qualified name
  * @return : QName
  */
 function __parseQName__(qualifiedName) {
@@ -2433,18 +2515,20 @@ Envjs.once('tick', function(){
 });
 
 /**
- * @class  Document - The Document interface represents the entire HTML
- *      or XML document. Conceptually, it is the root of the document tree,
- *      and provides the primary access to the document's data.
- *
+ * @class Document - The Document interface represents the entire HTML or XML
+ *        document. Conceptually, it is the root of the document tree, and
+ *        provides the primary access to the document's data.
+ * 
  * @extends Node
- * @param  implementation : DOMImplementation - the creator Implementation
+ * @param implementation :
+ *            DOMImplementation - the creator Implementation
  */
 exports.Document = Document = function(implementation, docParentWindow) {
     Node.apply(this, [this]);
 
     this.async = true;
-    // The Document Type Declaration (see DocumentType) associated with this document
+    // The Document Type Declaration (see DocumentType) associated with this
+    // document
     this.doctype = null;
     // The DOMImplementation object that handles this document.
     this.implementation = implementation;
@@ -2536,8 +2620,8 @@ __extend__(Document.prototype,{
         return node;
     },
     createElementNS : function(namespaceURI, qualifiedName) {
-        //we use this as a parser flag to ignore the xhtml
-        //namespace assumed by the parser
+        // we use this as a parser flag to ignore the xhtml
+        // namespace assumed by the parser
         log.debug('createElementNS %s %s', namespaceURI, qualifiedName);
         if (__ownerDocument__(this).implementation.errorChecking) {
             // throw Exception if the Namespace is invalid
@@ -2545,7 +2629,8 @@ __extend__(Document.prototype,{
                 throw(new DOMException(DOMException.NAMESPACE_ERR));
             }
 
-            // throw Exception if the qualifiedName string contains an illegal character
+            // throw Exception if the qualifiedName string contains an illegal
+            // character
             if (!__isValidName__(qualifiedName)) {
                 throw(new DOMException(DOMException.INVALID_CHARACTER_ERR));
             }
@@ -2570,8 +2655,8 @@ __extend__(Document.prototype,{
         return node;
     },
     createAttributeNS : function(namespaceURI, qualifiedName) {
-        //we use this as a parser flag to ignore the xhtml
-        //namespace assumed by the parser
+        // we use this as a parser flag to ignore the xhtml
+        // namespace assumed by the parser
         log.debug('createAttributeNS %s %s', namespaceURI, qualifiedName);
         // test for exceptions
         if (this.implementation.errorChecking) {
@@ -2580,7 +2665,8 @@ __extend__(Document.prototype,{
                 throw(new DOMException(DOMException.NAMESPACE_ERR));
             }
 
-            // throw Exception if the qualifiedName string contains an illegal character
+            // throw Exception if the qualifiedName string contains an illegal
+            // character
             if (!__isValidName__(qualifiedName)) {
                 throw(new DOMException(DOMException.INVALID_CHARACTER_ERR));
             }
@@ -2616,7 +2702,7 @@ __extend__(Document.prototype,{
     },
 
     evaluate: function(xpathText, contextNode, nsuriMapper, resultType, result){
-        //return new XPathExpression().evaluate();
+        // return new XPathExpression().evaluate();
         throw 'Include src/dom/xpath.js for evaluate support.';
     },
 
@@ -2645,19 +2731,21 @@ __extend__(Document.prototype,{
     }
 });
 
-}(/*Envjs.DOM.Document*/));
+}(/* Envjs.DOM.Document */));
 
 
 /*
  * Helper function
- *
+ * 
  */
 __isValidNamespace__ = function(doc, namespaceURI, qualifiedName, isAttribute) {
 
     if (doc.importing === true) {
-        //we're doing an importNode operation (or a cloneNode) - in both cases, there
-        //is no need to perform any namespace checking since the nodes have to have been valid
-        //to have gotten into the DOM in the first place
+        // we're doing an importNode operation (or a cloneNode) - in both cases,
+        // there
+        // is no need to perform any namespace checking since the nodes have to
+        // have been valid
+        // to have gotten into the DOM in the first place
         return true;
     }
 
@@ -2666,7 +2754,7 @@ __isValidNamespace__ = function(doc, namespaceURI, qualifiedName, isAttribute) {
     var qName = __parseQName__(qualifiedName);
 
 
-    //only check for namespaces if we're finished parsing
+    // only check for namespaces if we're finished parsing
     if (this.parsing === false) {
 
         // if the qualifiedName is malformed
@@ -2688,7 +2776,7 @@ __isValidNamespace__ = function(doc, namespaceURI, qualifiedName, isAttribute) {
     }
 
     // if the qualifiedName has a prefix that is "xml" and the namespaceURI is
-    //  different from "http://www.w3.org/XML/1998/namespace" [Namespaces].
+    // different from "http://www.w3.org/XML/1998/namespace" [Namespaces].
     if ((valid) && (qName.prefix === "xml") && (namespaceURI !== "http://www.w3.org/XML/1998/namespace")) {
         valid = false;
     }
@@ -2706,7 +2794,8 @@ Envjs.once('tick', function(){
 
 /**
  * @author envjs team
- * @param {Document} onwnerDocument
+ * @param {Document}
+ *            onwnerDocument
  */
 exports.DocumentType = DocumentType = function(ownerDocument) {
     Node.apply(this, arguments);
@@ -2732,7 +2821,7 @@ __extend__({
     }
 });
 
-}(/*Envjs.DOM.DocumentType*/));
+}(/* Envjs.DOM.DocumentType */));
 
 (function(){
     
@@ -2742,10 +2831,11 @@ Envjs.once('tick', function(){
    log = Envjs.logger('Envjs.DOM.DocumentFragment').debug('available'); 
 });
 /**
- * @class  DocumentFragment -
- *      DocumentFragment is a "lightweight" or "minimal" Document object.
+ * @class DocumentFragment - DocumentFragment is a "lightweight" or "minimal"
+ *        Document object.
  * @extends Node
- * @param  ownerDocument :  The Document object associated with this node.
+ * @param ownerDocument :
+ *            The Document object associated with this node.
  */
 exports.DocumentFragment = DocumentFragment =function(ownerDocument) {
     Node.apply(this, arguments);
@@ -2775,7 +2865,7 @@ __extend__(DocumentFragment.prototype,{
     }
 });
 
-}(/*Envjs.DOM.DocumentFragment*/));
+}(/* Envjs.DOM.DocumentFragment */));
 
 
 
@@ -2787,9 +2877,10 @@ Envjs.once('tick', function(){
    log = Envjs.logger('Envjs.DOM.DOMException').debug('available'); 
 });
 /**
- * @class  DOMException - raised when an operation is impossible to perform
+ * @class DOMException - raised when an operation is impossible to perform
  * @author Jon van Noort (jon@webarcana.com.au)
- * @param  code : int - the exception code (one of the DOMException constants)
+ * @param code :
+ *            int - the exception code (one of the DOMException constants)
  */
 exports.DOMException = DOMException = function(code) {
     this.code = code;
@@ -2815,11 +2906,11 @@ DOMException.INVALID_MODIFICATION_ERR       = 13;
 DOMException.NAMESPACE_ERR                  = 14;
 DOMException.INVALID_ACCESS_ERR             = 15;
 
-//Introduced in DOM Level 3:
+// Introduced in DOM Level 3:
 DOMException.VALIDATION_ERR                 = 16;
 DOMException.TYPE_MISMATCH_ERR              = 17;
 
-}(/*Envjs.DOM.DOMException*/));
+}(/* Envjs.DOM.DOMException */));
 var __E4XParser__,
     __E4XtoDomNode__;
     
@@ -2833,8 +2924,9 @@ Envjs.once('tick', function(){
 
 /**
  * @author ariel flesler
- *    http://flesler.blogspot.com/2008/11/fast-trim-function-for-javascript.html
- * @param {Object} str
+ *         http://flesler.blogspot.com/2008/11/fast-trim-function-for-javascript.html
+ * @param {Object}
+ *            str
  */
 function trim( str ){
     return (str || "").replace( /^\s+|\s+$/g, "" );
@@ -2857,12 +2949,12 @@ function trim( str ){
 
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 // Lesser General Public License for more details.
 
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 //
 //
 // Visit the XML for <SCRIPT> home page at http://xmljs.sourceforge.net
@@ -2872,10 +2964,9 @@ function trim( str ){
 var whitespace = "\n\r\t ";
 
 /**
-*   function:   SAXStrings
-*   Author:   Scott Severtson
-*   Description: a useful object containing string manipulation functions
-**/
+ * function: SAXStrings Author: Scott Severtson Description: a useful object
+ * containing string manipulation functions
+ */
 
 var SAXStrings = function() {};
 
@@ -2966,11 +3057,11 @@ SAXStrings.prototype.replace = function(strD, iB, iE, strF, strR) {
 var saxstrings = new SAXStrings();
 
 
-/***************************************************************************************************************
-Stack: A simple stack class, used for verifying document structure.
-
-    Author:   Scott Severtson
-*****************************************************************************************************************/
+/*******************************************************************************
+ * Stack: A simple stack class, used for verifying document structure.
+ * 
+ * Author: Scott Severtson
+ ******************************************************************************/
 
 var Stack = function() {
     this.m_arr = [];
@@ -3005,18 +3096,18 @@ __extend__(Stack.prototype, {
 });
 
 /**
-* function: isEmpty
-* Author: mike@idle.org
-* Description:  convenience function to identify an empty string
-**/
+ * function: isEmpty Author: mike@idle.org Description: convenience function to
+ * identify an empty string
+ */
 function isEmpty(str) {
     return (str===null) || (str.length===0);
 }
 
 /**
- * function __escapeXML__
- * author: David Joham djoham@yahoo.com
- * @param  str : string - The string to be escaped
+ * function __escapeXML__ author: David Joham djoham@yahoo.com
+ * 
+ * @param str :
+ *            string - The string to be escaped
  * @return : string - The escaped string
  */
 var escAmpRegEx = /&/g;
@@ -3035,9 +3126,10 @@ function __escapeXML__(str) {
 }
 
 /**
- * function __unescapeXML__
- * author: David Joham djoham@yahoo.com
- * @param  str : string - The string to be unescaped
+ * function __unescapeXML__ author: David Joham djoham@yahoo.com
+ * 
+ * @param str :
+ *            string - The string to be unescaped
  * @return : string - The unescaped string
  */
 var unescAmpRegEx = /&amp;/g;
@@ -3057,17 +3149,16 @@ function __unescapeXML__(str) {
 
 
 /**
-*   function:   this is the constructor to the XMLP Object
-*   Author:   Scott Severtson
-*   Description:XMLP is a pull-based parser. The calling application passes in a XML string
-*   to the constructor, then repeatedly calls .next() to parse the next segment.
-*   .next() returns a flag indicating what type of segment was found, and stores
-*   data temporarily in couple member variables (name, content, array of
-*   attributes), which can be accessed by several .get____() methods.
-*
-*   Basically, XMLP is the lowest common denominator parser - an very simple
-*   API which other wrappers can be built against.
-**/
+ * function: this is the constructor to the XMLP Object Author: Scott Severtson
+ * Description:XMLP is a pull-based parser. The calling application passes in a
+ * XML string to the constructor, then repeatedly calls .next() to parse the
+ * next segment. .next() returns a flag indicating what type of segment was
+ * found, and stores data temporarily in couple member variables (name, content,
+ * array of attributes), which can be accessed by several .get____() methods.
+ * 
+ * Basically, XMLP is the lowest common denominator parser - an very simple API
+ * which other wrappers can be built against.
+ */
 
 
 var XMLP = function(strXML) {
@@ -3084,7 +3175,7 @@ var XMLP = function(strXML) {
 };
 
 
-// CONSTANTS    (these must be below the constructor)
+// CONSTANTS (these must be below the constructor)
 
 
 XMLP._NONE    = 0;
@@ -3298,7 +3389,8 @@ XMLP.prototype._parseAttribute = function(iB, iE) {
     var iNB, iNE, iEq, iVB, iVE;
     var cQuote, strN, strV, iRet;
 
-        this.m_cAlt = ""; //resets the value so we don't use an old one by accident (see testAttribute7 in the test suite)
+        this.m_cAlt = ""; // resets the value so we don't use an old one by
+                            // accident (see testAttribute7 in the test suite)
 
     iNB = saxstrings.indexOfNonWhitespace(this.m_xml, iB, iE);
     if((iNB == -1) ||(iNB >= iE)) {
@@ -3650,13 +3742,11 @@ XMLP.prototype._setErr = function(iErr) {
 
 
 /**
-* function:   SAXDriver
-* Author:   Scott Severtson
-* Description:
-*    SAXDriver is an object that basically wraps an XMLP instance, and provides an
-*   event-based interface for parsing. This is the object users interact with when coding
-*   with XML for <SCRIPT>
-**/
+ * function: SAXDriver Author: Scott Severtson Description: SAXDriver is an
+ * object that basically wraps an XMLP instance, and provides an event-based
+ * interface for parsing. This is the object users interact with when coding
+ * with XML for <SCRIPT>
+ */
 
 var SAXDriver = function() {
     this.m_hndDoc = null;
@@ -3718,7 +3808,7 @@ SAXDriver.prototype.setLexicalHandler = function(hnd) {
 
 /**
  * LOCATOR/PARSE EXCEPTION INTERFACE
- **/
+ */
 SAXDriver.prototype.getColumnNumber = function() {
     return this.m_parser.getColumnNumber();
 };
@@ -3743,7 +3833,7 @@ SAXDriver.prototype.getSystemId = function() {
 
 /**
  * Attribute List Interface
- **/
+ */
 
 SAXDriver.prototype.getLength = function() {
     return this.m_parser.getAttributeCount();
@@ -3766,8 +3856,8 @@ SAXDriver.prototype.getValueByName = function(name) {
 
 
 /**
- *    Private functions
- **/
+ * Private functions
+ */
 
 SAXDriver.prototype._fireError = function(strMsg) {
     this.m_strErrMsg = strMsg;
@@ -3886,19 +3976,23 @@ SAXDriver.prototype._parseLoop = function(parser) {
 };
 
 /**
-* Defined 'globally' to this scope.  Remember everything is wrapped in a closure so this doesnt show up
-* in the outer most global scope.
-*/
+ * Defined 'globally' to this scope. Remember everything is wrapped in a closure
+ * so this doesnt show up in the outer most global scope.
+ */
 
 /**
- *  process SAX events
- *
- * @author Jon van Noort (jon@webarcana.com.au), David Joham (djoham@yahoo.com) and Scott Severtson
- *
- * @param  impl : DOMImplementation
- * @param  doc : DOMDocument - the Document to contain the parsed XML string
- * @param  p   : XMLP        - the SAX Parser
- *
+ * process SAX events
+ * 
+ * @author Jon van Noort (jon@webarcana.com.au), David Joham (djoham@yahoo.com)
+ *         and Scott Severtson
+ * 
+ * @param impl :
+ *            DOMImplementation
+ * @param doc :
+ *            DOMDocument - the Document to contain the parsed XML string
+ * @param p :
+ *            XMLP - the SAX Parser
+ * 
  * @return : DOMDocument
  */
 function __parseLoop__(impl, doc, p) {
@@ -3920,7 +4014,7 @@ function __parseLoop__(impl, doc, p) {
         // add the default-default namespace
         iNS = doc.createNamespace(""); 
         iNS.value = "http://www.w3.org/2000/xmlns/";
-        //doc._namespaces.setNamedItem(iNS);
+        // doc._namespaces.setNamedItem(iNS);
     }
 
   // loop until SAX parser stops emitting events
@@ -3930,7 +4024,8 @@ function __parseLoop__(impl, doc, p) {
 
     if (iEvt == XMLP._ELM_B) {                      // Begin-Element Event
       pName = p.getName();                      // get the Element name
-      pName = trim(pName, true, true);              // strip spaces from Element name
+      pName = trim(pName, true, true);              // strip spaces from Element
+                                                    // name
       if(pName.toLowerCase() == 'script'){
         p.replaceEntities = false;
       }
@@ -3941,19 +4036,21 @@ function __parseLoop__(impl, doc, p) {
         // add attributes to Element
         for(i = 0; i < p.getAttributeCount(); i++) {
           strName = p.getAttributeName(i);          // get Attribute name
-          iAttr = iNode.getAttributeNode(strName);  // if Attribute exists, use it
+          iAttr = iNode.getAttributeNode(strName);  // if Attribute exists, use
+                                                    // it
 
           if(!iAttr) {
             iAttr = doc.createAttribute(strName);   // otherwise create it
           }
 
           iAttr.value = p.getAttributeValue(i);   // set Attribute value
-          iNode.setAttributeNode(iAttr);            // attach Attribute to Element
+          iNode.setAttributeNode(iAttr);            // attach Attribute to
+                                                    // Element
         }
       }
       else {  // Namespace Aware
         // create element (with empty namespaceURI,
-        //  resolve after namespace 'attributes' have been parsed)
+        // resolve after namespace 'attributes' have been parsed)
         iNode = doc.createElementNS("", p.getName());
 
         // duplicate ParentNode's Namespace definitions
@@ -3972,24 +4069,31 @@ function __parseLoop__(impl, doc, p) {
               iNS = doc.createNamespace(strName);   // define namespace
             }
             else {
-              iNS = doc.createNamespace("");        // redefine default namespace
+              iNS = doc.createNamespace("");        // redefine default
+                                                    // namespace
             }
             iNS.value = p.getAttributeValue(i);   // set value = namespaceURI
 
-            iNode._namespaces.setNamedItem(iNS);    // attach namespace to namespace collection
+            iNode._namespaces.setNamedItem(iNS);    // attach namespace to
+                                                    // namespace collection
           }
           else {  // otherwise, it is a normal attribute
-            iAttr = iNode.getAttributeNode(strName);        // if Attribute exists, use it
+            iAttr = iNode.getAttributeNode(strName);        // if Attribute
+                                                            // exists, use it
 
             if(!iAttr) {
-              iAttr = doc.createAttributeNS("", strName);   // otherwise create it
+              iAttr = doc.createAttributeNS("", strName);   // otherwise create
+                                                            // it
             }
 
-            iAttr.value = p.getAttributeValue(i);         // set Attribute value
-            iNode.setAttributeNodeNS(iAttr);                // attach Attribute to Element
+            iAttr.value = p.getAttributeValue(i);         // set Attribute
+                                                            // value
+            iNode.setAttributeNodeNS(iAttr);                // attach Attribute
+                                                            // to Element
 
             if (__isIdDeclaration__(strName)) {
-              iNode.id = p.getAttributeValue(i);    // cache ID for getElementById()
+              iNode.id = p.getAttributeValue(i);    // cache ID for
+                                                    // getElementById()
             }
           }
         }
@@ -3999,9 +4103,11 @@ function __parseLoop__(impl, doc, p) {
           iNode.namespaceURI = iNode._namespaces.getNamedItem(iNode.prefix).value;
         }
 
-        //  for this Element's attributes
+        // for this Element's attributes
         for (i = 0; i < iNode.attributes.length; i++) {
-          if (iNode.attributes.item(i).prefix != "") {  // attributes do not have a default namespace
+          if (iNode.attributes.item(i).prefix != "") {  // attributes do not
+                                                        // have a default
+                                                        // namespace
             if (iNode._namespaces.getNamedItem(iNode.attributes.item(i).prefix)) {
               iNode.attributes.item(i).namespaceURI = iNode._namespaces.getNamedItem(iNode.attributes.item(i).prefix).value;
             }
@@ -4009,19 +4115,23 @@ function __parseLoop__(impl, doc, p) {
         }
       }
 
-      iNodeParent.appendChild(iNode);               // attach Element to parentNode
-      iNodeParent = iNode;                          // descend one level of the DOM Tree
+      iNodeParent.appendChild(iNode);               // attach Element to
+                                                    // parentNode
+      iNodeParent = iNode;                          // descend one level of the
+                                                    // DOM Tree
     }
 
     else if(iEvt == XMLP._ELM_E) {                  // End-Element Event
       
-      iNodeParent = iNodeParent.parentNode;         // ascend one level of the DOM Tree
+      iNodeParent = iNodeParent.parentNode;         // ascend one level of the
+                                                    // DOM Tree
 
     }
 
     else if(iEvt == XMLP._ELM_EMP) {                // Empty Element Event
       pName = p.getName();                          // get the Element name
-      pName = trim(pName, true, true);              // strip spaces from Element name
+      pName = trim(pName, true, true);              // strip spaces from Element
+                                                    // name
 
       if (!impl.namespaceAware) {
         iNode = doc.createElement(pName);           // create the Element
@@ -4029,19 +4139,21 @@ function __parseLoop__(impl, doc, p) {
         // add attributes to Element
         for(i = 0; i < p.getAttributeCount(); i++) {
           strName = p.getAttributeName(i);          // get Attribute name
-          iAttr = iNode.getAttributeNode(strName);  // if Attribute exists, use it
+          iAttr = iNode.getAttributeNode(strName);  // if Attribute exists, use
+                                                    // it
 
           if(!iAttr) {
             iAttr = doc.createAttribute(strName);   // otherwise create it
           }
 
           iAttr.value = p.getAttributeValue(i);   // set Attribute value
-          iNode.setAttributeNode(iAttr);            // attach Attribute to Element
+          iNode.setAttributeNode(iAttr);            // attach Attribute to
+                                                    // Element
         }
       }
       else {  // Namespace Aware
         // create element (with empty namespaceURI,
-        //  resolve after namespace 'attributes' have been parsed)
+        // resolve after namespace 'attributes' have been parsed)
         iNode = doc.createElementNS("", p.getName());
 
         // duplicate ParentNode's Namespace definitions
@@ -4059,24 +4171,31 @@ function __parseLoop__(impl, doc, p) {
             if (strName != "xmlns") {
               iNS = doc.createNamespace(strName);   // define namespace
             } else {
-              iNS = doc.createNamespace("");        // redefine default namespace
+              iNS = doc.createNamespace("");        // redefine default
+                                                    // namespace
             }
             iNS.value = p.getAttributeValue(i);   // set value = namespaceURI
 
-            iNode._namespaces.setNamedItem(iNS);    // attach namespace to namespace collection
+            iNode._namespaces.setNamedItem(iNS);    // attach namespace to
+                                                    // namespace collection
           }
           else {  // otherwise, it is a normal attribute
-            iAttr = iNode.getAttributeNode(strName);        // if Attribute exists, use it
+            iAttr = iNode.getAttributeNode(strName);        // if Attribute
+                                                            // exists, use it
 
             if(!iAttr) {
-              iAttr = doc.createAttributeNS("", strName);   // otherwise create it
+              iAttr = doc.createAttributeNS("", strName);   // otherwise create
+                                                            // it
             }
 
-            iAttr.value = p.getAttributeValue(i);         // set Attribute value
-            iNode.setAttributeNodeNS(iAttr);                // attach Attribute to Element
+            iAttr.value = p.getAttributeValue(i);         // set Attribute
+                                                            // value
+            iNode.setAttributeNodeNS(iAttr);                // attach Attribute
+                                                            // to Element
 
             if (__isIdDeclaration__(strName)) {
-              iNode.id = p.getAttributeValue(i);    // cache ID for getElementById()
+              iNode.id = p.getAttributeValue(i);    // cache ID for
+                                                    // getElementById()
             }
           }
         }
@@ -4086,9 +4205,11 @@ function __parseLoop__(impl, doc, p) {
           iNode.namespaceURI = iNode._namespaces.getNamedItem(iNode.prefix).value;
         }
 
-        //  for this Element's attributes
+        // for this Element's attributes
         for (i = 0; i < iNode.attributes.length; i++) {
-          if (iNode.attributes.item(i).prefix != "") {  // attributes do not have a default namespace
+          if (iNode.attributes.item(i).prefix != "") {  // attributes do not
+                                                        // have a default
+                                                        // namespace
             if (iNode._namespaces.getNamedItem(iNode.attributes.item(i).prefix)) {
               iNode.attributes.item(i).namespaceURI = iNode._namespaces.getNamedItem(iNode.attributes.item(i).prefix).value;
             }
@@ -4098,18 +4219,25 @@ function __parseLoop__(impl, doc, p) {
 
       // if this is the Root Element
       if (iNodeParent.nodeType == Node.DOCUMENT_NODE) {
-        iNodeParent.documentElement = iNode;        // register this Element as the Document.documentElement
+        iNodeParent.documentElement = iNode;        // register this Element as
+                                                    // the
+                                                    // Document.documentElement
       }
 
-      iNodeParent.appendChild(iNode);               // attach Element to parentNode
+      iNodeParent.appendChild(iNode);               // attach Element to
+                                                    // parentNode
     }
-    else if(iEvt == XMLP._TEXT || iEvt == XMLP._ENTITY) {                   // TextNode and entity Events
+    else if(iEvt == XMLP._TEXT || iEvt == XMLP._ENTITY) {                   // TextNode
+                                                                            // and
+                                                                            // entity
+                                                                            // Events
       // get Text content
       pContent = p.getContent().substring(p.getContentBegin(), p.getContentEnd());
 
       if (!impl.preserveWhiteSpace ) {
         if (trim(pContent, true, true) == "") {
-            pContent = ""; //this will cause us not to create the text node below
+            pContent = ""; // this will cause us not to create the text node
+                            // below
         }
       }
 
@@ -4117,28 +4245,30 @@ function __parseLoop__(impl, doc, p) {
         textNode = doc.createTextNode(pContent);
         iNodeParent.appendChild(textNode); // attach TextNode to parentNode
 
-        //the sax parser breaks up text nodes when it finds an entity. For
-        //example hello&lt;there will fire a text, an entity and another text
-        //this sucks for the dom parser because it looks to us in this logic
-        //as three text nodes. I fix this by keeping track of the entity nodes
-        //and when we're done parsing, calling normalize on their parent to
-        //turn the multiple text nodes into one, which is what DOM users expect
-        //the code to do this is at the bottom of this function
+        // the sax parser breaks up text nodes when it finds an entity. For
+        // example hello&lt;there will fire a text, an entity and another text
+        // this sucks for the dom parser because it looks to us in this logic
+        // as three text nodes. I fix this by keeping track of the entity nodes
+        // and when we're done parsing, calling normalize on their parent to
+        // turn the multiple text nodes into one, which is what DOM users expect
+        // the code to do this is at the bottom of this function
         if (iEvt == XMLP._ENTITY) {
             entitiesList[entitiesList.length] = textNode;
         }
         else {
-            //I can't properly decide how to handle preserve whitespace
-            //until the siblings of the text node are built due to
-            //the entitiy handling described above. I don't know that this
-            //will be all of the text node or not, so trimming is not appropriate
-            //at this time. Keep a list of all the text nodes for now
-            //and we'll process the preserve whitespace stuff at a later time.
+            // I can't properly decide how to handle preserve whitespace
+            // until the siblings of the text node are built due to
+            // the entitiy handling described above. I don't know that this
+            // will be all of the text node or not, so trimming is not
+            // appropriate
+            // at this time. Keep a list of all the text nodes for now
+            // and we'll process the preserve whitespace stuff at a later time.
             textNodesList[textNodesList.length] = textNode;
         }
       }
     }
-    else if(iEvt == XMLP._PI) {                     // ProcessingInstruction Event
+    else if(iEvt == XMLP._PI) {                     // ProcessingInstruction
+                                                    // Event
       // attach ProcessingInstruction to parentNode
       iNodeParent.appendChild(doc.createProcessingInstruction(p.getName(), p.getContent().substring(p.getContentBegin(), p.getContentEnd())));
     }
@@ -4148,11 +4278,14 @@ function __parseLoop__(impl, doc, p) {
 
       if (!impl.preserveWhiteSpace) {
         pContent = trim(pContent, true, true);      // trim whitespace
-        pContent.replace(/ +/g, ' ');               // collapse multiple spaces to 1 space
+        pContent.replace(/ +/g, ' ');               // collapse multiple spaces
+                                                    // to 1 space
       }
 
       if (pContent.length > 0) {                    // ignore empty CDATANodes
-        iNodeParent.appendChild(doc.createCDATASection(pContent)); // attach CDATA to parentNode
+        iNodeParent.appendChild(doc.createCDATASection(pContent)); // attach
+                                                                    // CDATA to
+                                                                    // parentNode
       }
     }
     else if(iEvt == XMLP._COMMENT) {                // Comment Event
@@ -4161,11 +4294,14 @@ function __parseLoop__(impl, doc, p) {
 
       if (!impl.preserveWhiteSpace) {
         pContent = trim(pContent, true, true);      // trim whitespace
-        pContent.replace(/ +/g, ' ');               // collapse multiple spaces to 1 space
+        pContent.replace(/ +/g, ' ');               // collapse multiple spaces
+                                                    // to 1 space
       }
 
       if (pContent.length > 0) {                    // ignore empty CommentNodes
-        iNodeParent.appendChild(doc.createComment(pContent));  // attach Comment to parentNode
+        iNodeParent.appendChild(doc.createComment(pContent));  // attach
+                                                                // Comment to
+                                                                // parentNode
       }
     }
     else if(iEvt == XMLP._DTD) {                    // ignore DTD events
@@ -4177,11 +4313,14 @@ function __parseLoop__(impl, doc, p) {
         throw(new DOMException(DOMException.SYNTAX_ERR));
     }
     else if(iEvt == XMLP._NONE) {                   // no more events
-      if (iNodeParent == doc) {                     // confirm that we have recursed back up to root
+      if (iNodeParent == doc) {                     // confirm that we have
+                                                    // recursed back up to root
         break;
       }
       else {
-        throw(new DOMException(DOMException.SYNTAX_ERR));  // one or more Tags were not closed properly
+        throw(new DOMException(DOMException.SYNTAX_ERR));  // one or more Tags
+                                                            // were not closed
+                                                            // properly
       }
         break;
 
@@ -4194,19 +4333,19 @@ function __parseLoop__(impl, doc, p) {
       child,
       childData,
       j;
-  //normalize any entities in the DOM to a single textNode
+  // normalize any entities in the DOM to a single textNode
   for (i = 0; i < entitiesList.length; i++) {
       entity = entitiesList[i];
-      //its possible (if for example two entities were in the
-      //same domnode, that the normalize on the first entitiy
-      //will remove the parent for the second. Only do normalize
-      //if I can find a parent node
+      // its possible (if for example two entities were in the
+      // same domnode, that the normalize on the first entitiy
+      // will remove the parent for the second. Only do normalize
+      // if I can find a parent node
       parentNode = entity.parentNode;
       if (parentNode) {
           parentNode.normalize();
 
-          //now do whitespace (if necessary)
-          //it was not done for text nodes that have entities
+          // now do whitespace (if necessary)
+          // it was not done for text nodes that have entities
           if(!impl.preserveWhiteSpace) {
                 children = parentNode.childNodes;
                 for ( j = 0; j < children.length; j++) {
@@ -4221,11 +4360,13 @@ function __parseLoop__(impl, doc, p) {
       }
   }
 
-  //do the preserve whitespace processing on the rest of the text nodes
-  //It's possible (due to the processing above) that the node will have been
-  //removed from the tree. Only do whitespace checking if parentNode is not null.
-  //This may duplicate the whitespace processing for some nodes that had entities in them
-  //but there's no way around that
+  // do the preserve whitespace processing on the rest of the text nodes
+  // It's possible (due to the processing above) that the node will have been
+  // removed from the tree. Only do whitespace checking if parentNode is not
+    // null.
+  // This may duplicate the whitespace processing for some nodes that had
+    // entities in them
+  // but there's no way around that
   if (!impl.preserveWhiteSpace) {
     for (i = 0; i < textNodesList.length; i++) {
         var node = textNodesList[i];
@@ -4240,9 +4381,11 @@ function __parseLoop__(impl, doc, p) {
 
 
 /**
- * @method DOMImplementation._isNamespaceDeclaration - Return true, if attributeName is a namespace declaration
+ * @method DOMImplementation._isNamespaceDeclaration - Return true, if
+ *         attributeName is a namespace declaration
  * @author Jon van Noort (jon@webarcana.com.au)
- * @param  attributeName : string - the attribute name
+ * @param attributeName :
+ *            string - the attribute name
  * @return : boolean
  */
 function __isNamespaceDeclaration__(attributeName) {
@@ -4251,9 +4394,11 @@ function __isNamespaceDeclaration__(attributeName) {
 }
 
 /**
- * @method DOMImplementation._isIdDeclaration - Return true, if attributeName is an id declaration
+ * @method DOMImplementation._isIdDeclaration - Return true, if attributeName is
+ *         an id declaration
  * @author Jon van Noort (jon@webarcana.com.au)
- * @param  attributeName : string - the attribute name
+ * @param attributeName :
+ *            string - the attribute name
  * @return : boolean
  */
 function __isIdDeclaration__(attributeName) {
@@ -4262,10 +4407,11 @@ function __isIdDeclaration__(attributeName) {
 }
 
 /**
- * @method DOMImplementation._isValidName - Return true,
- *   if name contains no invalid characters
+ * @method DOMImplementation._isValidName - Return true, if name contains no
+ *         invalid characters
  * @author Jon van Noort (jon@webarcana.com.au)
- * @param  name : string - the candidate name
+ * @param name :
+ *            string - the candidate name
  * @return : boolean
  */
 function __isValidName__(name) {
@@ -4275,12 +4421,14 @@ function __isValidName__(name) {
 var re_validName = /^[a-zA-Z_:][a-zA-Z0-9\.\-_:]*$/;
 
 /**
- * @method DOMImplementation._isValidString - Return true, if string does not contain any illegal chars
- *  All of the characters 0 through 31 and character 127 are nonprinting control characters.
- *  With the exception of characters 09, 10, and 13, (Ox09, Ox0A, and Ox0D)
- *  Note: different from _isValidName in that ValidStrings may contain spaces
+ * @method DOMImplementation._isValidString - Return true, if string does not
+ *         contain any illegal chars All of the characters 0 through 31 and
+ *         character 127 are nonprinting control characters. With the exception
+ *         of characters 09, 10, and 13, (Ox09, Ox0A, and Ox0D) Note: different
+ *         from _isValidName in that ValidStrings may contain spaces
  * @author Jon van Noort (jon@webarcana.com.au)
- * @param  name : string - the candidate string
+ * @param name :
+ *            string - the candidate string
  * @return : boolean
  */
 function __isValidString__(name) {
@@ -4290,19 +4438,20 @@ function __isValidString__(name) {
 var re_invalidStringChars = /\x01|\x02|\x03|\x04|\x05|\x06|\x07|\x08|\x0B|\x0C|\x0E|\x0F|\x10|\x11|\x12|\x13|\x14|\x15|\x16|\x17|\x18|\x19|\x1A|\x1B|\x1C|\x1D|\x1E|\x1F|\x7F/;
 
 /**
- * @method DOMImplementation._parseNSName - parse the namespace name.
- *  if there is no colon, the
+ * @method DOMImplementation._parseNSName - parse the namespace name. if there
+ *         is no colon, the
  * @author Jon van Noort (jon@webarcana.com.au)
- * @param  qualifiedName : string - The qualified name
- * @return : NSName - [
-         .prefix        : string - The prefix part of the qname
-         .namespaceName : string - The namespaceURI part of the qname
-    ]
+ * @param qualifiedName :
+ *            string - The qualified name
+ * @return : NSName - [ .prefix : string - The prefix part of the qname
+ *         .namespaceName : string - The namespaceURI part of the qname ]
  */
 function __parseNSName__(qualifiedName) {
   var resultNSName = {};
 
-  resultNSName.prefix          = qualifiedName;  // unless the qname has a namespaceName, the prefix is the entire String
+  resultNSName.prefix          = qualifiedName;  // unless the qname has a
+                                                    // namespaceName, the prefix
+                                                    // is the entire String
   resultNSName.namespaceName   = "";
 
   // split on ':'
@@ -4319,13 +4468,16 @@ function __parseNSName__(qualifiedName) {
 /**
  * @method DOMImplementation._parseQName - parse the qualified name
  * @author Jon van Noort (jon@webarcana.com.au)
- * @param  qualifiedName : string - The qualified name
+ * @param qualifiedName :
+ *            string - The qualified name
  * @return : QName
  */
 function __parseQName__(qualifiedName) {
   var resultQName = {};
 
-  resultQName.localName = qualifiedName;  // unless the qname has a prefix, the local name is the entire String
+  resultQName.localName = qualifiedName;  // unless the qname has a prefix,
+                                            // the local name is the entire
+                                            // String
   resultQName.prefix    = "";
 
   // split on ':'
@@ -4344,12 +4496,12 @@ function __parseQName__(qualifiedName) {
 
 
 /**
- *
- * This file only handles XML parser.
- * It is extended by parser/domparser.js (and parser/htmlparser.js)
- *
+ * 
+ * This file only handles XML parser. It is extended by parser/domparser.js (and
+ * parser/htmlparser.js)
+ * 
  * This depends on e4x, which some engines may not have.
- *
+ * 
  * @author thatcher
  */
 exports.DOMParser = DOMParser = function(principle, documentURI, baseURI) {
@@ -4362,31 +4514,26 @@ __extend__(DOMParser.prototype,{
         var doc = new Document(new DOMImplementation());
     
         // populate Document with Parsed Nodes
-        //try {
+        // try {
             __parseLoop__(doc.implementation, doc, parser);
-        /*} catch (e) {
-            console.log(
-                "Error parsing XML %s %s",  
-                doc.implementation.translateErrCode(e.code),
-                e
-            );
-        }*/
+        /*
+         * } catch (e) { console.log( "Error parsing XML %s %s",
+         * doc.implementation.translateErrCode(e.code), e ); }
+         */
 
-        // set parseComplete flag, (Some validation Rules are relaxed if this is false)
+        // set parseComplete flag, (Some validation Rules are relaxed if this is
+        // false)
         doc._parseComplete = true;
         return doc;
     
-        /*var e4xsupport = false;
-        try{e4xsupport = new XML();}catch(e){}
-        if(e4xsupport){
-            return __E4XParser__(xmlstring, mimetype);
-        }else{
-            var doc = new Document(new DOMImplementation());
-            //requires envjs parser.js module/mixins
-            XMLParser.parseDocument(xmlstring, doc, mimetype);
-            //console.log('xml \n %s', doc.documentElement.xml);
-            return doc; 
-        }*/
+        /*
+         * var e4xsupport = false; try{e4xsupport = new XML();}catch(e){}
+         * if(e4xsupport){ return __E4XParser__(xmlstring, mimetype); }else{ var
+         * doc = new Document(new DOMImplementation()); //requires envjs
+         * parser.js module/mixins XMLParser.parseDocument(xmlstring, doc,
+         * mimetype); //console.log('xml \n %s', doc.documentElement.xml);
+         * return doc; }
+         */
     }
 });
 
@@ -4413,7 +4560,8 @@ __E4XParser__ = function(xmlstring, mimetype){
     // https://bugzilla.mozilla.org/show_bug.cgi?id=336551
     // The official workaround is the big regexp below
     // but simpler one seems to be ok
-    // xmlstring = xmlstring.replace(/^<\?xml\s+version\s*=\s*(["'])[^\1]+\1[^?]*\?>/, "");
+    // xmlstring =
+    // xmlstring.replace(/^<\?xml\s+version\s*=\s*(["'])[^\1]+\1[^?]*\?>/, "");
     //
     xmlstring = xmlstring.replace(/<\?xml.*\?>/, '');
 
@@ -4421,7 +4569,7 @@ __E4XParser__ = function(xmlstring, mimetype){
 
     __E4XtoDomNode__(e4, doc, doc);
 
-    //console.log('xml \n %s', doc.documentElement.xml);
+    // console.log('xml \n %s', doc.documentElement.xml);
     return doc;
 };
 
@@ -4435,7 +4583,7 @@ __E4XtoDomNode__ = function(e4, parent, doc){
         element,
         kind,
         item;
-    //console.log('converting e4x node list \n %s', e4)
+    // console.log('converting e4x node list \n %s', e4)
 
     // not using the for each(item in e4) since some engines can't
     // handle the syntax (i.e. says syntax error)
@@ -4448,13 +4596,15 @@ __E4XtoDomNode__ = function(e4, parent, doc){
             xnode = e4[item];
 
             kind = xnode.nodeKind();
-            //console.log('treating node kind %s', kind);
+            // console.log('treating node kind %s', kind);
             switch(kind){
             case 'element':
                 // add node
-                //console.log('creating element %s %s', xnode.localName(), xnode.namespace());
+                // console.log('creating element %s %s', xnode.localName(),
+                // xnode.namespace());
                 if(xnode.namespace() && (xnode.namespace()+'') !== ''){
-                    //console.log('createElementNS %s %s',xnode.namespace()+'', xnode.localName() );
+                    // console.log('createElementNS %s %s',xnode.namespace()+'',
+                    // xnode.localName() );
                     domnode = doc.createElementNS(xnode.namespace()+'', xnode.localName());
                 }else{
                     domnode = doc.createElement(xnode.name()+'');
@@ -4467,23 +4617,23 @@ __E4XtoDomNode__ = function(e4, parent, doc){
                 // add children
                 children = xnode.children();
                 length = children.length();
-                //console.log('recursing? %s', length ? 'yes' : 'no');
+                // console.log('recursing? %s', length ? 'yes' : 'no');
                 if (length > 0) {
                     __E4XtoDomNode__(children, domnode, doc);
                 }
                 break;
             case 'attribute':
                 // console.log('setting attribute %s %s %s',
-                //       xnode.localName(), xnode.namespace(), xnode.valueOf());
+                // xnode.localName(), xnode.namespace(), xnode.valueOf());
 
                 //
-                // cross-platform alert.  The original code used
-                //  xnode.text() to get the attribute value
-                //  This worked in Rhino, but did not in Spidermonkey
-                //  valueOf seemed to work in both
+                // cross-platform alert. The original code used
+                // xnode.text() to get the attribute value
+                // This worked in Rhino, but did not in Spidermonkey
+                // valueOf seemed to work in both
                 //
                 if(xnode.namespace() && xnode.namespace().prefix){
-                    //console.log("%s", xnode.namespace().prefix);
+                    // console.log("%s", xnode.namespace().prefix);
                     parent.setAttributeNS(xnode.namespace()+'',
                                           xnode.namespace().prefix+':'+xnode.localName(),
                                           xnode.valueOf());
@@ -4494,27 +4644,29 @@ __E4XtoDomNode__ = function(e4, parent, doc){
                                               xnode.valueOf());
                     }
                 }else{
-                    //console.log('setting attribute %s', xnode.localName());
+                    // console.log('setting attribute %s', xnode.localName());
                     parent.setAttribute(xnode.localName()+'', xnode.valueOf());
                 }
                 break;
             case 'text':
-                //console.log('creating text node : %s', xnode);
+                // console.log('creating text node : %s', xnode);
                 domnode = doc.createTextNode(xnode+'');
                 parent.appendChild(domnode);
                 break;
             case 'comment':
-                //console.log('creating comment node : %s', xnode);
+                // console.log('creating comment node : %s', xnode);
                 value = xnode+'';
                 domnode = doc.createComment(value.substring(4,value.length-3));
                 parent.appendChild(domnode);
                 break;
             case 'processing-instruction':
-                //console.log('creating processing-instruction node : %s', xnode);
+                // console.log('creating processing-instruction node : %s',
+                // xnode);
                 value = xnode+'';
                 target = value.split(' ')[0].substring(2);
                 value = value.split(' ').splice(1).join(' ').replace('?>','');
-                //console.log('creating processing-instruction data : %s', value);
+                // console.log('creating processing-instruction data : %s',
+                // value);
                 domnode = doc.createProcessingInstruction(target, value);
                 parent.appendChild(domnode);
                 break;
@@ -4527,7 +4679,7 @@ __E4XtoDomNode__ = function(e4, parent, doc){
 };
 
 
-}(/*Envjs.DOM.DOMParser*/));
+}(/* Envjs.DOM.DOMParser */));
 
 (function(){
     
@@ -4538,17 +4690,17 @@ Envjs.once('tick', function(){
 });
     
 /**
- * @class  Attr
- *      The Attr interface represents an attribute in an Element object
+ * @class Attr The Attr interface represents an attribute in an Element object
  * @extends Node
- * @param  ownerDocument : The Document object associated with this node.
+ * @param ownerDocument :
+ *            The Document object associated with this node.
  */
 exports.Attr = Attr = function(ownerDocument) {
     Node.apply(this, arguments);
     // set when Attr is added to NamedNodeMap
     this.ownerElement = null;
-    //TODO: our implementation of Attr is incorrect because we don't
-    //      treat the value of the attribute as a child text node.
+    // TODO: our implementation of Attr is incorrect because we don't
+    // treat the value of the attribute as a child text node.
 };
 Attr.prototype = new Node();
 __extend__(Attr.prototype, {
@@ -4592,7 +4744,7 @@ __extend__(Attr.prototype, {
     }
 });
 
-}(/*Envjs.DOM.Attr*/));
+}(/* Envjs.DOM.Attr */));
 
 (function(){
     
@@ -4602,12 +4754,11 @@ Envjs.once('tick', function(){
    log = Envjs.logger('Envjs.DOM.Element').debug('available'); 
 });
 /**
- * @class  Element -
- *      By far the vast majority of objects (apart from text)
- *      that authors encounter when traversing a document are
- *      Element nodes.
+ * @class Element - By far the vast majority of objects (apart from text) that
+ *        authors encounter when traversing a document are Element nodes.
  * @extends Node
- * @param  ownerDocument : The Document object associated with this node.
+ * @param ownerDocument :
+ *            The Document object associated with this node.
  */
 exports.Element = Element = function(ownerDocument) {
     Node.apply(this, arguments);
@@ -4638,7 +4789,7 @@ __extend__(Element.prototype, {
         if (attr===null||attr===undefined) {
             // otherwise create it
             attr = __ownerDocument__(this).createAttribute(name);
-           //console.log('attr %s', attr);
+           // console.log('attr %s', attr);
         }
 
 
@@ -4660,7 +4811,7 @@ __extend__(Element.prototype, {
 
         // add/replace Attribute in NamedNodeMap
         this.attributes.setNamedItem(attr);
-        //console.log('element setNamedItem %s = %s', attr.name, attr.value);
+        // console.log('element setNamedItem %s = %s', attr.name, attr.value);
     },
     removeAttribute : function removeAttribute(name) {
 		log.debug('removing attribute %s for element %s', name, this.nodeName);
@@ -4698,12 +4849,14 @@ __extend__(Element.prototype, {
         if (attr) {
             ret = attr.value;
         }
-        return ret;  // if Attribute exists, return its value, otherwise return ""
+        return ret;  // if Attribute exists, return its value, otherwise
+                        // return ""
     },
     setAttributeNS : function(namespaceURI, qualifiedName, value) {
 		log.debug('setAttributeNS %s:%s for element %s', namespaceURI, qualifiedName, this.nodeName);
         // call NamedNodeMap.getNamedItem
-        //console.log('setAttributeNS %s %s %s', namespaceURI, qualifiedName, value);
+        // console.log('setAttributeNS %s %s %s', namespaceURI, qualifiedName,
+        // value);
         var attr = this.attributes.getNamedItem(namespaceURI, qualifiedName);
 
         if (!attr) {  // if Attribute exists, use it
@@ -4813,7 +4966,7 @@ __extend__(Element.prototype, {
     }
 });
 
-}(/*Envjs.DOM.Element*/));
+}(/* Envjs.DOM.Element */));
 
 
 (function(){
@@ -4824,14 +4977,13 @@ Envjs.once('tick', function(){
    log = Envjs.logger('Envjs.DOM.ProcessingInstruction').debug('available'); 
 });
 /**
- * @class  ProcessingInstruction -
- *      The ProcessingInstruction interface represents a
- *      "processing instruction", used in XML as a way to
- *      keep processor-specific information in the text of
- *      the document
+ * @class ProcessingInstruction - The ProcessingInstruction interface represents
+ *        a "processing instruction", used in XML as a way to keep
+ *        processor-specific information in the text of the document
  * @extends Node
  * @author Jon van Noort (jon@webarcana.com.au)
- * @param  ownerDocument :  The Document object associated with this node.
+ * @param ownerDocument :
+ *            The Document object associated with this node.
  */
 exports.ProcessingInstruction = ProcessingInstruction = function(ownerDocument) {
     Node.apply(this, arguments);
@@ -4856,13 +5008,15 @@ __extend__(ProcessingInstruction.prototype, {
     },
     get target(){
       // The target of this processing instruction.
-      // XML defines this as being the first token following the markup that begins the processing instruction.
+      // XML defines this as being the first token following the markup that
+        // begins the processing instruction.
       // The content of this processing instruction.
         return this.nodeName;
     },
     set target(value){
       // The target of this processing instruction.
-      // XML defines this as being the first token following the markup that begins the processing instruction.
+      // XML defines this as being the first token following the markup that
+        // begins the processing instruction.
       // The content of this processing instruction.
         this.nodeName = value;
     },
@@ -4877,7 +5031,7 @@ __extend__(ProcessingInstruction.prototype, {
     }
 });
 
-}(/*Envjs.DOM.ProcessingInstruction*/));
+}(/* Envjs.DOM.ProcessingInstruction */));
 
 
 
@@ -4898,7 +5052,7 @@ exports.Entity = Entity = function() {
 
 Entity.constants = {
         // content taken from W3C "HTML 4.01 Specification"
-        //                        "W3C Recommendation 24 December 1999"
+        // "W3C Recommendation 24 December 1999"
 
     nbsp: "\u00A0",
     iexcl: "\u00A1",
@@ -5158,7 +5312,7 @@ Entity.constants = {
 };
 
 
-}(/*Envjs.DOM.Entity*/));
+}(/* Envjs.DOM.Entity */));
 
 (function(){
     
@@ -5175,7 +5329,7 @@ exports.EntityReference = EntityReference = function() {
     throw new Error("EntityReference Not Implemented" );
 };
 
-}(/*Envjs.DOM.EntityReference*/));
+}(/* Envjs.DOM.EntityReference */));
 
 
 (function(){
@@ -5192,7 +5346,7 @@ exports.Notation = Notation = function() {
     throw new Error("Notation Not Implemented" );
 };
 
-}(/*Envjs.DOM.Notation*/));
+}(/* Envjs.DOM.Notation */));
 
 (function(){
     
@@ -5226,31 +5380,31 @@ __extend__(Range.prototype, {
     get commonAncestorContainer(){
 
     },
-    setStart: function(refNode, offset){//throws RangeException
+    setStart: function(refNode, offset){// throws RangeException
 
     },
-    setEnd: function(refNode, offset){//throws RangeException
+    setEnd: function(refNode, offset){// throws RangeException
     
     },
-    setStartBefore: function(refNode){//throws RangeException
+    setStartBefore: function(refNode){// throws RangeException
     
     },
-    setStartAfter: function(refNode){//throws RangeException
+    setStartAfter: function(refNode){// throws RangeException
     
     },
-    setEndBefore: function(refNode){//throws RangeException
+    setEndBefore: function(refNode){// throws RangeException
     
     },
-    setEndAfter: function(refNode){//throws RangeException
+    setEndAfter: function(refNode){// throws RangeException
     
     },
-    collapse: function(toStart){//throws RangeException
+    collapse: function(toStart){// throws RangeException
     
     },
-    selectNode: function(refNode){//throws RangeException
+    selectNode: function(refNode){// throws RangeException
     
     },
-    selectNodeContents: function(refNode){//throws RangeException
+    selectNodeContents: function(refNode){// throws RangeException
     
     },
     compareBoundaryPoints: function(how, sourceRange){
@@ -5291,7 +5445,7 @@ Range.END_TO_START                   = 3;
   
 
 
-}(/*Envjs.DOM.Range*/));
+}(/* Envjs.DOM.Range */));
 
 (function(){
     
@@ -5317,7 +5471,7 @@ __extend__(XMLSerializer.prototype, {
     }
 });
 
-}(/*Envjs.DOM.XMLSerilaizer*/));
+}(/* Envjs.DOM.XMLSerilaizer */));
 
 
 (function(){
@@ -5391,7 +5545,7 @@ exports.XPathResult = XPathExpression = function(xpathText, nsuriMap){
     this.raw = xpathText;
     this.compiled = __compileXPath__(xpathText, nsuriMap);
 };
-//redefined in closure below
+// redefined in closure below
 XPathExpression.prototype.evaluate = function(contextNode, resultType, result){
     throw 'Not Implemented';
 };
@@ -5408,7 +5562,7 @@ function xpathLog(msg) {}
 function xsltLog(msg) {}
 function xsltLogXml(msg) {}
 
-var ajaxsltIsIE6 = false;//navigator.appVersion.match(/MSIE 6.0/);
+var ajaxsltIsIE6 = false;// navigator.appVersion.match(/MSIE 6.0/);
 
 // Based on <http://www.w3.org/TR/2000/REC-DOM-Level-2-Core-20001113/
 // core.html#ID-1950641247>
@@ -5607,11 +5761,12 @@ function xmlEscapeTags(s) {
 }
 
 /**
- * Wrapper function to access the owner document uniformly for document
- * and other nodes: for the document node, the owner document is the
- * node itself, for all others it's the ownerDocument property.
- *
- * @param {Node} node
+ * Wrapper function to access the owner document uniformly for document and
+ * other nodes: for the document node, the owner document is the node itself,
+ * for all others it's the ownerDocument property.
+ * 
+ * @param {Node}
+ *            node
  * @return {Document}
  */
 function xmlOwnerDocument(node) {
@@ -6604,25 +6759,25 @@ function xmlParse(xml) {
 //
 // The four types are:
 //
-//   StringValue
+// StringValue
 //
-//   NumberValue
+// NumberValue
 //
-//   BooleanValue
+// BooleanValue
 //
-//   NodeSetValue
+// NodeSetValue
 //
 // The common interface of the value classes consists of methods that
 // implement the XPath type coercion rules:
 //
-//   stringValue() -- returns the value as a JavaScript String,
+// stringValue() -- returns the value as a JavaScript String,
 //
-//   numberValue() -- returns the value as a JavaScript Number,
+// numberValue() -- returns the value as a JavaScript Number,
 //
-//   booleanValue() -- returns the value as a JavaScript Boolean,
+// booleanValue() -- returns the value as a JavaScript Boolean,
 //
-//   nodeSetValue() -- returns the value as a JavaScript Array of DOM
-//   Node objects.
+// nodeSetValue() -- returns the value as a JavaScript Array of DOM
+// Node objects.
 //
 
 function StringValue(value) {
@@ -8265,39 +8420,39 @@ var xpathGrammarRules =
 //
 // The interface of the expression context:
 //
-//   Constructor -- gets the node, its position, the node set it
-//   belongs to, and a parent context as arguments. The parent context
-//   is used to implement scoping rules for variables: if a variable
-//   is not found in the current context, it is looked for in the
-//   parent context, recursively. Except for node, all arguments have
-//   default values: default position is 0, default node set is the
-//   set that contains only the node, and the default parent is null.
+// Constructor -- gets the node, its position, the node set it
+// belongs to, and a parent context as arguments. The parent context
+// is used to implement scoping rules for variables: if a variable
+// is not found in the current context, it is looked for in the
+// parent context, recursively. Except for node, all arguments have
+// default values: default position is 0, default node set is the
+// set that contains only the node, and the default parent is null.
 //
-//     Notice that position starts at 0 at the outside interface;
-//     inside XPath expressions this shows up as position()=1.
+// Notice that position starts at 0 at the outside interface;
+// inside XPath expressions this shows up as position()=1.
 //
-//   clone() -- creates a new context with the current context as
-//   parent. If passed as argument to clone(), the new context has a
-//   different node, position, or node set. What is not passed is
-//   inherited from the cloned context.
+// clone() -- creates a new context with the current context as
+// parent. If passed as argument to clone(), the new context has a
+// different node, position, or node set. What is not passed is
+// inherited from the cloned context.
 //
-//   setVariable(name, expr) -- binds given XPath expression to the
-//   name.
+// setVariable(name, expr) -- binds given XPath expression to the
+// name.
 //
-//   getVariable(name) -- what the name says.
+// getVariable(name) -- what the name says.
 //
-//   setNode(position) -- sets the context to the node at the given
-//   position. Needed to implement scoping rules for variables in
-//   XPath. (A variable is visible to all subsequent siblings, not
-//   only to its children.)
+// setNode(position) -- sets the context to the node at the given
+// position. Needed to implement scoping rules for variables in
+// XPath. (A variable is visible to all subsequent siblings, not
+// only to its children.)
 //
-//   set/isCaseInsensitive -- specifies whether node name tests should
-//   be case sensitive.  If you're executing xpaths against a regular
-//   HTML DOM, you probably don't want case-sensitivity, because
-//   browsers tend to disagree about whether elements & attributes
-//   should be upper/lower case.  If you're running xpaths in an
-//   XSLT instance, you probably DO want case sensitivity, as per the
-//   XSL spec.
+// set/isCaseInsensitive -- specifies whether node name tests should
+// be case sensitive. If you're executing xpaths against a regular
+// HTML DOM, you probably don't want case-sensitivity, because
+// browsers tend to disagree about whether elements & attributes
+// should be upper/lower case. If you're running xpaths in an
+// XSLT instance, you probably DO want case sensitivity, as per the
+// XSL spec.
 
 function ExprContext(node, opt_position, opt_nodelist, opt_parent, opt_caseInsensitive, opt_ignoreAttributesWithoutValue) {
   this.node = node;
@@ -8646,32 +8801,30 @@ function xpathGrammarPrecedence(frame) {
 
   return ret;
 }
-/*DGF xpathReduce is where the magic happens in this parser.
-Skim down to the bottom of this file to find the table of 
-grammatical rules and precedence numbers, "The productions of the grammar".
-
-The idea here
-is that we want to take a stack of tokens and apply
-grammatical rules to them, "reducing" them to higher-level
-tokens.  Ultimately, any valid XPath should reduce to exactly one
-"Expr" token.
-
-Reduce too early or too late and you'll have two tokens that can't reduce
-to single Expr.  For example, you may hastily reduce a qname that
-should name a function, incorrectly treating it as a tag name.
-Or you may reduce too late, accidentally reducing the last part of the
-XPath into a top-level "Expr" that won't reduce with earlier parts of
-the XPath.
-
-A "cand" is a grammatical rule candidate, with a given precedence
-number.  "ahead" is the upcoming token, which also has a precedence
-number.  If the token has a higher precedence number than
-the rule candidate, we'll "shift" the token onto the token stack,
-instead of immediately applying the rule candidate.
-
-Some tokens have left associativity, in which case we shift when they
-have LOWER precedence than the candidate.
-*/
+/*
+ * DGF xpathReduce is where the magic happens in this parser. Skim down to the
+ * bottom of this file to find the table of grammatical rules and precedence
+ * numbers, "The productions of the grammar".
+ * 
+ * The idea here is that we want to take a stack of tokens and apply grammatical
+ * rules to them, "reducing" them to higher-level tokens. Ultimately, any valid
+ * XPath should reduce to exactly one "Expr" token.
+ * 
+ * Reduce too early or too late and you'll have two tokens that can't reduce to
+ * single Expr. For example, you may hastily reduce a qname that should name a
+ * function, incorrectly treating it as a tag name. Or you may reduce too late,
+ * accidentally reducing the last part of the XPath into a top-level "Expr" that
+ * won't reduce with earlier parts of the XPath.
+ * 
+ * A "cand" is a grammatical rule candidate, with a given precedence number.
+ * "ahead" is the upcoming token, which also has a precedence number. If the
+ * token has a higher precedence number than the rule candidate, we'll "shift"
+ * the token onto the token stack, instead of immediately applying the rule
+ * candidate.
+ * 
+ * Some tokens have left associativity, in which case we shift when they have
+ * LOWER precedence than the candidate.
+ */
 function xpathReduce(stack, ahead) {
   var cand = null, i;
 
@@ -8968,5 +9121,5 @@ __compileXPath__ = function(xpathText, nsuriMap){
  * @copyright 2008-2010
  * @license MIT
  */
-//CLOSURE_END
+// CLOSURE_END
 }());

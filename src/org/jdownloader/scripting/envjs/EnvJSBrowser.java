@@ -234,6 +234,7 @@ public class EnvJSBrowser implements ContextCallback {
     }
 
     public void breakIt() {
+        printStacktrace();
         System.out.println("Break");
     }
 
@@ -660,7 +661,7 @@ public class EnvJSBrowser implements ContextCallback {
 
         cx.setOptimizationLevel(-1);
         cx.setLanguageVersion(Context.VERSION_1_5);
-
+        initGuiDebugger();
         tick = cx.compileString("var e=envjsglobals.Envjs;delete envjsglobals;  e.tick();  ", "ticker", 1, null);
         if (br == null) {
             throw new NullPointerException("browser is null");
@@ -679,10 +680,11 @@ public class EnvJSBrowser implements ContextCallback {
             }
             preloadClasses += "delete load;";
             evalTrusted(preloadClasses);
+
             String initSource = readRequire("envjs/init");
             initSource = initSource.replace("%EnvJSinstanceID%", id + "");
             evaluateTrustedString(cx, scope, initSource, "setInstance", 1, null);
-
+            evalTrusted("       var javaInstance=Packages.org.jdownloader.scripting.envjs.EnvJSBrowser.get(" + id + ");stacktrace=function(){javaInstance.printStacktrace();};");
             ArrayList<String> list = new ArrayList<String>(JSHtmlUnitPermissionRestricter.LOADED);
 
             Collections.sort(list, new Comparator<String>() {
@@ -713,9 +715,9 @@ public class EnvJSBrowser implements ContextCallback {
                     }
                 }
             }
-            if (getDebugLevel() == DebugLevel.DEBUG) {
-                cx.setDebugger(new JsDebugger(), "debugger");
-            }
+            // if (getDebugLevel() == DebugLevel.DEBUG) {
+            // cx.setDebugger(new JsDebugger(), "debugger");
+            // }
             initDone = true;
             // evaluateTrustedString(cx, scope, "delete EnvJs;delete After;", "CleanUp", 1, null);
 
@@ -735,6 +737,9 @@ public class EnvJSBrowser implements ContextCallback {
         } finally {
 
         }
+    }
+
+    public void initGuiDebugger() {
     }
 
     public void close() {
