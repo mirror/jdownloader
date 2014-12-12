@@ -1627,6 +1627,7 @@ lit_filename=Nome do arquivo
 lit_filesize=Tamanho
 lit_filter=Filtrar
 lit_finished=finalizado
+lit_finished_package=pacote concluído
 lit_hoster=Servidor
 lit_image=Imagem
 lit_import=Importar
