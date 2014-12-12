@@ -75,11 +75,17 @@ public class FiveFantasticPl extends PluginForHost {
             link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
 
             if (errorMessage.contains("Content-length too big")) {
-                link.setComment("The link seems to be folder. Folders are not supported.");
+                try {
+                    link.setComment("The link seems to be folder. Folders are not supported.");
+                } catch (final Throwable t) {
+                }
                 logger.severe("FiveFantastic: the link: " + downloadUrl + " seems to be folder. Folders are not supported!");
                 throw new PluginException(LinkStatus.ERROR_FATAL, "folders are not supported!");
             }
-            link.setComment("FiveFantastic: trying to get page for link: " + downloadUrl + ",  got error: " + errorMessage);
+            try {
+                link.setComment("FiveFantastic: trying to get page for link: " + downloadUrl + ",  got error: " + errorMessage);
+            } catch (final Throwable t) {
+            }
 
             logger.severe("FiveFantastic: trying to get page for link: " + downloadUrl + ",  got error: " + errorMessage);
             throw new PluginException(LinkStatus.ERROR_FATAL, "Error: " + errorMessage);
@@ -115,7 +121,10 @@ public class FiveFantasticPl extends PluginForHost {
             br.getPage(downloadUrl);
 
             if (br.containsHTML("Plik jest plikiem prywatnym.")) {
-                link.setComment("This is private file - download impossible");
+                try {
+                    link.setComment("This is private file - download impossible");
+                } catch (final Throwable t) {
+                }
                 logger.info("FiveFantastic: " + link.getDownloadURL() + " is private file - download impossible!");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
