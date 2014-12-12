@@ -445,7 +445,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         SelectionInfo<ParentType, ChildrenType> selection = getSelectionInfo(true, true);
         boolean selectall = true;
         for (PackageView<ParentType, ChildrenType> pv : selection.getPackageViews()) {
-            if (pv.getPackage().isExpanded()) {
+            if (pv.isExpanded()) {
                 toSelect.addAll(new SelectionInfo<ParentType, ChildrenType>(pv.getPackage(), null, true).getChildren());
             }
             toSelect.add(pv.getPackage());

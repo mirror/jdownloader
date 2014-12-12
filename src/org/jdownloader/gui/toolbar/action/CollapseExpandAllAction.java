@@ -22,7 +22,7 @@ public class CollapseExpandAllAction extends SelectionBasedToolbarAction {
             boolean allexpaned = true;
             ArrayList<AbstractPackageNode> list = new ArrayList<AbstractPackageNode>();
             for (PackageView<?, ?> p : selection.getPackageViews()) {
-                if (!p.getPackage().isExpanded()) {
+                if (!p.isExpanded()) {
                     allexpaned = false;
 
                 }
