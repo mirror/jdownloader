@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linx.li" }, urls = { "https?://(www\\.)?linx\\.li/[^<>\"/]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linx.li" }, urls = { "https?://(www\\.)?linx\\.li/[a-zA-Z0-9]+(?:\\.[a-z]+)?" }, flags = { 0 })
 public class LinxLi extends PluginForHost {
 
     public LinxLi(PluginWrapper wrapper) {
