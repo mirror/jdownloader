@@ -39,7 +39,7 @@ public class UJCECheck {
 
     public static final void check() {
         if (checked.compareAndSet(false, true)) {
-            if (Boolean.TRUE.equals(isRestrictedCryptography()) && isOracleJVM()) {
+            if (isOracleJVM() && Boolean.TRUE.equals(isRestrictedCryptography())) {
                 if (true) {
                     removeCryptographyRestrictions();
                 } else {
