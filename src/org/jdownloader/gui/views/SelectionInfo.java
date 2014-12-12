@@ -47,14 +47,12 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     private boolean                                                      applyTableFilter;
 
     public static class PluginView<ChildrenType extends AbstractPackageChildrenNode> {
-        private ArraySet<ChildrenType> children;
-        private PluginForHost          plugin;
+        private final ArraySet<ChildrenType> children;
+        private final PluginForHost          plugin;
 
         public PluginView(PluginForHost pkg) {
             children = new ArraySet<ChildrenType>();
-
             this.plugin = pkg;
-
         }
 
         public ArraySet<ChildrenType> getChildren() {
@@ -76,15 +74,23 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     };
 
     public static class PackageView<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
-        private ArraySet<ChildrenType> children;
-        private PackageType            pkg;
-        private boolean                packageIncluded;
+        private final ArraySet<ChildrenType> children;
+        private final PackageType            pkg;
+        private final boolean                packageIncluded;
+        private final int                    pkgSize;
+        private final boolean                isExpanded;
 
         public PackageView(PackageType pkg, boolean packageIncluded) {
             children = new ArraySet<ChildrenType>();
-
             this.pkg = pkg;
+            boolean readL = pkg.getModifyLock().readLock();
+            try {
+                this.pkgSize = pkg.getChildren().size();
+            } finally {
+                pkg.getModifyLock().readUnlock(readL);
+            }
             this.packageIncluded = packageIncluded;
+            this.isExpanded = pkg.isExpanded();
         }
 
         public ArraySet<ChildrenType> getChildren() {
@@ -99,16 +105,24 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
             return packageIncluded;
         }
 
-        public void addChildren(List<ChildrenType> children) {
+        private void addChildren(List<ChildrenType> children) {
             this.children.addAll(children);
         }
 
-        public void addChild(ChildrenType child) {
+        private void addChild(ChildrenType child) {
             children.add(child);
         }
 
+        public boolean isExpanded() {
+            return isExpanded;
+        }
+
+        public int getPackageSize() {
+            return pkgSize;
+        }
+
         public boolean isFull() {
-            return children.size() == pkg.getChildren().size();
+            return children.size() == pkgSize;
         }
     };
 
@@ -211,10 +225,12 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         // }
 
         for (AbstractNode node : raw) {
-            if (node == null) continue;
+            if (node == null) {
+                continue;
+            }
             if (node instanceof AbstractPackageChildrenNode) {
 
-                PackageType pkg = (PackageType) ((ChildrenType) node).getParentNode();
+                PackageType pkg = ((ChildrenType) node).getParentNode();
                 PackageView<PackageType, ChildrenType> pv = internalPackageView(pkg);
                 pv.addChild((ChildrenType) node);
                 addPluginView(node);
@@ -289,7 +305,9 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                                             break;
                                         }
                                     }
-                                    if (!filtered) unFiltered.add(l);
+                                    if (!filtered) {
+                                        unFiltered.add(l);
+                                    }
                                 }
                             }
 
@@ -387,7 +405,9 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
      * @return
      */
     public ChildrenType getContextLink() {
-        if (isLinkContext()) return (ChildrenType) contextObject;
+        if (isLinkContext()) {
+            return (ChildrenType) contextObject;
+        }
 
         throw new BadContextException("Not available in Packagecontext");
     }
@@ -407,7 +427,9 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
      * @return
      */
     public PackageType getContextPackage() {
-        if (contextObject == null) throw new BadContextException("Context is null");
+        if (contextObject == null) {
+            throw new BadContextException("Context is null");
+        }
         if (isPackageContext()) {
             return (PackageType) contextObject;
         } else {
@@ -425,7 +447,9 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     public PackageType getFirstPackage() {
 
         if (contextObject == null) {
-            if (children.size() == 0) throw new BadContextException("Invalid Context");
+            if (children.size() == 0) {
+                throw new BadContextException("Invalid Context");
+            }
             return children.get(0).getParentNode();
         } else {
 
@@ -519,7 +543,9 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
 
     public boolean isFullPackageSelection(PackageType pkg) {
         PackageView<PackageType, ChildrenType> ret = view.get(pkg);
-        if (ret == null) return false;
+        if (ret == null) {
+            return false;
+        }
         return ret.isFull();
     }
 

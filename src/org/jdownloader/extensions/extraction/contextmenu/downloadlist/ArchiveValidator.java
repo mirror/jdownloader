@@ -21,12 +21,16 @@ public class ArchiveValidator {
     private static WeakHashMap<SelectionInfo, Object>        VALIDATIONLOCKS = new WeakHashMap<SelectionInfo, Object>();
 
     public static List<Archive> validate(SelectionInfo<?, ?> selection) {
-        if (EXTENSION == null) return null;
+        if (EXTENSION == null) {
+            return null;
+        }
         Object lock = null;
         List<Archive> validation = null;
         synchronized (VALIDATIONCACHE) {
             validation = VALIDATIONCACHE.get(selection);
-            if (validation != null) return validation;
+            if (validation != null) {
+                return validation;
+            }
             synchronized (VALIDATIONLOCKS) {
                 lock = VALIDATIONLOCKS.get(selection);
                 if (lock == null) {
@@ -39,7 +43,9 @@ public class ArchiveValidator {
             try {
                 synchronized (VALIDATIONCACHE) {
                     validation = VALIDATIONCACHE.get(selection);
-                    if (validation != null) return validation;
+                    if (validation != null) {
+                        return validation;
+                    }
                 }
                 validation = getArchives(selection);
                 synchronized (VALIDATIONCACHE) {
@@ -57,7 +63,9 @@ public class ArchiveValidator {
     public static List<Archive> getArchives(SelectionInfo<?, ?> si) {
         ExtractionExtension extractor = EXTENSION;
         ArrayList<Archive> archives = new ArrayList<Archive>();
-        if (extractor == null) return archives;
+        if (extractor == null) {
+            return archives;
+        }
 
         nextLink: for (Object l : si.getChildren()) {
             if (l instanceof CrawledLink) {
@@ -66,7 +74,9 @@ public class ArchiveValidator {
                 if (extractor.isLinkSupported(clf)) {
 
                     for (Archive a : archives) {
-                        if (a.contains(clf)) continue nextLink;
+                        if (a.contains(clf)) {
+                            continue nextLink;
+                        }
                     }
 
                     Archive archive = extractor.getArchiveByFactory(clf);
@@ -82,7 +92,9 @@ public class ArchiveValidator {
                 if (extractor.isLinkSupported(clf)) {
 
                     for (Archive a : archives) {
-                        if (a.contains(clf)) continue nextLink;
+                        if (a.contains(clf)) {
+                            continue nextLink;
+                        }
                     }
 
                     Archive archive = extractor.getArchiveByFactory(clf);

@@ -56,7 +56,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
             ChildrenType firstLink = children.size() == 0 ? null : children.get(0);
             List<PackageView<PackageType, ChildrenType>> packages = sel.getPackageViews();
             PackageView<PackageType, ChildrenType> firstPackage = packages.size() == 0 ? null : packages.get(0);
-            if (firstPackage != null && (firstPackage.isFull() || firstPackage.getPackage().getChildren().size() == 0)) {
+            if (firstPackage != null && (firstPackage.isFull() || firstPackage.getPackageSize() == 0)) {
                 // full package has been removed. the first removed row will be the package row.
                 return getRowforObject(firstPackage.getPackage());
             }

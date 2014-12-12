@@ -77,7 +77,7 @@ public class CollapseExpandContextAction extends CustomizableTableContextAppActi
             boolean allexpaned = true;
             ArrayList<AbstractPackageNode> list = new ArrayList<AbstractPackageNode>();
             for (PackageView<?, ?> p : selection.getPackageViews()) {
-                if (!p.getPackage().isExpanded()) {
+                if (!p.isExpanded()) {
                     allexpaned = false;
 
                 }
