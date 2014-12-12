@@ -162,7 +162,7 @@ public class PluginClassLoader extends URLClassLoader {
             }
         }
 
-        private final Class<?> mapStaticFields(Class<?> currentClass) {
+        private final Class<?> mapStaticFields(final Class<?> currentClass) {
             if (currentClass != null && currentClass.getClassLoader() instanceof PluginClassLoaderChild) {
                 final String currentClassName = currentClass.getName();
                 final HashMap<String, Object> sharedPluginObjects;
@@ -183,9 +183,7 @@ public class PluginClassLoader extends URLClassLoader {
                             final String fieldName = field.getName();
                             if (!field.isSynthetic()) {
                                 final int modifiers = field.getModifiers();
-                                final boolean isStatic = (modifiers & Modifier.STATIC) != 0;
-                                final boolean isFinal = (modifiers & Modifier.FINAL) != 0;
-                                if (isStatic && !isFinal) {
+                                if (Modifier.isStatic(modifiers) && !Modifier.isFinal(modifiers)) {
                                     if (field.getType().isEnum() || field.isEnumConstant()) {
                                         if (logger == null) {
                                             logger = LogController.CL(false);
@@ -326,6 +324,7 @@ public class PluginClassLoader extends URLClassLoader {
                 }
                 Class<?> c = null;
                 synchronized (this) {
+
                     /*
                      * we have to synchronize this because concurrent defineClass for same class throws exception
                      */
