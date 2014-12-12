@@ -399,8 +399,8 @@ public class FShareVn extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
         if (System.getProperty("jd.revision.jdownloaderrevision") == null) {
             premiumWarning();
             account.setValid(false);

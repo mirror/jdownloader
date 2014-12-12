@@ -165,10 +165,17 @@ public class FlickrCom extends PluginForDecrypt {
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         String apilink = null;
         String path_alias = null;
+        String owner = null;
         if (parameter.matches(TYPE_SET)) {
             final String setid = new Regex(parameter, "(\\d+)/?$").getMatch(0);
             apilink = "https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&photoset_id=" + Encoding.urlEncode(setid) + "&method=flickr.photosets.getPhotos" + "&hermes=1&hermesClient=1&nojsoncallback=1";
             api_getPage(apilink.replace("GETJDPAGE", "1"));
+            owner = getJson("owner");
+            if (owner == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                decryptedLinks = null;
+                return;
+            }
             fpName = "flickr.com set " + setid + " of user " + this.username;
         } else if (parameter.endsWith("/sets") && !parameter.matches(TYPE_SET)) {
             apiGetSetsOfUser();
@@ -218,12 +225,19 @@ public class FlickrCom extends PluginForDecrypt {
             final String jsontext = br.getRegex("\"photo\":\\[(\\{.*?\\})\\]").getMatch(0);
             final String[] jsonarray = jsontext.split("\\},\\{");
             for (final String jsonentry : jsonarray) {
-                final String owner = getJson(jsonentry, "owner");
+                if (owner == null) {
+                    owner = getJson(jsonentry, "owner");
+                }
                 final String photoid = getJson(jsonentry, "id");
                 String title = getJson(jsonentry, "title");
+                if (owner == null || photoid == null || title == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    decryptedLinks = null;
+                    return;
+                }
                 title = encodeUnicode(title);
                 String description = new Regex(jsonentry, "\"description\":\\{\"_content\":\"(.+)\"\\}").getMatch(0);
-                final DownloadLink fina = createDownloadlink("http://www.flickrdecrypted.com/photos/" + username + "/" + photoid);
+                final DownloadLink fina = createDownloadlink("http://www.flickrdecrypted.com/photos/" + owner + "/" + photoid);
                 if (description != null) {
                     try {
                         description = Encoding.htmlDecode(description);
@@ -238,7 +252,9 @@ public class FlickrCom extends PluginForDecrypt {
                     /* Not available in old 0.9.591 Stable */
                     fina.setBrowserUrl(contenturl);
                 }
-                fina.setName(username + "_" + photoid + "_" + title + ".jpg");
+                final String phototitle = username + "_" + photoid + "_" + title + ".jpg";
+                fina.setName(phototitle);
+                fina.setProperty("decryptedfilename", phototitle);
                 fina.setProperty("LINKDUPEID", "flickrcom_" + username + "_" + photoid);
                 fina.setAvailable(true);
                 fina._setFilePackage(fp);

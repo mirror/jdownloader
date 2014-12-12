@@ -115,7 +115,7 @@ public class FlickrCom extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText("Only downloadable via account");
             return AvailableStatus.UNCHECKABLE;
         }
-        String filename = getFilename();
+        String filename = getFilename(downloadLink);
         if (filename == null) {
             downloadLink.getLinkStatus().setStatusText("Only downloadable for registered users [Add a flickt account to download such links!]");
             logger.warning("Filename not found, plugin must be broken...");
@@ -161,7 +161,9 @@ public class FlickrCom extends PluginForHost {
             if (ext == null || ext.length() > 5) {
                 ext = ".jpg";
             }
-            filename = Encoding.htmlDecode(filename.trim() + ext);
+            if (!filename.endsWith(ext)) {
+                filename = filename + ext;
+            }
         }
         // Cut filenames if they're too long
         if (filename.length() > 180) {
@@ -463,26 +465,35 @@ public class FlickrCom extends PluginForHost {
         return finallink;
     }
 
-    private String getFilename() {
-        String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
+    private String getFilename(final DownloadLink dl) {
+        final String linkid = new Regex(dl.getDownloadURL(), "(\\d+)$").getMatch(0);
+        String filename = dl.getStringProperty("decryptedfilename", null);
         if (filename == null) {
-            filename = br.getRegex("class=\"photo\\-title\">(.*?)</h1").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
+            }
+            if (filename == null) {
+                filename = br.getRegex("class=\"photo\\-title\">(.*?)</h1").getMatch(0);
+            }
             if (filename == null) {
                 filename = br.getRegex("<title>(.*?) \\| Flickr \\- Photo Sharing\\!</title>").getMatch(0);
             }
-        }
-        if (filename == null) {
-            filename = br.getRegex("<meta name=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        }
-
-        // trim
-        while (filename != null) {
-            if (filename.endsWith(".")) {
-                filename = filename.substring(0, filename.length() - 1);
-            } else if (filename.endsWith(" ")) {
-                filename = filename.substring(0, filename.length() - 1);
-            } else {
-                break;
+            if (filename == null) {
+                filename = br.getRegex("<meta name=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            }
+            if (filename != null) {
+                filename = Encoding.htmlDecode(filename).trim();
+                // trim
+                while (filename != null) {
+                    if (filename.endsWith(".")) {
+                        filename = filename.substring(0, filename.length() - 1);
+                    } else if (filename.endsWith(" ")) {
+                        filename = filename.substring(0, filename.length() - 1);
+                    } else {
+                        break;
+                    }
+                }
+                filename += "_" + linkid;
             }
         }
         return filename;

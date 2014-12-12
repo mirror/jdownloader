@@ -572,7 +572,7 @@ public class SoundcloudCom extends PluginForHost {
             // 2011-08-10T22:50:49Z
             date = date.replace("T", ":");
             final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, defaultCustomDate);
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:HH:mm");
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss Z");
             Date dateStr = formatter.parse(date);
 
             formattedDate = formatter.format(dateStr);
