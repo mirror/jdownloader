@@ -220,7 +220,17 @@ public class PutDriveCom extends PluginForHost {
             maxChunks = 1;
         }
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
+        } catch (final PluginException e) {
+            /* Bad servers */
+            if (e.getMessage() != null && e.getMessage().equals("Redirectloop")) {
+                handleErrorRetries("dlstart_fail_redirectloop", 20);
+            }
+            e.printStackTrace();
+            System.out.println("WTF");
+            throw e;
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             handleErrorRetries("unknowndlerror", 10);

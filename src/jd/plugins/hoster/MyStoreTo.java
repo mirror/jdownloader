@@ -27,6 +27,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -117,11 +118,17 @@ public class MyStoreTo extends PluginForHost {
     }
 
     private boolean isStable() {
-        if (System.getProperty("jd.revision.jdownloaderrevision") == null) {
-            return false;
+        String prev = JDUtilities.getRevision();
+        if (prev == null || prev.length() < 3) {
+            prev = "0";
         } else {
+            prev = prev.replaceAll(",|\\.", "");
+        }
+        final int rev = Integer.parseInt(prev);
+        if (rev < 10000) {
             return true;
         }
+        return false;
     }
 
     private String getFID(final DownloadLink dl) {

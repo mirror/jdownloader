@@ -68,18 +68,23 @@ public class GogoanimeCom extends PluginForDecrypt {
         }
 
         String fpName = br.getRegex("<h1( class=\"generic\">|>[^\r\n]+)(.*?)</h1>").getMatch(1);
-        if (fpName == null || fpName.length() == 0) fpName = br.getRegex("<title>([^<>\"]*?)( \\w+ Sub.*?)?</title>").getMatch(0);
+        if (fpName == null || fpName.length() == 0) {
+            fpName = br.getRegex("<title>([^<>\"]*?)( \\w+ Sub.*?)?</title>").getMatch(0);
+        }
 
         final String[] links = br.getRegex("<iframe.*?src=(\"|\\')(http[^<>\"]+)(\"|\\')").getColumn(1);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (final String singleLink : links) {
+        for (String singleLink : links) {
             // lets prevent returning of links which contain itself.
             if (!singleLink.matches(".+(" + this.getHost().replace(".", "\\.") + "|imgur\\.com).+")) {
-                final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(singleLink));
-                if (dl != null) decryptedLinks.add(dl);
+                singleLink = Encoding.htmlDecode(singleLink);
+                final DownloadLink dl = createDownloadlink(singleLink);
+                if (dl != null) {
+                    decryptedLinks.add(dl);
+                }
             }
         }
         if (fpName != null) {

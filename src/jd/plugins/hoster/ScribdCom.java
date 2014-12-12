@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -33,6 +34,7 @@ import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -41,6 +43,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "https?://(www\\.)?((de|ru|es)\\.)?scribd\\.com/doc/\\d+" }, flags = { 2 })
 public class ScribdCom extends PluginForHost {
@@ -145,10 +149,38 @@ public class ScribdCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+        final AccountInfo ai = new AccountInfo();
         login(account, true);
+        br.getPage("/account-settings/order-history");
         ai.setUnlimitedTraffic();
-        ai.setStatus("Registered (Free) User");
+        if (br.containsHTML("<span>Status: </span>Active</li>")) {
+            /* Okay we know now that the user bought a package - let's see if we can find the expire date as well */
+            final String purchaseDate = br.getRegex("<span>Purchased on: </span>([^<>\"]*?)</li>").getMatch(0);
+            if (purchaseDate != null) {
+                if (br.containsHTML("Annual Subscription for")) {
+                    /* User purchased a year */
+                    final long longpurchasedate = TimeFormatter.getMilliSeconds(purchaseDate, "yyyy-MM-dd", Locale.ENGLISH);
+                    ai.setValidUntil(longpurchasedate + 365 * 24 * 60 * 60 * 1000l);
+                } else {
+                    logger.info("Purchased package is unknown --> Cannot display expire date");
+                }
+            }
+            try {
+                account.setType(AccountType.PREMIUM);
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+            }
+            account.setProperty("free", false);
+            ai.setStatus("Premium account");
+        } else {
+            try {
+                account.setType(AccountType.FREE);
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+            }
+            account.setProperty("free", true);
+            ai.setStatus("Registered (Free) account");
+        }
         account.setValid(true);
         return ai;
     }
@@ -264,7 +296,7 @@ public class ScribdCom extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.getPage("http://de.scribd.com/csrf_token?href=http%3A%2F%2Fde.scribd.com%2F");
+                br.getPage("http://www.scribd.com/csrf_token?href=http%3A%2F%2Fwww.scribd.com%2F");
                 authenticity_token = br.getRegex("\"csrf_token\":\"([^<>\"]*?)\"").getMatch(0);
                 if (authenticity_token == null) {
                     logger.warning("Login broken!");
@@ -421,6 +453,7 @@ public class ScribdCom extends PluginForHost {
             br.setLoadLimit(br.getLoadLimit() * 3);
         } catch (Throwable e) {
         }
+        br.setCookie("https://www.scribd.com/", "lang", "en");
     }
 
     @Override
