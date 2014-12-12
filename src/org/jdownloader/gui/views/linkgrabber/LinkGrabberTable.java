@@ -8,7 +8,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
@@ -31,11 +30,9 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.CrawledPackage.TYPE;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.WarnLevel;
-import jd.plugins.DownloadLink.AvailableStatus;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.swing.MigPanel;
@@ -63,7 +60,6 @@ import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.KeyObserver;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
@@ -318,27 +314,8 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
     @Override
     protected boolean onShortcutDelete(final java.util.List<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
-
-        final List<CrawledLink> nodesToDelete = new ArrayList<CrawledLink>();
-        boolean containsOnline = false;
-        for (final CrawledLink dl : getSelectionInfo().getChildren()) {
-
-            nodesToDelete.add(dl);
-
-            if (TYPE.OFFLINE == dl.getParentNode().getType()) {
-                continue;
-            }
-            if (TYPE.POFFLINE == dl.getParentNode().getType()) {
-                continue;
-            }
-            if (dl.getDownloadLink().getAvailableStatus() != AvailableStatus.FALSE) {
-                containsOnline = true;
-
-            }
-
-        }
-        LinkCollector.requestDeleteLinks(nodesToDelete, containsOnline, _GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected_all(), KeyObserver.getInstance().isControlDown(false), false, false, false, false);
-        return true;
+        // Delete key is linked to the toolbar or context menu. let's use their customizable action instead implementing it again here
+        return false;
     }
 
     @Override

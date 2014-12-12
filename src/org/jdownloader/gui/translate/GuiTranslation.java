@@ -5584,4 +5584,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Not installed yet" })
     String uninstalledextensionManager_title();
 
+    @Default(lngs = { "en" }, values = { "finished package" })
+    String lit_finished_package();
+
 }
