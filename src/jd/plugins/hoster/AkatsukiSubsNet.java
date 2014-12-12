@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -28,7 +29,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "akatsuki-subs.net" }, urls = { "http://(www\\.)?(downloads|archiv)\\.akatsukiDISABLED\\-subs\\.net/file\\-\\d+\\.htm" }, flags = { 0 })
+import org.jdownloader.captcha.utils.recaptcha.api2.Recaptcha2Helper;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "akatsuki-subs.net" }, urls = { "http://(www\\.)?(downloads|archiv)\\.akatsuki\\-subs\\.net/file\\-\\d+\\.htm" }, flags = { 0 })
 public class AkatsukiSubsNet extends PluginForHost {
 
     public AkatsukiSubsNet(PluginWrapper wrapper) {
@@ -91,14 +94,14 @@ public class AkatsukiSubsNet extends PluginForHost {
         int counter = 0;
         String responseToken = null;
         do {
-            // Recaptcha2Helper rchelp = new Recaptcha2Helper();
-            // rchelp.init(this.br);
-            // final File outputFile = rchelp.loadImageFile();
-            //
-            // String code = getCaptchaCode("recaptcha", outputFile, downloadLink);
-            // success = rchelp.sendResponse(code);
-            // responseToken = rchelp.getResponseToken();
-            // counter++;
+            Recaptcha2Helper rchelp = new Recaptcha2Helper();
+            rchelp.init(this.br);
+            final File outputFile = rchelp.loadImageFile();
+
+            String code = getCaptchaCode("recaptcha", outputFile, downloadLink);
+            success = rchelp.sendResponse(code);
+            responseToken = rchelp.getResponseToken();
+            counter++;
         } while (!success && counter <= 3);
         if (!success) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);

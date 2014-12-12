@@ -2224,7 +2224,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         }
 
                         if (dialog.isDeleteLinks()) {
-                            LinkGrabberTable.getInstance().updateSelectionAfterRowDeletion();
+
                             LinkCollector.getInstance().removeChildren(nodesToDelete);
                         }
                         if (dialog.isClearFiltered()) {
@@ -2266,7 +2266,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     }
 
                     if (nodesToDelete.size() > 0) {
-                        LinkGrabberTable.getInstance().updateSelectionAfterRowDeletion();
+
                         LinkCollector.getInstance().removeChildren(nodesToDelete);
                     }
 
