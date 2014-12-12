@@ -918,4 +918,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "if the selection contains duplicate links..." })
     String ConfirmLinksContextAction_getTranslationForHandleDupes();
 
+    @Default(lngs = { "en" }, values = { "Affected Links: Finished Package" })
+    String GenericDeleteFromDownloadlistAction_getTranslationForDeleteFinishedPackage();
+
 }
