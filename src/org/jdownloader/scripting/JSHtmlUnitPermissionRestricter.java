@@ -182,6 +182,14 @@ public class JSHtmlUnitPermissionRestricter {
                         Log.L.severe("Javascript error occured");
                         LOADED.add(className);
                         return true;
+                    } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.JavaScriptException")) {
+                        // if (true) {
+                        // ScriptRuntime.constructError("Thread Loaded ", className).printStackTrace();
+                        //
+                        // }
+                        Log.L.severe("Javascript error occured");
+                        LOADED.add(className);
+                        return true;
                     } else {
                         // if (!Application.isJared(null)) {
                         // ScriptRuntime.constructError("Security Violation Loaded Class", className).printStackTrace();
@@ -285,6 +293,10 @@ public class JSHtmlUnitPermissionRestricter {
         CONTEXT_FACTORY = synch;
     }
 
+    public static SandboxContextFactory getCONTEXT_FACTORY() {
+        return CONTEXT_FACTORY;
+    }
+
     private static ConcurrentHashMap<Thread, Boolean> TRUSTED_THREAD = new ConcurrentHashMap<Thread, Boolean>();
 
     public static Object evaluateTrustedString(Context cx, Global scope, String source, String sourceName, int lineno, Object securityDomain) {
@@ -314,4 +326,28 @@ public class JSHtmlUnitPermissionRestricter {
         }
     }
 
+    // public synchronized static String evalJavaObject(String json) {
+    // // final ContextFactory factory = ContextFactory.getGlobal();
+    // Global scope = new Global();
+    //
+    // Context cx = Context.enter();
+    // try {
+    // cx.setOptimizationLevel(-1);
+    // // ScriptableObject.putProperty(scope, "myObj", json);
+    // cx.setOptimizationLevel(-1);
+    // cx.setLanguageVersion(Context.VERSION_1_5);
+    // cx.initStandardObjects();
+    // String js = json;
+    // Object jsObject = cx.evaluateString(scope, js, js, 1, null);
+    // String done = (String) cx.evaluateString(scope, "JSON.stringify(myObj);", "JSON.stringify(eval(myObj));", 1, null);
+    // // scope.init(cx);
+    // // net.sourceforge.htmlunit.corejs.javascript.tools.debugger.Main.main(null);
+    // return done;
+    // } catch (Throwable e) {
+    // e.printStackTrace();
+    // return json;
+    // } finally {
+    // Context.exit();
+    // }
+    // }
 }

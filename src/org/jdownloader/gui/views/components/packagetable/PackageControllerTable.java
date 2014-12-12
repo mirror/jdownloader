@@ -26,8 +26,6 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.TableModel;
 
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
@@ -457,76 +455,6 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             super.onShortcutSelectAll();
         } else {
             getModel().setSelectedObjects(toSelect);
-        }
-    }
-
-    /**
-     * This method returns the amount of rows which would be removed in a delete action before and after current selection.
-     *
-     * @return An integer array containing the amount of removed rows before the first selected row and after the last selected row.
-     */
-    public int[] getAffectedRowCountsByDeletion() {
-        int removedRowsCountBeforeFirstSelectedRow = 0;
-        int removedRowsCountAfterLastSelectedRow = 0;
-        final SelectionInfo<ParentType, ChildrenType> selection = getSelectionInfo(true, true);
-        final List<? extends AbstractNode> selectedRows = selection.getRawSelection();
-        final List<ParentType> selectedPackages = getSelectedPackages();
-        final List<ChildrenType> selectedChildren = getSelectedChildren();
-        if (!selectedRows.isEmpty()) {
-            if (selectedRows.get(0).getClass().isInstance(new CrawledLink(""))) {
-                ParentType pt = selectedChildren.get(0).getParentNode();
-                if (allChildrenSelected(pt)) {
-                    removedRowsCountBeforeFirstSelectedRow = 1;
-                }
-            }
-            if (selectedRows.get(selectedRows.size() - 1).getClass().isInstance(new CrawledPackage())) {
-                ParentType pt = selectedPackages.get(selectedPackages.size() - 1);
-                if (pt.isExpanded() && noChildrenSelected(pt)) {
-                    removedRowsCountAfterLastSelectedRow = pt.getChildren().size();
-                }
-            }
-        }
-        final int[] result = { removedRowsCountBeforeFirstSelectedRow, removedRowsCountAfterLastSelectedRow };
-        return result;
-    }
-
-    public boolean allChildrenSelected(ParentType pt) {
-        final List<ChildrenType> selectedChildren = getSelectedChildren();
-        for (ChildrenType childrenType : pt.getChildren()) {
-            if (!selectedChildren.contains(childrenType)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public boolean noChildrenSelected(ParentType pt) {
-        final List<ChildrenType> selectedChildren = getSelectedChildren();
-        for (ChildrenType childrenType : pt.getChildren()) {
-            if (selectedChildren.contains(childrenType)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public void updateSelectionAfterRowDeletion() {
-        final int[] result = getAffectedRowCountsByDeletion();
-        final int removedRowsCountBeforeFirstSelectedRow = result[0];
-        final int removedRowsCountAfterLastSelectedRow = result[1];
-        final int rowCount = getRowCount();
-        if (rowCount > 1) {
-            // select row after/before the deleted one to improve user experience
-            final int[] selectedRows = getSelectedRows();
-            if (selectedRows.length > 0) {
-                final int firstSelectedRow = selectedRows[0];
-                final int lastSelectedRow = selectedRows[selectedRows.length - 1];
-                if (lastSelectedRow + 1 + removedRowsCountAfterLastSelectedRow < rowCount) {
-                    setRowSelectionInterval(lastSelectedRow + 1 + removedRowsCountAfterLastSelectedRow, lastSelectedRow + 1 + removedRowsCountAfterLastSelectedRow);
-                } else if (firstSelectedRow - 1 - removedRowsCountBeforeFirstSelectedRow >= 0) {
-                    setRowSelectionInterval(firstSelectedRow - 1 - removedRowsCountBeforeFirstSelectedRow, firstSelectedRow - 1 - removedRowsCountBeforeFirstSelectedRow);
-                }
-            }
         }
     }
 

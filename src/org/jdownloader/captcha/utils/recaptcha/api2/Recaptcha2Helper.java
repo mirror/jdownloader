@@ -1,6 +1,8 @@
 package org.jdownloader.captcha.utils.recaptcha.api2;
 
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.util.regex.Matcher;
@@ -14,7 +16,9 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
+import jd.utils.JDUtilities;
 
+import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 
 public class Recaptcha2Helper {
@@ -139,6 +143,17 @@ public class Recaptcha2Helper {
 
     public BufferedImage loadImage() throws IOException, RecaptchaException {
 
+        URLConnectionAdapter conn = br.openGetConnection(loadImageUrl());
+        try {
+            return ImageIO.read(conn.getInputStream());
+
+        } finally {
+            conn.disconnect();
+        }
+
+    }
+
+    private String loadImageUrl() throws IOException, RecaptchaException {
         String anchor = "https://www.google.com/recaptcha/api2/anchor";
         iframeId = "I" + 0 + "_" + (System.currentTimeMillis() / 1000);
 
@@ -165,15 +180,7 @@ public class Recaptcha2Helper {
         tokenForCaptchaChallengePayload = unjsonify(br.getRegex("\\[\"rresp\",\\s*\"([^\"]+)").getMatch(0));
 
         timeImageLoading = System.currentTimeMillis();
-        String payloadUrl = "https://www.google.com/recaptcha/api2/payload?c=" + tokenForCaptchaChallengePayload;
-        URLConnectionAdapter conn = br.openGetConnection(payloadUrl);
-        try {
-            return ImageIO.read(conn.getInputStream());
-
-        } finally {
-            conn.disconnect();
-        }
-
+        return "https://www.google.com/recaptcha/api2/payload?c=" + tokenForCaptchaChallengePayload;
     }
 
     public String getResponseToken() {
@@ -200,6 +207,73 @@ public class Recaptcha2Helper {
         success = successIdentifier > 0;
 
         return success;
+    }
+
+    // No FINAL. This would not be JD2 plugin sys compatible any more
+    private static Object LOCK = new Object();
+
+    public static void writeToFile(final File file, final byte[] data) throws IOException {
+
+        if (file == null) {
+            throw new IllegalArgumentException("File is null.");
+        }
+        if (file.exists()) {
+            throw new IllegalArgumentException("File already exists: " + file);
+        }
+        file.createNewFile();
+        if (!file.isFile()) {
+            throw new IllegalArgumentException("Is not a file: " + file);
+        }
+        if (!file.canWrite()) {
+            throw new IllegalArgumentException("Cannot write to file: " + file);
+        }
+
+        FileOutputStream out = null;
+
+        try {
+            out = new FileOutputStream(file);
+            out.write(data);
+            out.flush();
+
+        } finally {
+            try {
+                out.close();
+            } catch (final Throwable e) {
+            }
+
+        }
+
+    }
+
+    public File loadImageFile() throws IOException, RecaptchaException {
+        URLConnectionAdapter conn = br.openGetConnection(loadImageUrl());
+        byte[] bytes = null;
+        try {
+            bytes = IO.readStream(-1, conn.getInputStream());
+        } finally {
+            conn.disconnect();
+        }
+        // synchronize to avoid existing file problems
+        synchronized (LOCK) {
+
+            int i = 0;
+            File file = null;
+            do {
+                file = JDUtilities.getResourceFile("recaptcha2/img_" + i + ".jpg", true);
+                i++;
+            } while (file.exists());
+            file.deleteOnExit();
+            try {
+                org.appwork.utils.IO.writeToFile(file, bytes);
+            } catch (IOException e) {
+                throw e;
+            } catch (Throwable e) {
+                // ((JD09))
+                writeToFile(file, bytes);
+            }
+            return file;
+        }
+
     }
 
 }
