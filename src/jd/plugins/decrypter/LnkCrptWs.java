@@ -80,6 +80,7 @@ import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.JDGui;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.Colors;
 import jd.nutils.JDHash;
@@ -524,7 +525,9 @@ public class LnkCrptWs extends PluginForDecrypt {
 
             // this prevents solvemedia group from seeing referrer
             if (clearReferer) {
-                smBr.setRequest(null);
+                final Request req = br.getRequest();
+                req.setURL(null);
+                smBr.setRequest(req);
             }
             // end of privacy protection
 
@@ -533,7 +536,7 @@ public class LnkCrptWs extends PluginForDecrypt {
             }
             setServer();
             setPath();
-            if (!smBr.getURL().contains("solvemedia.com/")) {
+            if (smBr.getURL() == null || !smBr.getURL().contains("solvemedia.com/")) {
                 // when we retry solving a solvemedia session, we reuse smBr, browser already contains the info we need!
                 smBr.getPage(server + path + challenge);
             }
@@ -551,7 +554,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                 }
             } else {
                 chId = smBr.getRegex("\"chid\"\\s+?:\\s+?\"(.*?)\",").getMatch(0);
-                captchaAddress = chId != null ? server + "/papi/media?c=" + chId : null;
+                captchaAddress = chId != null ? "/papi/media?c=" + chId : null;
             }
             if (captchaAddress == null) {
                 throw new Exception("SolveMedia Module fails");
@@ -618,9 +621,9 @@ public class LnkCrptWs extends PluginForDecrypt {
          * @default false
          * @parameter if true uses "https://api-secure.solvemedia.com" instead of "http://api.solvemedia.com"
          */
-        public void setSecure(boolean secure) {
-            if (secure) {
-                secure = true;
+        public void setSecure(final boolean secure) {
+            if (secure != this.secure) {
+                this.secure = secure;
             }
         }
 
@@ -628,9 +631,9 @@ public class LnkCrptWs extends PluginForDecrypt {
          * @default true
          * @parameter if false uses "_challenge.js" instead of "challenge.noscript" as url path
          */
-        public void setNoscript(boolean noscript) {
-            if (!noscript) {
-                noscript = false;
+        public void setNoscript(final boolean noscript) {
+            if (noscript != this.noscript) {
+                this.noscript = noscript;
             }
         }
 
