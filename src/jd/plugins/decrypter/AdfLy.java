@@ -36,7 +36,7 @@ import jd.utils.locale.JDL;
 
 import org.jdownloader.logging.LogController;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw|ay\\.gy|(dl|david)\\.nhachot\\.info|chathu\\.apkmania\\.co|alien\\.apkmania\\.co|n\\.shareme\\.in|proxy\\.doujin\\.us|free\\.singlem4a\\.com|adf\\.acb\\.im|ddl\\.tiramisubs\\.tk|packs\\.redmusic\\.pl|dl\\.android-zone\\.org)/[^<>\r\n\t]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw|ay\\.gy|(dl|david)\\.nhachot\\.info|chathu\\.apkmania\\.co|alien\\.apkmania\\.co|n\\.shareme\\.in|proxy\\.doujin\\.us|free\\.singlem4a\\.com|adf\\.acb\\.im|ddl\\.tiramisubs\\.tk|packs\\.redmusic\\.pl|dl\\.android-zone\\.org|out\\.unionfansub\\.com)/[^<>\r\n\t]+" }, flags = { 0 })
 @SuppressWarnings("deprecation")
 public class AdfLy extends PluginForDecrypt {
 
@@ -284,7 +284,7 @@ public class AdfLy extends PluginForDecrypt {
          * Save users preference in memory for given session. Each Start = new session<br/>
          * <br/>
          * Decrypter Template: Default Request Protocol.
-         *
+         * 
          * @return default request protocol
          * @author raztoki
          * */
@@ -343,7 +343,7 @@ public class AdfLy extends PluginForDecrypt {
 
         /**
          * returns true when current this.protocol value is https
-         *
+         * 
          */
         private boolean isProtocolHTTPS() {
             if ("https://".equalsIgnoreCase(this.protocol)) {

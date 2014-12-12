@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shorte.st" }, urls = { "http://(www\\.)?sh\\.st/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shorte.st" }, urls = { "http://(www\\.)?sh\\.st/[^<>\r\n\t]+" }, flags = { 0 })
 public class ShorteSt extends PluginForDecrypt {
 
     public ShorteSt(PluginWrapper wrapper) {
@@ -38,12 +38,18 @@ public class ShorteSt extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        String parameter = param.toString();
         br.getPage(parameter);
+        String redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"\\d+\\;url=(.*?)\" \\/>").getMatch(0);
+        if (redirect != null) {
+            parameter = redirect;
+            br.getPage(parameter);
+        }
         if (br.containsHTML(">page not found<")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+
         final String timer = getJs(br, "seconds");
         final String cb = getJs(br, "callbackUrl");
         final String sid = getJs(br, "sessionId");
