@@ -268,7 +268,7 @@ public class FShareVn extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
-        // for drop to frame
+        // drop to frame
         br = new Browser();
         // this should set English here...
         requestFileInformation(link);
