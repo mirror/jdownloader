@@ -17,7 +17,6 @@ import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableMode
 import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.components.YoutubeVariant;
 import jd.plugins.decrypter.YoutubeHelper;
-import jd.plugins.decrypter.YoutubeHelper.Replacer;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.GroupLogic;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.IfUrlisAPlaylistAction;
@@ -253,7 +252,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         addHeader(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_or_package_pattern_header(), NewTheme.I().getIcon(IconKey.ICON_FILE, 18));
         addDescriptionPlain(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_tags());
 
-        for (Replacer r : YoutubeHelper.REPLACER) {
+        for (jd.plugins.components.YoutubeReplacer r : YoutubeHelper.REPLACER) {
 
             StringBuilder sb = new StringBuilder();
             for (String s : r.getTags()) {

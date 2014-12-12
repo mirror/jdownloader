@@ -58,7 +58,7 @@ public class DoubleJNetAu extends PluginForHost {
         return -1;
     }
 
-    public static class AudioStream implements Storable {
+    public class AudioStream implements Storable {
         private String arid;
 
         public String getArid() {
@@ -92,7 +92,7 @@ public class DoubleJNetAu extends PluginForHost {
         }
     }
 
-    public static class Enity implements Storable {
+    public class Enity implements Storable {
         private String title;
 
         public String getTitle() {
@@ -107,7 +107,7 @@ public class DoubleJNetAu extends PluginForHost {
         }
     }
 
-    public static class StreamInfo implements Storable {
+    public class StreamInfo implements Storable {
         private Enity published_entity;
 
         public Enity getPublished_entity() {
