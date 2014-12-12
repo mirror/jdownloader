@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.swing.Icon;
+import javax.swing.ListSelectionModel;
 
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
@@ -29,6 +30,9 @@ import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.views.ArraySet;
+import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
@@ -42,6 +46,31 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         CURRENT,
         TOP,
         BOTTOM
+    }
+
+    @Override
+    protected int findFirstSelectedRow(ListSelectionModel s) {
+        try {
+            SelectionInfo<PackageType, ChildrenType> sel = getTable().getSelectionInfo(true, true);
+            ArraySet<ChildrenType> children = sel.getChildren();
+            ChildrenType firstLink = children.size() == 0 ? null : children.get(0);
+            List<PackageView<PackageType, ChildrenType>> packages = sel.getPackageViews();
+            PackageView<PackageType, ChildrenType> firstPackage = packages.size() == 0 ? null : packages.get(0);
+            if (firstPackage != null && (firstPackage.isFull() || firstPackage.getPackage().getChildren().size() == 0)) {
+                // full package has been removed. the first removed row will be the package row.
+                return getRowforObject(firstPackage.getPackage());
+            }
+            if (firstLink != null) {
+                // links have been removed, but not the full package of the first link. the first link thus defines the row.
+                return getRowforObject(firstLink);
+            }
+            return -1;
+        } catch (Throwable e) {
+            // catch ... exceptions here would break the whole table
+            e.printStackTrace();
+        }
+        return -1;
+
     }
 
     public abstract class TableDataModification {
