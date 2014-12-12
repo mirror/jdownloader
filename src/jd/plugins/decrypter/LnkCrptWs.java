@@ -1377,10 +1377,10 @@ public class LnkCrptWs extends PluginForDecrypt {
                 private Point loc;
 
                 private Timer mArrayTimer = new Timer(1000, new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        marray(loc);
-                    }
-                });
+                                              public void actionPerformed(ActionEvent e) {
+                                                  marray(loc);
+                                              }
+                                          });
 
                 @Override
                 public void mouseDragged(final MouseEvent e) {
@@ -1858,7 +1858,9 @@ public class LnkCrptWs extends PluginForDecrypt {
         final String containerId = new Regex(parameter, "dir/([a-zA-Z0-9]+)").getMatch(0);
         parameter = "http://linkcrypt.ws/dir/" + containerId;
         URLConnectionAdapter con;
-        loadAndSolveCaptcha(param, progress, decryptedLinks, parameter, containerId);
+        if (!loadAndSolveCaptcha(param, progress, decryptedLinks, parameter, containerId)) {
+            return decryptedLinks;
+        }
         // check for a password. Store latest password in DB
         Form password = br.getForm(0);
         if (password != null && password.hasInputFieldByName("password")) {
@@ -2105,7 +2107,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    public void loadAndSolveCaptcha(final CryptedLink param, final ProgressController progress, final ArrayList<DownloadLink> decryptedLinks, String parameter, final String containerId) throws IOException, InterruptedException, Exception, DecrypterException {
+    public boolean loadAndSolveCaptcha(final CryptedLink param, final ProgressController progress, final ArrayList<DownloadLink> decryptedLinks, final String parameter, final String containerId) throws IOException, InterruptedException, Exception, DecrypterException {
         br.clearCookies(parameter);
         br.getPage(parameter);
         for (int i = 0; i < 5; i++) {
@@ -2120,17 +2122,17 @@ public class LnkCrptWs extends PluginForDecrypt {
         System.out.println("CaptX " + br.containsHTML("CaptX"));
         System.out.println("KeyCAPTCHA " + br.containsHTML("KeyCAPTCHA"));
         if (br.containsHTML("<title>Linkcrypt\\.ws // Error 404</title>")) {
-            logger.info("This link might be offline: " + parameter);
+            final String msg = "This link might be offline!";
             final String additional = br.getRegex("<h2>\r?\n?(.*?)<").getMatch(0);
-            if (additional != null) {
+            if (additional != null && !(additional.matches("\\s+") || "".equals(additional))) {
                 logger.info(additional);
             }
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            offline.setFinalFileName(new Regex(parameter, "([\\w]+)$").getMatch(0));
-            decryptedLinks.add(offline);
-            throw new Exception("Cancel");
+            try {
+                decryptedLinks.add(createOfflinelink(parameter, new Regex(parameter, "([\\w]+)$").getMatch(0), msg));
+            } catch (final Throwable t) {
+                logger.info(msg + " :: " + parameter);
+            }
+            return false;
         }
 
         final String important[] = { "/js/jquery.js", "/dir/image/Warning.png" };
@@ -2240,6 +2242,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         if (!valid) {
             throw new DecrypterException(DecrypterException.CAPTCHA);
         }
+        return true;
     }
 
     @Override
@@ -2914,23 +2917,23 @@ public class LnkCrptWs extends PluginForDecrypt {
          */
         Comparator<Integer> isElementColor = new Comparator<Integer>() {
 
-            public int compare(Integer o1, Integer o2) {
-                int c = o1;
-                int c2 = o2;
-                if (isBackground(o1) || isBackground(o2)) {
-                    return 0;
-                }
-                if (c == 0x000000 || c2 == 0x000000) {
-                    return c == c2 ? 1 : 0;
-                }
-                int[] hsvC = Colors.rgb2hsv(c);
-                int[] hsvC2 = Colors.rgb2hsv(c2);
-                // TODO The "hsvC[1] / hsvC2[2] == 1" is repeated twice
-                        // Is it a typo? Was a different comparison meant in the second place?
-                                return ((hsvC[0] == hsvC2[0] && (hsvC[1] == hsvC2[1] || hsvC[2] == hsvC2[2] || hsvC[1] / hsvC2[2] == 1 || hsvC[1] / hsvC2[2] == 1)) && Colors.getRGBColorDifference2(c, c2) < 80) ? 1 : 0;
-            }
+                                               public int compare(Integer o1, Integer o2) {
+                                                   int c = o1;
+                                                   int c2 = o2;
+                                                   if (isBackground(o1) || isBackground(o2)) {
+                                                       return 0;
+                                                   }
+                                                   if (c == 0x000000 || c2 == 0x000000) {
+                                                       return c == c2 ? 1 : 0;
+                                                   }
+                                                   int[] hsvC = Colors.rgb2hsv(c);
+                                                   int[] hsvC2 = Colors.rgb2hsv(c2);
+                                                   // TODO The "hsvC[1] / hsvC2[2] == 1" is repeated twice
+                                                   // Is it a typo? Was a different comparison meant in the second place?
+                                                   return ((hsvC[0] == hsvC2[0] && (hsvC[1] == hsvC2[1] || hsvC[2] == hsvC2[2] || hsvC[1] / hsvC2[2] == 1 || hsvC[1] / hsvC2[2] == 1)) && Colors.getRGBColorDifference2(c, c2) < 80) ? 1 : 0;
+                                               }
 
-        };
+                                           };
 
         private boolean equalElements(int c, int c2) {
             return isElementColor.compare(c, c2) == 1;
