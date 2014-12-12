@@ -5,6 +5,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.crypto.Cipher;
 
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 
@@ -48,16 +51,17 @@ public class UJCECheck {
                         return;
                     }
                     if (uJCE.exists() && uJCE.isDirectory()) {
-                        final Thread thread = new Thread("UnlimitedJCEInstallation") {
-                            public void run() {
+                        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+
+                            @Override
+                            public void onShutdown(ShutdownRequest shutdownRequest) {
                                 try {
                                     IO.copyFolderRecursive(uJCE, securityFolder, true);
                                 } catch (final Throwable e) {
                                     e.printStackTrace();
                                 }
-                            };
-                        };
-                        thread.start();
+                            }
+                        });
 
                     }
                 }
