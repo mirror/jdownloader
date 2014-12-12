@@ -1627,6 +1627,7 @@ lit_filename=Ime dokumenta
 lit_filesize=Veličina dokumenta
 lit_filter=Filter
 lit_finished=završeno
+lit_finished_package=završen paket
 lit_hoster=Domaćin
 lit_image=Slika
 lit_import=import
