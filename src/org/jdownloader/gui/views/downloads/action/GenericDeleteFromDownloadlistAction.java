@@ -120,6 +120,7 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
     private DeleteFileOptions        deleteMode;
     private ByPassDialogSetup        byPassDialog;
     protected IncludedSelectionSetup includedSelection;
+    private boolean                  deleteFinishedPackage;
 
     @Override
     public void loadContextSetups() {
@@ -273,6 +274,10 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
 
             return true;
         }
+        if (isDeleteFinishedPackage() && link.getFilePackage().getView().isFinished()) {
+            return true;
+
+        }
         if (isDeleteOffline() && link.getFinalLinkState() == FinalLinkState.OFFLINE) {
 
             return true;
@@ -335,6 +340,14 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
                 first = false;
                 sb.append(_GUI._.lit_finished());
             }
+
+            if (isDeleteFinishedPackage()) {
+                if (!first) {
+                    sb.append(" & ");
+                }
+                first = false;
+                sb.append(_GUI._.lit_finished_package());
+            }
             if (isDeleteOffline()) {
                 if (!first) {
                     sb.append(" & ");
@@ -377,8 +390,22 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
         return deleteFailed;
     }
 
+    public static String getTranslationForDeleteFinishedPackage() {
+        return _JDT._.GenericDeleteFromDownloadlistAction_getTranslationForDeleteFinishedPackage();
+    }
+
     public static String getTranslationForDeleteFinished() {
         return _JDT._.GenericDeleteFromDownloadlistAction_getTranslationForDeleteFinished();
+    }
+
+    @Customizer(link = "#getTranslationForDeleteFinishedPackage")
+    public boolean isDeleteFinishedPackage() {
+        return deleteFinishedPackage;
+    }
+
+    public void setDeleteFinishedPackage(final boolean deleteFinished) {
+        GenericDeleteFromDownloadlistAction.this.deleteFinishedPackage = deleteFinished;
+
     }
 
     @Customizer(link = "#getTranslationForDeleteFinished")
