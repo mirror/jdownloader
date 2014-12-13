@@ -49,7 +49,8 @@ public class FileCryptCc extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         final String uid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
-        br.getPage(parameter);
+        // skip captcha by .bismarck
+        br.postPage(parameter, "recaptcha_response_field=");
         if (br.getURL().contains("filecrypt.cc/404.html")) {
             try {
                 decryptedLinks.add(createOfflinelink(parameter));
@@ -74,26 +75,28 @@ public class FileCryptCc extends PluginForDecrypt {
         final String fpName = br.getRegex("class=\"status (online|offline) shield\">([^<>\"]*?)<").getMatch(1);
 
         // mirrors
-        final String[] mirrors = br.getRegex("\"([^\"]*/Container/" + uid + "\\.html\\?mirror=\\d+)\"").getColumn(0);
-        if (mirrors != null) {
-            // first mirror shown should be mirror 0;
-            Arrays.sort(mirrors);
-            for (final String mirror : mirrors) {
-                // if 0 we don't need to get new page
-                if (!mirror.endsWith("mirror=0")) {
-                    br.getPage(mirror);
-                }
-                /* First try DLC, then single links */
-                final String dlc_id = br.getRegex("DownloadDLC\\(\\'([^<>\"]*?)\\'\\)").getMatch(0);
-                if (dlc_id != null) {
-                    logger.info("DLC found - trying to add it");
-                    decryptedLinks.addAll(loadcontainer("http://filecrypt.cc/DLC/" + dlc_id + ".dlc"));
-                }
+        String[] mirrors = br.getRegex("\"([^\"]*/Container/" + uid + "\\.html\\?mirror=\\d+)\"").getColumn(0);
+        if (mirrors.length < 1) {
+            mirrors = new String[1];
+            mirrors[0] = parameter + "?mirror=0";
+        }
+        // first mirror shown should be mirror 0;
+        Arrays.sort(mirrors);
+        for (String mirror : mirrors) {
+            // if 0 we don't need to get new page
+            if (!mirror.endsWith("mirror=0")) {
+                br.getPage(mirror);
             }
-            if (!decryptedLinks.isEmpty()) {
-                logger.info("DLC successfully added");
-                return decryptedLinks;
+            /* First try DLC, then single links */
+            final String dlc_id = br.getRegex("DownloadDLC\\(\\'([^<>\"]*?)\\'\\)").getMatch(0);
+            if (dlc_id != null) {
+                logger.info("DLC found - trying to add it");
+                decryptedLinks.addAll(loadcontainer("http://filecrypt.cc/DLC/" + dlc_id + ".dlc"));
             }
+        }
+        if (!decryptedLinks.isEmpty()) {
+            logger.info("DLC successfully added");
+            return decryptedLinks;
         }
 
         // this isn't always shown, see 104061178D - raztoki 20141118
