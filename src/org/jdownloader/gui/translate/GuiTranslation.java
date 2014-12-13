@@ -5410,7 +5410,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Semi-automatic Captcha Solving" })
     String CBSolver_getName_();
 
-    @Default(lngs = { "en" }, values = { "Semi-automatic Captcha Solving" })
+    @Default(lngs = { "en" }, values = { "Fully automated remote Captcha Solving" })
     String DeathByCaptchaSolver_getName_();
 
     @Default(lngs = { "en" }, values = { "My.JDownloader.org" })
@@ -5586,5 +5586,14 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "finished package" })
     String lit_finished_package();
+
+    @Default(lngs = { "en" }, values = { "Fully automated remote Captcha Solving" })
+    String ImageTyperzSolver_getName_();
+
+    @Default(lngs = { "en" }, values = { "imagetyperz.com" })
+    String ImageTyperzSolver_gettypeName_();
+
+    @Default(lngs = { "en" }, values = { "Solving..." })
+    String ImageTyperzSolver_solveBasicCaptchaChallenge_solving();
 
 }

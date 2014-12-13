@@ -20,6 +20,7 @@ import org.jdownloader.captcha.v2.solver.captchabrotherhood.CBSolver;
 import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.gui.DialogClickCaptchaSolver;
+import org.jdownloader.captcha.v2.solver.imagetyperz.ImageTyperzCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolver;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver;
@@ -65,6 +66,7 @@ public class ChallengeResponseController {
 
             addSolver(CaptchaMyJDSolver.getInstance());
             addSolver(DeathByCaptchaSolver.getInstance());
+            addSolver(ImageTyperzCaptchaSolver.getInstance());
             addSolver(CBSolver.getInstance());
             addSolver(Captcha9kwSolver.getInstance());
             addSolver(Captcha9kwSolverClick.getInstance());
