@@ -733,6 +733,9 @@ public class SoundcloudCom extends PluginForHost {
 
     /** Avoid chars which are not allowed in filenames under certain OS' */
     private static String encodeUnicode(final String input) {
+        if (input == null) {
+            return input;
+        }
         String output = input;
         output = output.replace(":", ";");
         output = output.replace("|", "¦");
