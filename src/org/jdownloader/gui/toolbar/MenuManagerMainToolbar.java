@@ -46,6 +46,7 @@ import org.jdownloader.gui.toolbar.action.CaptchaToogle9KWAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleCBAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleDBCAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleDialogAction;
+import org.jdownloader.gui.toolbar.action.CaptchaToogleImageTyperzAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleJACAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleMyJDAutoAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleMyJDRemoteAction;
@@ -183,6 +184,7 @@ public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, Down
         ocr.add(CaptchaToogle9KWAction.class);
         ocr.add(CaptchaToogleCBAction.class);
         ocr.add(CaptchaToogleDBCAction.class);
+        ocr.add(CaptchaToogleImageTyperzAction.class);
         ocr.add(CaptchaToogleDialogAction.class);
         ocr.add(CaptchaToogleJACAction.class);
         ocr.add(CaptchaToogleMyJDAutoAction.class);
