@@ -133,7 +133,7 @@ public class FileHostUpCom extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
             handleErrors();
-            if (br.getURL().contains("/error." + type) || br.getURL().contains("/index." + type) || (!br.containsHTML("class=\"downloadPageTable(V2)?\"") && !br.containsHTML("class=\"download\\-timer\""))) {
+            if (br.getURL().contains("/error." + type) || br.getURL().contains("/index." + type) || (!br.containsHTML("class=\"downloadPageTable(V2)?\"") && !br.containsHTML("\\$\\('\\.download-timer"))) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(,\\d+)?(\\.\\d+)? (KB|MB|GB))\\)<");
@@ -141,7 +141,7 @@ public class FileHostUpCom extends PluginForHost {
             filesize = fInfo.getMatch(1);
             if (filename == null || filesize == null) {
                 /* Get piece of the page which usually contains filename- and size */
-                final String page_piece = br.getRegex("(<div class=\"contentPageWrapper\">.*?class=\"link btn\\-free\")").getMatch(0);
+                final String page_piece = br.getRegex("(<div class=\"contentPageWrapper\">.*?class=\"link btn-free\")").getMatch(0);
                 if (page_piece != null) {
                     final String endings = jd.plugins.hoster.DirectHTTP.ENDINGS;
                     if (filename == null) {
@@ -195,7 +195,7 @@ public class FileHostUpCom extends PluginForHost {
                     } else {
                         logger.info("Found continue_link, continuing...");
                     }
-                    final String waittime = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
+                    final String waittime = br.getRegex("\\$\\('\\.download-timer-seconds'\\)\\.html\\((\\d+)\\);").getMatch(0);
                     if (waittime != null) {
                         logger.info("Found waittime, waiting (seconds): " + waittime + " + " + additional_WAIT_SECONDS + " additional seconds");
                         sleep((Integer.parseInt(waittime) + additional_WAIT_SECONDS) * 1001l, downloadLink);
@@ -247,9 +247,9 @@ public class FileHostUpCom extends PluginForHost {
     }
 
     private String getContinueLink() {
-        String continue_link = br.getRegex("\\$\\(\\'\\.download\\-timer\\'\\)\\.html\\(\"<a href=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
+        String continue_link = br.getRegex("\\$\\('\\.download-timer'\\)\\.html\\(\"<a href='(https?://[^<>\"]*?)'").getMatch(0);
         if (continue_link == null) {
-            continue_link = br.getRegex("class=\\'btn btn\\-free\\' href=\\'(https?://[^<>\"]*?)\\'>").getMatch(0);
+            continue_link = br.getRegex("class='btn btn-(?:free|default)' href='(https?://[^<>\"]*?)'>").getMatch(0);
         }
         if (continue_link == null) {
             continue_link = br.getRegex("<div class=\"captchaPageTable\">[\t\n\r ]+<form method=\"POST\" action=\"(https?://[^<>\"]*?)\"").getMatch(0);
