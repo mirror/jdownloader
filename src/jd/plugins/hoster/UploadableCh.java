@@ -349,7 +349,11 @@ public class UploadableCh extends PluginForHost {
         } else {
             br.setFollowRedirects(false);
             /* This way we don't have to care about the users' "instant download" setting */
-            br.postPage(link.getDownloadURL(), "download=premium");
+            String postlink = link.getDownloadURL();
+            if (!postlink.contains("http://www.")) {
+                postlink = postlink.replace("http://", "http://www.");
+            }
+            br.postPage(postlink, "download=premium");
             final String dllink = br.getRedirectLocation();
             if (dllink == null) {
                 logger.warning("Final link is null");
