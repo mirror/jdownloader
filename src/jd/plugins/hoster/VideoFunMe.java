@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videofun.me" }, urls = { "http://(www\\.)?videofun\\.me/(embed/[a-f0-9]{32}|embed\\?.+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videofun.me" }, urls = { "http://(www\\.)?videofun\\.me/(embed/[a-f0-9]{32}|embed\\?.+)|http://gateway.*\\.videofun\\.me/videos/.+" }, flags = { 0 })
 public class VideoFunMe extends PluginForHost {
 
     // raztoki embed video player template.
@@ -76,11 +76,14 @@ public class VideoFunMe extends PluginForHost {
         if (br.containsHTML(">Error 404")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        dllink = br.getRegex("url: \"(http[^\"]+videofun\\.me%2Fvideos[^\"]+)").getMatch(0);
+        dllink = br.getRedirectLocation();
         if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dllink = br.getRegex("url: \"(http[^\"]+videofun\\.me%2Fvideos[^\"]+)").getMatch(0);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dllink = Encoding.urlDecode(dllink, false);
         }
-        dllink = Encoding.urlDecode(dllink, false);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
