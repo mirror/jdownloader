@@ -286,11 +286,8 @@ public class FShareVn extends PluginForHost {
             // we get page again, because we do not take directlink from requestfileinfo.
             br.getPage(link.getDownloadURL());
             dllink = br.getRedirectLocation();
-            // if (dllink != null && dllink.endsWith("/file/" + uid)) {
-            // br.getPage(dllink);
-            // dllink = null;
-            // }
-            if (dllink == null) {
+            if (dllink != null && dllink.endsWith("/file/" + uid)) {
+                br.getPage(dllink);
                 dllink = br.getRegex("\"(http://[a-z0-9]+\\.fshare\\.vn/vip/[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null && br.containsHTML("<div id=\"dvdownload\">Download fast</div>")) {
                     // button base download here,
@@ -307,7 +304,7 @@ public class FShareVn extends PluginForHost {
             if (dllink.contains("logout")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL premium error");
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 3);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 if (br.containsHTML(SERVERERROR)) {
