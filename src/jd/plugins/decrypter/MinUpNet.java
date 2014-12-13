@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -45,9 +46,12 @@ public class MinUpNet extends PluginForDecrypt {
         }
         if (br.containsHTML("for=\"direct_link\">Direct Link :</label>")) {
             try {
-                br.getPage("http://minup.net/dfile.php?createlink=" + new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0));
-                final String finallink = br.getRedirectLocation();
-                if (finallink != null) decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+                final Browser br2 = br.cloneBrowser();
+                br2.getPage("http://minup.net/dfile.php?createlink=" + new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0));
+                final String finallink = br2.getRedirectLocation();
+                if (finallink != null) {
+                    decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+                }
             } catch (final Exception e) {
                 // Prevent the decrypter from failing here
             }

@@ -73,15 +73,15 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileparadox.in" }, urls = { "https?://(www\\.)?fileparadox\\.in/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileparadox.com", "fileparadox.in" }, urls = { "https?://(www\\.)?fileparadox\\.(in|com)/((vid)?embed-)?[a-z0-9]{12}", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2, 0 })
 @SuppressWarnings("deprecation")
 public class FileparadoxIn extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://fileparadox.in";
+    private final String               COOKIE_HOST                  = "http://fileparadox.com";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(fileparadox\\.in)";
+    private final String               DOMAINS                      = "(fileparadox\\.in|fileparadox\\.com)";
     private final String               PASSWORDTEXT                 = "Password[\t\r\n ]+:</b>[\t\r\n ]+<input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/((files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+|[a-z0-9]{58}/v(ideo)?\\.mp4)";
@@ -143,6 +143,16 @@ public class FileparadoxIn extends PluginForHost {
             // non account
             return false;
         }
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("fileparadox.in".equals(getHost())) {
+            if (host == null || "fileparadox.in".equals(host)) {
+                return "fileparadox.com";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     public boolean hasAutoCaptcha() {
