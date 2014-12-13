@@ -1627,6 +1627,7 @@ lit_filename=Název souboru
 lit_filesize=Velikost souboru
 lit_filter=Filtr
 lit_finished=dokončeno
+lit_finished_package=dokončený balíček
 lit_hoster=Hostitel
 lit_image=Obrázek
 lit_import=importovat
