@@ -288,17 +288,20 @@ public class FShareVn extends PluginForHost {
             dllink = br.getRedirectLocation();
             if (dllink != null && dllink.endsWith("/file/" + uid)) {
                 br.getPage(dllink);
-                dllink = br.getRegex("\"(http://[a-z0-9]+\\.fshare\\.vn/vip/[^<>\"]*?)\"").getMatch(0);
-                if (dllink == null && br.containsHTML("<div id=\"dvdownload\">Download fast</div>")) {
-                    // button base download here,
-                    Browser ajax = br.cloneBrowser();
-                    ajax.getHeaders().put("Accept", "*/*");
-                    ajax.getHeaders().put("x-requested-with", "XMLHttpRequest");
-                    ajax.getPage("/download/index");
-                    dllink = ajax.toString();
-                }
+                dllink = br.getRedirectLocation();
                 if (dllink == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    dllink = br.getRegex("\"(http://[a-z0-9]+\\.fshare\\.vn/vip/[^<>\"]*?)\"").getMatch(0);
+                    if (dllink == null && br.containsHTML("<div id=\"dvdownload\">Download fast</div>")) {
+                        // button base download here,
+                        Browser ajax = br.cloneBrowser();
+                        ajax.getHeaders().put("Accept", "*/*");
+                        ajax.getHeaders().put("x-requested-with", "XMLHttpRequest");
+                        ajax.getPage("/download/index");
+                        dllink = ajax.toString();
+                    }
+                    if (dllink == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
             }
             if (dllink.contains("logout")) {
