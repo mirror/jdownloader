@@ -50,7 +50,9 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
             if (result == null) {
                 ISimpleInArchiveItem item = items[index];
                 try {
-                    if (item == null || item.isFolder()) continue;
+                    if (item == null || item.isFolder()) {
+                        continue;
+                    }
                 } catch (SevenZipException e) {
                     e.printStackTrace();
                 }
@@ -95,19 +97,27 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
     public ISequentialOutStream getStream(final int index, ExtractAskMode extractaskmode) throws SevenZipException {
         if (lastIndex >= 0) {
             ISequentialOutStream ret = outStreams[lastIndex];
-            if (lastIndex == index) return ret;
+            if (lastIndex == index) {
+                return ret;
+            }
             if (ret != null) {
                 /* close previous opened MultiCallback */
                 outStreams[lastIndex] = null;
                 try {
-                    if (ret instanceof MultiCallback) ((MultiCallback) ret).close();
+                    if (ret instanceof MultiCallback) {
+                        ((MultiCallback) ret).close();
+                    }
                 } catch (final Throwable e) {
                 }
             }
         }
         lastIndex = index;
-        if (ctrl.gotKilled()) { throw new SevenZipException("Extraction has been aborted"); }
-        if (error.get()) throw new SevenZipException("Extraction error");
+        if (ctrl.gotKilled()) {
+            throw new SevenZipException("Extraction has been aborted");
+        }
+        if (error.get()) {
+            throw new SevenZipException("Extraction error");
+        }
         ISequentialOutStream ret = outStreams[index];
         if (ret == null) {
             if (extractaskmode != ExtractAskMode.EXTRACT) {
@@ -116,7 +126,9 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
             }
             final Boolean isFolder = (Boolean) inArchive.getProperty(index, PropID.IS_FOLDER);
             final String path = (String) inArchive.getProperty(index, PropID.PATH);
-            if (StringUtils.isEmpty(path)) { throw new SevenZipException("path is null"); }
+            if (StringUtils.isEmpty(path)) {
+                throw new SevenZipException("path is null");
+            }
             final Long itemSize = (Long) inArchive.getProperty(index, PropID.SIZE);
             final Date lastWriteTime = (Date) inArchive.getProperty(index, PropID.LAST_WRITE_TIME);
             final Boolean itemEncrypted = (Boolean) inArchive.getProperty(index, PropID.ENCRYPTED);
@@ -235,12 +247,16 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                     if (skipped.get()) {
                         ret = getNullOutputStream();
                     } else {
-                        if (extractTo == null) throw new SevenZipException("Extraction error, extractTo == null");
+                        if (extractTo == null) {
+                            throw new SevenZipException("Extraction error, extractTo == null");
+                        }
                         archive.addExtractedFiles(extractTo);
                         ret = new MultiCallback(extractTo, ctrl, config, false) {
-                            {
-                                if (slowDownWorkaroundNeeded) {
-                                    priority = null;
+
+                            @Override
+                            protected void waitCPUPriority() throws SevenZipException {
+                                if (!slowDownWorkaroundNeeded) {
+                                    super.waitCPUPriority();
                                 }
                             }
 
@@ -256,7 +272,9 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                                             }
                                         }
                                     }
-                                    if (ctrl.gotKilled()) throw new SevenZipException("Extraction has been aborted");
+                                    if (ctrl.gotKilled()) {
+                                        throw new SevenZipException("Extraction has been aborted");
+                                    }
                                     return super.write(data);
                                 } finally {
                                     ctrl.addAndGetProcessedBytes(data.length);
@@ -269,7 +287,9 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                 outStreams[index] = ret;
             } catch (Throwable e) {
                 error.set(true);
-                if (e instanceof SevenZipException) throw (SevenZipException) e;
+                if (e instanceof SevenZipException) {
+                    throw (SevenZipException) e;
+                }
                 throw new SevenZipException(e);
             }
         }
@@ -288,7 +308,9 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                             throw new SevenZipException(e);
                         }
                     }
-                    if (ctrl.gotKilled()) throw new SevenZipException("Extraction has been aborted");
+                    if (ctrl.gotKilled()) {
+                        throw new SevenZipException("Extraction has been aborted");
+                    }
                     ctrl.addAndGetProcessedBytes(data.length);
                     return data.length;
                 }
@@ -297,7 +319,9 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
             return new ISequentialOutStream() {
                 @Override
                 public int write(byte[] data) throws SevenZipException {
-                    if (ctrl.gotKilled()) throw new SevenZipException("Extraction has been aborted");
+                    if (ctrl.gotKilled()) {
+                        throw new SevenZipException("Extraction has been aborted");
+                    }
                     ctrl.addAndGetProcessedBytes(data.length);
                     return data.length;
                 }
@@ -323,7 +347,9 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                     /* close previous opened MultiCallback */
                     outStreams[lastIndex] = null;
                     try {
-                        if (ret instanceof MultiCallback) ((MultiCallback) ret).close();
+                        if (ret instanceof MultiCallback) {
+                            ((MultiCallback) ret).close();
+                        }
                     } catch (final Throwable e) {
                     }
                 }
@@ -331,7 +357,9 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                 ISimpleInArchiveItem item = items[lastIndex];
                 MultiCallback callback = null;
                 if (item != null && ret != null) {
-                    if (ret instanceof MultiCallback) callback = (MultiCallback) ret;
+                    if (ret instanceof MultiCallback) {
+                        callback = (MultiCallback) ret;
+                    }
                     if (callback != null && item.getSize() != callback.getWritten()) {
                         logger.info("Size missmatch for " + item.getPath() + " is " + callback.getWritten() + " but should be " + item.getSize());
                         if (ExtractOperationResult.OK == res) {
@@ -344,7 +372,9 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                 switch (res) {
                 case OK:
                     /* extraction successfully ,continue with next file */
-                    if (callback != null) multi.setLastModifiedDate(item, callback.getFile());
+                    if (callback != null) {
+                        multi.setLastModifiedDate(item, callback.getFile());
+                    }
                     break;
                 case CRCERROR:
                     if (item != null) {
@@ -374,7 +404,9 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
             }
         } catch (final Throwable e) {
             error.set(true);
-            if (e instanceof SevenZipException) throw (SevenZipException) e;
+            if (e instanceof SevenZipException) {
+                throw (SevenZipException) e;
+            }
             throw new SevenZipException(e);
         }
     }
@@ -384,7 +416,9 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
             for (ISequentialOutStream outStream : outStreams) {
                 if (outStream != null) {
                     try {
-                        if (outStream instanceof MultiCallback) ((MultiCallback) outStream).close();
+                        if (outStream instanceof MultiCallback) {
+                            ((MultiCallback) outStream).close();
+                        }
                     } catch (Throwable e) {
                     }
                 }
