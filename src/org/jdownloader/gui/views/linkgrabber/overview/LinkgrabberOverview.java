@@ -35,6 +35,174 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawlerNumbers> implements GenericConfigEventListener<Boolean>, LinkCollectorListener, GUIListener {
 
+    private final class UnknownCountEntry extends DataEntry<AggregatedCrawlerNumbers> {
+        private UnknownCountEntry(String label) {
+            super(label);
+        }
+
+        @Override
+        public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
+            if (total != null) {
+                setTotal(total.getStatusUnknown() + "");
+            }
+            if (filtered != null) {
+                setFiltered(filtered.getStatusUnknown() + "");
+            }
+            if (selected != null) {
+                setSelected(selected.getStatusUnknown() + "");
+            }
+        }
+
+        @Override
+        public BooleanKeyHandler getVisibleKeyHandler() {
+            return CFG_GUI.OVERVIEW_PANEL_LINKGRABBER_STATUS_UNKNOWN_VISIBLE;
+        }
+    }
+
+    private final class OfflineCountEntry extends DataEntry<AggregatedCrawlerNumbers> {
+        private OfflineCountEntry(String label) {
+            super(label);
+        }
+
+        @Override
+        public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
+            if (total != null) {
+                setTotal(total.getStatusOffline() + "");
+            }
+            if (filtered != null) {
+                setFiltered(filtered.getStatusOffline() + "");
+            }
+            if (selected != null) {
+                setSelected(selected.getStatusOffline() + "");
+            }
+        }
+
+        @Override
+        public BooleanKeyHandler getVisibleKeyHandler() {
+            return CFG_GUI.OVERVIEW_PANEL_LINKGRABBER_STATUS_OFFLINE_VISIBLE;
+        }
+    }
+
+    private final class OnlineCountEntry extends DataEntry<AggregatedCrawlerNumbers> {
+        private OnlineCountEntry(String label) {
+            super(label);
+        }
+
+        @Override
+        public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
+            if (total != null) {
+                setTotal(total.getStatusOnline() + "");
+            }
+            if (filtered != null) {
+                setFiltered(filtered.getStatusOnline() + "");
+            }
+            if (selected != null) {
+                setSelected(selected.getStatusOnline() + "");
+            }
+        }
+
+        @Override
+        public BooleanKeyHandler getVisibleKeyHandler() {
+            return CFG_GUI.OVERVIEW_PANEL_LINKGRABBER_STATUS_ONLINE_VISIBLE;
+        }
+    }
+
+    private final class HostCountEntry extends DataEntry<AggregatedCrawlerNumbers> {
+        private HostCountEntry(String label) {
+            super(label);
+        }
+
+        @Override
+        public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
+            if (total != null) {
+                setTotal(total.getHoster().size() + "");
+            }
+            if (filtered != null) {
+                setFiltered(filtered.getHoster().size() + "");
+            }
+            if (selected != null) {
+                setSelected(selected.getHoster().size() + "");
+            }
+        }
+
+        @Override
+        public BooleanKeyHandler getVisibleKeyHandler() {
+            return CFG_GUI.OVERVIEW_PANEL_LINKGRABBER_HOSTER_COUNT_VISIBLE;
+        }
+    }
+
+    private final class LinksCountEntry extends DataEntry<AggregatedCrawlerNumbers> {
+        private LinksCountEntry(String label) {
+            super(label);
+        }
+
+        @Override
+        public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
+            if (total != null) {
+                setTotal(total.getLinkCount() + "");
+            }
+            if (filtered != null) {
+                setFiltered(filtered.getLinkCount() + "");
+            }
+            if (selected != null) {
+                setSelected(selected.getLinkCount() + "");
+            }
+        }
+
+        @Override
+        public BooleanKeyHandler getVisibleKeyHandler() {
+            return CFG_GUI.OVERVIEW_PANEL_LINKGRABBER_LINKS_COUNT_VISIBLE;
+        }
+    }
+
+    private final class BytesTotalEntry extends DataEntry<AggregatedCrawlerNumbers> {
+        private BytesTotalEntry(String label) {
+            super(label);
+        }
+
+        @Override
+        public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
+            if (total != null) {
+                setTotal(total.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+            }
+            if (filtered != null) {
+                setFiltered(filtered.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+            }
+            if (selected != null) {
+                setSelected(selected.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+            }
+        }
+
+        @Override
+        public BooleanKeyHandler getVisibleKeyHandler() {
+            return CFG_GUI.OVERVIEW_PANEL_LINKGRABBER_TOTAL_BYTES_VISIBLE;
+        }
+    }
+
+    private final class PackagesEntry extends DataEntry<AggregatedCrawlerNumbers> {
+        private PackagesEntry() {
+            super(_GUI._.DownloadOverview_DownloadOverview_packages());
+        }
+
+        @Override
+        public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
+            if (total != null) {
+                setTotal(total.getPackageCount() + "");
+            }
+            if (filtered != null) {
+                setFiltered(filtered.getPackageCount() + "");
+            }
+            if (selected != null) {
+                setSelected(selected.getPackageCount() + "");
+            }
+        }
+
+        @Override
+        public BooleanKeyHandler getVisibleKeyHandler() {
+            return CFG_GUI.OVERVIEW_PANEL_LINKGRABBER_PACKAGE_COUNT_VISIBLE;
+        }
+    }
+
     /**
      * 
      */
@@ -173,154 +341,14 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
     @Override
     protected List<DataEntry<AggregatedCrawlerNumbers>> createDataEntries() {
 
-        DataEntry<AggregatedCrawlerNumbers> packageCount = new DataEntry<AggregatedCrawlerNumbers>(_GUI._.DownloadOverview_DownloadOverview_packages()) {
+        DataEntry<AggregatedCrawlerNumbers> packageCount = new PackagesEntry();
+        DataEntry<AggregatedCrawlerNumbers> size = new BytesTotalEntry(_GUI._.DownloadOverview_DownloadOverview_size());
 
-            @Override
-            public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
-                if (total != null) {
-                    setTotal(total.getPackageCount() + "");
-                }
-                if (filtered != null) {
-                    setFiltered(filtered.getPackageCount() + "");
-                }
-                if (selected != null) {
-                    setSelected(selected.getPackageCount() + "");
-                }
-            }
-
-            @Override
-            public BooleanKeyHandler getVisibleKeyHandler() {
-                return CFG_GUI.OVERVIEW_PANEL_LINKGRABBER_PACKAGE_COUNT_VISIBLE;
-            }
-
-        };
-        DataEntry<AggregatedCrawlerNumbers> size = new DataEntry<AggregatedCrawlerNumbers>(_GUI._.DownloadOverview_DownloadOverview_size()) {
-
-            @Override
-            public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
-                if (total != null) {
-                    setTotal(total.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                }
-                if (filtered != null) {
-                    setFiltered(filtered.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                }
-                if (selected != null) {
-                    setSelected(selected.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                }
-            }
-
-            @Override
-            public BooleanKeyHandler getVisibleKeyHandler() {
-                return CFG_GUI.OVERVIEW_PANEL_LINKGRABBER_TOTAL_BYTES_VISIBLE;
-            }
-
-        };
-
-        DataEntry<AggregatedCrawlerNumbers> linkCount = new DataEntry<AggregatedCrawlerNumbers>(_GUI._.DownloadOverview_DownloadOverview_links()) {
-
-            @Override
-            public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
-                if (total != null) {
-                    setTotal(total.getLinkCount() + "");
-                }
-                if (filtered != null) {
-                    setFiltered(filtered.getLinkCount() + "");
-                }
-                if (selected != null) {
-                    setSelected(selected.getLinkCount() + "");
-                }
-            }
-
-            @Override
-            public BooleanKeyHandler getVisibleKeyHandler() {
-                return CFG_GUI.OVERVIEW_PANEL_LINKGRABBER_LINKS_COUNT_VISIBLE;
-            }
-
-        };
-        DataEntry<AggregatedCrawlerNumbers> hosterCount = new DataEntry<AggregatedCrawlerNumbers>(_GUI._.DownloadOverview_DownloadOverview_hoster()) {
-
-            @Override
-            public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
-                if (total != null) {
-                    setTotal(total.getHoster().size() + "");
-                }
-                if (filtered != null) {
-                    setFiltered(filtered.getHoster().size() + "");
-                }
-                if (selected != null) {
-                    setSelected(selected.getHoster().size() + "");
-                }
-            }
-
-            @Override
-            public BooleanKeyHandler getVisibleKeyHandler() {
-                return CFG_GUI.OVERVIEW_PANEL_LINKGRABBER_HOSTER_COUNT_VISIBLE;
-            }
-
-        };
-        DataEntry<AggregatedCrawlerNumbers> onlineCount = new DataEntry<AggregatedCrawlerNumbers>(_GUI._.DownloadOverview_DownloadOverview_online()) {
-
-            @Override
-            public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
-                if (total != null) {
-                    setTotal(total.getStatusOnline() + "");
-                }
-                if (filtered != null) {
-                    setFiltered(filtered.getStatusOnline() + "");
-                }
-                if (selected != null) {
-                    setSelected(selected.getStatusOnline() + "");
-                }
-            }
-
-            @Override
-            public BooleanKeyHandler getVisibleKeyHandler() {
-                return CFG_GUI.OVERVIEW_PANEL_LINKGRABBER_STATUS_ONLINE_VISIBLE;
-            }
-
-        };
-        DataEntry<AggregatedCrawlerNumbers> offlineCount = new DataEntry<AggregatedCrawlerNumbers>(_GUI._.DownloadOverview_DownloadOverview_offline()) {
-
-            @Override
-            public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
-                if (total != null) {
-                    setTotal(total.getStatusOffline() + "");
-                }
-                if (filtered != null) {
-                    setFiltered(filtered.getStatusOffline() + "");
-                }
-                if (selected != null) {
-                    setSelected(selected.getStatusOffline() + "");
-                }
-            }
-
-            @Override
-            public BooleanKeyHandler getVisibleKeyHandler() {
-                return CFG_GUI.OVERVIEW_PANEL_LINKGRABBER_STATUS_OFFLINE_VISIBLE;
-            }
-
-        };
-        DataEntry<AggregatedCrawlerNumbers> unknownCount = new DataEntry<AggregatedCrawlerNumbers>(_GUI._.DownloadOverview_DownloadOverview_unknown()) {
-
-            @Override
-            public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
-                if (total != null) {
-                    setTotal(total.getStatusUnknown() + "");
-                }
-                if (filtered != null) {
-                    setFiltered(filtered.getStatusUnknown() + "");
-                }
-                if (selected != null) {
-                    setSelected(selected.getStatusUnknown() + "");
-                }
-            }
-
-            @Override
-            public BooleanKeyHandler getVisibleKeyHandler() {
-                return CFG_GUI.OVERVIEW_PANEL_LINKGRABBER_STATUS_UNKNOWN_VISIBLE;
-            }
-
-        };
+        DataEntry<AggregatedCrawlerNumbers> linkCount = new LinksCountEntry(_GUI._.DownloadOverview_DownloadOverview_links());
+        DataEntry<AggregatedCrawlerNumbers> hosterCount = new HostCountEntry(_GUI._.DownloadOverview_DownloadOverview_hoster());
+        DataEntry<AggregatedCrawlerNumbers> onlineCount = new OnlineCountEntry(_GUI._.DownloadOverview_DownloadOverview_online());
+        DataEntry<AggregatedCrawlerNumbers> offlineCount = new OfflineCountEntry(_GUI._.DownloadOverview_DownloadOverview_offline());
+        DataEntry<AggregatedCrawlerNumbers> unknownCount = new UnknownCountEntry(_GUI._.DownloadOverview_DownloadOverview_unknown());
 
         ArrayList<DataEntry<AggregatedCrawlerNumbers>> entries = new ArrayList<DataEntry<AggregatedCrawlerNumbers>>();
         entries.add(packageCount);

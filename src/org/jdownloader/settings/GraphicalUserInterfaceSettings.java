@@ -3,6 +3,7 @@ package org.jdownloader.settings;
 import java.awt.event.KeyEvent;
 import java.util.HashMap;
 
+import org.appwork.storage.Storable;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.annotations.AboutConfig;
@@ -1126,4 +1127,37 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     long getDownloadsTableRefreshInterval();
 
     void setDownloadsTableRefreshInterval(long ms);
+
+    public static class Position implements Storable {
+        public Position(/* storable */) {
+
+        }
+
+        private int x = -1;
+
+        public int getX() {
+            return x;
+        }
+
+        public void setX(int x) {
+            this.x = x;
+        }
+
+        public int getY() {
+            return y;
+        }
+
+        public void setY(int y) {
+            this.y = y;
+        }
+
+        private int y = -1;
+    }
+
+    @AboutConfig
+    @RequiresRestart("Restart JDownloader if you changed this value")
+    @DescriptionForConfigEntry("Customize the order of the Overview Panel Entries in x and y position")
+    HashMap<String, Position> getOverviewPositions();
+
+    void setOverviewPositions(HashMap<String, Position> map);
 }

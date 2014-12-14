@@ -5,7 +5,9 @@ import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -27,6 +29,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.Position;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
@@ -117,10 +120,25 @@ public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUILi
 
     protected void layoutInfoPanel(MigPanel info) {
         info.removeAll();
-
+        HashMap<String, Position> map = CFG_GUI.CFG.getOverviewPositions();
+        boolean save = false;
+        if (map == null) {
+            map = new HashMap<String, Position>();
+            save = true;
+        }
+        HashMap<String, DataEntry<T>> idMap = new HashMap<String, DataEntry<T>>();
         this.dataEntries = new ArrayList<DataEntry<T>>();
         for (DataEntry<T> s : createDataEntries()) {
-            if (s.getVisibleKeyHandler() == null || s.getVisibleKeyHandler().isEnabled()) dataEntries.add(s);
+            Position ret = map.get(s.getId());
+            if (ret == null) {
+                ret = new Position();
+                map.put(s.getId(), ret);
+                save = true;
+            }
+            idMap.put(s.getId(), s);
+            if (s.getVisibleKeyHandler() == null || s.getVisibleKeyHandler().isEnabled()) {
+                dataEntries.add(s);
+            }
             if (s.getVisibleKeyHandler() != null) {
                 s.getVisibleKeyHandler().getEventSender().addListener(relayoutListener);
             }
@@ -130,26 +148,92 @@ public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUILi
         // speed
         // eta
 
-        int splitafter = dataEntries.size() / 2;
         ArrayList<DataEntry<T>> row1 = new ArrayList<DataEntry<T>>();
         ArrayList<DataEntry<T>> row2 = new ArrayList<DataEntry<T>>();
 
-        for (int i = 0; i < dataEntries.size(); i++) {
-
-            if (i % 2 == 0) {
-                row1.add(dataEntries.get(i));
+        for (Entry<String, Position> es : map.entrySet()) {
+            DataEntry<T> v = idMap.get(es.getKey());
+            if (v == null) {
+                continue;
+            }
+            int x = es.getValue().getX();
+            int y = es.getValue().getY();
+            ArrayList<DataEntry<T>> row;
+            if (y == 0) {
+                row = row1;
             } else {
-                row2.add(dataEntries.get(i));
+                row = row2;
+            }
+            while (x >= 0 && y >= 0) {
+                while (x >= row.size()) {
+                    row.add(null);
+                }
+                if (row.get(x) != null) {
+                    x++;
+                    continue;
+                }
+
+                row.set(x, v);
+                idMap.remove(v.getId());
+                break;
+
             }
 
         }
 
+        addloop: for (int i = 0; i < dataEntries.size(); i++) {
+            DataEntry<T> v = dataEntries.get(i);
+            if (!idMap.containsKey(v.getId())) {
+                continue;
+            }
+
+            if (i % 2 == 0) {
+                int index = 0;
+                while (true) {
+                    while (index >= row1.size()) {
+                        row1.add(null);
+                    }
+                    if (row1.get(index) == null) {
+                        row1.set(index, v);
+                        continue addloop;
+                    } else {
+                        index++;
+                    }
+                }
+
+            } else {
+                int index = 0;
+                while (true) {
+                    while (index >= row2.size()) {
+                        row2.add(null);
+                    }
+                    if (row2.get(index) == null) {
+                        row2.set(index, v);
+                        continue addloop;
+                    } else {
+                        index++;
+                    }
+                }
+            }
+
+        }
+
+        if (save) {
+            CFG_GUI.CFG.setOverviewPositions(map);
+        }
+
         for (DataEntry<T> de : row1) {
+            if (de == null) {
+                continue;
+            }
             de.addTo(info);
         }
 
         boolean first = true;
         for (DataEntry<T> de : row2) {
+            if (de == null) {
+                continue;
+            }
             if (first) {
                 de.addTo(info, ",newline");
             } else {
@@ -244,12 +328,18 @@ public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUILi
 
     protected void startUpdateTimer() {
         Timer currentTimer = updateTimer.get();
-        if (currentTimer != null && currentTimer.isRunning()) return;
-        if (DownloadWatchDog.getInstance().isRunning() == false) return;
+        if (currentTimer != null && currentTimer.isRunning()) {
+            return;
+        }
+        if (DownloadWatchDog.getInstance().isRunning() == false) {
+            return;
+        }
         currentTimer = new Timer(1000, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (!(e.getSource() instanceof Timer)) return;
+                if (!(e.getSource() instanceof Timer)) {
+                    return;
+                }
                 if (e.getSource() != updateTimer.get() || !isDisplayable()) {
                     Timer timer = ((Timer) e.getSource());
                     updateTimer.compareAndSet(timer, null);
@@ -266,11 +356,15 @@ public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUILi
 
     protected void stopUpdateTimer() {
         Timer old = updateTimer.getAndSet(null);
-        if (old != null) old.stop();
+        if (old != null) {
+            old.stop();
+        }
     }
 
     public void update() {
-        if (visible.get() == false) return;
+        if (visible.get() == false) {
+            return;
+        }
         final T total;
         final T filtered;
         final T selected;
@@ -294,7 +388,9 @@ public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUILi
 
             @Override
             protected void runInEDT() {
-                if (!isDisplayable() || visible.get() == false) { return; }
+                if (!isDisplayable() || visible.get() == false) {
+                    return;
+                }
                 for (DataEntry<T> entry : dataEntries) {
                     set(entry);
                 }
