@@ -285,6 +285,7 @@ public class RapiduNet extends PluginForHost {
         // LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE when Free user has waittime for the next
         // downloads
         do {
+            br.setFollowRedirects(true);
             retry = false;
             requestFileInformation(downloadLink);
             String loginInfo = login(account, false);
@@ -296,7 +297,23 @@ public class RapiduNet extends PluginForHost {
             if (userPremium == 0) {
                 MAXCHUNKSFORPREMIUM = 1;
             } else {
-                MAXCHUNKSFORPREMIUM = -3;
+                // API method to get download limits
+                try {
+                    br.postPage("http://rapidu.net/api/getServerLimit/", "");
+                } catch (Exception e) {
+
+                }
+                // returns:
+                // {"filesConnLimit":int,"filesDownloadLimit":int}
+                // filesConnLimit = number of chunks
+                // filesDownloadLimit = number of simultanous downloads
+
+                String downloadLimit = getJson("filesConnLimit", br.toString());
+                if (downloadLimit == null) {
+                    MAXCHUNKSFORPREMIUM = -3;
+                } else {
+                    MAXCHUNKSFORPREMIUM = -1 * Integer.parseInt(downloadLimit);
+                }
             }
 
             br.setFollowRedirects(true);
@@ -488,6 +505,8 @@ public class RapiduNet extends PluginForHost {
             } catch (final Exception e) {
                 logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
             }
+            // set max simult. downloads using API method
+            account.setMaxSimultanDownloads(checkMaxSimultanPremiumDowloadNum());
         }
 
         account.setValid(true);
@@ -504,10 +523,36 @@ public class RapiduNet extends PluginForHost {
         return jd.plugins.hoster.Youtube.unescape(s);
     }
 
+    private int checkMaxSimultanPremiumDowloadNum() {
+        int limit = 2;
+        Browser br2 = new Browser();
+        br2.setCookiesExclusive(true);
+        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br2.setFollowRedirects(true);
+        // API method to get download limits
+        try {
+            br2.postPage("http://rapidu.net/api/getServerLimit/", "");
+        } catch (Exception e) {
+
+        }
+        // returns:
+        // {"filesConnLimit":int,"filesDownloadLimit":int}
+        // filesConnLimit = number of chunks
+        // filesDownloadLimit = number of simultanous downloads
+        String downloadLimit = getJson("filesDownloadLimit", br2.toString());
+        if (downloadLimit == null) {
+            return limit;
+        } else {
+            limit = Integer.parseInt(downloadLimit);
+        }
+        return limit;
+
+    }
+
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         // requested by the hoster admin
-        return 2;
+        return checkMaxSimultanPremiumDowloadNum();
     }
 
     @Override
