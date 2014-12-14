@@ -290,7 +290,13 @@ public class OffCloudCom extends PluginForHost {
         } else {
             login();
         }
+        br.postPage("https://offcloud.com/stats/usage-left", "");
+        String remaininglinksnum = getJson("links");
         postAPISafe("https://offcloud.com/stats/addons", "");
+        /*
+         * Basically, at the moment we got 3 account types: Premium, Free account with generate-links feature, Free Account without
+         * generate-links feature (used free account, ZERO traffic)
+         */
         String userpackage = null;
         final String jsonarraypackages = br.getRegex("\"data\": \\[(.*?)\\]").getMatch(0);
         final String[] packages = jsonarraypackages.split("\\},([\t\r\n ]+)?\\{");
@@ -306,26 +312,18 @@ public class OffCloudCom extends PluginForHost {
             }
         }
         final String packagetype = getJson(userpackage, "type");
-        String remaininglinksnum = null;
-        if (userpackage.equals("")) {
-            /* Workaround for a serverside bug that happens if the user generates more free downloadlinks than usually possible. */
+        if ((userpackage == null && br.containsHTML("-increase")) || userpackage.equals("") || packagetype.equals("premium-link-increase")) {
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
-            remaininglinksnum = "0";
-            account.setProperty("accinfo_linksleft", "0");
-            /* No links downloadable anymore --> No traffic left --> Free account limit reached */
-            ai.setTrafficLeft(0);
-            freeAccountLimitReached();
-        } else if (packagetype.equals("premium-link-increase")) {
-            account.setType(AccountType.FREE);
-            ai.setStatus("Registered (free) account");
-            remaininglinksnum = getJson(userpackage, "remainingLinksCount");
+            /* Important: If we found our package, get the remaining links count from there as the other one might be wrong! */
+            if ("premium-link-increase".equals(packagetype)) {
+                remaininglinksnum = getJson(userpackage, "remainingLinksCount");
+            }
             account.setProperty("accinfo_linksleft", remaininglinksnum);
             if (remaininglinksnum.equals("0")) {
                 /* No links downloadable anymore --> No traffic left --> Free account limit reached */
                 ai.setTrafficLeft(0);
             }
-            freeAccountLimitReached();
         } else {
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium account");
@@ -333,9 +331,7 @@ public class OffCloudCom extends PluginForHost {
             String expiredate = getJson(userpackage, "activeTill");
             expiredate = expiredate.replaceAll("Z$", "+0000");
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate, "yyyy-MM-dd'T'HH:mm:ss.S", Locale.ENGLISH));
-            postAPISafe("https://offcloud.com/stats/usage-left", "");
-            final String linksleft = getJson("links");
-            account.setProperty("accinfo_linksleft", linksleft);
+            account.setProperty("accinfo_linksleft", remaininglinksnum);
         }
         account.setValid(true);
         /* Only add hosts which are listed as 'active' (working) */
@@ -507,6 +503,8 @@ public class OffCloudCom extends PluginForHost {
                 statuscode = 8;
             } else if (error.equals("IP address needs to be registered. Check your email for further information.")) {
                 statuscode = 9;
+            } else if (error.equals("There is a networking issue. Please contact our support to get some help.")) {
+                statuscode = 10;
             } else if (error.equals("premium")) {
                 statuscode = 100;
             } else {
@@ -562,6 +560,7 @@ public class OffCloudCom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 6:
+                /* "File will not be downloaded due to an error." --> WTF */
                 statusMessage = "WTF";
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, statusMessage);
             case 7:
@@ -581,6 +580,14 @@ public class OffCloudCom extends PluginForHost {
                     statusMessage = "\r\nBitte bestätige deine aktuelle IP Adresse über den Bestätigungslink per E-Mail um den Account wieder nutzen zu können.";
                 } else {
                     statusMessage = "\r\nPlease confirm your current IP adress via the activation link you got per mail to continue using this account.";
+                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            case 10:
+                /* Network issue --> WTF */
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    statusMessage = "\r\nNetzwerkprobleme - bitte den offcloud Support kontaktierten.";
+                } else {
+                    statusMessage = "\r\nNetwork problems - please contact the offcloud support.";
                 }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 100:
