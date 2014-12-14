@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "porn.com" }, urls = { "http://(www\\.)?porn\\.com/videos/.*?\\d+(\\.html)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "porn.com" }, urls = { "http://(www\\.)?porn\\.com/videos/[^<>\"/]+\\d+(\\.html)?" }, flags = { 0 })
 public class PornCom extends PluginForHost {
 
     private String DLLINK = null;
