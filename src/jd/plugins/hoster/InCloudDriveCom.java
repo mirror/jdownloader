@@ -98,6 +98,9 @@ public class InCloudDriveCom extends PluginForHost {
     private AvailableStatus parseFileInformation(final DownloadLink link) throws Exception {
         setFUID(link);
         br.getPage("https://www.inclouddrive.com/file/" + hashTag[1]);
+        if (br.containsHTML(">we are performing a service upgrade please try again!")) {
+            return AvailableStatus.UNCHECKABLE;
+        }
         final String regexFS = "<div class=\"downloadfileinfo[^>]*>(.*?) \\((.*?)\\)";
         String filename = br.getRegex(regexFS).getMatch(0);
         String filesize = br.getRegex(regexFS).getMatch(1);
@@ -143,6 +146,9 @@ public class InCloudDriveCom extends PluginForHost {
     public void doFree(final DownloadLink downloadLink, final boolean resume, final int maxchunks, final String directlinkparam) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkparam);
         if (dllink == null) {
+            if (br.containsHTML(">we are performing a service upgrade please try again!")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Maintenance is being done");
+            }
             if (downloadLink.getBooleanProperty("premiumRequired", false)) {
                 // canHandle for JD2, non JD2 here.
                 premiumDownloadRestriction(downloadLink, downloadLink.getStringProperty("premiumRestrictionMsg", null));
@@ -471,7 +477,7 @@ public class InCloudDriveCom extends PluginForHost {
 
     /**
      * When premium only download restriction (eg. filesize), throws exception with given message
-     *
+     * 
      * @param msg
      * @throws PluginException
      */
@@ -546,7 +552,7 @@ public class InCloudDriveCom extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
+     * 
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
