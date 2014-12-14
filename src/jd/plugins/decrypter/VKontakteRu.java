@@ -60,7 +60,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     private static final String     EXCEPTION_ACCPROBLEM                 = "EXCEPTION_ACCPROBLEM";
     private static final String     EXCEPTION_LINKOFFLINE                = "EXCEPTION_LINKOFFLINE";
-    private static final String     EXCEPTION_API_UNKNOWN                = "EXCEPTION_LINKOFFLINE";
+    private static final String     EXCEPTION_API_UNKNOWN                = "EXCEPTION_API_UNKNOWN";
 
     /* Settings */
     private static final String     FASTLINKCHECK_VIDEO                  = "FASTLINKCHECK_VIDEO";
@@ -235,7 +235,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_WALL_LOOPBACK_LINK)) {
                     /* Remove loopback-part as it only contains information which we need later but not in the link */
                     newLink = new Regex(CRYPTEDLINK_FUNCTIONAL, "(http://(www\\.)?vk\\.com/wall(\\-)?\\d+)").getMatch(0);
-                } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_PUBLIC_EXTENDED) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUMS) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_PAGE) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_VIDEO_SINGLE) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_WALL_LINK) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_AUDIO) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_COMMUNITY_ALBUM)) {
+                } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_PUBLIC_EXTENDED) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUMS) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_PAGE) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_VIDEO_SINGLE) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_WALL_LINK) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_AUDIO) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_COMMUNITY_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_WALL_POST_LINK)) {
                     /* Don't change anything */
                 } else {
                     /* We either have a public community or profile --> Get the owner_id and change the link to a wall-link */

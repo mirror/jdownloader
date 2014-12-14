@@ -16,13 +16,18 @@
 
 package jd.plugins.decrypter;
 
+import java.awt.Point;
+import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.gui.UserIO;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -56,6 +61,28 @@ public class ProtectDdlIslandRu extends PluginForDecrypt {
             offline.setProperty("offline", true);
             decryptedLinks.add(offline);
             return decryptedLinks;
+        }
+        if (!br.containsHTML("img\\.php\\?get_captcha=true")) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        boolean success = false;
+        for (int i = 1; i <= 3; i++) {
+            final File captchaFile = this.getLocalCaptchaFile();
+            Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://protect.ddl-island.ru/img.php?get_captcha=true"));
+            final Point p = UserIO.getInstance().requestClickPositionDialog(captchaFile, "protect.ddl-island.ru | " + String.valueOf(i + 1) + "/3", null);
+            if (p == null) {
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
+            br.postPage(br.getURL(), "position%5B%5D.x=" + String.valueOf(p.x) + "&position%5B%5D.y=" + String.valueOf(p.y));
+            if (br.containsHTML("img\\.php\\?get_captcha=true")) {
+                continue;
+            }
+            success = true;
+            break;
+        }
+        if (!success) {
+            throw new DecrypterException(DecrypterException.CAPTCHA);
         }
         final String finallink = br.getRegex(">Lien :</b></td><td><a href=\"(http[^<>\"]*?)\"").getMatch(0);
         if (finallink == null) {
