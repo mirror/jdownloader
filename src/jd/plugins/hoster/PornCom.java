@@ -66,8 +66,9 @@ public class PornCom extends PluginForHost {
         }
         filename = Encoding.htmlDecode(filename.trim());
         get_dllink(this.br);
+        /* A little trick to download videos that are usually only available for registered users WITHOUT account :) */
         if (DLLINK == null) {
-            final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html").getMatch(0);
+            final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)(?:\\.html)?$").getMatch(0);
             final Browser brc = br.cloneBrowser();
             /* This way we can access links which are usually only accessible for registered users */
             brc.getPage("http://www.porn.com/videos/embed/" + fid + ".html");
