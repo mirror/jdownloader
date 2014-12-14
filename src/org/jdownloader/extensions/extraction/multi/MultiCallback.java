@@ -37,36 +37,56 @@ import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
  * 
  */
 class MultiCallback implements ISequentialOutStream {
-    protected FileOutputStream     fos     = null;
-    protected CPUPriority          priority;
-    protected BufferedOutputStream bos     = null;
-    protected long                 written = 0;
-    protected final File           file;
+    protected final FileOutputStream     fos;
+    protected final CPUPriority          priority;
+    protected final BufferedOutputStream bos;
+    protected long                       written = 0;
+    protected final File                 file;
 
     MultiCallback(File file, ExtractionController con, ExtractionConfig config, boolean shouldCrc) throws FileNotFoundException {
-        priority = config.getCPUPriority();
+        final CPUPriority priority = config.getCPUPriority();
         if (priority == null || CPUPriority.HIGH.equals(priority)) {
             this.priority = null;
+        } else {
+            this.priority = priority;
         }
-        int maxbuffersize = Math.max(config.getBufferSize() * 1024, 10240);
+        final int maxbuffersize = Math.max(config.getBufferSize() * 1024, 10240);
         this.file = file;
-        fos = new FileOutputStream(file, false);
-        bos = new BufferedOutputStream(fos, maxbuffersize);
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(file, false);
+        } catch (final FileNotFoundException e) {
+            /**
+             * too fast file opening/extraction (eg image gallery) can result in "access denied" exception
+             */
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e1) {
+                throw e;
+            }
+            fos = new FileOutputStream(file, false);
+        }
+        this.fos = fos;
+        bos = new BufferedOutputStream(this.fos, maxbuffersize);
+    }
+
+    protected void waitCPUPriority() throws SevenZipException {
+        if (priority != null && !CPUPriority.HIGH.equals(priority)) {
+            synchronized (this) {
+                try {
+                    wait(priority.getTime());
+                } catch (InterruptedException e) {
+                    throw new MultiSevenZipException(e, ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
+                }
+            }
+        }
     }
 
     public int write(byte[] data) throws SevenZipException {
         try {
             bos.write(data);
             written += data.length;
-            if (priority != null && !CPUPriority.HIGH.equals(priority)) {
-                synchronized (this) {
-                    try {
-                        wait(priority.getTime());
-                    } catch (InterruptedException e) {
-                        throw new MultiSevenZipException(e, ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
-                    }
-                }
-            }
+            waitCPUPriority();
         } catch (IOException e) {
             throw new MultiSevenZipException(e, ExtractionControllerConstants.EXIT_CODE_WRITE_ERROR);
         }
@@ -88,26 +108,20 @@ class MultiCallback implements ISequentialOutStream {
      */
     void close() throws IOException {
         try {
-            try {
-                bos.flush();
-            } catch (Throwable e) {
-            }
-            try {
-                bos.close();
-            } catch (Throwable e) {
-            }
-            try {
-                fos.flush();
-            } catch (Throwable e) {
-            }
-            try {
-                fos.close();
-            } catch (Throwable e) {
-            }
-        } finally {
-            bos = null;
-            fos = null;
+            bos.flush();
+        } catch (Throwable e) {
         }
-
+        try {
+            bos.close();
+        } catch (Throwable e) {
+        }
+        try {
+            fos.flush();
+        } catch (Throwable e) {
+        }
+        try {
+            fos.close();
+        } catch (Throwable e) {
+        }
     }
 }
