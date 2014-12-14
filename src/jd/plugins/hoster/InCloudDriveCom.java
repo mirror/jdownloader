@@ -418,6 +418,9 @@ public class InCloudDriveCom extends PluginForHost {
             }
             if (dllink == null) {
                 parseFileInformation(link);
+                if (br.containsHTML(">we are performing a service upgrade please try again!")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Maintenance is being done");
+                }
                 dllink = br.getRegex("\"(https?://\\w+\\.inclouddrive\\.com/download/\\?token=[^\"]+)\"").getMatch(0);
                 if (dllink == null) {
                     dllink = br.getRegex("\"(https?://\\w+\\.inclouddrive\\.com/download\\.php\\?accesstoken=[^\"]+)\"").getMatch(0);
