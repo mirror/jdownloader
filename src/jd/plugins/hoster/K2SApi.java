@@ -1927,11 +1927,11 @@ public abstract class K2SApi extends PluginForHost {
         public static String getJson(final String source, final String key) {
             String result = new Regex(source, "\"" + Pattern.quote(key) + "\"[ \t]*:[ \t]*(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
             if (result == null) {
-                result = new Regex(source, "\"" + Pattern.quote(key) + "\"[ \t]*:[ \t]*\"([^\"]+)\"").getMatch(0);
+                result = new Regex(source, "\"" + Pattern.quote(key) + "\"[ \t]*:[ \t]*\"([^\"]*)\"").getMatch(0);
                 if (result != null) {
                     // some rudimentary detection if we have braked at the wrong place.
                     while (result.endsWith("\\")) {
-                        String xtraResult = new Regex(source, "\"" + Pattern.quote(key) + "\"[ \t]*:[ \t]*\"(" + Pattern.quote(result) + "\"[^\"]+\"?)\"").getMatch(0);
+                        String xtraResult = new Regex(source, "\"" + Pattern.quote(key) + "\"[ \t]*:[ \t]*\"(" + Pattern.quote(result) + "\"[^\"]*\"?)\"").getMatch(0);
                         if (xtraResult != null) {
                             result = xtraResult;
                         } else {

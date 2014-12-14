@@ -160,8 +160,10 @@ public class FlickrCom extends PluginForDecrypt {
             throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
         br.getHeaders().put("Referer", "");
-        csrf = "1405808633%3Ai01dgnb1q25wxw29%3Ac82715e60f008b97cb7e8fa3529ce156";
         csrf = getJson("csrf");
+        if (csrf == null) {
+            csrf = "1405808633%3Ai01dgnb1q25wxw29%3Ac82715e60f008b97cb7e8fa3529ce156";
+        }
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         String apilink = null;
         String path_alias = null;
@@ -177,7 +179,7 @@ public class FlickrCom extends PluginForDecrypt {
                 return;
             }
             fpName = "flickr.com set " + setid + " of user " + this.username;
-        } else if (parameter.endsWith("/sets") && !parameter.matches(TYPE_SET)) {
+        } else if (parameter.matches(".+/sets/?") && !parameter.matches(TYPE_SET)) {
             apiGetSetsOfUser();
             return;
         } else if (parameter.matches(TYPE_FAVORITES)) {
@@ -252,7 +254,7 @@ public class FlickrCom extends PluginForDecrypt {
                     /* Not available in old 0.9.591 Stable */
                     fina.setBrowserUrl(contenturl);
                 }
-                final String phototitle = username + "_" + photoid + "_" + title + ".jpg";
+                final String phototitle = username + "_" + photoid + (!"".equals(title) ? "_" + title : "") + ".jpg";
                 fina.setName(phototitle);
                 fina.setProperty("decryptedfilename", phototitle);
                 fina.setProperty("LINKDUPEID", "flickrcom_" + username + "_" + photoid);
@@ -385,7 +387,7 @@ public class FlickrCom extends PluginForDecrypt {
         String api_apikey = br.getRegex("root\\.YUI_config\\.flickr\\.api\\.site_key\\s*?=\\s*?\"(.*?)\"").getMatch(0);
         /* Handle API decryption for GROUPS and complete users here */
         if (api_apikey == null) {
-            api_apikey = getJson(br.toString(), "api_key");
+            api_apikey = getJson(br, "api_key");
         }
         if (api_apikey == null) {
             api_apikey = "80bd84ccc43c9992edf04205340abe2f";
@@ -511,7 +513,7 @@ public class FlickrCom extends PluginForDecrypt {
      *
      * @author raztoki
      * */
-    private static String getJson(final String source, final String key) {
+    private String getJson(final String source, final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
     }
 
@@ -531,7 +533,7 @@ public class FlickrCom extends PluginForDecrypt {
      *
      * @author raztoki
      * */
-    private String getJson(final Browser ibr, final String key) {
+    private static String getJson(final Browser ibr, final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
     }
 
