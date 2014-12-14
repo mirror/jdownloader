@@ -583,11 +583,11 @@ public class OffCloudCom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 10:
-                /* Network issue --> WTF */
+                /* Networking issues --> Serverside problems --> Temporarily disable account */
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    statusMessage = "\r\nNetzwerkprobleme - bitte den offcloud Support kontaktierten.";
+                    statusMessage = "\r\nServerseitige Netzwerkprobleme - bitte den offcloud Support kontaktieren.";
                 } else {
-                    statusMessage = "\r\nNetwork problems - please contact the offcloud support.";
+                    statusMessage = "\r\nServerside networking problems - please contact the Offcloud support.";
                 }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 100:
