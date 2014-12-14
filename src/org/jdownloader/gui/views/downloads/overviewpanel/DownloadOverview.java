@@ -44,6 +44,270 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> implements DownloadControllerListener, HierarchyListener, GenericConfigEventListener<Boolean>, GUIListener {
 
+    private final class FailedEntry extends DataEntry<AggregatedNumbers> {
+        private FailedEntry(String label) {
+            super(label);
+        }
+
+        @Override
+        public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
+            if (total != null) {
+                setTotal(total.getFailedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+            }
+            if (filtered != null) {
+                setFiltered(filtered.getFailedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+            }
+            if (selected != null) {
+                setSelected(selected.getFailedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+            }
+        }
+
+        @Override
+        public BooleanKeyHandler getVisibleKeyHandler() {
+            return CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_LINKS_FAILED_COUNT_VISIBLE;
+        }
+    }
+
+    private final class SkippedEntry extends DataEntry<AggregatedNumbers> {
+        private SkippedEntry(String label) {
+            super(label);
+        }
+
+        @Override
+        public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
+            if (total != null) {
+                setTotal(total.getSkippedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+            }
+            if (filtered != null) {
+                setFiltered(filtered.getSkippedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+            }
+            if (selected != null) {
+                setSelected(selected.getSkippedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+            }
+        }
+
+        @Override
+        public BooleanKeyHandler getVisibleKeyHandler() {
+            return CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_LINKS_SKIPPED_COUNT_VISIBLE;
+        }
+    }
+
+    private final class FinishedEntry extends DataEntry<AggregatedNumbers> {
+        private FinishedEntry(String label) {
+            super(label);
+        }
+
+        @Override
+        public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
+            if (total != null) {
+                setTotal(total.getFinishedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+            }
+            if (filtered != null) {
+                setFiltered(filtered.getFinishedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+            }
+            if (selected != null) {
+                setSelected(selected.getFinishedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+            }
+        }
+
+        @Override
+        public BooleanKeyHandler getVisibleKeyHandler() {
+            return CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_LINKS_FINISHED_COUNT_VISIBLE;
+        }
+    }
+
+    private final class ConnectionsEntry extends DataEntry<AggregatedNumbers> {
+        private ConnectionsEntry(String label) {
+            super(label);
+        }
+
+        @Override
+        public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
+            if (total != null) {
+                setTotal(total.getConnections() + "");
+            }
+            if (filtered != null) {
+                setFiltered(filtered.getConnections() + "");
+            }
+            if (selected != null) {
+                setSelected(selected.getConnections() + "");
+            }
+        }
+
+        @Override
+        public BooleanKeyHandler getVisibleKeyHandler() {
+            return CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_CONNECTIONS_VISIBLE;
+        }
+    }
+
+    private final class ETAEntry extends DataEntry<AggregatedNumbers> {
+        private ETAEntry(String label) {
+            super(label);
+        }
+
+        @Override
+        public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
+            if (total != null) {
+                setTotal(total.getEtaString());
+            }
+            if (filtered != null) {
+                setFiltered(filtered.getEtaString());
+            }
+            if (selected != null) {
+                setSelected(selected.getEtaString());
+            }
+        }
+
+        @Override
+        public BooleanKeyHandler getVisibleKeyHandler() {
+            return CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_ETAVISIBLE;
+        }
+    }
+
+    private final class SpeedEntry extends DataEntry<AggregatedNumbers> {
+        private SpeedEntry(String label) {
+            super(label);
+        }
+
+        @Override
+        public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
+            if (total != null) {
+                setTotal(total.getDownloadSpeedString());
+            }
+            if (filtered != null) {
+                setFiltered(filtered.getDownloadSpeedString());
+            }
+            if (selected != null) {
+                setSelected(selected.getDownloadSpeedString());
+            }
+        }
+
+        @Override
+        public BooleanKeyHandler getVisibleKeyHandler() {
+            return CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_SPEED_VISIBLE;
+        }
+    }
+
+    private final class LinksCountEntry extends DataEntry<AggregatedNumbers> {
+        private LinksCountEntry(String label) {
+            super(label);
+        }
+
+        @Override
+        public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
+            if (total != null) {
+                setTotal(total.getLinkCount() + "");
+            }
+            if (filtered != null) {
+                setFiltered(filtered.getLinkCount() + "");
+            }
+            if (selected != null) {
+                setSelected(selected.getLinkCount() + "");
+            }
+        }
+
+        @Override
+        public BooleanKeyHandler getVisibleKeyHandler() {
+            return CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_LINK_COUNT_VISIBLE;
+        }
+    }
+
+    private final class DownloadsEntry extends DataEntry<AggregatedNumbers> {
+        private DownloadsEntry(String label) {
+            super(label);
+        }
+
+        @Override
+        public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
+            if (total != null) {
+                setTotal(total.getRunning() + "");
+            }
+            if (filtered != null) {
+                setFiltered(filtered.getRunning() + "");
+            }
+            if (selected != null) {
+                setSelected(selected.getRunning() + "");
+            }
+        }
+
+        @Override
+        public BooleanKeyHandler getVisibleKeyHandler() {
+            return CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_RUNNING_DOWNLOADS_COUNT_VISIBLE;
+        }
+    }
+
+    private final class BytesLoadedEntry extends DataEntry<AggregatedNumbers> {
+        private BytesLoadedEntry(String label) {
+            super(label);
+        }
+
+        @Override
+        public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
+            if (total != null) {
+                setTotal(total.getLoadedBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+            }
+            if (filtered != null) {
+                setFiltered(filtered.getLoadedBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+            }
+            if (selected != null) {
+                setSelected(selected.getLoadedBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+            }
+        }
+
+        @Override
+        public BooleanKeyHandler getVisibleKeyHandler() {
+            return CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_BYTES_LOADED_VISIBLE;
+        }
+    }
+
+    private final class BytesTotalEntry extends DataEntry<AggregatedNumbers> {
+        private BytesTotalEntry(String label) {
+            super(label);
+        }
+
+        @Override
+        public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
+            if (total != null) {
+                setTotal(total.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+            }
+            if (filtered != null) {
+                setFiltered(filtered.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+            }
+            if (selected != null) {
+                setSelected(selected.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+            }
+        }
+
+        @Override
+        public BooleanKeyHandler getVisibleKeyHandler() {
+            return CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_TOTAL_BYTES_VISIBLE;
+        }
+    }
+
+    private final class PackagesEntry extends DataEntry<AggregatedNumbers> {
+        private PackagesEntry(String label) {
+            super(label);
+        }
+
+        @Override
+        public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
+            if (total != null) {
+                setTotal(total.getPackageCount() + "");
+            }
+            if (filtered != null) {
+                setFiltered(filtered.getPackageCount() + "");
+            }
+            if (selected != null) {
+                setSelected(selected.getPackageCount() + "");
+            }
+        }
+
+        @Override
+        public BooleanKeyHandler getVisibleKeyHandler() {
+            return CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PACKAGE_COUNT_VISIBLE;
+        }
+    }
+
     /**
      * 
      */
@@ -133,241 +397,21 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
     }
 
     protected List<DataEntry<AggregatedNumbers>> createDataEntries() {
-        DataEntry<AggregatedNumbers> packageCount = new DataEntry<AggregatedNumbers>(_GUI._.DownloadOverview_DownloadOverview_packages()) {
+        DataEntry<AggregatedNumbers> packageCount = new PackagesEntry(_GUI._.DownloadOverview_DownloadOverview_packages());
+        DataEntry<AggregatedNumbers> size = new BytesTotalEntry(_GUI._.DownloadOverview_DownloadOverview_size());
+        DataEntry<AggregatedNumbers> bytesLoaded = new BytesLoadedEntry(_GUI._.DownloadOverview_DownloadOverview_loaded());
+        DataEntry<AggregatedNumbers> runningDownloads = new DownloadsEntry(_GUI._.DownloadOverview_DownloadOverview_running_downloads());
 
-            @Override
-            public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
-                if (total != null) {
-                    setTotal(total.getPackageCount() + "");
-                }
-                if (filtered != null) {
-                    setFiltered(filtered.getPackageCount() + "");
-                }
-                if (selected != null) {
-                    setSelected(selected.getPackageCount() + "");
-                }
-            }
+        DataEntry<AggregatedNumbers> linkCount = new LinksCountEntry(_GUI._.DownloadOverview_DownloadOverview_links());
 
-            @Override
-            public BooleanKeyHandler getVisibleKeyHandler() {
-                return CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PACKAGE_COUNT_VISIBLE;
-            }
+        DataEntry<AggregatedNumbers> speed = new SpeedEntry(_GUI._.DownloadOverview_DownloadOverview_speed());
+        DataEntry<AggregatedNumbers> eta = new ETAEntry(_GUI._.DownloadOverview_DownloadOverview_eta());
 
-        };
-        DataEntry<AggregatedNumbers> size = new DataEntry<AggregatedNumbers>(_GUI._.DownloadOverview_DownloadOverview_size()) {
+        DataEntry<AggregatedNumbers> connections = new ConnectionsEntry(_GUI._.DownloadOverview_DownloadOverview_connections());
 
-            @Override
-            public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
-                if (total != null) {
-                    setTotal(total.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                }
-                if (filtered != null) {
-                    setFiltered(filtered.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                }
-                if (selected != null) {
-                    setSelected(selected.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                }
-            }
-
-            @Override
-            public BooleanKeyHandler getVisibleKeyHandler() {
-                return CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_TOTAL_BYTES_VISIBLE;
-            }
-
-        };
-        DataEntry<AggregatedNumbers> bytesLoaded = new DataEntry<AggregatedNumbers>(_GUI._.DownloadOverview_DownloadOverview_loaded()) {
-
-            @Override
-            public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
-                if (total != null) {
-                    setTotal(total.getLoadedBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                }
-                if (filtered != null) {
-                    setFiltered(filtered.getLoadedBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                }
-                if (selected != null) {
-                    setSelected(selected.getLoadedBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                }
-            }
-
-            @Override
-            public BooleanKeyHandler getVisibleKeyHandler() {
-                return CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_BYTES_LOADED_VISIBLE;
-            }
-
-        };
-        DataEntry<AggregatedNumbers> runningDownloads = new DataEntry<AggregatedNumbers>(_GUI._.DownloadOverview_DownloadOverview_running_downloads()) {
-
-            @Override
-            public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
-                if (total != null) {
-                    setTotal(total.getRunning() + "");
-                }
-                if (filtered != null) {
-                    setFiltered(filtered.getRunning() + "");
-                }
-                if (selected != null) {
-                    setSelected(selected.getRunning() + "");
-                }
-            }
-
-            @Override
-            public BooleanKeyHandler getVisibleKeyHandler() {
-                return CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_RUNNING_DOWNLOADS_COUNT_VISIBLE;
-            }
-
-        };
-
-        DataEntry<AggregatedNumbers> linkCount = new DataEntry<AggregatedNumbers>(_GUI._.DownloadOverview_DownloadOverview_links()) {
-
-            @Override
-            public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
-                if (total != null) {
-                    setTotal(total.getLinkCount() + "");
-                }
-                if (filtered != null) {
-                    setFiltered(filtered.getLinkCount() + "");
-                }
-                if (selected != null) {
-                    setSelected(selected.getLinkCount() + "");
-                }
-            }
-
-            @Override
-            public BooleanKeyHandler getVisibleKeyHandler() {
-                return CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_LINK_COUNT_VISIBLE;
-            }
-
-        };
-
-        DataEntry<AggregatedNumbers> speed = new DataEntry<AggregatedNumbers>(_GUI._.DownloadOverview_DownloadOverview_speed()) {
-
-            @Override
-            public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
-                if (total != null) {
-                    setTotal(total.getDownloadSpeedString());
-                }
-                if (filtered != null) {
-                    setFiltered(filtered.getDownloadSpeedString());
-                }
-                if (selected != null) {
-                    setSelected(selected.getDownloadSpeedString());
-                }
-            }
-
-            @Override
-            public BooleanKeyHandler getVisibleKeyHandler() {
-                return CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_SPEED_VISIBLE;
-            }
-
-        };
-        DataEntry<AggregatedNumbers> eta = new DataEntry<AggregatedNumbers>(_GUI._.DownloadOverview_DownloadOverview_eta()) {
-
-            @Override
-            public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
-                if (total != null) {
-                    setTotal(total.getEtaString());
-                }
-                if (filtered != null) {
-                    setFiltered(filtered.getEtaString());
-                }
-                if (selected != null) {
-                    setSelected(selected.getEtaString());
-                }
-            }
-
-            @Override
-            public BooleanKeyHandler getVisibleKeyHandler() {
-                return CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_ETAVISIBLE;
-            }
-
-        };
-
-        DataEntry<AggregatedNumbers> connections = new DataEntry<AggregatedNumbers>(_GUI._.DownloadOverview_DownloadOverview_connections()) {
-
-            @Override
-            public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
-                if (total != null) {
-                    setTotal(total.getConnections() + "");
-                }
-                if (filtered != null) {
-                    setFiltered(filtered.getConnections() + "");
-                }
-                if (selected != null) {
-                    setSelected(selected.getConnections() + "");
-                }
-            }
-
-            @Override
-            public BooleanKeyHandler getVisibleKeyHandler() {
-                return CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_CONNECTIONS_VISIBLE;
-            }
-
-        };
-
-        DataEntry<AggregatedNumbers> finishedDownloads = new DataEntry<AggregatedNumbers>(_GUI._.DownloadOverview_DownloadOverview_finished_downloads()) {
-
-            @Override
-            public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
-                if (total != null) {
-                    setTotal(total.getFinishedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                }
-                if (filtered != null) {
-                    setFiltered(filtered.getFinishedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                }
-                if (selected != null) {
-                    setSelected(selected.getFinishedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                }
-            }
-
-            @Override
-            public BooleanKeyHandler getVisibleKeyHandler() {
-                return CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_LINKS_FINISHED_COUNT_VISIBLE;
-            }
-
-        };
-        DataEntry<AggregatedNumbers> skippedDownloads = new DataEntry<AggregatedNumbers>(_GUI._.DownloadOverview_DownloadOverview_skipped_downloads()) {
-
-            @Override
-            public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
-                if (total != null) {
-                    setTotal(total.getSkippedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                }
-                if (filtered != null) {
-                    setFiltered(filtered.getSkippedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                }
-                if (selected != null) {
-                    setSelected(selected.getSkippedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                }
-            }
-
-            @Override
-            public BooleanKeyHandler getVisibleKeyHandler() {
-                return CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_LINKS_SKIPPED_COUNT_VISIBLE;
-            }
-
-        };
-        DataEntry<AggregatedNumbers> failedDownloads = new DataEntry<AggregatedNumbers>(_GUI._.DownloadOverview_DownloadOverview_failed_downloads()) {
-
-            @Override
-            public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
-                if (total != null) {
-                    setTotal(total.getFailedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                }
-                if (filtered != null) {
-                    setFiltered(filtered.getFailedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                }
-                if (selected != null) {
-                    setSelected(selected.getFailedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                }
-            }
-
-            @Override
-            public BooleanKeyHandler getVisibleKeyHandler() {
-                return CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_LINKS_FAILED_COUNT_VISIBLE;
-            }
-
-        };
+        DataEntry<AggregatedNumbers> finishedDownloads = new FinishedEntry(_GUI._.DownloadOverview_DownloadOverview_finished_downloads());
+        DataEntry<AggregatedNumbers> skippedDownloads = new SkippedEntry(_GUI._.DownloadOverview_DownloadOverview_skipped_downloads());
+        DataEntry<AggregatedNumbers> failedDownloads = new FailedEntry(_GUI._.DownloadOverview_DownloadOverview_failed_downloads());
 
         ArrayList<DataEntry<AggregatedNumbers>> entries = new ArrayList<DataEntry<AggregatedNumbers>>();
         entries.add(packageCount);

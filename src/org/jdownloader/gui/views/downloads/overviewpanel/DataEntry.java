@@ -28,6 +28,12 @@ public abstract class DataEntry<T> {
     private JLabel       filtered;
     private JLabel       selected;
     final private String label;
+    protected String     id;
+
+    public String getId() {
+
+        return id;
+    }
 
     public String getLabel() {
         return label;
@@ -39,6 +45,8 @@ public abstract class DataEntry<T> {
     }
 
     public DataEntry(String label) {
+        id = getClass().getName();
+        id = id.substring(id.lastIndexOf(".") + 1);
         this.label = label;
         total = new JLabel("-1");
         filtered = new JLabel("-1");
