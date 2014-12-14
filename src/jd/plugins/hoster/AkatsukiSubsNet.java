@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.captcha.utils.recaptcha.api2.Recaptcha2Helper;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "akatsuki-subs.net" }, urls = { "http://(www\\.)?(downloads|archiv)\\.akatsuki\\-subs\\.net/file\\-\\d+\\.htm" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "akatsuki-subs.net" }, urls = { "http://(www\\.)?(downloads|archiv)\\.akatsuki\\-subs\\.net/file\\-\\d+\\.htm" }, flags = { 0 })
 public class AkatsukiSubsNet extends PluginForHost {
 
     public AkatsukiSubsNet(PluginWrapper wrapper) {
@@ -97,7 +97,6 @@ public class AkatsukiSubsNet extends PluginForHost {
             Recaptcha2Helper rchelp = new Recaptcha2Helper();
             rchelp.init(this.br);
             final File outputFile = rchelp.loadImageFile();
-
             String code = getCaptchaCode("recaptcha", outputFile, downloadLink);
             success = rchelp.sendResponse(code);
             responseToken = rchelp.getResponseToken();
@@ -129,13 +128,13 @@ public class AkatsukiSubsNet extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlFree
      *            (+1|-1)
      */
