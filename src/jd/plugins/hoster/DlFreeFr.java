@@ -215,6 +215,8 @@ public class DlFreeFr extends PluginForHost {
                 if (dlLink != null) {
                     break;
                 } else if (dlLink == null && (i + 1 != repeat)) {
+                    // lets put a small wait in here
+                    downloadLink.wait(2563l * new Random().nextInt(4));
                     continue;
                 } else {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
