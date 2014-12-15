@@ -24,7 +24,7 @@ public class DownloadLinkCandidateHistory {
     protected DownloadLinkCandidateHistory() {
     }
 
-    public boolean attach(DownloadLinkCandidate candidate) {
+    public synchronized boolean attach(DownloadLinkCandidate candidate) {
         if (history.containsKey(candidate)) {
             return false;
         }
@@ -32,7 +32,7 @@ public class DownloadLinkCandidateHistory {
         return true;
     }
 
-    public boolean dettach(DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
+    public synchronized boolean dettach(DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
         if (history.containsKey(candidate) && history.get(candidate) == null) {
             history.put(candidate, result);
             return true;
@@ -78,14 +78,16 @@ public class DownloadLinkCandidateHistory {
 
     public static List<DownloadLinkCandidateResult> selectResults(DownloadLinkCandidateHistory history, DownloadLinkCandidateHistorySelector selector) {
         final List<DownloadLinkCandidateResult> ret = new ArrayList<DownloadLinkCandidateResult>();
-        final Iterator<Entry<DownloadLinkCandidate, DownloadLinkCandidateResult>> it = history.getHistory().entrySet().iterator();
-        while (it.hasNext()) {
-            final Entry<DownloadLinkCandidate, DownloadLinkCandidateResult> next = it.next();
-            final DownloadLinkCandidate candidate = next.getKey();
-            final DownloadLinkCandidateResult result = next.getValue();
-            if (candidate != null && result != null) {
-                if (selector == null || selector.select(candidate, result)) {
-                    ret.add(result);
+        synchronized (history) {
+            final Iterator<Entry<DownloadLinkCandidate, DownloadLinkCandidateResult>> it = history.getHistory().entrySet().iterator();
+            while (it.hasNext()) {
+                final Entry<DownloadLinkCandidate, DownloadLinkCandidateResult> next = it.next();
+                final DownloadLinkCandidate candidate = next.getKey();
+                final DownloadLinkCandidateResult result = next.getValue();
+                if (candidate != null && result != null) {
+                    if (selector == null || selector.select(candidate, result)) {
+                        ret.add(result);
+                    }
                 }
             }
         }
