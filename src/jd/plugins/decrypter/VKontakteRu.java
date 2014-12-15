@@ -395,6 +395,8 @@ public class VKontakteRu extends PluginForDecrypt {
         if (fpName == null) {
             fpName = "vk.com audio - " + new Regex(this.CRYPTEDLINK_FUNCTIONAL, "(\\d+)$").getMatch(0);
         }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(Encoding.htmlDecode(fpName.trim()));
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         String postData = null;
         if (new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/audio\\?id=\\-\\d+").matches()) {
@@ -425,11 +427,9 @@ public class VKontakteRu extends PluginForDecrypt {
             if (fastcheck_audio) {
                 dl.setAvailable(true);
             }
+            fp.add(dl);
             decryptedLinks.add(dl);
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
-        fp.addLinks(decryptedLinks);
     }
 
     /** NOT using API audio pages and audio playlists are similar */
@@ -441,7 +441,11 @@ public class VKontakteRu extends PluginForDecrypt {
 
         final String albumID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "album_id=(\\d+)").getMatch(0);
         final String fpName = br.getRegex("onclick=\"Audio\\.loadAlbum\\(" + albumID + "\\)\">[\t\n\r ]+<div class=\"label\">([^<>\"]*?)</div>").getMatch(0);
-
+        FilePackage fp = null;
+        if (fpName != null) {
+            fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+        }
         int overallCounter = 1;
         final DecimalFormat df = new DecimalFormat("00000");
         final String[][] audioLinks = br.getRegex("\"(https?://cs\\d+\\.(vk\\.com|userapi\\.com|vk\\.me)/u\\d+/audio/[a-z0-9]+\\.mp3),\\d+\".*?return false\">([^<>\"]*?)</a></b> &ndash; <span class=\"title\">([^<>\"]*?)</span><span class=\"user\"").getMatches();
@@ -462,15 +466,14 @@ public class VKontakteRu extends PluginForDecrypt {
             if (fastcheck_audio) {
                 dl.setAvailable(true);
             }
+            if (fp != null) {
+                fp.add(dl);
+            }
             decryptedLinks.add(dl);
             logger.info("Decrypted link number " + df.format(overallCounter) + " :" + finallink);
             overallCounter++;
         }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
-        }
+
     }
 
     /**
@@ -489,7 +492,8 @@ public class VKontakteRu extends PluginForDecrypt {
         if (fpName == null) {
             fpName = "vk.com page " + pageID;
         }
-
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(Encoding.htmlDecode(fpName.trim()));
         int overallCounter = 1;
         final DecimalFormat df = new DecimalFormat("00000");
         final String[][] audioLinks = br.getRegex("\"(https?://cs[a-z0-9]+\\.(vk\\.com|userapi\\.com|vk\\.me)/u\\d+/audio[^<>\"]*?)\".*?onclick=\"return nav\\.go\\(this, event\\);\">([^<>\"]*?)</a></b> \\&ndash; <span class=\"title\" id=\"title\\d+_\\d+_\\d+\">([^<>\"]*?)</span>").getMatches();
@@ -510,13 +514,11 @@ public class VKontakteRu extends PluginForDecrypt {
             if (fastcheck_audio) {
                 dl.setAvailable(true);
             }
+            fp.add(dl);
             decryptedLinks.add(dl);
             logger.info("Decrypted link number " + df.format(overallCounter) + " :" + finallink);
             overallCounter++;
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
-        fp.addLinks(decryptedLinks);
     }
 
     /** Using API */
@@ -698,6 +700,9 @@ public class VKontakteRu extends PluginForDecrypt {
             decryptedLinks = null;
             return;
         }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(new Regex(this.CRYPTEDLINK_FUNCTIONAL, "/(album|tag)(.+)").getMatch(1));
+        fp.setProperty("CLEANUP_NAME", false);
         final String[][] regexesPage1 = { { "><a href=\"/photo((\\-)?\\d+_\\d+(\\?tag=\\d+)?)\"", "0" } };
         final String[][] regexesAllOthers = { { "><a href=\"/photo((\\-)?\\d+_\\d+(\\?tag=\\d+)?)\"", "0" } };
         final ArrayList<String> decryptedData = decryptMultiplePages(type, numberOfEntrys, regexesPage1, regexesAllOthers, 80, 40, 80, this.CRYPTEDLINK_FUNCTIONAL, "al=1&part=1&offset=");
@@ -709,12 +714,9 @@ public class VKontakteRu extends PluginForDecrypt {
             /** Pass those goodies over to the hosterplugin */
             final DownloadLink dl = getSinglePhotoDownloadLink(element);
             dl.setProperty("albumid", albumID);
+            fp.add(dl);
             decryptedLinks.add(dl);
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(new Regex(this.CRYPTEDLINK_FUNCTIONAL, "/(album|tag)(.+)").getMatch(1));
-        fp.setProperty("CLEANUP_NAME", false);
-        fp.addLinks(decryptedLinks);
     }
 
     private DownloadLink getSinglePhotoDownloadLink(final String photoID) throws IOException {
@@ -917,7 +919,8 @@ public class VKontakteRu extends PluginForDecrypt {
     private void decryptWallLink() throws Exception {
         long total_numberof_entries;
         final String userID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/wall((\\-)?\\d+)").getMatch(0);
-
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(userID);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         int currentOffset = 0;
         if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_WALL_LOOPBACK_LINK)) {
@@ -961,7 +964,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     logger.info("This post contains no media --> Skipping it");
                     continue;
                 }
-                decryptWallSinglePostJson(post);
+                decryptWallSinglePostJson(post, fp);
             }
 
             logger.info("Decrypted offset " + currentOffset + " / " + total_numberof_entries);
@@ -969,19 +972,16 @@ public class VKontakteRu extends PluginForDecrypt {
             if (decryptedLinks.size() >= MAX_LINKS_PER_RUN) {
                 logger.info("Reached " + MAX_LINKS_PER_RUN + " links per run limit -> Returning link to continue");
                 final DownloadLink loopBack = createDownloadlink(this.CRYPTEDLINK_FUNCTIONAL + "-maxoffset=" + total_numberof_entries + "-currentoffset=" + currentOffset);
+                fp.add(loopBack);
                 decryptedLinks.add(loopBack);
                 break;
             }
             currentOffset += api_max_entries_per_request;
         }
-
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(userID);
-        fp.addLinks(decryptedLinks);
     }
 
     /** Decrypts media of single API wall-post json objects */
-    private void decryptWallSinglePostJson(final String source) throws IOException {
+    private void decryptWallSinglePostJson(final String source, FilePackage fp) throws IOException {
         final String attachmentstext = new Regex(source, "\"attachments\":\\[(.*?)\\}\\}\\],").getMatch(0);
         if (attachmentstext == null) {
             return;
@@ -1007,6 +1007,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 dl.setProperty("owner_id", owner_id);
                 dl.setProperty("content_id", content_id);
                 dl.setProperty("directlinks", attachment);
+                fp.add(dl);
                 decryptedLinks.add(dl);
             } else if (type.equals("doc")) {
                 if (title == null || url == null) {
@@ -1016,6 +1017,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 dl.setDownloadSize(Long.parseLong(getJson(attachment, "size")));
                 dl.setName(title);
                 dl.setAvailable(true);
+                fp.add(dl);
                 decryptedLinks.add(dl);
             } else if (type.equals("audio") && wall_grabaudio) {
                 final String artist = getJson(attachment, "artist");
@@ -1030,18 +1032,21 @@ public class VKontakteRu extends PluginForDecrypt {
                     dl.setAvailable(true);
                 }
                 dl.setFinalFileName(artist + " - " + title + ".mp3");
+                fp.add(dl);
                 decryptedLinks.add(dl);
             } else if (type.equals("link") && wall_grablink) {
                 if (url == null) {
                     return;
                 }
                 final DownloadLink dl = createDownloadlink(url);
+                fp.add(dl);
                 decryptedLinks.add(dl);
             } else if (type.equals("video") && wall_grabvideo) {
                 if (content_id == null || owner_id == null) {
                     return;
                 }
                 final DownloadLink dl = createDownloadlink("https://vk.com/video" + owner_id + "_" + content_id);
+                fp.add(dl);
                 decryptedLinks.add(dl);
             } else if (type.equals("album") && wall_grabalbums) {
                 final String album_id = getJson(attachment, "album_id");
@@ -1049,6 +1054,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     return;
                 }
                 final DownloadLink dl = createDownloadlink("https://vk.com/album" + owner_id + "_" + album_id);
+                fp.add(dl);
                 decryptedLinks.add(dl);
             } else if (type.equals("poll")) {
                 logger.info("Current post only contains a poll --> Skipping it");
@@ -1067,12 +1073,11 @@ public class VKontakteRu extends PluginForDecrypt {
             logger.info("This single post contains no media --> Skipping it");
             return;
         }
-        decryptWallSinglePostJson(br.toString());
-        logger.info("Found " + decryptedLinks.size() + " links");
-
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(postID);
-        fp.addLinks(decryptedLinks);
+        decryptWallSinglePostJson(br.toString(), fp);
+        logger.info("Found " + decryptedLinks.size() + " links");
+
     }
 
     /** NOT using API - general method --> NEVER change a running system! */
