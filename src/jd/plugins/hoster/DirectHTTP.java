@@ -96,7 +96,7 @@ public class DirectHTTP extends PluginForHost {
         }
 
         public void findID() throws PluginException {
-            this.id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+            this.id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)(?:\"|\\&)").getMatch(0);
             if (this.id == null) {
                 this.id = this.br.getRegex("Recaptcha\\.create\\((\"|\\')([A-Za-z0-9%_\\+\\- ]+)\\1").getMatch(1);
             }
