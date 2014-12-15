@@ -35,6 +35,7 @@ import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -203,7 +204,7 @@ public class VKontakteRu extends PluginForDecrypt {
         /* Check/fix links before browser access START */
         if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_SHORT)) {
             loginrequired = false;
-            br.getPage(CRYPTEDLINK_ORIGINAL);
+            getPage(br, CRYPTEDLINK_ORIGINAL);
             final String finallink = br.getRedirectLocation();
             if (finallink == null) {
                 logger.warning("vk.com: Decrypter broken for link: " + this.CRYPTEDLINK_FUNCTIONAL);
@@ -244,7 +245,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 }
 
                 /* Set correct domain to work with */
-                br.getPage("http://vk.com/");
+                getPage(br, "http://vk.com/");
                 MAINPAGE = new Regex(br.getURL(), "(https?://vk\\.com)").getMatch(0);
 
                 /* Replace section start */
@@ -746,11 +747,11 @@ public class VKontakteRu extends PluginForDecrypt {
         if (this.CRYPTEDLINK_FUNCTIONAL.matches(".*?vk\\.com/id\\d+\\?z=albums\\d+")) {
             this.CRYPTEDLINK_FUNCTIONAL = "http://vk.com/albums" + new Regex(this.CRYPTEDLINK_FUNCTIONAL, "(\\d+)$").getMatch(0);
             if (!this.CRYPTEDLINK_FUNCTIONAL.equalsIgnoreCase(br.getURL())) {
-                br.getPage(this.CRYPTEDLINK_FUNCTIONAL);
+                getPage(br, this.CRYPTEDLINK_FUNCTIONAL);
             }
         } else {
             /* not needed as we already have requested this page */
-            // br.getPage(parameter);
+            // getPage(br,parameter);
         }
         String numberOfEntrys = br.getRegex("\\| (\\d+) albums?</title>").getMatch(0);
         // Language independant
@@ -826,7 +827,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     logger.info("Decrypting video " + totalCounter + " / " + numberOfEntrys);
                     final String completeVideolink = "http://vk.com/video" + singleVideo;
                     try {
-                        br.getPage(completeVideolink);
+                        getPage(br, completeVideolink);
                         decryptSingleVideo(completeVideolink);
                     } catch (final DecrypterException e) {
                         /* Catch offline case and handle it */
@@ -1363,18 +1364,18 @@ public class VKontakteRu extends PluginForDecrypt {
                         logger.warning("Security check failed for link: " + parameter);
                         throw new DecrypterException(EXCEPTION_ACCPROBLEM);
                     }
-                    br.getPage(parameter);
+                    getPage(br, parameter);
                 } else if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.vk.com/?role=fast")) {
                     if (!getUserLogin(true)) {
                         throw new DecrypterException(EXCEPTION_ACCPROBLEM);
                     }
-                    br.getPage(parameter);
+                    getPage(br, parameter);
                 } else {
-                    br.getPage(parameter);
+                    getPage(br, parameter);
                 }
             } else if (br.containsHTML("server number not set \\(0\\)")) {
                 logger.info("Server says 'server number not set' --> Retrying");
-                br.getPage(parameter);
+                getPage(br, parameter);
                 continue;
             } else {
                 break;
@@ -1419,7 +1420,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private void apiGetPageSafe(final String parameter) throws Exception {
         int counter = 1;
         do {
-            br.getPage(parameter);
+            getPage(br, parameter);
         } while (apiHandleErrors() && counter <= 3);
     }
 
@@ -1497,9 +1498,17 @@ public class VKontakteRu extends PluginForDecrypt {
             logger.info("Validation required");
             String redirectUri = getJson("redirect_uri");
             logger.info("Redirect URI: " + redirectUri);
-            if (redirectUri != null) {
-                br.getPage(redirectUri);
 
+            if (redirectUri != null) {
+                ;
+                boolean success = siteHandleSecurityCheck(redirectUri);
+                if (success) {
+                    logger.info("Verification Done");
+                    return true;
+                } else {
+                    logger.info("Verification Failed");
+                    return false;
+                }
             }
             int counter = 1;
             boolean loginsucceeded = false;
@@ -1561,6 +1570,23 @@ public class VKontakteRu extends PluginForDecrypt {
         return false;
     }
 
+    private void getPage(Browser br, String url) throws IOException, InterruptedException {
+        int counter = 0;
+        while (true) {
+            if (counter++ > 5) {
+                break;
+            }
+            br.getPage(url);
+            if (br.containsHTML("You tried to load the same page more than once in one second")) {
+                Thread.sleep(2000);
+                continue;
+            } else {
+                break;
+            }
+
+        }
+    }
+
     /** Returns current API 'error_code', returns -1 if there is none */
     private int getCurrentAPIErrorcode() {
         final String errcodeSTR = br.getRegex("\"error_code\":(\\d+)").getMatch(0);
@@ -1594,29 +1620,64 @@ public class VKontakteRu extends PluginForDecrypt {
         return true;
     }
 
-    private boolean siteHandleSecurityCheck(final String parameter) throws IOException {
+    private boolean siteHandleSecurityCheck(final String parameter) throws Exception {
         final Browser ajaxBR = br.cloneBrowser();
         boolean hasPassed = false;
-        ajaxBR.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        for (int i = 0; i <= 3; i++) {
-            logger.info("Entering security check...");
-            final String to = br.getRegex("to: \\'([^<>\"]*?)\\'").getMatch(0);
-            final String hash = br.getRegex("hash: \\'([^<>\"]*?)\\'").getMatch(0);
-            if (to == null || hash == null) {
-                return false;
+        ajaxBR.getPage(parameter);
+
+        if (ajaxBR.containsHTML("missing digits")) {
+            ajaxBR.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+
+            for (int i = 0; i <= 3; i++) {
+                logger.info("Entering security check...");
+                Form form = ajaxBR.getFormBySubmitvalue("Confirm");
+                String[] preAndPost = ajaxBR.getRegex("<span class=\"field_prefix\">([^<]+)</span>").getColumn(0);
+
+                if (form == null || preAndPost == null || preAndPost.length != 2) {
+                    return false;
+                }
+
+                String end;
+                String start;
+                final String code = UserIO.getInstance().requestInputDialog("Please enter your phone number (Starts with " + (start = Encoding.htmlDecode(preAndPost[0]).trim()) + " & ends with " + (end = Encoding.htmlDecode(preAndPost[1]).trim()) + ")");
+                if (!code.startsWith(start) || !code.endsWith(end)) {
+                    continue;
+                }
+                form.getInputFieldByName("code").setValue(code.substring(start.length(), code.length() - end.length()));
+                ajaxBR.submitForm(form);
+                if (!ajaxBR.containsHTML(">Unfortunately, the numbers you have entered are incorrect")) {
+                    hasPassed = true;
+                    break;
+                }
+                if (ajaxBR.containsHTML("You can try again in \\d+ hour")) {
+                    logger.info("Failed security check, account is banned for some hours!");
+                    break;
+                }
             }
-            final String code = UserIO.getInstance().requestInputDialog("Enter the last 4 digits of your phone number for vkontakte.ru :");
-            ajaxBR.postPage("https://vk.com/login.php", "act=security_check&al=1&al_page=3&code=" + code + "&hash=" + Encoding.urlEncode(hash) + "&to=" + Encoding.urlEncode(to));
-            if (!ajaxBR.containsHTML(">Unfortunately, the numbers you have entered are incorrect")) {
-                hasPassed = true;
-                break;
+            return hasPassed;
+        } else {
+            ajaxBR.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+
+            for (int i = 0; i <= 3; i++) {
+                logger.info("Entering security check...");
+                final String to = br.getRegex("to: \\'([^<>\"]*?)\\'").getMatch(0);
+                final String hash = br.getRegex("hash: \\'([^<>\"]*?)\\'").getMatch(0);
+                if (to == null || hash == null) {
+                    return false;
+                }
+                final String code = UserIO.getInstance().requestInputDialog("Enter the last 4 digits of your phone number for vkontakte.ru :");
+                ajaxBR.postPage("https://vk.com/login.php", "act=security_check&al=1&al_page=3&code=" + code + "&hash=" + Encoding.urlEncode(hash) + "&to=" + Encoding.urlEncode(to));
+                if (!ajaxBR.containsHTML(">Unfortunately, the numbers you have entered are incorrect")) {
+                    hasPassed = true;
+                    break;
+                }
+                if (ajaxBR.containsHTML("You can try again in \\d+ hour")) {
+                    logger.info("Failed security check, account is banned for some hours!");
+                    break;
+                }
             }
-            if (ajaxBR.containsHTML("You can try again in \\d+ hour")) {
-                logger.info("Failed security check, account is banned for some hours!");
-                break;
-            }
+            return hasPassed;
         }
-        return hasPassed;
     }
 
     /** Handles basic offline errors. */
