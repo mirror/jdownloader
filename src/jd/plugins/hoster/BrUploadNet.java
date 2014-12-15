@@ -474,13 +474,13 @@ public class BrUploadNet extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     *
+     * 
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     *
+     * 
      * @param controlFree
      *            (+1|-1)
      */
@@ -616,7 +616,7 @@ public class BrUploadNet extends PluginForHost {
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
-     *
+     * 
      * @param key
      * @param value
      * @return
@@ -642,7 +642,7 @@ public class BrUploadNet extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
+     * 
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
@@ -659,7 +659,7 @@ public class BrUploadNet extends PluginForHost {
     /**
      * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
      * which is based on fuid.
-     *
+     * 
      * @version 0.2
      * @author raztoki
      * */
@@ -846,7 +846,7 @@ public class BrUploadNet extends PluginForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date
      * error.
-     *
+     * 
      * @param dl
      *            : The DownloadLink
      * @param error
@@ -881,16 +881,14 @@ public class BrUploadNet extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
-        if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
-            /* free users it's provided by default */
-            ai.setUsedSpace(space[0] + " " + space[1]);
-        } else if ((space != null && space.length != 0) && space[0] != null) {
-            /* premium users the Mb value isn't provided for some reason... */
-            ai.setUsedSpace(space[0] + "Mb");
+        final String space[] = new Regex(correctedBR, "span>\\s*Used space\\:\\s*([\\d\\.]+)\\s*of\\s*([\\d\\.]+)\\s+(\\w+)\\s*</div>").getRow(0);
+        if (space != null) {
+
+            ai.setUsedSpace(space[0] + " " + space[2]);
         }
         account.setValid(true);
-        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
+        final String availabletraffic = new Regex(correctedBR, "glyphicon glyphicon-signal\"></span>\\s*(.*?)\\s*</div>").getMatch(0);
+
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
             /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
@@ -902,6 +900,7 @@ public class BrUploadNet extends PluginForHost {
         } else {
             ai.setUnlimitedTraffic();
         }
+
         /* If the premium account is expired we'll simply accept it as a free account. */
         final String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
         long expire_milliseconds = 0;
@@ -1014,6 +1013,10 @@ public class BrUploadNet extends PluginForHost {
             if (dllink == null) {
                 br.setFollowRedirects(false);
                 getPage(downloadLink.getDownloadURL());
+                if (br.containsHTML("Limite de download excedido")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Traffic Limit Reached (~50 GB daily)", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+
+                }
                 dllink = getDllink();
                 if (dllink == null) {
                     Form dlform = br.getFormbyProperty("name", "F1");
