@@ -542,14 +542,17 @@ public class UpdateController implements UpdateCallbackInterface {
     }
 
     public void runExtensionUnInstallation(String id) throws InterruptedException {
+
         handler.uninstallExtension(id);
     }
 
     public void runExtensionInstallation(String id) throws InterruptedException {
+
         handler.installExtension(id);
     }
 
     public void waitForUpdate() throws InterruptedException {
+
         handler.waitForUpdate();
     }
 

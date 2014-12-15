@@ -43,6 +43,10 @@ public class UninstalledExtension {
 
     }
 
+    public String getId() {
+        return id;
+    }
+
     public SwitchPanel getPanel() {
         if (panel != null) {
             return panel;
