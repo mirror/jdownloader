@@ -5596,4 +5596,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Solving..." })
     String ImageTyperzSolver_solveBasicCaptchaChallenge_solving();
 
+    @Default(lngs = { "en" }, values = { "↑ At the top" })
+    String setOverviewPositions_north();
+
+    @Default(lngs = { "en" }, values = { "↓ At the bottom" })
+    String setOverviewPositions_south();
+
 }

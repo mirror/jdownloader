@@ -1160,4 +1160,24 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     HashMap<String, Position> getOverviewPositions();
 
     void setOverviewPositions(HashMap<String, Position> map);
+
+    public static enum DockingPosition implements LabelInterface {
+        NORTH() {
+            @Override
+            public String getLabel() {
+                return _GUI._.setOverviewPositions_north();
+            }
+        },
+        SOUTH() {
+            public String getLabel() {
+                return _GUI._.setOverviewPositions_south();
+            }
+        }
+    }
+
+    @DefaultEnumValue("SOUTH")
+    @AboutConfig
+    DockingPosition getLinkgrabberBottombarPosition();
+
+    void setLinkgrabberBottombarPosition(DockingPosition pos);
 }
