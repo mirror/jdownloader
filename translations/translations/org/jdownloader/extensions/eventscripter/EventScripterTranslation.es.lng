@@ -1,0 +1,14 @@
+NONE=Ninguno
+ON_DOWNLOAD_CONTROLLER_START=La Descarga ha iniciado
+ON_DOWNLOAD_CONTROLLER_STOPPED=La Descarga ha finalizado
+ON_NEW_FILE=Un nuevo archivo ha sido creado
+allow=Permitir
+classes=/* ===== Classes ===== */
+deny=Denegar
+downloadLink=// Enlace de Descarga
+edit_script=Editar Script
+editor_showhelp=Mostrar/Ocultar Ayuda
+example_script_name=Ejemplo
+filepackage=// Paquete del Archivo
+loading_editor_title=Cargando Editor...
+securityLoading_title=¡Alerta de Seguridad!
