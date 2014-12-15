@@ -398,7 +398,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
             return;
         }
         if (this.controlledby == null) {
-            boolean readL = getModifyLock().readLock();
+            getModifyLock().writeLock();
             try {
                 for (DownloadLink link : links) {
                     if (!this.downloadLinkList.contains(link)) {
@@ -407,7 +407,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
                     }
                 }
             } finally {
-                getModifyLock().readUnlock(readL);
+                getModifyLock().writeUnlock();
             }
         } else {
             this.controlledby.moveOrAddAt(this, Arrays.asList(links), -1);
@@ -530,7 +530,14 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      * @return
      */
     public int size() {
-        return downloadLinkList.size();
+        boolean readL = getModifyLock().readLock();
+        try {
+            return downloadLinkList.size();
+        } finally {
+            if (readL) {
+                getModifyLock().readUnlock(readL);
+            }
+        }
     }
 
     @Override
