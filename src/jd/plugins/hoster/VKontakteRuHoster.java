@@ -240,7 +240,7 @@ public class VKontakteRuHoster extends PluginForHost {
     /**
      * Checks a given directlink for content. Sets finalfilename as final filename if finalfilename != null - else sets server filename as
      * final filename.
-     *
+     * 
      * @return <b>true</b>: Link is valid and can be downloaded <b>false</b>: Link leads to HTML, times out or other problems occured - link
      *         is not downloadable!
      */
@@ -329,7 +329,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = br.getCookies(VKontakteRuHoster.DOMAIN);
                 for (final Cookie c : add.getCookies()) {
-                    if ("deleted".equals(c.getValue())) {
+                    if ("deleted".equalsIgnoreCase(c.getValue())) {
                         continue;
                     }
                     cookies.put(c.getKey(), c.getValue());
@@ -515,7 +515,7 @@ public class VKontakteRuHoster extends PluginForHost {
     /**
      * Try to get best quality and test links till a working link is found as it can happen that the found link is offline but others are
      * online
-     *
+     * 
      * @throws IOException
      */
     private void getHighestQualityPic(final DownloadLink dl, String source) throws Exception {
