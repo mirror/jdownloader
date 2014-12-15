@@ -54,4 +54,6 @@ public interface UpdateHandler {
 
     List<InstallLog> clearInstallLogs();
 
+    void requestFullExtensionUpdate(String... parameters);
+
 }
