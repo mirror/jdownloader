@@ -21,7 +21,10 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -869,15 +872,146 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private String getJson(final String key) {
-        return getJson(this.br.toString(), key);
+        return JSonUtils.getJson(this.br.toString(), key);
     }
 
-    private String getJson(final String source, final String parameter) {
-        String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.\\-]+)").getMatch(1);
-        if (result == null) {
-            result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^\"]*?)\"").getMatch(1);
+    public String decodeUnicode(final String s) {
+        final Pattern p = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
+        String res = s;
+        final Matcher m = p.matcher(res);
+        while (m.find()) {
+            res = res.replaceAll("\\" + m.group(0), Character.toString((char) Integer.parseInt(m.group(1), 16)));
         }
-        return result;
+        return res;
+    }
+
+    public static class JSonUtils {
+        public static String escape(final String s) {
+            final StringBuilder sb = new StringBuilder();
+            char ch;
+            String ss;
+            for (int i = 0; i < s.length(); i++) {
+                ch = s.charAt(i);
+                switch (ch) {
+                case '"':
+                    sb.append("\\\"");
+                    continue;
+                case '\\':
+                    sb.append("\\\\");
+                    continue;
+                case '\b':
+                    sb.append("\\b");
+                    continue;
+                case '\f':
+                    sb.append("\\f");
+                    continue;
+                case '\n':
+                    sb.append("\\n");
+                    continue;
+                case '\r':
+                    sb.append("\\r");
+                    continue;
+                case '\t':
+                    sb.append("\\t");
+                    continue;
+
+                }
+
+                if (ch >= '\u0000' && ch <= '\u001F' || ch >= '\u007F' && ch <= '\u009F' || ch >= '\u2000' && ch <= '\u20FF') {
+                    ss = Integer.toHexString(ch);
+                    sb.append("\\u");
+                    for (int k = 0; k < 4 - ss.length(); k++) {
+                        sb.append('0');
+                    }
+                    sb.append(ss.toUpperCase(Locale.ENGLISH));
+                    continue;
+                }
+
+                sb.append(ch);
+
+            }
+            return sb.toString();
+        }
+
+        /**
+         * @param string
+         * @return
+         */
+        public static String unescape(final String s) {
+            char ch;
+            final StringBuilder sb = new StringBuilder();
+            final StringBuilder sb2 = new StringBuilder();
+            int ii;
+            int i;
+            for (i = 0; i < s.length(); i++) {
+                ch = s.charAt(i);
+                try {
+                    switch (ch) {
+                    case '\\':
+                        ch = s.charAt(++i);
+                        switch (ch) {
+                        case '"':
+                            sb.append('"');
+                            continue;
+                        case '\\':
+                            sb.append('\\');
+                            continue;
+                        case 'r':
+                            sb.append('\r');
+                            continue;
+                        case 'n':
+                            sb.append('\n');
+                            continue;
+                        case 't':
+                            sb.append('\t');
+                            continue;
+                        case 'f':
+                            sb.append('\f');
+                            continue;
+                        case 'b':
+                            sb.append('\b');
+                            continue;
+
+                        case 'u':
+                            sb2.delete(0, sb2.length());
+
+                            i++;
+                            ii = i + 4;
+                            for (; i < ii; i++) {
+                                ch = s.charAt(i);
+                                if (sb2.length() > 0 || ch != '0') {
+                                    sb2.append(ch);
+                                }
+                            }
+                            i--;
+                            // can not use short....
+                            // java.lang.NumberFormatException: Value out of range. Value:"8abf" Radix:16
+                            sb.append((char) Long.parseLong(sb2.toString(), 16));
+                            continue;
+                        default:
+                            sb.append(ch);
+                            continue;
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                sb.append(ch);
+            }
+
+            return sb.toString();
+        }
+
+        public static String getJson(final String source, final String parameter) {
+            String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.\\-]+)").getMatch(1);
+            if (result == null) {
+                result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^\"]*?)\"").getMatch(1);
+            }
+            if (result != null) {
+                return unescape(result);
+            }
+            return result;
+        }
     }
 
     /**
@@ -957,7 +1091,7 @@ public class VKontakteRu extends PluginForDecrypt {
             // First get all photo links
             // Correct browser html
             for (final String post : posts) {
-                final String post_id = getJson(post, "id");
+                final String post_id = JSonUtils.getJson(post, "id");
                 logger.info("Decrypting post: " + post_id);
                 /* Check if the post actually contains downloadable media */
                 if (!post.contains("\"attachments\"")) {
@@ -988,16 +1122,16 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         final String[] attachments = attachmentstext.split("\\}\\},\\{");
         for (final String attachment : attachments) {
-            final String content_id = getJson(attachment, "id");
-            final String owner_id = getJson(attachment, "owner_id");
-            final String title = getJson(attachment, "title");
-            final String url = getJson(attachment, "url");
-            final String type = getJson(attachment, "type");
+            final String content_id = JSonUtils.getJson(attachment, "id");
+            final String owner_id = JSonUtils.getJson(attachment, "owner_id");
+            final String title = JSonUtils.getJson(attachment, "title");
+            final String url = JSonUtils.getJson(attachment, "url");
+            final String type = JSonUtils.getJson(attachment, "type");
             if (type == null) {
                 return;
             }
             if (type.equals("photo") && wall_grabphotos) {
-                final String album_id = getJson(attachment, "album_id");
+                final String album_id = JSonUtils.getJson(attachment, "album_id");
                 if (content_id == null || album_id == null || owner_id == null) {
                     return;
                 }
@@ -1014,13 +1148,13 @@ public class VKontakteRu extends PluginForDecrypt {
                     return;
                 }
                 final DownloadLink dl = createDownloadlink(url);
-                dl.setDownloadSize(Long.parseLong(getJson(attachment, "size")));
+                dl.setDownloadSize(Long.parseLong(JSonUtils.getJson(attachment, "size")));
                 dl.setName(title);
                 dl.setAvailable(true);
                 fp.add(dl);
                 decryptedLinks.add(dl);
             } else if (type.equals("audio") && wall_grabaudio) {
-                final String artist = getJson(attachment, "artist");
+                final String artist = JSonUtils.getJson(attachment, "artist");
                 if (owner_id == null || content_id == null || artist == null || title == null || url == null) {
                     return;
                 }
@@ -1049,7 +1183,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 fp.add(dl);
                 decryptedLinks.add(dl);
             } else if (type.equals("album") && wall_grabalbums) {
-                final String album_id = getJson(attachment, "album_id");
+                final String album_id = JSonUtils.getJson(attachment, "album_id");
                 if (album_id == null || owner_id == null) {
                     return;
                 }
