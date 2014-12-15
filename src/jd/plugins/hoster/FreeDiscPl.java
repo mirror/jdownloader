@@ -112,6 +112,9 @@ public class FreeDiscPl extends PluginForHost {
         if (filesize == null) {
             filesize = br.getRegex("class=\\'frameFilesCountNumber\\'>([^<>\"]*?)</div><div class=\\'frameFilesViews\\'><i class=").getMatch(0);
         }
+        if (filesize == null) {
+            filesize = br.getRegex("<i class=\"icon-hdd\"></i>Rozmiar </div><div class=\\'value\\'>([^<>\"]*?)</div><div class=\\'key\\'>").getMatch(0);
+        }
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
