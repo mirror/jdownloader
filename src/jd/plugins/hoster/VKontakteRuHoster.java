@@ -299,6 +299,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         return;
                     }
                 }
+                br.clearCookies("http://vk.com/login.php");
                 br.setFollowRedirects(true);
                 br.getPage("http://vk.com/login.php");
                 String damnIPH = br.getRegex("name=\"ip_h\" value=\"(.*?)\"").getMatch(0);
