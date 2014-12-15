@@ -95,16 +95,15 @@ public class TnaFlixCom extends PluginForHost {
         if (br.containsHTML("class=\"errorPage page404\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.getRedirectLocation() != null) {
-            if (br.getRedirectLocation().contains("errormsg=true")) {
+        final String redirect = br.getRedirectLocation();
+        if (redirect != null) {
+            if (redirect.contains("errormsg=true")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (downloadLink.getDownloadURL().contains("viewkey=")) {
+            if (redirect.contains("video")) {
                 downloadLink.setUrlDownload(br.getRedirectLocation());
-                br.getPage(downloadLink.getDownloadURL());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            br.getPage(redirect);
         }
         String filename = br.getRegex("<title>([^<>]*?) \\- TNAFlix Porn Videos</title>").getMatch(0);
         if (filename == null) {
