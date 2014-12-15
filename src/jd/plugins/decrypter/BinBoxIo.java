@@ -81,6 +81,10 @@ public class BinBoxIo extends PluginForDecrypt {
                         throw e;
                     }
                     final String code = getCaptchaCode(cf, param);
+                    if ("".equals(code)) {
+                        // refresh (f5) button returns "", but so does a empty response by the user (send button)
+                        continue;
+                    }
                     final String chid = sm.getChallenge(code);
                     br.postPage(br.getURL(), "validate=" + validate + "&adcopy_response=" + Encoding.urlEncode(code) + "&adcopy_challenge=" + chid);
                     if (br.containsHTML("solvemedia\\.com/papi/")) {
