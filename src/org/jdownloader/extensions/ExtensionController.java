@@ -52,6 +52,7 @@ import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.translate._JDT;
+import org.jdownloader.updatev2.UpdateController;
 
 public class ExtensionController implements MenuExtenderHandler {
     private static final String              TMP_INVALIDEXTENSIONS = "invalidextensions";
@@ -202,6 +203,14 @@ public class ExtensionController implements MenuExtenderHandler {
         }
         if (set.add("org.jdownloader.extensions.translator.TranslatorExtension") || !Application.isJared(null)) {
             ret.add(new UninstalledExtension("translator", IconKey.ICON_LANGUAGE, _GUI._.ExtensionController_initUninstalledExtensions_TranslatorExtension(), _GUI._.ExtensionController_initUninstalledExtensions_TranslatorExtension_description()));
+        }
+        if (UpdateController.getInstance().isHandlerSet()) {
+            for (UninstalledExtension ue : ret) {
+                if (UpdateController.getInstance().isExtensionInstalled(ue.getId())) {
+
+                }
+
+            }
         }
         uninstalledExtensions = Collections.unmodifiableList(ret);
     }
