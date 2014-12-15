@@ -205,11 +205,20 @@ public class ExtensionController implements MenuExtenderHandler {
             ret.add(new UninstalledExtension("translator", IconKey.ICON_LANGUAGE, _GUI._.ExtensionController_initUninstalledExtensions_TranslatorExtension(), _GUI._.ExtensionController_initUninstalledExtensions_TranslatorExtension_description()));
         }
         if (UpdateController.getInstance().isHandlerSet()) {
+            // reinstall extensions if we could not load them
+            ArrayList<String> list = new ArrayList<String>();
             for (UninstalledExtension ue : ret) {
                 if (UpdateController.getInstance().isExtensionInstalled(ue.getId())) {
-
+                    list.add(ue.getId());
                 }
+            }
 
+            try {
+                // UpdateController.getInstance().runExtensionUnInstallation(ue.getId());
+
+                UpdateController.getInstance().runExtensionsFullUpdate(list);
+            } catch (Throwable e) {
+                e.printStackTrace();
             }
         }
         uninstalledExtensions = Collections.unmodifiableList(ret);

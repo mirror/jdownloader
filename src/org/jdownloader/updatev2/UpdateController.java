@@ -25,6 +25,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
@@ -575,4 +576,17 @@ public class UpdateController implements UpdateCallbackInterface {
         return ret;
     }
 
+    /**
+     * forces the updatesystem to reinstall the existions.
+     * 
+     * @param list
+     */
+    public void runExtensionsFullUpdate(ArrayList<String> list) {
+        if (handler == null || !Application.isJared(null)) {
+            return;
+        }
+        handler.requestFullExtensionUpdate(list.toArray(new String[] {}));
+        runUpdateChecker(false);
+
+    }
 }
