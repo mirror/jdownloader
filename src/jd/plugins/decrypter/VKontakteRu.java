@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Random;
 
@@ -138,7 +139,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private boolean                 fastcheck_photo                      = false;
     private boolean                 fastcheck_audio                      = false;
 
-    private ArrayList<DownloadLink> decryptedLinks                       = new ArrayList<DownloadLink>();
+    private ArrayList<DownloadLink> decryptedLinks                       = null;
 
     @Override
     protected DownloadLink createDownloadlink(String link) {
@@ -154,6 +155,25 @@ public class VKontakteRu extends PluginForDecrypt {
      */
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        decryptedLinks = new ArrayList<DownloadLink>() {
+            @Override
+            public boolean add(DownloadLink e) {
+                try {
+                    distribute(e);
+                } catch (Throwable e1) {
+                }
+                return super.add(e);
+            }
+
+            @Override
+            public boolean addAll(Collection<? extends DownloadLink> c) {
+                try {
+                    distribute(c.toArray(new DownloadLink[] {}));
+                } catch (Throwable e) {
+                }
+                return super.addAll(c);
+            }
+        };
         br.setFollowRedirects(true);
         CRYPTEDLINK_ORIGINAL = Encoding.htmlDecode(param.toString()).replace("vkontakte.ru/", "vk.com/").replace("https://", "http://");
         CRYPTEDLINK_FUNCTIONAL = CRYPTEDLINK_ORIGINAL;
@@ -366,7 +386,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * NOT Using API
-     *
+     * 
      * @throws Exception
      */
     private void decryptAudioAlbum() throws Exception {
@@ -455,7 +475,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * NOT Using API
-     *
+     * 
      * @throws Exception
      */
     private void decryptAudioPage() throws Exception {
@@ -860,7 +880,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * NOT Using API
-     *
+     * 
      * @throws Exception
      */
     private void decryptCommunityVideoAlbum() throws Exception {
@@ -1248,7 +1268,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * Returns the ownerID which belongs to a name e.g. vk.com/some_name
-     *
+     * 
      * @throws Exception
      */
     private String resolveScreenNameAPI(final String screenname) throws Exception {
@@ -1276,7 +1296,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * Handles these error-codes: https://vk.com/dev/errors
-     *
+     * 
      * @return true = ready to retry, false = problem - failed!
      */
     private boolean apiHandleErrors() throws Exception {
