@@ -206,9 +206,6 @@ public class SmoozedCom extends PluginForHost {
             }
         }
         apiCheck(account, session_Key, downloadLink);
-        if (true) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Test");
-        }
         apiDownload(account, session_Key, downloadLink, maxChunks);
     }
 
