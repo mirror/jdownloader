@@ -62,6 +62,7 @@ import org.jdownloader.gui.views.linkgrabber.properties.LinkgrabberProperties;
 import org.jdownloader.gui.views.linkgrabber.properties.LinkgrabberPropertiesHeader;
 import org.jdownloader.gui.views.linkgrabber.properties.PropertiesScrollPane;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.DockingPosition;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.NewLinksInLinkgrabberAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.SimpleHttpInterface;
@@ -293,6 +294,17 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.getEventSender().addListener(this);
         org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.getEventSender().addListener(this);
         org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.getEventSender().addListener(this);
+        org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_BOTTOMBAR_POSITION.getEventSender().addListener(new GenericConfigEventListener<Enum>() {
+
+            @Override
+            public void onConfigValueModified(KeyHandler<Enum> keyHandler, Enum newValue) {
+                fireRelayout();
+            }
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<Enum> keyHandler, Enum invalidValue, ValidationException validateException) {
+            }
+        });
         MenuManagerLinkgrabberTableContext.getInstance().setPanel(this);
 
     }
@@ -337,46 +349,98 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         propertiesPanel.save();
         removeAll();
         boolean propertiesPanelVisible = CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled();
-        if (CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.isEnabled()) {
 
-            if (CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.isEnabled()) {
-                if (propertiesPanelVisible) {
+        switch (CFG_GUI.CFG.getLinkgrabberBottombarPosition()) {
+        case NORTH:
 
-                    // all panels visible
-                    setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]0[]2[]2[]0"));
+            if (CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.isEnabled()) {
+                if (CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.isEnabled()) {
+                    if (propertiesPanelVisible) {
+
+                        // all panels visible
+                        setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[]2[grow, fill]0[]2[]0"));
+                    } else {
+                        setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[]2[grow, fill]2[]0"));
+                    }
+
                 } else {
-                    setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]2[]2[]0"));
+                    if (propertiesPanelVisible) {
+                        setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[]2[grow, fill]0[]0"));
+                    } else {
+                        setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[]2[grow, fill]0"));
+                    }
                 }
 
             } else {
-                if (propertiesPanelVisible) {
-                    setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]0[]2[]0"));
+
+                if (CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.isEnabled()) {
+                    if (propertiesPanelVisible) {
+
+                        // all panels visible
+                        setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[]2[grow, fill]0[]2[]0"));
+                    } else {
+                        setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[]2[grow, fill]2[]0"));
+                    }
+
                 } else {
-                    setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]2[]0"));
+                    if (propertiesPanelVisible) {
+                        setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[]2[grow, fill]0[]0"));
+                    } else {
+                        setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[]2[grow, fill]0"));
+                    }
                 }
+
             }
 
-        } else {
+            break;
+        case SOUTH:
 
-            if (CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.isEnabled()) {
-                if (propertiesPanelVisible) {
+            if (CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.isEnabled()) {
+                if (CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.isEnabled()) {
+                    if (propertiesPanelVisible) {
 
-                    // all panels visible
-                    setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]0[]2[]2[]0"));
+                        // all panels visible
+                        setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]0[]2[]2[]0"));
+                    } else {
+                        setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]2[]2[]0"));
+                    }
+
                 } else {
-                    setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]2[]2[]0"));
+                    if (propertiesPanelVisible) {
+                        setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]0[]2[]0"));
+                    } else {
+                        setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]2[]0"));
+                    }
                 }
 
             } else {
-                if (propertiesPanelVisible) {
-                    setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]0[]2[]0"));
+
+                if (CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.isEnabled()) {
+                    if (propertiesPanelVisible) {
+
+                        // all panels visible
+                        setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]0[]2[]2[]0"));
+                    } else {
+                        setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]2[]2[]0"));
+                    }
+
                 } else {
-                    setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]2[]0"));
+                    if (propertiesPanelVisible) {
+                        setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]0[]2[]0"));
+                    } else {
+                        setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]2[]0"));
+                    }
                 }
+
             }
 
+            break;
         }
+        if (CFG_GUI.LINKGRABBER_BOTTOMBAR_POSITION.getValue() == DockingPosition.NORTH) {
+            add(leftBar, "height 24!");
 
+            add(rightBar, "height 24!");
+        }
         String constrains = "spanx";
 
         if (CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.getValue()) {
@@ -429,9 +493,11 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         //
         // }
 
-        add(leftBar, "height 24!");
+        if (CFG_GUI.LINKGRABBER_BOTTOMBAR_POSITION.getValue() != DockingPosition.NORTH) {
+            add(leftBar, "height 24!");
 
-        add(rightBar, "height 24!");
+            add(rightBar, "height 24!");
+        }
     }
 
     private PropertiesScrollPane createPropertiesPanel() {
@@ -604,7 +670,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     }
 
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-        if (keyHandler == CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE && newValue == Boolean.TRUE) {
+        if (keyHandler != null && keyHandler == CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE && newValue == Boolean.TRUE) {
             new EDTRunner() {
 
                 @Override
@@ -628,6 +694,10 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         if (!newValue && keyHandler == org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE) {
             JDGui.help(_GUI._.LinkGrabberPanel_onConfigValueModified_title_(), _GUI._.LinkGrabberPanel_onConfigValueModified_msg_(), NewTheme.I().getIcon("warning_green", 32));
         }
+        fireRelayout();
+    }
+
+    public void fireRelayout() {
         new EDTRunner() {
 
             @Override
