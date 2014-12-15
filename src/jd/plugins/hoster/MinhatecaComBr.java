@@ -122,7 +122,7 @@ public class MinhatecaComBr extends PluginForHost {
             dllink = unescape(dllink);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (dl.getConnection().getContentType().contains("html") && dl.getConnection().getResponseCode() != 206) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
