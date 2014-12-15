@@ -1356,6 +1356,12 @@ public class VKontakteRu extends PluginForDecrypt {
             throw new DecrypterException(EXCEPTION_API_UNKNOWN);
         case 17:
             logger.info("Validation required");
+            String redirectUri = getJson("redirect_uri");
+            logger.info("Redirect URI: " + redirectUri);
+            if (redirectUri != null) {
+                br.getPage(redirectUri);
+
+            }
             int counter = 1;
             boolean loginsucceeded = false;
             do {
