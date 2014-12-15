@@ -193,7 +193,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
             for (final String current_quality[] : qualities) {
                 final String qual_regex = current_quality[0];
                 final String qual_name = current_quality[1];
-                links = ajax.getRegex("\"url\":\"(https?://[^<>\"]*?" + qual_regex + "_\\d+\\.flv)\"").getColumn(0);
+                links = ajax.getRegex("\"url\":\"(https?://[^<>\"]*?" + qual_regex + "[^\"]*_\\d+\\.flv)\"").getColumn(0);
                 if (links != null && links.length > 0) {
                     used_quality = qual_name;
                     break;
