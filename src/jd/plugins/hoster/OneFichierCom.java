@@ -630,7 +630,6 @@ public class OneFichierCom extends PluginForHost {
             sleep(2 * 1000l, link);
             /* TODO: Update linkstructure here whenever admin tells us new structure. */
             final String url = "https://" + getFID(link) + ".1fichier.com/" + "?u=" + Encoding.urlEncode(account.getUser()) + "&p=" + JDHash.getMD5(account.getPass());
-
             URLConnectionAdapter con = br.openGetConnection(url);
             if (con.getResponseCode() == 401) {
                 try {
@@ -639,29 +638,36 @@ public class OneFichierCom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            br.followConnection();
-            if (pwProtected || br.containsHTML("password")) {
-                passCode = handlePassword(link, passCode);
-            }
-            dllink = br.getRedirectLocation();
-            if (dllink != null) {
+            if (con.isContentDisposition()) {
+                con.disconnect();
+                dllink = url;
+            } else {
+                br.followConnection();
+                if (pwProtected || br.containsHTML("password")) {
+                    passCode = handlePassword(link, passCode);
+                }
+                dllink = br.getRedirectLocation();
+                if (dllink != null) {
 
-                try {
-                    errorIpBlockedHandling(br);
-                } catch (PluginException e) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
+                    try {
+                        errorIpBlockedHandling(br);
+                    } catch (PluginException e) {
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
+                    }
                 }
             }
-            if (dllink == null && br.containsHTML("\">Warning \\! Without premium status, you can download only")) {
-                logger.info("Seems like this is no premium account or it's vot valid anymore -> Disabling it");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else if (dllink == null) {
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                if (br.containsHTML("\">Warning \\! Without premium status, you can download only")) {
+                    logger.info("Seems like this is no premium account or it's vot valid anymore -> Disabling it");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
-            String useDllink = dllink;
             for (int i = 0; i != 2; i++) {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, useDllink, true, 0);
+                br.setFollowRedirects(true);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
                 if (dl.getConnection().getContentType().contains("html")) {
                     if ("http://www.1fichier.com/?c=DB".equalsIgnoreCase(br.getURL())) {
                         dl.getConnection().disconnect();
@@ -677,7 +683,7 @@ public class OneFichierCom extends PluginForHost {
                 }
                 link.setProperty(PREMLINK, dllink);
                 dl.startDownload();
-                break;
+                return;
             }
         }
     }
