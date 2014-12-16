@@ -170,6 +170,7 @@ public class DataHu extends PluginForHost {
         br.setFollowRedirects(true);
         requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
+        handleSiteErrors();
         if (br.containsHTML("A let.*?shez v.*?rnod kell:")) {
             long wait = (Long.parseLong(br.getRegex(Pattern.compile("<div id=\"counter\" class=\"countdown\">([0-9]+)</div>")).getMatch(0)) * 1000);
             sleep(wait, downloadLink);
@@ -192,6 +193,7 @@ public class DataHu extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.datahu.toomanysimultandownloads", "Too many simultan downloads, please wait some time!"), 60 * 1000l);
             }
             br.followConnection();
+            handleSiteErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -211,10 +213,25 @@ public class DataHu extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, -4);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The finallink doesn't seem to be a file...");
+            /*
+             * Wait a minute for respons 503 because JD tried to start too many downloads in a short time
+             */
+            if (dl.getConnection().getResponseCode() == 503) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.datahu.toomanysimultandownloads", "Too many simultan downloads, please wait some time!"), 60 * 1000l);
+            }
             br.followConnection();
+            handleSiteErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void handleSiteErrors() throws PluginException {
+        if (br.containsHTML("Az adott fájl nem létezik\\.")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("Az adott fájl már nem elérhető\\.")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 
     public void login(final Account account) throws Exception {
