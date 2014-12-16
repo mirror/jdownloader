@@ -48,7 +48,11 @@ public class Recaptcha2Helper {
         return ip == null || ip.trim().length() == 0;
     }
 
-    public void init(Browser br) throws RecaptchaException, IOException {
+    protected void initBrowser() {
+        br = new Browser();
+    }
+
+    public void init(final Browser br) throws RecaptchaException, IOException {
         this.br = br.cloneBrowser();
         this.host = new URL(br.getURL()).getHost();
         this.siteKey = new Regex(br.toString(), "data-sitekey\\s*=\\s*\"([^\"]+)").getMatch(0);
@@ -60,15 +64,54 @@ public class Recaptcha2Helper {
         initGoogleApiProperties();
     }
 
-    protected void initBrowser() {
-        br = new Browser();
+    /**
+     * Use when hoster doesn't give public API key via standard recaptchav2 html, or at all!<br />
+     * Browser can be null and new Browser session will be used. Be aware it will be using JDownloader default User-Agent <br />
+     * Provided Browser referer is nullfied. <br />
+     * Host can be null only when existing Browser is provided, host will be determined from current URL. <br />
+     *
+     *
+     * @author raztoki
+     * @param br
+     * @param siteKey
+     * @param host
+     * @throws RecaptchaException
+     * @throws IOException
+     */
+    public void init(final Browser br, final String siteKey, final String host) throws RecaptchaException, IOException {
+        if (siteKey == null) {
+            throw new RecaptchaException("'siteKey' can not be null");
+        }
+        if (br == null) {
+            if (host == null) {
+                throw new RecaptchaException("'host' name can not be null");
+            }
+            this.br = new Browser();
+        } else {
+            if (host == null) {
+                final String brHost = new URL(br.getURL()).getHost();
+                if (brHost == null) {
+                    throw new RecaptchaException("'host' can not be determined!");
+                } else {
+                    this.host = brHost;
+                }
+            } else {
+                this.host = host;
+            }
+            this.br = br.cloneBrowser();
+            // nullify referer, its not required
+            this.br.getHeaders().put("Referer", "");
+        }
+        this.siteKey = siteKey;
+        // now other required components!
+        initGoogleApiProperties();
     }
 
     // lets use static version and language
     private void initStaticRecaptchaScript() throws IOException, RecaptchaException {
 
-        String apiJs = br.getPage("http://www.google.com/recaptcha/api.js");
-        String recaptcha__de = new Regex(apiJs, "po.src = '(.*?)'").getMatch(0);
+        final String apiJs = br.getPage("http://www.google.com/recaptcha/api.js");
+        final String recaptcha__de = new Regex(apiJs, "po.src = '(.*?)'").getMatch(0);
         if (recaptcha__de == null || !recaptcha__de.matches("https?\\://www.gstatic.com/recaptcha/api2/r\\d+/recaptcha__\\w+.js")) {
             throw new RecaptchaException("Could not find recaptcha_lng.js in http://www.google.com/recaptcha/api.js");
         }
@@ -143,7 +186,7 @@ public class Recaptcha2Helper {
 
     public BufferedImage loadImage() throws IOException, RecaptchaException {
 
-        URLConnectionAdapter conn = br.openGetConnection(loadImageUrl());
+        final URLConnectionAdapter conn = br.openGetConnection(loadImageUrl());
         try {
             return ImageIO.read(conn.getInputStream());
 
@@ -154,11 +197,11 @@ public class Recaptcha2Helper {
     }
 
     private String loadImageUrl() throws IOException, RecaptchaException {
-        String anchor = "https://www.google.com/recaptcha/api2/anchor";
+        final String anchor = "https://www.google.com/recaptcha/api2/anchor";
         iframeId = "I" + 0 + "_" + (System.currentTimeMillis() / 1000);
 
         rpcToken = Math.round(1E8 * Double.parseDouble("0." + (int) (Math.random() * Integer.MAX_VALUE)));
-        String anchorUrl = anchor + "?k=" + siteKey + "&hl=" + language + "&v=" + version + "&usegapi=1&jsh=" + Encoding.urlEncode(jshString) + "#id=" + iframeId + "&parent=" + Encoding.urlEncode("http://" + host) + "&pfname=&rpctoken=" + rpcToken;
+        final String anchorUrl = anchor + "?k=" + siteKey + "&hl=" + language + "&v=" + version + "&usegapi=1&jsh=" + Encoding.urlEncode(jshString) + "#id=" + iframeId + "&parent=" + Encoding.urlEncode("http://" + host) + "&pfname=&rpctoken=" + rpcToken;
 
         br.getPage(anchorUrl);
 
@@ -170,7 +213,7 @@ public class Recaptcha2Helper {
         // botGuard not supported
         botGuardString = "";
 
-        String rcFrameUrl = "https://www.google.com/recaptcha/api2/frame?c=" + tokenForFrameLoading + "&hl=" + language + "&v=" + version + "&bg=" + botGuardString + "&usegapi=1&jsh=" + Encoding.urlEncode(jshString);
+        final String rcFrameUrl = "https://www.google.com/recaptcha/api2/frame?c=" + tokenForFrameLoading + "&hl=" + language + "&v=" + version + "&bg=" + botGuardString + "&usegapi=1&jsh=" + Encoding.urlEncode(jshString);
 
         br.getPage(rcFrameUrl);
 
@@ -191,17 +234,17 @@ public class Recaptcha2Helper {
         return System.currentTimeMillis() > verifyTime + timeout;
     }
 
-    public boolean sendResponse(String response) throws IOException {
+    public boolean sendResponse(final String response) throws IOException {
 
-        String responseJson = "{\"response\":\"" + response + "\"}";
+        final String responseJson = "{\"response\":\"" + response + "\"}";
 
-        long timeToSolve = System.currentTimeMillis() - timeImageLoading;
-        long timeToSolveMore = timeToSolve + (long) (Math.random() * 500);
+        final long timeToSolve = System.currentTimeMillis() - timeImageLoading;
+        final long timeToSolveMore = timeToSolve + (long) (Math.random() * 500);
         br.postPage("https://www.google.com/recaptcha/api2/userverify", "c=" + tokenForCaptchaChallengePayload + "&response=" + Encoding.Base64Encode(responseJson) + "&t=" + timeToSolve + "&ct=" + timeToSolveMore + "&bg=" + botGuardString);
         String[] responseData = br.getRegex("\\[\"uvresp\"\\s*,\\s*\"([^\"]+)\"\\s*\\,\\s*(\\d*)\\s*\\,\\s*(\\d*)").getRow(0);
-        this.responseToken = responseData[0];
+        responseToken = responseData[0];
         successIdentifier = responseData[1].length() > 0 ? Integer.parseInt(responseData[1]) : 0;
-        // I'm not sure if this is the timout. it may be the timeout in seconds until responseToken is valid
+        // I'm not sure if this is the timeout. it may be the timeout in seconds until responseToken is valid
         verifyTime = System.currentTimeMillis();
         timeout = responseData[2].length() > 0 ? Integer.parseInt(responseData[2]) * 1000 : 0;
         success = successIdentifier > 0;
@@ -246,7 +289,7 @@ public class Recaptcha2Helper {
     }
 
     public File loadImageFile() throws IOException, RecaptchaException {
-        URLConnectionAdapter conn = br.openGetConnection(loadImageUrl());
+        final URLConnectionAdapter conn = br.openGetConnection(loadImageUrl());
         byte[] bytes = null;
         try {
             bytes = IO.readStream(-1, conn.getInputStream());

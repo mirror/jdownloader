@@ -50,11 +50,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.utils.recaptcha.api2.Recaptcha2Helper;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://\\w+\\.(?:real\\-debrid\\.com|rdb\\.so)/dl/\\w+/.+" }, flags = { 2 })
 public class RealDebridCom extends PluginForHost {
@@ -666,23 +666,25 @@ public class RealDebridCom extends PluginForHost {
                 }
                 for (int retry = 0; retry < 3; retry++) {
                     try {
-                        br.getPage(mProt + mName + "/ajax/login.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + JDHash.getMD5(account.getPass()) + "&captcha_challenge=&captcha_answer=&time=" + System.currentTimeMillis() + "&pin_challenge=&pin_answer=");
+                        br.getPage(mProt + mName + "/ajax/login.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + JDHash.getMD5(account.getPass()) + "&captcha_response=&time=" + System.currentTimeMillis() + "&pin_challenge=&pin_answer=");
                         if (hash2.equalsIgnoreCase(JDHash.getMD5(br.toString()))) {
                             continue;
                         } else if (br.containsHTML("\"captcha\":1")) {
-                            DownloadLink dummyLink = new DownloadLink(this, "Account", mProt + mName, mProt + mName, true);
-                            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                            final String challenge = getJson("captcha_challenge");
-                            final String image = getJson("captcha_url");
-                            if (challenge == null || image == null) {
+                            final String publicApiKey = getJson("recaptcha_public_key");
+                            if (publicApiKey == null) {
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
-                            rc.setChallenge(challenge);
-                            rc.setCaptchaAddress(image);
-                            final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                            final String c = getCaptchaCode("recaptcha", cf, dummyLink);
-                            br.getPage(mProt + mName + "/ajax/login.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + JDHash.getMD5(account.getPass()) + "&captcha_challenge=" + rc.getChallenge() + "&captcha_answer=" + Encoding.urlEncode(c) + "&time=" + System.currentTimeMillis() + "&pin_challenge=&pin_answer=");
+                            DownloadLink dummyLink = new DownloadLink(this, "Account", mProt + mName, mProt + mName, true);
+                            final Recaptcha2Helper rchelp = new Recaptcha2Helper();
+                            rchelp.init(br, publicApiKey, Browser.getHost(br.getURL()));
+                            final File cf = rchelp.loadImageFile();
+                            final String code = getCaptchaCode("recaptcha", cf, dummyLink);
+                            final boolean success = rchelp.sendResponse(code);
+                            final String responseToken = rchelp.getResponseToken();
+                            if (!success && retry + 1 > 3) {
+                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                            }
+                            br.getPage(mProt + mName + "/ajax/login.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + JDHash.getMD5(account.getPass()) + "&captcha_response=" + Encoding.urlEncode(responseToken) + "&time=" + System.currentTimeMillis() + "&pin_challenge=&pin_answer=");
                             if (br.containsHTML("\"captcha\":1")) {
                                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nError either captcha is incorrect or your user:password is incorrect", PluginException.VALUE_ID_PREMIUM_DISABLE);
                             }
@@ -804,7 +806,7 @@ public class RealDebridCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -814,7 +816,7 @@ public class RealDebridCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -824,7 +826,7 @@ public class RealDebridCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from provided Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
@@ -834,7 +836,7 @@ public class RealDebridCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response provided String source.
-     * 
+     *
      * @author raztoki
      * */
     private String getJsonArray(final String source, final String key) {
@@ -844,7 +846,7 @@ public class RealDebridCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJsonArray(final String key) {
@@ -854,7 +856,7 @@ public class RealDebridCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return String[] value from provided JSon Array
-     * 
+     *
      * @author raztoki
      * @param source
      * @return
