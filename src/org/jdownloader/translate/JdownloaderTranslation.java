@@ -921,4 +921,16 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Affected Links: Finished Package" })
     String GenericDeleteFromDownloadlistAction_getTranslationForDeleteFinishedPackage();
 
+    @Default(lngs = { "en" }, values = { "This Download is not available in your country" })
+    String CountryIPBlockException_createCandidateResult();
+
+    @Default(lngs = { "en" }, values = { "Free Account" })
+    String AccountType_free();
+
+    @Default(lngs = { "en" }, values = { "Premium Account" })
+    String AccountType_premium();
+
+    @Default(lngs = { "en" }, values = { "Unknown Account" })
+    String AccountType_unknown();
+
 }

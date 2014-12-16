@@ -5602,4 +5602,52 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "↓ At the bottom" })
     String setOverviewPositions_south();
 
+    @Default(lngs = { "en" }, values = { "Download Mode" })
+    String CandidateAccountColumn();
+
+    @Default(lngs = { "en" }, values = { "%s1@%s2" })
+    String CandidateAccountColumn_getStringValue_account(String user, String hoster);
+
+    @Default(lngs = { "en" }, values = { "Free" })
+    String CandidateAccountColumn_getStringValue_free_();
+
+    @Default(lngs = { "en" }, values = { "Gateway" })
+    String CandidateGatewayColumn();
+
+    @Default(lngs = { "en" }, values = { "Multihoster %s1" })
+    String CandidateAccountColumn_account_multi(String type);
+
+    @Default(lngs = { "en" }, values = { "%s1" })
+    String CandidateAccountColumn_account_original(String type);
+
+    @Default(lngs = { "en" }, values = { "%s3: %s1@%s2" })
+    String CandidateAccountColumn_getStringValue_account_type(String user, String hoster, String accountType);
+
+    @Default(lngs = { "en" }, values = { "Started at" })
+    String CandidateTooltipTableModel_time();
+
+    @Default(lngs = { "en" }, values = { "Download Mode" })
+    String CandidateTooltipTableModel_account();
+
+    @Default(lngs = { "en" }, values = { "Gateway" })
+    String CandidateTooltipTableModel_gateway();
+
+    @Default(lngs = { "en" }, values = { "Result" })
+    String CandidateTooltipTableModel_result();
+
+    @Default(lngs = { "en" }, values = { "Running" })
+    String CandidateTooltipTableModel_initColumns_running_();
+
+    @Default(lngs = { "en" }, values = { "dd.MM.yy HH:mm:ss" })
+    String CandidateTooltipTableModel_getDateFormatString_timeformat();
+
+    @Default(lngs = { "en" }, values = { "Interrupted" })
+    String CandidateTooltipTableModel_configureRendererComponent_stopped_();
+
+    @Default(lngs = { "en" }, values = { "Account unavailable" })
+    String CandidateTooltipTableModel_configureRendererComponent_account_unavailable();
+
+    @Default(lngs = { "en" }, values = { "Account required" })
+    String CandidateTooltipTableModel_configureRendererComponent_account_required();
+
 }

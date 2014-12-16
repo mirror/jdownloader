@@ -76,7 +76,7 @@ public class HasCaptchaColumn extends ExtIconColumn<AbstractNode> {
     }
 
     @Override
-    protected int getMaxWidth() {
+    public int getMaxWidth() {
         return 100;
     }
 

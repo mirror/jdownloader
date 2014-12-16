@@ -35,6 +35,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
 import jd.config.Property;
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
+import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.packagecontroller.AbstractNodeNotifier;
@@ -195,6 +197,32 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private transient volatile String[]                         cachedName                          = null;
 
     private transient UrlProtection                             urlProtection                       = UrlProtection.UNSET;
+    /**
+     * volatile? We currently use these fields in the view only. As long as they are not sued for controlling purposes, I see no reason to
+     * synchronize them
+     **/
+    private transient DownloadLinkCandidate                     latestCandidate;
+    /**
+     * volatile? We currently use these fields in the view only. As long as they are not sued for controlling purposes, I see no reason to
+     * synchronize them
+     **/
+    private transient DownloadLinkCandidateResult               latestCandidateResult;
+
+    /**
+     * The last known CandidateResult This value will be lost on exit
+     * 
+     */
+    public DownloadLinkCandidateResult getLatestCandidateResult() {
+        return latestCandidateResult;
+    }
+
+    /**
+     * The last known CandidateResult This value will be lost on exit
+     * 
+     */
+    public void setLatestCandidateResult(DownloadLinkCandidateResult latestCandidateResult) {
+        this.latestCandidateResult = latestCandidateResult;
+    }
 
     public FilePackage getLastValidFilePackage() {
         if (lastValidFilePackage != null) {
@@ -2204,6 +2232,24 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             return ret;
         }
         return getPluginPatternMatcher();
+    }
+
+    /**
+     * the last tried candidate or null. This value will be lost on exit
+     * 
+     * @param candidate
+     */
+    public void setLatestCandidate(DownloadLinkCandidate candidate) {
+        this.latestCandidate = candidate;
+    }
+
+    /**
+     * the last tried candidate or null. This value will be lost on exit
+     * 
+     * @param candidate
+     */
+    public DownloadLinkCandidate getLatestCandidate() {
+        return latestCandidate;
     }
 
 }

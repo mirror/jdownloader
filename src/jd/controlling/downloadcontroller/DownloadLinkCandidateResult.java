@@ -11,7 +11,7 @@ import org.jdownloader.plugins.SkipReason;
 public class DownloadLinkCandidateResult {
 
     public static enum RESULT {
-        /* DO NOT CHANGE ORDER HERE, we use compareTo which uses ordinal */
+        /* DO NOT CHANGE ORDER HERE, we use compareTo(sorting) which uses ordinal */
         CONNECTION_TEMP_UNAVAILABLE,
         CONNECTION_ISSUES,
         FATAL_ERROR,
@@ -34,7 +34,8 @@ public class DownloadLinkCandidateResult {
         FAILED_INCOMPLETE,
         FAILED_EXISTS,
         OFFLINE_TRUSTED,
-        STOPPED;
+        STOPPED,
+        COUNTRY_BLOCKED;
     }
 
     private final RESULT     result;
@@ -59,7 +60,7 @@ public class DownloadLinkCandidateResult {
         return message;
     }
 
-    protected void setMessage(String message) {
+    public void setMessage(String message) {
         this.message = message;
     }
 
@@ -67,7 +68,7 @@ public class DownloadLinkCandidateResult {
         return waitTime;
     }
 
-    protected void setWaitTime(long waitTime) {
+    public void setWaitTime(long waitTime) {
         this.waitTime = Math.max(-1, waitTime);
     }
 
@@ -86,7 +87,7 @@ public class DownloadLinkCandidateResult {
         return startTime;
     }
 
-    protected void setStartTime(long startTime) {
+    public void setStartTime(long startTime) {
         this.startTime = Math.max(-1, startTime);
     }
 
@@ -96,7 +97,7 @@ public class DownloadLinkCandidateResult {
 
     private long finishTime = -1;
 
-    protected void setFinishTime(long finishTime) {
+    public void setFinishTime(long finishTime) {
         this.finishTime = Math.max(-1, finishTime);
     }
 

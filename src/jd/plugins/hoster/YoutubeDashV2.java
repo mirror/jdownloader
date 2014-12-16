@@ -610,8 +610,15 @@ public class YoutubeDashV2 extends PluginForHost {
                     }
 
                 } catch (PluginException e) {
-                    if (e.getErrorMessage() != null && e.getErrorMessage().contains("This video is private")) {
-                        throw e;
+                    if (e.getErrorMessage() != null) {
+
+                        if (e.getErrorMessage().contains("This video is private")) {
+                            throw e;
+                        }
+
+                        if (e.getErrorMessage().contains(_JDT._.CountryIPBlockException_createCandidateResult())) {
+                            throw e;
+                        }
                     }
                     List<LinkVariant> alternatives = getVariantsByLink(downloadLink);
                     if (alternatives != null) {
@@ -777,6 +784,17 @@ public class YoutubeDashV2 extends PluginForHost {
         YoutubeHelper helper = getCachedHelper();
         Map<YoutubeITAG, YoutubeStreamData> info = helper.loadVideo(vid);
         if (info == null) {
+            // if (StringUtils.equalsIgnoreCase(vid.error, "This video is unavailable.") || StringUtils.equalsIgnoreCase(vid.error,/*
+            // * 15.12.2014
+            // */"This video is not available.")) {
+            // throw new CountryIPBlockException();
+            // }
+            // if (StringUtils.equalsIgnoreCase(vid.error, "This video is unavailable.") || StringUtils.equalsIgnoreCase(vid.error,/*
+            // * 15.12.2014
+            // */"This video is not available.")) {
+            // throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE,
+            // _JDT._.CountryIPBlockException_createCandidateResult(), 1 * 24 * 60 * 60 * 100l);
+            // }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, vid.error);
         }
 
