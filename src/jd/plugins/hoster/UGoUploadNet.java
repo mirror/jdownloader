@@ -98,7 +98,7 @@ public class UGoUploadNet extends PluginForHost {
     private static final boolean account_FREE_RESUME                          = false;
     private static final int     account_FREE_MAXCHUNKS                       = 1;
     private static final int     account_FREE_MAXDOWNLOADS                    = 1;
-    private static final boolean account_PREMIUM_RESUME                       = false;
+    private static final boolean account_PREMIUM_RESUME                       = true;
     private static final int     account_PREMIUM_MAXCHUNKS                    = 1;
     private static final int     account_PREMIUM_MAXDOWNLOADS                 = 20;
 
@@ -495,7 +495,7 @@ public class UGoUploadNet extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(account, false);
+        login(account, true);
         if (account.getBooleanProperty("free", false)) {
             if (!available_CHECK_OVER_INFO_PAGE) {
                 br.getPage(link.getDownloadURL());

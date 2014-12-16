@@ -23,6 +23,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.Random;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -62,7 +63,7 @@ public class GameOneDeA extends PluginForDecrypt {
 
         /**
          * Replacing & to {@literal &amp;} in InputStreams
-         * 
+         *
          * @author mhaller
          * @see <a href="http://stackoverflow.com/a/4588005">http://stackoverflow.com/a/4588005</a>
          */
@@ -236,6 +237,7 @@ public class GameOneDeA extends PluginForDecrypt {
                     } catch (final Throwable e) {
                         continue;
                     }
+                    String finalfilename = null;
                     for (int j = 0; j < linkList.getLength(); ++j) {
                         final Node node = linkList.item(j);
                         dllink = node.getTextContent();
@@ -252,39 +254,45 @@ public class GameOneDeA extends PluginForDecrypt {
 
                         DownloadLink dlLink_rtmp = null;
                         boolean rtmpe = false;
-                        if (dllink.startsWith("rtmp://")) {
-                            dlLink_rtmp = createDownloadlink(dllink.replace("rtmp", "gameonertmp"));
-                        } else if (dllink.startsWith("rtmpe://")) {
-                            dlLink_rtmp = createDownloadlink(dllink.replace("rtmpe", "gameonertmpe"));
+                        if (dllink.startsWith("rtmpe://")) {
+                            dlLink_rtmp = createDownloadlink("http://gameonedecrypted.de/" + System.currentTimeMillis() + new Random().nextInt(100000));
                             rtmpe = true;
-
                             dlLink_rtmp.setAvailable(false);
                             dlLink_rtmp.setProperty("offline", true);
-
                         }
                         /* Episode > 102 */
                         dllink = dllink.replaceAll("^.*?/r2/", "http://cdn.riptide-mtvn.com/r2/");
-                        /* Fallback */
-                        dllink = dllink.replace("rtmp", "gameonertmp");
                         DownloadLink dlLink_http = null;
                         if (dllink.startsWith("http://")) {
-                            dlLink_http = createDownloadlink("directhttp://" + dllink);
+                            dlLink_http = createDownloadlink("http://gameonedecrypted.de/" + System.currentTimeMillis() + new Random().nextInt(100000));
+                            dlLink_http.setProperty("mainlink", parameter);
+                            dlLink_http.setProperty("directlink", dllink);
                         } else {
-                            dlLink_rtmp = createDownloadlink(dllink);
+                            dlLink_rtmp = createDownloadlink("http://gameonedecrypted.de/" + System.currentTimeMillis() + new Random().nextInt(100000));
+                            dlLink_rtmp.setProperty("mainlink", parameter);
+                            dlLink_rtmp.setProperty("directlink", dllink);
                         }
                         if (!newEpisode) {
                             if (dlLink_http != null) {
-                                dlLink_http.setFinalFileName(filename + "_Part_" + df.format(i + 1) + "@" + q + "_http" + ext);
+                                finalfilename = filename + "_Part_" + df.format(i + 1) + "@" + q + "_http" + ext;
+                                dlLink_http.setFinalFileName(finalfilename);
+                                dlLink_http.setProperty("LINKDUPEID", "gameone_" + finalfilename);
                             }
                             if (dlLink_rtmp != null) {
-                                dlLink_http.setFinalFileName(filename + "_Part_" + df.format(i + 1) + "@" + q + "_rtmp" + (rtmpe ? "e" : "") + ext);
+                                finalfilename = filename + "_Part_" + df.format(i + 1) + "@" + q + "_rtmp" + (rtmpe ? "e" : "") + ext;
+                                dlLink_rtmp.setFinalFileName(finalfilename);
+                                dlLink_rtmp.setProperty("LINKDUPEID", "gameone_" + finalfilename);
                             }
                         } else {
                             if (dlLink_http != null) {
-                                dlLink_http.setFinalFileName(filename + "@" + q + "_http" + ext);
+                                finalfilename = filename + "@" + q + "_http" + ext;
+                                dlLink_http.setFinalFileName(finalfilename);
+                                dlLink_http.setProperty("LINKDUPEID", "gameone_" + finalfilename);
                             }
                             if (dlLink_rtmp != null) {
-                                dlLink_rtmp.setFinalFileName(filename + "@" + q + "_rtmp" + (rtmpe ? "e" : "") + ext);
+                                finalfilename = filename + "@" + q + "_rtmp" + (rtmpe ? "e" : "") + ext;
+                                dlLink_rtmp.setFinalFileName(finalfilename);
+                                dlLink_rtmp.setProperty("LINKDUPEID", "gameone_" + finalfilename);
                             }
                         }
                         if (dlLink_http != null) {

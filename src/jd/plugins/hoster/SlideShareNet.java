@@ -65,17 +65,20 @@ public class SlideShareNet extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (link.getBooleanProperty("offline", false)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (link.getDownloadURL().matches(PICTURELINK)) {
             final String directlink = link.getStringProperty("directpiclink", null);
             link.setFinalFileName(link.getStringProperty("filename", null));
             URLConnectionAdapter con = null;
             try {
                 con = br.openGetConnection(directlink);
-                if (!con.getContentType().contains("html"))
+                if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
-                else
+                } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
             } finally {
                 try {
                     con.disconnect();
@@ -92,9 +95,13 @@ public class SlideShareNet extends PluginForHost {
                     throw e;
                 }
             }
-            if (br.containsHTML(FILENOTFOUND) || br.containsHTML(">Uploaded Content Removed<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML(FILENOTFOUND) || br.containsHTML(">Uploaded Content Removed<")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             final String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             link.setName(Encoding.htmlDecode(filename.trim()));
         }
         return AvailableStatus.TRUE;
@@ -119,7 +126,9 @@ public class SlideShareNet extends PluginForHost {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via account!");
         }
@@ -136,7 +145,9 @@ public class SlideShareNet extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -151,7 +162,7 @@ public class SlideShareNet extends PluginForHost {
                 br.setFollowRedirects(false);
                 br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
                 br.getPage("https://www.slideshare.net/login");
-                final String token = br.getRegex("window\\._auth_token = \"([^<>\"]*?)\"").getMatch(0);
+                final String token = br.getRegex("name=\"authenticity_token\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
                 final String lang = System.getProperty("user.language");
                 if (token == null) {
                     if ("de".equalsIgnoreCase(lang)) {
@@ -222,7 +233,9 @@ public class SlideShareNet extends PluginForHost {
                 // order to get this stupid slideshow_id
                 br.getPage(link.getDownloadURL());
                 final String slideshareID = br.getRegex("\"slideshow_id\":(\\d+)").getMatch(0);
-                if (slideshareID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (slideshareID == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 final String timestamp = System.currentTimeMillis() + "";
                 // Examplelink: http://www.slideshare.net/webbmedia/webbmedia-group-2013-tech-trends
                 final String getLink = "https://www.slideshare.net/api/2/get_slideshow?api_key=" + Encoding.Base64Decode(APIKEY) + "&ts=" + timestamp + "&hash=" + JDHash.getSHA1(Encoding.Base64Decode(SHAREDSECRET) + timestamp) + "&slideshow_id=" + slideshareID;
@@ -230,9 +243,13 @@ public class SlideShareNet extends PluginForHost {
                 dllink = getXML("DownloadUrl");
             } else {
                 br.getPage(link.getDownloadURL());
-                if (br.containsHTML(NOTDOWNLOADABLE)) throw new PluginException(LinkStatus.ERROR_FATAL, "This document is not downloadable");
+                if (br.containsHTML(NOTDOWNLOADABLE)) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "This document is not downloadable");
+                }
                 br.getPage(link.getDownloadURL() + "/download");
-                if (br.containsHTML(FILENOTFOUND)) throw new PluginException(LinkStatus.ERROR_FATAL, "This document is not downloadable!");
+                if (br.containsHTML(FILENOTFOUND)) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "This document is not downloadable!");
+                }
                 dllink = br.getRegex("class=\"altDownload\"><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
             }
         }
@@ -253,16 +270,21 @@ public class SlideShareNet extends PluginForHost {
 
     private void fixFilename(final DownloadLink downloadLink) {
         String oldName = downloadLink.getFinalFileName();
-        if (oldName == null) oldName = downloadLink.getName();
+        if (oldName == null) {
+            oldName = downloadLink.getName();
+        }
         final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
         final String newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
         if (newExtension != null && !oldName.endsWith(newExtension)) {
             String oldExtension = null;
-            if (oldName.contains(".")) oldExtension = oldName.substring(oldName.lastIndexOf("."));
-            if (oldExtension != null && oldExtension.length() <= 5)
+            if (oldName.contains(".")) {
+                oldExtension = oldName.substring(oldName.lastIndexOf("."));
+            }
+            if (oldExtension != null && oldExtension.length() <= 5) {
                 downloadLink.setFinalFileName(oldName.replace(oldExtension, newExtension));
-            else
+            } else {
                 downloadLink.setFinalFileName(oldName + newExtension);
+            }
         }
     }
 

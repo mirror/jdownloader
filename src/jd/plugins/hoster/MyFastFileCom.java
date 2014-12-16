@@ -189,7 +189,6 @@ public class MyFastFileCom extends PluginForHost {
             handleErrorRetries("unknowndlerror_html", 10);
         }
         dl.startDownload();
-
     }
 
     @SuppressWarnings("unused")
