@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freedisc.pl" }, urls = { "http://(www\\.)?freedisc\\.pl/[A-Za-z0-9\\-_]+,d\\-\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freedisc.pl" }, urls = { "http://(www\\.)?freedisc\\.pl/[A-Za-z0-9\\-_]+,d\\-\\d+([[A-Za-z0-9\\-_,]+)?" }, flags = { 0 })
 public class FreeDiscPlFolder extends PluginForDecrypt {
 
     public FreeDiscPlFolder(PluginWrapper wrapper) {
@@ -55,8 +55,8 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
         final String fpName = br.getRegex("<title>([^<>\"]*?)\\-  Freedisc\\.pl</title>").getMatch(0);
         // style='float: left; overflow: auto;'><a href="
         final String[] links = br.getRegex("<div style=\\'float: left; overflow: auto;\\'>([\t\n\r ]+)?<a  href=\"(/[^<>\"]*?)\"").getColumn(1);
-        final String[] folders = br.getRegex("class=\\'dirName2FS\\'><a href=\"(/[^<>\"]*?)\"").getColumn(0);
-        if ((links == null || links.length == 0) && (folders == null || folders.length == 0) && br.containsHTML("class=\"directoryText previousDirLinkFS\"") || !br.getURL().matches(TYPE_FOLDER)) {
+        final String[] folders = br.getRegex("class=\"CssTreeValue\"><a href=\"(/[A-Za-z0-9\\-_]+,d\\-\\d+[^<>\"]*?)\"").getColumn(0);
+        if ((links == null || links.length == 0) && (folders == null || folders.length == 0) && br.containsHTML("class=\"directoryText previousDirLinkFS\"")) {
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setAvailable(false);
             offline.setProperty("offline", true);
