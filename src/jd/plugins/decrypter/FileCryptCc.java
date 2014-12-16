@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.awt.Point;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,11 +24,13 @@ import java.util.Arrays;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -37,7 +40,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecrypt.cc" }, urls = { "http://(?:www\\.)?filecrypt\\.cc/Container/([A-Z0-9]{10})\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecrypt.cc" }, urls = { "https?://(?:www\\.)?filecrypt\\.cc/Container/([A-Z0-9]{10})\\.html" }, flags = { 0 })
 public class FileCryptCc extends PluginForDecrypt {
 
     public FileCryptCc(PluginWrapper wrapper) {
@@ -49,7 +52,7 @@ public class FileCryptCc extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         final String uid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
-        // skip captcha by .bismarck
+        // skip text captcha
         br.postPage(parameter, "recaptcha_response_field=");
         if (br.getURL().contains("filecrypt.cc/404.html")) {
             try {
@@ -60,14 +63,33 @@ public class FileCryptCc extends PluginForDecrypt {
             return decryptedLinks;
         }
         int counter = 0;
+        Form captchaform = null;
         while (counter++ < 3 && br.containsHTML("class=\"safety\"")) {
+            final Form[] allForms = br.getForms();
+            if (allForms != null && allForms.length != 0) {
+                for (final Form aForm : allForms) {
+                    if (aForm.containsHTML("captcha")) {
+                        captchaform = aForm;
+                        break;
+                    }
+                }
+            }
             final String captcha = br.getRegex("(/captcha/[^<>\"]*?)\"").getMatch(0);
             if (captcha == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            final String code = getCaptchaCode(captcha, param);
-            br.postPage(br.getURL(), "recaptcha_response_field=" + Encoding.urlEncode(code));
+            if (captcha.contains("circle.php")) {
+                final File file = this.getLocalCaptchaFile();
+                br.cloneBrowser().getDownload(file, captcha);
+                final Point p = UserIO.getInstance().requestClickPositionDialog(file, "Click on the open circle", null);
+                if (p == null) {
+                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                }
+                captchaform.put("button.x", String.valueOf(p.x));
+                captchaform.put("button.y", String.valueOf(p.y));
+                br.submitForm(captchaform);
+            }
         }
         if (br.containsHTML("class=\"safety\"")) {
             throw new DecrypterException(DecrypterException.CAPTCHA);
@@ -174,5 +196,4 @@ public class FileCryptCc extends PluginForDecrypt {
         }
         return links;
     }
-
 }

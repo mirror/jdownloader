@@ -138,7 +138,12 @@ public class PornHubCom extends PluginForHost {
             if (!s.matches(".+:.+")) {
                 continue;
             }
-            values.put(s.split(":")[0], Encoding.htmlDecode(s.split(":", 2)[1]));
+            String key = s.split(":")[0];
+            if (!key.equalsIgnoreCase("video_title")) {
+                values.put(key, Encoding.htmlDecode(s.split(":", 2)[1]));
+            } else {
+                values.put(key, Encoding.urlDecode(s.split(":", 2)[1], false));
+            }
         }
 
         if (values == null || values.size() < 1) {
@@ -181,7 +186,7 @@ public class PornHubCom extends PluginForHost {
 
     /**
      * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in JavaScript by Chris Veness
-     *
+     * 
      * @see <a
      *      href="http://csrc.nist.gov/publications/nistpubs/800-38a/sp800-38a.pdf">"Recommendation for Block Cipher Modes of Operation - Methods and Techniques"</a>
      */
