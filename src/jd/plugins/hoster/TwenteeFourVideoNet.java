@@ -52,7 +52,7 @@ public class TwenteeFourVideoNet extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<video><error")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("txt=\\'([^<>\"]*?)\\'").getMatch(0);
+        String filename = br.getRegex("txt=\\'([^<>]*?)\\'").getMatch(0);
         final String filesize = br.getRegex("filesize=\\'(\\d+)\\'").getMatch(0);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

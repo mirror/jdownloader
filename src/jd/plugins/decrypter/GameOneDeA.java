@@ -267,10 +267,22 @@ public class GameOneDeA extends PluginForDecrypt {
                             dlLink_http = createDownloadlink("http://gameonedecrypted.de/" + System.currentTimeMillis() + new Random().nextInt(100000));
                             dlLink_http.setProperty("mainlink", parameter);
                             dlLink_http.setProperty("directlink", dllink);
+                            try {
+                                dlLink_http.setContentUrl(parameter);
+                            } catch (final Throwable e) {
+                                /* Not available in old 0.9.581 Stable */
+                                dlLink_http.setBrowserUrl(parameter);
+                            }
                         } else {
                             dlLink_rtmp = createDownloadlink("http://gameonedecrypted.de/" + System.currentTimeMillis() + new Random().nextInt(100000));
                             dlLink_rtmp.setProperty("mainlink", parameter);
                             dlLink_rtmp.setProperty("directlink", dllink);
+                            try {
+                                dlLink_rtmp.setContentUrl(parameter);
+                            } catch (final Throwable e) {
+                                /* Not available in old 0.9.581 Stable */
+                                dlLink_rtmp.setBrowserUrl(parameter);
+                            }
                         }
                         if (!newEpisode) {
                             if (dlLink_http != null) {

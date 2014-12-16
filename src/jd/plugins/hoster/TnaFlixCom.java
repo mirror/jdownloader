@@ -57,9 +57,16 @@ public class TnaFlixCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getPage(Encoding.htmlDecode("http://" + configLink));
-        String dllink = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
+        String dllink = null;
+        final String[] qualities = { "720p", "480p", "360p", "240p", "144p" };
+        for (final String quality : qualities) {
+            dllink = br.getRegex("" + quality + "</res>\\s*<videolink>(http://.*?)</videoLink>").getMatch(0);
+            if (dllink != null) {
+                break;
+            }
+        }
         if (dllink == null) {
-            dllink = br.getRegex("360p</res>\\s*<videolink>(http://.*?)</videoLink>").getMatch(0);
+            dllink = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
         }
         if (dllink == null) {
             dllink = br.getRegex("<videolink>(http://.*?)</videoLink>").getMatch(0);

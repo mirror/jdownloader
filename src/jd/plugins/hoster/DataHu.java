@@ -17,11 +17,13 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
+import jd.http.Browser;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -30,23 +32,113 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.VKontakteRu.JSonUtils;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data.hu" }, urls = { "http://[\\w\\.]*?data.hu/get/\\d+/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data.hu" }, urls = { "http://[\\w\\.]*?data.hu/get/\\d+/[^<>\"/%]+" }, flags = { 2 })
 public class DataHu extends PluginForHost {
 
-    private static Object LOCK = new Object();
+    private static final String NICE_HOST         = "offcloud.com";
+    private static final String NICE_HOSTproperty = NICE_HOST.replaceAll("(\\.|\\-)", "");
+
+    private int                 statuscode        = 0;
 
     public DataHu(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://data.hu/premium.php");
     }
 
+    @Override
+    public String getAGBLink() {
+        return "http://data.hu/adatvedelem.php";
+    }
+
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace(".html", ""));
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 3;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 3;
+    }
+
+    @Override
+    public int getTimegapBetweenConnections() {
+        return 500;
+    }
+
+    /** Using API: http://data.hu/api.php */
+    @Override
+    public boolean checkLinks(final DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
+        try {
+            br.setCookiesExclusive(true);
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            String checkurl = null;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 50 links at once (limit = 50) */
+                    if (index == urls.length || links.size() > 50) {
+                        break;
+                    }
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                for (final DownloadLink dl : links) {
+                    checkurl = "http://data.hu/get/" + getFID(dl) + "/";
+                    sb.append(checkurl);
+                    sb.append("%2C");
+                }
+                this.getAPISafe("http://data.hu/api.php?act=check_download_links&links=" + sb.toString());
+                br.getRequest().setHtmlCode(JSonUtils.unescape(br.toString()));
+                for (final DownloadLink dllink : links) {
+                    checkurl = "http://data.hu/get/" + getFID(dllink) + "/";
+                    final String thisjson = br.getRegex("\"" + checkurl + "\":\\{(.*?)\\}").getMatch(0);
+                    if (thisjson == null || !"online".equals(this.getJson(thisjson, "status"))) {
+                        dllink.setAvailable(false);
+                    } else {
+                        final String name = this.getJson(thisjson, "filename");
+                        final String size = this.getJson(thisjson, "filesize");
+                        /* Names via API are good --> Use as final filenames */
+                        dllink.setFinalFileName(name);
+                        dllink.setDownloadSize(SizeFormatter.getSize(size));
+                        dllink.setAvailable(true);
+                    }
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        checkLinks(new DownloadLink[] { downloadLink });
+        if (!downloadLink.isAvailabilityStatusChecked()) {
+            return AvailableStatus.UNCHECKED;
+        }
+        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -59,57 +151,25 @@ public class DataHu extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        br.getPage("http://data.hu/index.php?isl=1");
-        if (!br.containsHTML("<td>Prémium:</td>")) {
+        if (!"premium".equals(getJson("type"))) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        String days = br.getRegex("<td><a href=\"/premium\\.php\">(.*?)<span").getMatch(0);
-        if (days != null && !days.equals("0")) {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(days, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
-        } else {
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
-        String points = br.getRegex(Pattern.compile("title=\"Mi az a DataPont\\?\">(\\d+) pont</a>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (points != null) {
-            ai.setPremiumPoints(Long.parseLong(points));
-        }
+        final String expiredate = getJson("expiration_date");
+        ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate, "yyyy-MM-dd mm:HH:ss", Locale.ENGLISH));
         ai.setStatus("Premium account");
         account.setValid(true);
         return ai;
     }
 
     @Override
-    public String getAGBLink() {
-        return "http://data.hu/adatvedelem.php";
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 3;
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return 2;
-    }
-
-    @Override
-    public int getTimegapBetweenConnections() {
-        return 500;
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         requestFileInformation(downloadLink);
+        br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("A let.*?shez v.*?rnod kell:")) {
             long wait = (Long.parseLong(br.getRegex(Pattern.compile("<div id=\"counter\" class=\"countdown\">([0-9]+)</div>")).getMatch(0)) * 1000);
             sleep(wait, downloadLink);
@@ -125,8 +185,9 @@ public class DataHu extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The finallink doesn't seem to be a file...");
-            // Wait a minute for respons 503 because JD tried to start too many
-            // downloads in a short time
+            /*
+             * Wait a minute for respons 503 because JD tried to start too many downloads in a short time
+             */
             if (dl.getConnection().getResponseCode() == 503) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.datahu.toomanysimultandownloads", "Too many simultan downloads, please wait some time!"), 60 * 1000l);
             }
@@ -138,19 +199,16 @@ public class DataHu extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         requestFileInformation(downloadLink);
-        login(account);
-        br.getPage(downloadLink.getDownloadURL());
-        String link = br.getRegex("window\\.location\\.href=\\'(.*?)\\';").getMatch(0);
+        getAPISafe("http://data.hu/api.php?act=get_direct_link&link=" + JSonUtils.escape(downloadLink.getDownloadURL()) + "&username=" + JSonUtils.escape(account.getUser()) + "&password=" + JSonUtils.escape(account.getPass()));
+        final String link = getJson("direct_link");
         if (link == null) {
-            link = br.getRegex("\"(http://ddlp\\.data\\.hu/get/[a-z0-9]+/\\d+/.*?)\"").getMatch(0);
-        }
-        if (link == null) {
+            /* Should never happen */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, -4);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The finallink doesn't seem to be a file...");
             br.followConnection();
@@ -159,46 +217,183 @@ public class DataHu extends PluginForHost {
         dl.startDownload();
     }
 
-    public void login(Account account) throws Exception {
-        synchronized (LOCK) {
-            br.setCustomCharset("utf-8");
-            br.setFollowRedirects(true);
-            this.setBrowserExclusive();
-            br.forceDebug(true);
-            br.getPage("http://data.hu/index.php?isl=1");
-            final String loginID = br.getRegex("name=\"login_passfield\" value=\"(.*?)\"").getMatch(0);
-            if (loginID == null) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    public void login(final Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
+        br.setFollowRedirects(true);
+        getAPISafe("http://data.hu/api.php?act=check_login_data&username=" + JSonUtils.escape(account.getUser()) + "&password=" + JSonUtils.escape(account.getPass()));
+    }
+
+    private String getFID(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "data.hu/get/(\\d+)").getMatch(0);
+    }
+
+    private void getAPISafe(final String accesslink) throws IOException, PluginException {
+        br.getPage(accesslink);
+        updatestatuscode();
+        handleAPIErrors(this.br);
+    }
+
+    private void postAPISafe(final String accesslink, final String postdata) throws IOException, PluginException {
+        br.postPage(accesslink, postdata);
+        updatestatuscode();
+        handleAPIErrors(this.br);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from provided Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final Browser ibr, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value given JSon Array of Key from JSon response provided String source.
+     *
+     * @author raztoki
+     * */
+    private String getJsonArray(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJsonArray(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return String[] value from provided JSon Array
+     *
+     * @author raztoki
+     * @param source
+     * @return
+     */
+    private String[] getJsonResultsFromArray(final String source) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
+    }
+
+    /**
+     * 0 = everything ok, 1-99 = "error"-errors, 100-199 = "not_available"-errors, 200-299 = Other (html) [download] errors, sometimes mixed
+     * with the API errors.
+     */
+    private void updatestatuscode() {
+        String error = getJson("error");
+        final String msg = getJson("msg");
+        if (error != null && msg != null) {
+            if (msg.equals("wrong username or password")) {
+                statuscode = 1;
+            } else if (msg.equals("no premium")) {
+                statuscode = 2;
+            } else if (msg.equals("wrong link")) {
+                statuscode = 3;
+            } else if (msg.equals("max 50 link can check")) {
+                statuscode = 4;
+            } else if (msg.equals("no act param defined")) {
+                statuscode = 5;
+            } else {
+                statuscode = 666;
             }
-            String postData = "act=dologin&login_passfield=" + loginID + "&target=%2Findex.php&t=&id=&data=&url_for_login=%2Findex.php%3Fisl%3D1&need_redirect=1&username=" + Encoding.urlEncode(account.getUser()) + "&" + loginID + "=" + Encoding.urlEncode(account.getPass()) + "&remember=on";
-            br.postPage("http://data.hu/login.php", postData);
-            if (br.getCookie("http://data.hu/", "datapremiumseccode") == null) {
-                final String lang = System.getProperty("user.language");
-                if ("de".equalsIgnoreCase(lang)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            }
+        } else {
+            /* No way to tell that something unpredictable happened here --> status should be fine. */
+            statuscode = 0;
         }
     }
 
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    private void handleAPIErrors(final Browser br) throws PluginException {
+        String statusMessage = null;
+        try {
+            switch (statuscode) {
+            case 0:
+                /* Everything ok */
+                break;
+            case 1:
+                /* Wrong username or password -> permanently disable account */
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    statusMessage = "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.";
+                } else {
+                    statusMessage = "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.";
+                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case 2:
+                /* Account = Free account tried a download in premium mode --> (Should never happen anyways) Permanently disable */
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    statusMessage = "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.";
+                } else {
+                    statusMessage = "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.";
+                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case 3:
+                /* User tried to download an invalid link via account --> Should never happen */
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    statusMessage = "\r\nUngültiger Downloadlink";
+                } else {
+                    statusMessage = "\r\nInvalid downloadlink";
+                }
+                throw new PluginException(LinkStatus.ERROR_FATAL, statusMessage);
+            case 4:
+                /* We tried to check more than 50 links at the same time --> Should never happen */
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    statusMessage = "\r\nKann maximal 50 Links gleichzeitig überprüfen";
+                } else {
+                    statusMessage = "\r\nMax simultaneous checkable links number equals 50";
+                }
+                throw new PluginException(LinkStatus.ERROR_FATAL, statusMessage);
+            case 5:
+                /* 'no act param defined' --> Should never happen */
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    statusMessage = "\r\nFATALER API Fehler";
+                } else {
+                    statusMessage = "\r\nFATAL API error";
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, statusMessage);
+            case 666:
+                /* SHTF --> Should never happen */
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    statusMessage = "\r\nUnbekannter Fehler";
+                } else {
+                    statusMessage = "\r\nUnknown error";
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, statusMessage);
+            default:
+                /* Completely Unknown error */
+                statusMessage = "Unknown error";
+                logger.info(NICE_HOST + ": Unknown API error");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        } catch (final PluginException e) {
+            logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
+            throw e;
         }
-        String filename = br.getRegex("<div class=\"download_filename\">(.*?)</div>").getMatch(0);
-        String filesize = br.getRegex("<div class=\"download_filename\">(\\d+(\\.\\d+)? [A-Za-z]{1,5})</div></div>").getMatch(0);
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-        downloadLink.setName(filename.trim());
-        return AvailableStatus.TRUE;
     }
 
     @Override
