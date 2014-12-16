@@ -359,6 +359,7 @@ public class HellShareCom extends PluginForHost {
         }
         final String downloadOverview = getDownloadOverview(fileId);
         if (downloadOverview != null) {
+            br.setFollowRedirects(false);
             br.getPage(downloadOverview);
         }
 
