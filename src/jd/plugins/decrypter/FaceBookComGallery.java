@@ -38,6 +38,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.VKontakteRu.JSonUtils;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(www\\.)?(on\\.fb\\.me/[A-Za-z0-9]+\\+?|facebook\\.com/.+)" }, flags = { 0 })
@@ -997,7 +998,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         br.getPage(parameter);
         String scriptRedirect = br.getRegex("<script>window\\.location\\.replace\\(\"(https?:[^<>\"]*?)\"\\);</script>").getMatch(0);
         if (scriptRedirect != null) {
-            scriptRedirect = Encoding.htmlDecode(scriptRedirect.replace("\\", ""));
+            scriptRedirect = JSonUtils.unescape(scriptRedirect);
             br.getPage(scriptRedirect);
         }
         String normal_redirect = br.getRegex("<meta http\\-equiv=\"refresh\" content=\"0; URL=(/[^<>\"]*?)\"").getMatch(0);
