@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
+import jd.plugins.DownloadLink;
 
 import org.appwork.exceptions.WTFException;
 import org.jdownloader.plugins.SkipReason;
@@ -28,19 +29,33 @@ public class DownloadLinkCandidateHistory {
         if (history.containsKey(candidate)) {
             return false;
         }
+        DownloadLink link = candidate.getLink();
+        if (link != null) {
+            link.setLatestCandidate(candidate);
+            link.setLatestCandidateResult(null);
+        }
         history.put(candidate, null);
         return true;
     }
 
     public synchronized boolean dettach(DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
         if (history.containsKey(candidate) && history.get(candidate) == null) {
+
+            DownloadLink link = candidate.getLink();
+            if (link != null) {
+                link.setLatestCandidate(candidate);
+                // DownloadLink copy = new DownloadLinkStorable(link)._getDownloadLink();
+
+                link.setLatestCandidateResult(result);
+
+            }
             history.put(candidate, result);
             return true;
         }
         return false;
     }
 
-    protected Map<DownloadLinkCandidate, DownloadLinkCandidateResult> getHistory() {
+    public Map<DownloadLinkCandidate, DownloadLinkCandidateResult> getHistory() {
         return history;
     }
 

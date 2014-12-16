@@ -12,6 +12,8 @@ import org.jdownloader.gui.views.components.packagetable.columns.FileTypeColumn;
 import org.jdownloader.gui.views.components.packagetable.columns.HasCaptchaColumn;
 import org.jdownloader.gui.views.downloads.columns.AddedDateColumn;
 import org.jdownloader.gui.views.downloads.columns.AvailabilityColumn;
+import org.jdownloader.gui.views.downloads.columns.CandidateAccountColumn;
+import org.jdownloader.gui.views.downloads.columns.CandidateGatewayColumn;
 import org.jdownloader.gui.views.downloads.columns.ConnectionColumn;
 import org.jdownloader.gui.views.downloads.columns.DownloadFolderColumn;
 import org.jdownloader.gui.views.downloads.columns.DurationColumn;
@@ -65,6 +67,9 @@ public class DownloadsTableModel extends PackageControllerTableModel<FilePackage
         this.addColumn(new HosterColumn());
         this.addColumn(new UrlColumn());
         this.addColumn(new ConnectionColumn());
+        this.addColumn(new CandidateGatewayColumn());
+        this.addColumn(new CandidateAccountColumn());
+
         this.addColumn(taskColumn = new TaskColumn());
         this.addColumn(new RemainingColumn());
         this.addColumn(new EnabledDisabledColumn());

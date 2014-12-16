@@ -119,7 +119,7 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
                 return 150;
             }
 
-            protected int getMaxWidth() {
+            public int getMaxWidth() {
                 return getDefaultWidth();
             }
 
@@ -275,7 +275,7 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
                 return 80;
             }
 
-            protected int getMaxWidth() {
+            public int getMaxWidth() {
                 return getDefaultWidth();
             }
 

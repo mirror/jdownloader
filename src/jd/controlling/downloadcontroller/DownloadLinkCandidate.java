@@ -1,15 +1,17 @@
 package jd.controlling.downloadcontroller;
 
+import java.lang.ref.WeakReference;
+
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.plugins.DownloadLink;
 
 public class DownloadLinkCandidate {
-    private final boolean              forced;
-    private final DownloadLink         link;
-    private final CachedAccount        cachedAccount;
-    private final AbstractProxySelectorImpl proxySelector;
-    private final boolean              customizedAccount;
+    private final boolean                     forced;
+    private final WeakReference<DownloadLink> link;
+    private final CachedAccount               cachedAccount;
+    private final AbstractProxySelectorImpl   proxySelector;
+    private final boolean                     customizedAccount;
 
     public AbstractProxySelectorImpl getProxySelector() {
         return proxySelector;
@@ -20,7 +22,7 @@ public class DownloadLinkCandidate {
     }
 
     public DownloadLink getLink() {
-        return link;
+        return link == null ? null : link.get();
     }
 
     public boolean isForced() {
@@ -29,7 +31,8 @@ public class DownloadLinkCandidate {
 
     @Override
     public String toString() {
-        return "DownloadCandidate:" + link + "|Host " + link.getHost() + "|Account:" + cachedAccount + "|Proxy:" + proxySelector;
+        DownloadLink link = getLink();
+        return "DownloadCandidate:" + link + "|Host " + (link == null ? null : link.getHost()) + "|Account:" + cachedAccount + "|Proxy:" + proxySelector;
     }
 
     public DownloadLinkCandidate(DownloadLink link, boolean forced) {
@@ -45,7 +48,7 @@ public class DownloadLinkCandidate {
     }
 
     public DownloadLinkCandidate(DownloadLink link, boolean forced, CachedAccount cachedAccount, AbstractProxySelectorImpl proxy, boolean customizedAccount) {
-        this.link = link;
+        this.link = new WeakReference<DownloadLink>(link);
         this.forced = forced;
         this.cachedAccount = cachedAccount;
         this.proxySelector = proxy;

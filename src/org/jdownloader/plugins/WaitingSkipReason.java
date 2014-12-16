@@ -13,6 +13,7 @@ import org.jdownloader.api.downloads.v2.DownloadsAPIV2Impl;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 import org.jdownloader.gui.views.downloads.columns.TaskColumn;
+import org.jdownloader.gui.views.downloads.columns.candidatetooltip.ResultColumn;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
@@ -107,6 +108,9 @@ public class WaitingSkipReason implements ConditionalSkipReason, TimeOutConditio
     public String getMessage(Object requestor, AbstractNode node) {
         long left = getTimeOutLeft();
         if (left > 0) {
+            if (requestor instanceof ResultColumn) {
+                return getMessage();
+            }
             if (requestor instanceof TaskColumn) {
                 return getMessage();
             }

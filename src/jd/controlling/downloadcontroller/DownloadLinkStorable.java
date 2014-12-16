@@ -20,9 +20,14 @@ import org.jdownloader.plugins.FinalLinkState;
 
 public class DownloadLinkStorable implements Storable {
 
-    private static final byte[] KEY     = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
-    private static final String CRYPTED = "CRYPTED:";
-    private DownloadLink        link;
+    private static final byte[]                       KEY      = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+    private static final String                       CRYPTED  = "CRYPTED:";
+    public static final TypeRef<DownloadLinkStorable> TYPE_REF = new TypeRef<DownloadLinkStorable>() {
+                                                                   public java.lang.reflect.Type getType() {
+                                                                       return DownloadLinkStorable.class;
+                                                                   };
+                                                               };
+    private DownloadLink                              link;
 
     public AvailableStatus getAvailablestatus() {
         return link.getAvailableStatus();

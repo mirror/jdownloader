@@ -1025,7 +1025,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 logger.warning(unavailableReason);
                 vid.error = unavailableReason;
                 return null;
-            } else if (unavailableReason.equals("This video is unavailable.")) {
+            } else if (unavailableReason.equals("This video is unavailable.") || unavailableReason.equals(/* 15.12.2014 */"This video is not available.")) {
                 // be aware that this is always present, only when there is a non whitespace suberror is it valid.
                 // currently covering
                 // Sorry about that. .:. 7BN5H7AVHUIE8 invalid uid.

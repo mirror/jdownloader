@@ -172,7 +172,7 @@ public class UrlOrderTableModel extends ExtTableModel<UrlDisplayEntry> implement
             }
 
             @Override
-            protected int getMaxWidth() {
+            public int getMaxWidth() {
                 return 300;
             }
 

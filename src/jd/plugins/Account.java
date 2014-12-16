@@ -21,9 +21,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import jd.config.Property;
 import jd.controlling.AccountController;
 
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
+import org.jdownloader.translate._JDT;
 
 public class Account extends Property {
 
@@ -429,10 +431,25 @@ public class Account extends Property {
         setProperty(LATEST_VALID_TIMESTAMP, currentTimeMillis);
     }
 
-    public static enum AccountType {
-        FREE,
-        PREMIUM,
-        UNKNOWN
+    public static enum AccountType implements LabelInterface {
+        FREE {
+            @Override
+            public String getLabel() {
+                return _JDT._.AccountType_free();
+            }
+        },
+        PREMIUM {
+            @Override
+            public String getLabel() {
+                return _JDT._.AccountType_premium();
+            }
+        },
+        UNKNOWN {
+            @Override
+            public String getLabel() {
+                return _JDT._.AccountType_unknown();
+            }
+        }
     }
 
     /**

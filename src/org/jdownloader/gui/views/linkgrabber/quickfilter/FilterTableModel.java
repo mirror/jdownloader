@@ -37,7 +37,7 @@ public class FilterTableModel extends ExtTableModel<Filter> {
             //
             // }
             @Override
-            protected int getMaxWidth() {
+            public int getMaxWidth() {
                 return 18;
             }
 
@@ -78,7 +78,7 @@ public class FilterTableModel extends ExtTableModel<Filter> {
             //
             // }
             @Override
-            protected int getMaxWidth() {
+            public int getMaxWidth() {
                 return 50;
             }
 
@@ -168,7 +168,7 @@ public class FilterTableModel extends ExtTableModel<Filter> {
             }
 
             @Override
-            protected int getMaxWidth() {
+            public int getMaxWidth() {
                 return 30;
             }
 

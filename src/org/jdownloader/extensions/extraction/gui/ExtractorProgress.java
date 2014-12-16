@@ -105,7 +105,7 @@ public class ExtractorProgress extends IconedProcessIndicator {
                         return 25;
                     }
 
-                    protected int getMaxWidth() {
+                    public int getMaxWidth() {
                         return getDefaultWidth();
                     }
 
