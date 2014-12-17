@@ -32,7 +32,6 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
 
     public CrawledLinkFactory(CrawledLink l) {
         super(l);
-
     }
 
     private CrawledLink getFirstLink() {
@@ -51,36 +50,36 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
         throw new WTFException("Archive should always have at least one link");
     }
 
-    public java.util.List<ArchiveFile> createPartFileList(String file, String pattern) {
+    public List<ArchiveFile> createPartFileList(String file, String pattern) {
         final Pattern pat = Pattern.compile(pattern, CrossSystem.isWindows() ? Pattern.CASE_INSENSITIVE : 0);
-        java.util.List<ArchiveFile> ret = new ArrayList<ArchiveFile>();
-        if (getFirstLink().getParentNode() == null) {
+        final CrawledPackage parentNode = getFirstLink().getParentNode();
+        if (parentNode == null) {
+            final List<ArchiveFile> ret = new ArrayList<ArchiveFile>();
             // not yet packagized
             ret.add(this);
+            return ret;
         } else {
-            ModifyLock modifyLock = getFirstLink().getParentNode().getModifyLock();
+            final ModifyLock modifyLock = parentNode.getModifyLock();
             boolean readL = modifyLock.readLock();
             try {
-                List<CrawledLink> links = getFirstLink().getParentNode().getChildren();
-                HashMap<String, CrawledLinkArchiveFile> map = new HashMap<String, CrawledLinkArchiveFile>();
-                for (CrawledLink l : links) {
-                    String linkName = l.getName();
+                final HashMap<String, CrawledLinkArchiveFile> map = new HashMap<String, CrawledLinkArchiveFile>();
+                for (CrawledLink link : parentNode.getChildren()) {
+                    final String linkName = link.getName();
                     if (linkName.equals(file) || pat.matcher(linkName).matches()) {
                         CrawledLinkArchiveFile af = map.get(linkName);
                         if (af == null) {
-                            af = new CrawledLinkArchiveFile(l);
+                            af = new CrawledLinkArchiveFile(link);
                             map.put(linkName, af);
-                            ret.add(af);
                         } else {
-                            af.addMirror(l);
+                            af.addMirror(link);
                         }
                     }
                 }
+                return new ArrayList<ArchiveFile>(map.values());
             } finally {
                 modifyLock.readUnlock(readL);
             }
         }
-        return ret;
     }
 
     public Collection<? extends String> getGuessedPasswordList(Archive archive) {

@@ -314,9 +314,7 @@ public class CandidateTooltipTableModel extends ExtTableModel<HistoryEntry> {
 
     public CandidateTooltipTableModel(List<HistoryEntry> history) {
         super("CandidateTooltipTableModel");
-
         _fireTableStructureChanged(history, true);
-
     }
 
     @Override

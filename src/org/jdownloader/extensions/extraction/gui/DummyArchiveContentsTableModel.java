@@ -24,9 +24,7 @@ public class DummyArchiveContentsTableModel extends ExtTableModel<DummyArchiveFi
 
     public DummyArchiveContentsTableModel(DummyArchive da) {
         super("DummyArchiveContentsTableModel");
-
-        getTableData().addAll(da.getList());
-
+        _fireTableStructureChanged(da.getList(), true);
     }
 
     @Override
@@ -82,33 +80,33 @@ public class DummyArchiveContentsTableModel extends ExtTableModel<DummyArchiveFi
 
             @Override
             protected Icon getIcon(DummyArchiveFile value) {
-                if (value.isMissing()) {
-                    return offline;
-                }
                 if (value.getOnlineStatus() == AvailableStatus.TRUE) {
                     return online;
+                }
+                if (value.isMissing() || value.isIncomplete()) {
+                    return offline;
                 }
                 return unknown;
             }
 
             @Override
             public String getStringValue(DummyArchiveFile value) {
-                if (value.isMissing()) {
-                    return T._.offline();
-                }
                 if (value.getOnlineStatus() == AvailableStatus.TRUE) {
                     return T._.online();
+                }
+                if (value.isMissing() || value.isIncomplete()) {
+                    return T._.offline();
                 }
                 return T._.unknown();
             }
 
             @Override
             protected String getTooltipText(DummyArchiveFile value) {
-                if (value.isMissing() || value.isIncomplete()) {
-                    return T._.offline_tt();
-                }
                 if (value.getOnlineStatus() == AvailableStatus.TRUE) {
                     return T._.online_tt();
+                }
+                if (value.isMissing() || value.isIncomplete()) {
+                    return T._.offline_tt();
                 }
                 return T._.unknown_tt();
             }

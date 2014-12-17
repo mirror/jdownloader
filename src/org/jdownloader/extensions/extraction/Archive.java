@@ -17,7 +17,6 @@
 package org.jdownloader.extensions.extraction;
 
 import java.io.File;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -155,14 +154,13 @@ public class Archive {
     }
 
     public java.util.List<ArchiveFile> getArchiveFiles() {
-        return Collections.unmodifiableList(archives);
+        return archives;
     }
 
     public void setArchiveFiles(java.util.List<ArchiveFile> collection) {
-        this.archives = collection;
+        this.archives = new CopyOnWriteArrayList<ArchiveFile>(collection);
         for (ArchiveFile af : archives) {
             af.setArchive(this);
-
         }
     }
 

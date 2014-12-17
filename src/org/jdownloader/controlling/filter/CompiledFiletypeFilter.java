@@ -195,12 +195,16 @@ public class CompiledFiletypeFilter {
         GZ,
         AR,
         BZ2,
+        ARJ,
+        CPIO,
         SevenZ("7Z"),
         S7Z,
         DMG,
         SFX,
         XZ,
-        TGZ;
+        TGZ,
+        LZH,
+        LHA;
 
         private Pattern        pattern;
         private static Pattern allPattern;

@@ -21,12 +21,9 @@ public class DummyArchiveContentsTable extends BasicJDTable<DummyArchiveFile> {
             if (daf.getArchiveFile() != null && daf.getArchiveFile() instanceof CrawledLinkArchiveFile) {
                 linkgrabber = true;
                 break;
-
             }
         }
 
-        // getModel().setColumnVisible(((DummyArchiveContentsTableModel)
-        // getModel()).getLocal(), !linkgrabber);
         getModel().setColumnVisible(((DummyArchiveContentsTableModel) getModel()).getLinkStatus(), linkgrabber);
         addRowHighlighter(new ExtOverlayRowHighlighter(null, ColorUtils.getAlphaInstance(Color.RED, 20)) {
 

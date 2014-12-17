@@ -10,17 +10,19 @@ import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFile;
 
 public class DummyArchiveFile {
 
-    private String      name;
-    private boolean     missing = false;
-    private ArchiveFile archiveFile;
-    private File        file;
+    private final String      name;
+    private final boolean     missing;
+    private final ArchiveFile archiveFile;
+    private final File        file;
 
     public ArchiveFile getArchiveFile() {
         return archiveFile;
     }
 
     public boolean isIncomplete() {
-        if (file != null && file.exists()) return false;
+        if (file != null && file.exists()) {
+            return false;
+        }
         return archiveFile == null || !archiveFile.isComplete();
     }
 
@@ -28,15 +30,11 @@ public class DummyArchiveFile {
         return missing;
     }
 
-    public DummyArchiveFile setMissing(boolean exists) {
-        this.missing = exists;
-        return this;
-    }
-
     public DummyArchiveFile(String miss, File folder) {
         name = miss;
         this.file = new File(folder, miss);
-        setMissing(!file.exists());
+        missing = !file.exists();
+        this.archiveFile = null;
     }
 
     public String toString() {
@@ -45,6 +43,16 @@ public class DummyArchiveFile {
 
     public DummyArchiveFile(ArchiveFile af) {
         name = af.getName();
+        if (af instanceof MissingArchiveFile) {
+            this.file = null;
+            missing = true;
+        } else if (af instanceof CrawledLinkArchiveFile) {
+            file = null;
+            missing = false;
+        } else {
+            file = new File(af.getFilePath());
+            missing = !file.exists();
+        }
         archiveFile = af;
     }
 
@@ -70,8 +78,12 @@ public class DummyArchiveFile {
     }
 
     public boolean isLocalFileAvailable() {
-        if (file != null) return file.exists();
-        if (archiveFile != null) return archiveFile.exists();
+        if (file != null) {
+            return file.exists();
+        }
+        if (archiveFile != null) {
+            return archiveFile.exists();
+        }
         return false;
     }
 

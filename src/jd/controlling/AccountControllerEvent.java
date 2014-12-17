@@ -22,14 +22,10 @@ import org.appwork.utils.event.SimpleEvent;
 
 public class AccountControllerEvent extends SimpleEvent<AccountController, Object, AccountControllerEvent.Types> {
 
-    private Account account;
+    private final Account account;
 
     public Account getAccount() {
         return account;
-    }
-
-    public void setAccount(Account account) {
-        this.account = account;
     }
 
     public AccountControllerEvent(AccountController caller, Types type, Account account, Object... parameters) {

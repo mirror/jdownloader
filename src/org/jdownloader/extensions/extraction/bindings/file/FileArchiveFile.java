@@ -11,11 +11,11 @@ import org.jdownloader.extensions.extraction.ExtractionStatus;
 
 public class FileArchiveFile implements ArchiveFile {
 
-    private File    file;
-    private Archive archive;
-    private String  name;
-    private String  filePath;
-    private boolean isFirstArchiveFile = false;
+    private final File   file;
+    private final String name;
+    private final String filePath;
+    private boolean      isFirstArchiveFile = false;
+    private final int    hashCode;
 
     public boolean isFirstArchiveFile() {
         return isFirstArchiveFile;
@@ -29,6 +29,7 @@ public class FileArchiveFile implements ArchiveFile {
         this.file = f;
         name = file.getName();
         filePath = file.getAbsolutePath();
+        hashCode = (getClass() + name).hashCode();
     }
 
     public File getFile() {
@@ -36,7 +37,7 @@ public class FileArchiveFile implements ArchiveFile {
     }
 
     public boolean isComplete() {
-        return file.exists();
+        return getFile().exists();
     }
 
     public String getFilePath() {
@@ -45,7 +46,7 @@ public class FileArchiveFile implements ArchiveFile {
 
     @Override
     public int hashCode() {
-        return file.hashCode();
+        return hashCode;
     }
 
     @Override
@@ -56,7 +57,7 @@ public class FileArchiveFile implements ArchiveFile {
         if (obj == this) {
             return true;
         }
-        return file.equals(((FileArchiveFile) obj).file);
+        return getFile().equals(((FileArchiveFile) obj).getFile());
     }
 
     public void deleteFile(FileCreationManager.DeleteOption option) {
@@ -83,7 +84,7 @@ public class FileArchiveFile implements ArchiveFile {
 
     @Override
     public long getFileSize() {
-        return file.length();
+        return getFile().length();
     }
 
     @Override
@@ -96,16 +97,11 @@ public class FileArchiveFile implements ArchiveFile {
 
     @Override
     public void setArchive(Archive archive) {
-        this.archive = archive;
-    }
-
-    public Archive getArchive() {
-        return archive;
     }
 
     @Override
     public boolean exists() {
-        return file.exists();
+        return getFile().exists();
     }
 
     @Override

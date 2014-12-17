@@ -220,7 +220,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
     private JPanel                  waitingPane;
 
-    private Timer                   speedInTitleUpdater;
+    private volatile Timer          speedInTitleUpdater;
 
     private boolean                 busy;
 

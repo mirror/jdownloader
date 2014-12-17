@@ -12,7 +12,7 @@ import org.jdownloader.extensions.extraction.ExtractionController;
 
 public class DownloadLinkArchive extends Archive {
 
-    private java.util.List<DownloadLink> disabledLinks;
+    private List<DownloadLink> disabledLinks;
 
     public DownloadLinkArchive(ArchiveFactory link) {
         super(link);

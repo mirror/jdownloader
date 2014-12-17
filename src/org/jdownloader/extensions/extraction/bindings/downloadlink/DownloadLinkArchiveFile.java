@@ -28,18 +28,19 @@ import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class DownloadLinkArchiveFile implements ArchiveFile {
 
-    private List<DownloadLink> downloadLinks;
-    private String             name;
-    private String             filePath;
-    private long               size;
-    private Archive            archive;
+    private final List<DownloadLink> downloadLinks;
+    private final String             name;
+    private final String             filePath;
+    private volatile long            size;
+    private final int                hashCode;
 
     public DownloadLinkArchiveFile(DownloadLink link) {
         downloadLinks = new CopyOnWriteArrayList<DownloadLink>();
         downloadLinks.add(link);
-        name = new File(link.getFileOutput(false, true)).getName();
         filePath = link.getFileOutput(false, true);
+        name = new File(filePath).getName();
         size = link.getView().getBytesTotalEstimated();
+        hashCode = (getClass() + name).hashCode();
     }
 
     public String toString() {
@@ -48,7 +49,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     @Override
     public int hashCode() {
-        return downloadLinks.hashCode();
+        return hashCode;
     }
 
     @Override
@@ -60,8 +61,8 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
             return true;
         }
         // this equals is used by the build method of ExtractionExtension. If we have one matching link, the archivefile matches as well
-        for (DownloadLink dl : ((DownloadLinkArchiveFile) obj).downloadLinks) {
-            if (downloadLinks.contains(dl)) {
+        for (DownloadLink dl : ((DownloadLinkArchiveFile) obj).getDownloadLinks()) {
+            if (getDownloadLinks().contains(dl)) {
                 return true;
             }
         }
@@ -70,7 +71,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     @Override
     public boolean isComplete() {
-        for (DownloadLink downloadLink : downloadLinks) {
+        for (DownloadLink downloadLink : getDownloadLinks()) {
             if ((SkipReason.FILE_EXISTS.equals(downloadLink.getSkipReason()) || FinalLinkState.FAILED_EXISTS.equals(downloadLink.getFinalLinkState()) || FinalLinkState.CheckFinished(downloadLink.getFinalLinkState())) && new File(filePath).exists()) {
                 return true;
             }
@@ -83,8 +84,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     }
 
     public void deleteFile(DeleteOption option) {
-
-        DownloadWatchDog.getInstance().delete(downloadLinks, option);
+        DownloadWatchDog.getInstance().delete(new ArrayList<DownloadLink>(getDownloadLinks()), option);
     }
 
     public List<DownloadLink> getDownloadLinks() {
@@ -97,7 +97,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     }
 
     public void setStatus(ExtractionController controller, ExtractionStatus status) {
-        for (DownloadLink downloadLink : downloadLinks) {
+        for (DownloadLink downloadLink : getDownloadLinks()) {
             downloadLink.setExtractionStatus(status);
             final PluginProgress progress = downloadLink.getPluginProgress();
             if (progress != null && progress instanceof ExtractionProgress) {
@@ -107,7 +107,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     }
 
     public void setMessage(ExtractionController controller, String text) {
-        for (DownloadLink downloadLink : downloadLinks) {
+        for (DownloadLink downloadLink : getDownloadLinks()) {
             final PluginProgress progress = downloadLink.getPluginProgress();
             if (progress != null && progress instanceof ExtractionProgress) {
                 ((ExtractionProgress) progress).setMessage(text);
@@ -119,7 +119,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
         final PluginProgress progress = controller.getExtractionProgress();
         progress.updateValues(value, max);
         progress.setColor(color);
-        for (DownloadLink downloadLink : downloadLinks) {
+        for (DownloadLink downloadLink : getDownloadLinks()) {
             if (value <= 0 && max <= 0) {
                 downloadLink.addPluginProgress(progress);
             } else {
@@ -143,23 +143,22 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     @Override
     public void deleteLink() {
-        final java.util.List<DownloadLink> list = new ArrayList<DownloadLink>(downloadLinks);
-        DownloadController.getInstance().removeChildren(list);
+        DownloadController.getInstance().removeChildren(new ArrayList<DownloadLink>(getDownloadLinks()));
     }
 
     public void addMirror(DownloadLink link) {
-        downloadLinks.add(link);
+        getDownloadLinks().add(link);
         size = Math.max(link.getView().getBytesTotal(), size);
     }
 
     public void setProperty(String key, Object value) {
-        for (DownloadLink downloadLink : downloadLinks) {
+        for (DownloadLink downloadLink : getDownloadLinks()) {
             downloadLink.setProperty(key, value);
         }
     }
 
     public Object getProperty(String key) {
-        for (DownloadLink downloadLink : downloadLinks) {
+        for (DownloadLink downloadLink : getDownloadLinks()) {
             if (downloadLink.hasProperty(key)) {
                 return downloadLink.getProperty(key);
             }
@@ -169,7 +168,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     public AvailableStatus getAvailableStatus() {
         AvailableStatus ret = null;
-        for (DownloadLink downloadLink : downloadLinks) {
+        for (DownloadLink downloadLink : getDownloadLinks()) {
             switch (downloadLink.getAvailableStatus()) {
             case TRUE:
                 return downloadLink.getAvailableStatus();
@@ -193,7 +192,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     @Override
     public void onCleanedUp(final ExtractionController controller) {
-        for (final DownloadLink downloadLink : downloadLinks) {
+        for (final DownloadLink downloadLink : getDownloadLinks()) {
             switch (CFG_GENERAL.CFG.getCleanupAfterDownloadAction()) {
             case CLEANUP_IMMEDIATELY:
                 DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
@@ -238,17 +237,11 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     @Override
     public void setArchive(Archive archive) {
-        this.archive = archive;
         if (archive != null && archive.getFactory() != null) {
-            for (DownloadLink downloadLink : downloadLinks) {
+            for (DownloadLink downloadLink : getDownloadLinks()) {
                 downloadLink.setArchiveID(archive.getFactory().getID());
             }
         }
-
-    }
-
-    public Archive getArchive() {
-        return archive;
     }
 
     @Override
@@ -265,7 +258,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     @Override
     public void removePluginProgress(ExtractionController controller) {
-        for (final DownloadLink downloadLink : downloadLinks) {
+        for (final DownloadLink downloadLink : getDownloadLinks()) {
             downloadLink.removePluginProgress(controller.getExtractionProgress());
         }
     }
