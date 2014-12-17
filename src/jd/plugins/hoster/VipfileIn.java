@@ -385,20 +385,35 @@ public class VipfileIn extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.getPage(this.getProtocol() + "www." + this.getHost() + "/login." + type);
                 final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
-                final String loginpostpage = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                br.postPage(loginpostpage, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                final boolean oldLogin = true;
                 final String lang = System.getProperty("user.language");
-                if (!br.containsHTML("\"login_status\":\"success\"")) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (oldLogin) {
+                    br.postPage("http://vipfile.in/login.html", "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
+                    if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout\\.html\">logout \\(")) {
+                        if ("de".equalsIgnoreCase(lang)) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                    }
+                } else {
+                    final String loginpostpage = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                    br.postPage(loginpostpage, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    if (!br.containsHTML("\"login_status\":\"success\"")) {
+                        if ("de".equalsIgnoreCase(lang)) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
                 }
-                br.getPage(loginstart + this.getHost() + "/account_home." + type);
-                if (!br.containsHTML("class=\"badge badge\\-success\">PAID USER</span>")) {
+                if (!br.getURL().contains("/upgrade")) {
+                    br.getPage(loginstart + this.getHost() + "/upgrade." + type);
+                }
+                final String type = br.getRegex("Account Type:[\t\n\r ]+</td>[\t\n\r ]+<td>([^<>\"]*?)<").getMatch(0);
+                if (type == null || !type.contains("Paid")) {
                     account.setProperty("free", true);
                 } else {
                     account.setProperty("free", false);
@@ -440,15 +455,15 @@ public class VipfileIn extends PluginForHost {
             MAXPREM.set(account_FREE_MAXDOWNLOADS);
             ai.setStatus("Registered (free) user");
         } else {
-            br.getPage("http://" + this.getHost() + "/upgrade." + type);
+            br.getPage("http://" + this.getHost() + "/index." + type);
             /* If the premium account is expired we'll simply accept it as a free account. */
-            final String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+            final String expire = br.getRegex("<p>Account is preimum until : ([^<>\"]*?)</p>").getMatch(0);
             if (expire == null) {
                 account.setValid(false);
                 return ai;
             }
             long expire_milliseconds = 0;
-            expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy hh:mm:ss", Locale.ENGLISH);
+            expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
             if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
                 account.setProperty("free", true);
                 try {

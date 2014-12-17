@@ -147,7 +147,7 @@ public class InCloudDriveCom extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, directlinkparam);
         if (dllink == null) {
             if (br.containsHTML(">we are performing a service upgrade please try again!")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Maintenance is being done");
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Maintenance is being done", 1 * 60 * 60 * 1000l);
             }
             if (downloadLink.getBooleanProperty("premiumRequired", false)) {
                 // canHandle for JD2, non JD2 here.
@@ -419,7 +419,7 @@ public class InCloudDriveCom extends PluginForHost {
             if (dllink == null) {
                 parseFileInformation(link);
                 if (br.containsHTML(">we are performing a service upgrade please try again!")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Maintenance is being done");
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Maintenance is being done", 1 * 60 * 60 * 1000l);
                 }
                 dllink = br.getRegex("\"(https?://\\w+\\.inclouddrive\\.com/download/\\?token=[^\"]+)\"").getMatch(0);
                 if (dllink == null) {
@@ -480,7 +480,7 @@ public class InCloudDriveCom extends PluginForHost {
 
     /**
      * When premium only download restriction (eg. filesize), throws exception with given message
-     * 
+     *
      * @param msg
      * @throws PluginException
      */
@@ -555,7 +555,7 @@ public class InCloudDriveCom extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.

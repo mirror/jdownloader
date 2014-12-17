@@ -39,9 +39,19 @@ public class ProtectDdlIslandRu extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final String INVALIDLINKS = "http://(www\\.)?protect\\.ddl\\-island\\.ru/(img|other)";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        if (parameter.matches(INVALIDLINKS)) {
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
+        }
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getContentType().matches("(application/javascript|text/css)")) {
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);

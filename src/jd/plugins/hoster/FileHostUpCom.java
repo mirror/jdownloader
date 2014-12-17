@@ -58,7 +58,7 @@ public class FileHostUpCom extends PluginForHost {
     // For sites which use this script: http://www.yetishare.com/
     // YetiShareBasic Version 0.4.4-psp
     // mods:
-    // limit-info: free account untested, set FREE limits
+    // limit-info:
     // protocol: no https
     // captchatype: null
     // other:
