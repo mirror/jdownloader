@@ -29,10 +29,15 @@ public class DownloadLinkCandidateHistory {
         if (history.containsKey(candidate)) {
             return false;
         }
-        DownloadLink link = candidate.getLink();
-        if (link != null) {
-            link.setLatestCandidate(candidate);
-            link.setLatestCandidateResult(null);
+        try {
+            DownloadLink link = candidate.getLink();
+            if (link != null) {
+                link.addHistoryEntry(HistoryEntry.create(candidate));
+
+            }
+        } catch (Throwable e) {
+            // just to be sure
+            e.printStackTrace();
         }
         history.put(candidate, null);
         return true;
@@ -40,14 +45,22 @@ public class DownloadLinkCandidateHistory {
 
     public synchronized boolean dettach(DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
         if (history.containsKey(candidate) && history.get(candidate) == null) {
+            try {
+                DownloadLink link = candidate.getLink();
+                if (link != null) {
+                    HistoryEntry history = link.getLatestHistoryEntry();
+                    if (history != null && history.getCandidate() == candidate) {
+                        HistoryEntry.updateResult(history, candidate, result);
+                    } else {
+                        System.out.println("Candidate Misnach");
+                    }
 
-            DownloadLink link = candidate.getLink();
-            if (link != null) {
-                link.setLatestCandidate(candidate);
-                // DownloadLink copy = new DownloadLinkStorable(link)._getDownloadLink();
-
-                link.setLatestCandidateResult(result);
-
+                } else {
+                    System.out.println("No LInk");
+                }
+            } catch (Throwable e) {
+                // just to be sure
+                e.printStackTrace();
             }
             history.put(candidate, result);
             return true;
@@ -138,6 +151,7 @@ public class DownloadLinkCandidateHistory {
                 case FAILED_EXISTS:
                 case OFFLINE_TRUSTED:
                     /* these results(above) should have ended in removal of DownloadLinkHistory */
+
                 case PROXY_UNAVAILABLE:
                 case CONNECTION_TEMP_UNAVAILABLE:
                     /* if we end up here(results above) -> find the bug :) */

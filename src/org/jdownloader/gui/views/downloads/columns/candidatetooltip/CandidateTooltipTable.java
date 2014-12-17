@@ -10,6 +10,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
 
+import jd.controlling.downloadcontroller.HistoryEntry;
 import jd.gui.swing.jdgui.BasicJDTable;
 
 import org.appwork.swing.components.tooltips.ToolTipController;
@@ -19,7 +20,7 @@ import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.jdownloader.gui.views.downloads.columns.candidatetooltip.CandidateTooltipTableModel.MaxWidthProvider;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-public class CandidateTooltipTable extends BasicJDTable<CandidateAndResult> {
+public class CandidateTooltipTable extends BasicJDTable<HistoryEntry> {
 
     private static final long serialVersionUID            = -2166408567306279016L;
     private boolean           repaintBecauseOfSizeChanged = false;
@@ -42,7 +43,7 @@ public class CandidateTooltipTable extends BasicJDTable<CandidateAndResult> {
         // this.setShowGrid(false);
         // this.setShowHorizontalLines(false);
 
-        // this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<CandidateAndResult>(Color.BLACK,
+        // this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<HistoryEntry>(Color.BLACK,
         // ColorUtils.getAlphaInstance(Color.RED, 50), null) {
         // public int getPriority() {
         // return Integer.MAX_VALUE - 1;
@@ -54,7 +55,7 @@ public class CandidateTooltipTable extends BasicJDTable<CandidateAndResult> {
         // }
         //
         // @Override
-        // public boolean accept(ExtColumn<CandidateAndResult> column, CandidateAndResult value, boolean selected, boolean focus, int row) {
+        // public boolean accept(ExtColumn<HistoryEntry> column, HistoryEntry value, boolean selected, boolean focus, int row) {
         // return false;
         // }
         //
@@ -64,7 +65,7 @@ public class CandidateTooltipTable extends BasicJDTable<CandidateAndResult> {
     @Override
     public void paintComponent(Graphics g) {
         boolean init = false;
-        for (ExtColumn<CandidateAndResult> col : getModel().getColumns()) {
+        for (ExtColumn<HistoryEntry> col : getModel().getColumns()) {
             if (col instanceof MaxWidthProvider) {
                 int pref = ((MaxWidthProvider) col).getMaxPreferredWitdh();
                 if (pref > 0) {
@@ -104,7 +105,7 @@ public class CandidateTooltipTable extends BasicJDTable<CandidateAndResult> {
     public Dimension getPreferredSize() {
         Dimension ret = super.getPreferredSize();
         // int prefWidth = 0;
-        // for (ExtColumn<CandidateAndResult> col : getModel().getColumns()) {
+        // for (ExtColumn<HistoryEntry> col : getModel().getColumns()) {
         // if (col instanceof MaxWidthProvider) {
         // int pref = ((MaxWidthProvider) col).getMaxPreferredWitdh();
         // if (pref > 0) {
@@ -125,7 +126,7 @@ public class CandidateTooltipTable extends BasicJDTable<CandidateAndResult> {
 
     }
 
-    protected ExtTableHeaderRenderer createDefaultHeaderRenderer(ExtColumn<CandidateAndResult> column) {
+    protected ExtTableHeaderRenderer createDefaultHeaderRenderer(ExtColumn<HistoryEntry> column) {
         ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(column, getTableHeader());
 
         setHeaderRendererColors(ret);
@@ -148,7 +149,7 @@ public class CandidateTooltipTable extends BasicJDTable<CandidateAndResult> {
         Color f = (LAFOptions.getInstance().getColorForTableMouseOverRowForeground());
         Color b = (LAFOptions.getInstance().getColorForTableMouseOverRowBackground());
         f = Color.black;
-        this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<CandidateAndResult>(f, b, null) {
+        this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<HistoryEntry>(f, b, null) {
             public int getPriority() {
                 return Integer.MAX_VALUE - 1;
 
@@ -160,7 +161,7 @@ public class CandidateTooltipTable extends BasicJDTable<CandidateAndResult> {
             }
 
             @Override
-            public boolean accept(ExtColumn<CandidateAndResult> column, CandidateAndResult value, boolean selected, boolean focus, int row) {
+            public boolean accept(ExtColumn<HistoryEntry> column, HistoryEntry value, boolean selected, boolean focus, int row) {
                 return mouseOverRow == row;
             }
 
@@ -173,7 +174,7 @@ public class CandidateTooltipTable extends BasicJDTable<CandidateAndResult> {
      * @see org.appwork.swing.exttable.ExtTable#onShortcutDelete(java.util.java.util.List , java.awt.event.KeyEvent, boolean)
      */
     @Override
-    protected boolean onShortcutDelete(java.util.List<CandidateAndResult> selectedObjects, KeyEvent evt, boolean direct) {
+    protected boolean onShortcutDelete(java.util.List<HistoryEntry> selectedObjects, KeyEvent evt, boolean direct) {
         // new RemoveAction(selectedObjects, direct).actionPerformed(null);
         return false;
     }
@@ -185,7 +186,7 @@ public class CandidateTooltipTable extends BasicJDTable<CandidateAndResult> {
      * org.appwork.swing.exttable.ExtColumn)
      */
     @Override
-    protected JPopupMenu onContextMenu(JPopupMenu popup, CandidateAndResult contextObject, java.util.List<CandidateAndResult> selection, ExtColumn<CandidateAndResult> column, MouseEvent ev) {
+    protected JPopupMenu onContextMenu(JPopupMenu popup, HistoryEntry contextObject, java.util.List<HistoryEntry> selection, ExtColumn<HistoryEntry> column, MouseEvent ev) {
         return null;
     }
 

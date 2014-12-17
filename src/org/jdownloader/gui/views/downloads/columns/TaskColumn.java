@@ -4,10 +4,13 @@ import java.awt.Dialog.ModalityType;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.Icon;
 import javax.swing.JPopupMenu;
+import javax.swing.SwingUtilities;
 
+import jd.controlling.downloadcontroller.HistoryEntry;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -21,6 +24,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.components.tooltips.MultiLineLabelTooltip;
 import org.appwork.swing.components.tooltips.MultiLineLabelTooltip.LabelInfo;
+import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
@@ -29,6 +33,7 @@ import org.jdownloader.DomainInfo;
 import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.downloads.columns.candidatetooltip.CandidateTooltip;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.FinalLinkState;
@@ -69,7 +74,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
     private static final long  serialVersionUID = 1L;
 
     private final Icon         trueIcon;
-    private final Icon         falseIcon;
+
     private final Icon         infoIcon;
 
     private final Icon         iconWait;
@@ -88,8 +93,6 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
     private final String       startingString;
 
     private final Icon         startingIcon;
-
-    private final Icon         trueIconMirror;
 
     @Override
     public int getDefaultWidth() {
@@ -110,8 +113,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
     public TaskColumn() {
         super(_GUI._.StatusColumn_StatusColumn());
         this.trueIcon = new AbstractIcon("true", 16);
-        this.trueIconMirror = new AbstractIcon("true-orange", 16);
-        this.falseIcon = new AbstractIcon("false", 16);
+
         this.infoIcon = new AbstractIcon("info", 16);
         this.iconWait = new AbstractIcon("wait", 16);
         this.extracting = new AbstractIcon(org.jdownloader.gui.IconKey.ICON_COMPRESS, 16);
@@ -146,6 +148,28 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
 
     public boolean onSingleClick(final MouseEvent e, final AbstractNode value) {
         return handleIPBlockCondition(e, value);
+    }
+
+    @Override
+    public boolean onDoubleClick(final MouseEvent e, final AbstractNode obj) {
+
+        SwingUtilities.invokeLater(new Runnable() {
+
+            public void run() {
+
+                if (obj instanceof DownloadLink) {
+                    List<HistoryEntry> his = ((DownloadLink) obj).getHistory();
+                    if (his != null) {
+                        ToolTipController.getInstance().show(CandidateTooltip.create(e.getPoint(), obj));
+                    }
+
+                }
+
+            }
+
+        });
+
+        return true;
     }
 
     public static boolean handleIPBlockCondition(final MouseEvent e, final AbstractNode value) {
@@ -251,7 +275,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
             final FinalLinkState finalLinkState = link.getFinalLinkState();
             if (finalLinkState != null) {
                 if (FinalLinkState.CheckFailed(finalLinkState)) {
-                    columnHelper.icon = falseIcon;
+                    columnHelper.icon = finalLinkState.getIcon(16);
                     columnHelper.string = finalLinkState.getExplanation(this, link);
                     columnHelper.tooltip = null;
                     return;
@@ -280,11 +304,8 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                         return;
                     }
                 }
-                if (FinalLinkState.FINISHED_MIRROR.equals(finalLinkState)) {
-                    columnHelper.icon = trueIconMirror;
-                } else {
-                    columnHelper.icon = trueIcon;
-                }
+
+                columnHelper.icon = finalLinkState.getIcon(16);
                 columnHelper.string = finalLinkState.getExplanation(this, link);
                 columnHelper.tooltip = null;
                 return;
