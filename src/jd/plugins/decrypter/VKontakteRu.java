@@ -1637,18 +1637,23 @@ public class VKontakteRu extends PluginForDecrypt {
                     return false;
                 }
 
+                org.jdownloader.statistics.StatsManager.I().track("vkontakte/verify/missing_digits/ask");
+
                 String end;
                 String start;
                 final String code = UserIO.getInstance().requestInputDialog("Please enter your phone number (Starts with " + (start = Encoding.htmlDecode(preAndPost[0]).trim()) + " & ends with " + (end = Encoding.htmlDecode(preAndPost[1]).trim()) + ")");
                 if (!code.startsWith(start) || !code.endsWith(end)) {
+                    org.jdownloader.statistics.StatsManager.I().track("vkontakte/verify/missing_digits/bad_input");
                     continue;
                 }
                 form.getInputFieldByName("code").setValue(code.substring(start.length(), code.length() - end.length()));
                 ajaxBR.submitForm(form);
                 if (!ajaxBR.containsHTML(">Unfortunately, the numbers you have entered are incorrect")) {
                     hasPassed = true;
+                    org.jdownloader.statistics.StatsManager.I().track("vkontakte/verify/missing_digits/success");
                     break;
                 }
+                org.jdownloader.statistics.StatsManager.I().track("vkontakte/verify/missing_digits/failed");
                 if (ajaxBR.containsHTML("You can try again in \\d+ hour")) {
                     logger.info("Failed security check, account is banned for some hours!");
                     break;
@@ -1659,6 +1664,7 @@ public class VKontakteRu extends PluginForDecrypt {
             ajaxBR.getHeaders().put("X-Requested-With", "XMLHttpRequest");
 
             for (int i = 0; i <= 3; i++) {
+                org.jdownloader.statistics.StatsManager.I().track("vkontakte/verify/digits4/ask");
                 logger.info("Entering security check...");
                 final String to = br.getRegex("to: \\'([^<>\"]*?)\\'").getMatch(0);
                 final String hash = br.getRegex("hash: \\'([^<>\"]*?)\\'").getMatch(0);
@@ -1669,8 +1675,10 @@ public class VKontakteRu extends PluginForDecrypt {
                 ajaxBR.postPage("https://vk.com/login.php", "act=security_check&al=1&al_page=3&code=" + code + "&hash=" + Encoding.urlEncode(hash) + "&to=" + Encoding.urlEncode(to));
                 if (!ajaxBR.containsHTML(">Unfortunately, the numbers you have entered are incorrect")) {
                     hasPassed = true;
+                    org.jdownloader.statistics.StatsManager.I().track("vkontakte/verify/digits4/success");
                     break;
                 }
+                org.jdownloader.statistics.StatsManager.I().track("vkontakte/verify/digits4/failed");
                 if (ajaxBR.containsHTML("You can try again in \\d+ hour")) {
                     logger.info("Failed security check, account is banned for some hours!");
                     break;
