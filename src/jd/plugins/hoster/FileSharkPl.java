@@ -255,13 +255,13 @@ public class FileSharkPl extends PluginForHost {
             ai.setUnlimitedTraffic();
         }
 
-        String expire = br.getRegex(">Rodzaj konta <strong>Premium <span>\\(do (\\d{4}\\-\\d{2}\\-\\d{2})\\)").getMatch(0);
+        String expire = br.getRegex(">Rodzaj konta <strong>Premium <span title=\"(\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})\">\\(do").getMatch(0);
         if (expire == null) {
             ai.setExpired(true);
             account.setValid(false);
             return ai;
         }
-        ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", Locale.ENGLISH));
+        ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH));
         account.setValid(true);
         try {
             account.setMaxSimultanDownloads(-1);
