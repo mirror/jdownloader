@@ -44,7 +44,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extmatrix.com" }, urls = { "https?://(www\\.)?extmatrix\\.com/files/[A-Za-z0-9]+/[^<>\"/]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extmatrix.com" }, urls = { "https?://(www\\.)?extmatrix\\.com/(files|get)/[A-Za-z0-9]+/[^<>\"/]+" }, flags = { 2 })
 public class ExtMatrixCom extends PluginForHost {
 
     public ExtMatrixCom(PluginWrapper wrapper) {
@@ -68,7 +68,7 @@ public class ExtMatrixCom extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         /* Prefer http for stable compatibility reasons. */
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://").replace("/get/", "/files/"));
     }
 
     // Using FlexShareScript 1.2.1, heavily modified

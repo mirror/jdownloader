@@ -66,7 +66,7 @@ public class FourUpMe extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.0.9
-    // mods: getdllink regex added additional domains to the lookup, MAINTENANCE[Additional text]
+    // mods: getdllink regex added additional domains to the lookup, MAINTENANCE[Additional text], heavily modified, do NOT upgrade!
     // non account: 10 * ??
     // free account: chunks * maxdls
     // premium account: chunks * maxdls
@@ -191,7 +191,7 @@ public class FourUpMe extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -4, "freelink");
+        doFree(downloadLink, false, 1, "freelink");
     }
 
     @SuppressWarnings("unused")
@@ -422,6 +422,9 @@ public class FourUpMe extends PluginForHost {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?(" + COOKIE_HOST.replaceAll("https?://(www\\.)?", "") + "|4up\\.(me|im)))(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+            if (dllink == null) {
+                dllink = new Regex(correctedBR, "\"(https?://(www\\.)?4upfiles\\.com/handle\\.php\\?file=[^<>\"]*?)\"").getMatch(0);
+            }
             if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {

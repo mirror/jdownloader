@@ -56,7 +56,7 @@ public class ExpressLeechCom extends PluginForHost {
 
     // For sites which use this script: http://www.yetishare.com/
     // YetiShareBasic Version 2.0-ajax 0.0.4-psp
-    // mods: requestFileInformation[Set final filename]
+    // mods: requestFileInformation[Set final filename], heavily modified, do NOT upgrade!
     // limit-info:
     // protocol: no https
     // captchatype: null
@@ -303,7 +303,7 @@ public class ExpressLeechCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaAction, postData, resume, maxchunks);
-                if (!dl.getConnection().isContentDisposition()) {
+                if (!dl.getConnection().isContentDisposition() && dl.getConnection().getContentType().contains("html")) {
                     br.followConnection();
                     handleErrors();
                     continue_link = getDllink();
@@ -318,7 +318,7 @@ public class ExpressLeechCom extends PluginForHost {
         }
         final String final_downloadlink = dl.getConnection().getURL().toString();
         logger.info("Final downloadlink: " + final_downloadlink);
-        if (!dl.getConnection().isContentDisposition()) {
+        if (!dl.getConnection().isContentDisposition() && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (captcha && (br.containsHTML(captcha_RECAPTCHA) || br.containsHTML(captcha_SOLVEMEDIA))) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
