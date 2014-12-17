@@ -445,6 +445,57 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         return ret;
     }
 
+    public void visitNodes(final AbstractNodeVisitor<ChildType, PackageType> visitor, final boolean liveWalk) {
+        if (visitor != null) {
+            if (liveWalk) {
+                final boolean pkgLock = readLock();
+                try {
+                    for (PackageType pkg : getPackages()) {
+                        Boolean visitNode = visitor.visitPackageNode(pkg);
+                        if (visitNode == null) {
+                            return;
+                        }
+                        if (Boolean.TRUE.equals(visitNode)) {
+                            final boolean childLock = pkg.getModifyLock().readLock();
+                            try {
+                                for (ChildType child : pkg.getChildren()) {
+                                    visitNode = visitor.visitChildrenNode(child);
+                                    if (visitNode == null) {
+                                        return;
+                                    } else if (Boolean.FALSE.equals(visitNode)) {
+                                        break;
+                                    }
+                                }
+                            } finally {
+                                pkg.getModifyLock().readUnlock(childLock);
+                            }
+
+                        }
+                    }
+                } finally {
+                    readUnlock(pkgLock);
+                }
+            } else {
+                for (PackageType pkg : getPackagesCopy()) {
+                    Boolean visitNode = visitor.visitPackageNode(pkg);
+                    if (visitNode == null) {
+                        return;
+                    }
+                    if (Boolean.TRUE.equals(visitNode)) {
+                        for (ChildType child : getChildrenCopy(pkg)) {
+                            visitNode = visitor.visitChildrenNode(child);
+                            if (visitNode == null) {
+                                return;
+                            } else if (Boolean.FALSE.equals(visitNode)) {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     public void merge(final PackageType dest, final java.util.List<ChildType> srcLinks, final java.util.List<PackageType> srcPkgs, final MergePosition mergeposition) {
         if (dest == null) {
             return;

@@ -8,7 +8,7 @@ import java.util.Map;
 
 public class PackedFile implements ContentNode {
 
-    private volatile long size;
+    private final long size;
 
     public long getSize() {
         return size;
@@ -43,8 +43,12 @@ public class PackedFile implements ContentNode {
         return directorySize;
     }
 
-    public PackedFile(boolean folder, String path, long size) {
-        this.size = size;
+    public PackedFile(boolean folder, String path, Long size) {
+        if (size != null) {
+            this.size = size;
+        } else {
+            this.size = -1;
+        }
         directorySize = 0l;
         this.path = path;
         directory = folder;
@@ -62,7 +66,7 @@ public class PackedFile implements ContentNode {
     public synchronized void add(PackedFile packedFile) {
         children.put(packedFile.getName(), packedFile);
         if (!packedFile.isDirectory()) {
-            directorySize += packedFile.getSize();
+            directorySize += Math.max(0, packedFile.getSize());
             fileCount++;
         } else {
             directoryCount++;

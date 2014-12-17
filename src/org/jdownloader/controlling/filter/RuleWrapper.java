@@ -4,6 +4,7 @@ import java.util.regex.Pattern;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.plugins.DownloadLink;
 
 import org.appwork.utils.Files;
@@ -266,10 +267,10 @@ public class RuleWrapper<T extends FilterRule> {
             if (sources == null || sources.length == 0) {
                 /* the first link never has sourceURLs */
                 sources = new String[2];
-                sources[0] = link.getURL();
+                sources[0] = LinkCrawler.cleanURL(link.getURL());
                 LinkCollectingJob job = link.getSourceJob();
                 if (job != null) {
-                    sources[1] = job.getCustomSourceUrl();
+                    sources[1] = LinkCrawler.cleanURL(job.getCustomSourceUrl());
                 }
             }
 

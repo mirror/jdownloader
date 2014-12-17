@@ -11,8 +11,9 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
+import jd.controlling.packagecontroller.AbstractNodeVisitor;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.StringUtils;
@@ -91,46 +92,53 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
         return null;
     }
 
-    public java.util.List<ArchiveFile> createPartFileList(final String file, String pattern) {
+    public List<ArchiveFile> createPartFileList(final String file, String pattern) {
         final Pattern pat = Pattern.compile(pattern, CrossSystem.isWindows() ? Pattern.CASE_INSENSITIVE : 0);
-        List<DownloadLink> links = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+        final String fileParent = new File(file).getParent();
+        final HashMap<String, ArchiveFile> map = new HashMap<String, ArchiveFile>();
+        DownloadController.getInstance().visitNodes(new AbstractNodeVisitor<DownloadLink, FilePackage>() {
 
-            public boolean acceptNode(DownloadLink node) {
-                String nodeFile = node.getFileOutput(false, true);
+            @Override
+            public Boolean visitPackageNode(FilePackage pkg) {
+                if (CrossSystem.isWindows()) {
+                    return StringUtils.equalsIgnoreCase(fileParent, pkg.getDownloadDirectory());
+                } else {
+                    return StringUtils.equals(fileParent, pkg.getDownloadDirectory());
+                }
+            }
+
+            @Override
+            public Boolean visitChildrenNode(DownloadLink node) {
+                final String nodeFile = node.getFileOutput(false, true);
                 if (nodeFile == null) {
                     // http://board.jdownloader.org/showthread.php?t=59031
                     return false;
                 }
-                return file.equals(nodeFile) || pat.matcher(nodeFile).matches();
-            }
+                if (file.equals(nodeFile) || pat.matcher(nodeFile).matches()) {
+                    final String nodeName = node.getView().getDisplayName();
+                    DownloadLinkArchiveFile af = (DownloadLinkArchiveFile) map.get(nodeName);
+                    if (af == null) {
+                        af = new DownloadLinkArchiveFile(node);
+                        map.put(nodeName, af);
+                    } else {
+                        af.addMirror(node);
+                    }
+                }
+                return true;
 
-            public int returnMaxResults() {
-                return 0;
             }
-        });
-        HashMap<String, DownloadLinkArchiveFile> map = new HashMap<String, DownloadLinkArchiveFile>();
-        java.util.List<ArchiveFile> ret = new ArrayList<ArchiveFile>();
-        for (DownloadLink l : links) {
-            String linkName = l.getView().getDisplayName();
-            DownloadLinkArchiveFile af = map.get(linkName);
-            if (af == null) {
-                af = new DownloadLinkArchiveFile(l);
-                map.put(linkName, af);
-                ret.add(af);
-            } else {
-                af.addMirror(l);
-            }
-        }
-        java.util.List<ArchiveFile> filelist = new FileArchiveFactory(new File(getFilePath())).createPartFileList(file, pattern);
-        for (ArchiveFile af : filelist) {
-            DownloadLinkArchiveFile downloadLinkArchiveFile = map.get(af.getName());
-            if (downloadLinkArchiveFile == null) {
+        }, true);
+
+        final List<ArchiveFile> localFiles = new FileArchiveFactory(new File(getFilePath())).createPartFileList(file, pattern);
+        for (ArchiveFile af : localFiles) {
+            final ArchiveFile archiveFile = map.get(af.getName());
+            if (archiveFile == null) {
                 // There is a matching local file, without a downloadlink link. this can happen if the user removes finished downloads
                 // immediatelly
-                ret.add(af);
+                map.put(af.getName(), af);
             }
         }
-        return ret;
+        return new ArrayList<ArchiveFile>(map.values());
     }
 
     public File toFile(String path) {

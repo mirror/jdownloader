@@ -5,30 +5,33 @@ import java.util.List;
 
 public class DummyArchive {
 
-    private Archive archive;
-    private int     missingCount    = 0;
-    private int     incompleteCount = 0;
+    private final String name;
+    private int          missingCount    = 0;
+    private int          incompleteCount = 0;
 
     public int getIncompleteCount() {
         return incompleteCount;
     }
 
-    private java.util.List<DummyArchiveFile> list;
+    private final java.util.List<DummyArchiveFile> list;
 
     public java.util.List<DummyArchiveFile> getList() {
         return list;
     }
 
     public DummyArchive(Archive archive) {
-        this.archive = archive;
+        name = archive.getName();
         list = new ArrayList<DummyArchiveFile>();
     }
 
     public void add(DummyArchiveFile e) {
         list.add(e);
-        if (e.isMissing()) missingCount++;
-        if (e.isIncomplete()) incompleteCount++;
-
+        if (e.isMissing()) {
+            missingCount++;
+        }
+        if (e.isIncomplete()) {
+            incompleteCount++;
+        }
     }
 
     public boolean isComplete() {
@@ -41,7 +44,6 @@ public class DummyArchive {
 
     public static DummyArchive create(Archive archive2, List<String> missing) {
         DummyArchive ret = new DummyArchive(archive2);
-
         if (missing != null) {
             for (String miss : missing) {
                 ret.add(new DummyArchiveFile(miss, archive2.getFolder()));
@@ -54,7 +56,7 @@ public class DummyArchive {
     }
 
     public String getName() {
-        return archive.getName();
+        return name;
     }
 
 }

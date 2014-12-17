@@ -42,7 +42,12 @@ public class ArchiveItem implements Storable {
     public static ArchiveItem create(ISimpleInArchiveItem item) throws SevenZipException {
         ArchiveItem ret = new ArchiveItem();
         ret.path = item.getPath();
-        ret.size = item.getSize();
+        final Long size = item.getSize();
+        if (size != null) {
+            ret.size = size;
+        } else {
+            ret.size = -1;
+        }
         ret.folder = item.isFolder();
         return ret;
     }

@@ -577,7 +577,6 @@ public class LinkCrawler {
     protected void crawlDeeper(final int generation, final CrawledLink source) {
         final CrawledLinkModifier sourceLinkModifier = source.getCustomCrawledLinkModifier();
         source.setCustomCrawledLinkModifier(null);
-        final String[] sourceURLs = getAndClearSourceURLs(source);
         source.setBrokenCrawlerHandler(null);
         if (source == null || source.getURL() == null || duplicateFinderDeep.putIfAbsent(source.getURL(), this) != null || this.isCrawledLinkFiltered(source)) {
             return;
@@ -597,6 +596,7 @@ public class LinkCrawler {
 
         };
         if (checkStartNotify(generation)) {
+            final String[] sourceURLs = getAndClearSourceURLs(source);
             try {
                 Browser br = null;
                 try {
@@ -1273,13 +1273,13 @@ public class LinkCrawler {
     protected void processHostPlugin(int generation, LazyHostPlugin pHost, CrawledLink possibleCryptedLink) {
         final CrawledLinkModifier parentLinkModifier = possibleCryptedLink.getCustomCrawledLinkModifier();
         possibleCryptedLink.setCustomCrawledLinkModifier(null);
-        final String[] sourceURLs = getAndClearSourceURLs(possibleCryptedLink);
         possibleCryptedLink.setBrokenCrawlerHandler(null);
         if (pHost == null || possibleCryptedLink.getURL() == null || this.isCrawledLinkFiltered(possibleCryptedLink)) {
             return;
         }
         if (checkStartNotify(generation)) {
             try {
+                final String[] sourceURLs = getAndClearSourceURLs(possibleCryptedLink);
                 PluginForHost wplg = null;
                 /*
                  * use a new PluginClassLoader here
@@ -1380,7 +1380,7 @@ public class LinkCrawler {
         }
     }
 
-    private String[] getAndClearSourceURLs(final CrawledLink link) {
+    public String[] getAndClearSourceURLs(final CrawledLink link) {
         final ArrayList<String> sources = new ArrayList<String>();
         CrawledLink next = link;
         while (next != null) {
@@ -1700,12 +1700,12 @@ public class LinkCrawler {
     protected void container(int generation, PluginsC oplg, final CrawledLink cryptedLink) {
         final CrawledLinkModifier parentLinkModifier = cryptedLink.getCustomCrawledLinkModifier();
         cryptedLink.setCustomCrawledLinkModifier(null);
-        final String[] sourceURLs = getAndClearSourceURLs(cryptedLink);
         cryptedLink.setBrokenCrawlerHandler(null);
         if (oplg == null || cryptedLink.getURL() == null || duplicateFinderContainer.putIfAbsent(cryptedLink.getURL(), this) != null || this.isCrawledLinkFiltered(cryptedLink)) {
             return;
         }
         if (checkStartNotify(generation)) {
+            final String[] sourceURLs = getAndClearSourceURLs(cryptedLink);
             try {
                 processedLinksCounter.incrementAndGet();
                 /* set new PluginClassLoaderChild because ContainerPlugin maybe uses Hoster/Crawler */
@@ -1809,7 +1809,6 @@ public class LinkCrawler {
     protected void crawl(final int generation, LazyCrawlerPlugin lazyC, final CrawledLink cryptedLink) {
         final CrawledLinkModifier parentLinkModifier = cryptedLink.getCustomCrawledLinkModifier();
         cryptedLink.setCustomCrawledLinkModifier(null);
-        final String[] sourceURLs = getAndClearSourceURLs(cryptedLink);
         final BrokenCrawlerHandler brokenCrawler = cryptedLink.getBrokenCrawlerHandler();
         cryptedLink.setBrokenCrawlerHandler(null);
         if (lazyC == null || cryptedLink.getCryptedLink() == null || duplicateFinderCrawler.putIfAbsent(cryptedLink.getURL(), this) != null || this.isCrawledLinkFiltered(cryptedLink)) {
@@ -1817,6 +1816,7 @@ public class LinkCrawler {
         }
         if (checkStartNotify(generation)) {
             try {
+                final String[] sourceURLs = getAndClearSourceURLs(cryptedLink);
                 processedLinksCounter.incrementAndGet();
                 final PluginForDecrypt wplg;
                 /*

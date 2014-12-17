@@ -68,7 +68,7 @@ public class DownloadLinkCandidateHistory {
         return false;
     }
 
-    public Map<DownloadLinkCandidate, DownloadLinkCandidateResult> getHistory() {
+    protected Map<DownloadLinkCandidate, DownloadLinkCandidateResult> getHistory() {
         return history;
     }
 

@@ -20,8 +20,7 @@ public class ExtractionEvent extends SimpleEvent<ExtractionController, Object, E
         EXTRACTION_FAILED, // Extraction was not successful
         EXTRACTION_FAILED_CRC, // CRC error occurred
         NOT_ENOUGH_SPACE, // Not enough space for the archive
-        FILE_NOT_FOUND // Archive was not found
-        ,
+        FILE_NOT_FOUND, // Archive was not found
         ACTIVE_ITEM// new file is beeing extracted
     }
 

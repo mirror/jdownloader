@@ -4,7 +4,7 @@ import java.io.File;
 
 public class Item {
 
-    private String path;
+    private final String path;
 
     public String getPath() {
         return path;
@@ -14,17 +14,21 @@ public class Item {
         return file;
     }
 
-    private File file;
-    private long size;
+    private final File file;
+    private final long size;
 
     public long getSize() {
         return size;
     }
 
-    public Item(String path, long size, File extractTo) {
+    public Item(String path, Long size, File extractTo) {
         this.path = path;
+        if (size != null) {
+            this.size = size;
+        } else {
+            this.size = -1;
+        }
         this.file = extractTo;
-        this.size = size;
     }
 
 }

@@ -126,9 +126,6 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
             }
             final Boolean isFolder = (Boolean) inArchive.getProperty(index, PropID.IS_FOLDER);
             final String path = (String) inArchive.getProperty(index, PropID.PATH);
-            if (StringUtils.isEmpty(path)) {
-                throw new SevenZipException("path is null");
-            }
             final Long itemSize = (Long) inArchive.getProperty(index, PropID.SIZE);
             final Date lastWriteTime = (Date) inArchive.getProperty(index, PropID.LAST_WRITE_TIME);
             final Boolean itemEncrypted = (Boolean) inArchive.getProperty(index, PropID.ENCRYPTED);
@@ -360,8 +357,9 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                     if (ret instanceof MultiCallback) {
                         callback = (MultiCallback) ret;
                     }
-                    if (callback != null && item.getSize() != callback.getWritten()) {
-                        logger.info("Size missmatch for " + item.getPath() + " is " + callback.getWritten() + " but should be " + item.getSize());
+                    final Long size = item.getSize();
+                    if (callback != null && size != null && size != callback.getWritten()) {
+                        logger.info("Size missmatch for " + item.getPath() + " is " + callback.getWritten() + " but should be " + size);
                         if (ExtractOperationResult.OK == res) {
                             logger.info("Size missmatch for " + item.getPath() + ", but Extraction returned OK?! Archive seems incomplete");
                             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_INCOMPLETE_ERROR);
