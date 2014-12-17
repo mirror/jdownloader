@@ -33,6 +33,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.reflection.Clazz;
 import org.mozilla.javascript.ConsString;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
@@ -1242,5 +1243,76 @@ public class DummyScriptEnginePlugin extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 
+    }
+
+    public static Object jsonToJavaObject(String string) throws Exception {
+        try {
+            if (true) {
+                throw new Exception("Debug");
+            }
+            return org.appwork.storage.JSonStorage.restoreFromString(string, new org.appwork.storage.TypeRef<Object>() {
+            });
+        } catch (Throwable e) {
+            // jd 09 workaround. use rhino
+
+            try {
+                ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(null);
+                ScriptEngine engine = mgr.getEngineByName("JavaScript");
+
+                engine.eval("var response=" + string + ";");
+                return toMap(engine.get("response"));
+            } catch (ScriptException e2) {
+                throw new Exception("JavaScript to Java failed: " + string);
+            }
+        }
+    }
+
+    public static Object toMap(Object obj) {
+
+        if (obj == null) {
+            return null;
+        }
+
+        if (Clazz.isPrimitiveWrapper(obj.getClass())) {
+            return obj;
+        } else if (obj instanceof String) {
+            return obj;
+        }
+        if (obj instanceof org.mozilla.javascript.NativeObject) {
+            HashMap<String, Object> ret = new HashMap<String, Object>();
+            for (Object s : ((org.mozilla.javascript.NativeObject) obj).getIds()) {
+                if (s instanceof String) {
+                    ret.put((String) s, toMap(((org.mozilla.javascript.NativeObject) obj).get(s)));
+                } else {
+                    System.out.println("Unknown Key: " + s + " " + s.getClass());
+                }
+
+            }
+            return ret;
+        } else if (obj instanceof org.mozilla.javascript.NativeArray) {
+            ArrayList<Object> ret = new ArrayList<Object>();
+            for (int i = 0; i < ((org.mozilla.javascript.NativeArray) obj).getLength(); i++) {
+                ret.add(toMap(((org.mozilla.javascript.NativeArray) obj).get(i)));
+            }
+            return ret;
+        } else if (obj instanceof net.sourceforge.htmlunit.corejs.javascript.NativeObject) {
+            HashMap<String, Object> ret = new HashMap<String, Object>();
+            for (Object s : ((net.sourceforge.htmlunit.corejs.javascript.NativeObject) obj).getIds()) {
+                if (s instanceof String) {
+                    ret.put((String) s, toMap(((net.sourceforge.htmlunit.corejs.javascript.NativeObject) obj).get(s)));
+                } else {
+                    System.out.println("Unknown Key: " + s + " " + s.getClass());
+                }
+
+            }
+            return ret;
+        } else if (obj instanceof net.sourceforge.htmlunit.corejs.javascript.NativeArray) {
+            ArrayList<Object> ret = new ArrayList<Object>();
+            for (int i = 0; i < ((net.sourceforge.htmlunit.corejs.javascript.NativeArray) obj).getLength(); i++) {
+                ret.add(toMap(((net.sourceforge.htmlunit.corejs.javascript.NativeArray) obj).get(i)));
+            }
+            return ret;
+        }
+        return null;
     }
 }
