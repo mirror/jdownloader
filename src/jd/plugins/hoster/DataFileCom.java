@@ -95,7 +95,7 @@ public class DataFileCom extends PluginForHost {
         br.setFollowRedirects(false);
         String filesize = null;
         // Limit reached -> Let's use their linkchecker to at least find the filesize and onlinestatus
-        if (br.containsHTML(DAILYLIMIT) || br.getURL().contains("error.html?code=7")) {
+        if (br.containsHTML(DAILYLIMIT) || br.getURL().contains("error.html?code=7") || br.getURL().contains("error.html?code=9")) {
             final Browser br2 = br.cloneBrowser();
             br2.postPage("http://www.datafile.com/linkchecker.html", "btn=&links=" + Encoding.urlEncode(link.getDownloadURL()));
             filesize = br2.getRegex("title=\"File size\">([^<>\"]*?)</td>").getMatch(0);
@@ -171,8 +171,11 @@ public class DataFileCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
+        if (br.getURL().contains("error.html?code=9")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You can not download more than one file at a time without Premium membership", 2 * 60 * 60 * 1000l);
+        }
         if (br.containsHTML(DAILYLIMIT) || br.getURL().contains("error.html?code=7")) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You exceeded your free daily download limit", 2 * 60 * 60 * 1000l);
         }
         if (br.containsHTML("ErrorCode 7: Download file count limit")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download file count limit", 10 * 60 * 1000l);
@@ -288,9 +291,15 @@ public class DataFileCom extends PluginForHost {
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
-                Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                final Browser br2 = br.cloneBrowser();
+                try {
+                    // @since JD2
+                    con = br2.openHeadConnection(dllink);
+                } catch (final Throwable t) {
+                    con = br2.openGetConnection(dllink);
+                }
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -299,6 +308,10 @@ public class DataFileCom extends PluginForHost {
             } catch (Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
             }
         }
         return dllink;
@@ -654,7 +667,7 @@ public class DataFileCom extends PluginForHost {
     private String loginToken(final Account account) throws Exception {
         final Browser nbr = new Browser();
         prepApiBrowser(nbr);
-        nbr.getPage(apiURL + "/users/auth?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        nbr.getPage(apiURL + "/users/auth?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&accesskey=cddce1a5-a6dd-4300-9c08-eb70909de7c6");
         final String apiToken = getJson(nbr, "token");
         final String code = getJson(nbr, "code");
         if (apiToken != null) {
@@ -695,6 +708,12 @@ public class DataFileCom extends PluginForHost {
             // 902 Password can not be empty
             // 903 User inactive
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + errorMsg(nbr), PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } else if ("1000".equalsIgnoreCase(code)) {
+            // 1000 access key invalid
+            useAPI.set(false);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "AccessKey invalid");
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return apiToken;
     }
