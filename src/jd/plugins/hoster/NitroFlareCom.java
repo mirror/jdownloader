@@ -300,7 +300,7 @@ public class NitroFlareCom extends PluginForHost {
     /**
      * Validates account and returns correct account info, when user has provided incorrect user pass fields to JD client. Or Throws
      * exception indicating users mistake, when it's a irreversible mistake.
-     *
+     * 
      * @param account
      * @return
      * @throws PluginException
@@ -424,7 +424,7 @@ public class NitroFlareCom extends PluginForHost {
             handleApiErrors(account, downloadLink);
             // error handling here.
             if ("free".equalsIgnoreCase(getJson("linkType"))) {
-                final String accessLink = getJson("accessLink");
+                String accessLink = getJson("accessLink");
                 if (inValidate(accessLink)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -448,10 +448,11 @@ public class NitroFlareCom extends PluginForHost {
                             sleep((Long.parseLong(delay) * 1000) - (System.currentTimeMillis() - startTime), downloadLink);
                         }
                         br.getPage(req + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
-                        if ("error".equalsIgnoreCase(getJson("type")) && "6".equalsIgnoreCase(getJson("code")) && i + 1 != repeat) {
+                        final String wrongCaptcha = getJson("accessLink");
+                        if ((!inValidate(wrongCaptcha) || "error".equalsIgnoreCase(getJson("type")) && "6".equalsIgnoreCase(getJson("code"))) && i + 1 != repeat) {
                             startTime = System.currentTimeMillis();
                             continue;
-                        } else if ("error".equalsIgnoreCase(getJson("type")) && "6".equalsIgnoreCase(getJson("code")) && i + 1 == repeat) {
+                        } else if ((!inValidate(wrongCaptcha) || "error".equalsIgnoreCase(getJson("type")) && "6".equalsIgnoreCase(getJson("code"))) && i + 1 == repeat) {
                             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         } else {
                             break;
@@ -655,7 +656,7 @@ public class NitroFlareCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -665,7 +666,7 @@ public class NitroFlareCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -675,7 +676,7 @@ public class NitroFlareCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from provided Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
@@ -685,7 +686,7 @@ public class NitroFlareCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
+     * 
      * @author raztoki
      * */
     private String getJsonArray(final String source, final String key) {
@@ -695,7 +696,7 @@ public class NitroFlareCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJsonArray(final String key) {
@@ -705,7 +706,7 @@ public class NitroFlareCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return String[] value from provided JSon Array
-     *
+     * 
      * @author raztoki
      * @param source
      * @return
@@ -716,7 +717,7 @@ public class NitroFlareCom extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
+     * 
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
