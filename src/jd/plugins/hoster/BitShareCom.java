@@ -47,18 +47,22 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitshare.com" }, urls = { "http://(www\\.)?bitshare\\.com/(\\?(f|m)=[a-z0-9]{8}|files/[a-z0-9]{8})" }, flags = { 2 })
 public class BitShareCom extends PluginForHost {
 
-    private static final String  JSONHOST         = "http://bitshare.com/files-ajax/";
-    private static final String  AJAXIDREGEX      = "var ajaxdl = \"(.*?)\";";
-    private static final String  FILEIDREGEX      = "bitshare\\.com/.*?([a-z0-9]{8})";
-    private static final String  DLLINKREGEX      = "SUCCESS#(http://.+)";
-    private static final String  MAINPAGE         = "http://bitshare.com/";
-    private static AtomicInteger maxPrem          = new AtomicInteger(1);
-    private static Object        LOCK             = new Object();
-    private final char[]         FILENAMEREPLACES = new char[] { '-' };
-    private static final String  LINKOFFLINE      = "(>We are sorry, but the requested file was not found in our database|>Error \\- File not available<|The file was deleted either by the uploader, inactivity or due to copyright claim)";
-    private boolean              useApi           = false;
+    private static final String  JSONHOST                 = "http://bitshare.com/files-ajax/";
+    private static final String  AJAXIDREGEX              = "var ajaxdl = \"(.*?)\";";
+    private static final String  FILEIDREGEX              = "bitshare\\.com/.*?([a-z0-9]{8})";
+    private static final String  DLLINKREGEX              = "SUCCESS#(http://.+)";
+    private static final String  MAINPAGE                 = "http://bitshare.com/";
+    private static AtomicInteger maxPrem                  = new AtomicInteger(1);
+    private static Object        LOCK                     = new Object();
+    private final char[]         FILENAMEREPLACES         = new char[] { '-' };
+    private static final String  LINKOFFLINE              = "(>We are sorry, but the requested file was not found in our database|>Error \\- File not available<|The file was deleted either by the uploader, inactivity or due to copyright claim)";
+    private boolean              useApi                   = false;
+    private static final String  NORESUME                 = "NORESUME";
 
-    private String               agent            = null;
+    private String               agent                    = null;
+
+    /* In case we know that the host does not work at the moment or for a longer period of time. */
+    private static final boolean static_unter_maintenance = true;
 
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload("http://bitshare.com/?f=" + new Regex(link.getDownloadURL(), "([a-z0-9]{8})$").getMatch(0));
@@ -168,6 +172,9 @@ public class BitShareCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink) throws Exception {
+        if (static_unter_maintenance) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is under maintenance", 3 * 60 * 60 * 1000l);
+        }
         if (br.containsHTML("Only Premium members can access this file\\.<")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.bitsharecom.premiumonly", "Only downloadable for premium users!"));
         }
@@ -315,8 +322,25 @@ public class BitShareCom extends PluginForHost {
         // Remove new line
         dllink = dllink.replaceAll("%0D%0A", "").trim();
         logger.info("Fixed dllink...");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+
+        if (dllink.equals("http://bitshare.com")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is under maintenance", 3 * 60 * 60 * 1000l);
+        }
+
+        boolean resume = true;
+        if (downloadLink.getBooleanProperty(BitShareCom.NORESUME, false)) {
+            resume = false;
+            downloadLink.setProperty(BitShareCom.NORESUME, Boolean.valueOf(false));
+        }
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, 1);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 416) {
+                logger.info("Resume impossible, disabling it for the next try");
+                downloadLink.setChunksProgress(null);
+                downloadLink.setProperty(BitShareCom.NORESUME, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             br.followConnection();
             errorHandling(downloadLink, br);
             logger.warning("Unhandled error happened before the download");
@@ -347,6 +371,9 @@ public class BitShareCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
+        if (static_unter_maintenance) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is under maintenance", 3 * 60 * 60 * 1000l);
+        }
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
