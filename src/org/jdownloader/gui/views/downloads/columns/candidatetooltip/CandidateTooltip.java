@@ -5,6 +5,7 @@ import java.awt.Dimension;
 import java.awt.MouseInfo;
 import java.awt.Point;
 import java.util.LinkedList;
+import java.util.List;
 
 import javax.swing.JComponent;
 import javax.swing.JScrollPane;
@@ -13,8 +14,7 @@ import javax.swing.event.AncestorListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
-import jd.controlling.downloadcontroller.DownloadLinkCandidateHistory;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.HistoryEntry;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountEntry;
 import jd.plugins.DownloadLink;
@@ -27,9 +27,9 @@ public class CandidateTooltip extends PanelToolTip {
 
     public static CandidateTooltip create(Point position, AbstractNode obj) {
         if (obj instanceof DownloadLink) {
-            DownloadLinkCandidateHistory his = DownloadWatchDog.getInstance().getSession().getHistory((DownloadLink) obj);
+            List<HistoryEntry> his = ((DownloadLink) obj).getHistory();
             if (his != null) {
-                return new CandidateTooltip((DownloadLink) obj, his);
+                return new CandidateTooltip(position, (DownloadLink) obj, his);
             }
         }
         return null;
@@ -38,6 +38,7 @@ public class CandidateTooltip extends PanelToolTip {
     private Color                      color;
     private CandidateTooltipTable      table;
     private CandidateTooltipTableModel model;
+    private Point                      position;
 
     public Point getDesiredLocation(JComponent activeComponent, Point ttPosition) {
 
@@ -64,7 +65,7 @@ public class CandidateTooltip extends PanelToolTip {
         });
     }
 
-    public CandidateTooltip(DownloadLink obj, DownloadLinkCandidateHistory his) {
+    public CandidateTooltip(Point position, DownloadLink obj, List<HistoryEntry> history) {
         super(new TooltipPanel("ins 0,wrap 1", "[]", "[grow,fill]") {
             @Override
             public Dimension getPreferredSize() {
@@ -75,12 +76,12 @@ public class CandidateTooltip extends PanelToolTip {
                 return pref;
             }
         });
-
+        this.position = position;
         color = (LAFOptions.getInstance().getColorForTooltipForeground());
 
         final LinkedList<AccountEntry> domains = new LinkedList<AccountEntry>();
 
-        table = new CandidateTooltipTable(this, model = new CandidateTooltipTableModel(his));
+        table = new CandidateTooltipTable(this, model = new CandidateTooltipTableModel(history));
         this.update();
         model.addTableModelListener(new TableModelListener() {
 
@@ -103,7 +104,8 @@ public class CandidateTooltip extends PanelToolTip {
     public Dimension getPreferredSize() {
         Dimension ret = super.getPreferredSize();
         // javax.swing.PopupFactory.class.getName();
-        // ret.width = Math.max(ret.width, panel.getPreferredSize().width);
+        // ret.width = Math.max(ret.width, JDGui.getInstance().getMainFrame().getWidth());
+
         return ret;
     }
 

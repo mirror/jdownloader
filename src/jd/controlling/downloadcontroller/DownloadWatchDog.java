@@ -1176,25 +1176,25 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             if (SkipReason.NO_ACCOUNT.equals(value.getSkipReason())) {
                 printDownloadLinkCandidateHistory(candidate);
             }
-            // currentSession.removeHistory(link);
+            currentSession.removeHistory(link);
             candidate.getLink().setSkipReason(value.getSkipReason());
             return;
         case PLUGIN_DEFECT:
             if (!onDetach) {
-                // currentSession.removeHistory(link);
+                currentSession.removeHistory(link);
                 candidate.getLink().setFinalLinkState(FinalLinkState.PLUGIN_DEFECT);
             }
             return;
         case OFFLINE_TRUSTED:
             if (onDetach) {
-                // currentSession.removeHistory(link);
+                currentSession.removeHistory(link);
                 candidate.getLink().setFinalLinkState(FinalLinkState.OFFLINE);
                 return;
             }
             break;
         case FINISHED_EXISTS:
             if (onDetach) {
-                // currentSession.removeHistory(link);
+                currentSession.removeHistory(link);
                 candidate.getLink().setFinishedDate(value.getFinishTime());
                 candidate.getLink().setFinalLinkState(FinalLinkState.FINISHED_MIRROR);
                 return;
@@ -1202,7 +1202,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             break;
         case FINISHED:
             if (onDetach) {
-                // currentSession.removeHistory(link);
+                currentSession.removeHistory(link);
                 candidate.getLink().setFinishedDate(value.getFinishTime());
                 if (hashResult != null && hashResult.match()) {
                     switch (hashResult.getHashInfo().getType()) {
@@ -1227,14 +1227,14 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             break;
         case FAILED_EXISTS:
             if (onDetach) {
-                // currentSession.removeHistory(link);
+                currentSession.removeHistory(link);
                 candidate.getLink().setFinalLinkState(FinalLinkState.FAILED_EXISTS);
                 return;
             }
             break;
         case FAILED:
             if (onDetach) {
-                // currentSession.removeHistory(link);
+                currentSession.removeHistory(link);
                 if (hashResult != null && hashResult.match() == false) {
                     switch (hashResult.getHashInfo().getType()) {
                     case CRC32:
@@ -1258,7 +1258,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             break;
         case STOPPED:
             if (onDetach) {
-                // currentSession.removeHistory(link);
+                currentSession.removeHistory(link);
                 return;
             }
             break;
@@ -1297,19 +1297,19 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         case ACCOUNT_REQUIRED:
             if (!onDetach) {
                 printDownloadLinkCandidateHistory(candidate);
-                // currentSession.removeHistory(link);
+                currentSession.removeHistory(link);
                 candidate.getLink().setSkipReason(SkipReason.NO_ACCOUNT);
             }
             return;
         case CAPTCHA:
             if (!onDetach) {
-                // currentSession.removeHistory(link);
+                currentSession.removeHistory(link);
                 candidate.getLink().setSkipReason(SkipReason.CAPTCHA);
             }
             return;
         case FATAL_ERROR:
             if (!onDetach) {
-                // currentSession.removeHistory(link);
+                currentSession.removeHistory(link);
                 candidate.getLink().setProperty(DownloadLink.PROPERTY_CUSTOM_MESSAGE, value.getMessage());
                 candidate.getLink().setFinalLinkState(FinalLinkState.FAILED_FATAL);
 
@@ -3017,7 +3017,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         @Override
                         public void execute(DownloadSession currentSession) {
                             link.setConditionalSkipReason(null);
-                            // currentSession.removeHistory(link);
+                            currentSession.removeHistory(link);
                         }
 
                         @Override
@@ -3027,7 +3027,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     con.abort();
                 } else {
                     link.setConditionalSkipReason(null);
-                    // session.removeHistory(link);
+                    session.removeHistory(link);
                 }
             }
 
@@ -3434,7 +3434,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         @Override
                         public void execute(DownloadSession currentSession) {
                             try {
-                                // latestSession.removeHistory((DownloadLink) null);
+                                latestSession.removeHistory((DownloadLink) null);
                                 latestSession.removeAccountCache(null);
                                 latestSession.clearPluginCache();
                                 latestSession.getActivationRequests().clear();

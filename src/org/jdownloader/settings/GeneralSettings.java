@@ -593,4 +593,10 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setDupeManagerEnabled(boolean b);
 
+    @AboutConfig
+    @DefaultIntValue(10)
+    @DescriptionForConfigEntry("How many history entries will be kept in the download links")
+    int getMaxDownloadLinkHistoryEntries();
+
+    void setMaxDownloadLinkHistoryEntries(int size);
 }

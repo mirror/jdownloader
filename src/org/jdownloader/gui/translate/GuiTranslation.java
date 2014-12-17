@@ -5623,7 +5623,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "%s3: %s1@%s2" })
     String CandidateAccountColumn_getStringValue_account_type(String user, String hoster, String accountType);
 
-    @Default(lngs = { "en" }, values = { "Started at" })
+    @Default(lngs = { "en" }, values = { "Started" })
     String CandidateTooltipTableModel_time();
 
     @Default(lngs = { "en" }, values = { "Download Mode" })

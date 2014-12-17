@@ -28,6 +28,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -35,8 +36,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
 import jd.config.Property;
-import jd.controlling.downloadcontroller.DownloadLinkCandidate;
-import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
+import jd.controlling.downloadcontroller.HistoryEntry;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.packagecontroller.AbstractNodeNotifier;
@@ -66,6 +66,7 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten. Die Informationen werden dann in einer Tabelle
@@ -197,32 +198,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private transient volatile String[]                         cachedName                          = null;
 
     private transient UrlProtection                             urlProtection                       = UrlProtection.UNSET;
-    /**
-     * volatile? We currently use these fields in the view only. As long as they are not sued for controlling purposes, I see no reason to
-     * synchronize them
-     **/
-    private transient DownloadLinkCandidate                     latestCandidate;
-    /**
-     * volatile? We currently use these fields in the view only. As long as they are not sued for controlling purposes, I see no reason to
-     * synchronize them
-     **/
-    private transient DownloadLinkCandidateResult               latestCandidateResult;
-
-    /**
-     * The last known CandidateResult This value will be lost on exit
-     * 
-     */
-    public DownloadLinkCandidateResult getLatestCandidateResult() {
-        return latestCandidateResult;
-    }
-
-    /**
-     * The last known CandidateResult This value will be lost on exit
-     * 
-     */
-    public void setLatestCandidateResult(DownloadLinkCandidateResult latestCandidateResult) {
-        this.latestCandidateResult = latestCandidateResult;
-    }
+    private transient LinkedList<HistoryEntry>                  history                             = new LinkedList<HistoryEntry>();
 
     public FilePackage getLastValidFilePackage() {
         if (lastValidFilePackage != null) {
@@ -1131,6 +1107,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void reset(List<PluginForHost> resetPlugins) {
+        history.clear();
         setInternalTmpFilenameAppend(null);
         setInternalTmpFilename(null);
         setFinalFileName(null);
@@ -2234,22 +2211,36 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return getPluginPatternMatcher();
     }
 
-    /**
-     * the last tried candidate or null. This value will be lost on exit
-     * 
-     * @param candidate
-     */
-    public void setLatestCandidate(DownloadLinkCandidate candidate) {
-        this.latestCandidate = candidate;
+    public void addHistoryEntry(HistoryEntry create) {
+        if (create == null) {
+            return;
+        }
+        synchronized (history) {
+
+            history.add(create);
+            while (history.size() > CFG_GENERAL.CFG.getMaxDownloadLinkHistoryEntries()) {
+                history.remove(0);
+            }
+        }
+        if (hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.HISTORY, create));
+        }
     }
 
-    /**
-     * the last tried candidate or null. This value will be lost on exit
-     * 
-     * @param candidate
-     */
-    public DownloadLinkCandidate getLatestCandidate() {
-        return latestCandidate;
+    public List<HistoryEntry> getHistory() {
+        synchronized (history) {
+            return new ArrayList<HistoryEntry>(history);
+        }
+    }
+
+    public HistoryEntry getLatestHistoryEntry() {
+        synchronized (history) {
+            if (history.size() == 0) {
+                return null;
+            }
+            return history.getLast();
+
+        }
     }
 
 }
