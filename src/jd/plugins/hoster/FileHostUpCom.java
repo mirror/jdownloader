@@ -39,6 +39,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
@@ -55,11 +56,11 @@ public class FileHostUpCom extends PluginForHost {
     }
 
     // For sites which use this script: http://www.yetishare.com/
-    // YetiShareBasic Version 0.4.2-psp
+    // YetiShareBasic Version 0.4.4-psp
     // mods:
-    // limit-info:
+    // limit-info: free account untested, set FREE limits
     // protocol: no https
-    // captchatype: null recaptcha
+    // captchatype: null
     // other:
 
     @Override
@@ -97,8 +98,8 @@ public class FileHostUpCom extends PluginForHost {
     private static final int     account_FREE_MAXCHUNKS                       = 1;
     private static final int     account_FREE_MAXDOWNLOADS                    = 1;
     private static final boolean account_PREMIUM_RESUME                       = true;
-    private static final int     account_PREMIUM_MAXCHUNKS                    = 1;
-    private static final int     account_PREMIUM_MAXDOWNLOADS                 = 1;
+    private static final int     account_PREMIUM_MAXCHUNKS                    = 0;
+    private static final int     account_PREMIUM_MAXDOWNLOADS                 = 20;
 
     private static AtomicInteger MAXPREM                                      = new AtomicInteger(1);
 
@@ -192,9 +193,11 @@ public class FileHostUpCom extends PluginForHost {
             } else {
                 if (available_CHECK_OVER_INFO_PAGE) {
                     br.getPage(downloadLink.getDownloadURL());
-                    /* Via the other handling, handleErrors is already executed in the availablecheck */
-                    handleErrors();
                 }
+                /* Via the other handling, handleErrors is already executed in the availablecheck */
+                handleErrors();
+                /* Passwords are usually before waittime. */
+                handlePassword(downloadLink);
                 /* Handle up to 3 pre-download pages before the (eventually existing) captcha */
                 for (int i = 1; i <= 5; i++) {
                     logger.info("Handling pre-download page #" + i);
@@ -494,7 +497,8 @@ public class FileHostUpCom extends PluginForHost {
                 br.followConnection();
                 handleErrors();
                 logger.info("Found no errors, let's see if we can find the dllink now...");
-                dllink = this.getDllink();
+                handlePassword(link);
+                dllink = this.getContinueLink();
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -507,6 +511,29 @@ public class FileHostUpCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
+        }
+    }
+
+    private void handlePassword(final DownloadLink dl) throws PluginException, IOException {
+        if (br.getURL().contains("/file_password.html")) {
+            logger.info("Current link is password protected");
+            String passCode = dl.getStringProperty("pass", null);
+            if (passCode == null) {
+                passCode = Plugin.getUserInput("Password?", dl);
+                if (passCode == null || passCode.equals("")) {
+                    logger.info("User has entered blank password, exiting handlePassword");
+                    dl.setProperty("pass", Property.NULL);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                }
+                dl.setProperty("pass", passCode);
+            }
+            br.postPage(br.getURL(), "submit=access+file&submitme=1&file=" + this.getFID(dl) + "&filePassword=" + Encoding.urlEncode(passCode));
+            if (br.getURL().contains("/file_password.html")) {
+                logger.info("User entered incorrect password --> Retrying");
+                dl.setProperty("pass", Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+            }
+            logger.info("User entered correct password --> Continuing");
         }
     }
 
