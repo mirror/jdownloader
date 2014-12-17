@@ -133,10 +133,11 @@ public class XFileSharingProBasic extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final String[] fileInfo = new String[3];
-        final Browser altbr = br.cloneBrowser();
+        Browser altbr = null;
         br.setFollowRedirects(true);
         correctDownloadLink(link);
         prepBrowser(br);
+        altbr = br.cloneBrowser();
         setFUID(link);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
