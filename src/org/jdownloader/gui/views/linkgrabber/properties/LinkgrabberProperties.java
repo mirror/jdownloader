@@ -44,16 +44,18 @@ public class LinkgrabberProperties extends MigPanel {
     }
 
     public void update(AbstractNode objectbyRow) {
-        if (objectbyRow instanceof CrawledPackage) {
-            CrawledPackage pkg = (CrawledPackage) objectbyRow;
-            linkPanel.setVisible(false);
-            pkgPanel.setVisible(true);
-            pkgPanel.setSelectedItem(pkg);
-        } else if (objectbyRow instanceof CrawledLink) {
-            CrawledLink link = (CrawledLink) objectbyRow;
-            linkPanel.setVisible(true);
-            pkgPanel.setVisible(false);
-            linkPanel.setSelectedItem(link);
+        if (objectbyRow != null) {
+            if (objectbyRow instanceof CrawledPackage) {
+                CrawledPackage pkg = (CrawledPackage) objectbyRow;
+                linkPanel.setVisible(false);
+                pkgPanel.setVisible(true);
+                pkgPanel.setSelectedItem(pkg);
+            } else if (objectbyRow instanceof CrawledLink) {
+                CrawledLink link = (CrawledLink) objectbyRow;
+                linkPanel.setVisible(true);
+                pkgPanel.setVisible(false);
+                linkPanel.setSelectedItem(link);
+            }
         }
     }
 
