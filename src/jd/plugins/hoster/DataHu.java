@@ -67,7 +67,7 @@ public class DataHu extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 3;
+        return 4;
     }
 
     @Override
@@ -113,9 +113,13 @@ public class DataHu extends PluginForHost {
                     } else {
                         final String name = this.getJson(thisjson, "filename");
                         final String size = this.getJson(thisjson, "filesize");
+                        final String md5 = getJson(thisjson, "md5");
+                        final String sha1 = getJson(thisjson, "sha1");
                         /* Names via API are good --> Use as final filenames */
                         dllink.setFinalFileName(name);
                         dllink.setDownloadSize(SizeFormatter.getSize(size));
+                        dllink.setMD5Hash(md5);
+                        dllink.setSha1Hash(sha1);
                         dllink.setAvailable(true);
                     }
                 }
@@ -171,15 +175,7 @@ public class DataHu extends PluginForHost {
         requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
         handleSiteErrors();
-        if (br.containsHTML("A let.*?shez v.*?rnod kell:")) {
-            long wait = (Long.parseLong(br.getRegex(Pattern.compile("<div id=\"counter\" class=\"countdown\">([0-9]+)</div>")).getMatch(0)) * 1000);
-            sleep(wait, downloadLink);
-        }
-        br.getPage(downloadLink.getDownloadURL());
-        String link = br.getRegex(Pattern.compile("<div class=\"download_box_button\"><a href=\"(http://.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (link == null) {
-            link = br.getRegex(Pattern.compile("\"(http://ddl\\d+\\.data\\.hu/get/\\d+/\\d+/.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        }
+        final String link = br.getRegex(Pattern.compile("(?:\"|\\')(http://ddl\\d+\\.data\\.hu/get/\\d+/\\d+/.*?)(?:\"|\\')", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (link == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -210,7 +206,8 @@ public class DataHu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, -4);
+        /* Max 4 connections per downloadserver so we prefer a total of 4 simultan downloads to avoid 503 server errors. */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The finallink doesn't seem to be a file...");
             /*

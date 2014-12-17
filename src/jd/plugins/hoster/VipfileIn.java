@@ -57,7 +57,7 @@ public class VipfileIn extends PluginForHost {
     // For sites which use this script: http://www.yetishare.com/
     // YetiShareBasic Version 0.4.3-psp
     // mods:
-    // limit-info: untested
+    // limit-info: premium tested, seems like they only have premium accounts
     // protocol: no https
     // captchatype: null recaptcha
     // other:
