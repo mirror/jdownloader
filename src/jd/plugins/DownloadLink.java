@@ -302,6 +302,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         /* deserialize object and then fill other stuff(transient..) */
         stream.defaultReadObject();
         setView(new DefaultDownloadLinkViewImpl());
+        history = new LinkedList<HistoryEntry>();
         extractionStatus = new NullsafeAtomicReference<ExtractionStatus>();
         enabled = new AtomicBoolean(isEnabled);
         linkInfo = new NullsafeAtomicReference<LinkInfo>();
@@ -1107,7 +1108,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void reset(List<PluginForHost> resetPlugins) {
-        history.clear();
+        clearHistory();
         setInternalTmpFilenameAppend(null);
         setInternalTmpFilename(null);
         setFinalFileName(null);
@@ -1142,6 +1143,13 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (hasNotificationListener()) {
             notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.RESET, null));
         }
+    }
+
+    public void clearHistory() {
+        synchronized (NULL) {
+            history.clear();
+        }
+
     }
 
     public void resume(List<PluginForHost> resetPlugins) {
