@@ -24,6 +24,7 @@ import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorHighlightListener;
 import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
@@ -125,9 +126,15 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
                     @Override
                     protected void runInEDT() {
+                        final AbstractNode node;
                         if (table.getModel().hasSelectedObjects()) {
+                            node = table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex());
+                        } else {
+                            node = null;
+                        }
+                        if (node != null) {
                             setPropertiesPanelVisible(true);
-                            propertiesPanel.update(table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex()));
+                            propertiesPanel.update(node);
                         } else {
                             setPropertiesPanelVisible(false);
                         }

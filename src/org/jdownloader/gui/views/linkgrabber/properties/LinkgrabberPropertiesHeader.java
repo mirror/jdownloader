@@ -43,18 +43,19 @@ public class LinkgrabberPropertiesHeader extends AbstractPanelHeader implements 
             @Override
             protected void runInEDT() {
                 current = objectbyRow;
-                String str = "";
-                if (objectbyRow instanceof CrawledPackage) {
-                    final CrawledPackage pkg = (CrawledPackage) objectbyRow;
-                    setIcon(NewTheme.I().getIcon("package_open", 16));
-                    str = (_GUI._.LinkgrabberPropertiesHeader_update_package(pkg.getName()));
-                } else if (objectbyRow instanceof CrawledLink) {
-                    final CrawledLink link = (CrawledLink) objectbyRow;
-                    setIcon(link.getLinkInfo().getIcon());
-                    str = (_GUI._.LinkgrabberPropertiesHeader_update_link(link.getName()));
+                if (objectbyRow != null) {
+                    String str = "";
+                    if (objectbyRow instanceof CrawledPackage) {
+                        final CrawledPackage pkg = (CrawledPackage) objectbyRow;
+                        setIcon(NewTheme.I().getIcon("package_open", 16));
+                        str = (_GUI._.LinkgrabberPropertiesHeader_update_package(pkg.getName()));
+                    } else if (objectbyRow instanceof CrawledLink) {
+                        final CrawledLink link = (CrawledLink) objectbyRow;
+                        setIcon(link.getLinkInfo().getIcon());
+                        str = (_GUI._.LinkgrabberPropertiesHeader_update_link(link.getName()));
+                    }
+                    setText(str);
                 }
-                setText(str);
-
             }
         };
 
