@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freedisc.pl" }, urls = { "http://(www\\.)?freedisc\\.pl/[A-Za-z0-9\\-_]+,d\\-\\d+([[A-Za-z0-9\\-_,]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freedisc.pl" }, urls = { "http://(www\\.)?freedisc\\.pl/[A-Za-z0-9\\-_]+,d\\-\\d+([A-Za-z0-9\\-_,]+)?" }, flags = { 0 })
 public class FreeDiscPlFolder extends PluginForDecrypt {
 
     public FreeDiscPlFolder(PluginWrapper wrapper) {
