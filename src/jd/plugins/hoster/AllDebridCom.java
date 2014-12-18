@@ -113,10 +113,12 @@ public class AllDebridCom extends PluginForHost {
                 }
             }
             String daysLeft = accDetails.get("date");
-            if (daysLeft != null) {
+            if (daysLeft != null && !"0".equals(daysLeft)) {
                 account.setValid(true);
                 long validuntil = System.currentTimeMillis() + (Long.parseLong(daysLeft) * 1000 * 60 * 60 * 24);
                 ac.setValidUntil(validuntil);
+            } else if ("0".equals(daysLeft)) {
+                logger.info("User has less than 24 hours premium left --> Do not set any expire date");
             } else {
                 /* no daysleft available?! */
                 account.setValid(false);
