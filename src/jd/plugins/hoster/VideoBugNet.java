@@ -59,7 +59,7 @@ public class VideoBugNet extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("No htmlCode read") || br.toString().length() < 20) {
+        if (br.containsHTML("No htmlCode read|Content has been removed due to copyright") || br.toString().length() < 20) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dllink = br.getRegex("url: '(http[^']+(videobug\\.net|play44\\.net)%2Fvideos[^']+)").getMatch(0);

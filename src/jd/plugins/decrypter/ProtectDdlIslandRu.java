@@ -32,7 +32,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protect.ddl-island.ru" }, urls = { "http://(www\\.)?protect\\.ddl\\-island\\.ru/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protect.ddl-island.ru" }, urls = { "http://(www\\.)?protect\\.ddl\\-island\\.ru/(?:other\\?id=)?[A-Za-z0-9]+" }, flags = { 0 })
 public class ProtectDdlIslandRu extends PluginForDecrypt {
 
     public ProtectDdlIslandRu(PluginWrapper wrapper) {
@@ -43,7 +43,8 @@ public class ProtectDdlIslandRu extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        /* other?id= = force text captcha */
+        final String parameter = param.toString().replace("other?id=", "");
         if (parameter.matches(INVALIDLINKS)) {
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
