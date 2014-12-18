@@ -45,6 +45,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.SoundCloudComDecrypter;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -109,12 +110,14 @@ public class SoundcloudCom extends PluginForHost {
             }
         }
         br.getPage("https://api.sndcdn.com/resolve?url=" + Encoding.urlEncode(parameter.getDownloadURL()) + "&_status_code_map%5B302%5D=200&_status_format=json&client_id=" + CLIENTID + "&app_version=" + APP_VERSION);
-        // this is poor way to determine the track id.
-        final String sid = getJson("id");
+
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final AvailableStatus status = checkStatusJson(parameter, this.br.toString(), true);
+        Map<String, Object> response = DummyScriptEnginePlugin.jsonToJavaMap(br.toString());
+        // this is poor way to determine the track id.
+        final String sid = SoundCloudComDecrypter.getString(response, "id");
+        final AvailableStatus status = checkStatusJson(parameter, response, true);
         if (status.equals(AvailableStatus.FALSE)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -153,9 +156,10 @@ public class SoundcloudCom extends PluginForHost {
                 api_access += "&secret_token=" + secret_token;
             }
             br.getPage(api_access);
-            apilink = getJson("download_url");
+            response = DummyScriptEnginePlugin.jsonToJavaMap(br.toString());
+            apilink = toString(response.get("download_url"));
             if (apilink == null) {
-                apilink = getJson("stream_url");
+                apilink = toString(response.get("stream_url"));
             }
             if (apilink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -276,6 +280,72 @@ public class SoundcloudCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    public static AvailableStatus checkStatusJson(DownloadLink parameter, Map<String, Object> source, boolean fromHostplugin) throws ParseException {
+        String filename = toString(source.get("title"));
+
+        if (filename == null) {
+            if (fromHostplugin) {
+                parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.pluginBroken", "The host plugin is broken!"));
+            }
+            return AvailableStatus.FALSE;
+        }
+        filename = filename.trim();
+        final String id = toString(source.get("id"));
+        final String filesize = toString(source.get("original_content_size"));
+        try {
+            final String description = toString(source.get("description"));
+            if (description != null) {
+                parameter.setComment(description);
+            }
+        } catch (Throwable e) {
+        }
+        final String date = toString(source.get("created_at"));
+        String username = toString(source.get("username"));
+        String type = toString(source.get("original_format"));
+        if (type == null || type.equals("raw")) {
+            type = "mp3";
+        }
+        final String url = toString(source.get("download_url"));
+        if (url != null) {
+            /* we have original file downloadable */
+            if (filesize != null) {
+                parameter.setDownloadSize(Long.parseLong(filesize));
+            }
+            if (fromHostplugin) {
+                parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.downloadavailable", "Original file is downloadable"));
+            }
+        } else {
+            type = "mp3";
+            if (fromHostplugin) {
+                parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.previewavailable", "Preview (Stream) is downloadable"));
+            }
+        }
+
+        if (url != null) {
+            parameter.setProperty("directlink", url + "?client_id=" + CLIENTID);
+        }
+        if (username != null) {
+            username = Encoding.htmlDecode(username.trim());
+            parameter.setProperty("channel", username);
+        }
+        parameter.setProperty("plainfilename", filename);
+        parameter.setProperty("originaldate", date);
+        parameter.setProperty("linkid", id);
+        parameter.setProperty("type", type);
+        final String formattedfilename = getFormattedFilename(parameter);
+        parameter.setFinalFileName(formattedfilename);
+        return AvailableStatus.TRUE;
+
+    }
+
+    private static String toString(Object object) {
+        if (object == null) {
+            return null;
+        }
+        return object.toString();
+    }
+
+    @Deprecated
     public static AvailableStatus checkStatusJson(final DownloadLink parameter, final String source, final boolean fromHostplugin) throws ParseException, IOException {
         String filename = getJson(source, "title");
         filename = encodeUnicode(filename);
@@ -668,63 +738,11 @@ public class SoundcloudCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
-     *
+     * 
      * @author raztoki
      * */
     private static String getJson(final String source, final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from provided Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final Browser ibr, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return String[] value from provided JSon Array
-     *
-     * @author raztoki
-     * @param source
-     * @return
-     */
-    private String[] getJsonResultsFromArray(final String source) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
     public static String getXML(final String parameter, final String source) {
@@ -777,4 +795,5 @@ public class SoundcloudCom extends PluginForHost {
         }
         return false;
     }
+
 }

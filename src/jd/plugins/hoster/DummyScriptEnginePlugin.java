@@ -1315,4 +1315,8 @@ public class DummyScriptEnginePlugin extends PluginForHost {
         }
         return null;
     }
+
+    public static Map<String, Object> jsonToJavaMap(String string) throws Exception {
+        return (Map<String, Object>) jsonToJavaObject(string);
+    }
 }
