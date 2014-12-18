@@ -75,6 +75,10 @@ public class DataHu extends PluginForHost {
         return 500;
     }
 
+    private void prepBR() {
+        br.getHeaders().put("User-Agent", "JDownloader");
+    }
+
     /** Using API: http://data.hu/api.php */
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
@@ -82,6 +86,7 @@ public class DataHu extends PluginForHost {
             return false;
         }
         try {
+            prepBR();
             br.setCookiesExclusive(true);
             final StringBuilder sb = new StringBuilder();
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
@@ -233,8 +238,8 @@ public class DataHu extends PluginForHost {
 
     public void login(final Account account) throws Exception {
         this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
+        prepBR();
         getAPISafe("http://data.hu/api.php?act=check_login_data&username=" + JSonUtils.escape(account.getUser()) + "&password=" + JSonUtils.escape(account.getPass()));
     }
 

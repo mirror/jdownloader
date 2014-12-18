@@ -58,6 +58,9 @@ public class GameOneDe extends PluginForHost {
         if (dllink.startsWith("http")) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
+                }
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -81,14 +84,29 @@ public class GameOneDe extends PluginForHost {
         }
         final String mainlink = downloadLink.getStringProperty("mainlink", null);
         if (mainlink != null && dllink.startsWith("http")) {
-            br.getPage(mainlink);
+            br.setFollowRedirects(true);
+            // br.getPage(mainlink);
+            // final String[] mrssUrl = br.getRegex("\\.addVariable\\(\"mrss\"\\s?,\\s?\"(http://.*?)\"").getColumn(0);
+            // for (String startUrl : mrssUrl) {
+            // startUrl = startUrl.replaceAll("http://(.*?)/", "http://www.gameone.de/api/mrss/");
+            // br.getPage(startUrl);
+            // }
             final Browser br2 = br.cloneBrowser();
+            br2.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+            br2.getHeaders().put("Accept-Language", "de,en-gb;q=0.7, en;q=0.3");
+            br2.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:33.0) Gecko/20100101 Firefox/33.0");
+            br2.getHeaders().put("Accept-Encoding", "Identity");
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
                 try {
-                    con = br2.openGetConnection(dllink);
+                    try {
+                        /* @since JD2 */
+                        con = br.openHeadConnection(dllink);
+                    } catch (final Throwable t) {
+                        con = br.openGetConnection(dllink);
+                    }
                 } catch (final BrowserException e) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }

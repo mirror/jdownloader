@@ -23,11 +23,15 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -37,6 +41,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
@@ -46,6 +51,7 @@ public class CopyCom extends PluginForHost {
     public CopyCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("");
+        this.setConfigElements();
     }
 
     @Override
@@ -53,8 +59,11 @@ public class CopyCom extends PluginForHost {
         return "https://www.copy.com/about/tos";
     }
 
-    private static final String NOCHUNKS = "NOCHUNKS";
-    private String              ddlink   = null;
+    private final String        MOVE_FILES_TO_ACCOUNT              = "MOVE_FILES_TO_ACCOUNT";
+    private final String        DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD = "EMPTY_TRASH_AFTER_DOWNLOAD";
+    private static final String NOCHUNKS                           = "NOCHUNKS";
+
+    private String              ddlink                             = null;
 
     /**
      * Corrects downloadLink.urlDownload().<br/>
@@ -113,7 +122,7 @@ public class CopyCom extends PluginForHost {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getStringProperty("mainlink", null));
+        br.getPage(getMainLink(link));
 
         if (br.containsHTML(">You&rsquo;ve found a page that doesn&rsquo;t exist")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -135,6 +144,8 @@ public class CopyCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        if (ddlink == null) {
+        }
         if (ddlink == null) {
             ddlink = downloadLink.getStringProperty("specified_link", null) + "?download=1";
         }
@@ -294,7 +305,52 @@ public class CopyCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         if (account.getBooleanProperty("free", false)) {
-            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+            final String fid = getFID(link);
+            boolean movefiletoaccount = this.getPluginConfig().getBooleanProperty(MOVE_FILES_TO_ACCOUNT, false);
+            final boolean deleteafterdownload = this.getPluginConfig().getBooleanProperty(DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD, false);
+            String path = null;
+            if (movefiletoaccount) {
+                final String oauth_Data = Encoding.htmlDecode(this.br.getCookie(MAINPAGE, "COPY_AUTH"));
+                final String api_auth = getJson(oauth_Data, "apiweb.copy.com");
+                if (api_auth == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                /* Prepare usage of site-API */
+                br.getHeaders().put("Accept", "application/json");
+                br.getHeaders().put("X-Client-Type", "API");
+                br.getHeaders().put("X-Client-Version", "1.0.00");
+                br.getHeaders().put("X-Api-Version", "1.0");
+                br.getHeaders().put("X-Authorization", api_auth);
+                br.postPageRaw("https://apiweb.copy.com/jsonrpc", "{\"jsonrpc\":\"2.0\",\"method\":\"copy_link\",\"params\":{\"link_token\":\"" + fid + "\"},\"id\":1}");
+                final String share_owner = getJson("share_owner");
+                path = getJson("path");
+                if (share_owner == null || path == null) {
+                    logger.warning("MoveFileToAcc handling failed");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                ddlink = "https://copy.com/web/users/user-" + share_owner + "/copy" + Encoding.urlEncode(path) + "?revision=1&download=1";
+            }
+            try {
+                doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+            } finally {
+                if (deleteafterdownload && path != null) {
+                    boolean success = false;
+                    try {
+                        br.postPageRaw("https://apiweb.copy.com/jsonrpc", "{\"jsonrpc\":\"2.0\",\"method\":\"update_objects\",\"params\":{\"meta\":[{\"action\":\"remove\",\"path\":\"" + path + "\"}]},\"id\":1}");
+                        if (getJson("code") != null) {
+                            success = false;
+                        } else {
+                            success = true;
+                        }
+                    } catch (final Throwable e) {
+                    }
+                    if (success) {
+                        logger.info("Successfully deleted file from account");
+                    } else {
+                        logger.warning("Failed to remove file from account");
+                    }
+                }
+            }
         } else {
             String dllink = br.getRegex("").getMatch(0);
             if (dllink == null) {
@@ -312,10 +368,87 @@ public class CopyCom extends PluginForHost {
         }
     }
 
+    private String getFID(final DownloadLink dl) {
+        final String fid = new Regex(getMainLink(dl), "([A-Za-z0-9]+)$").getMatch(0);
+        return fid;
+    }
+
+    private String getMainLink(final DownloadLink dl) {
+        return dl.getStringProperty("mainlink", null);
+    }
+
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         /* workaround for free/premium issue on stable 09581 */
         return maxPrem.get();
+    }
+
+    private void setConfigElements() {
+        final ConfigEntry moveFilesToAcc = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), MOVE_FILES_TO_ACCOUNT, JDL.L("plugins.hoster.CopyCom.MoveFilesToAccount", "1. Move files to account before downloading them to avoid downloadlimits?")).setDefaultValue(false);
+        getConfig().addEntry(moveFilesToAcc);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD, JDL.L("plugins.hoster.CopyCom.EmptyTrashAfterSuccessfulDownload", "2. Delete moved files & empty trash after downloadlink-generation?")).setEnabledCondidtion(moveFilesToAcc, true).setDefaultValue(false));
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from provided Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final Browser ibr, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value given JSon Array of Key from JSon response provided String source.
+     *
+     * @author raztoki
+     * */
+    private String getJsonArray(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJsonArray(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return String[] value from provided JSon Array
+     *
+     * @author raztoki
+     * @param source
+     * @return
+     */
+    private String[] getJsonResultsFromArray(final String source) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
     @Override

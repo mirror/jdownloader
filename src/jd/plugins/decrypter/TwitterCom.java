@@ -41,8 +41,16 @@ public class TwitterCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("http://", "https://");
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
+        } else if (br.containsHTML("class=\"ProtectedTimeline\"")) {
+            logger.info("This tweet timeline is protected");
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setAvailable(false);
             offline.setProperty("offline", true);
@@ -124,18 +132,17 @@ public class TwitterCom extends PluginForDecrypt {
             } while (br.containsHTML("\"has_more_items\":true"));
             fp.addLinks(decryptedLinks);
         } else {
-            final Regex fin_al = br.getRegex("data\\-resolved\\-url\\-large=\"(https?://[^<>\"]*?\\.(jpg|png|gif):large)\"");
-            final String finallink = fin_al.getMatch(0);
             final String status_id = new Regex(parameter, "/status/(\\d+)/").getMatch(0);
-            final String ending = fin_al.getMatch(1);
-            if (finallink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+            final String[] alllinks = br.getRegex("property=\"og:image\" content=\"(https?://[^<>\"]+/media/[A-Za-z0-9\\-_]+\\.(?:jpg|png|gif):large)\"").getColumn(0);
+            for (final String alink : alllinks) {
+                final Regex fin_al = new Regex(alink, "https?://[^<>\"]+/media/([A-Za-z0-9\\-_]+)\\.(jpg|png|gif):large");
+                final String servername = fin_al.getMatch(0);
+                final String ending = fin_al.getMatch(1);
+                final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(alink.trim()));
+                dl.setAvailable(true);
+                dl.setFinalFileName(status_id + "_" + servername + "." + ending);
+                decryptedLinks.add(dl);
             }
-            final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink.trim()));
-            dl.setAvailable(true);
-            dl.setFinalFileName(status_id + "." + ending);
-            decryptedLinks.add(dl);
         }
 
         return decryptedLinks;

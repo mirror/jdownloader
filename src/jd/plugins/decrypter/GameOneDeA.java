@@ -260,9 +260,20 @@ public class GameOneDeA extends PluginForDecrypt {
                             dlLink_rtmp.setAvailable(false);
                             dlLink_rtmp.setProperty("offline", true);
                         }
+                        DownloadLink dlLink_http = null;
+                        if (dllink.startsWith("rtmp")) {
+                            dlLink_rtmp = createDownloadlink("http://gameonedecrypted.de/" + System.currentTimeMillis() + new Random().nextInt(100000));
+                            dlLink_rtmp.setProperty("mainlink", parameter);
+                            dlLink_rtmp.setProperty("directlink", dllink);
+                            try {
+                                dlLink_rtmp.setContentUrl(parameter);
+                            } catch (final Throwable e) {
+                                /* Not available in old 0.9.581 Stable */
+                                dlLink_rtmp.setBrowserUrl(parameter);
+                            }
+                        }
                         /* Episode > 102 */
                         dllink = dllink.replaceAll("^.*?/r2/", "http://cdn.riptide-mtvn.com/r2/");
-                        DownloadLink dlLink_http = null;
                         if (dllink.startsWith("http://")) {
                             dlLink_http = createDownloadlink("http://gameonedecrypted.de/" + System.currentTimeMillis() + new Random().nextInt(100000));
                             dlLink_http.setProperty("mainlink", parameter);
@@ -272,16 +283,6 @@ public class GameOneDeA extends PluginForDecrypt {
                             } catch (final Throwable e) {
                                 /* Not available in old 0.9.581 Stable */
                                 dlLink_http.setBrowserUrl(parameter);
-                            }
-                        } else {
-                            dlLink_rtmp = createDownloadlink("http://gameonedecrypted.de/" + System.currentTimeMillis() + new Random().nextInt(100000));
-                            dlLink_rtmp.setProperty("mainlink", parameter);
-                            dlLink_rtmp.setProperty("directlink", dllink);
-                            try {
-                                dlLink_rtmp.setContentUrl(parameter);
-                            } catch (final Throwable e) {
-                                /* Not available in old 0.9.581 Stable */
-                                dlLink_rtmp.setBrowserUrl(parameter);
                             }
                         }
                         if (!newEpisode) {
