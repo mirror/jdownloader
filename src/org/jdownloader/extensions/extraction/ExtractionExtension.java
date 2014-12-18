@@ -716,12 +716,13 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
      * 
      * @param activeValue
      */
-    public void cancel(ExtractionController activeValue) {
+    public boolean cancel(ExtractionController activeValue) {
         boolean wasInProgress = getJobQueue().isInProgress(activeValue);
-        getJobQueue().remove(activeValue);
+        boolean ret = getJobQueue().remove(activeValue);
         if (wasInProgress) {
             fireEvent(new ExtractionEvent(activeValue, ExtractionEvent.Type.CLEANUP));
         }
+        return ret;
     }
 
     private boolean onNewFile(Archive archive) {

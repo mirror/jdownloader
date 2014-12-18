@@ -13,6 +13,10 @@ public class DummyArchive {
         return incompleteCount;
     }
 
+    public int getMissingCount() {
+        return missingCount;
+    }
+
     private final java.util.List<DummyArchiveFile> list;
 
     public java.util.List<DummyArchiveFile> getList() {
