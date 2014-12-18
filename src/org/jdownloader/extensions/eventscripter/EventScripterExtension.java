@@ -59,11 +59,11 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
-import org.jdownloader.extensions.eventscripter.sandboxobjects.PackagizerLinkSandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.CrawlerJobSandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.DownloadLinkSandBox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.EventSandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.FilePackageSandBox;
+import org.jdownloader.extensions.eventscripter.sandboxobjects.PackagizerLinkSandbox;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 
@@ -254,13 +254,18 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     }
 
-    public void runTest(EventTrigger eventTrigger, String name, String scriptSource) {
+    public void runTest(final EventTrigger eventTrigger, final String name, final String scriptSource) {
+        new Thread("TestRun") {
+            @Override
+            public void run() {
+                ScriptEntry script = new ScriptEntry();
+                script.setEventTrigger(eventTrigger);
+                script.setScript(scriptSource);
+                script.setName(name);
+                runScript(script, eventTrigger.getTestProperties());
+            }
+        }.start();
 
-        ScriptEntry script = new ScriptEntry();
-        script.setEventTrigger(eventTrigger);
-        script.setScript(scriptSource);
-        script.setName(name);
-        runScript(script, eventTrigger.getTestProperties());
     }
 
     public void runTestCompile(EventTrigger eventTrigger, String script) {

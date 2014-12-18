@@ -199,18 +199,28 @@ public class ScriptEnvironment {
                 return;
             } else {
                 try {
-                    showMessageDialog(new JacksonMapper().objectToString(objects[0]));
+                    try {
+                        showMessageDialog(new JacksonMapper().objectToString(objects[0]));
+                    } catch (Throwable e) {
+
+                        showMessageDialog(format(toJson(objects[0])));
+                    }
                 } catch (Throwable e) {
 
-                    showMessageDialog(format(toJson(objects[0])));
+                    showMessageDialog(objects[0] + "");
                 }
                 return;
             }
         }
         try {
-            showMessageDialog(new JacksonMapper().objectToString(objects));
+            try {
+                showMessageDialog(new JacksonMapper().objectToString(objects));
+            } catch (Throwable e) {
+                showMessageDialog(format(toJson(objects)));
+
+            }
         } catch (Throwable e) {
-            showMessageDialog(format(toJson(objects)));
+            showMessageDialog(objects + "");
 
         }
         return;
