@@ -60,7 +60,7 @@ public class DownloadLinkCandidateResult {
         return message;
     }
 
-    public void setMessage(String message) {
+    protected void setMessage(String message) {
         this.message = message;
     }
 
@@ -68,7 +68,7 @@ public class DownloadLinkCandidateResult {
         return waitTime;
     }
 
-    public void setWaitTime(long waitTime) {
+    protected void setWaitTime(long waitTime) {
         this.waitTime = Math.max(-1, waitTime);
     }
 
@@ -87,7 +87,7 @@ public class DownloadLinkCandidateResult {
         return startTime;
     }
 
-    public void setStartTime(long startTime) {
+    protected void setStartTime(long startTime) {
         this.startTime = Math.max(-1, startTime);
     }
 
@@ -97,7 +97,7 @@ public class DownloadLinkCandidateResult {
 
     private long finishTime = -1;
 
-    public void setFinishTime(long finishTime) {
+    protected void setFinishTime(long finishTime) {
         this.finishTime = Math.max(-1, finishTime);
     }
 

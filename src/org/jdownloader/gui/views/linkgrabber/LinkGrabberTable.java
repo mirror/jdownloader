@@ -358,34 +358,28 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
     @SuppressWarnings("unchecked")
     @Override
     protected boolean processKeyBinding(KeyStroke stroke, KeyEvent evt, int condition, boolean pressed) {
+        boolean actionNotified = false;
         try {
             final InputMap map = getInputMap(condition);
             final ActionMap am = getActionMap();
-
             if (map != null && am != null && isEnabled()) {
                 final Object binding = map.get(stroke);
-
                 final Action action = (binding == null) ? null : am.get(binding);
                 if (action != null) {
                     if (action instanceof CustomizableAppAction) {
                         ((CustomizableAppAction) action).requestUpdate(this);
                     }
                     if (!action.isEnabled()) {
-
                         Toolkit.getDefaultToolkit().beep();
                     } else {
-
-                        return SwingUtilities.notifyAction(action, stroke, evt, this, evt.getModifiers());
-
+                        actionNotified = SwingUtilities.notifyAction(action, stroke, evt, this, evt.getModifiers());
                     }
-
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-        return super.processKeyBinding(stroke, evt, condition, pressed);
+        return super.processKeyBinding(stroke, evt, condition, pressed) || actionNotified;
     }
 
     public void updateContextShortcuts() {
