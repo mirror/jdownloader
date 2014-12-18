@@ -351,15 +351,15 @@ public class DownloadSession extends Property {
         return createTime;
     }
 
-    public synchronized DownloadLinkCandidateHistory getHistory(DownloadLink downloadLink) {
+    protected DownloadLinkCandidateHistory getHistory(DownloadLink downloadLink) {
         return candidateHistory.get(downloadLink);
     }
 
-    protected synchronized Collection<DownloadLinkCandidateHistory> getHistories() {
-        return new ArrayList<DownloadLinkCandidateHistory>(candidateHistory.values());
+    protected Collection<DownloadLinkCandidateHistory> getHistories() {
+        return candidateHistory.values();
     }
 
-    public synchronized DownloadLinkCandidateHistory buildHistory(DownloadLink downloadLink) {
+    protected DownloadLinkCandidateHistory buildHistory(DownloadLink downloadLink) {
         DownloadLinkCandidateHistory ret = candidateHistory.get(downloadLink);
         if (ret == null) {
             ret = new DownloadLinkCandidateHistory();
@@ -368,7 +368,7 @@ public class DownloadSession extends Property {
         return ret;
     }
 
-    protected synchronized DownloadLinkCandidateHistory removeHistory(DownloadLink downloadLink) {
+    protected DownloadLinkCandidateHistory removeHistory(DownloadLink downloadLink) {
         if (downloadLink == null) {
             candidateHistory.clear();
             return null;
