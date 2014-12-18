@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "israbox.com" }, urls = { "http://[\\w\\.]*israbox\\.com/[0-9]+\\-.*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "israbox.com" }, urls = { "http://[\\w\\.]*israbox\\.net/[0-9]+\\-.*?\\.html" }, flags = { 0 })
 public class SrBoxCom extends PluginForDecrypt {
 
     public SrBoxCom(PluginWrapper wrapper) {
@@ -67,7 +67,7 @@ public class SrBoxCom extends PluginForDecrypt {
         // want to create a subfolder with the name of the package because
         // the folder is immediately created because it will download the cover
         // in it
-        String[] TabImage = br.getRegex("<img src=\"http://[\\w\\.]*?israbox\\.com/uploads(.*?)\"").getColumn(0);
+        String[] TabImage = br.getRegex("<img src=\"(http://[\\w\\.]*?israbox\\.com)*?/uploads(.*?)\"").getColumn(1);
 
         // Creation of the array of link that is supported by all plug-in
         String[] links = br.getRegex("<a href=\"(.*?)\"").getColumn(0);
@@ -190,7 +190,7 @@ public class SrBoxCom extends PluginForDecrypt {
             return null;
         }
 
-        if (bVerify && link.startsWith("http://www.israbox.com")) {
+        if (bVerify && (link.startsWith("http://www.israbox.com") || link.startsWith("http://www.israbox.net"))) {
             return null;
         }
 
