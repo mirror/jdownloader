@@ -85,12 +85,6 @@ public class GameOneDe extends PluginForHost {
         final String mainlink = downloadLink.getStringProperty("mainlink", null);
         if (mainlink != null && dllink.startsWith("http")) {
             br.setFollowRedirects(true);
-            // br.getPage(mainlink);
-            // final String[] mrssUrl = br.getRegex("\\.addVariable\\(\"mrss\"\\s?,\\s?\"(http://.*?)\"").getColumn(0);
-            // for (String startUrl : mrssUrl) {
-            // startUrl = startUrl.replaceAll("http://(.*?)/", "http://www.gameone.de/api/mrss/");
-            // br.getPage(startUrl);
-            // }
             final Browser br2 = br.cloneBrowser();
             br2.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
             br2.getHeaders().put("Accept-Language", "de,en-gb;q=0.7, en;q=0.3");
