@@ -2,6 +2,7 @@ package org.jdownloader.gui.views;
 
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -28,6 +29,8 @@ import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.DownloadFolderChooserDialogDefaultPath;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
 
@@ -172,6 +175,15 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
         if (path != null && !CrossSystem.isAbsolutePath(path.getPath())) {
             path = new File(org.jdownloader.settings.staticreferences.CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue(), path.getPath());
         }
+        switch (CFG_GUI.CFG.getDownloadFolderChooserDefaultPath()) {
+        case CURRENT_PATH:
+            break;
+        case GLOBAL_DOWNLOAD_DIRECTORY:
+            path = new File(org.jdownloader.settings.staticreferences.CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue());
+            break;
+        case LAST_USED_PATH:
+            path = null;
+        }
         final File path2 = path;
         final DownloadFolderChooserDialog d = new DownloadFolderChooserDialog(path, title, _GUI._.OpenDownloadFolderAction_actionPerformed_save_(), null);
         d.setPackageSubFolderSelectionVisible(packager);
@@ -189,7 +201,11 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
             });
         }
 
-        d.setQuickSelectionList(DownloadPathHistoryManager.getInstance().listPaths(path != null ? path.getAbsolutePath() : null));
+        List<String> quick;
+        d.setQuickSelectionList(quick = DownloadPathHistoryManager.getInstance().listPaths(path != null ? path.getAbsolutePath() : null));
+        if (CFG_GUI.CFG.getDownloadFolderChooserDefaultPath() == DownloadFolderChooserDialogDefaultPath.LAST_USED_PATH && quick != null && quick.size() > 0) {
+            d.setPreSelection(new File(quick.get(0)));
+        }
         d.setFileSelectionMode(FileChooserSelectionMode.DIRECTORIES_ONLY);
 
         File[] dest = Dialog.getInstance().showDialog(d);

@@ -933,4 +933,13 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Unknown Account" })
     String AccountType_unknown();
 
+    @Default(lngs = { "en" }, values = { "Current Path" })
+    String DownloadFolderChooserDialogDefaultPath_CURRENT_PATH();
+
+    @Default(lngs = { "en" }, values = { "The global Download Directory: %s1" })
+    String DownloadFolderChooserDialogDefaultPath_GLOBAL_DOWNLOAD_DIRECTORY(String dir);
+
+    @Default(lngs = { "en" }, values = { "Latest used path" })
+    String DownloadFolderChooserDialogDefaultPath_LAST_USED_PATH();
+
 }
