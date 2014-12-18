@@ -132,6 +132,15 @@ public class NitroFlareCom extends PluginForHost {
                     atLeastOneDL = true;
                 }
                 br.getPage(apiURL + "/getFileInfo?" + sb);
+                if (br.containsHTML("In these moments we are upgrading the site system")) {
+
+                    for (final DownloadLink dl : links) {
+                        dl.getLinkStatus().setStatusText("Nitroflare.com is maintenance mode. Try again later");
+                        dl.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+
+                    }
+                    return true;
+                }
                 for (final DownloadLink dl : links) {
                     final String filter = br.getRegex("(\"" + getFUID(dl) + "\":\\{.*?\\})").getMatch(0);
                     if (filter == null) {
@@ -507,7 +516,10 @@ public class NitroFlareCom extends PluginForHost {
         // 6 => 'Invalid captcha',
         // 7 => 'Free users can download only 1 file at the same time'
         // 8 => ﻿{"type":"error","message":"Wrong login","code":8}
+        if (br.containsHTML("In these moments we are upgrading the site system")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Nitroflare.com is maintenance mode. Try again later", 60 * 60 * 1000);
 
+        }
         final String type = getJson("type");
         final String code = getJson("code");
         final String msg = getJson("message");
