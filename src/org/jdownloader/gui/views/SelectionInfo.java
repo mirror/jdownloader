@@ -12,6 +12,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.event.queue.Queue.QueuePriority;
+import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
@@ -169,10 +171,25 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
             if (lfilters != null && lfilters.size() > 0) {
                 filters = lfilters;
             }
-
         }
-        agregate();
+        if (table != null) {
+            // long t = System.currentTimeMillis();
+            table.getController().getQueue().addWait(new QueueAction<Void, RuntimeException>(QueuePriority.HIGH) {
 
+                @Override
+                protected Void run() throws RuntimeException {
+                    aggregate();
+                    return null;
+                }
+            });
+            // System.out.println("Within Queue: " + (System.currentTimeMillis() - t) + " Size:" + (selection != null ? selection.size() :
+            // 0));
+        } else {
+            // long t = System.currentTimeMillis();
+            aggregate();
+            // System.out.println("Outside Queue: " + (System.currentTimeMillis() - t) + " Size:" + (selection != null ? selection.size() :
+            // 0));
+        }
     }
 
     public boolean contains(AbstractPackageNode<?, ?> child) {
@@ -196,7 +213,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     }
 
     @SuppressWarnings("unchecked")
-    protected void agregate() {
+    protected void aggregate() {
         raw = new ArraySet<AbstractNode>(rawSelection);
         // use cases:
         // we use this class not only for real selections, but also for faked selections. that means, that the selection of a child without
@@ -231,11 +248,12 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
             if (node instanceof AbstractPackageChildrenNode) {
 
                 PackageType pkg = ((ChildrenType) node).getParentNode();
-                PackageView<PackageType, ChildrenType> pv = internalPackageView(pkg);
-                pv.addChild((ChildrenType) node);
+                if (pkg != null) {
+                    PackageView<PackageType, ChildrenType> pv = internalPackageView(pkg);
+                    pv.addChild((ChildrenType) node);
+                }
                 addPluginView(node);
                 children.add((ChildrenType) node);
-
             } else {
 
                 // if we selected a package, and ALL it's links, we want all
@@ -245,18 +263,15 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                 // if we selected a package, and it is NOT expanded, we want
                 // all
                 // links
-
-                PackageView<PackageType, ChildrenType> pv = internalPackageView((PackageType) node);
-
-                if (!((PackageType) node).isExpanded()) {
-                    // add allTODO
-                    boolean readL = ((PackageType) node).getModifyLock().readLock();
-                    try {
+                boolean readL = ((PackageType) node).getModifyLock().readLock();
+                try {
+                    PackageView<PackageType, ChildrenType> pv = internalPackageView((PackageType) node);
+                    if (!((PackageType) node).isExpanded()) {
+                        // add allTODO
                         List<ChildrenType> childs = ((PackageType) node).getChildren();
                         ArraySet<ChildrenType> unFiltered = new ArraySet<ChildrenType>();
                         if (filters == null) {
                             children.addAll(childs);
-
                             pv.addChildren(childs);
                             for (ChildrenType l : childs) {
                                 addPluginView(l);
@@ -277,15 +292,8 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                                 }
                             }
                             children.addAll(unFiltered);
-
                         }
-                    } finally {
-                        ((PackageType) node).getModifyLock().readUnlock(readL);
-                    }
-
-                } else {
-                    boolean readL = ((PackageType) node).getModifyLock().readLock();
-                    try {
+                    } else {
                         List<ChildrenType> childs = ((PackageType) node).getChildren();
                         boolean containsNone = true;
                         boolean containsAll = true;
@@ -310,7 +318,6 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                                     }
                                 }
                             }
-
                         }
                         // table.getModel()
                         if (containsNone) {
@@ -328,7 +335,6 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                                 for (ChildrenType l : unFiltered) {
                                     addPluginView(l);
                                 }
-
                             }
                         } else if (containsAll) {
                             pv.addChildren(childs);
@@ -336,17 +342,15 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                             for (ChildrenType l : childs) {
                                 addPluginView(l);
                             }
-
                         } else {
                             pv.addChildren(selected);
                             for (ChildrenType l : selected) {
                                 addPluginView(l);
                             }
-
                         }
-                    } finally {
-                        ((PackageType) node).getModifyLock().readUnlock(readL);
                     }
+                } finally {
+                    ((PackageType) node).getModifyLock().readUnlock(readL);
                 }
             }
         }
@@ -380,9 +384,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
      */
     private PackageView<PackageType, ChildrenType> internalPackageView(PackageType pkg) {
         PackageView<PackageType, ChildrenType> pv = view.get(pkg);
-
         if (pv == null) {
-
             pv = new PackageView<PackageType, ChildrenType>(pkg, raw.contains(pkg));
             packageViews.add(pv);
             view.put(pkg, pv);
