@@ -27,6 +27,8 @@ import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;
+import org.jdownloader.settings.staticreferences.CFG_GENERAL;
+import org.jdownloader.translate._JDT;
 
 public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
@@ -1180,4 +1182,31 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     DockingPosition getLinkgrabberBottombarPosition();
 
     void setLinkgrabberBottombarPosition(DockingPosition pos);
+
+    public static enum DownloadFolderChooserDialogDefaultPath implements LabelInterface {
+        CURRENT_PATH {
+            @Override
+            public String getLabel() {
+                return _JDT._.DownloadFolderChooserDialogDefaultPath_CURRENT_PATH();
+            }
+        },
+        GLOBAL_DOWNLOAD_DIRECTORY {
+            @Override
+            public String getLabel() {
+                return _JDT._.DownloadFolderChooserDialogDefaultPath_GLOBAL_DOWNLOAD_DIRECTORY(CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue());
+            }
+        },
+        LAST_USED_PATH {
+            @Override
+            public String getLabel() {
+                return _JDT._.DownloadFolderChooserDialogDefaultPath_LAST_USED_PATH();
+            }
+        }
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("CURRENT_PATH")
+    DownloadFolderChooserDialogDefaultPath getDownloadFolderChooserDefaultPath();
+
+    void setDownloadFolderChooserDefaultPath(DownloadFolderChooserDialogDefaultPath path);
 }
