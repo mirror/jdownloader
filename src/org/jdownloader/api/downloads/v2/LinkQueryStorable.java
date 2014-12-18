@@ -1,9 +1,16 @@
 package org.jdownloader.api.downloads.v2;
 
 import org.appwork.storage.Storable;
+import org.appwork.storage.jackson.JacksonMapper;
 import org.jdownloader.myjdownloader.client.bindings.downloadlist.DownloadLinkQuery;
 
 public class LinkQueryStorable extends DownloadLinkQuery implements Storable {
+    public static void main(String[] args) {
+
+        System.out.println(LinkQueryStorable.class.getSimpleName() + "= ");
+        System.out.println(new JacksonMapper().objectToString(new LinkQueryStorable()));
+    }
+
     public static final LinkQueryStorable FULL = new LinkQueryStorable();
     static {
         FULL.setBytesLoaded(true);
