@@ -318,7 +318,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
             e.printStackTrace();
         }
 
-        return super.processKeyBinding(stroke, evt, condition, pressed) || actionNotified;
+        return actionNotified || super.processKeyBinding(stroke, evt, condition, pressed);
     }
 
     @Override
