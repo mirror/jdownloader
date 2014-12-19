@@ -329,11 +329,11 @@ public class YoutubeDashV2 extends PluginForHost {
 
         void setLinkIsPlaylistUrlAction(IfUrlisAPlaylistAction action);
 
-        @DefaultBooleanValue(false)
-        @AboutConfig
-        boolean isPreferHttpsEnabled();
-
-        void setPreferHttpsEnabled(boolean b);
+        // @DefaultBooleanValue(false)
+        // @AboutConfig
+        // boolean isPreferHttpsEnabled();
+        //
+        // void setPreferHttpsEnabled(boolean b);
 
         public static enum GroupLogic implements LabelInterface {
             BY_MEDIA_TYPE {
@@ -1898,7 +1898,6 @@ public class YoutubeDashV2 extends PluginForHost {
     @Override
     public void setActiveVariantByLink(DownloadLink downloadLink, LinkVariant variant) {
         YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
-        boolean prefers = cfg.isPreferHttpsEnabled();
 
         if (variant == null) {
             return;
@@ -1918,12 +1917,13 @@ public class YoutubeDashV2 extends PluginForHost {
             downloadLink.setFinalFileName(filename = getCachedHelper().createFilename(downloadLink));
             downloadLink.setPluginPatternMatcher("youtubev2://" + YoutubeVariant.SUBTITLES + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/");
 
-            if (prefers) {
-                downloadLink.setContentUrl("https://www.youtube.com" + "/watch?v=" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "&variant=" + variant);
-            } else {
-                downloadLink.setContentUrl("http://www.youtube.com" + "/watch?v=" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "&variant=" + variant);
-
-            }
+            // if (prefers) {
+            downloadLink.setContentUrl("https://www.youtube.com" + "/watch?v=" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "&variant=" + variant);
+            // } else {
+            // downloadLink.setContentUrl("http://www.youtube.com" + "/watch?v=" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) +
+            // "&variant=" + variant);
+            //
+            // }
 
             try {
 
@@ -1945,12 +1945,13 @@ public class YoutubeDashV2 extends PluginForHost {
             String filename;
             downloadLink.setFinalFileName(filename = getCachedHelper().createFilename(downloadLink));
             downloadLink.setPluginPatternMatcher("youtubev2://" + v._getUniqueId() + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/");
-            if (prefers) {
-                downloadLink.setContentUrl("https://www.youtube.com" + "/watch?v=" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "&variant=" + variant);
-            } else {
-                downloadLink.setContentUrl("http://www.youtube.com" + "/watch?v=" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "&variant=" + variant);
-
-            }
+            // if (prefers) {
+            downloadLink.setContentUrl("https://www.youtube.com" + "/watch?v=" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "&variant=" + variant);
+            // } else {
+            // downloadLink.setContentUrl("http://www.youtube.com" + "/watch?v=" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) +
+            // "&variant=" + variant);
+            //
+            // }
             try {
                 downloadLink.setLinkID("youtubev2://" + v._getUniqueId() + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/" + URLEncode.encodeRFC2396(filename));
             } catch (UnsupportedEncodingException e) {
