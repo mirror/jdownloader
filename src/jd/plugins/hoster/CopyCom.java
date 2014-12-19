@@ -145,8 +145,6 @@ public class CopyCom extends PluginForHost {
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (ddlink == null) {
-        }
-        if (ddlink == null) {
             ddlink = downloadLink.getStringProperty("specified_link", null) + "?download=1";
         }
 
@@ -322,13 +320,22 @@ public class CopyCom extends PluginForHost {
                 br.getHeaders().put("X-Api-Version", "1.0");
                 br.getHeaders().put("X-Authorization", api_auth);
                 br.postPageRaw("https://apiweb.copy.com/jsonrpc", "{\"jsonrpc\":\"2.0\",\"method\":\"copy_link\",\"params\":{\"link_token\":\"" + fid + "\"},\"id\":1}");
+                final String type = getJson("type");
                 final String share_owner = getJson("share_owner");
                 path = getJson("path");
-                if (share_owner == null || path == null) {
+                if (share_owner == null || path == null || type == null) {
                     logger.warning("MoveFileToAcc handling failed");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                ddlink = "https://copy.com/web/users/user-" + share_owner + "/copy" + Encoding.urlEncode(path) + "?revision=1&download=1";
+                ddlink = "https://copy.com/web/users/user-" + share_owner + "/copy";
+                String name = link.getName();
+                name = name.replace(" ", "%20");
+                name = name.replace("[", "%5B");
+                name = name.replace("]", "%5D");
+                name = name.replace("+", "%2B");
+                ddlink += path + "/";
+                ddlink += name;
+                ddlink += "?download=1";
             }
             try {
                 doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
@@ -369,7 +376,7 @@ public class CopyCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink dl) {
-        final String fid = new Regex(getMainLink(dl), "([A-Za-z0-9]+)$").getMatch(0);
+        final String fid = new Regex(getMainLink(dl), "copy\\.com/s/([A-Za-z0-9]+)").getMatch(0);
         return fid;
     }
 
