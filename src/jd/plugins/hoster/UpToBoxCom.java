@@ -64,7 +64,7 @@ public class UpToBoxCom extends PluginForHost {
     private final static String  SSL_CONNECTION               = "SSL_CONNECTION";
 
     private String               correctedBR                  = "";
-    private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input|Password:</b>";
     private final String         COOKIE_HOST                  = "http://uptobox.com";
     private static final String  DOMAINS                      = "(uptobox\\.com|uptostream\\.com)";
     private static final String  regexIpBlock                 = "<center><p><b>Sorry, " + DOMAINS + " is not available in your country</b></p></center>";

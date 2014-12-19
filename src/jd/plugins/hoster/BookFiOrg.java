@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -43,6 +44,13 @@ public class BookFiOrg extends PluginForHost {
         return "http://" + this.getHost() + "/";
     }
 
+    public void correctDownloadLink(final DownloadLink link) {
+        if (link.getDownloadURL().matches("http://(?:www\\.)?bookfi\\.org/dl/\\d+.+")) {
+            final String fid = new Regex(link.getDownloadURL(), "bookfi\\.org/dl/(\\d+)").getMatch(0);
+            link.setUrlDownload("http://bookfi.org/book/" + fid);
+        }
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
@@ -57,14 +65,18 @@ public class BookFiOrg extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("class=\"notFound")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("class=\"notFound")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (parameter.contains("/md5/")) {
             // bookfi
             String bookid = br.getRegex("<a href=\"(book/\\d+)\" ><h3").getMatch(0);
             if (bookid == null) {
                 // bookos
                 bookid = br.getRegex("<a href=\"(book/\\d+/[a-z0-9]+)\"><h3").getMatch(0);
-                if (bookid == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                if (bookid == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             br.getPage("/" + bookid);
         }
@@ -74,12 +86,18 @@ public class BookFiOrg extends PluginForHost {
         if (info == null) {
             // bookos
             info = br.getRegex("<a class=\"button active dnthandler\" href=\"([^\"]+)\">.*?\\([^,]+, ([^\\)]+?)\\)</a>").getRow(0);
-            if (info == null || info[0] == null || info[1] == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (info == null || info[0] == null || info[1] == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         // Goes to download link to find out filename
         String filename = br.getRegex("<h2 style=\"display:inline\">([^<>\"]*?)</h2>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<h1 style=\"color:#49AFD0\"  itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            filename = br.getRegex("<h1 style=\"color:#49AFD0\"  itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         param.setFinalFileName(filename + ".pdf");
         param.setDownloadSize(SizeFormatter.getSize(info[1]));
         DLLINK = info[0];
@@ -107,10 +125,11 @@ public class BookFiOrg extends PluginForHost {
         final String newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
         if (newExtension != null && !downloadLink.getFinalFileName().endsWith(newExtension)) {
             final String oldExtension = downloadLink.getFinalFileName().substring(downloadLink.getFinalFileName().lastIndexOf("."));
-            if (oldExtension != null)
+            if (oldExtension != null) {
                 downloadLink.setFinalFileName(downloadLink.getFinalFileName().replace(oldExtension, newExtension));
-            else
+            } else {
                 downloadLink.setFinalFileName(downloadLink.getFinalFileName() + newExtension);
+            }
         }
     }
 

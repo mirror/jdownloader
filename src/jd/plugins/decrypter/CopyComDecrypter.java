@@ -21,6 +21,7 @@ import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -153,7 +154,7 @@ public class CopyComDecrypter extends PluginForDecrypt {
             return null;
         }
         for (final String singleinfo : links) {
-            String name = getJson("name", singleinfo);
+            final String name = getJson(singleinfo, "name");
             if (additionalPath.endsWith("/" + Encoding.urlEncode(name))) {
 
             }
@@ -161,15 +162,14 @@ public class CopyComDecrypter extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            name = Encoding.htmlDecode(name.trim());
-            if (!"file".equals(getJson("type", singleinfo))) {
+            if (!"file".equals(getJson(singleinfo, "type"))) {
                 final DownloadLink dl = createDownloadlink(parameter + "/" + name);
 
                 decryptedLinks.add(dl);
             } else {
                 final DownloadLink dl = createDownloadlink("http://copydecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
-                final String filesize = getJson("size", singleinfo);
-                String url = getJson("url", singleinfo);
+                final String filesize = getJson(singleinfo, "size");
+                String url = getJson(singleinfo, "url");
                 if (filesize == null || url == null) {
                     logger.warning("Decrypter broken for ligetContentUrl:https://copy.com/ZPRER9vmqF93/DSC00243.JPGnk: " + parameter);
                     return null;
@@ -195,12 +195,66 @@ public class CopyComDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private String getJson(final String parameter, final String source) {
-        String result = new Regex(source, "\"" + parameter + "\":([0-9\\.]+)").getMatch(0);
-        if (result == null) {
-            result = new Regex(source, "\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
-        }
-        return result;
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from provided Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final Browser ibr, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value given JSon Array of Key from JSon response provided String source.
+     *
+     * @author raztoki
+     * */
+    private String getJsonArray(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJsonArray(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return String[] value from provided JSon Array
+     *
+     * @author raztoki
+     * @param source
+     * @return
+     */
+    private String[] getJsonResultsFromArray(final String source) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
 }
