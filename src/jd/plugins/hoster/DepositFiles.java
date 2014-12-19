@@ -599,7 +599,6 @@ public class DepositFiles extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setBrowserExclusive();
-        setMainpage();
         AccountInfo ai = new AccountInfo();
         synchronized (LOCK) {
             // via /api/
@@ -612,6 +611,7 @@ public class DepositFiles extends PluginForHost {
                 }
             }
             if (!useAPI.get()) {
+                setMainpage();
                 ai = webFetchAccountInfo(account);
             }
             return ai;
@@ -929,7 +929,7 @@ public class DepositFiles extends PluginForHost {
             result = accountData.get("token").toString();
         } else {
             // try without api...
-            useAPI.set(false);
+            // useAPI.set(false);
             logger.warning("Possible issue with getToken! Please report to JDownloader Development Team.");
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
@@ -999,42 +999,32 @@ public class DepositFiles extends PluginForHost {
             }
             if (token == null) {
                 logger.warning("Could not find 'token'");
-                useAPI.set(false);
+                // useAPI.set(false);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             accountData.put("token", token);
             String passKey = getJson("member_passkey");
             if (passKey == null) {
                 logger.warning("Could not find 'passKey'");
-                useAPI.set(false);
+                // useAPI.set(false);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             accountData.put("passKey", passKey);
             String mode = getJson("mode");
             if (mode == null) {
                 logger.warning("Could not find 'mode'");
-                useAPI.set(false);
+                // useAPI.set(false);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             accountData.put("mode", mode);
+            // "gold_expired":"2015-01-18 14:37:08"
+            final String expire = getJson("gold_expired");
             if ("gold".equalsIgnoreCase(mode)) {
                 account.setProperty("free", false);
                 try {
                     account.setMaxSimultanDownloads(-1);
                     account.setConcurrentUsePossible(true);
                 } catch (Throwable e) {
-                }
-                // no expire date shown by API within login... kinda lame I know... && cookie session is set with login
-                br.setFollowRedirects(true);
-                // we need to save cookies from browser into mainpage, otherwise cookies session wont send with request!
-                mainpageCookies(br);
-                br.getPage(MAINPAGE.get() + "/de/gold/");
-                String expire = br.getRegex("Gold-Zugriff: <b>(.*?)</b></div>").getMatch(0);
-                if (expire == null) {
-                    expire = br.getRegex("Gold Zugriff bis: <b>(.*?)</b></div>").getMatch(0);
-                }
-                if (expire == null) {
-                    expire = br.getRegex("Gold(-| )(Zugriff|Zugang)( bis)?: <b>(.*?)</b></div>").getMatch(3);
                 }
                 final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.UK);
                 if (expire == null) {
