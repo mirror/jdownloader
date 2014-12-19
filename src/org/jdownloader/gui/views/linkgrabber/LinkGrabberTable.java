@@ -379,7 +379,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return super.processKeyBinding(stroke, evt, condition, pressed) || actionNotified;
+        return actionNotified || super.processKeyBinding(stroke, evt, condition, pressed);
     }
 
     public void updateContextShortcuts() {
