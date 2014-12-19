@@ -75,14 +75,14 @@ public class TbCmV2 extends PluginForDecrypt {
      * Returns host from provided String.
      */
     static String getBase() {
-        YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
-        boolean prefers = cfg.isPreferHttpsEnabled();
-
-        if (prefers) {
-            return "https://www.youtube.com";
-        } else {
-            return "http://www.youtube.com";
-        }
+        // YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
+        // boolean prefers = cfg.isPreferHttpsEnabled();
+        //
+        // if (prefers) {
+        return "https://www.youtube.com";
+        // } else {
+        // return "http://www.youtube.com";
+        // }
 
     }
 
@@ -650,37 +650,37 @@ public class TbCmV2 extends PluginForDecrypt {
 
                 }
 
-            if (extra != null && extra.length > 0) {
-                main: for (VariantInfo v : allVariants.values()) {
-                    for (String s : extra) {
-                        if (v.variant.getTypeId().equals(s)) {
+                if (extra != null && extra.length > 0) {
+                    main: for (VariantInfo v : allVariants.values()) {
+                        for (String s : extra) {
+                            if (v.variant.getTypeId().equals(s)) {
 
-                            String groupID = getGroupID(v.variant);
+                                String groupID = getGroupID(v.variant);
 
-                            List<VariantInfo> fromGroup = groups.get(groupID);
+                                List<VariantInfo> fromGroup = groups.get(groupID);
 
-                            decryptedLinks.add(createLink(v, fromGroup));
-                            continue main;
+                                decryptedLinks.add(createLink(v, fromGroup));
+                                continue main;
 
-                        }
-                    }
-                }
-
-            }
-
-            ArrayList<String> extraSubtitles = cfg.getExtraSubtitles();
-            if (extraSubtitles != null) {
-                for (String v : extraSubtitles) {
-                    if (v != null) {
-                        for (VariantInfo vi : allSubtitles) {
-                            if (vi.getIdentifier().equalsIgnoreCase(v)) {
-                                decryptedLinks.add(createLink(vi, allSubtitles));
                             }
+                        }
+                    }
 
+                }
+
+                ArrayList<String> extraSubtitles = cfg.getExtraSubtitles();
+                if (extraSubtitles != null) {
+                    for (String v : extraSubtitles) {
+                        if (v != null) {
+                            for (VariantInfo vi : allSubtitles) {
+                                if (vi.getIdentifier().equalsIgnoreCase(v)) {
+                                    decryptedLinks.add(createLink(vi, allSubtitles));
+                                }
+
+                            }
                         }
                     }
                 }
-            }
 
             }
         }
@@ -896,7 +896,7 @@ public class TbCmV2 extends PluginForDecrypt {
 
     /**
      * Parse a playlist id and return all found video ids
-     *
+     * 
      * @param decryptedLinks
      * @param dupeCheckSet
      * @param base

@@ -61,12 +61,17 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.txtresource.TranslationFactory;
+import org.appwork.uio.InputDialogInterface;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.InputDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -624,11 +629,11 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
         this.cfg = cfg;
 
-        if (cfg.isPreferHttpsEnabled()) {
-            this.base = "https://www.youtube.com";
-        } else {
-            this.base = "http://www.youtube.com";
-        }
+        // if (cfg.isPreferHttpsEnabled()) {
+        this.base = "https://www.youtube.com";
+        // } else {
+        // this.base = "http://www.youtube.com";
+        // }
         ArrayList<YoutubeVariantInterface> variants = new ArrayList<YoutubeVariantInterface>();
         HashMap<String, YoutubeVariantInterface> variantsMap = new HashMap<String, YoutubeVariantInterface>();
         for (YoutubeVariant v : YoutubeVariant.values()) {
@@ -1208,11 +1213,11 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             return;
         }
         Browser clone = br.cloneBrowser();
-        if (cfg.isPreferHttpsEnabled()) {
-            clone.getPage("https://gdata.youtube.com/feeds/api/users/" + vid.user + "?v=2");
-        } else {
-            clone.getPage("http://gdata.youtube.com/feeds/api/users/" + vid.user + "?v=2");
-        }
+        // if (cfg.isPreferHttpsEnabled()) {
+        clone.getPage("https://gdata.youtube.com/feeds/api/users/" + vid.user + "?v=2");
+        // } else {
+        // clone.getPage("http://gdata.youtube.com/feeds/api/users/" + vid.user + "?v=2");
+        // }
 
         String googleID = clone.getRegex("<yt\\:googlePlusUserId>(.*?)</yt\\:googlePlusUserId>").getMatch(0);
         if (StringUtils.isNotEmpty(googleID)) {
@@ -1241,11 +1246,11 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             return;
         }
         Browser clone = br.cloneBrowser();
-        if (cfg.isPreferHttpsEnabled()) {
-            clone.getPage("https://gdata.youtube.com/feeds/api/videos/" + vid.videoID + "?v=2");
-        } else {
-            clone.getPage("http://gdata.youtube.com/feeds/api/videos/" + vid.videoID + "?v=2");
-        }
+        // if (cfg.isPreferHttpsEnabled()) {
+        clone.getPage("https://gdata.youtube.com/feeds/api/videos/" + vid.videoID + "?v=2");
+        // } else {
+        // clone.getPage("http://gdata.youtube.com/feeds/api/videos/" + vid.videoID + "?v=2");
+        // }
         try {
             // dd.MM.yyyy_HH-mm-ss
             // 2014-01-06T00:01:01.000Z
@@ -1319,12 +1324,14 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         try {
             this.br.setDebug(true);
             this.br.setCookiesExclusive(true);
-            this.br.clearCookies("youtube.com");
+            // delete all cookies
+            this.br.clearCookies(null);
+
             br.setCookie("http://youtube.com", "PREF", "hl=en-GB");
             if (account.getProperty("cookies") != null) {
                 @SuppressWarnings("unchecked")
                 HashMap<String, String> cookies = (HashMap<String, String>) account.getProperty("cookies");
-                cookies = null;
+                // cookies = null;
                 if (cookies != null) {
                     if (cookies.containsKey("LOGIN_INFO")) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
@@ -1336,8 +1343,8 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                         if (refresh == false) {
                             return;
                         } else {
-                            this.br.getPage("http://www.youtube.com");
-                            if (!this.br.containsHTML("<span class=\"yt-uix-button-content\">Sign In </span></button></div>")) {
+                            this.br.getPage("https://www.youtube.com");
+                            if (this.br.containsHTML("<span class=\"yt-uix-button-content\">Sign out </span></a>")) {
                                 return;
                             }
                         }
@@ -1346,14 +1353,20 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             }
 
             this.br.setFollowRedirects(true);
-            this.br.getPage(this.replaceHttps("http://www.youtube.com/"));
+            getPageFollowRedirectsDuringLogin(br, this.replaceHttps("http://www.youtube.com/"));
             /* first call to google */
-            this.br.getPage("https://www.google.com/accounts/ServiceLogin?uilel=3&service=youtube&passive=true&continue=http%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26nomobiletemp%3D1%26hl%3Den_US%26next%3D%252Findex&hl=en_US&ltmpl=sso");
+
+            getPageFollowRedirectsDuringLogin(br, "https://accounts.google.com/ServiceLogin?uilel=3&service=youtube&passive=true&continue=http%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26nomobiletemp%3D1%26hl%3Den_US%26next%3D%252Findex&hl=en_US&ltmpl=sso");
+
             String checkConnection = this.br.getRegex("iframeUri: \\'(https.*?)\\'").getMatch(0);
             if (checkConnection != null) {
+                // JS octal encoding http://brajeshwar.github.io/entities/
+                checkConnection = checkConnection.replaceAll("\\\\0?75", "=").replaceAll("\\\\0?46", "&");
+                checkConnection += "&timestamp=" + System.currentTimeMillis();
                 /*
                  * don't know if this is important but seems to set pstMsg to 1 ;)
                  */
+                // checkConnection = JSonStorage.restoreFromString("\"" + checkConnection + "\"", TypeRef.STRING);
                 checkConnection = Encoding.unescape(checkConnection);
                 try {
                     this.br.cloneBrowser().getPage(checkConnection);
@@ -1378,17 +1391,43 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             this.br.submitForm(form);
-            if (this.br.getRedirectLocation() == null) {
-                final String page = Encoding.htmlDecode(this.br.toString());
-                final String red = new Regex(page, "url='(https?://.*?)'").getMatch(0);
-                if (red == null) {
-                    account.setValid(false);
+
+            if (this.br.getRedirectLocation() != null) {
+                getPageFollowRedirectsDuringLogin(br, this.br.getRedirectLocation());
+            }
+
+            Form challengeForm = br.getFormbyProperty("id", "challengeform");
+            if (challengeForm != null) {
+                if (!showDialog || true) {
+                    // count how often this actually happens.
+                    StatsManager.I().track("jd2/counter/plugin/Youtube/Verification");
+                    logger.info("Youtube Login Verification required");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                this.br.getPage(red);
+                // TODO: Fix. I cannot reproduce this right now.
+                challengeForm.getInputField("challengetype").setValue("RecoveryEmailChallenge");
+                challengeForm.getInputField("phoneNumber").setValue("");
+
+                challengeForm.getInputField("emailAnswer").setValue(Encoding.urlEncode("***"));
+
+                br.submitForm(challengeForm);
+
+                if (this.br.getRedirectLocation() != null && this.br.getRedirectLocation().contains("ChangePassword")) {
+                    if (showDialog) {
+                        CrossSystem.openURL(this.br.getRedirectLocation());
+                        InputDialog d = new InputDialog(Dialog.STYLE_PASSWORD, "Youtube Password change required!", "Youtube want's you to change our password for the account '" + account.getUser() + "'. Please log in your youtube/google account in our browser and follow the steps.\r\nHint: If you are already logged in, try to log out, and login afterwards.\r\n\r\nPlease enter the new password here:", null);
+                        UIOManager.I().show(InputDialogInterface.class, d);
+                        String newPassword = d.getText();
+                        if (StringUtils.isNotEmpty(newPassword) && !StringUtils.equals(newPassword, account.getPass())) {
+                            account.setPass(newPassword);
+                            login(account, refresh, showDialog);
+                            return;
+                        }
+                    }
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+
             }
-            /* second call to google */
-            this.br.getPage(this.br.getRedirectLocation());
             if (this.br.containsHTML("Google will check if this")) {
                 if (showDialog) {
                     UserIO.getInstance().requestMessageDialog(0, "Youtube Login Error", "Please logout and login again at youtube.com, account check needed!");
@@ -1440,16 +1479,11 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 // br.postPage("https://accounts.google.com/LoginVerification", "");
                 throw new WTFException("Not Implemented");
 
-            } else {
-                if (this.br.getRedirectLocation() == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "The login verification is broken. Please contact our support.");
-                }
-                this.br.setFollowRedirects(true);
-                this.br.getPage(this.br.getRedirectLocation());
-
-                final String location = Encoding.unescape(this.br.getRegex("location\\.replace\\(\"(.*?)\"").getMatch(0));
-                this.br.getPage(location);
             }
+            if (this.br.getRedirectLocation() != null && this.br.getCookie("http://www.youtube.com", "LOGIN_INFO") == null) {
+                getPageFollowRedirectsDuringLogin(br, this.br.getRedirectLocation());
+            }
+
             if (this.br.getCookie("http://www.youtube.com", "LOGIN_INFO") == null) {
                 account.setValid(false);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -1466,6 +1500,33 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             throw e;
         }
 
+    }
+
+    private void getPageFollowRedirectsDuringLogin(Browser br, String string) throws IOException {
+        boolean before = br.isFollowingRedirects();
+        br.setFollowRedirects(false);
+        int max = 20;
+        try {
+            while (max-- > 0) {
+
+                br.getPage(string);
+                if (br.getRedirectLocation() != null) {
+                    if (br.getCookie("youtube.com", "LOGIN_INFO") != null) {
+                        break;
+                    }
+                    string = br.getRedirectLocation();
+                    continue;
+                }
+                String redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"0\\; url=\\&\\#39\\;(.+)\\&\\#39\\;").getMatch(0);
+                if (redirect != null) {
+                    string = Encoding.htmlDecode(redirect);
+                } else {
+                    break;
+                }
+            }
+        } finally {
+            br.setFollowRedirects(before);
+        }
     }
 
     public void login(final boolean refresh, final boolean showDialog) {
@@ -1668,13 +1729,13 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     private String replaceHttps(final String s) {
 
-        final boolean prefers = this.cfg.isPreferHttpsEnabled();
-
-        if (prefers) {
-            return s.replaceFirst("http://", "https://");
-        } else {
-            return s.replaceFirst("https://", "http://");
-        }
+        // final boolean prefers = this.cfg.isPreferHttpsEnabled();
+        //
+        // if (prefers) {
+        return s.replaceFirst("http://", "https://");
+        // } else {
+        // return s.replaceFirst("https://", "http://");
+        // }
     }
 
     public void setupProxy() {
