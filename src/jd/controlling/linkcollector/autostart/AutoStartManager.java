@@ -147,6 +147,10 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
         return (int) (System.currentTimeMillis() - lastStarted);
     }
 
+    public boolean isRunning() {
+        return delayer != null && delayer.isDelayerActive();
+    }
+
     public void interrupt() {
         if (delayer.stop() && eventSender.hasListener()) {
             eventSender.fireEvent(new AutoStartManagerEvent(this, AutoStartManagerEvent.Type.DONE));

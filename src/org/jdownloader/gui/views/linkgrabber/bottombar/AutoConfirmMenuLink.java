@@ -68,6 +68,10 @@ public class AutoConfirmMenuLink extends MenuItemData implements MenuLink, SelfL
         } catch (Throwable e) {
         }
         AppAction a = new AppAction() {
+            @Override
+            public boolean isEnabled() {
+                return LinkCollector.getInstance().getAutoStartManager().isRunning();
+            }
 
             @Override
             public void actionPerformed(ActionEvent e) {
