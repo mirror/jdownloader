@@ -1247,9 +1247,7 @@ public class DummyScriptEnginePlugin extends PluginForHost {
 
     public static Object jsonToJavaObject(String string) throws Exception {
         try {
-            if (true) {
-                throw new Exception("Debug");
-            }
+
             return org.appwork.storage.JSonStorage.restoreFromString(string, new org.appwork.storage.TypeRef<Object>() {
             });
         } catch (Throwable e) {

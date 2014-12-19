@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -226,60 +225,6 @@ public class SoundcloudCom extends PluginForHost {
         }
     }
 
-    public static AvailableStatus checkStatusXML(final DownloadLink parameter, final String source, final boolean fromHostplugin) throws ParseException, IOException {
-        String filename = getXML("title", source);
-        if (filename == null) {
-            if (fromHostplugin) {
-                parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.pluginBroken", "The host plugin is broken!"));
-            }
-            return AvailableStatus.FALSE;
-        }
-        filename = Encoding.htmlDecode(filename.trim().replace("\"", "'"));
-        final String id = getXML("id", source);
-        final String filesize = getXML("original-content-size", source);
-        final String description = getXML("description", source);
-        if (description != null) {
-            try {
-                parameter.setComment(Encoding.htmlDecode(description));
-            } catch (Throwable e) {
-            }
-        }
-        String date = new Regex(source, "<created\\-at type=\"datetime\">([^<>\"]*?)</created-at>").getMatch(0);
-        String username = getXML("username", source);
-        String type = getXML("original-format", source);
-        if (type == null || type.equals("raw")) {
-            type = "mp3";
-        }
-        username = Encoding.htmlDecode(username.trim());
-        final String url = getXML("download-url", source);
-        if (url != null) {
-            /* we have original file downloadable */
-            if (filesize != null) {
-                parameter.setDownloadSize(Long.parseLong(filesize));
-            }
-            if (fromHostplugin) {
-                parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.downloadavailable", "Original file is downloadable"));
-            }
-        } else {
-            type = "mp3";
-            if (fromHostplugin) {
-                parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.previewavailable", "Preview (Stream) is downloadable"));
-            }
-        }
-
-        if (url != null) {
-            parameter.setProperty("directlink", url + "?client_id=" + CLIENTID);
-        }
-        parameter.setProperty("channel", username);
-        parameter.setProperty("plainfilename", filename);
-        parameter.setProperty("originaldate", date);
-        parameter.setProperty("linkid", id);
-        parameter.setProperty("type", type);
-        final String formattedfilename = getFormattedFilename(parameter);
-        parameter.setFinalFileName(formattedfilename);
-        return AvailableStatus.TRUE;
-    }
-
     public static AvailableStatus checkStatusJson(DownloadLink parameter, Map<String, Object> source, boolean fromHostplugin) throws ParseException {
         String filename = toString(source.get("title"));
 
@@ -290,6 +235,7 @@ public class SoundcloudCom extends PluginForHost {
             return AvailableStatus.FALSE;
         }
         filename = filename.trim();
+        filename = encodeUnicode(filename);
         final String id = toString(source.get("id"));
         final String filesize = toString(source.get("original_content_size"));
         try {
@@ -343,64 +289,6 @@ public class SoundcloudCom extends PluginForHost {
             return null;
         }
         return object.toString();
-    }
-
-    @Deprecated
-    public static AvailableStatus checkStatusJson(final DownloadLink parameter, final String source, final boolean fromHostplugin) throws ParseException, IOException {
-        String filename = getJson(source, "title");
-        filename = encodeUnicode(filename);
-        if (filename == null) {
-            if (fromHostplugin) {
-                parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.pluginBroken", "The host plugin is broken!"));
-            }
-            return AvailableStatus.FALSE;
-        }
-        filename = Encoding.htmlDecode(filename.trim());
-        final String id = getJson(source, "id");
-        final String filesize = getJson(source, "original_content_size");
-        try {
-            final String description = getJson(source, "description");
-            if (description != null) {
-                parameter.setComment(Encoding.htmlDecode(description));
-            }
-        } catch (Throwable e) {
-        }
-        final String date = getJson(source, "created_at");
-        String username = getJson(source, "username");
-        String type = getJson(source, "original_format");
-        if (type == null || type.equals("raw")) {
-            type = "mp3";
-        }
-        final String url = getJson(source, "download_url");
-        if (url != null) {
-            /* we have original file downloadable */
-            if (filesize != null) {
-                parameter.setDownloadSize(Long.parseLong(filesize));
-            }
-            if (fromHostplugin) {
-                parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.downloadavailable", "Original file is downloadable"));
-            }
-        } else {
-            type = "mp3";
-            if (fromHostplugin) {
-                parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.previewavailable", "Preview (Stream) is downloadable"));
-            }
-        }
-
-        if (url != null) {
-            parameter.setProperty("directlink", url + "?client_id=" + CLIENTID);
-        }
-        if (username != null) {
-            username = Encoding.htmlDecode(username.trim());
-            parameter.setProperty("channel", username);
-        }
-        parameter.setProperty("plainfilename", filename);
-        parameter.setProperty("originaldate", date);
-        parameter.setProperty("linkid", id);
-        parameter.setProperty("type", type);
-        final String formattedfilename = getFormattedFilename(parameter);
-        parameter.setFinalFileName(formattedfilename);
-        return AvailableStatus.TRUE;
     }
 
     public static final String TYPE_API_ALL      = "https?://api\\.soundcloud\\.com/tracks/\\d+/(stream|download)(\\?secret_token=[A-Za-z0-9\\-_]+)?";
@@ -733,20 +621,6 @@ public class SoundcloudCom extends PluginForHost {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     * 
-     * @author raztoki
-     * */
-    private static String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    public static String getXML(final String parameter, final String source) {
-        return new Regex(source, "<" + parameter + "( type=\"[^<>\"/]*?\")?>([^<>]*?)</" + parameter + ">").getMatch(1);
     }
 
     /** Avoid chars which are not allowed in filenames under certain OS' */
