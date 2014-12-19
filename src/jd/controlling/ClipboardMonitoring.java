@@ -530,7 +530,7 @@ public class ClipboardMonitoring {
         }
     }
 
-    public static void processSupportedTransferData(final Transferable transferable) {
+    public static void processSupportedTransferData(final Transferable transferable, LinkOrigin origin) {
         try {
             final String listContent = getListTransferData(transferable);
             final String stringContent = getStringTransferData(transferable);
@@ -564,7 +564,8 @@ public class ClipboardMonitoring {
             }
             String content = sb.toString();
             if (!StringUtils.isEmpty(content)) {
-                LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.CLIPBOARD, null), content);
+                final LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(origin, null), content);
+
                 job.setCustomSourceUrl(browserUrl);
                 final HashSet<String> pws = PasswordUtils.getPasswords(content);
                 if (pws != null && pws.size() > 0) {

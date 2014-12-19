@@ -109,7 +109,6 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
                 return DeleteFileOptions.REMOVE_LINKS_ONLY;
             }
         }
-
         return deleteMode;
     }
 

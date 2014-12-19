@@ -3,6 +3,7 @@ package org.jdownloader.gui.views.linkgrabber;
 import java.awt.datatransfer.Transferable;
 
 import jd.controlling.ClipboardMonitoring;
+import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
@@ -23,7 +24,7 @@ public class LinkGrabberTableTransferHandler extends PackageControllerTableTrans
 
     @Override
     protected boolean importTransferable(TransferSupport support) {
-        ClipboardMonitoring.processSupportedTransferData(support.getTransferable());
+        ClipboardMonitoring.processSupportedTransferData(support.getTransferable(), support.isDrop() ? LinkOrigin.PASTE_LINKS_ACTION : LinkOrigin.CLIPBOARD);
         return true;
     }
 
