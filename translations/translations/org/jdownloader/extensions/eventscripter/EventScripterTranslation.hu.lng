@@ -1,0 +1,34 @@
+NONE=Semmi
+ON_DOWNLOAD_CONTROLLER_START=A letöltés elkezdődött
+ON_DOWNLOAD_CONTROLLER_STOPPED=A letöltés megállt
+ON_JDOWNLOADER_STARTED=A JDownloader elindult
+ON_NEW_CRAWLER_JOB=Új linkgyűjtó feladat
+ON_NEW_FILE=Egy új fájl jött létre
+ON_OUTGOING_REMOTE_API_EVENT=A távoli alkalmazásprogramozási interfész eseményt elutasították
+ON_PACKAGIZER=Csomagoló indul
+allow=Engedélyez
+classes=/* ===== Osztályok ===== */
+deny=Megtagad
+description=Figyeli a belső JDownloader eseményeket, és lehetővé teszi a megfelelő szkriptek végrehajtását (JavaScript)
+downloadLink=// Letöltési link
+edit_script=Script szerkesztése
+editor_autoformat=Automatikus formátumú
+editor_showhelp=Súgó mutatása/elrejtése
+editor_testcompile=Összeállítás tesztelése
+editor_testrun=Teszt futtatása
+emptyScript=//Itt elkezdhet készíteni egy új scriptet. Nyugodtan használja a rendelkezésre álló api (alkalmazásprogramozási interfész) tulajdonságokat és módszereket
+event_trigger=Programindító esemény
+example_script_name=Példa
+filepackage=// Fájl csomag
+loading_editor_title=Szerkesztő betöltése...
+none_trigger=// Ez az esemény soha nem indul.
+permission_msg=A '%s1' esemény script '%s2' engedélyeket igényel az indításhoz.\nA script megpróbálja\n%s3.\nSzeretné ezt engedni? Ha nem biztos benne, kérjük ellenőrizze a scriptet!
+permission_title=Esemény scripter jogosultság szükséges!
+properties_for_eventtrigger=// ========= '%s1' eseményIndító tulajdonságai  =========
+script_editor_title=Script szerkesztő: %s1
+securityLoading=Az Ön gépére megpróbálnak feltölteni és végrehajtani egy JavaScript kódot a következő helyről: %s1. Kérjük ne feledje, hogy ez a script teljes hozzáférést biztosít az aktuális környezetspecifikus tulajdonságokhoz és funkciókhoz. Csak megbízható helyről származó kódot engedjen betöltődni! Javasoljuk, hogy csak a saját, megbízható JavaScript fájljait használja.
+securityLoading_title=Biztonsági figyelmeztetés!
+showMessageDialog_title=Figyelmeztetés üzenet %s1@%s2
+sure_delete_entries=Tényleg szeretné törölni %s1 scriptet(eket)?
+syntax_error=JavaScript szintaktikai hiba
+title=Eseményszerkesztő
