@@ -62,7 +62,7 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
         } catch (final BrowserException e) {
             offline = true;
         }
-        if (offline || br.getURL().contains("error/missing") || br.containsHTML("(>Ooops, This Video is not available|>This video was removed and is no longer available at our site|<title></title>)")) {
+        if (offline || br.getURL().contains("error/missing") || br.containsHTML("(>Ooops, This Video is not available|>This video was removed and is no longer available at our site|<title></title>|var flashVars = \\{d: \\'\\'\\};)")) {
             final DownloadLink dl = createDownloadlink("http://cliphunterdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
             try {
                 dl.setContentUrl(parameter);
