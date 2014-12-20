@@ -277,7 +277,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
 
     /**
      * Decrypts all tracks of a single set
-     * 
+     *
      * @throws Exception
      */
     private void decryptSet() throws Exception {
@@ -341,7 +341,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
 
     /**
      * Decrypts all sets of a user
-     * 
+     *
      * @throws Exception
      */
     private void decryptUserSets() throws Exception {
@@ -386,7 +386,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
 
     /**
      * Decrypts all sets (playlists) of a users' category 'In Playlists''
-     * 
+     *
      * @throws Exception
      */
     private void decryptUserInPlaylists() throws Exception {
@@ -574,7 +574,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         int offset = 0;
 
         while (true) {
-            br.getPage("https://api.sndcdn.com/e1/users/" + userID + "/sounds?limit=" + maxPerCall + "&offset=" + offset + "&linked_partitioning=1&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID);
+            br.getPage("https://api-v2.soundcloud.com/users/" + userID + "/spotlight?limit=" + maxPerCall + "&offset=" + offset + "&linked_partitioning=1&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID);
 
             List<Map<String, Object>> collection = parseCollection();
             if (collection == null || collection.size() != maxPerCall) {
@@ -659,7 +659,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
 
     /**
      * Accesses the soundcloud resolve url which returns important information about the user-profile or url (if parameter != null).
-     * 
+     *
      * @throws DecrypterException
      */
     private void resolve(final String forced_url) throws IOException, DecrypterException {

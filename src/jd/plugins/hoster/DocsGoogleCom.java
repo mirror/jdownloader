@@ -173,7 +173,7 @@ public class DocsGoogleCom extends PluginForHost {
         if (dllink == null) {
             dllink = streamLink;
         }
-        boolean resume = false;
+        boolean resume = true;
         int maxChunks = 0;
         if (downloadLink.getBooleanProperty(DocsGoogleCom.NOCHUNKS, false) || !resume) {
             maxChunks = 1;
