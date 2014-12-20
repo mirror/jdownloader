@@ -96,13 +96,13 @@ public class MovShareNet extends PluginForHost {
             if (filename.equals("Untitled") || filename.equals("Title")) {
                 downloadLink.setFinalFileName("Video " + new Regex(downloadLink.getDownloadURL(), "movshare\\.net/video/(.+)$").getMatch(0) + ".avi");
             } else {
-                downloadLink.setFinalFileName(filename + ".avi");
+                downloadLink.setFinalFileName(filename + (!filename.endsWith(".avi") ? ".avi" : ""));
             }
         } else {
             if (filename.equals("Untitled") || filename.equals("Title")) {
                 downloadLink.setFinalFileName("Video " + new Regex(downloadLink.getDownloadURL(), "epornic\\.com/video/(.+)$").getMatch(0) + ".flv");
             } else {
-                downloadLink.setFinalFileName(filename + ".flv");
+                downloadLink.setFinalFileName(filename + (!filename.endsWith(".flv") ? ".flv" : ""));
             }
         }
         return AvailableStatus.TRUE;
