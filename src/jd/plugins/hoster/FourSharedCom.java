@@ -266,13 +266,15 @@ public class FourSharedCom extends PluginForHost {
                         // Ticket Time
                         String ttt = br.getRegex(" var c = (\\d+);").getMatch(0);
                         if (ttt == null) {
-                            ttt = br.getRegex("id=\"downloadDelayTimeSec\" class=\"sec alignCenter light\\-blue\">(\\d+)</div>").getMatch(0);
+                            ttt = br.getRegex("id=\"downloadDelayTimeSec\"\\s+?class=\"sec alignCenter light\\-blue\">(\\d+)</div>").getMatch(0);
                         }
                         int tt = 20;
                         if (ttt != null) {
                             tt = Integer.parseInt(ttt);
+                            logger.info("Waiting " + ttt.trim() + " seconds from now on...");
+                        } else {
+                            logger.info("Wait time regex fails, default 20 seconds is used");
                         }
-                        logger.info("Waiting " + ttt.trim() + " seconds from now on...");
                         sleep(tt * 1000l, downloadLink);
                     }
                 }
