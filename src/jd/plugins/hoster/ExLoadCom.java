@@ -880,6 +880,8 @@ public class ExLoadCom extends PluginForHost {
                 // check form for login captcha crap.
                 DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), COOKIE_HOST, true);
                 loginform = captchaForm(dummyLink, loginform);
+                /* Short waittime or login + plaintext captcha will simply fail */
+                Thread.sleep(5 * 1000l);
                 // end of check form for login captcha crap.
                 loginform.remove(null);
                 sendForm(loginform);

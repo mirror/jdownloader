@@ -319,10 +319,27 @@ public class CopyCom extends PluginForHost {
                 br.getHeaders().put("X-Client-Version", "1.0.00");
                 br.getHeaders().put("X-Api-Version", "1.0");
                 br.getHeaders().put("X-Authorization", api_auth);
-                br.postPageRaw("https://apiweb.copy.com/jsonrpc", "{\"jsonrpc\":\"2.0\",\"method\":\"copy_link\",\"params\":{\"link_token\":\"" + fid + "\"},\"id\":1}");
-                final String type = getJson("type");
-                final String share_owner = getJson("share_owner");
-                path = getJson("path");
+                br.postPageRaw("https://apiweb.copy.com/jsonrpc", "{\"jsonrpc\":\"2.0\",\"method\":\"list_objects\",\"params\":{\"include_links\":true,\"include_thumbnails\":true,\"sort_field\":\"name\",\"sort_direction\":\"asc\",\"path\":\"/\",\"include_companies\":false,\"limit\":100,\"list_watermark\":0,\"max_items\":100,\"offset\":0,\"include_total_items\":true},\"id\":1}");
+                final String userfilesjson = br.getRegex("\"children\":\\[(.*?)\\}\\],\"total_items\"").getMatch(0);
+                final String[] userfiles = userfilesjson.split("\\},\\{");
+                final String setname = link.getName();
+                String dlsource = null;
+                for (final String userfile : userfiles) {
+                    final String thispath = getJson(userfile, "path");
+                    if (thispath.contains(setname)) {
+                        dlsource = userfile;
+                        logger.info("File is imported into account");
+                        break;
+                    }
+                }
+                if (dlsource == null) {
+                    logger.info("File is not yet imported into account --> Impoprting it");
+                    br.postPageRaw("https://apiweb.copy.com/jsonrpc", "{\"jsonrpc\":\"2.0\",\"method\":\"copy_link\",\"params\":{\"link_token\":\"" + fid + "\"},\"id\":1}");
+                    dlsource = br.toString();
+                }
+                final String type = getJson(dlsource, "type");
+                final String share_owner = getJson(dlsource, "share_owner");
+                path = getJson(dlsource, "path");
                 if (share_owner == null || path == null || type == null) {
                     logger.warning("MoveFileToAcc handling failed");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

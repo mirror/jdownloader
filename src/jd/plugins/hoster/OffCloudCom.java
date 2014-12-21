@@ -68,7 +68,7 @@ public class OffCloudCom extends PluginForHost {
 
     /* Connection limits */
     private static final boolean                           ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
+    private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int                               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
     private int                                            statuscode                   = 0;
@@ -389,7 +389,7 @@ public class OffCloudCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -399,7 +399,7 @@ public class OffCloudCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -409,7 +409,7 @@ public class OffCloudCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from provided Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
@@ -419,7 +419,7 @@ public class OffCloudCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response provided String source.
-     * 
+     *
      * @author raztoki
      * */
     private String getJsonArray(final String source, final String key) {
@@ -429,7 +429,7 @@ public class OffCloudCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJsonArray(final String key) {
@@ -439,7 +439,7 @@ public class OffCloudCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return String[] value from provided JSon Array
-     * 
+     *
      * @author raztoki
      * @param source
      * @return
@@ -636,7 +636,7 @@ public class OffCloudCom extends PluginForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
      * from the host list.
-     * 
+     *
      * @param error
      *            : The name of the error
      * @param maxRetries
@@ -671,43 +671,43 @@ public class OffCloudCom extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Delete downloaded links from the offcloud download history after successful download?");
-                                                      put("ACCOUNT_USERNAME", "Username:");
-                                                      put("ACCOUNT_LINKSLEFT", "Instant download inputs left:");
-                                                      put("ACCOUNT_TYPE", "Account type:");
-                                                      put("ACCOUNT_SIMULTANDLS", "Max. simultaneous downloads:");
-                                                      put("ACCOUNT_CHUNKS", "Max number of chunks per file:");
-                                                      put("ACCOUNT_RESUME", "Resume of stopped downloads:");
-                                                      put("ACCOUNT_YES", "Yes");
-                                                      put("ACCOUNT_NO", "No");
-                                                      put("DETAILS_TITEL", "Account information");
-                                                      put("LANG_GENERAL_UNLIMITED", "Unlimited");
-                                                      put("LANG_GENERAL_CLOSE", "Close");
-                                                  }
-                                              };
+        {
+            put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Delete downloaded links from the offcloud download history after successful download?");
+            put("ACCOUNT_USERNAME", "Username:");
+            put("ACCOUNT_LINKSLEFT", "Instant download inputs left:");
+            put("ACCOUNT_TYPE", "Account type:");
+            put("ACCOUNT_SIMULTANDLS", "Max. simultaneous downloads:");
+            put("ACCOUNT_CHUNKS", "Max number of chunks per file:");
+            put("ACCOUNT_RESUME", "Resume of stopped downloads:");
+            put("ACCOUNT_YES", "Yes");
+            put("ACCOUNT_NO", "No");
+            put("DETAILS_TITEL", "Account information");
+            put("LANG_GENERAL_UNLIMITED", "Unlimited");
+            put("LANG_GENERAL_CLOSE", "Close");
+        }
+    };
 
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-                                                  {
-                                                      put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Lösche heruntergeladene links nach jedem erfolgreichen Download aus der offcloud Download-Historie?");
-                                                      put("ACCOUNT_USERNAME", "Account Name:");
-                                                      put("ACCOUNT_LINKSLEFT", "Verbleibende Anzahl von Instant-Download Links:");
-                                                      put("ACCOUNT_TYPE", "Account Typ:");
-                                                      put("ACCOUNT_SIMULTANDLS", "Max. Anzahl gleichzeitiger Downloads:");
-                                                      put("ACCOUNT_CHUNKS", "Max. Anzahl Verbindungen pro Datei (Chunks):");
-                                                      put("ACCOUNT_RESUME", "Abgebrochene Downloads fortsetzbar:");
-                                                      put("ACCOUNT_YES", "Ja");
-                                                      put("ACCOUNT_NO", "Nein");
-                                                      put("DETAILS_TITEL", "Additional account information");
-                                                      put("LANG_GENERAL_UNLIMITED", "Unlimitiert");
-                                                      put("LANG_GENERAL_CLOSE", "Schließen");
-                                                  }
-                                              };
+        {
+            put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Lösche heruntergeladene links nach jedem erfolgreichen Download aus der offcloud Download-Historie?");
+            put("ACCOUNT_USERNAME", "Account Name:");
+            put("ACCOUNT_LINKSLEFT", "Verbleibende Anzahl von Instant-Download Links:");
+            put("ACCOUNT_TYPE", "Account Typ:");
+            put("ACCOUNT_SIMULTANDLS", "Max. Anzahl gleichzeitiger Downloads:");
+            put("ACCOUNT_CHUNKS", "Max. Anzahl Verbindungen pro Datei (Chunks):");
+            put("ACCOUNT_RESUME", "Abgebrochene Downloads fortsetzbar:");
+            put("ACCOUNT_YES", "Ja");
+            put("ACCOUNT_NO", "Nein");
+            put("DETAILS_TITEL", "Additional account information");
+            put("LANG_GENERAL_UNLIMITED", "Unlimitiert");
+            put("LANG_GENERAL_CLOSE", "Schließen");
+        }
+    };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
      * English.
-     * 
+     *
      * @param key
      * @return
      */
