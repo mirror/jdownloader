@@ -154,8 +154,8 @@ public class InCloudDriveCom extends PluginForHost {
                 premiumDownloadRestriction(downloadLink, downloadLink.getStringProperty("premiumRestrictionMsg", null));
             }
             // premium only check can be done here now (20141117)
-            if (br.containsHTML(">The requested file is to big for a guest or free download\\.")) {
-                premiumDownloadRestriction(downloadLink, "The requested file is to big! You need premium!");
+            if (br.containsHTML(">The requested file is to big for a guest or free download|>This link only for premium user")) {
+                premiumDownloadRestriction(downloadLink, "The requested file is to big / only for premium user");
             }
             final String token = Encoding.urlDecode(br.getRegex("freetoken=\"(.*?)\"").getMatch(0), false);
             final String predlwait = br.getRegex("id=\"freetimer\"[^>]*>*(\\d+)</div>").getMatch(0);
@@ -480,7 +480,7 @@ public class InCloudDriveCom extends PluginForHost {
 
     /**
      * When premium only download restriction (eg. filesize), throws exception with given message
-     *
+     * 
      * @param msg
      * @throws PluginException
      */
@@ -555,7 +555,7 @@ public class InCloudDriveCom extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
+     * 
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
