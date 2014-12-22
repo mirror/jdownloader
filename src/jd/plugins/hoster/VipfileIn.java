@@ -331,7 +331,7 @@ public class VipfileIn extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
+     * 
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
@@ -457,7 +457,7 @@ public class VipfileIn extends PluginForHost {
         } else {
             br.getPage("http://" + this.getHost() + "/index." + type);
             /* If the premium account is expired we'll simply accept it as a free account. */
-            final String expire = br.getRegex("<p>Account is preimum until : ([^<>\"]*?)</p>").getMatch(0);
+            final String expire = br.getRegex(">Account is pre(im|mi)um until : ([^<>\"]*?)</p>").getMatch(1);
             if (expire == null) {
                 account.setValid(false);
                 return ai;
