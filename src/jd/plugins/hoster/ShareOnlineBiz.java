@@ -117,13 +117,16 @@ public class ShareOnlineBiz extends PluginForHost {
                     sb.append(getID(dl));
                     c++;
                 }
+                br.setKeepResponseContentBytes(true);
                 br.postPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=checklinks&md5=1", sb.toString());
-                String infos[][] = br.getRegex(Pattern.compile("(.*?);\\s*?(OK)\\s*?;(.*?)\\s*?;(\\d+);([0-9a-fA-F]{32})")).getMatches();
+                final byte[] responseBytes = br.getRequest().getResponseBytes();
+                final String infosUTF8[][] = new Regex(new String(responseBytes, "UTF-8"), Pattern.compile("(.*?);\\s*?(OK)\\s*?;(.*?)\\s*?;(\\d+);([0-9a-fA-F]{32})")).getMatches();
+                final String infosISO88591[][] = new Regex(new String(responseBytes, "ISO-8859-1"), Pattern.compile("(.*?);\\s*?(OK)\\s*?;(.*?)\\s*?;(\\d+);([0-9a-fA-F]{32})")).getMatches();
                 for (DownloadLink dl : links) {
                     String id = getID(dl);
                     int hit = -1;
-                    for (int i = 0; i < infos.length; i++) {
-                        if (infos[i][0].equalsIgnoreCase(id)) {
+                    for (int i = 0; i < infosUTF8.length; i++) {
+                        if (infosUTF8[i][0].equalsIgnoreCase(id)) {
                             hit = i;
                             break;
                         }
@@ -132,15 +135,38 @@ public class ShareOnlineBiz extends PluginForHost {
                         /* id not in response, so its offline */
                         dl.setAvailable(false);
                     } else {
-                        dl.setFinalFileName(infos[hit][2].trim());
+                        /* workaround for broken fileNames, some are ISO88591, others are UTF-8 */
+                        final String fileNameUTF8 = infosUTF8[hit][2].trim();
+                        final String fileNameISO88591 = infosISO88591[hit][2].trim();
+                        final String fileName;
+                        if (fileNameUTF8.length() < fileNameISO88591.length()) {
+                            fileName = fileNameUTF8;
+                        } else if (fileNameUTF8.length() > fileNameISO88591.length()) {
+                            fileName = fileNameISO88591;
+                        } else {
+                            String bestFileName = null;
+                            for (char chr : fileNameISO88591.toCharArray()) {
+                                if (chr > 255) {
+                                    /* iso88591 only uses first 256 points in char */
+                                    bestFileName = fileNameUTF8;
+                                    break;
+                                }
+                            }
+                            if (bestFileName == null) {
+                                fileName = fileNameISO88591;
+                            } else {
+                                fileName = bestFileName;
+                            }
+                        }
+                        dl.setFinalFileName(fileName);
                         long size = -1;
-                        dl.setDownloadSize(size = SizeFormatter.getSize(infos[hit][3]));
+                        dl.setDownloadSize(size = SizeFormatter.getSize(infosUTF8[hit][3]));
                         if (size > 0) {
                             dl.setProperty("VERIFIEDFILESIZE", size);
                         }
-                        if (infos[hit][1].trim().equalsIgnoreCase("OK")) {
+                        if (infosUTF8[hit][1].trim().equalsIgnoreCase("OK")) {
                             dl.setAvailable(true);
-                            dl.setMD5Hash(infos[hit][4].trim());
+                            dl.setMD5Hash(infosUTF8[hit][4].trim());
                         } else {
                             dl.setAvailable(false);
                         }
@@ -726,17 +752,22 @@ public class ShareOnlineBiz extends PluginForHost {
             }
         }
         br.setFollowRedirects(true);
-        final String response = br.getPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=linkdata&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&lid=" + linkID);
-        if (response.contains("** USER DATA INVALID")) {
+        br.setKeepResponseContentBytes(true);
+        br.getPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=linkdata&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&lid=" + linkID);
+        final byte[] responseBytes = br.getRequest().getResponseBytes();
+        final String responseUTF8 = new String(responseBytes, "UTF-8");
+        final String responseISO88591 = new String(responseBytes, "ISO-8859-1");
+        br.setKeepResponseContentBytes(false);
+        if (responseUTF8.contains("** USER DATA INVALID")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         if (br.containsHTML("your IP is temporary banned")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
-        if (response.contains("** REQUESTED DOWNLOAD LINK NOT FOUND **")) {
+        if (responseUTF8.contains("** REQUESTED DOWNLOAD LINK NOT FOUND **")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (response.contains("EXCEPTION request download link not found")) {
+        if (responseUTF8.contains("EXCEPTION request download link not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // These are NO API errors
@@ -746,11 +777,12 @@ public class ShareOnlineBiz extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 502 || br.containsHTML("<title>Share\\-Online \\- The page is temporarily unavailable</title>")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler 502, bitte warten...", 30 * 1000l);
         }
-        final HashMap<String, String> dlInfos = getInfos(response, ": ");
-        final String filename = dlInfos.get("NAME");
+        final HashMap<String, String> dlInfos = getInfos(responseUTF8, ": ");
+        final String fileNameUTF8 = dlInfos.get("NAME");
+        final String fileNameISO88591 = getInfos(responseISO88591, ": ").get("NAME");
         final String size = dlInfos.get("SIZE");
         final String status = dlInfos.get("STATUS");
-        if (filename == null || size == null) {
+        if (fileNameUTF8 == null || size == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         parameter.setMD5Hash(dlInfos.get("MD5"));
@@ -763,8 +795,29 @@ public class ShareOnlineBiz extends PluginForHost {
         if (size != null) {
             parameter.setDownloadSize(Long.parseLong(size));
         }
-        if (filename != null) {
-            parameter.setFinalFileName(filename);
+        /* workaround for broken fileNames, some are ISO88591, others are UTF-8 */
+        final String fileName;
+        if (fileNameUTF8.length() < fileNameISO88591.length()) {
+            fileName = fileNameUTF8;
+        } else if (fileNameUTF8.length() > fileNameISO88591.length()) {
+            fileName = fileNameISO88591;
+        } else {
+            String bestFileName = null;
+            for (char chr : fileNameISO88591.toCharArray()) {
+                if (chr > 255) {
+                    /* iso88591 only uses first 256 points in char */
+                    bestFileName = fileNameUTF8;
+                    break;
+                }
+            }
+            if (bestFileName == null) {
+                fileName = fileNameISO88591;
+            } else {
+                fileName = bestFileName;
+            }
+        }
+        if (parameter.getFinalFileName() != null) {
+            parameter.setFinalFileName(fileName);
         }
         String dlURL = dlInfos.get("URL");
         // http://api.share-online.biz/api/account.php?act=fileError&fid=FILE_ID
@@ -896,40 +949,75 @@ public class ShareOnlineBiz extends PluginForHost {
         String id = getID(downloadLink);
         br.setDebug(true);
         br.setFollowRedirects(true);
-        if (br.postPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=checklinks&md5=1&snr=1", "links=" + id).matches("\\s*")) {
-            String startURL = downloadLink.getDownloadURL();
-            // workaround to bypass new layout and use old site
-            br.getPage(startURL += startURL.contains("?") ? "&v2=1" : "?v2=1");
-            // we only use this direct mode if the API failed twice! in this case this is the only way to get the information
-            String js = br.getRegex("var dl=[^\r\n]*").getMatch(-1);
-            js = execJS(js);
-            String[] strings = js.split(",");
+        br.setKeepResponseContentBytes(true);
+        try {
+            if (br.postPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=checklinks&md5=1&snr=1", "links=" + id).matches("\\s*")) {
+                String startURL = downloadLink.getDownloadURL();
+                // workaround to bypass new layout and use old site
+                br.getPage(startURL += startURL.contains("?") ? "&v2=1" : "?v2=1");
+                // we only use this direct mode if the API failed twice! in this case this is the only way to get the information
+                String js = br.getRegex("var dl=[^\r\n]*").getMatch(-1);
+                js = execJS(js);
+                String[] strings = js.split(",");
 
-            if (strings == null || strings.length != 5) {
+                if (strings == null || strings.length != 5) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                final long size = Long.parseLong(strings[0].trim());
+                downloadLink.setDownloadSize(size);
+                if (size > 0) {
+                    downloadLink.setProperty("VERIFIEDFILESIZE", size);
+                }
+                if (downloadLink.getFinalFileName() == null) {
+                    /* website never final! */
+                    downloadLink.setName(strings[3].trim());
+                }
+                downloadLink.setMD5Hash(strings[1]);
+                return AvailableStatus.TRUE;
+            }
+            final byte[] responseBytes = br.getRequest().getResponseBytes();
+            final String infosUTF8[] = new Regex(new String(responseBytes, "UTF-8"), Pattern.compile("(.*?);([^;]+);(.*?)\\s*?;(\\d+);([0-9a-fA-F]{32});(\\d+)")).getRow(0);
+            final String infosISO88591[] = new Regex(new String(responseBytes, "ISO-8859-1"), Pattern.compile("(.*?);([^;]+);(.*?)\\s*?;(\\d+);([0-9a-fA-F]{32});(\\d+)")).getRow(0);
+            if (infosUTF8 == null || !infosUTF8[1].equalsIgnoreCase("OK")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            long size = -1;
-            downloadLink.setDownloadSize(size = Long.parseLong(strings[0].trim()));
+            /* workaround for broken fileNames, some are ISO88591, others are UTF-8 */
+            final String fileNameUTF8 = infosUTF8[2].trim();
+            final String fileNameISO88591 = infosISO88591[2].trim();
+            final String fileName;
+            if (fileNameUTF8.length() < fileNameISO88591.length()) {
+                fileName = fileNameUTF8;
+            } else if (fileNameUTF8.length() > fileNameISO88591.length()) {
+                fileName = fileNameISO88591;
+            } else {
+                String bestFileName = null;
+                for (char chr : fileNameISO88591.toCharArray()) {
+                    if (chr > 255) {
+                        /* iso88591 only uses first 256 points in char */
+                        bestFileName = fileNameUTF8;
+                        break;
+                    }
+                }
+                if (bestFileName == null) {
+                    fileName = fileNameISO88591;
+                } else {
+                    fileName = bestFileName;
+                }
+            }
+            final long size = Long.parseLong(infosUTF8[3].trim());
+            downloadLink.setDownloadSize(size);
             if (size > 0) {
                 downloadLink.setProperty("VERIFIEDFILESIZE", size);
             }
-            downloadLink.setName(strings[3].trim());
-            downloadLink.setMD5Hash(strings[1]);
-
+            if (downloadLink.getFinalFileName() == null) {
+                downloadLink.setFinalFileName(fileName);
+            }
+            downloadLink.setMD5Hash(infosUTF8[4].trim());
+            server = Long.parseLong(infosUTF8[5].trim());
             return AvailableStatus.TRUE;
+        } finally {
+            br.setKeepResponseContentBytes(false);
         }
-        String infos[] = br.getRegex("(.*?);([^;]+);(.*?)\\s*?;(\\d+);([0-9a-fA-F]{32});(\\d+)").getRow(0);
-        if (infos == null || !infos[1].equalsIgnoreCase("OK")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        long size = -1;
-        downloadLink.setDownloadSize(size = Long.parseLong(infos[3].trim()));
-        if (size > 0) {
-            downloadLink.setProperty("VERIFIEDFILESIZE", size);
-        }
-        downloadLink.setName(infos[2].trim());
-        server = Long.parseLong(infos[5].trim());
-        return AvailableStatus.TRUE;
     }
 
     @Override
