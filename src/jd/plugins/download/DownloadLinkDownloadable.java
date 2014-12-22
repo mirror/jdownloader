@@ -9,6 +9,7 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 
@@ -20,10 +21,13 @@ import jd.controlling.downloadcontroller.FileIsLockedException;
 import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.DownloadLinkDatabindingInterface;
 import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.download.HashInfo.TYPE;
@@ -96,16 +100,6 @@ public class DownloadLinkDownloadable implements Downloadable {
     @Override
     public void setDownloadTotalBytes(long l) {
         downloadLink.setDownloadSize(l);
-    }
-
-    @Override
-    public long[] getChunksProgress() {
-        return downloadLink.getView().getChunksProgress();
-    }
-
-    @Override
-    public void setChunksProgress(long[] ls) {
-        downloadLink.setChunksProgress(ls);
     }
 
     public SingleDownloadController getDownloadLinkController() {
@@ -210,16 +204,6 @@ public class DownloadLinkDownloadable implements Downloadable {
     }
 
     @Override
-    public String getMD5Hash() {
-        return downloadLink.getMD5Hash();
-    }
-
-    @Override
-    public String getSha1Hash() {
-        return downloadLink.getSha1Hash();
-    }
-
-    @Override
     public String getName() {
         return downloadLink.getName();
     }
@@ -234,19 +218,89 @@ public class DownloadLinkDownloadable implements Downloadable {
         downloadLink.addPluginProgress(progress);
     }
 
+    public HashResult getHashResult(HashInfo hashInfo, File outputPartFile) {
+        if (hashInfo == null) {
+            return null;
+        }
+        TYPE type = hashInfo.getType();
+        final PluginProgress hashProgress = new HashCheckPluginProgress(outputPartFile, Color.YELLOW.darker(), type);
+        hashProgress.setProgressSource(this);
+        try {
+            addPluginProgress(hashProgress);
+            final byte[] b = new byte[32767];
+            String hashFile = null;
+            FileInputStream fis = null;
+            int n = 0;
+            int cur = 0;
+            switch (type) {
+            case MD5:
+            case SHA1:
+                DigestInputStream is = null;
+                try {
+                    is = new DigestInputStream(fis = new FileInputStream(outputPartFile), MessageDigest.getInstance(type.name()));
+                    while ((n = is.read(b)) >= 0) {
+                        cur += n;
+                        hashProgress.setCurrent(cur);
+                    }
+                    hashFile = HexFormatter.byteArrayToHex(is.getMessageDigest().digest());
+                } catch (final Throwable e) {
+                    LogSource.exception(getLogger(), e);
+                } finally {
+                    try {
+                        is.close();
+                    } catch (final Throwable e) {
+                    }
+                    try {
+                        fis.close();
+                    } catch (final Throwable e) {
+                    }
+                }
+                break;
+            case CRC32:
+                CheckedInputStream cis = null;
+                try {
+                    fis = new FileInputStream(outputPartFile);
+                    cis = new CheckedInputStream(fis, new CRC32());
+                    while ((n = cis.read(b)) >= 0) {
+                        cur += n;
+                        hashProgress.setCurrent(cur);
+                    }
+                    long value = cis.getChecksum().getValue();
+                    byte[] longBytes = new byte[] { (byte) (value >>> 24), (byte) (value >>> 16), (byte) (value >>> 8), (byte) value };
+                    hashFile = HexFormatter.byteArrayToHex(longBytes);
+                } catch (final Throwable e) {
+                    LogSource.exception(getLogger(), e);
+                } finally {
+                    try {
+                        cis.close();
+                    } catch (final Throwable e) {
+                    }
+                    try {
+                        fis.close();
+                    } catch (final Throwable e) {
+                    }
+                }
+                break;
+            }
+            return new HashResult(hashInfo, hashFile);
+        } finally {
+            removePluginProgress(hashProgress);
+        }
+    }
+
     @Override
     public HashInfo getHashInfo() {
         String hash;
         // StatsManager
         String name = getName();
-        if ((hash = getMD5Hash()) != null && hash.length() == 32) {
+        if ((hash = downloadLink.getMD5Hash()) != null && hash.matches("^[a-fA-F0-9]{32}$")) {
             /* MD5 Check */
             return new HashInfo(hash, HashInfo.TYPE.MD5);
-        } else if (!StringUtils.isEmpty(hash = getSha1Hash()) && hash.length() == 40) {
+        } else if (!StringUtils.isEmpty(hash = downloadLink.getSha1Hash()) && hash.matches("^[a-fA-F0-9]{40}$")) {
             /* SHA1 Check */
             return new HashInfo(hash, HashInfo.TYPE.SHA1);
         } else if ((hash = new Regex(name, ".*?\\[([A-Fa-f0-9]{8})\\]").getMatch(0)) != null) {
-            return new HashInfo(hash, HashInfo.TYPE.CRC32);
+            return new HashInfo(hash, HashInfo.TYPE.CRC32, false);
         } else {
             FilePackage filePackage = downloadLink.getFilePackage();
             if (!FilePackage.isDefaultFilePackage(filePackage)) {
@@ -272,7 +326,7 @@ public class DownloadLinkDownloadable implements Downloadable {
                                 /* Delete comments */
                                 sfvText = sfvText.replaceAll(";(.*?)[\r\n]{1,2}", "");
                                 if (sfvText != null && sfvText.contains(name)) {
-                                    hash = new Regex(sfvText, name + "\\s*([A-Fa-f0-9]{8})").getMatch(0);
+                                    hash = new Regex(sfvText, Pattern.quote(name) + "\\s*([A-Fa-f0-9]{8})").getMatch(0);
                                     if (hash != null) {
                                         return new HashInfo(hash, HashInfo.TYPE.CRC32);
                                     }
@@ -289,12 +343,7 @@ public class DownloadLinkDownloadable implements Downloadable {
     }
 
     private File getFileOutput(DownloadLink link, boolean ignoreCustom) {
-
-        // SingleDownloadController controller = link.getDownloadLinkController();
-        // if (controller != null) {
-        // return controller.getDownloadPath(this, false, false);
-        // }
-        SingleDownloadController controller = link.getDownloadLinkController();
+        final SingleDownloadController controller = link.getDownloadLinkController();
         if (controller == null) {
             return new File(link.getFileOutput(false, ignoreCustom));
         } else {
@@ -370,11 +419,6 @@ public class DownloadLinkDownloadable implements Downloadable {
         return renameOkay;
     }
 
-    // @Override
-    // public void setFinalFileOutput(String absolutePath) {
-    // downloadLink.setFinalFileOutput(absolutePath);
-    // }
-
     @Override
     public void waitForNextConnectionAllowed() throws InterruptedException {
         plugin.waitForNextConnectionAllowed(downloadLink);
@@ -382,7 +426,7 @@ public class DownloadLinkDownloadable implements Downloadable {
 
     @Override
     public boolean isInterrupted() {
-        SingleDownloadController sdc = getDownloadLinkController();
+        final SingleDownloadController sdc = getDownloadLinkController();
         return (sdc != null && sdc.isAborting());
     }
 
@@ -404,7 +448,6 @@ public class DownloadLinkDownloadable implements Downloadable {
 
     @Override
     public String getFinalFileOutput() {
-
         return getFileOutput(downloadLink, true).getAbsolutePath();
     }
 
@@ -458,79 +501,50 @@ public class DownloadLinkDownloadable implements Downloadable {
     }
 
     @Override
+    public <T> T getDataBindingInterface(Class<? extends DownloadLinkDatabindingInterface> T) {
+        return (T) downloadLink.bindData(T);
+    }
+
+    @Override
+    public void updateFinalFileName() {
+        if (getFinalFileName() == null) {
+            Logger logger = getLogger();
+            DownloadInterface dl = getDownloadInterface();
+            URLConnectionAdapter connection = getDownloadInterface().getConnection();
+            logger.info("FinalFileName is not set yet!");
+            if (connection.isContentDisposition() || dl.allowFilenameFromURL) {
+                String name = Plugin.getFileNameFromHeader(connection);
+                logger.info("FinalFileName: set to " + name + "(from connection)");
+                if (dl.fixWrongContentDispositionHeader) {
+                    setFinalFileName(Encoding.htmlDecode(name));
+                } else {
+                    setFinalFileName(name);
+                }
+            } else {
+                String name = getName();
+                logger.info("FinalFileName: set to " + name + "(from plugin)");
+                setFinalFileName(name);
+            }
+        }
+    }
+
+    @Override
     public DownloadInterface getDownloadInterface() {
         return plugin.getDownloadInterface();
     }
 
     @Override
-    public void updateFinalFileName() {
-    }
-
-    @Override
-    public HashResult getHashResult(HashInfo hashInfo, File file) {
-        if (hashInfo == null) {
-            return null;
-        }
-        TYPE type = hashInfo.getType();
-        File outputPartFile = file;
-        final PluginProgress hashProgress = new HashCheckPluginProgress(outputPartFile, Color.YELLOW.darker(), type);
-        hashProgress.setProgressSource(this);
-        try {
-            addPluginProgress(hashProgress);
-            final byte[] b = new byte[32767];
-            String hashFile = null;
-            FileInputStream fis = null;
-            int n = 0;
-            int cur = 0;
-            switch (type) {
+    public void setHashInfo(HashInfo hashInfo) {
+        if (hashInfo != null && hashInfo.isTrustworthy() && getHashInfo() == null) {
+            switch (hashInfo.getType()) {
             case MD5:
-            case SHA1:
-                try {
-                    DigestInputStream is = new DigestInputStream(fis = new FileInputStream(outputPartFile), MessageDigest.getInstance(type.name()));
-                    while ((n = is.read(b)) >= 0) {
-                        cur += n;
-                        hashProgress.setCurrent(cur);
-                    }
-                    hashFile = HexFormatter.byteArrayToHex(is.getMessageDigest().digest());
-                } catch (final Throwable e) {
-                    LogSource.exception(getLogger(), e);
-                } finally {
-                    try {
-                        fis.close();
-                    } catch (final Throwable e) {
-                    }
-                }
+                downloadLink.setMD5Hash(hashInfo.getHash());
                 break;
-            case CRC32:
-                try {
-                    fis = new FileInputStream(outputPartFile);
-                    CheckedInputStream cis = new CheckedInputStream(fis, new CRC32());
-                    while ((n = cis.read(b)) >= 0) {
-                        cur += n;
-                        hashProgress.setCurrent(cur);
-                    }
-                    long value = cis.getChecksum().getValue();
-                    byte[] longBytes = new byte[] { (byte) (value >>> 24), (byte) (value >>> 16), (byte) (value >>> 8), (byte) value };
-                    hashFile = HexFormatter.byteArrayToHex(longBytes);
-                } catch (final Throwable e) {
-                    LogSource.exception(getLogger(), e);
-                } finally {
-                    try {
-                        fis.close();
-                    } catch (final Throwable e) {
-                    }
-                }
+            case SHA1:
+                downloadLink.setSha1Hash(hashInfo.getHash());
                 break;
             }
-            return new HashResult(hashInfo, hashFile);
-        } finally {
-            removePluginProgress(hashProgress);
         }
-    }
-
-    @Override
-    public <T> T getDataBindingInterface(Class<? extends DownloadLinkDatabindingInterface> T) {
-        return null;
     }
 
     @Override

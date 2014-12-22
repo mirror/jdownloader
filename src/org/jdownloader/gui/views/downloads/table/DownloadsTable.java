@@ -61,9 +61,11 @@ import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.downloads.MenuManagerDownloadTabBottomBar;
+import org.jdownloader.gui.views.downloads.action.DownloadTabActionUtils;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuManagerDownloadTableContext;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.DeleteFileOptions;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class DownloadsTable extends PackageControllerTable<FilePackage, DownloadLink> implements DirectFeedbackInterface {
@@ -182,8 +184,8 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
     @Override
     protected boolean onShortcutDelete(final java.util.List<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
-        // Delete key is linked to the toolbar or context menu. let's use their customizable action instead implementing it again here
-        return false;
+        DownloadTabActionUtils.deleteLinksRequest(getSelectionInfo(), _GUI._.RemoveSelectionAction_actionPerformed_(), DeleteFileOptions.REMOVE_LINKS_ONLY, evt.isControlDown());
+        return true;
 
     }
 
