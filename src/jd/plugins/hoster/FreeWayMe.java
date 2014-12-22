@@ -495,6 +495,31 @@ public class FreeWayMe extends PluginForHost {
         return ac;
     }
 
+    private int getChunks(Account account, String host) {
+        if (!this.getPluginConfig().getBooleanProperty(BETAUSER, false)) {
+            return 1;
+        }
+        if (account == null) {
+            return 1;
+        }
+        if (account.getBooleanProperty(ACC_PROPERTY_DROSSEL_ACTIVE, false)) {
+            return 1;
+        }
+        List<String> multipleChunks = new ArrayList<String>() {
+            {
+                add("ul.to");
+                add("uploaded.to");
+                add("uploaded.net");
+                add("oboom.com");
+                add("uploadable.ch");
+            }
+        };
+        if (multipleChunks.contains(host.toLowerCase())) {
+            return -2;
+        }
+        return 1;
+    }
+
     private String getJson(final String source, final String parameter) {
         String result = new Regex(source, "\"" + parameter + "\":([0-9\\.]+)").getMatch(0);
         if (result == null) {
@@ -574,7 +599,7 @@ public class FreeWayMe extends PluginForHost {
             link.setProperty(FreeWayMe.NORESUME, Boolean.valueOf(false));
         }
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, getChunks(acc, link.getHost()));
 
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 416) {
