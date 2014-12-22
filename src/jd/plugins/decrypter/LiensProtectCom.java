@@ -43,7 +43,7 @@ public class LiensProtectCom extends antiDDoSForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
-        if (br.getURL().contains("/error.php") || br.containsHTML("<title>Index of") || br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getURL().contains("/error.php") || br.containsHTML("<title>Index of") || (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404)) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
