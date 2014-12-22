@@ -68,6 +68,26 @@ public class DownloadLinkDownloadable implements Downloadable {
     }
 
     @Override
+    public String getMD5Hash() {
+        return downloadLink.getMD5Hash();
+    }
+
+    @Override
+    public String getSha1Hash() {
+        return downloadLink.getSha1Hash();
+    }
+
+    @Override
+    public long[] getChunksProgress() {
+        return downloadLink.getView().getChunksProgress();
+    }
+
+    @Override
+    public void setChunksProgress(long[] ls) {
+        downloadLink.setChunksProgress(ls);
+    }
+
+    @Override
     public Logger getLogger() {
         return plugin.getLogger();
     }
@@ -533,7 +553,6 @@ public class DownloadLinkDownloadable implements Downloadable {
         return plugin.getDownloadInterface();
     }
 
-    @Override
     public void setHashInfo(HashInfo hashInfo) {
         if (hashInfo != null && hashInfo.isTrustworthy() && getHashInfo() == null) {
             switch (hashInfo.getType()) {
