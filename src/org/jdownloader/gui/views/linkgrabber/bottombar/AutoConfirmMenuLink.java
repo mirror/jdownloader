@@ -77,6 +77,7 @@ public class AutoConfirmMenuLink extends MenuItemData implements MenuLink, SelfL
             public void actionPerformed(ActionEvent e) {
                 LinkCollector.getInstance().getAutoStartManager().interrupt();
             }
+
         };
         a.setAccelerator(ks);
         ret.add(a);
