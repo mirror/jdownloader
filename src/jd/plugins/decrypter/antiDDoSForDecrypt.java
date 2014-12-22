@@ -59,29 +59,30 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         return false;
     }
 
-    // cloudflare
-
-    protected static HashMap<String, String>      antiDDoSCookies = new HashMap<String, String>();
+    protected static HashMap<String, Cookies>     antiDDoSCookies = new HashMap<String, Cookies>();
     protected final WeakHashMap<Browser, Boolean> browserPrepped  = new WeakHashMap<Browser, Boolean>();
     protected static AtomicReference<String>      agent           = new AtomicReference<String>(null);
-    private boolean                               prepBrSet       = false;
 
     protected Browser prepBrowser(final Browser prepBr) {
+        if ((browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            return prepBr;
+        }
         // define custom browser headers and language settings.
         // required for native cloudflare support, without the need to repeat requests.
         try {
             prepBr.addAllowedResponseCodes(new int[] { 429, 503, 520, 522 });
         } catch (final Throwable t) {
         }
-        if ((browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
-            return prepBr;
-        }
         synchronized (antiDDoSCookies) {
             if (!antiDDoSCookies.isEmpty()) {
-                for (final Map.Entry<String, String> cookieEntry : antiDDoSCookies.entrySet()) {
+                for (final Map.Entry<String, Cookies> cookieEntry : antiDDoSCookies.entrySet()) {
                     final String key = cookieEntry.getKey();
-                    final String value = cookieEntry.getValue();
-                    prepBr.setCookie(this.getHost(), key, value);
+                    if (key != null && key.contains(this.getHost())) {
+                        try {
+                            prepBr.setCookies(key, cookieEntry.getValue(), false);
+                        } catch (final Throwable e) {
+                        }
+                    }
                 }
             }
         }
@@ -107,13 +108,11 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      *
      * @author raztoki
      */
-    public void getPage(final Browser ibr, final String page) throws Exception {
+    protected void getPage(final Browser ibr, final String page) throws Exception {
         if (page == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!prepBrSet) {
-            prepBrowser(ibr);
-        }
+        prepBrowser(ibr);
         final boolean follows_redirects = ibr.isFollowingRedirects();
         URLConnectionAdapter con = null;
         ibr.setFollowRedirects(true);
@@ -136,17 +135,15 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      * @author raztoki
      *
      * */
-    public void getPage(final String page) throws Exception {
+    protected void getPage(final String page) throws Exception {
         getPage(br, page);
     }
 
-    public void postPage(final Browser ibr, String page, final String postData) throws Exception {
+    protected void postPage(final Browser ibr, String page, final String postData) throws Exception {
         if (page == null || postData == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!prepBrSet) {
-            prepBrowser(ibr);
-        }
+        prepBrowser(ibr);
         // stable sucks
         if (isJava7nJDStable() && page.startsWith("https")) {
             page = page.replaceFirst("^https://", "http://");
@@ -172,17 +169,15 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      * @author raztoki
      *
      * */
-    public void postPage(String page, final String postData) throws Exception {
+    protected void postPage(String page, final String postData) throws Exception {
         postPage(br, page, postData);
     }
 
-    public void sendForm(final Browser ibr, final Form form) throws Exception {
+    protected void sendForm(final Browser ibr, final Form form) throws Exception {
         if (form == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!prepBrSet) {
-            prepBrowser(ibr);
-        }
+        prepBrowser(ibr);
         // stable sucks && lame to the max, lets try and send a form outside of desired protocol. (works with oteupload)
         if (Form.MethodType.POST.equals(form.getMethod())) {
             // if the form doesn't contain an action lets set one based on current br.getURL().
@@ -235,11 +230,11 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      * @author raztoki
      *
      * */
-    public void sendForm(final Form form) throws Exception {
+    protected void sendForm(final Form form) throws Exception {
         sendForm(br, form);
     }
 
-    private void sendRequest(final Browser ibr, final Request request) throws Exception {
+    protected void sendRequest(final Browser ibr, final Request request) throws Exception {
         URLConnectionAdapter con = null;
         try {
             con = ibr.openRequestConnection(request);
@@ -260,7 +255,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      * @author raztoki
      *
      * */
-    private void sendRequest(final Request request) throws Exception {
+    protected void sendRequest(final Request request) throws Exception {
         sendRequest(br, request);
     }
 
@@ -337,7 +332,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         if (ibr == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final HashMap<String, String> cookies = new HashMap<String, String>();
+        final Cookies cookies = new Cookies();
         if (ibr.getHttpConnection() != null) {
             final String URL = ibr.getURL();
             final int responseCode = ibr.getHttpConnection().getResponseCode();
@@ -460,7 +455,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                     // //]]>
                     // </script>
 
-                } else if (ibr.containsHTML("<p>The owner of this website \\(" + Pattern.quote(br.getHost()) + "\\) has banned your IP address") && ibr.containsHTML("<title>Access denied \\| " + Pattern.quote(ibr.getHost()) + " used CloudFlare to restrict access</title>")) {
+                } else if (ibr.containsHTML("<p>The owner of this website \\(" + Pattern.quote(ibr.getHost()) + "\\) has banned your IP address") && ibr.containsHTML("<title>Access denied \\| " + Pattern.quote(br.getHost()) + " used CloudFlare to restrict access</title>")) {
                     // common when proxies are used?? see keep2share.cc jdlog://5562413173041
                     String ip = ibr.getRegex("your IP address \\((.*?)\\)\\.</p>").getMatch(0);
                     String message = ibr.getHost() + " has banned your IP Address" + (inValidate(ip) ? "!" : "! " + ip);
@@ -477,14 +472,13 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 final Cookies add = ibr.getCookies(this.getHost());
                 for (final Cookie c : add.getCookies()) {
                     if (new Regex(c.getKey(), "(cfduid|cf_clearance)").matches()) {
-                        cookies.put(c.getKey(), c.getValue());
+                        cookies.add(c);
                     }
                 }
             }
             // save the session!
             synchronized (antiDDoSCookies) {
-                antiDDoSCookies.clear();
-                antiDDoSCookies.putAll(cookies);
+                antiDDoSCookies.put(this.getHost(), cookies);
             }
         }
     }

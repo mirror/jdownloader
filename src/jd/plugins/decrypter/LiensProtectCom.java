@@ -25,11 +25,16 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "liens-protect.com" }, urls = { "http://(www\\.)?liens\\-protect\\.com/[A-Za-z0-9_\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "liens-protect.com" }, urls = { "https?://(www\\.)?liens\\-protect\\.com/[A-Za-z0-9_\\-]+" }, flags = { 0 })
 public class LiensProtectCom extends antiDDoSForDecrypt {
 
     public LiensProtectCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    protected boolean useRUA() {
+        return true;
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -38,7 +43,7 @@ public class LiensProtectCom extends antiDDoSForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
-        if (br.getURL().contains("/error.php") || br.containsHTML("<title>Index of")) {
+        if (br.getURL().contains("/error.php") || br.containsHTML("<title>Index of") || br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }

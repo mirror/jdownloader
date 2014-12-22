@@ -31,6 +31,11 @@ public class PotlockerRe extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("potlocker.re/", "potlocker.me/");

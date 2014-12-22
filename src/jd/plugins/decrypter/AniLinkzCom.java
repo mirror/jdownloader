@@ -51,6 +51,11 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
     }
 
     @Override
+    protected boolean useRUA() {
+        return true;
+    }
+
+    @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         this.param = param;
         // testing purpose lets null/zero/false storables

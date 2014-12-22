@@ -43,6 +43,11 @@ public class GogoanimeCom extends antiDDoSForDecrypt {
     private final String invalidLinks = ".+" + Pattern.quote(this.getHost()) + "/(category|thumbs|sitemap|img|xmlrpc|fav|images|ads|gga\\-contact).*?";
     private final String embed        = ".+" + Pattern.quote(this.getHost()) + "/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+)";
 
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
