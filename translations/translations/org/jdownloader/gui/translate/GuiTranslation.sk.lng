@@ -636,6 +636,7 @@ SpeedLimitator_SpeedLimitator_object_=Vlastný limit rýchlosti
 SpeedLimiterToggleAction_getNameWhenDisabled_=Obmedzovač rýchlosti povolený
 SpeedLimiterToggleAction_tooltip=Povoliť / Zakázať globálny obmedzovač rýchlosti
 SpeedMeterPanel_createTooltipText_=Rýchlostný limit: %s1/s
+SpeedMeterPanel_getString_limited=Rýchlostný limit: %s1/s
 SpeedlimitEditor_SpeedlimitEditor_=Rýchlostný limit
 SpeedlimitEditor_format=%s1/s
 SpeedlimitToggleAction_SpeedlimitToggleAction=Viditeľný rýchlomer
