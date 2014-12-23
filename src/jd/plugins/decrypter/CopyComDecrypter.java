@@ -48,6 +48,9 @@ public class CopyComDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         String parameter = Encoding.htmlDecode(param.toString());
+        if (parameter.matches("https://(www\\.)?copy\\.com/[A-Za-z0-9]+\\?download=1")) {
+            parameter = "https://www.copy.com/s/" + new Regex(parameter, "copy\\.com/([A-Za-z0-9]+)\\?download=1").getMatch(0);
+        }
         final DownloadLink offline = createDownloadlink("http://copydecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
         try {
             offline.setContentUrl(parameter);
