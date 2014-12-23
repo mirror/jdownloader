@@ -374,6 +374,7 @@ public class OffCloudCom extends PluginForHost {
                         if (ip == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
+                        /* Set these headers before every request else it will fail! */
                         br.getHeaders().put("Accept", "Accept   application/json, text/plain, */*");
                         br.getHeaders().put("Content-Type", "application/json;charset=utf-8");
                         br.postPageRaw("https://www.offcloud.com/account/ip/remove/", "{\"ip\":\"" + ip + "\"}");
