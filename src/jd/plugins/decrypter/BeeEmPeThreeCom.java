@@ -62,6 +62,12 @@ public class BeeEmPeThreeCom extends PluginForDecrypt {
             decryptedLinks.add(fina);
             return decryptedLinks;
         }
+        final String directlink = br.getRegex("soundFile=(http://[^<>\"]*?)\"").getMatch(0);
+        if (directlink != null) {
+            final DownloadLink fina = createDownloadlink("directhttp://" + directlink);
+            decryptedLinks.add(fina);
+            return decryptedLinks;
+        }
 
         final String finalFilename = br.getRegex("monetized_ad_client_song = \"([^<>\"]*?)\"").getMatch(0);
         String captchaUrl = null;

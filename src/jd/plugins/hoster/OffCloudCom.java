@@ -60,6 +60,7 @@ public class OffCloudCom extends PluginForHost {
 
     /** Using API: https://github.com/offcloud/offcloud-api */
     private static final String                            CLEAR_DOWNLOAD_HISTORY       = "CLEAR_DOWNLOAD_HISTORY";
+    private static final String                            CLEAR_ALLOWED_IP_ADDRESSES   = "CLEAR_ALLOWED_IP_ADDRESSES";
     private static final String                            DOMAIN                       = "https://offcloud.com/api/";
     private static final String                            NICE_HOST                    = "offcloud.com";
     private static final String                            NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
@@ -353,6 +354,41 @@ public class OffCloudCom extends PluginForHost {
             }
         }
         ai.setMultiHostSupport(this, supportedHosts);
+
+        if (this.getPluginConfig().getBooleanProperty(CLEAR_ALLOWED_IP_ADDRESSES, default_clear_allowed_ip_addresses)) {
+            try {
+                logger.info("Remove IP handling active: Removing all registered IPs but the current one");
+                postAPISafe("https://www.offcloud.com/account/registered-ips", "");
+                String[] ipdata = null;
+                final String jsoniparray = br.getRegex("\"data\": \\[(.*?)\\]").getMatch(0);
+                if (jsoniparray != null) {
+                    ipdata = jsoniparray.split("\\},[\n ]+\\{");
+                }
+                if (ipdata != null && ipdata.length > 1) {
+                    final int ipcount = ipdata.length;
+                    logger.info("Found " + ipcount + " active IPs");
+                    /* Delete all allowed IPs except the one the user has at the moment (first in list). */
+                    for (int i = 1; i <= ipdata.length - 1; i++) {
+                        final String singleipdata = ipdata[i];
+                        final String ip = getJson(singleipdata, "ip");
+                        if (ip == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        br.getHeaders().put("Accept", "Accept   application/json, text/plain, */*");
+                        br.getHeaders().put("Content-Type", "application/json;charset=utf-8");
+                        br.postPageRaw("https://www.offcloud.com/account/ip/remove/", "{\"ip\":\"" + ip + "\"}");
+                        if ("true".equals(getJson("result"))) {
+                            logger.info("Successfully removed IP: " + ip);
+                        } else {
+                            logger.warning("Failed to remove IP: " + ip);
+                        }
+                    }
+                }
+            } catch (final Throwable e) {
+                logger.warning("FATAL error occured in IP-remove handling!");
+            }
+        }
+
         return ai;
     }
 
@@ -659,10 +695,13 @@ public class OffCloudCom extends PluginForHost {
         }
     }
 
-    private final boolean default_clear_download_history = false;
+    private final boolean default_clear_download_history     = false;
+    private final boolean default_clear_allowed_ip_addresses = false;
 
     public void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEAR_DOWNLOAD_HISTORY, JDL.L("plugins.hoster.offcloudcom.clear_serverside_download_history", getPhrase("SETTING_CLEAR_DOWNLOAD_HISTORY"))).setDefaultValue(default_clear_download_history));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEAR_ALLOWED_IP_ADDRESSES, JDL.L("plugins.hoster.offcloudcom.clear_allowed_ip_addresses", getPhrase("SETTING_CLEAR_ALLOWED_IP_ADDRESSES"))).setDefaultValue(default_clear_allowed_ip_addresses));
     }
 
     @Override
@@ -673,6 +712,7 @@ public class OffCloudCom extends PluginForHost {
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
         {
             put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Delete downloaded links from the offcloud download history after successful download?");
+            put("SETTING_CLEAR_ALLOWED_IP_ADDRESSES", "Activate 'Confirm IP' workaround?\r\nIn case you often get E-Mails from offcloud to confirm your current IP address, this setting may help.\r\nThis will always delete all of your allowed IPs except your current IP from your offcloud account.\r\n<html><p style=\"color:#F62817\">WARNING: Do NOT use this function in case you\r\n-Use multiple internet connections (IPs) at the same time\r\n-Share your offcloud account with friends\r\n-Use one or more proxies (or VPNs)</p></html>");
             put("ACCOUNT_USERNAME", "Username:");
             put("ACCOUNT_LINKSLEFT", "Instant download inputs left:");
             put("ACCOUNT_TYPE", "Account type:");
@@ -690,6 +730,7 @@ public class OffCloudCom extends PluginForHost {
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
         {
             put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Lösche heruntergeladene links nach jedem erfolgreichen Download aus der offcloud Download-Historie?");
+            put("SETTING_CLEAR_ALLOWED_IP_ADDRESSES", "Aktiviere 'IP-bestätigen' Workaround?\r\nFalls du oft A-Mails von offcloud bekommst mit der Aufforderung, deine aktuelle IP-Adresse zu bestätigen, könnte diese Einstellung helfen.\r\nSie wird immer alle erlaubten IPs außer deine aktuelle in deinem offcloud Konto löschen.\r\n<html><p style=\"color:#F62817\">WARNUNG: Benutze diese Einstellungsmöglichkeit NICHT, falls du\r\n-Mehrere Internetverbindungen (IPs) gleichzeitig nutzt\r\n-Deinen offcloud Account mit Freunden teilst\r\n-Einen oder mehrere Proxys (oder VPNs) nutzt</p></html>");
             put("ACCOUNT_USERNAME", "Account Name:");
             put("ACCOUNT_LINKSLEFT", "Verbleibende Anzahl von Instant-Download Links:");
             put("ACCOUNT_TYPE", "Account Typ:");
