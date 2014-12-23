@@ -423,6 +423,9 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     links = br.getRegex("hovercard\\.php\\?fbid=(\\d+)").getColumn(0);
                 } else {
                     links = br.getRegex("class=\"photoTextTitle\" href=\"(https?://(www\\.)?facebook\\.com/media/set/\\?set=(a|vb)\\.[^<>\"]*?)\"").getColumn(0);
+                    if (links == null || links.length == 0) {
+                        links = br.getRegex("hovercard\\.php\\?fbid=(\\d+)").getColumn(0);
+                    }
                 }
             }
             if (links == null || links.length == 0) {

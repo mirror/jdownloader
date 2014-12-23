@@ -298,6 +298,7 @@ public class CopyCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        final String plain_path = link.getStringProperty("plain_path", null);
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
@@ -306,7 +307,6 @@ public class CopyCom extends PluginForHost {
             final String fid = getFID(link);
             boolean movefiletoaccount = this.getPluginConfig().getBooleanProperty(MOVE_FILES_TO_ACCOUNT, false);
             final boolean deleteafterdownload = this.getPluginConfig().getBooleanProperty(DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD, false);
-            String path = null;
             if (movefiletoaccount) {
                 final String oauth_Data = Encoding.htmlDecode(this.br.getCookie(MAINPAGE, "COPY_AUTH"));
                 final String api_auth = getJson(oauth_Data, "apiweb.copy.com");
@@ -319,48 +319,28 @@ public class CopyCom extends PluginForHost {
                 br.getHeaders().put("X-Client-Version", "1.0.00");
                 br.getHeaders().put("X-Api-Version", "1.0");
                 br.getHeaders().put("X-Authorization", api_auth);
-                br.postPageRaw("https://apiweb.copy.com/jsonrpc", "{\"jsonrpc\":\"2.0\",\"method\":\"list_objects\",\"params\":{\"include_links\":true,\"include_thumbnails\":true,\"sort_field\":\"name\",\"sort_direction\":\"asc\",\"path\":\"/\",\"include_companies\":false,\"limit\":100,\"list_watermark\":0,\"max_items\":100,\"offset\":0,\"include_total_items\":true},\"id\":1}");
-                final String userfilesjson = br.getRegex("\"children\":\\[(.*?)\\}\\],\"total_items\"").getMatch(0);
-                final String[] userfiles = userfilesjson.split("\\},\\{");
-                final String setname = link.getName();
-                String dlsource = null;
-                for (final String userfile : userfiles) {
-                    final String thispath = getJson(userfile, "path");
-                    if (thispath.contains(setname)) {
-                        dlsource = userfile;
-                        logger.info("File is imported into account");
-                        break;
-                    }
-                }
-                if (dlsource == null) {
+                br.postPageRaw("https://apiweb.copy.com/jsonrpc", "{\"jsonrpc\":\"2.0\",\"method\":\"list_objects\",\"params\":{\"include_links\":true,\"include_thumbnails\":true,\"sort_field\":\"name\",\"sort_direction\":\"asc\",\"path\":\"" + plain_path + "\",\"limit\":100,\"list_watermark\":0,\"max_items\":100,\"offset\":0,\"include_total_items\":true},\"id\":1}");
+                final String totalitems = getJson("total_items");
+                if ("0".equals(totalitems)) {
                     logger.info("File is not yet imported into account --> Impoprting it");
                     br.postPageRaw("https://apiweb.copy.com/jsonrpc", "{\"jsonrpc\":\"2.0\",\"method\":\"copy_link\",\"params\":{\"link_token\":\"" + fid + "\"},\"id\":1}");
-                    dlsource = br.toString();
                 }
-                final String type = getJson(dlsource, "type");
-                final String share_owner = getJson(dlsource, "share_owner");
-                path = getJson(dlsource, "path");
-                if (share_owner == null || path == null || type == null) {
+                final String share_owner = getJson("share_owner");
+                if (share_owner == null) {
                     logger.warning("MoveFileToAcc handling failed");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 ddlink = "https://copy.com/web/users/user-" + share_owner + "/copy";
-                String name = link.getName();
-                name = name.replace(" ", "%20");
-                name = name.replace("[", "%5B");
-                name = name.replace("]", "%5D");
-                name = name.replace("+", "%2B");
-                ddlink += path + "/";
-                ddlink += name;
+                ddlink += plain_path + "/";
                 ddlink += "?download=1";
             }
             try {
                 doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
             } finally {
-                if (deleteafterdownload && path != null) {
+                if (deleteafterdownload) {
                     boolean success = false;
                     try {
-                        br.postPageRaw("https://apiweb.copy.com/jsonrpc", "{\"jsonrpc\":\"2.0\",\"method\":\"update_objects\",\"params\":{\"meta\":[{\"action\":\"remove\",\"path\":\"" + path + "\"}]},\"id\":1}");
+                        br.postPageRaw("https://apiweb.copy.com/jsonrpc", "{\"jsonrpc\":\"2.0\",\"method\":\"update_objects\",\"params\":{\"meta\":[{\"action\":\"remove\",\"path\":\"" + plain_path + "\"}]},\"id\":1}");
                         if (getJson("code") != null) {
                             success = false;
                         } else {
