@@ -111,7 +111,9 @@ public class DataHu extends PluginForHost {
                 this.getAPISafe("http://data.hu/api.php?act=check_download_links&links=" + sb.toString());
                 br.getRequest().setHtmlCode(JSonUtils.unescape(br.toString()));
                 for (final DownloadLink dllink : links) {
-                    checkurl = "http://data.hu/get/" + getFID(dllink) + "/";
+                    final String added_url = dllink.getDownloadURL();
+                    final String fid = getFID(dllink);
+                    checkurl = "http://data.hu/get/" + fid + "/";
                     final String thisjson = br.getRegex("\"" + checkurl + "\":\\{(.*?)\\}").getMatch(0);
                     if (thisjson == null || !"online".equals(this.getJson(thisjson, "status"))) {
                         dllink.setAvailable(false);
@@ -120,6 +122,16 @@ public class DataHu extends PluginForHost {
                         final String size = this.getJson(thisjson, "filesize");
                         final String md5 = getJson(thisjson, "md5");
                         final String sha1 = getJson(thisjson, "sha1");
+                        /* Correct urls so when users copy them they can actually use them. */
+                        if (!added_url.contains("name")) {
+                            final String correctedurl = "http://data.hu/get/" + fid + "/" + name;
+                            dllink.setUrlDownload(correctedurl);
+                            try {
+                                dllink.setContentUrl(correctedurl);
+                            } catch (final Throwable e) {
+                                /* Not available in old 0.9.581 Stable */
+                            }
+                        }
                         /* Names via API are good --> Use as final filenames */
                         dllink.setFinalFileName(name);
                         dllink.setDownloadSize(SizeFormatter.getSize(size));
