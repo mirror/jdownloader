@@ -170,8 +170,9 @@ public class CopyComDecrypter extends PluginForDecrypt {
                 final DownloadLink dl = createDownloadlink("http://copydecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
                 final String filesize = getJson(singleinfo, "size");
                 String url = getJson(singleinfo, "url");
-                if (filesize == null || url == null) {
-                    logger.warning("Decrypter broken for ligetContentUrl:https://copy.com/ZPRER9vmqF93/DSC00243.JPGnk: " + parameter);
+                final String path = getJson(singleinfo, "path");
+                if (filesize == null || url == null || path == null) {
+                    logger.warning("Decrypter broken for: " + parameter);
                     return null;
                 }
                 url = url.replace("\\", "");
@@ -187,6 +188,7 @@ public class CopyComDecrypter extends PluginForDecrypt {
                 dl.setProperty("plain_size", filesize);
                 dl.setProperty("mainlink", parameter);
                 dl.setProperty("specified_link", url);
+                dl.setProperty("plain_path", path);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }

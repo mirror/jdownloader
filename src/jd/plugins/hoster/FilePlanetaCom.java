@@ -405,7 +405,9 @@ public class FilePlanetaCom extends PluginForHost {
                 download1 = cleanForm(download1);
                 // end of backward compatibility
                 download1.remove("method_free");
+                download1.remove("method_free");
                 download1.remove("method_premium");
+                download1.put("method_free", "Free+Download");
                 sendForm(download1);
                 checkErrors(downloadLink, account, false);
                 getDllink();
