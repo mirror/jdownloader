@@ -36,11 +36,14 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecrypt.cc" }, urls = { "https?://(?:www\\.)?filecrypt\\.cc/Container/([A-Z0-9]{10})\\.html" }, flags = { 0 })
+import org.jdownloader.captcha.utils.recaptcha.api2.Recaptcha2Helper;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecrypt.cc" }, urls = { "https?://(?:www\\.)?filecrypt\\.cc/Container/([A-Z0-9]{10})\\.html" }, flags = { 0 })
 public class FileCryptCc extends PluginForDecrypt {
 
     public FileCryptCc(PluginWrapper wrapper) {
@@ -50,10 +53,13 @@ public class FileCryptCc extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br = new Browser();
         br.setFollowRedirects(true);
         final String uid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        // using recaptcha v2, it doesn't seem skipable. I tried with new response value - raztoki
+        br.getPage(parameter);
         // skip text captcha
-        br.postPage(parameter, "recaptcha_response_field=");
+        // br.postPage(parameter, "recaptcha_response_field=");
         if (br.getURL().contains("filecrypt.cc/404.html")) {
             try {
                 decryptedLinks.add(createOfflinelink(parameter));
@@ -63,8 +69,9 @@ public class FileCryptCc extends PluginForDecrypt {
             return decryptedLinks;
         }
         int counter = 0;
+        final int retry = 3;
         Form captchaform = null;
-        while (counter++ < 3 && br.containsHTML("class=\"safety\"")) {
+        while (counter++ < retry && br.containsHTML("class=\"safety\"")) {
             final Form[] allForms = br.getForms();
             if (allForms != null && allForms.length != 0) {
                 for (final Form aForm : allForms) {
@@ -74,12 +81,12 @@ public class FileCryptCc extends PluginForDecrypt {
                     }
                 }
             }
-            final String captcha = br.getRegex("(/captcha/[^<>\"]*?)\"").getMatch(0);
-            if (captcha == null) {
+            String captcha = br.getRegex("(/captcha/[^<>\"]*?)\"").getMatch(0);
+            if (captcha == null && !captchaform.containsHTML("=\"g-recaptcha\"")) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            if (captcha.contains("circle.php")) {
+            if (captcha != null && captcha.contains("circle.php")) {
                 final File file = this.getLocalCaptchaFile();
                 br.cloneBrowser().getDownload(file, captcha);
                 final Point p = UserIO.getInstance().requestClickPositionDialog(file, "Click on the open circle", null);
@@ -88,6 +95,24 @@ public class FileCryptCc extends PluginForDecrypt {
                 }
                 captchaform.put("button.x", String.valueOf(p.x));
                 captchaform.put("button.y", String.valueOf(p.y));
+                br.submitForm(captchaform);
+            } else if (captchaform.containsHTML("=\"g-recaptcha\"")) {
+                // recaptcha v2
+                boolean success = false;
+                String responseToken = null;
+                do {
+                    Recaptcha2Helper rchelp = new Recaptcha2Helper();
+                    rchelp.init(this.br);
+                    final File outputFile = rchelp.loadImageFile();
+                    String code = getCaptchaCode("recaptcha", outputFile, param);
+                    success = rchelp.sendResponse(code);
+                    responseToken = rchelp.getResponseToken();
+                    counter++;
+                } while (!success && counter <= retry);
+                if (!success) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                captchaform.put("g-recaptcha-response", Encoding.urlEncode(responseToken));
                 br.submitForm(captchaform);
             }
         }
