@@ -1010,6 +1010,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             }
         }
         if (unavailableReason != null) {
+            final String copyrightClaim = "This video is no longer available due to a copyright claim";
             unavailableReason = Encoding.htmlDecode(unavailableReason.replaceAll("\\+", " ").trim());
             /*
              * If you consider using !unavailableReason.contains("this video is unavailable), you need to also ignore content warning
@@ -1032,9 +1033,20 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 return null;
             } else if (unavailableReason.contains("account associated with this video has been")) {
                 // currently covering
-                // This video is no longer available because the YouTube account associated with this video has been closed. .:. wBVhciYW9Og
+                // This video is no longer available because the YouTube account associated with this video has been closed.
+                // id=wBVhciYW9Og, date=20141222, author=raztoki
                 logger.warning(unavailableReason);
                 vid.error = unavailableReason;
+                return null;
+            } else if (unavailableReason.contains(copyrightClaim)) {
+                // currently covering
+                // "One Monkey saves another Mo..."
+                // This video is no longer available due to a copyright claim by ANI Media Pvt Ltd.
+                // id=l8nBcj8ul7s, date=20141224, author=raztoki
+                // filename is shown in error.
+                vid.title = new Regex(unavailableReason, "\"(.*?(?:\\.\\.\\.)?)\"\n").getMatch(0);
+                logger.warning(copyrightClaim);
+                vid.error = copyrightClaim;
                 return null;
             } else if (unavailableReason.equals("This video is unavailable.") || unavailableReason.equals(/* 15.12.2014 */"This video is not available.")) {
                 // be aware that this is always present, only when there is a non whitespace suberror is it valid.
