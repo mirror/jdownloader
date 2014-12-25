@@ -275,9 +275,11 @@ public class FShareVn extends PluginForHost {
         if (account.getBooleanProperty("free", false)) {
             // we want to keep directlink for free download
             if (dllink == null) {
+                dllink = getDllink(); // Should get dllink before free account login
                 // English is also set here && cache login causes problems, premium pages sometimes not returned without fresh login.
                 login(account, true);
-                br.getPage(link.getDownloadURL());
+                // br.getPage(link.getDownloadURL());
+                sleep(1 * 1001l, link); // 1 second wait via web, can't get proper page after free account login
             }
             doFree(link);
         } else {
@@ -317,6 +319,15 @@ public class FShareVn extends PluginForHost {
             }
             dl.startDownload();
         }
+    }
+
+    public String getDllink() throws Exception {
+        Browser ajax = br.cloneBrowser();
+        ajax.getHeaders().put("Accept", "*/*");
+        ajax.getHeaders().put("x-requested-with", "XMLHttpRequest");
+        ajax.getPage("/download/index");
+        dllink = ajax.getRegex("(https?://download[^/]*fshare\\.vn/dl/.+)").getMatch(0);
+        return dllink;
     }
 
     // do not add @Override here to keep 0.* compatibility
