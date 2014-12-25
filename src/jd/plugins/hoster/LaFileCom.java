@@ -54,16 +54,16 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lafile.com" }, urls = { "https?://(www\\.)?lafile\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "florenfile.com", "lafile.com" }, urls = { "https?://(www\\.)?(lafile|florenfile)\\.com/(vidembed\\-)?[a-z0-9]{12}", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2, 0 })
 public class LaFileCom extends PluginForHost {
 
     private String                         correctedBR                  = "";
     private String                         passCode                     = null;
     private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     // primary website url, take note of redirects
-    private static final String            COOKIE_HOST                  = "http://lafile.com";
+    private static final String            COOKIE_HOST                  = "http://florenfile.com";
     // domain names used within download links.
-    private static final String            DOMAINS                      = "(lafile\\.com)";
+    private static final String            DOMAINS                      = "(florenfile\\.com)";
     private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -91,6 +91,16 @@ public class LaFileCom extends PluginForHost {
     // protocol: no https
     // captchatype: recaptcha
     // other:
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("lafile.com".equals(getHost())) {
+            if (host == null || "lafile.com".equals(host)) {
+                return "florenfile.com";
+            }
+        }
+        return super.rewriteHost(host);
+    }
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -338,7 +348,7 @@ public class LaFileCom extends PluginForHost {
                     dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
                     /** wait time is often skippable for reCaptcha handling */
-                    skipWaittime = false;
+                    skipWaittime = true;
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
                     final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");

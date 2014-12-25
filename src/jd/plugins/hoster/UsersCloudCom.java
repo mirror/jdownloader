@@ -740,6 +740,9 @@ public class UsersCloudCom extends PluginForHost {
         }
         if (!inValidate(orgExt)) {
             orgName = new Regex(orgNameExt, "(.+)" + orgExt).getMatch(0);
+            if (orgName == null) {
+                orgName = orgNameExt;
+            }
         } else {
             orgName = orgNameExt;
         }
