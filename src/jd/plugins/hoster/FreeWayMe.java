@@ -80,6 +80,9 @@ import org.jdownloader.images.NewTheme;
 public class FreeWayMe extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap                  = new HashMap<Account, HashMap<String, Long>>();
+    private Account                                        currAcc                             = null;
+    private DownloadLink                                   currDownloadLink                    = null;
+
     private final String                                   ALLOWRESUME                         = "ALLOWRESUME";
     private final String                                   BETAUSER                            = "FREEWAYBETAUSER";
 
@@ -112,6 +115,11 @@ public class FreeWayMe extends PluginForHost {
         this.enablePremium("https://www.free-way.me/premium");
     }
 
+    private void setConstants(final Account acc, final DownloadLink dl) {
+        this.currAcc = acc;
+        this.currDownloadLink = dl;
+    }
+
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
         {
             put("SETTING_RESUME", "Enable resume of stopped downloads (Warning: This can cause CRC errors)");
@@ -131,6 +139,7 @@ public class FreeWayMe extends PluginForHost {
             put("ERROR_INAVLID_HOST_URL", "Invalid host link");
             put("ERROR_CONNECTIONS", "Too many simultan downloads");
             put("ERROR_TRAFFIC_LIMIT", "Traffic limit");
+            put("ERROR_TRAFFIC_LIMIT_UNTER_ACCOUNT", "Traffic of free sub-account has been reached");
             put("DETAILS_TITEL", "Account information");
             put("DETAILS_CATEGORY_ACC", "Account");
             put("DETAILS_ACCOUNT_NAME", "Account name:");
@@ -145,6 +154,10 @@ public class FreeWayMe extends PluginForHost {
             put("DETAILS_HOSTS_AMOUNT", "Amount: ");
             put("DETAILS_REVISION", "Plugin Revision:");
             put("CLOSE", "Close");
+            put("ACCOUNTTYPE_FREE", "Free account");
+            put("ACCOUNTTYPE_FREE_SUB", "Free sub-account");
+            put("ACCOUNTTYPE_PREMIUM", "Flatrate account");
+            put("ACCOUNTTYPE_PREMIUM_SPENDER", "Flatrate donator account");
             put("ERROR_PREVENT_SPRIT_USAGE", "Sprit usage prevented!");
             put("FULLSPEED_TRAFFIC_NOTIFICATION_CAPTION", "Fullspeedlimit");
             put("SETTINGS_FULLSPEED_NOTIFICATION_BUBBLE", "Show bubble notification if fullspeed limit is reached");
@@ -179,6 +192,7 @@ public class FreeWayMe extends PluginForHost {
             put("ERROR_INAVLID_HOST_URL", "Ungültiger Hoster Link");
             put("ERROR_CONNECTIONS", "Zu viele parallele Downloads");
             put("ERROR_TRAFFIC_LIMIT", "Traffic Begrenzung");
+            put("ERROR_TRAFFIC_LIMIT_UNTER_ACCOUNT", "Trafficlimit des kostenlosen Unter-Accounts wurde erreicht");
             put("DETAILS_TITEL", "Account Zusatzinformationen");
             put("DETAILS_CATEGORY_ACC", "Account");
             put("DETAILS_ACCOUNT_NAME", "Account Name:");
@@ -193,6 +207,10 @@ public class FreeWayMe extends PluginForHost {
             put("DETAILS_HOSTS_AMOUNT", "Anzahl: ");
             put("DETAILS_REVISION", "Plugin Revision:");
             put("CLOSE", "Schließen");
+            put("ACCOUNTTYPE_FREE", "Kostenloser ('Free') Account");
+            put("ACCOUNTTYPE_FREE_SUB", "Kostenloser ('Free') Unter-Account");
+            put("ACCOUNTTYPE_PREMIUM", "Flatrate Account");
+            put("ACCOUNTTYPE_PREMIUM_SPENDER", "Flatrate Spender Account");
             put("ERROR_PREVENT_SPRIT_USAGE", "Spritverbrauch verhindert!");
             put("FULLSPEED_TRAFFIC_NOTIFICATION_CAPTION", "Fullspeed-Limit");
             put("SETTINGS_FULLSPEED_NOTIFICATION_BUBBLE", "Zeige Bubble-Benachrichtigung wenn das Fullspeedlimit ausgeschöpft ist");
@@ -339,6 +357,7 @@ public class FreeWayMe extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         logger.info("{fetchAccInfo} Update free-way account: " + account.getUser());
+        setConstants(account, null);
         AccountInfo ac = new AccountInfo();
         br.setConnectTimeout(70 * 1000);
         br.setReadTimeout(65 * 1000);
@@ -442,14 +461,21 @@ public class FreeWayMe extends PluginForHost {
         account.setProperty(ACC_PROPERTY_TRAFFIC_REDUCTION, ((int) (trafficPerc * 100)));
         account.setConcurrentUsePossible(true);
 
-        final String accountType = getRegexTag(accInfoAPIResp, "premium").getMatch(0);
+        String accountType_text = null;
+        final String accountType = this.getJson(accInfoAPIResp, "premium");
         final double remaining_gb = Double.parseDouble(this.getJson(accInfoAPIResp, "restgb"));
+        final String expireDate_str = getJson(accInfoAPIResp, "Flatrate");
+        final long traffic_left_free = Long.parseLong(getJson(accInfoAPIResp, "guthaben")) * 1024 * 1024l;
         if (accountType.equalsIgnoreCase("Flatrate") || accountType.equalsIgnoreCase("Spender")) {
             logger.info("{fetchAccInfo} Flatrate Account");
+            if (accountType.equalsIgnoreCase("Spender")) {
+                accountType_text = getPhrase("ACCOUNTTYPE_PREMIUM_SPENDER");
+            } else {
+                accountType_text = getPhrase("ACCOUNTTYPE_PREMIUM");
+            }
             /* TODO: Remove if statement in case this works fine for Spender-Accounts */
-            final String expireDate_str = getRegexTag(accInfoAPIResp, "Flatrate").getMatch(0);
             if (expireDate_str != null) {
-                long validUntil = Long.parseLong(getRegexTag(accInfoAPIResp, "Flatrate").getMatch(0));
+                long validUntil = Long.parseLong(getJson(accInfoAPIResp, "Flatrate"));
                 ac.setValidUntil(validUntil * 1000);
             }
             /* Obey users' setting */
@@ -462,18 +488,25 @@ public class FreeWayMe extends PluginForHost {
                 logger.info("User has traffic_left in GUI IN_ACTIVE");
                 ac.setUnlimitedTraffic();
             }
-        } else if (accountType.equals("Free")) {
-            logger.info("{fetchAccInfo} Free Account");
+        } else if (expireDate_str != null && maxPremi > 1 && accountType.equals("Free")) {
+            /* TODO: Find a better way to differ between Free- and Free-Sub-Accounts! */
+            logger.info("{fetchAccInfo} Free Unter-Account");
+            accountType_text = getPhrase("ACCOUNTTYPE_FREE_SUB");
             /* Free accounts have a normal trafficlimit - once the traffic is gone, there is no way to continue downloading via free account */
-            final long traffic_left_free = Long.parseLong(getJson(accInfoAPIResp, "guthaben")) * 1024 * 1024l;
-            ac.setTrafficLeft(Long.parseLong(getJson(accInfoAPIResp, "guthaben")) * 1024 * 1024);
+            ac.setTrafficLeft(traffic_left_free);
             /* TODO: Ask for a better API-way to get the traffic-max for free accounts */
             if (traffic_left_free <= traffic_max_static) {
                 ac.setTrafficMax(traffic_max_static);
             }
+        } else {
+            logger.info("{fetchAccInfo} Free Account");
+            accountType_text = getPhrase("ACCOUNTTYPE_FREE");
+            /* Free accounts have a normal trafficlimit - once the traffic is gone, there is no way to continue downloading via free account */
+            ac.setTrafficLeft(traffic_left_free);
         }
         account.setProperty("notifications", (new Regex(accInfoAPIResp, "\"notis\":(\\d+)")).getMatch(0));
         account.setProperty("acctype", accountType);
+        account.setProperty("acctype_text", accountType_text);
         // check if beta-account is enabled
         String hostsUrl = "https://www.free-way.me/ajax/jd.php?id=3";
         if (this.getPluginConfig().getBooleanProperty(BETAUSER, false)) {
@@ -489,9 +522,8 @@ public class FreeWayMe extends PluginForHost {
                 supportedHosts.add(host.trim());
             }
         }
-        // set
         ac.setMultiHostSupport(this, supportedHosts);
-        ac.setStatus(accountType + " Account");
+        ac.setStatus(accountType_text);
         return ac;
     }
 
@@ -528,10 +560,6 @@ public class FreeWayMe extends PluginForHost {
         return result;
     }
 
-    private Regex getRegexTag(String content, String tag) {
-        return new Regex(content, "\"" + tag + "\":\"([^\"]*)\"");
-    }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 0;
@@ -549,7 +577,9 @@ public class FreeWayMe extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
+    @SuppressWarnings("deprecation")
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
+        setConstants(acc, link);
         if (prevetSpritUsage(acc)) {
             // we stop if the user won't lose sprit
             acc.setError(AccountError.TEMP_DISABLED, getPhrase("ERROR_PREVENT_SPRIT_USAGE"));
@@ -588,7 +618,7 @@ public class FreeWayMe extends PluginForHost {
         dllink = br.getRedirectLocation();
 
         if (dllink == null) {
-            handleError(acc, link);
+            handleErrors();
             // if above error handling fails... ie unknown error
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -609,15 +639,15 @@ public class FreeWayMe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             br.followConnection();
-            handleError(acc, link);
+            handleErrors();
             logger.severe("{handleMultiHost} Unhandled download error on free-way.me: " + br.toString());
-            errorMagic(acc, link, "unknown_dl_error", this.getPluginConfig().getLongProperty(MAX_RETRIES_UNKNOWN_ERROR, max_retries_unknown_error_default));
+            errorMagic("unknown_dl_error", this.getPluginConfig().getLongProperty(MAX_RETRIES_UNKNOWN_ERROR, max_retries_unknown_error_default));
 
         }
         dl.startDownload();
     }
 
-    private void handleError(final Account acc, final DownloadLink link) throws PluginException {
+    private void handleErrors() throws PluginException {
         String error = "";
         try {
             error = (new Regex(br.toString(), "<p id='error'>([^<]*)</p>")).getMatch(0);
@@ -625,39 +655,39 @@ public class FreeWayMe extends PluginForHost {
             // we handle this few lines later
         }
         if (error == null) {
-            errorMagic(acc, link, getPhrase("ERROR_SERVER"), 5);
+            errorMagic(getPhrase("ERROR_SERVER"), 5);
         } else if (error.contains("Download password required")) {
             // file requires pw to download
-            String newDLpw = getUserInput(null, link);
-            link.setDownloadPassword(newDLpw);
+            String newDLpw = getUserInput(null, this.currDownloadLink);
+            this.currDownloadLink.setDownloadPassword(newDLpw);
             throw new PluginException(LinkStatus.ERROR_RETRY);
         } else if (error.contains("No more traffic for this host")) {
             // this happens if there is a limit for a spcific host of this multi host
-            tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l, error);
+            tempUnavailableHoster(1 * 60 * 60 * 1000l, error);
         } else if (error.contains("ltiger Login")) { // Ungü
-            acc.setError(AccountError.TEMP_DISABLED, getPhrase("ERROR_INVALID_LOGIN"));
+            this.currAcc.setError(AccountError.TEMP_DISABLED, getPhrase("ERROR_INVALID_LOGIN"));
             throw new PluginException(LinkStatus.ERROR_RETRY);
         } else if (error.contains("ltige URL")) { // Ungültige URL
-            tempUnavailableHoster(acc, link, 1 * 60 * 1000l, getPhrase("ERROR_INVALID_URL"));
+            tempUnavailableHoster(1 * 60 * 1000l, getPhrase("ERROR_INVALID_URL"));
         } else if (error.contains("File offline.")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (error.contains("Sie haben nicht genug Traffic, um diesen Download durchzuf")) { // ühren
-            acc.setUpdateTime(-1);
-            tempUnavailableHoster(acc, link, 10 * 60 * 1000l, getPhrase("ERROR_TRAFFIC_LIMIT"));
+            this.currAcc.setUpdateTime(-1);
+            tempUnavailableHoster(10 * 60 * 1000l, getPhrase("ERROR_TRAFFIC_LIMIT"));
         } else if (error.contains("nnen nicht mehr parallele Downloads durchf")) { // Sie kö... ...ühren
-            int attempts = link.getIntegerProperty("CONNECTIONS_RETRY_COUNT_PARALLEL", 0);
+            int attempts = this.currDownloadLink.getIntegerProperty("CONNECTIONS_RETRY_COUNT_PARALLEL", 0);
             // first attempt -> update acc information
             if (attempts == 0) {
-                acc.setUpdateTime(-1); // force update acc next try (to get new information about simultan connections)
+                this.currAcc.setUpdateTime(-1); // force update acc next try (to get new information about simultan connections)
             }
-            link.setProperty("CONNECTIONS_RETRY_COUNT_PARALLEL", attempts + 1);
+            this.currDownloadLink.setProperty("CONNECTIONS_RETRY_COUNT_PARALLEL", attempts + 1);
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, getPhrase("ERROR_CONNECTIONS"), (12 + 20 * attempts) * 1000l);
         } else if (error.contains("ltiger Hoster")) { // Ungü...
-            tempUnavailableHoster(acc, link, 8 * 60 * 1000l, getPhrase("ERROR_INAVLID_HOST_URL"));
+            tempUnavailableHoster(8 * 60 * 1000l, getPhrase("ERROR_INAVLID_HOST_URL"));
         } else if (error.equalsIgnoreCase("Dieser Hoster ist aktuell leider nicht aktiv.")) {
-            tempUnavailableHoster(acc, link, 8 * 60 * 1000l, getPhrase("ERROR_HOST_TMP_DISABLED"));
+            tempUnavailableHoster(8 * 60 * 1000l, getPhrase("ERROR_HOST_TMP_DISABLED"));
         } else if (error.equalsIgnoreCase("Diese Datei wurde nicht gefunden.")) {
-            tempUnavailableHoster(acc, link, 1 * 60 * 1000l, "File not found");
+            tempUnavailableHoster(1 * 60 * 1000l, "File not found");
         } else if (error.equalsIgnoreCase("Es ist ein unbekannter Fehler aufgetreten (#1)") //
                 || error.equalsIgnoreCase("Unbekannter Fehler #2") //
                 || error.equalsIgnoreCase("Unbekannter Fehler #3") //
@@ -667,57 +697,60 @@ public class FreeWayMe extends PluginForHost {
              * after x retries we disable this host and retry with normal plugin
              */
             //
-            int attempts = link.getIntegerProperty("CONNECTIONS_RETRY_COUNT", 0);
+            int attempts = this.currDownloadLink.getIntegerProperty("CONNECTIONS_RETRY_COUNT", 0);
             if (attempts >= 3) {
                 /* reset retrycounter */
-                link.setProperty("CONNECTIONS_RETRY_COUNT", 0);
-                tempUnavailableHoster(acc, link, 4 * 60 * 1000l, error);
+                this.currDownloadLink.setProperty("CONNECTIONS_RETRY_COUNT", 0);
+                tempUnavailableHoster(4 * 60 * 1000l, error);
             }
-            link.setProperty("CONNECTIONS_RETRY_COUNT", attempts + 1);
+            this.currDownloadLink.setProperty("CONNECTIONS_RETRY_COUNT", attempts + 1);
             String msg = "(" + (attempts + 1) + "/ 3)";
             throw new PluginException(LinkStatus.ERROR_RETRY, getPhrase("ERROR_RETRY_SECONDS") + msg, 15 * 1000l);
         } else if (error.startsWith("Die Datei darf maximal")) {
             logger.info("{handleMultiHost} File download limit");
-            tempUnavailableHoster(acc, link, 2 * 60 * 1000l, error);
+            tempUnavailableHoster(2 * 60 * 1000l, error);
         } else if (error.equalsIgnoreCase("Mehrere Computer haben in letzter Zeit diesen Account genutzt")) {
             logger.info("{handleMultiHost} free-way ip ban");
-            acc.setError(AccountError.TEMP_DISABLED, getPhrase("ERROR_BAN"));
+            this.currAcc.setError(AccountError.TEMP_DISABLED, getPhrase("ERROR_BAN"));
             throw new PluginException(LinkStatus.ERROR_RETRY, getPhrase("ERROR_BAN"), 16 * 60 * 1000l);
         } else if (br.containsHTML(">Interner Fehler bei Findung eines stabilen Accounts<")) {
             /*
              * after x retries we disable this host and retry with normal plugin --> This error means that the free-way system cannot find
              * any working accounts for the current host at the moment
              */
-            int attempts = link.getIntegerProperty("CONNECTIONS_RETRY_COUNT", 0);
+            int attempts = this.currDownloadLink.getIntegerProperty("CONNECTIONS_RETRY_COUNT", 0);
             if (attempts >= 3) {
                 /* reset retrycounter */
-                link.setProperty("CONNECTIONS_RETRY_COUNT", 0);
+                this.currDownloadLink.setProperty("CONNECTIONS_RETRY_COUNT", 0);
                 logger.info(getPhrase("ERROR_NO_STABLE_ACCOUNTS") + " --> Disabling current host for 15 minutes");
-                tempUnavailableHoster(acc, link, 5 * 60 * 1000l, getPhrase("ERROR_NO_STABLE_ACCOUNTS"));
+                tempUnavailableHoster(5 * 60 * 1000l, getPhrase("ERROR_NO_STABLE_ACCOUNTS"));
             }
-            link.setProperty("CONNECTIONS_RETRY_COUNT", attempts + 1);
+            this.currDownloadLink.setProperty("CONNECTIONS_RETRY_COUNT", attempts + 1);
             String msg = "(" + (attempts + 1) + "/ 3  )";
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("ERROR_NO_STABLE_ACCOUNTS") + msg);
+        } else if (error.equals("Volumen des Unteraccounts aufgebraucht")) {
+            this.currAcc.setError(AccountError.EXPIRED, getPhrase("ERROR_TRAFFIC_LIMIT_UNTER_ACCOUNT"));
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else if (br.containsHTML("cURL-Error: Couldn't resolve host")) {
-            errorMagic(acc, link, getPhrase("ERROR_SERVER"), 10);
+            errorMagic(getPhrase("ERROR_SERVER"), 10);
         } else if (br.containsHTML("Advanced authentification needed")) {
             // 2FA auth required => do it during acc check
-            acc.setUpdateTime(-1); // force update acc next try
+            this.currAcc.setUpdateTime(-1); // force update acc next try
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
     }
 
-    private void errorMagic(final Account acc, final DownloadLink link, final String error, final long maxretries) throws PluginException {
-        int timesFailed = link.getIntegerProperty(ACC_PROPERTY_UNKOWN_FAILS, 0);
+    private void errorMagic(final String error, final long maxretries) throws PluginException {
+        int timesFailed = this.currDownloadLink.getIntegerProperty(ACC_PROPERTY_UNKOWN_FAILS, 0);
         if (timesFailed <= maxretries) {
             timesFailed++;
-            link.setProperty(ACC_PROPERTY_CURL_FAIL_RESOLVE_HOST, timesFailed);
+            this.currDownloadLink.setProperty(ACC_PROPERTY_CURL_FAIL_RESOLVE_HOST, timesFailed);
             logger.info(error + ":  -> Retrying");
             throw new PluginException(LinkStatus.ERROR_RETRY, error);
         } else {
-            link.setProperty(ACC_PROPERTY_UNKOWN_FAILS, Property.NULL);
+            this.currDownloadLink.setProperty(ACC_PROPERTY_UNKOWN_FAILS, Property.NULL);
             logger.info(error + ":  -> Disabling current host");
-            tempUnavailableHoster(acc, link, 60 * 60 * 1000l, error);
+            tempUnavailableHoster(60 * 60 * 1000l, error);
         }
     }
 
@@ -735,17 +768,21 @@ public class FreeWayMe extends PluginForHost {
                 String windowTitleLangText = null;
 
                 final String accType = account.getStringProperty("acctype", null);
+                final String accTypeText = account.getStringProperty("acctype_text", null);
                 final Integer maxSimultanDls = account.getIntegerProperty(ACC_PROPERTY_CONNECTIONS, 1);
                 final String notifications = account.getStringProperty("notifications", "0");
                 final float trafficUsage = account.getIntegerProperty(ACC_PROPERTY_TRAFFIC_REDUCTION, -1) / 100f;
                 String restFullspeedTraffic = account.getStringProperty(ACC_PROPERTY_REST_FULLSPEED_TRAFFIC, "?");
 
-                /* Make sure to show the correct fullspeed trafficleft for Free accounts */
+                /**
+                 * TODO: Find a better way for this handling in V2, needs API change. Make sure to show the correct fullspeed trafficleft
+                 * for Free accounts
+                 */
                 if (accType.equals("Free") && !restFullspeedTraffic.equals("?")) {
                     final long fullspeedtraffic_long = (long) Double.parseDouble(restFullspeedTraffic) * 1024 * 1024 * 1024l;
                     final long real_traffic = account.getAccountInfo().getTrafficLeft();
                     /*
-                     * Show real traffic as fullspeed traffic if we got more fullspeedtraffic than real traffic, else show fullspeed
+                     * Show real traffic as fullspeed traffic in case we got more fullspeedtraffic than real traffic, else show fullspeed
                      * traffic.
                      */
                     if (fullspeedtraffic_long >= real_traffic) {
@@ -787,7 +824,7 @@ public class FreeWayMe extends PluginForHost {
 
                 panelGenerator.addCategory(getPhrase("DETAILS_CATEGORY_ACC"));
                 panelGenerator.addEntry(getPhrase("DETAILS_ACCOUNT_NAME"), account.getUser());
-                panelGenerator.addEntry(getPhrase("DETAILS_ACCOUNT_TYPE"), accType);
+                panelGenerator.addEntry(getPhrase("DETAILS_ACCOUNT_TYPE"), accTypeText);
 
                 panelGenerator.addEntry(getPhrase("DETAILS_SIMULTAN_DOWNLOADS"), maxSimultanDls.toString());
 
@@ -911,19 +948,19 @@ public class FreeWayMe extends PluginForHost {
         return AvailableStatus.UNCHECKABLE;
     }
 
-    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, long timeout, String msg) throws PluginException {
-        if (downloadLink == null) {
+    private void tempUnavailableHoster(long timeout, String msg) throws PluginException {
+        if (this.currDownloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, getPhrase("ERROR_UNKNWON_CODE"));
         }
         synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(this.currAcc);
             if (unavailableMap == null) {
                 unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(account, unavailableMap);
+                hostUnavailableMap.put(this.currAcc, unavailableMap);
             }
             /* wait to retry this host */
-            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
-            account.setProperty("unavailablemap", unavailableMap);
+            unavailableMap.put(this.currDownloadLink.getHost(), (System.currentTimeMillis() + timeout));
+            this.currAcc.setProperty("unavailablemap", unavailableMap);
         }
         throw new PluginException(LinkStatus.ERROR_RETRY, msg);
     }
