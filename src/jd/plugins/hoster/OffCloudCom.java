@@ -340,16 +340,25 @@ public class OffCloudCom extends PluginForHost {
         postAPISafe("https://offcloud.com/stats/sites", "");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final String jsonlist = br.getRegex("\"fs\":[\t\n\r ]+\\[(.*?)\\][\t\nr ]+}").getMatch(0);
+        /**
+         * Explanation of their status-types: Healthy = working, Fragile = may work or not - if not will be fixed within the next 72 hours
+         * (support also said it means that they currently have no accounts for this host), Limited = broken, will be fixed tomorrow, dead =
+         * site offline or their plugin is completely broken
+         */
         final String[] hostDomainsInfo = jsonlist.split("\\},([\t\n\r ]+)?\\{");
         for (final String domaininfo : hostDomainsInfo) {
             final String status = getJson(domaininfo, "isActive");
             final String realhost = getJson(domaininfo, "displayName");
-            boolean active = Arrays.asList("Active", "Healthy", "Fragile").contains(status);
+            if (realhost == null || status == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            boolean active = Arrays.asList("Healthy", "Fragile").contains(status);
+            logger.info("offcloud.com status of host " + realhost + ": " + status);
             if (active && "180upload.com".equals(realhost)) {
                 logger.info("NOT adding 180upload.com to the list of supported hosts as it will require captcha via multihost also");
-            } else if (active && realhost != null) {
+            } else if (active) {
                 supportedHosts.add(realhost.toLowerCase());
-            } else if (!active && realhost != null) {
+            } else {
                 logger.info("NOT adding this host as it is inactive at the moment: " + realhost);
             }
         }
@@ -544,6 +553,8 @@ public class OffCloudCom extends PluginForHost {
                 statuscode = 9;
             } else if (error.equals("There is a networking issue. Please contact our support to get some help.")) {
                 statuscode = 10;
+            } else if (error.equals("Premium account quota for uploaded exceeded today. Please try to download again later.")) {
+                statuscode = 11;
             } else if (error.equals("premium")) {
                 statuscode = 100;
             } else {
@@ -629,6 +640,13 @@ public class OffCloudCom extends PluginForHost {
                     statusMessage = "\r\nServerside networking problems - please contact the Offcloud support.";
                 }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            case 11:
+                /*
+                 * Daily quota of host reached --> Temporarily disable it (usually hosts are then listed as "Limited" and will not be added
+                 * to the supported host list on next fetchAccountInfo anyways
+                 */
+                statusMessage = "Hosts' (daily) quota reached - temporarily disabling it";
+                tempUnavailableHoster(3 * 60 * 60 * 1000l);
             case 100:
                 /* Free account limits reached -> permanently disable account */
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
