@@ -98,8 +98,10 @@ public class EmuParadiseMe extends PluginForHost {
         requestFileInformation(downloadLink);
         synchronized (LOCK) {
             br.getPage(br.getURL() + "-download");
-            if (br.containsHTML("id=\"happy\\-hour\"")) {
+            if (br.containsHTML("id=\"happy\\-hour\"") && !br.containsHTML("class=\"help tip\" style=\"display:none;\" id=\"happy\\-hour\">")) {
                 maxFree.set(2);
+            } else {
+                maxFree.set(1);
             }
             dllink = checkDirectLink(downloadLink, "directlink");
             if (dllink == null) {
@@ -142,6 +144,11 @@ public class EmuParadiseMe extends PluginForHost {
         br.getHeaders().put("Referer", "http://www.emuparadise.me/");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 503) {
+                /* Too many connections --> Happy hour is definitly not active --> Only allow 1 simultaneous download. */
+                maxFree.set(1);
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many concurrent connections - wait before starting new downloads", 1 * 60 * 60 * 1000l);
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
