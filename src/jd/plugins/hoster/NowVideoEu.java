@@ -45,7 +45,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowvideo.eu", "nowvideo.co" }, urls = { "http://(www\\.)?(nowvideo\\.(sx|eu|co|ch|ag|at|li)/(video/|player\\.php\\?v=|share\\.php\\?id=)|embed\\.nowvideo\\.(sx|eu|co|ch|ag|at)/embed\\.php\\?v=)[a-z0-9]+", "NEVERUSETHISSUPERDUBERREGEXATALL2013" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowvideo.ch", "nowvideo.co", "nowvideo.eu" }, urls = { "http://(www\\.)?(nowvideo\\.(sx|eu|co|ch|ag|at|li)/(video/|player\\.php\\?v=|share\\.php\\?id=)|embed\\.nowvideo\\.(sx|eu|co|ch|ag|at)/embed\\.php\\?v=)[a-z0-9]+", "NEVERUSETHISSUPERDUBERREGEXATALL2013", "NEVERUSETHISSUPERDUBERREGEXATALL2014" }, flags = { 2, 0, 0 })
 public class NowVideoEu extends PluginForHost {
 
     /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet */
@@ -64,9 +64,9 @@ public class NowVideoEu extends PluginForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if ("nowvideo.co".equals(getHost())) {
-            if (host == null || host.startsWith("nowvideo.")) {
-                return "nowvideo.ch";
+        if (!currentMainDomain.equals(getHost())) {
+            if (host == null || !host.equals(currentMainDomain)) {
+                return currentMainDomain;
             }
         }
         return super.rewriteHost(host);
@@ -137,14 +137,14 @@ public class NowVideoEu extends PluginForHost {
     }
 
     private static Object                  LOCK               = new Object();
-
-    private static AtomicReference<String> MAINPAGE           = new AtomicReference<String>("http://www.nowvideo.ch");
+    private static final String            currentMainDomain  = "nowvideo.ch";
+    private static AtomicReference<String> MAINPAGE           = new AtomicReference<String>("http://www." + currentMainDomain);
     private static AtomicReference<String> ccTLD              = new AtomicReference<String>("sx");
     private final String                   ISBEINGCONVERTED   = ">The file is being converted.";
     private final String                   domains            = "nowvideo\\.(sx|eu|co|ch|ag|at|li)";
     private static AtomicBoolean           AVAILABLE_PRECHECK = new AtomicBoolean(false);
 
-    private static AtomicReference<String> agent              = new AtomicReference<String>("http://www.nowvideo.ch");
+    private static AtomicReference<String> agent              = new AtomicReference<String>("http://www." + currentMainDomain);
 
     private Browser prepBrowser(Browser prepBr) {
         if (agent.get() == null) {
