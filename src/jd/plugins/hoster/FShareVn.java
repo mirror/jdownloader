@@ -279,7 +279,12 @@ public class FShareVn extends PluginForHost {
                 // English is also set here && cache login causes problems, premium pages sometimes not returned without fresh login.
                 login(account, true);
                 // br.getPage(link.getDownloadURL());
-                sleep(1 * 1001l, link); // 1 second wait via web, can't get proper page after free account login
+                br.getPage(br.getRedirectLocation());
+                String wait = br.getRegex("var count = (\\d+?);").getMatch(0);
+                if (wait == null) {
+                    wait = "1"; // 1 second wait via web (couldn't get proper page after free account login)
+                }
+                sleep(Long.parseLong(wait) * 1001l, link);
             }
             doFree(link);
         } else {
@@ -290,6 +295,9 @@ public class FShareVn extends PluginForHost {
             dllink = br.getRedirectLocation();
             if (dllink != null && dllink.endsWith("/file/" + uid)) {
                 br.getPage(dllink);
+                if (br.containsHTML("Your account is being used from another device")) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Account is being used in another device");
+                }
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
                     dllink = br.getRegex("\"(http://[a-z0-9]+\\.fshare\\.vn/vip/[^<>\"]*?)\"").getMatch(0);
@@ -326,7 +334,7 @@ public class FShareVn extends PluginForHost {
         ajax.getHeaders().put("Accept", "*/*");
         ajax.getHeaders().put("x-requested-with", "XMLHttpRequest");
         ajax.getPage("/download/index");
-        dllink = ajax.getRegex("(https?://download[^/]*fshare\\.vn/dl/.+)").getMatch(0);
+        dllink = ajax.toString();
         return dllink;
     }
 
