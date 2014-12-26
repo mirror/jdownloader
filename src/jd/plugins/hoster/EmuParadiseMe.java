@@ -147,7 +147,7 @@ public class EmuParadiseMe extends PluginForHost {
             if (dl.getConnection().getResponseCode() == 503) {
                 /* Too many connections --> Happy hour is definitly not active --> Only allow 1 simultaneous download. */
                 maxFree.set(1);
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many concurrent connections - wait before starting new downloads", 1 * 60 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many concurrent connections - wait before starting new downloads", 1 * 60 * 1000l);
             }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
