@@ -48,7 +48,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nitroflare.com" }, urls = { "https?://(www\\.)?nitroflare\\.com/view/[A-Z0-9]+" }, flags = { 2 })
-public class NitroFlareCom extends PluginForHost {
+public class NitroFlareCom extends antiDDoSForHost {
 
     private final String         language = System.getProperty("user.language");
     private final String         baseURL  = "https://nitroflare.com";
@@ -131,7 +131,7 @@ public class NitroFlareCom extends PluginForHost {
                     sb.append(getFUID(dl));
                     atLeastOneDL = true;
                 }
-                br.getPage(apiURL + "/getFileInfo?" + sb);
+                getPage(br, apiURL + "/getFileInfo?" + sb);
                 if (br.containsHTML("In these moments we are upgrading the site system")) {
 
                     for (final DownloadLink dl : links) {
@@ -191,7 +191,7 @@ public class NitroFlareCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (useAPI.get()) {
             return reqFileInformation(link);
         } else {
@@ -199,8 +199,8 @@ public class NitroFlareCom extends PluginForHost {
         }
     }
 
-    private AvailableStatus requestFile(final DownloadLink link) throws IOException, PluginException {
-        br.getPage(link.getDownloadURL());
+    private AvailableStatus requestFile(final DownloadLink link) throws Exception {
+        getPage(link.getDownloadURL());
         if (br.containsHTML(">File doesn't exist<|This file has been removed due")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -240,12 +240,12 @@ public class NitroFlareCom extends PluginForHost {
                     requestFile(downloadLink);
                 }
                 final Browser br2 = br.cloneBrowser();
-                br.postPage(br.getURL(), "goToFreePage=");
+                postPage(br.getURL(), "goToFreePage=");
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                 rc.findID();
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("/ajax/freeDownload.php", "method=startTimer&fileId=" + getFUID(downloadLink));
+                postPage("/ajax/freeDownload.php", "method=startTimer&fileId=" + getFUID(downloadLink));
                 if (br.containsHTML("This file is available with premium key only|﻿This file is available with Premium only")) {
                     throwPremiumRequiredException(downloadLink);
                 } else if (br.containsHTML("﻿Downloading is not possible") || br.containsHTML("downloading is not possible")) {
@@ -255,7 +255,7 @@ public class NitroFlareCom extends PluginForHost {
                     }
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
                 }
-                br2.getPage("/js/downloadFree.js?v=1.0.1");
+                getPage(br2, "/js/downloadFree.js?v=1.0.1");
                 final String waittime = br2.getRegex("var time = (\\d+);").getMatch(0);
                 int wait = 30;
                 if (waittime != null) {
@@ -266,7 +266,7 @@ public class NitroFlareCom extends PluginForHost {
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                    br.postPage("/ajax/freeDownload.php", "method=fetchDownload&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
+                    postPage("/ajax/freeDownload.php", "method=fetchDownload&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
                     if (br.containsHTML("The captcha wasn't entered correctly|You have to fill the captcha")) {
                         continue;
                     }
@@ -309,7 +309,7 @@ public class NitroFlareCom extends PluginForHost {
     /**
      * Validates account and returns correct account info, when user has provided incorrect user pass fields to JD client. Or Throws
      * exception indicating users mistake, when it's a irreversible mistake.
-     * 
+     *
      * @param account
      * @return
      * @throws PluginException
@@ -363,7 +363,7 @@ public class NitroFlareCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         synchronized (LOCK) {
             AccountInfo ai = new AccountInfo();
-            br.getPage(apiURL + "/getKeyInfo?" + validateAccount(account));
+            getPage(apiURL + "/getKeyInfo?" + validateAccount(account));
             handleApiErrors(account, null);
             final String expire = getJson("expiryDate");
             final String status = getJson("status");
@@ -429,7 +429,7 @@ public class NitroFlareCom extends PluginForHost {
             // needed for when dropping to frame, the cookie session seems to carry over current position in download sequence and you get
             // recaptcha error codes at first step.
             br = new Browser();
-            br.getPage(req);
+            getPage(req);
             handleApiErrors(account, downloadLink);
             // error handling here.
             if ("free".equalsIgnoreCase(getJson("linkType"))) {
@@ -456,7 +456,7 @@ public class NitroFlareCom extends PluginForHost {
                         if (!inValidate(delay)) {
                             sleep((Long.parseLong(delay) * 1000) - (System.currentTimeMillis() - startTime), downloadLink);
                         }
-                        br.getPage(req + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
+                        getPage(req + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
                         final String wrongCaptcha = getJson("accessLink");
                         if ((!inValidate(wrongCaptcha) || "error".equalsIgnoreCase(getJson("type")) && "6".equalsIgnoreCase(getJson("code"))) && i + 1 != repeat) {
                             startTime = System.currentTimeMillis();
@@ -663,84 +663,6 @@ public class NitroFlareCom extends PluginForHost {
     private String getFUID(DownloadLink downloadLink) {
         final String fuid = new Regex(downloadLink.getDownloadURL(), "nitroflare\\.com/view/([A-Z0-9]+)").getMatch(0);
         return fuid;
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     * 
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from provided Browser.
-     * 
-     * @author raztoki
-     * */
-    private String getJson(final Browser ibr, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response provided String source.
-     * 
-     * @author raztoki
-     * */
-    private String getJsonArray(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     * 
-     * @author raztoki
-     * */
-    private String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return String[] value from provided JSon Array
-     * 
-     * @author raztoki
-     * @param source
-     * @return
-     */
-    private String[] getJsonResultsFromArray(final String source) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
-    }
-
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     * */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     public boolean hasCaptcha(final DownloadLink downloadLink, final jd.plugins.Account acc) {
