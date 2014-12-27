@@ -182,7 +182,7 @@ public class UpToBoxCom extends PluginForHost {
         }
         if (filename == null || filename.equals("")) {
             if (correctedBR.contains("You have reached the download\\-limit")) {
-                logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
+                logger.warning("Wait time detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
             }
             logger.warning("The filename equals null, throwing \"plugin defect\" now...");
@@ -234,7 +234,7 @@ public class UpToBoxCom extends PluginForHost {
                 dlForm.remove(null);
                 final long timeBefore = System.currentTimeMillis();
                 boolean password = false;
-                boolean skipWaittime = false;
+                boolean skipWaittime = true; // Wait time is not always needed.
                 if (new Regex(correctedBR, PASSWORDTEXT).matches()) {
                     password = true;
                     logger.info("The downloadlink seems to be password protected.");
@@ -375,13 +375,13 @@ public class UpToBoxCom extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     *
+     * 
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     *
+     * 
      * @param controlFree
      *            (+1|-1)
      */
@@ -483,9 +483,9 @@ public class UpToBoxCom extends PluginForHost {
             }
         }
         /** Wait time reconnect handling */
-        if (new Regex(correctedBR, "(You have reached the download\\-limit|You have to wait)").matches()) {
+        if (new Regex(correctedBR, "(You have reached the download\\-limit|You have to wait|Vous devez attendre)").matches()) {
             // adjust this regex to catch the wait time string for COOKIE_HOST
-            String WAIT = new Regex(correctedBR, "((You have reached the download\\-limit|You have to wait)[^<>]+)").getMatch(0);
+            String WAIT = new Regex(correctedBR, "((You have reached the download\\-limit|You have to wait|Vous devez attendre)[^<>]+)").getMatch(0);
             String tmphrs = new Regex(WAIT, "\\s+(\\d+)\\s+hours?").getMatch(0);
             if (tmphrs == null) {
                 tmphrs = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
