@@ -44,11 +44,11 @@ public class SrBoxCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.containsHTML("(An error has occurred|The article cannot be found)") || "http://www.israbox.net/".equals(br.getRedirectLocation()) || "http://www.israbox.com/".equals(br.getRedirectLocation())) {
-            logger.info("Link offline: " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            try {
+                decryptedLinks.add(createOfflinelink(parameter));
+            } catch (final Throwable t) {
+                logger.info("Link offline: " + parameter);
+            }
             return decryptedLinks;
         }
         String fpName = br.getRegex("<h1><a href.*>(.*?)</a></h1>").getMatch(0);
