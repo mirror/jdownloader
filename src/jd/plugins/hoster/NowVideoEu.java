@@ -64,8 +64,8 @@ public class NowVideoEu extends PluginForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if ("nowvideo.co".equals(getHost()) || "nowvideo.eu".equals(getHost())) {
-            if (host == null || ("nowvideo.co".equals(host) || "nowvideo.eu".equals(host))) {
+        if (getHost().matches("nowvideo\\.(sx|eu|co|ch|ag|at|li)")) {
+            if (host == null || host.matches("nowvideo\\.(sx|eu|co|ch|ag|at|li)")) {
                 return currentMainDomain;
             }
         }
