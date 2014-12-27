@@ -555,6 +555,8 @@ public class OffCloudCom extends PluginForHost {
                 statuscode = 10;
             } else if (error.equals("Premium account quota for uploaded exceeded today. Please try to download again later.")) {
                 statuscode = 11;
+            } else if (error.equals("The file is not available on the server.")) {
+                statuscode = 12;
             } else if (error.equals("premium")) {
                 statuscode = 100;
             } else {
@@ -647,6 +649,10 @@ public class OffCloudCom extends PluginForHost {
                  */
                 statusMessage = "Hosts' (daily) quota reached - temporarily disabling it";
                 tempUnavailableHoster(3 * 60 * 60 * 1000l);
+            case 12:
+                /* File is offline --> Display correct status to user. */
+                statusMessage = "File is offline";
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             case 100:
                 /* Free account limits reached -> permanently disable account */
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -729,40 +735,40 @@ public class OffCloudCom extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Delete downloaded links from the offcloud download history after successful download?");
-                                                      put("SETTING_CLEAR_ALLOWED_IP_ADDRESSES", "Activate 'Confirm IP' workaround?\r\nIn case you often get E-Mails from offcloud to confirm your current IP address, this setting may help.\r\nThis will always delete all of your allowed IPs except your current IP from your offcloud account.\r\n<html><p style=\"color:#F62817\">WARNING: Do NOT use this function in case you\r\n-Use multiple internet connections (IPs) at the same time\r\n-Share your offcloud account with friends\r\n-Use one or more proxies (or VPNs)</p></html>");
-                                                      put("ACCOUNT_USERNAME", "Username:");
-                                                      put("ACCOUNT_LINKSLEFT", "Instant download inputs left:");
-                                                      put("ACCOUNT_TYPE", "Account type:");
-                                                      put("ACCOUNT_SIMULTANDLS", "Max. simultaneous downloads:");
-                                                      put("ACCOUNT_CHUNKS", "Max number of chunks per file:");
-                                                      put("ACCOUNT_RESUME", "Resume of stopped downloads:");
-                                                      put("ACCOUNT_YES", "Yes");
-                                                      put("ACCOUNT_NO", "No");
-                                                      put("DETAILS_TITEL", "Account information");
-                                                      put("LANG_GENERAL_UNLIMITED", "Unlimited");
-                                                      put("LANG_GENERAL_CLOSE", "Close");
-                                                  }
-                                              };
+        {
+            put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Delete downloaded links from the offcloud download history after successful download?");
+            put("SETTING_CLEAR_ALLOWED_IP_ADDRESSES", "Activate 'Confirm IP' workaround?\r\nIn case you often get E-Mails from offcloud to confirm your current IP address, this setting may help.\r\nThis will always delete all of your allowed IPs except your current IP from your offcloud account.\r\n<html><p style=\"color:#F62817\">WARNING: Do NOT use this function in case you\r\n-Use multiple internet connections (IPs) at the same time\r\n-Share your offcloud account with friends\r\n-Use one or more proxies (or VPNs)</p></html>");
+            put("ACCOUNT_USERNAME", "Username:");
+            put("ACCOUNT_LINKSLEFT", "Instant download inputs left:");
+            put("ACCOUNT_TYPE", "Account type:");
+            put("ACCOUNT_SIMULTANDLS", "Max. simultaneous downloads:");
+            put("ACCOUNT_CHUNKS", "Max number of chunks per file:");
+            put("ACCOUNT_RESUME", "Resume of stopped downloads:");
+            put("ACCOUNT_YES", "Yes");
+            put("ACCOUNT_NO", "No");
+            put("DETAILS_TITEL", "Account information");
+            put("LANG_GENERAL_UNLIMITED", "Unlimited");
+            put("LANG_GENERAL_CLOSE", "Close");
+        }
+    };
 
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-                                                  {
-                                                      put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Lösche heruntergeladene links nach jedem erfolgreichen Download aus der offcloud Download-Historie?");
-                                                      put("SETTING_CLEAR_ALLOWED_IP_ADDRESSES", "Aktiviere 'IP-bestätigen' Workaround?\r\nFalls du oft E-Mails von offcloud bekommst mit der Aufforderung, deine aktuelle IP-Adresse zu bestätigen, könnte diese Einstellung helfen.\r\nSie wird immer alle erlaubten IPs außer deine aktuelle in deinem offcloud Konto löschen.\r\n<html><p style=\"color:#F62817\">WARNUNG: Benutze diese Einstellungsmöglichkeit NICHT, falls du\r\n-Mehrere Internetverbindungen (IPs) gleichzeitig nutzt\r\n-Deinen offcloud Account mit Freunden teilst\r\n-Einen oder mehrere Proxys (oder VPNs) nutzt</p></html>");
-                                                      put("ACCOUNT_USERNAME", "Account Name:");
-                                                      put("ACCOUNT_LINKSLEFT", "Verbleibende Anzahl von Instant-Download Links:");
-                                                      put("ACCOUNT_TYPE", "Account Typ:");
-                                                      put("ACCOUNT_SIMULTANDLS", "Max. Anzahl gleichzeitiger Downloads:");
-                                                      put("ACCOUNT_CHUNKS", "Max. Anzahl Verbindungen pro Datei (Chunks):");
-                                                      put("ACCOUNT_RESUME", "Abgebrochene Downloads fortsetzbar:");
-                                                      put("ACCOUNT_YES", "Ja");
-                                                      put("ACCOUNT_NO", "Nein");
-                                                      put("DETAILS_TITEL", "Additional account information");
-                                                      put("LANG_GENERAL_UNLIMITED", "Unlimitiert");
-                                                      put("LANG_GENERAL_CLOSE", "Schließen");
-                                                  }
-                                              };
+        {
+            put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Lösche heruntergeladene links nach jedem erfolgreichen Download aus der offcloud Download-Historie?");
+            put("SETTING_CLEAR_ALLOWED_IP_ADDRESSES", "Aktiviere 'IP-bestätigen' Workaround?\r\nFalls du oft E-Mails von offcloud bekommst mit der Aufforderung, deine aktuelle IP-Adresse zu bestätigen, könnte diese Einstellung helfen.\r\nSie wird immer alle erlaubten IPs außer deine aktuelle in deinem offcloud Konto löschen.\r\n<html><p style=\"color:#F62817\">WARNUNG: Benutze diese Einstellungsmöglichkeit NICHT, falls du\r\n-Mehrere Internetverbindungen (IPs) gleichzeitig nutzt\r\n-Deinen offcloud Account mit Freunden teilst\r\n-Einen oder mehrere Proxys (oder VPNs) nutzt</p></html>");
+            put("ACCOUNT_USERNAME", "Account Name:");
+            put("ACCOUNT_LINKSLEFT", "Verbleibende Anzahl von Instant-Download Links:");
+            put("ACCOUNT_TYPE", "Account Typ:");
+            put("ACCOUNT_SIMULTANDLS", "Max. Anzahl gleichzeitiger Downloads:");
+            put("ACCOUNT_CHUNKS", "Max. Anzahl Verbindungen pro Datei (Chunks):");
+            put("ACCOUNT_RESUME", "Abgebrochene Downloads fortsetzbar:");
+            put("ACCOUNT_YES", "Ja");
+            put("ACCOUNT_NO", "Nein");
+            put("DETAILS_TITEL", "Additional account information");
+            put("LANG_GENERAL_UNLIMITED", "Unlimitiert");
+            put("LANG_GENERAL_CLOSE", "Schließen");
+        }
+    };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and

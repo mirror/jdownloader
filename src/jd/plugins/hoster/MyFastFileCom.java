@@ -254,6 +254,7 @@ public class MyFastFileCom extends PluginForHost {
             default:
                 /* Unknown error */
                 logger.warning("Unknown API error happened!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown API error happened!");
                 /* TODO: Implement all- or as many errors as possible, then activate the code below */
                 // statusMessage = "Unknown error";
                 // logger.info(NICE_HOST + ": Unknown API error");
@@ -301,9 +302,7 @@ public class MyFastFileCom extends PluginForHost {
         } else {
             this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
             logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
-            // tempUnavailableHoster(acc, dl, 1 * 60 * 60 * 1000l);
-            /* TODO: Remove plugin defect once all known errors are correctly handled */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, error);
+            tempUnavailableHoster(1 * 60 * 60 * 1000l);
         }
     }
 
