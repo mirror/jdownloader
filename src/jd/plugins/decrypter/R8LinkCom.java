@@ -78,7 +78,7 @@ public class R8LinkCom extends PluginForDecrypt {
                 }
             }
         }
-        final String finallink = br.getRegex("HTTP-EQUIV='Refresh' CONTENT='\\d+;URL=(http://[^<>\"]*?)'>").getMatch(0);
+        final String finallink = br.getRegex("HTTP-EQUIV='Refresh'[^>]*CONTENT='\\d+;URL=(http://[^<>\"]*?)'").getMatch(0);
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
