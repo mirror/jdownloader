@@ -573,6 +573,8 @@ public class OffCloudCom extends PluginForHost {
                 statuscode = 11;
             } else if (error.equals("The file is not available on the server.")) {
                 statuscode = 12;
+            } else if (error.equals("Unregistered IP address detected.")) {
+                statuscode = 13;
             } else if (error.equals("premium")) {
                 statuscode = 100;
             } else {
@@ -643,7 +645,7 @@ public class OffCloudCom extends PluginForHost {
                 statusMessage = "'User is not allowed this operation.' --> Host is temporarily disabled";
                 tempUnavailableHoster(15 * 60 * 1000l);
             case 9:
-                /* Free account limits reached -> permanently disable account */
+                /* User needs to confirm his current IP. */
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                     statusMessage = "\r\nBitte bestätige deine aktuelle IP Adresse über den Bestätigungslink per E-Mail um den Account wieder nutzen zu können.";
                 } else {
@@ -669,6 +671,17 @@ public class OffCloudCom extends PluginForHost {
                 /* File is offline --> Display correct status to user. */
                 statusMessage = "File is offline";
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            case 13:
+                /*
+                 * Happens when a user tries to download directlink of another user - should never happen inside JD but if, the user will
+                 * probably have to confirm his current IP.
+                 */
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    statusMessage = "\r\nBitte bestätige deine aktuelle IP Adresse über den Bestätigungslink per E-Mail um den Account wieder nutzen zu können.";
+                } else {
+                    statusMessage = "\r\nPlease confirm your current IP adress via the activation link you got per mail to continue using this account.";
+                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 100:
                 /* Free account limits reached -> permanently disable account */
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
