@@ -71,6 +71,16 @@ public class MixtureCloudCom extends PluginForHost {
         return "http://file.mixturecloud.com/terms";
     }
 
+    @Override
+    public String rewriteHost(String host) {
+        if ("mixture-cloud.com".equals(getHost())) {
+            if (host == null || "mixture-cloud.com".equals(host)) {
+                return "mixturecloud.com";
+            }
+        }
+        return super.rewriteHost(host);
+    }
+
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
         return false;

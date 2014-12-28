@@ -48,6 +48,9 @@ public class DebridLinkFr extends PluginForHost {
     private static final String                            apiHost            = "https://api.debrid-link.fr/1.1/";
     private static final String                            publicApiKey       = "kMREtSnp61OgLvG8";
     private long                                           ts                 = 0;
+    private static final String                            NOCHUNKS           = "NOCHUNKS";
+    private static final String                            NICE_HOST          = "debrid-link.fr";
+    private static final String                            NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
 
     /**
      * @author raztoki
@@ -127,6 +130,7 @@ public class DebridLinkFr extends PluginForHost {
             }
         }
         ac.setMultiHostSupport(this, supportedHosts);
+        ac.setProperty("plain_hostinfo", this.br.toString());
         // end of multihoster array
         return ac;
     }
@@ -346,7 +350,10 @@ public class DebridLinkFr extends PluginForHost {
                         // what todo here? revert to another plugin **
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     } else if ("notFreeHost".equals(error)) {
-                        /* Filehost is disabled for current FREE account --> Disable it "forever" */
+                        /*
+                         * Filehost is disabled for current FREE account --> Disable it "forever" --> Should usually not happen as already
+                         * handled below in canHandle.
+                         */
                         tempUnavailableHoster(account, downloadLink, 10 * 60 * 60 * 1000l);
                     }
                 }
@@ -491,13 +498,16 @@ public class DebridLinkFr extends PluginForHost {
         showMessage(downloadLink, "Phase 1/2: Generating link");
         getPage(account, downloadLink, "addLink", true, "link=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
 
-        int chunks = 0;
+        int maxChunks = 0;
         boolean resumes = true;
 
         final String chunk = getJson("chunk");
         final String resume = getJson("resume");
         if (chunk != null && !"0".equals(chunk)) {
-            chunks = -Integer.parseInt(chunk);
+            maxChunks = -Integer.parseInt(chunk);
+        }
+        if (downloadLink.getBooleanProperty(NICE_HOSTproperty + DebridLinkFr.NOCHUNKS, false)) {
+            maxChunks = 1;
         }
         if (resume != null) {
             resumes = Boolean.parseBoolean(resume);
@@ -510,7 +520,7 @@ public class DebridLinkFr extends PluginForHost {
         }
         showMessage(downloadLink, "Phase 2/2: Download begins!");
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             errHandling(account, downloadLink, true);
@@ -521,7 +531,29 @@ public class DebridLinkFr extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         }
-        dl.startDownload();
+        try {
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (downloadLink.getBooleanProperty(NICE_HOSTproperty + DebridLinkFr.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(NICE_HOSTproperty + DebridLinkFr.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        } catch (final PluginException e) {
+            // New V2 chunk errorhandling
+            /* unknown error, we disable multiple chunks */
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(NICE_HOSTproperty + DebridLinkFr.NOCHUNKS, false) == false) {
+                downloadLink.setProperty(NICE_HOSTproperty + DebridLinkFr.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            throw e;
+        }
     }
 
     @Override
@@ -546,15 +578,31 @@ public class DebridLinkFr extends PluginForHost {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) {
+        final String currenthost = downloadLink.getHost();
+        if (account.getType() == AccountType.FREE) {
+            final String plain_hostinfo = account.getAccountInfo().getStringProperty("plain_hostinfo", null);
+            final String jsonarrayplaintext = new Regex(plain_hostinfo, "\"hosters\":\\[(.*?)\\],\"ts\"").getMatch(0);
+            final String[] hostinfo = jsonarrayplaintext.split("\\},\\{");
+            if (hostinfo != null) {
+                for (final String singlehostinfo : hostinfo) {
+                    final String free_host = this.getJson(singlehostinfo, "free_host");
+                    if (singlehostinfo.contains(currenthost) && !"true".equals(free_host)) {
+                        return false;
+                    }
+
+                }
+            }
+        }
+
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
+                Long lastUnavailable = unavailableMap.get(currenthost);
                 if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
                     return false;
                 } else if (lastUnavailable != null) {
-                    unavailableMap.remove(downloadLink.getHost());
+                    unavailableMap.remove(currenthost);
                     if (unavailableMap.size() == 0) {
                         hostUnavailableMap.remove(account);
                     }

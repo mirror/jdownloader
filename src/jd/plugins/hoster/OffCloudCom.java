@@ -81,6 +81,8 @@ public class OffCloudCom extends PluginForHost {
         super(wrapper);
         this.enablePremium("https://offcloud.com/");
         this.setConfigElements();
+        /* This is just a test. */
+        this.setStartIntervall(10 * 1000l);
     }
 
     @Override
@@ -178,7 +180,7 @@ public class OffCloudCom extends PluginForHost {
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
         int maxChunks = ACCOUNT_PREMIUM_MAXCHUNKS;
-        if (link.getBooleanProperty(NOCHUNKS, false)) {
+        if (link.getBooleanProperty(NICE_HOSTproperty + NOCHUNKS, false)) {
             maxChunks = 1;
         }
         boolean resume = ACCOUNT_PREMIUM_RESUME;
@@ -193,6 +195,11 @@ public class OffCloudCom extends PluginForHost {
                 logger.info("Resume impossible, disabling it for the next try");
                 link.setChunksProgress(null);
                 link.setProperty(OffCloudCom.NORESUME, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if (dl.getConnection().getResponseCode() == 503 && link.getBooleanProperty(NICE_HOSTproperty + OffCloudCom.NOCHUNKS, false) == false) {
+                // New V2 chunk errorhandling
+                /* unknown error, we disable multiple chunks */
+                link.setProperty(NICE_HOSTproperty + OffCloudCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             final String contenttype = dl.getConnection().getContentType();
@@ -211,8 +218,8 @@ public class OffCloudCom extends PluginForHost {
                     } catch (final Throwable e) {
                     }
                     /* unknown error, we disable multiple chunks */
-                    if (link.getBooleanProperty(OffCloudCom.NOCHUNKS, false) == false) {
-                        link.setProperty(OffCloudCom.NOCHUNKS, Boolean.valueOf(true));
+                    if (link.getBooleanProperty(NICE_HOSTproperty + OffCloudCom.NOCHUNKS, false) == false) {
+                        link.setProperty(NICE_HOSTproperty + OffCloudCom.NOCHUNKS, Boolean.valueOf(true));
                         throw new PluginException(LinkStatus.ERROR_RETRY);
                     }
                 } else if (this.getPluginConfig().getBooleanProperty(CLEAR_DOWNLOAD_HISTORY, default_clear_download_history)) {
@@ -238,13 +245,22 @@ public class OffCloudCom extends PluginForHost {
             } catch (final PluginException e) {
                 // New V2 chunk errorhandling
                 /* unknown error, we disable multiple chunks */
-                if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(OffCloudCom.NOCHUNKS, false) == false) {
+                if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(NICE_HOSTproperty + OffCloudCom.NOCHUNKS, false) == false) {
                     link.setProperty(OffCloudCom.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
                 throw e;
             }
         } catch (final Throwable e) {
+            if (e instanceof IllegalStateException) {
+                link.setChunksProgress(null);
+            }
+            if (e instanceof IllegalStateException && link.getBooleanProperty(NICE_HOSTproperty + OffCloudCom.NOCHUNKS, false) == false) {
+                // New V2 chunk errorhandling
+                /* unknown error, we disable multiple chunks */
+                link.setProperty(NICE_HOSTproperty + OffCloudCom.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
         }
     }
