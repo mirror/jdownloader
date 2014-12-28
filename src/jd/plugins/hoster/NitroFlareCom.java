@@ -363,8 +363,35 @@ public class NitroFlareCom extends antiDDoSForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         synchronized (LOCK) {
             AccountInfo ai = new AccountInfo();
-            getPage(apiURL + "/getKeyInfo?" + validateAccount(account));
+            final String req = apiURL + "/getKeyInfo?" + validateAccount(account);
+            getPage(req);
             handleApiErrors(account, null);
+            // recaptcha can happen here on brute force attack
+            String recap = getJson("recaptchaPublic");
+            if (!inValidate(recap)) {
+                logger.info("Detected captcha method \"Re Captcha\"");
+                final Browser captcha = br.cloneBrowser();
+                final DownloadLink dummyLink = new DownloadLink(null, "Account Login Requires Recaptcha", this.getHost(), br.getURL(), true);
+                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(captcha);
+                // after 5 wrong guesses they ban ip/account
+                int repeat = 3;
+                for (int i = 0; i != repeat; i++) {
+                    rc.setId(recap);
+                    rc.load();
+                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    final String c = getCaptchaCode("recaptcha", cf, dummyLink);
+                    getPage(req + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
+                    handleApiErrors(account, null);
+                    if ("error".equalsIgnoreCase(getJson("type")) && "6".equalsIgnoreCase(getJson("code")) && i + 1 != repeat) {
+                        continue;
+                    } else if ("error".equalsIgnoreCase(getJson("type")) && "6".equalsIgnoreCase(getJson("code")) && i + 1 == repeat) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    } else {
+                        break;
+                    }
+                }
+            }
             final String expire = getJson("expiryDate");
             final String status = getJson("status");
             final String storage = getJson("storageUsed");
