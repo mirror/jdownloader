@@ -29,6 +29,7 @@ DuplicateAction_DuplicateAction_=Duplikovať pravidlo
 ExportAction_ExportAction_tt=Uložit pravidlé do súboru.\n- Zálohujte\n- Zdieľajte s ostatnými
 Extraction_onShutdownRequest_=Rozbaľovanie stále prebieha!
 Extraction_onShutdownRequest_msg=Prerušiť rozbaľovanie?
+GenericDeleteFromLinkgrabberAction_getTranslationForClearSearchFilter=Vymazať pole vyhľadávania
 ImportAction_tt=Importovať pravidla z *.jdfilter (*.jdregexfilter) súborov
 LinkCollector_addCrawledLink_offlinepackage=Offline súbory
 LinkCollector_addCrawledLink_variouspackage=Rôzne súbory
