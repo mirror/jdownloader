@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.gui.UserIO;
 import jd.http.Browser;
@@ -45,21 +47,24 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidu.net" }, urls = { "https?://rapidu\\.(net|pl)/(\\d+)(/)?" }, flags = { 2 })
 public class RapiduNet extends PluginForHost {
 
-    private String userAgent        = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.149 Safari/537.36 OPR/20.0.1387.77";
+    private String       userAgent        = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.149 Safari/537.36 OPR/20.0.1387.77";
 
     // requested by admin of the hoster due to high traffic
-    private int    MAXCHUNKSFORFREE = 1;
-    private int    MAXCHUNKSFORPREMIUM;
+    private int          MAXCHUNKSFORFREE = 1;
+    private int          MAXCHUNKSFORPREMIUM;
+    private final String PREFER_RECONNECT = "PREFER_RECONNECT";
 
     public RapiduNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://rapidu.net/premium/");
+        this.setConfigElements();
     }
 
     @Override
@@ -349,9 +354,14 @@ public class RapiduNet extends PluginForHost {
                         Date actualDate = new Date();
                         long leftToWait = newStartDate.getTime() - actualDate.getTime();
                         if (leftToWait > 0) {
+                            final boolean preferReconnect = this.getPluginConfig().getBooleanProperty("PREFER_RECONNECT", false);
                             // doesn't work correctly
                             // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, leftToWait); }
                             // temporary solution
+                            if (preferReconnect) {
+                                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, leftToWait * 60 * 1001l);
+                            }
+
                             sleep(leftToWait, downloadLink);
                             retry = true;
                         }
@@ -398,6 +408,12 @@ public class RapiduNet extends PluginForHost {
 
         dl.startDownload();
 
+    }
+
+    private boolean default_prefer_reconnect = false;
+
+    private void setConfigElements() {
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), PREFER_RECONNECT, JDL.L("plugins.hoster.rapidunet.preferreconnect", getPhrase("PREFER_RECONNECT"))).setDefaultValue(default_prefer_reconnect));
     }
 
     private String        MAINPAGE = "http://rapidu.net";
@@ -603,5 +619,34 @@ public class RapiduNet extends PluginForHost {
             return true;
         }
         return false;
+    }
+
+    private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
+                                                  {
+                                                      put("PREFER_RECONNECT", "Prefer Reconnect if the wait time is detected");
+                                                  }
+                                              };
+
+    private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
+                                                  {
+                                                      put("PREFER_RECONNECT", "Wybierz Ponowne Połaczenie, jeśli wykryto czas oczekiwania na kolejne pobieranie");
+
+                                                  }
+                                              };
+
+    /**
+     * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
+     * English.
+     * 
+     * @param key
+     * @return
+     */
+    private String getPhrase(String key) {
+        if ("pl".equals(System.getProperty("user.language")) && phrasesPL.containsKey(key)) {
+            return phrasesPL.get(key);
+        } else if (phrasesEN.containsKey(key)) {
+            return phrasesEN.get(key);
+        }
+        return "Translation not found!";
     }
 }
