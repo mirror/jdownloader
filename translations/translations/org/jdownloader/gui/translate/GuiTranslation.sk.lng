@@ -1088,6 +1088,7 @@ lit_continue=Pokračovať
 lit_delete=Odstrániť
 lit_directory=Priečinok
 lit_disabled=zakázané
+lit_edit=upraviť
 lit_enabled=Povolené
 lit_error_occured=Došlo k chybe...
 lit_export=exportovať
