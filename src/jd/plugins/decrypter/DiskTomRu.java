@@ -30,7 +30,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "disk.tom.ru" }, urls = { "^http://([\\w]+\\.)?disk\\.tom\\.ru/[a-z0-9]{7}$" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "disk.tom.ru" }, urls = { "http://(?:[\\w]+\\.)?disk\\.tom\\.ru/([a-z0-9]{7})" }, flags = { 0 })
 public class DiskTomRu extends PluginForDecrypt {
 
     /**
@@ -43,7 +43,7 @@ public class DiskTomRu extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        String uid = new Regex(parameter, "([a-z0-9]{7})$").getMatch(0);
+        String uid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
 
         br.getPage(parameter);
         if (br.containsHTML("<div id=\"error\">пакет не найден<")) {
@@ -51,30 +51,45 @@ public class DiskTomRu extends PluginForDecrypt {
             return decryptedLinks;
         }
         String title = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        if (title == null) title = "";
+        if (title == null) {
+            title = "";
+        }
 
         /* Password protected package */
         if (br.containsHTML(">пакет защищен паролем<")) {
             for (int i = 0; i <= 3; i++) {
                 final String passCode = Plugin.getUserInput("Enter password for: " + title, param);
                 br.postPage(parameter, "put_pwd=" + Encoding.urlEncode(passCode));
-                if (br.containsHTML(">пакет защищен паролем<")) continue;
+                if (br.containsHTML(">пакет защищен паролем<")) {
+                    continue;
+                }
                 break;
             }
-            if (br.containsHTML(">пакет защищен паролем<")) throw new DecrypterException(DecrypterException.PASSWORD);
-            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+            if (br.containsHTML(">пакет защищен паролем<")) {
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
+            if (br.getRedirectLocation() != null) {
+                br.getPage(br.getRedirectLocation());
+            }
         }
 
         String domain = new Regex(br.getURL(), "(https?://[^/]+)").getMatch(0);
 
-        String[] links = br.getRegex("href=\"(/download/" + uid + "/[^\"]+)").getColumn(0);
+        String[][] links = br.getRegex("(<a[^>]*href=\"(/download/" + uid + "/[^\"]+))").getMatches();
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        ArrayList<String[]> customHeaders = new ArrayList<String[]>();
+        customHeaders.add(new String[] { "Referer", br.getURL() });
 
-        for (String link : links) {
-            decryptedLinks.add(createDownloadlink("directhttp://" + domain + link));
+        for (String[] link : links) {
+            if (link == null || link[0].contains("class=\"thumb\"")) {
+                continue;
+            }
+            final DownloadLink dl = createDownloadlink("directhttp://" + domain + link[1]);
+            dl.setProperty("customHeader", customHeaders);
+            decryptedLinks.add(dl);
         }
 
         if (title != null || !title.equals("")) {
