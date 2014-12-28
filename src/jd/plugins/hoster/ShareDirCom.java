@@ -47,17 +47,20 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class ShareDirCom extends PluginForHost {
 
     // Based on API: http://easyfiles.pl/api_dokumentacja.php?api_en=1
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap               = new HashMap<Account, HashMap<String, Long>>();
-    private static final String                            NOCHUNKS                         = "NOCHUNKS";
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap                   = new HashMap<Account, HashMap<String, Long>>();
+    private static final String                            NOCHUNKS                             = "NOCHUNKS";
 
-    private static final String                            NICE_HOST                        = "sharedir.com";
-    private static final String                            API_HTTP                         = "http://";
-    private static final String                            NICE_HOSTproperty                = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private static final String                            NICE_HOST                            = "sharedir.com";
+    private static final String                            API_HTTP                             = "http://";
+    private static final String                            NICE_HOSTproperty                    = NICE_HOST.replaceAll("(\\.|\\-)", "");
 
-    /* 500 MB, checked/set 03.09.14 */
-    private static final long                              default_free_account_traffic_max = 524288000L;
+    /** TODO: Get these 2 constants via API. */
+    /* 500 MB, checked/set 28.12.14 */
+    private static final long                              default_free_account_traffic_max     = 524288000L;
+    /* Max. downloadable filesize for freeusers in MB, checked/set 28.12.14 */
+    private static final long                              default_free_account_filesize_max_mb = 150;
 
-    private int                                            STATUSCODE                       = 0;
+    private int                                            STATUSCODE                           = 0;
 
     public ShareDirCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -394,16 +397,10 @@ public class ShareDirCom extends PluginForHost {
                 statusMessage = "Error 500";
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 666:
-                /* File too big for free accounts -> show errormessage / try without account (or use other available account(s)) */
+                /* File too big for free accounts -> Use next download candidate */
                 statusMessage = "Error: This file is only downloadable via premium account (filesize > 150 MB)";
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) {
-                        throw (PluginException) e;
-                    }
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only downloadable via premium account (filesize > 150 MB)");
+                downloadLink.setProperty("sharedircom_" + account.getUser() + "_downloadallowed", false);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "This file is only downloadable via premium account (filesize > " + default_free_account_filesize_max_mb + " MB)");
             case 667:
                 /* No traffic available to download current file -> disable current host */
                 tempUnavailableHoster(account, downloadLink, 60 * 60 * 1000l);
@@ -443,11 +440,19 @@ public class ShareDirCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) {
         /* Make sure that our account type allows downloading a link with this filesize. */
-        final long verifiedFileSize = downloadLink.getVerifiedFileSize();
-        if (verifiedFileSize >= 150 * 1000 * 1000l && !Account.AccountType.PREMIUM.equals(account.getType())) {
+        long fsize = downloadLink.getVerifiedFileSize();
+        if (fsize == -1) {
+            fsize = downloadLink.getDownloadSize();
+        }
+        if (fsize >= default_free_account_filesize_max_mb * 1000l * 1000l && !Account.AccountType.PREMIUM.equals(account.getType())) {
+            return false;
+        }
+        /* Failover for too big files - used in case a download attempt is made. */
+        if (!downloadLink.getBooleanProperty("sharedircom_" + account.getUser() + "_downloadallowed", true) && account.getType() == AccountType.FREE) {
             return false;
         }
         synchronized (hostUnavailableMap) {
