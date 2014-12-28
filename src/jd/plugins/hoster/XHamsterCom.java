@@ -144,26 +144,28 @@ public class XHamsterCom extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText("This video is password protected");
             return AvailableStatus.TRUE;
         }
-        final String filename = getFilename();
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        downloadLink.setFinalFileName(filename);
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (downloadLink.getFinalFileName() == null) {
+            final String filename = getFilename();
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            return AvailableStatus.TRUE;
-        } finally {
+            downloadLink.setFinalFileName(filename);
+        }
+        if (downloadLink.getDownloadSize() <= 0) {
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (Throwable e) {
+                con = br.openHeadConnection(DLLINK);
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     private String getFilename() throws PluginException, IOException {
