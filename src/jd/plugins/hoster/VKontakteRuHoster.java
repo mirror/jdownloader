@@ -28,6 +28,7 @@ import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -237,7 +238,7 @@ public class VKontakteRuHoster extends PluginForHost {
     /**
      * Checks a given directlink for content. Sets finalfilename as final filename if finalfilename != null - else sets server filename as
      * final filename.
-     * 
+     *
      * @return <b>true</b>: Link is valid and can be downloaded <b>false</b>: Link leads to HTML, times out or other problems occured - link
      *         is not downloadable!
      */
@@ -250,6 +251,9 @@ public class VKontakteRuHoster extends PluginForHost {
             br2.getHeaders().put("Accept-Encoding", "identity");
             try {
                 con = br2.openGetConnection(this.finalUrl);
+            } catch (final BrowserException ebr) {
+                /* This happens e.g. for temporarily unavailable videos. */
+                throw ebr;
             } catch (final Throwable e) {
                 return false;
             }
@@ -517,7 +521,7 @@ public class VKontakteRuHoster extends PluginForHost {
     /**
      * Try to get best quality and test links till a working link is found as it can happen that the found link is offline but others are
      * online
-     * 
+     *
      * @throws IOException
      */
     private void getHighestQualityPic(final DownloadLink dl, String source) throws Exception {
