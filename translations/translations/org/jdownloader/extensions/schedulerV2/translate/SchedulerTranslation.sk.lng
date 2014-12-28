@@ -1,4 +1,5 @@
 action_disableSpeedLimit=Vypnúť rýchlostný limit
+action_enableAccount=Povoliť účet
 addScheduleEntryDialog_account=Účet
 addScheduleEntryDialog_date=Dátum
 addScheduleEntryDialog_days=Dni
@@ -10,6 +11,7 @@ addScheduleEntryDialog_speed=Rýchlosť
 addScheduleEntryDialog_time=Čas
 addScheduleEntryDialog_title_edit=Upraviť plán
 scheduleTable_column_action=Akcia
+scheduleTable_column_enable=Povoliť
 scheduleTable_column_name=Názov
 scheduleTable_column_repeats=Opakovanie
 time_option_daily=Každý deň
