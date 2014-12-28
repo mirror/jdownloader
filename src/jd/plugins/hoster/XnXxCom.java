@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xnxx.com" }, urls = { "http://[\\w\\.]*?(video\\.)?xnxx\\.com/video[0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xnxx.com" }, urls = { "http://[\\w\\.]*?(video\\.)?xnxx\\.com/video[0-9]+/" }, flags = { 0 })
 public class XnXxCom extends PluginForHost {
 
     public XnXxCom(PluginWrapper wrapper) {
@@ -48,7 +48,9 @@ public class XnXxCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex("flv_url=(http.*?)\\&amp;").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = Encoding.htmlDecode(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
@@ -62,7 +64,9 @@ public class XnXxCom extends PluginForHost {
         // all!
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(Page not found|This page may be in preparation, please check back in a few minutes)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(Page not found|This page may be in preparation, please check back in a few minutes)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>(.+) - XNXX\\.COM</title>").getMatch(0);
         if (filename == null) {
             br.getRegex("<span class=\"style5\"><strong>(.*?)</strong>").getMatch(0);
@@ -70,7 +74,9 @@ public class XnXxCom extends PluginForHost {
                 br.getRegex("name=description content=\"(.*?)free sex video").getMatch(0);
             }
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (!br.containsHTML(".mp4")) {
             downloadLink.setFinalFileName(filename.trim() + ".flv");
         } else {
