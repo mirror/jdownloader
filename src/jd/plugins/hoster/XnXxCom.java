@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xnxx.com" }, urls = { "http://[\\w\\.]*?(video\\.)?xnxx\\.com/video[0-9]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xnxx.com" }, urls = { "http://[\\w\\.]*?(video\\.)?xnxx\\.com/video[0-9]+" }, flags = { 0 })
 public class XnXxCom extends PluginForHost {
 
     public XnXxCom(PluginWrapper wrapper) {
@@ -59,11 +59,10 @@ public class XnXxCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        // The regex only takes the short urls but these ones redirect to the
-        // real ones to if follow redirects is false the plugin doesn't work at
-        // all!
+        // The regex only takes the short urls but these ones redirect to the real ones to if follow redirects is false the plugin doesn't
+        // work at all!
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(downloadLink.getDownloadURL() + "/");
         if (br.containsHTML("(Page not found|This page may be in preparation, please check back in a few minutes)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
