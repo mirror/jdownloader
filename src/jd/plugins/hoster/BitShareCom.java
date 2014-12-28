@@ -62,7 +62,7 @@ public class BitShareCom extends PluginForHost {
     private String               agent                    = null;
 
     /* In case we know that the host does not work at the moment or for a longer period of time. */
-    private static final boolean static_unter_maintenance = true;
+    private static final boolean static_under_maintenance = true;
 
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload("http://bitshare.com/?f=" + new Regex(link.getDownloadURL(), "([a-z0-9]{8})$").getMatch(0));
@@ -172,7 +172,7 @@ public class BitShareCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink) throws Exception {
-        if (static_unter_maintenance) {
+        if (static_under_maintenance) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is under maintenance", 3 * 60 * 60 * 1000l);
         }
         if (br.containsHTML("Only Premium members can access this file\\.<")) {
@@ -371,7 +371,7 @@ public class BitShareCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        if (static_unter_maintenance) {
+        if (static_under_maintenance) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is under maintenance", 3 * 60 * 60 * 1000l);
         }
         login(account, false);

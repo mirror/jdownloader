@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -92,14 +93,27 @@ public class WeTransferCom extends PluginForHost {
         }
         String filesize = br.getRegex("<br>([^<>\"]*?)</div>[\t\n\r ]+<a href=\"#\" data\\-hash=").getMatch(0);
         final String mainpage = new Regex(dlink, "(https?://(www\\.)?([a-z0-9\\-\\.]+\\.)?wetransfer\\.com/)").getMatch(0);
-        br.getPage(mainpage + "/api/v1/transfers/" + CODE + "/download?recipient_id=" + recepientID + "&security_hash=" + HASH + "&password=&ie=false");
+        br.getPage(mainpage + "/api/v1/transfers/" + CODE + "/download?recipient_id=" + recepientID + "&security_hash=" + HASH + "&password=&ie=false&ts=" + System.currentTimeMillis());
+        br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
         if (br.containsHTML("\"error\":\"invalid_transfer\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        DLLINK = br.getRegex("\"direct_link\":\"(http[^<>\"]*?)\"").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\"action\":\"(http[^<>\"]*?)\"").getMatch(0);
+        final String callback = br.getRegex("\"callback\":\"(\\{.*?)\"\\}\\}$").getMatch(0);
+        String action = getJson("action");
+        if (action == null || callback == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        action += "?";
+        final String[] values = { "unique", "profile", "filename", "expiration", "escaped", "signature" };
+        for (final String value : values) {
+            final String result = getJson(value);
+            if (result == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            action += value + "=" + Encoding.urlEncode(result) + "&";
+        }
+        action += "callback=" + Encoding.urlEncode(callback);
+        DLLINK = action;
         if (DLLINK != null) {
             String filename = new Regex(Encoding.htmlDecode(DLLINK), "filename=\"([^<>\"]*?)\"").getMatch(0);
             if (filename == null) {
@@ -195,6 +209,68 @@ public class WeTransferCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
         dl.startDownload();
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from provided Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final Browser ibr, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value given JSon Array of Key from JSon response provided String source.
+     *
+     * @author raztoki
+     * */
+    private String getJsonArray(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJsonArray(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return String[] value from provided JSon Array
+     *
+     * @author raztoki
+     * @param source
+     * @return
+     */
+    private String[] getJsonResultsFromArray(final String source) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
     @Override
