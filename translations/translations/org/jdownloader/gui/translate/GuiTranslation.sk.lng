@@ -655,6 +655,7 @@ SpeedlimitEditor_SpeedlimitEditor_=Rýchlostný limit
 SpeedlimitEditor_format=%s1/s
 SpeedlimitToggleAction_SpeedlimitToggleAction=Viditeľný rýchlomer
 SplitPackagesByHost_SplitPackagesByHost_object_=Rozdeliť balíčky podľa hostiteľa
+StatsManager_createAndUploadLog_thanks_=Ďakujeme za prispenie. Váš kód chyby je %s1
 StatsManager_run_upload_error_message=Čakajte prosím.\nJDownloader zbiera informácie o probléme so sťahovaním.
 StatusBarImpl_add_premium=Pridať prémiový účet ...
 StatusBarImpl_initGUI_abort_linkgrabber=Prerušiť zachytávač odkazov
