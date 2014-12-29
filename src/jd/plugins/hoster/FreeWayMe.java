@@ -80,31 +80,32 @@ import org.jdownloader.images.NewTheme;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "free-way.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class FreeWayMe extends PluginForHost {
 
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap                  = new HashMap<Account, HashMap<String, Long>>();
-    private Account                                        currAcc                             = null;
-    private DownloadLink                                   currDownloadLink                    = null;
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap                    = new HashMap<Account, HashMap<String, Long>>();
+    private Account                                        currAcc                               = null;
+    private DownloadLink                                   currDownloadLink                      = null;
 
-    private final String                                   ALLOWRESUME                         = "ALLOWRESUME";
-    private final String                                   BETAUSER                            = "FREEWAYBETAUSER";
+    private final String                                   ALLOWRESUME                           = "ALLOWRESUME";
+    private final String                                   BETAUSER                              = "FREEWAYBETAUSER";
 
-    private final String                                   NOTIFY_ON_FULLSPEED_LIMIT_BUBBLE    = "NOTIFY_ON_FULLSPEED_LIMIT_BUBBLE";
-    private final String                                   NOTIFY_ON_FULLSPEED_LIMIT_DIALOG    = "NOTIFY_ON_FULLSPEED_LIMIT_DIALOG";
+    private final String                                   NOTIFY_ON_FULLSPEED_LIMIT_BUBBLE      = "NOTIFY_ON_FULLSPEED_LIMIT_BUBBLE";
+    private final String                                   NOTIFY_ON_FULLSPEED_LIMIT_DIALOG      = "NOTIFY_ON_FULLSPEED_LIMIT_DIALOG";
 
-    private final String                                   SETTING_2FA_ALIAS                   = "SETTING_2FA_ALIAS";
-    private final String                                   SETTING_SHOW_TRAFFICLEFT            = "SETTING_SHOW_TRAFFICLEFT";
+    private final String                                   SETTING_2FA_ALIAS                     = "SETTING_2FA_ALIAS";
+    private final String                                   SETTING_SHOW_TRAFFICLEFT              = "SETTING_SHOW_TRAFFICLEFT";
 
-    private static final String                            NORESUME                            = "NORESUME";
-    private static final String                            PREVENTSPRITUSAGE                   = "PREVENTSPRITUSAGE";
-    private static final String                            MAX_RETRIES_UNKNOWN_ERROR           = "MAX_RETRIES_UNKNOWN_ERROR";
-    private static final long                              max_retries_unknown_error_default   = 10;
-    private static final long                              traffic_max_static                  = 5 * 1024 * 1024 * 1024l;
+    private static final String                            NORESUME                              = "NORESUME";
+    private static final String                            PREVENTSPRITUSAGE                     = "PREVENTSPRITUSAGE";
+    private static final String                            MAX_RETRIES_UNKNOWN_ERROR             = "MAX_RETRIES_UNKNOWN_ERROR";
+    private static final long                              max_retries_unknown_error_default     = 10;
+    private static final long                              traffic_max_free_sub_static           = 5 * 1024 * 1024 * 1024l;
+    private static final short                             traffic_left_flatrate_show_minimal_gb = 10;
 
-    public final String                                    ACC_PROPERTY_CONNECTIONS            = "parallel";
-    public final String                                    ACC_PROPERTY_TRAFFIC_REDUCTION      = "ACC_TRAFFIC_REDUCTION";
-    public final String                                    ACC_PROPERTY_DROSSEL_ACTIVE         = "ACC_PROPERTY_DROSSEL_ACTIVE";
-    public final String                                    ACC_PROPERTY_REST_FULLSPEED_TRAFFIC = "ACC_PROPERTY_REST_FULLSPEED_TRAFFIC";
-    public final String                                    ACC_PROPERTY_UNKOWN_FAILS           = "timesfailedfreewayme_unknown";
-    public final String                                    ACC_PROPERTY_CURL_FAIL_RESOLVE_HOST = "timesfailedfreewayme_curl_resolve_host";
+    public final String                                    ACC_PROPERTY_CONNECTIONS              = "parallel";
+    public final String                                    ACC_PROPERTY_TRAFFIC_REDUCTION        = "ACC_TRAFFIC_REDUCTION";
+    public final String                                    ACC_PROPERTY_DROSSEL_ACTIVE           = "ACC_PROPERTY_DROSSEL_ACTIVE";
+    public final String                                    ACC_PROPERTY_REST_FULLSPEED_TRAFFIC   = "ACC_PROPERTY_REST_FULLSPEED_TRAFFIC";
+    public final String                                    ACC_PROPERTY_UNKOWN_FAILS             = "timesfailedfreewayme_unknown";
+    public final String                                    ACC_PROPERTY_CURL_FAIL_RESOLVE_HOST   = "timesfailedfreewayme_curl_resolve_host";
 
     /**
      * @author flubshi
@@ -202,7 +203,7 @@ public class FreeWayMe extends PluginForHost {
             put("DETAILS_FULLSPEED_TRAFFIC", "Fullspeedvolumen verbraucht:");
             put("DETAILS_FULLSPEED_REST_TRAFFIC", "Restliches Fullspeedvolumen:");
             put("DETAILS_FULLSPEED_UNKOWN", "unbekannt");
-            put("DETAILS_FULLSPEED_REDUCED", "gedrosselt");
+            put("DETAILS_FULLSPEED_REDUCED", "gedrosselt!");
             put("DETAILS_NOTIFICATIONS", "Benachrichtigungen:");
             put("DETAILS_CATEGORY_HOSTS", "Unterstützte Hoster");
             put("DETAILS_HOSTS_AMOUNT", "Anzahl: ");
@@ -383,6 +384,8 @@ public class FreeWayMe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("ERROR_BAN"), PluginException.VALUE_ID_PREMIUM_DISABLE);
 
         } else {
+            /* First check for known errors, then throw unknown. */
+            handleErrorsGeneral(br.toString());
             logger.severe("{fetchAccInfo} Unknown ERROR!");
             logger.severe("{fetchAccInfo} Add to error parser: " + br.toString());
             // unknown error
@@ -481,7 +484,7 @@ public class FreeWayMe extends PluginForHost {
                 ac.setValidUntil(validUntil * 1000);
             }
             /* Obey users' setting */
-            if (this.getPluginConfig().getBooleanProperty(this.SETTING_SHOW_TRAFFICLEFT, false) && remaining_gb > 10) {
+            if (this.getPluginConfig().getBooleanProperty(this.SETTING_SHOW_TRAFFICLEFT, false) && remaining_gb > traffic_left_flatrate_show_minimal_gb) {
                 logger.info("User has traffic_left in GUI ACTIVE");
                 /* TODO: Use (upcoming) API response for this to make it dynamic */
                 ac.setTrafficMax(Long.parseLong(getJson(accInfoAPIResp, "drossel-max")) * 1024 * 1024 * 1024);
@@ -496,18 +499,32 @@ public class FreeWayMe extends PluginForHost {
             account.setType(AccountType.FREE);
             accountType = "FreeSUB";
             accountType_text = getPhrase("ACCOUNTTYPE_FREE_SUB");
-            /* Free accounts have a normal trafficlimit - once the traffic is gone, there is no way to continue downloading via free account */
-            ac.setTrafficLeft(traffic_left_free);
+            /*
+             * Free accounts have a normal trafficlimit - once the traffic is gone, there is no way to continue downloading via free account
+             * - do not set negative traffic as -1 = unlimited.
+             */
+            if (traffic_left_free < 0) {
+                ac.setTrafficLeft(0);
+            } else {
+                ac.setTrafficLeft(traffic_left_free);
+            }
             /* TODO: Ask for a better API-way to get the traffic-max for free accounts */
-            if (traffic_left_free <= traffic_max_static) {
-                ac.setTrafficMax(traffic_max_static);
+            if (traffic_left_free <= traffic_max_free_sub_static) {
+                ac.setTrafficMax(traffic_max_free_sub_static);
             }
         } else {
             logger.info("{fetchAccInfo} Free Account");
             account.setType(AccountType.FREE);
             accountType_text = getPhrase("ACCOUNTTYPE_FREE");
-            /* Free accounts have a normal trafficlimit - once the traffic is gone, there is no way to continue downloading via free account */
-            ac.setTrafficLeft(traffic_left_free);
+            /*
+             * Free accounts have a normal trafficlimit - once the traffic is gone, there is no way to continue downloading via free account
+             * - do not set negative traffic as -1 = unlimited.
+             */
+            if (traffic_left_free < 0) {
+                ac.setTrafficLeft(0);
+            } else {
+                ac.setTrafficLeft(traffic_left_free);
+            }
         }
         account.setProperty("notifications", (new Regex(accInfoAPIResp, "\"notis\":(\\d+)")).getMatch(0));
         account.setProperty("acctype", accountType);
@@ -735,15 +752,26 @@ public class FreeWayMe extends PluginForHost {
             this.currDownloadLink.setProperty("CONNECTIONS_RETRY_COUNT", attempts + 1);
             String msg = "(" + (attempts + 1) + "/ 3  )";
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("ERROR_NO_STABLE_ACCOUNTS") + msg);
-        } else if (error.equals("Volumen des Unteraccounts aufgebraucht")) {
-            this.currAcc.setError(AccountError.EXPIRED, getPhrase("ERROR_TRAFFIC_LIMIT_UNTER_ACCOUNT"));
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else if (br.containsHTML("cURL-Error: Couldn't resolve host")) {
             errorMagic(getPhrase("ERROR_SERVER"), 10);
         } else if (br.containsHTML("Advanced authentification needed")) {
             // 2FA auth required => do it during acc check
             this.currAcc.setUpdateTime(-1); // force update acc next try
             throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
+        handleErrorsGeneral(error);
+    }
+
+    /**
+     * TODO: Maybe move all or as many as possible errormessages in here to have a general errorhandling. Maybe with API V2.
+     *
+     * @throws PluginException
+     */
+    private void handleErrorsGeneral(final String error) throws PluginException {
+        if (error.equals("Volumen des Unteraccounts aufgebraucht")) {
+            this.currAcc.setError(AccountError.EXPIRED, getPhrase("ERROR_TRAFFIC_LIMIT_UNTER_ACCOUNT"));
+            this.currAcc.getAccountInfo().setTrafficLeft(0);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("ERROR_TRAFFIC_LIMIT_UNTER_ACCOUNT"), PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
@@ -808,12 +836,12 @@ public class FreeWayMe extends PluginForHost {
                  * for Free accounts.
                  */
                 /* Find correct text for used fullspeed traffic percentage. */
-                if (accType.equals("FreeSUB") && restFullspeedTrafficLong > 0 && restFullspeedTrafficLong - traffic_max_static > traffic_max_static) {
+                if (accType.equals("FreeSUB") && restFullspeedTrafficLong > 0 && restFullspeedTrafficLong - traffic_max_free_sub_static > traffic_max_free_sub_static) {
                     trafficUsedPercent = "0.0%";
                 } else if (trafficUsage == -1) {
                     trafficUsedPercent = getPhrase("DETAILS_FULLSPEED_UNKOWN");
                 } else if (trafficUsage >= 100) {
-                    getPhrase("DETAILS_FULLSPEED_REDUCED");
+                    trafficUsedPercent = getPhrase("DETAILS_FULLSPEED_REDUCED");
                 } else {
                     trafficUsedPercent = trafficUsage + "%";
                 }
