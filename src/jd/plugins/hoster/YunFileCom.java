@@ -132,7 +132,7 @@ public class YunFileCom extends PluginForHost {
         }
         String filename = null, filesize = null;
         // if (br.getURL().matches("http://page\\d+\\.yunfile.com/fs/[a-z0-9]+/")) ;
-        filename = br.getRegex("class=\"title\">Downloading:\\&nbsp;\\&nbsp;([^<>\"]*?)</h2>").getMatch(0);
+        filename = br.getRegex("Downloading:\\&nbsp;<a></a>\\&nbsp;([^ ]*)[^<>]+<").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?) \\- Yunfile\\.com \\- Free File Hosting and Sharing, Permanently Save </title>").getMatch(0);
         }
@@ -142,8 +142,11 @@ public class YunFileCom extends PluginForHost {
         filesize = br.getRegex("文件大小: <b>([^<>\"]*?)</b>").getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex("File Size: <b>([^<>\"]*?)</b>").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("Downloading:[^ \"]+ - (\\d*(\\.\\d*)? (K|M|G)?B)<").getMatch(0);
+            }
         }
-        if (filename == null || filesize == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(filename.trim());
