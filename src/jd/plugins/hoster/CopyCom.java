@@ -50,7 +50,7 @@ public class CopyCom extends PluginForHost {
 
     public CopyCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("");
+        this.enablePremium("https://www.copy.com/");
         this.setConfigElements();
     }
 
@@ -95,12 +95,12 @@ public class CopyCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         if (link.getBooleanProperty("ddlink", false)) {
+            /* Direct downloadlink */
             ddlink = link.getDownloadURL();
             URLConnectionAdapter con = null;
             try {
                 con = br.openGetConnection(ddlink);
                 if (con.isContentDisposition() && con.isOK()) {
-                    // ddlink!
                     if (link.getFinalFileName() == null) {
                         link.setFinalFileName(getFileNameFromHeader(con));
                     }
@@ -298,16 +298,21 @@ public class CopyCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        final String plain_path = link.getStringProperty("plain_path", null);
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         if (account.getBooleanProperty("free", false)) {
+            /* Original (public) path to the file. */
+            final String plain_path_saved = link.getStringProperty("plain_path", null);
+            /* Path to the file based on users' account folderstructure. */
+            String plain_path_real = null;
             final String fid = getFID(link);
             boolean movefiletoaccount = this.getPluginConfig().getBooleanProperty(MOVE_FILES_TO_ACCOUNT, false);
             final boolean deleteafterdownload = this.getPluginConfig().getBooleanProperty(DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD, false);
             if (movefiletoaccount) {
+                final String finalfilename = link.getFinalFileName();
+                final String escaped_filename = Encoding.urlEncode(finalfilename);
                 final String oauth_Data = Encoding.htmlDecode(this.br.getCookie(MAINPAGE, "COPY_AUTH"));
                 final String api_auth = getJson(oauth_Data, "apiweb.copy.com");
                 if (api_auth == null) {
@@ -319,28 +324,50 @@ public class CopyCom extends PluginForHost {
                 br.getHeaders().put("X-Client-Version", "1.0.00");
                 br.getHeaders().put("X-Api-Version", "1.0");
                 br.getHeaders().put("X-Authorization", api_auth);
-                br.postPageRaw("https://apiweb.copy.com/jsonrpc", "{\"jsonrpc\":\"2.0\",\"method\":\"list_objects\",\"params\":{\"include_links\":true,\"include_thumbnails\":true,\"sort_field\":\"name\",\"sort_direction\":\"asc\",\"path\":\"" + plain_path + "\",\"limit\":100,\"list_watermark\":0,\"max_items\":100,\"offset\":0,\"include_total_items\":true},\"id\":1}");
-                final String totalitems = getJson("total_items");
-                if ("0".equals(totalitems)) {
-                    logger.info("File is not yet imported into account --> Impoprting it");
-                    br.postPageRaw("https://apiweb.copy.com/jsonrpc", "{\"jsonrpc\":\"2.0\",\"method\":\"copy_link\",\"params\":{\"link_token\":\"" + fid + "\"},\"id\":1}");
-                }
+                /*
+                 * Do NOT check whether the file/folder already exists in the account as if we delete single files of folders later, this
+                 * will mess up the folder/file structure in copy.com accounts - see delete code below. Rather import things twice or more
+                 * than enabling this code.
+                 */
+                // br.postPageRaw("https://apiweb.copy.com/jsonrpc",
+                // "{\"jsonrpc\":\"2.0\",\"method\":\"list_objects\",\"params\":{\"include_links\":true,\"include_thumbnails\":true,\"sort_field\":\"name\",\"sort_direction\":\"asc\",\"path\":\""
+                // + plain_path +
+                // "\",\"limit\":100,\"list_watermark\":0,\"max_items\":100,\"offset\":0,\"include_total_items\":true},\"id\":1}");
+                // final String totalitems = getJson("total_items");
+                // if ("0".equals(totalitems)) {
+                // logger.info("File is not yet imported into account --> Impoprting it");
+                // br.postPageRaw("https://apiweb.copy.com/jsonrpc",
+                // "{\"jsonrpc\":\"2.0\",\"method\":\"copy_link\",\"params\":{\"link_token\":\"" + fid + "\"},\"id\":1}");
+                // }
+                logger.info("Importing file/folder into account");
+                br.postPageRaw("https://apiweb.copy.com/jsonrpc", "{\"jsonrpc\":\"2.0\",\"method\":\"copy_link\",\"params\":{\"link_token\":\"" + fid + "\"},\"id\":1}");
                 final String share_owner = getJson("share_owner");
-                if (share_owner == null) {
+                plain_path_real = getJson("path");
+                if (share_owner == null || plain_path_real == null) {
                     logger.warning("MoveFileToAcc handling failed");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                /* Add correct path to the file in case user added a folder with files- and or more subfolders/files. */
+                if (plain_path_saved.matches("/.+/.+") && !plain_path_real.matches("/.+/.+")) {
+                    plain_path_real += new Regex(plain_path_saved, "^/[^<>\"/]+(/.+)").getMatch(0);
+                }
                 ddlink = "https://copy.com/web/users/user-" + share_owner + "/copy";
-                ddlink += plain_path + "/";
+                ddlink += plain_path_real + "/";
                 ddlink += "?download=1";
+                ddlink = ddlink.replace(finalfilename, escaped_filename);
             }
             try {
+                this.sleep(8 * 1000l, link);
                 doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
             } finally {
                 if (deleteafterdownload) {
                     boolean success = false;
                     try {
-                        br.postPageRaw("https://apiweb.copy.com/jsonrpc", "{\"jsonrpc\":\"2.0\",\"method\":\"update_objects\",\"params\":{\"meta\":[{\"action\":\"remove\",\"path\":\"" + plain_path + "\"}]},\"id\":1}");
+                        /* Delete root folder for folders with files/more subfolders (see note above). */
+                        if (plain_path_real.matches("/.+/.+")) {
+                            plain_path_real = new Regex(plain_path_real, "^(/[^<>\"/]+)/").getMatch(0);
+                        }
+                        br.postPageRaw("https://apiweb.copy.com/jsonrpc", "{\"jsonrpc\":\"2.0\",\"method\":\"update_objects\",\"params\":{\"meta\":[{\"action\":\"remove\",\"path\":\"" + plain_path_real + "\"}]},\"id\":1}");
                         if (getJson("code") != null) {
                             success = false;
                         } else {
