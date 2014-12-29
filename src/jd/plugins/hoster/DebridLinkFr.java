@@ -90,12 +90,14 @@ public class DebridLinkFr extends PluginForHost {
         getPage(account, null, "infoMember", true, null);
         final String accountType = getJson("accountType");
         final String premiumLeft = getJson("premiumLeft");
+        boolean isFree = false;
         if ("0".equals(accountType)) {
             // free account
             ac.setStatus("Free Account");
             account.setType(AccountType.FREE);
             ac.setValidUntil(-1);
             account.setProperty("free", true);
+            isFree = true;
         } else if ("1".equals(accountType)) {
             // premium account
             ac.setStatus("Premium Account");
@@ -115,17 +117,26 @@ public class DebridLinkFr extends PluginForHost {
 
         // multihoster array
         getPage(account, null, "statusDownloader", false, null);
-        String[] status = br.getRegex("\\{\"status\":[\\d\\-]+.*?\\].*?\\}").getColumn(-1);
         ArrayList<String> supportedHosts = new ArrayList<String>();
-        for (String stat : status) {
-            final String s = getJson(stat, "status");
-            // don't add host if they are down! or disabled
-            if ("-1".equals(s) || "0".equals(s)) {
+        final String[] hostitems = getHostItems(this.br.toString());
+        for (final String hostitem : hostitems) {
+            final String name = getJson(hostitem, "name");
+            final boolean isFreeHost = Boolean.parseBoolean(this.getJson(hostitem, "free_host"));
+            final String status = getJson(hostitem, "status");
+            /* Don't add hosts if they are down or disabled, */
+            if ("-1".equals(status) || "0".equals(status)) {
+                logger.info("NOT adding host " + name + " to host array because it is down or disabled");
+                continue;
+            } else if (isFree && !isFreeHost) {
+                /* Don't add hosts which are not supported via the current account type - important for free accounts. */
+                logger.info("NOT adding host " + name + " to host array because user has a free account and this is not a free host");
                 continue;
             } else {
-                String[] hosts = new Regex(stat, "\"(([^\",]+\\.){1,}[a-z]+)\"").getColumn(0);
-                for (final String host : hosts) {
-                    supportedHosts.add(host);
+                logger.info("ADDING host " + name + " to host array");
+                final String jsonarray = this.getJsonArray(hostitem, "hosts");
+                final String[] domains = this.getJsonResultsFromArray(jsonarray);
+                for (final String domain : domains) {
+                    supportedHosts.add(domain);
                 }
             }
         }
@@ -580,14 +591,13 @@ public class DebridLinkFr extends PluginForHost {
     @Override
     public boolean canHandle(final DownloadLink downloadLink, final Account account) {
         final String currenthost = downloadLink.getHost();
-        if (account.getType() == AccountType.FREE) {
-            final String plain_hostinfo = account.getAccountInfo().getStringProperty("plain_hostinfo", null);
-            final String jsonarrayplaintext = new Regex(plain_hostinfo, "\"hosters\":\\[(.*?)\\],\"ts\"").getMatch(0);
-            final String[] hostinfo = jsonarrayplaintext.split("\\},\\{");
+        final String plain_hostinfo = account.getAccountInfo().getStringProperty("plain_hostinfo", null);
+        if (account.getType() == AccountType.FREE && plain_hostinfo != null) {
+            final String[] hostinfo = getHostItems(plain_hostinfo);
             if (hostinfo != null) {
                 for (final String singlehostinfo : hostinfo) {
-                    final String free_host = this.getJson(singlehostinfo, "free_host");
-                    if (singlehostinfo.contains(currenthost) && !"true".equals(free_host)) {
+                    final boolean free_host = Boolean.parseBoolean(this.getJson(singlehostinfo, "free_host"));
+                    if (singlehostinfo.contains(currenthost) && !free_host) {
                         return false;
                     }
 
@@ -610,6 +620,12 @@ public class DebridLinkFr extends PluginForHost {
             }
         }
         return true;
+    }
+
+    private String[] getHostItems(final String source) {
+        final String jsonarrayplaintext = new Regex(source, "\"hosters\":\\[(.*?)\\],\"ts\"").getMatch(0);
+        final String[] hostitems = jsonarrayplaintext.split("\\},\\{");
+        return hostitems;
     }
 
     private void showMessage(DownloadLink link, String message) {
