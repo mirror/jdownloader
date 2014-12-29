@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.storage.simplejson.ParserException;
 
-@HostPlugin(revision = "$Revision: $", interfaceVersion = 2, names = { "adoctukuhampco.in" }, urls = { "http://adoctukuhampco.in/.*" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: $", interfaceVersion = 2, names = { "adoctukuhampco.in" }, urls = { "http://(www\\.)?adoctukuhampco\\.in/\\d+[a-z0-9\\-]+\\.html" }, flags = { 0 })
 public class AdoctukuhampcoIn extends PluginForHost {
 
     private String dllink = null;
@@ -41,7 +41,7 @@ public class AdoctukuhampcoIn extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return ""; // none found on website
+        return "http://adoctukuhampco.in/";
     }
 
     @Override
@@ -66,13 +66,13 @@ public class AdoctukuhampcoIn extends PluginForHost {
         }
         // find the name of the video
 
-        final String videoUrl = br.getRegex("<video(.*?)<source src=\"(.*?)\"").getMatch(1).trim(); // (.|\\n)*</video>
-        if (null == videoUrl) {
+        dllink = br.getRegex("<video(.*?)<source src=\"(.*?)\"").getMatch(1).trim(); // (.|\\n)*</video>
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Could not locate the tag containing the video url.");
         }
         // find the url of the video file
 
-        final String extension = videoUrl.substring(videoUrl.lastIndexOf('.'));
+        final String extension = dllink.substring(dllink.lastIndexOf('.'));
         final String finalFilename = videoTitle + extension;
         downloadLink.setFinalFileName(finalFilename);
         // assemble the final name of the file that is to be downloaded
@@ -81,7 +81,11 @@ public class AdoctukuhampcoIn extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(videoUrl);
+            try {
+                con = br2.openHeadConnection(dllink);
+            } catch (final Throwable e) {
+                con = br2.openGetConnection(dllink);
+            }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {

@@ -70,7 +70,7 @@ public class CopyComDecrypter extends PluginForDecrypt {
             try {
                 con = br.openGetConnection(parameter);
                 if (con.isContentDisposition()) {
-                    // ddlink!
+                    /* Direct downloadlink */
                     final DownloadLink dl = createDownloadlink(br.getURL().replace("copy.com", "copydecrypted.com"));
 
                     if (dl.getFinalFileName() == null) {
@@ -98,6 +98,7 @@ public class CopyComDecrypter extends PluginForDecrypt {
             parameter = newparameter;
         }
 
+        final String root_url = new Regex(parameter, "(https?://(www\\.)?copy\\.com/s/[A-Za-z0-9]+)").getMatch(0);
         final String additionalPath = new Regex(parameter, "copy\\.com(/s/.+)").getMatch(0);
         String linktext = null;
         if (ENABLE_API) {
@@ -172,17 +173,18 @@ public class CopyComDecrypter extends PluginForDecrypt {
             } else {
                 final DownloadLink dl = createDownloadlink("http://copydecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
                 final String filesize = getJson(singleinfo, "size");
-                String url = getJson(singleinfo, "url");
+                final String url = getJson(singleinfo, "url");
                 final String path = getJson(singleinfo, "path");
                 if (filesize == null || url == null || path == null) {
                     logger.warning("Decrypter broken for: " + parameter);
                     return null;
                 }
-                url = url.replace("\\", "");
+                final String contenturl = root_url + path;
                 try {
-                    dl.setContentUrl(url);
+                    dl.setContentUrl(contenturl);
                 } catch (Throwable e) {
-
+                    /* Not available in old 0.9.581 Stable */
+                    dl.setBrowserUrl(contenturl);
                 }
                 dl.setDownloadSize(Long.parseLong(filesize));
                 dl.setFinalFileName(name);
