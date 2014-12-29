@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -58,7 +59,7 @@ import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "https?://(www\\.)?(share\\-online\\.biz|egoshare\\.com)/(download\\.php\\?id\\=|dl/)[\\w]+" }, flags = { 2 })
-public class ShareOnlineBiz extends antiDDoSForHost {
+public class ShareOnlineBiz extends PluginForHost {
 
     private static WeakHashMap<Account, HashMap<String, String>>    ACCOUNTINFOS         = new WeakHashMap<Account, HashMap<String, String>>();
     private static WeakHashMap<Account, CopyOnWriteArrayList<Long>> THREADFAILURES       = new WeakHashMap<Account, CopyOnWriteArrayList<Long>>();
@@ -117,7 +118,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                     c++;
                 }
                 br.setKeepResponseContentBytes(true);
-                postPage(br, userProtocol() + "://api.share-online.biz/cgi-bin?q=checklinks&md5=1", sb.toString());
+                br.postPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=checklinks&md5=1", sb.toString());
                 final byte[] responseBytes = br.getRequest().getResponseBytes();
                 final String infosUTF8[][] = new Regex(new String(responseBytes, "UTF-8"), Pattern.compile("(.*?);\\s*?(OK)\\s*?;(.*?)\\s*?;(\\d+);([0-9a-fA-F]{32})")).getMatches();
                 final String infosISO88591[][] = new Regex(new String(responseBytes, "ISO-8859-1"), Pattern.compile("(.*?);\\s*?(OK)\\s*?;(.*?)\\s*?;(\\d+);([0-9a-fA-F]{32})")).getMatches();
@@ -326,7 +327,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             try {
                 final Browser br2 = new Browser();
                 final String id = this.getID(downloadLink);
-                getPage(br2, userProtocol() + "://api.share-online.biz/api/account.php?act=fileError&fid=" + id);
+                br2.getPage(userProtocol() + "://api.share-online.biz/api/account.php?act=fileError&fid=" + id);
             } catch (Throwable e) {
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -631,7 +632,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         br.setCookie("http://www.share-online.biz", "page_language", "english");
         // redirects!
         try {
-            getPage(downloadLink.getDownloadURL().replace("https://", "http://"));
+            br.getPage(downloadLink.getDownloadURL().replace("https://", "http://"));
         } catch (final BrowserException e) {
             if (br.getRequest().getHttpConnection().getResponseCode() == 502) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.maintenance", "Server maintenance"), 30 * 60 * 1000l);
@@ -646,7 +647,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String ID = getID(downloadLink);
-        postPage("/dl/" + ID + "/free/", "dl_free=1");
+        br.postPage("/dl/" + ID + "/free/", "dl_free=1");
         errorHandling(br, downloadLink, null, null);
         String wait = br.getRegex("var wait=(\\d+)").getMatch(0);
         boolean captcha = br.containsHTML("RECAPTCHA active");
@@ -676,7 +677,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                     this.sleep(gotWait, downloadLink);
                 }
             }
-            postPage("/dl/" + ID + "/free/captcha/" + System.currentTimeMillis(), "dl_free=1&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_challenge_field=" + rc.getChallenge());
+            br.postPage("/dl/" + ID + "/free/captcha/" + System.currentTimeMillis(), "dl_free=1&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_challenge_field=" + rc.getChallenge());
             url = br.getRegex("([a-zA-Z0-9/=]+)").getMatch(0);
             if ("0".equals(url)) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -752,7 +753,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         }
         br.setFollowRedirects(true);
         br.setKeepResponseContentBytes(true);
-        getPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=linkdata&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&lid=" + linkID);
+        br.getPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=linkdata&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&lid=" + linkID);
         final byte[] responseBytes = br.getRequest().getResponseBytes();
         final String responseUTF8 = new String(responseBytes, "UTF-8");
         final String responseISO88591 = new String(responseBytes, "ISO-8859-1");
@@ -850,7 +851,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         return false;
     }
 
-    public HashMap<String, String> loginAPI(Account account, boolean forceLogin) throws Exception {
+    public HashMap<String, String> loginAPI(Account account, boolean forceLogin) throws IOException, PluginException {
         final String lang = System.getProperty("user.language");
         synchronized (LOCK) {
             try {
@@ -908,8 +909,8 @@ public class ShareOnlineBiz extends antiDDoSForHost {
     }
 
     /* Used for API request - also handles (server) errors */
-    private String apiGetPage(final String link) throws Exception {
-        getPage(link);
+    private String apiGetPage(final String link) throws IOException, PluginException {
+        br.getPage(link);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
         }
@@ -939,6 +940,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+        // revert
         hideID = false;
         correctDownloadLink(downloadLink);
         this.setBrowserExclusive();
@@ -950,11 +952,10 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         br.setFollowRedirects(true);
         br.setKeepResponseContentBytes(true);
         try {
-            postPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=checklinks&md5=1&snr=1", "links=" + id);
-            if (br.toString().matches("\\s*")) {
+            if (br.postPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=checklinks&md5=1&snr=1", "links=" + id).matches("\\s*")) {
                 String startURL = downloadLink.getDownloadURL();
                 // workaround to bypass new layout and use old site
-                getPage(startURL += startURL.contains("?") ? "&v2=1" : "?v2=1");
+                br.getPage(startURL += startURL.contains("?") ? "&v2=1" : "?v2=1");
                 // we only use this direct mode if the API failed twice! in this case this is the only way to get the information
                 String js = br.getRegex("var dl=[^\r\n]*").getMatch(-1);
                 js = execJS(js);
