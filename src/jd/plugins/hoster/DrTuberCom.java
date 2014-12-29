@@ -88,9 +88,11 @@ public class DrTuberCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/34.0");
+        br.getHeaders().put("Accept-Language", "de,en-US;q=0.7,en;q=0.3");
         String continueLink = null, filename = null;
         // Check if link is an embedded link e.g. from a decrypter
 
@@ -125,12 +127,11 @@ public class DrTuberCom extends PluginForHost {
             if (filename == null) {
                 filename = br.getRegex("<h1 class=\"name\">(.*?)</h1>").getMatch(0);
             }
-            br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
             final boolean new_handling = true;
             if (new_handling) {
                 /*
                  * Very very very very bad js workaround
-                 * 
+                 *
                  * IMPORTANT: If we find no other way to fix this in the future, switch to /embed/ links, old handling still works fine for
                  * them
                  */
@@ -149,6 +150,7 @@ public class DrTuberCom extends PluginForHost {
                 if (vkey != null) {
                     continueLink += "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode("UFQ2bDEzdW1xVjhLODI3"));
                 }
+                continueLink += "&aid=&domain_id=";
             } else {
                 continueLink = getContinueLink(br.getRegex("(var configPath.*?addVariable\\(\\'config\\',.*?;)").getMatch(0));
                 vkey = new Regex(continueLink, "vkey=(\\w+)").getMatch(0);
@@ -180,7 +182,6 @@ public class DrTuberCom extends PluginForHost {
         if (continueLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         br.getPage(continueLink);
         DLLINK = br.getRegex("<video_file>(<\\!\\[CDATA\\[)?(http://.*?)(\\]\\]>)?</video_file>").getMatch(1);
         if (filename == null || DLLINK == null) {
@@ -192,6 +193,9 @@ public class DrTuberCom extends PluginForHost {
         Browser br2 = br.cloneBrowser();
         URLConnectionAdapter con = null;
         try {
+            br2.setFollowRedirects(true);
+            br2.getHeaders().put("Referer", "http://www.drtuber.com/player/videoplayer.swf?v=18.38&ps=CCCCCC");
+            br2.getHeaders().put("Accept-Language", "de,en-US;q=0.7,en;q=0.3");
             con = br2.openGetConnection(DLLINK);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
