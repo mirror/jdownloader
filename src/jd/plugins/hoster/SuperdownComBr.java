@@ -339,7 +339,7 @@ public class SuperdownComBr extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage("http://www.superdown.com.br/login", "lembrar=on&email=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("https://www.superdown.com.br/login", "lembrar=on&email=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass()));
                 final String lang = System.getProperty("user.language");
                 /* Check if we have a free account (free accounts cannot download anything anyways) */
                 if (br.containsHTML("style=\"font-size:15px\">Buy a Plan</a>")) {
