@@ -185,9 +185,7 @@ public class UlabsDe extends PluginForHost {
         } else {
             dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
             logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
-            // tempUnavailableHoster(acc, dl, 1 * 60 * 60 * 1000l);
-            /* Test mode, usually never throw plugin defect */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            tempUnavailableHoster(acc, dl, 1 * 60 * 60 * 1000l);
         }
     }
 
