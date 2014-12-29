@@ -205,7 +205,14 @@ public class ShareDirCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        try {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } catch (final Throwable e) {
+            if (e instanceof PluginException) {
+                throw (PluginException) e;
+            }
+        }
+        throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered users");
     }
 
     /** no override to keep plugin compatible to old stable */
@@ -452,7 +459,7 @@ public class ShareDirCom extends PluginForHost {
             return false;
         }
         /* Failover for too big files - used in case a download attempt is made. */
-        if (!downloadLink.getBooleanProperty("sharedircom_" + account.getUser() + "_downloadallowed", true) && account.getType() == AccountType.FREE) {
+        if (account != null && !downloadLink.getBooleanProperty("sharedircom_" + account.getUser() + "_downloadallowed", true) && account.getType() == AccountType.FREE) {
             return false;
         }
         synchronized (hostUnavailableMap) {

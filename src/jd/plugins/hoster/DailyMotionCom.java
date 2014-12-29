@@ -21,6 +21,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -39,6 +40,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "http://dailymotiondecrypted\\.com/video/\\w+" }, flags = { 2 })
@@ -63,72 +65,13 @@ public class DailyMotionCom extends PluginForHost {
         return videosource;
     }
 
-    public static LinkedHashMap<String, String[]> findVideoQualities(final Browser br, final String parameter, String videosource) throws IOException {
-        LinkedHashMap<String, String[]> QUALITIES = new LinkedHashMap<String, String[]>();
-        final String[][] qualities = { { "hd1080URL", "1" }, { "hd720URL", "2" }, { "hqURL", "3" }, { "sdURL", "4" }, { "ldURL", "5" }, { "video_url", "5" } };
-        for (final String quality[] : qualities) {
-            final String qualityName = quality[0];
-            final String qualityNumber = quality[1];
-            final String currentQualityUrl = getQuality(qualityName, videosource);
-            if (currentQualityUrl != null) {
-                final String[] dlinfo = new String[4];
-                dlinfo[0] = currentQualityUrl;
-                dlinfo[1] = null;
-                dlinfo[2] = qualityName;
-                dlinfo[3] = qualityNumber;
-                QUALITIES.put(qualityNumber, dlinfo);
-            }
-        }
-        // List empty or only 1 link found -> Check for (more) links
-        if (QUALITIES.isEmpty() || QUALITIES.size() == 1) {
-            final String manifestURL = new Regex(videosource, "\"autoURL\":\"(http://[^<>\"]*?)\"").getMatch(0);
-            if (manifestURL != null) {
-                /** HDS */
-                final String[] dlinfo = new String[4];
-                dlinfo[0] = manifestURL;
-                dlinfo[1] = "hds";
-                dlinfo[2] = "autoURL";
-                dlinfo[3] = "7";
-                QUALITIES.put("7", dlinfo);
-            }
+    private static AtomicBoolean hostplg_loaded = new AtomicBoolean(false);
 
-            // Try to avoid HDS
-            br.getPage("http://www.dailymotion.com/embed/video/" + new Regex(parameter, "([A-Za-z0-9\\-_]+)$").getMatch(0));
-            videosource = br.getRegex("var info = \\{(.*?)\\},").getMatch(0);
-            if (videosource != null) {
-                videosource = Encoding.htmlDecode(videosource).replace("\\", "");
-                final String[][] embedQualities = { { "stream_h264_ld_url", "5" }, { "stream_h264_url", "4" }, { "stream_h264_hq_url", "3" }, { "stream_h264_hd_url", "2" }, { "stream_h264_hd1080_url", "1" } };
-                for (final String quality[] : embedQualities) {
-                    final String qualityName = quality[0];
-                    final String qualityNumber = quality[1];
-                    final String currentQualityUrl = getQuality(qualityName, videosource);
-                    if (currentQualityUrl != null) {
-                        final String[] dlinfo = new String[4];
-                        dlinfo[0] = currentQualityUrl;
-                        dlinfo[1] = null;
-                        dlinfo[2] = qualityName;
-                        dlinfo[3] = qualityNumber;
-                        QUALITIES.put(qualityNumber, dlinfo);
-                    }
-                }
-            }
-            // if (FOUNDQUALITIES.isEmpty()) {
-            // String[] values =
-            // br.getRegex("new SWFObject\\(\"(http://player\\.grabnetworks\\.com/swf/GrabOSMFPlayer\\.swf)\\?id=\\d+\\&content=v([0-9a-f]+)\"").getRow(0);
-            // if (values == null || values.length != 2) {
-            // /** RTMP */
-            // final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted.com/video/" + System.currentTimeMillis() + new
-            // Random(10000));
-            // dl.setProperty("isrtmp", true);
-            // dl.setProperty("mainlink", PARAMETER);
-            // dl.setFinalFileName(FILENAME + "_RTMP.mp4");
-            // fp.add(dl);
-            // decryptedLinks.add(dl);
-            // return decryptedLinks;
-            // }
-            // }
+    public static LinkedHashMap<String, String[]> findVideoQualities(final Browser br, final String parameter, String videosource) throws IOException {
+        if (!hostplg_loaded.getAndSet(true)) {
+            JDUtilities.getPluginForDecrypt("dailymotion.com");
         }
-        return QUALITIES;
+        return jd.plugins.decrypter.DailyMotionComDecrypter.findVideoQualities(br, parameter, videosource);
     }
 
     public String                dllink                 = null;

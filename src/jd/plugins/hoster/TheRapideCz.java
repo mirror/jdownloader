@@ -74,7 +74,7 @@ public class TheRapideCz extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie("http://therapide.cz/", "lang", "en");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("File does not exist")) {
+        if (br.containsHTML("File does not exist|The file has been deleted")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<div class=\"file\\-dash\\-title\" style=\"padding\\-left: 20px;\">([^<>\"]*?)</div>").getMatch(0);

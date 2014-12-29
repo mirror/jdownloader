@@ -54,7 +54,7 @@ public class LetWatchUs extends PluginForHost {
     private String                         passCode                     = null;
     private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                  = "http://letwatch.us.com";
+    private static final String            COOKIE_HOST                  = "http://letwatch.us";
     private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
@@ -101,7 +101,7 @@ public class LetWatchUs extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/embed-", "/").replace("letwatch.us/", "letwatch.us.com/"));
+        link.setUrlDownload(link.getDownloadURL().replace("/embed-", "/").replace("letwatch.us.com/", "letwatch.us/"));
         /* link cleanup, but respect users protocol choosing or forced protocol */
         if (!SUPPORTSHTTPS) {
             link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));

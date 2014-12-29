@@ -391,7 +391,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * NOT Using API
-     * 
+     *
      * @throws Exception
      */
     private void decryptAudioAlbum() throws Exception {
@@ -483,7 +483,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * NOT Using API
-     * 
+     *
      * @throws Exception
      */
     private void decryptAudioPage() throws Exception {
@@ -785,7 +785,11 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         final String albumID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "((\\-)?\\d+)$").getMatch(0);
-        final int numberOfEntrys = Integer.parseInt(br.getRegex("\"videoCount\":(\\d+)").getMatch(0));
+        String numberofentries = getJson("videoCount");
+        if (numberofentries == null) {
+            numberofentries = getJson("count");
+        }
+        final int numberOfEntrys = Integer.parseInt(numberofentries);
         int totalCounter = 0;
         int onlineCounter = 0;
         int offlineCounter = 0;
@@ -800,13 +804,13 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             String[] videos = null;
             if (totalCounter < 12) {
-                final String jsVideoArray = br.getRegex("videoList: \\{\\'all\\': \\[(.*?)\\]\\]\\}").getMatch(0);
+                final String jsVideoArray = br.getRegex("videoList: \\{\"all\":\\{\"silent\":1,\"list\":\\[(.*?)\\],\"count\"").getMatch(0);
                 if (jsVideoArray == null) {
                     logger.warning("Decrypter broken for link: " + this.CRYPTEDLINK_FUNCTIONAL);
                     decryptedLinks = null;
                     return;
                 }
-                videos = new Regex(jsVideoArray, "\\[((\\-)?\\d+, \\d+), \\'").getColumn(0);
+                videos = new Regex(jsVideoArray, "\\[((\\-)?\\d+,\\d+),\"").getColumn(0);
             } else {
                 br.postPage("https://vk.com/al_video.php", "act=load_videos_silent&al=1&offset=" + totalCounter + "&oid=" + albumID);
                 videos = br.getRegex("\\[((\\-)?\\d+, \\d+), \\'").getColumn(0);
@@ -824,7 +828,8 @@ public class VKontakteRu extends PluginForDecrypt {
                     } catch (final Throwable e) {
                         // Not available in 0.9.851 Stable
                     }
-                    singleVideo = singleVideo.replace(", ", "_");
+                    singleVideo = singleVideo.replace(",", "_");
+                    singleVideo = singleVideo.replace(" ", "");
                     logger.info("Decrypting video " + totalCounter + " / " + numberOfEntrys);
                     final String completeVideolink = "http://vk.com/video" + singleVideo;
                     try {
@@ -1018,7 +1023,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * NOT Using API
-     * 
+     *
      * @throws Exception
      */
     private void decryptCommunityVideoAlbum() throws Exception {
@@ -1440,7 +1445,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * Returns the ownerID which belongs to a name e.g. vk.com/some_name
-     * 
+     *
      * @throws Exception
      */
     private String resolveScreenNameAPI(final String screenname) throws Exception {
@@ -1470,7 +1475,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * Handles these error-codes: https://vk.com/dev/errors
-     * 
+     *
      * @return true = ready to retry, false = problem - failed!
      */
     private boolean apiHandleErrors() throws Exception {
