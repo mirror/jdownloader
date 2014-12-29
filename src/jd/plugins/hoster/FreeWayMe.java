@@ -478,7 +478,11 @@ public class FreeWayMe extends PluginForHost {
             } else {
                 accountType_text = getPhrase("ACCOUNTTYPE_PREMIUM");
             }
-            /* TODO: Remove if statement in case this works fine for Spender-Accounts */
+            /*
+             * "Spender" (Donator) accounts are same as "Flatrate" but they do not have an official expire date as they can end any time if
+             * the donator changes the password of his donated accounts (or it gets banned or or or) or if it changes because he decides to
+             * extend the donated accounts.
+             */
             if (expireDate_str != null) {
                 long validUntil = Long.parseLong(getJson(accInfoAPIResp, "Flatrate"));
                 ac.setValidUntil(validUntil * 1000);
