@@ -648,7 +648,10 @@ public class VKontakteRuHoster extends PluginForHost {
     private void photo_correctLink() {
         if (this.getPluginConfig().getBooleanProperty(VKPHOTO_CORRECT_FINAL_LINKS, false)) {
             logger.info("VKPHOTO_CORRECT_FINAL_LINKS enabled --> Correcting finallink");
-            /* Correct server to get files that are otherwise inaccessible */
+            /*
+             * Correct server to get files that are otherwise inaccessible - note that this can also make the finallinks unusable (e.g.
+             * server returns errorcode 500 instead of the file) but this is a very rare problem.
+             */
             final String oldserver = new Regex(this.finalUrl, "(https?://cs\\d+\\.vk\\.me/)").getMatch(0);
             final String serv_id = new Regex(this.finalUrl, "cs(\\d+)\\.vk\\.me/").getMatch(0);
             if (oldserver != null && serv_id != null) {
