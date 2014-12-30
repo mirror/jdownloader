@@ -71,10 +71,16 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.MessageDialogImpl;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.controlling.contextmenu.ActionData;
+import org.jdownloader.controlling.contextmenu.ContextMenuManager;
+import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
+import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
+import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.gui.notify.BasicNotify;
 import org.jdownloader.gui.notify.BubbleNotify;
 import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
+import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.images.NewTheme;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "free-way.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
@@ -100,12 +106,12 @@ public class FreeWayMe extends PluginForHost {
     private static final long                              traffic_max_free_sub_static           = 5 * 1024 * 1024 * 1024l;
     private static final short                             traffic_left_flatrate_show_minimal_gb = 10;
 
-    public final String                                    ACC_PROPERTY_CONNECTIONS              = "parallel";
-    public final String                                    ACC_PROPERTY_TRAFFIC_REDUCTION        = "ACC_TRAFFIC_REDUCTION";
-    public final String                                    ACC_PROPERTY_DROSSEL_ACTIVE           = "ACC_PROPERTY_DROSSEL_ACTIVE";
-    public final String                                    ACC_PROPERTY_REST_FULLSPEED_TRAFFIC   = "ACC_PROPERTY_REST_FULLSPEED_TRAFFIC";
-    public final String                                    ACC_PROPERTY_UNKOWN_FAILS             = "timesfailedfreewayme_unknown";
-    public final String                                    ACC_PROPERTY_CURL_FAIL_RESOLVE_HOST   = "timesfailedfreewayme_curl_resolve_host";
+    public static final String                             ACC_PROPERTY_CONNECTIONS              = "parallel";
+    public static final String                             ACC_PROPERTY_TRAFFIC_REDUCTION        = "ACC_TRAFFIC_REDUCTION";
+    public static final String                             ACC_PROPERTY_DROSSEL_ACTIVE           = "ACC_PROPERTY_DROSSEL_ACTIVE";
+    public static final String                             ACC_PROPERTY_REST_FULLSPEED_TRAFFIC   = "ACC_PROPERTY_REST_FULLSPEED_TRAFFIC";
+    public static final String                             ACC_PROPERTY_UNKOWN_FAILS             = "timesfailedfreewayme_unknown";
+    public static final String                             ACC_PROPERTY_CURL_FAIL_RESOLVE_HOST   = "timesfailedfreewayme_curl_resolve_host";
 
     /**
      * @author flubshi
@@ -115,6 +121,9 @@ public class FreeWayMe extends PluginForHost {
         setStartIntervall(1 * 1000l);
         setConfigElements();
         this.enablePremium("https://www.free-way.me/premium");
+
+        FreeWayDiagnostic diagMenu = new FreeWayDiagnostic();
+        MenuManagerMainToolbar.getInstance().registerExtender(diagMenu);
     }
 
     private void setConstants(final Account acc, final DownloadLink dl) {
@@ -554,9 +563,9 @@ public class FreeWayMe extends PluginForHost {
     }
 
     private int getChunks(Account account, String host) {
-        if (!this.getPluginConfig().getBooleanProperty(BETAUSER, false)) {
-            return 1;
-        }
+        // if (!this.getPluginConfig().getBooleanProperty(BETAUSER, false)) {
+        // return 1;
+        // }
         if (account == null) {
             return 1;
         }
@@ -1219,4 +1228,17 @@ public class FreeWayMe extends PluginForHost {
             return FreeWayMe.this;
         }
     }
+
+    public class FreeWayDiagnostic implements MenuExtenderHandler {
+
+        @Override
+        public MenuItemData updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
+            if (manager instanceof MenuManagerMainToolbar) {
+                mr.getItems().add(mr.getItems().size() - 1, new MenuItemData(new ActionData(jd.plugins.hoster.FreeWayDiagAction.class)));
+
+            }
+            return null;
+        }
+    }
+
 }
