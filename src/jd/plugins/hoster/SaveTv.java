@@ -675,6 +675,9 @@ public class SaveTv extends PluginForHost {
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler 404", 60 * 60 * 1000l);
+            }
             /* Handle (known) errors */
             logger.warning("Save.tv: Received HTML code instead of the file!");
             br.followConnection();

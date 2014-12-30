@@ -55,6 +55,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private String              finalUrl                    = null;
     private static final String AUDIOLINK                   = "http://vkontaktedecrypted\\.ru/audiolink/[\\d\\-]+_[\\d\\-]+";
     private static final String VIDEOLINK                   = "http://vkontaktedecrypted\\.ru/videolink/[\\d\\-]+";
+    private static final String PICTURELINK                 = "http://vkontaktedecrypted\\.ru/picturelink/(\\-)?[\\d\\-]+_[\\d\\-]+(\\?tag=[\\d\\-]+)?";
     private static final String DOCLINK                     = "http://vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?";
     private int                 MAXCHUNKS                   = 1;
     private static final String TEMPORARILYBLOCKED          = jd.plugins.decrypter.VKontakteRu.TEMPORARILYBLOCKED;
@@ -88,14 +89,177 @@ public class VKontakteRuHoster extends PluginForHost {
         return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
+    @SuppressWarnings("deprecation")
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        /* Check if offline was set via decrypter */
+        if (link.getBooleanProperty("offline", false)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+
+        this.finalUrl = null;
+        this.setBrowserExclusive();
+
+        this.br.setFollowRedirects(false);
+        // Login required to check/download
+        if (link.getDownloadURL().matches(VKontakteRuHoster.DOCLINK)) {
+            this.MAXCHUNKS = 0;
+            this.br.getPage(link.getDownloadURL());
+            if (this.br.containsHTML("File deleted")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (this.br.containsHTML("This document is available only to its owner\\.")) {
+                link.getLinkStatus().setStatusText("This document is available only to its owner");
+                link.setName(new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+                return AvailableStatus.TRUE;
+            }
+            String filename = this.br.getRegex("title>([^<>\"]*?)</title>").getMatch(0);
+            this.finalUrl = this.br.getRegex("var src = \\'(http://[^<>\"]*?)\\';").getMatch(0);
+            if (filename == null || this.finalUrl == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            /* Sometimes filenames on site are cut - finallink usually contains the full filenames */
+            final String betterFilename = new Regex(this.finalUrl, "docs/[a-z0-9]+/([^<>\"]*?)\\?extra=.+").getMatch(0);
+            if (betterFilename != null) {
+                filename = Encoding.htmlDecode(betterFilename).trim();
+            } else {
+                filename = Encoding.htmlDecode(filename.trim());
+            }
+            if (!this.linkOk(link, filename)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        } else {
+            // Only log in if needed
+            final boolean noLogin = checkNoLoginNeeded(link);
+            Account aa = null;
+            if (!noLogin) {
+                aa = AccountController.getInstance().getValidAccount(this);
+                if (aa == null) {
+                    link.getLinkStatus().setStatusText("Only downlodable via account!");
+                    return AvailableStatus.UNCHECKABLE;
+                }
+                this.login(this.br, aa, false);
+            }
+            if (link.getDownloadURL().matches(VKontakteRuHoster.AUDIOLINK)) {
+                // final String audioID = link.getStringProperty("owner_id", null) + "_" + link.getStringProperty("content_id", null) + "1";
+                String finalFilename = link.getFinalFileName();
+                if (finalFilename == null) {
+                    finalFilename = link.getName();
+                }
+                this.finalUrl = link.getStringProperty("directlink", null);
+                if (!this.linkOk(link, finalFilename)) {
+                    this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    String post = "act=get_wall_playlist&al=1&local_id=" + link.getProperty("postID") + "&oid=" + link.getProperty("fromId") + "&wall_type=own";
+                    br.postPage("https://vk.com/audio", post);
+                    String url = br.getRegex("\"0\"\\:\"" + Pattern.quote(link.getProperty("owner_id") + "") + "\"\\,\"1\"\\:\"" + Pattern.quote(link.getProperty("content_id") + "") + "\"\\,\"2\"\\:(\"[^\"]+\")").getMatch(0);
+                    // Decodes the json String
+                    url = (String) DummyScriptEnginePlugin.jsonToJavaObject(url);
+                    this.finalUrl = url;
+                    if (this.finalUrl == null) {
+                        this.logger.info("vk.com: FINALLINK is null in availablecheck --> Probably file is offline");
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+
+                    if (!this.linkOk(link, finalFilename)) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    link.setProperty("directlink", this.finalUrl);
+                }
+            } else if (link.getDownloadURL().matches(VKontakteRuHoster.VIDEOLINK)) {
+                this.MAXCHUNKS = 0;
+                this.br.setFollowRedirects(true);
+                this.finalUrl = link.getStringProperty("directlink", null);
+                // Check if directlink is expired
+                if (!this.linkOk(link, link.getFinalFileName())) {
+                    final String oid = link.getStringProperty("userid", null);
+                    final String id = link.getStringProperty("videoid", null);
+                    final String embedhash = link.getStringProperty("embedhash", null);
+                    this.br.getPage("http://vk.com/video.php?act=a_flash_vars&vid=" + oid + "_" + id);
+                    if (br.containsHTML("This video has been removed from public access")) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    final LinkedHashMap<String, String> availableQualities = this.findAvailableVideoQualities();
+                    if (availableQualities == null) {
+                        this.logger.info("vk.com: Couldn't find any available qualities for videolink");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    this.finalUrl = availableQualities.get(link.getStringProperty("selectedquality", null));
+                    if (this.finalUrl == null) {
+                        this.logger.warning("Could not find new link for selected quality...");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+                if (!this.linkOk(link, link.getStringProperty("directfilename", null))) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } else {
+                this.finalUrl = link.getStringProperty("picturedirectlink", null);
+                if (this.finalUrl == null) {
+                    // For photos which are actually offline but their directlinks still exist
+                    String directLinks = link.getStringProperty("directlinks", null);
+                    if (directLinks != null) {
+                        getHighestQualityPic(link, directLinks);
+                    }
+                    if (this.finalUrl == null) {
+                        final String photoID = new Regex(link.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?[\\d\\-]+_[\\d\\-]+)").getMatch(0);
+                        String albumID = link.getStringProperty("albumid");
+                        if (albumID == null) {
+                            this.getPageSafe(aa, link, "http://vk.com/photo" + photoID);
+                            if (this.br.containsHTML("Unknown error|Unbekannter Fehler")) {
+                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                            }
+                            if (this.br.containsHTML("Access denied")) {
+                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                            }
+                            albumID = this.br.getRegex("class=\"active_link\">[\t\n\r ]+<a href=\"/(.*?)\"").getMatch(0);
+                            if (albumID == null) {
+                                this.logger.info("vk.com: albumID is null");
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                        }
+                        this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                        this.br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                        this.postPageSafe(aa, link, "http://vk.com/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
+                        if (this.br.containsHTML(">Unfortunately, this photo has been deleted")) {
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        }
+                        final String correctedBR = this.br.toString().replace("\\", "");
+                        final String id_source = new Regex(correctedBR, "\\{(\"id\":\"" + photoID + ".*?)(\"id\"|\\}\\}|\\]\\},\\{|\\]\\}\\]<)").getMatch(0);
+                        getHighestQualityPic(link, id_source);
+                        /* Handle special case here, avoid plugin defect messages. */
+                        if (photolinkHasServerIssues(link)) {
+                            link.getLinkStatus().setStatusText("Photo is temporarily unavailable (server issues)");
+                            return AvailableStatus.TRUE;
+                        }
+                    }
+                }
+                if (this.finalUrl == null) {
+                    this.logger.warning("vk.com: Finallink is null!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                photo_correctLink();
+                link.setProperty("picturedirectlink", this.finalUrl);
+            }
+        }
+        return AvailableStatus.TRUE;
+    }
+
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         if (downloadLink.getDownloadURL().matches(VKontakteRuHoster.DOCLINK)) {
             if (this.br.containsHTML("This document is available only to its owner\\.")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This document is available only to its owner");
             }
+        } else if (this.finalUrl == null && photolinkHasServerIssues(downloadLink)) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Photo is temporarily unavailable (server issues)", 30 * 60 * 1000l);
         }
         br.getHeaders().put("Accept-Encoding", "identity");
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, this.finalUrl, true, this.MAXCHUNKS);
+        handleServerErrors(downloadLink);
+        this.dl.startDownload();
+    }
+
+    @SuppressWarnings("deprecation")
+    private void handleServerErrors(final DownloadLink downloadLink) throws PluginException, IOException {
         final URLConnectionAdapter con = this.dl.getConnection();
         if (con.getResponseCode() == 416) {
             con.disconnect();
@@ -108,7 +272,10 @@ public class VKontakteRuHoster extends PluginForHost {
             this.br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        this.dl.startDownload();
+    }
+
+    private boolean photolinkHasServerIssues(final DownloadLink dl) {
+        return dl.getBooleanProperty("photo_server_error", false);
     }
 
     @Override
@@ -205,7 +372,7 @@ public class VKontakteRuHoster extends PluginForHost {
         if (downloadLink.getDownloadURL().matches(VKontakteRuHoster.DOCLINK)) {
             this.requestFileInformation(downloadLink);
             this.doFree(downloadLink);
-        } else if (downloadLink.getBooleanProperty("nologin", false)) {
+        } else if (checkNoLoginNeeded(downloadLink)) {
             this.requestFileInformation(downloadLink);
             this.doFree(downloadLink);
         } else {
@@ -218,6 +385,14 @@ public class VKontakteRuHoster extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "Download only possible with account!");
         }
+    }
+
+    private boolean checkNoLoginNeeded(final DownloadLink dl) {
+        boolean noLogin = dl.getBooleanProperty("nologin", false);
+        if (!noLogin) {
+            noLogin = dl.getDownloadURL().matches(PICTURELINK);
+        }
+        return noLogin;
     }
 
     @Override
@@ -257,6 +432,53 @@ public class VKontakteRuHoster extends PluginForHost {
             } catch (final Throwable e) {
                 return false;
             }
+            if (!con.getContentType().contains("html")) {
+                downloadLink.setDownloadSize(con.getLongContentLength());
+                if (finalfilename == null) {
+                    downloadLink.setFinalFileName(Encoding.htmlDecode(Plugin.getFileNameFromHeader(con)));
+                } else {
+                    downloadLink.setFinalFileName(finalfilename);
+                }
+            } else {
+                return false;
+            }
+            return true;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+    }
+
+    /**
+     * Checks a given photo directlink for content. Sets finalfilename as final filename if finalfilename != null - else sets server
+     * filename as final filename.
+     *
+     * @return <b>true</b>: Link is valid and can be downloaded <b>false</b>: Link leads to HTML, times out or other problems occured - link
+     *         is not downloadable!
+     */
+    private boolean photolinkOk(final DownloadLink downloadLink, final String finalfilename) throws IOException {
+        final Browser br2 = this.br.cloneBrowser();
+        /* In case the link redirects to the finallink */
+        br2.setFollowRedirects(true);
+        URLConnectionAdapter con = null;
+        try {
+            br2.getHeaders().put("Accept-Encoding", "identity");
+            try {
+                con = br2.openGetConnection(this.finalUrl);
+            } catch (final BrowserException ebr) {
+                /* This happens e.g. for temporarily unavailable videos. */
+                throw ebr;
+            } catch (final Throwable e) {
+                return false;
+            }
+            if (con.getLongContentLength() <= 100 || con.getResponseCode() == 404 || con.getResponseCode() == 502) {
+                /* Photo is supposed to be online but it's not downloadable */
+                downloadLink.setProperty("photo_server_error", true);
+                return false;
+            }
+            downloadLink.setProperty("photo_server_error", false);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
                 if (finalfilename == null) {
@@ -368,156 +590,6 @@ public class VKontakteRuHoster extends PluginForHost {
         br.setCookie("http://vk.com/", "remixlang", "3");
     }
 
-    @SuppressWarnings("deprecation")
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        /* Check if offline was set via decrypter */
-        if (link.getBooleanProperty("offline", false)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-
-        this.finalUrl = null;
-        this.setBrowserExclusive();
-
-        this.br.setFollowRedirects(false);
-        // Login required to check/download
-        if (link.getDownloadURL().matches(VKontakteRuHoster.DOCLINK)) {
-            this.MAXCHUNKS = 0;
-            this.br.getPage(link.getDownloadURL());
-            if (this.br.containsHTML("File deleted")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (this.br.containsHTML("This document is available only to its owner\\.")) {
-                link.getLinkStatus().setStatusText("This document is available only to its owner");
-                link.setName(new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
-                return AvailableStatus.TRUE;
-            }
-            String filename = this.br.getRegex("title>([^<>\"]*?)</title>").getMatch(0);
-            this.finalUrl = this.br.getRegex("var src = \\'(http://[^<>\"]*?)\\';").getMatch(0);
-            if (filename == null || this.finalUrl == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            /* Sometimes filenames on site are cut - finallink usually contains the full filenames */
-            final String betterFilename = new Regex(this.finalUrl, "docs/[a-z0-9]+/([^<>\"]*?)\\?extra=.+").getMatch(0);
-            if (betterFilename != null) {
-                filename = Encoding.htmlDecode(betterFilename).trim();
-            } else {
-                filename = Encoding.htmlDecode(filename.trim());
-            }
-            if (!this.linkOk(link, filename)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        } else {
-            // Only log in if needed
-            final boolean noLogin = link.getBooleanProperty("nologin", false);
-            Account aa = null;
-            if (!noLogin) {
-                aa = AccountController.getInstance().getValidAccount(this);
-                if (aa == null) {
-                    link.getLinkStatus().setStatusText("Only downlodable via account!");
-                    return AvailableStatus.UNCHECKABLE;
-                }
-                this.login(this.br, aa, false);
-            }
-            if (link.getDownloadURL().matches(VKontakteRuHoster.AUDIOLINK)) {
-                final String audioID = link.getStringProperty("owner_id", null) + "_" + link.getStringProperty("content_id", null) + "1";
-                String finalFilename = link.getFinalFileName();
-                if (finalFilename == null) {
-                    finalFilename = link.getName();
-                }
-                this.finalUrl = link.getStringProperty("directlink", null);
-                if (!this.linkOk(link, finalFilename)) {
-                    this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    String post = "act=get_wall_playlist&al=1&local_id=" + link.getProperty("postID") + "&oid=" + link.getProperty("fromId") + "&wall_type=own";
-                    br.postPage("https://vk.com/audio", post);
-                    String url = br.getRegex("\"0\"\\:\"" + Pattern.quote(link.getProperty("owner_id") + "") + "\"\\,\"1\"\\:\"" + Pattern.quote(link.getProperty("content_id") + "") + "\"\\,\"2\"\\:(\"[^\"]+\")").getMatch(0);
-                    // Decodes the json String
-                    url = (String) DummyScriptEnginePlugin.jsonToJavaObject(url);
-                    this.finalUrl = url;
-                    if (this.finalUrl == null) {
-                        this.logger.info("vk.com: FINALLINK is null in availablecheck --> Probably file is offline");
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-
-                    if (!this.linkOk(link, finalFilename)) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    link.setProperty("directlink", this.finalUrl);
-                }
-            } else if (link.getDownloadURL().matches(VKontakteRuHoster.VIDEOLINK)) {
-                this.MAXCHUNKS = 0;
-                this.br.setFollowRedirects(true);
-                this.finalUrl = link.getStringProperty("directlink", null);
-                // Check if directlink is expired
-                if (!this.linkOk(link, link.getFinalFileName())) {
-                    final String oid = link.getStringProperty("userid", null);
-                    final String id = link.getStringProperty("videoid", null);
-                    final String embedhash = link.getStringProperty("embedhash", null);
-                    this.br.getPage("http://vk.com/video.php?act=a_flash_vars&vid=" + oid + "_" + id);
-                    if (br.containsHTML("This video has been removed from public access")) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    final LinkedHashMap<String, String> availableQualities = this.findAvailableVideoQualities();
-                    if (availableQualities == null) {
-                        this.logger.info("vk.com: Couldn't find any available qualities for videolink");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    this.finalUrl = availableQualities.get(link.getStringProperty("selectedquality", null));
-                    if (this.finalUrl == null) {
-                        this.logger.warning("Could not find new link for selected quality...");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                }
-                if (!this.linkOk(link, link.getStringProperty("directfilename", null))) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-            } else {
-                this.finalUrl = link.getStringProperty("picturedirectlink", null);
-                if (this.finalUrl == null) {
-                    // For photos which are actually offline but their directlinks still exist
-                    String directLinks = link.getStringProperty("directlinks", null);
-                    if (directLinks != null) {
-                        getHighestQualityPic(link, directLinks);
-                    }
-                    if (this.finalUrl == null) {
-                        final String photoID = new Regex(link.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?[\\d\\-]+_[\\d\\-]+)").getMatch(0);
-                        String albumID = link.getStringProperty("albumid");
-                        if (albumID == null) {
-                            this.getPageSafe(aa, link, "http://vk.com/photo" + photoID);
-                            if (this.br.containsHTML("Unknown error|Unbekannter Fehler")) {
-                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                            }
-                            if (this.br.containsHTML("Access denied")) {
-                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                            }
-                            albumID = this.br.getRegex("class=\"active_link\">[\t\n\r ]+<a href=\"/(.*?)\"").getMatch(0);
-                            if (albumID == null) {
-                                this.logger.info("vk.com: albumID is null");
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                            }
-                        }
-                        this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                        this.br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-                        this.postPageSafe(aa, link, "http://vk.com/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
-                        if (this.br.containsHTML(">Unfortunately, this photo has been deleted")) {
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        }
-                        final String correctedBR = this.br.toString().replace("\\", "");
-                        final String id_source = new Regex(correctedBR, "\\{(\"id\":\"" + photoID + ".*?)(\"id\"|\\}\\})").getMatch(0);
-                        getHighestQualityPic(link, id_source);
-                    }
-                }
-                if (this.finalUrl == null) {
-                    this.logger.warning("vk.com: Finallink is null!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                photo_correctLink();
-                link.setProperty("picturedirectlink", this.finalUrl);
-            }
-        }
-        return AvailableStatus.TRUE;
-    }
-
     /**
      * Try to get best quality and test links till a working link is found as it can happen that the found link is offline but others are
      * online
@@ -540,23 +612,27 @@ public class VKontakteRuHoster extends PluginForHost {
         } else {
             /* Old way */
             final String[] qs = { "w_", "z_", "y_", "x_", "m_" };
-            final String base = new Regex(source, "base(\\')?:(\"|\\')(http://[^<>\"]*?)(\"|\\')").getMatch(2);
+            final String base = new Regex(source, "base(?:\\'|\")?:(?:\"|\\')(http://[^<>\"]*?)(\"|\\')").getMatch(0);
             for (final String q : qs) {
                 /* large image */
-                if (this.finalUrl == null || this.finalUrl != null && !this.linkOk(dl, null)) {
-                    if (base == null) {
-                        this.finalUrl = new Regex(source, q + "(\\')?:\\[(\"|\\')([^<>\"]*?)(\"|\\')").getMatch(2);
-                        if (this.finalUrl != null) {
+                if (this.finalUrl == null || this.finalUrl != null && !this.photolinkOk(dl, null)) {
+                    this.finalUrl = new Regex(source, q + "src\":\"(http[^<>\"]+)\"").getMatch(0);
+                    if (this.finalUrl == null) {
+                        this.finalUrl = new Regex(source, q + "(\\'|\")?:\\[(\"|\\')([^<>\"]*?)(\"|\\')").getMatch(2);
+                    }
+                    if (this.finalUrl != null) {
+                        if (!this.finalUrl.startsWith("http") && base == null) {
+                            this.finalUrl = null;
+                            continue;
+                        } else if (!this.finalUrl.startsWith("http")) {
+                            this.finalUrl = base + this.finalUrl;
+                        }
+                        if (!this.finalUrl.endsWith(".jpg")) {
                             this.finalUrl += ".jpg";
-                        } else {
-                            /* Other source has complete links */
-                            this.finalUrl = new Regex(source, "\"" + q + "src\":\"(http[^<>\"]*?)\"").getMatch(0);
                         }
                     } else {
-                        final String linkPart = new Regex(source, q + "(\\')?:\\[(\"|\\')([^<>\"]*?)(\"|\\')").getMatch(2);
-                        if (linkPart != null) {
-                            this.finalUrl = base + linkPart + ".jpg";
-                        }
+                        /* Other source has complete links */
+                        this.finalUrl = new Regex(source, "\"" + q + "src\":\"(http[^<>\"]*?)\"").getMatch(0);
                     }
                 } else {
                     break;
