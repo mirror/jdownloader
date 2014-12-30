@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -63,11 +64,22 @@ public class DocsGoogleCom extends PluginForDecrypt {
         PluginForHost plugin = JDUtilities.getPluginForHost("docs.google.com");
         ((jd.plugins.hoster.DocsGoogleCom) plugin).prepBrowser(br);
 
-        if (parameter.matches(FOLDER_NORMAL)) {
-            br.getPage(parameter + "/edit?pli=1");
-        } else {
-            br.getPage(parameter);
-        }
+        int retry = 0;
+        do {
+            try {
+                if (parameter.matches(FOLDER_NORMAL)) {
+                    br.getPage(parameter + "/edit?pli=1");
+                } else {
+                    br.getPage(parameter);
+                }
+            } catch (final Throwable e) {
+                final URLConnectionAdapter con = br.getHttpConnection();
+                if (con == null || con.getResponseCode() != 200 && con.getResponseCode() != 500) {
+                    throw e;
+                }
+            }
+            retry++;
+        } while (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 500 && retry <= 3);
 
         final String count_docs = br.getRegex("class=\"flip-folder-item-count\">(\\d+)").getMatch(0);
 

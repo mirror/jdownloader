@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vplay.tv" }, urls = { "http://(www\\.)?vplay\\.ro/watch/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vplay.tv" }, urls = { "http://((www\\.)?vplay\\.ro/watch/[a-z0-9]+|i\\.vplay\\.ro/f/embed\\.swf\\?key=[a-z0-9]+)" }, flags = { 0 })
 public class VplayRo extends PluginForHost {
 
     public VplayRo(PluginWrapper wrapper) {
@@ -40,16 +40,31 @@ public class VplayRo extends PluginForHost {
         return "http://vplay.ro/";
     }
 
+    public void correctDownloadLink(final DownloadLink link) {
+        final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+        link.setUrlDownload("http://vplay.ro/watch/" + fid);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Video does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Video does not exist")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<h2 title=\"([^<>\"]*?)\">").getMatch(0);
-        if (filename == null) filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
+        if (filename == null) {
+            filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        filename = Encoding.htmlDecode(filename.trim());
+        if (!filename.endsWith(".mp4")) {
+            filename += ".mp4";
+        }
+        link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }
 
@@ -58,7 +73,9 @@ public class VplayRo extends PluginForHost {
         requestFileInformation(downloadLink);
         br.postPage("http://www.vplay.ro/play/dinosaur.do", "onLoad=%5Btype%20Function%5D&external=0&key=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
         final String dllink = br.getRegex("\\&nqURL=(http://[^<>\"]*?)\\&th").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
