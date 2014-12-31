@@ -531,11 +531,15 @@ public class RapidGatorNet extends PluginForHost {
                 if (this.br.getRegex("location\\.href = '/\\?r=download/index&session_id=[A-Za-z0-9]+'").matches()) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
+                handleErrorsBasic();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, true, 1);
             if (this.dl.getConnection().getContentType().contains("html")) {
-                if (this.dl.getConnection().getResponseCode() == 416) {
+                final URLConnectionAdapter con = dl.getConnection();
+                if (con.getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404 (session expired?)", 30 * 60 * 1000l);
+                } else if (con.getResponseCode() == 416) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 10 * 60 * 1000l);
                 }
                 this.br.followConnection();
@@ -965,7 +969,15 @@ public class RapidGatorNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAccount is banned!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 } else if (errorMessage.contains("Parameter login or password is missing")) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    /*
+                     * Unusual case but this may also happen frequently if users use strange chars as usernme/password so simply treat this
+                     * as "login/password wrong"!
+                     */
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 } else if (errorMessage.contains("Session not exist")) {
                     if (sessionReset) {
                         account.setProperty("session_id", Property.NULL);
@@ -979,6 +991,15 @@ public class RapidGatorNet extends PluginForHost {
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
+                } else if (errorMessage.contains("Error: You requested login to your account from unusual Ip address")) {
+                    /* User needs to confirm his current IP. */
+                    String statusMessage;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        statusMessage = "\r\nBitte bestätige deine aktuelle IP Adresse über den Bestätigungslink per E-Mail um den Account wieder nutzen zu können.";
+                    } else {
+                        statusMessage = "\r\nPlease confirm your current IP adress via the activation link you got per mail to continue using this account.";
+                    }
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
                 if (con.getResponseCode() == 503 || errorMessage.contains("Service Temporarily Unavailable")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service Temporarily Unavailable", 5 * 60 * 1000l);
@@ -1233,6 +1254,12 @@ public class RapidGatorNet extends PluginForHost {
                 this.logger.info("LastIP = " + lastIP);
                 return true;
             }
+        }
+    }
+
+    private void handleErrorsBasic() throws PluginException {
+        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404 (session expired?)", 30 * 60 * 1000l);
         }
     }
 

@@ -45,7 +45,7 @@ public class FreeWayDiagAction extends AbstractExtensionAction<ShutdownExtension
         if (diagnose.size() == 0) {
             Thread t = new Thread(new Runnable() {
                 public void run() {
-                    MessageDialogImpl dialog = new MessageDialogImpl(UIOManager.LOGIC_COUNTDOWN, "Ihre JDownloader Einstellungen sind für free-way in Ordnung!\r\nBei Problemen bitte an support@free-way.me wenden.");
+                    MessageDialogImpl dialog = new MessageDialogImpl(UIOManager.LOGIC_COUNTDOWN, getPhrase("FREEWAYDIAGNOSE_SETTINGS_OK"));
                     try {
                         Dialog.getInstance().showDialog(dialog);
                     } catch (DialogNoAnswerException e) {
@@ -61,7 +61,7 @@ public class FreeWayDiagAction extends AbstractExtensionAction<ShutdownExtension
                         probs += "- " + s + "\r\n";
                     }
 
-                    MessageDialogImpl dialog = new MessageDialogImpl(UIOManager.LOGIC_COUNTDOWN, "Der Download über free-way.me könnte aufgrund folgender Probleme beschränkt sein:\r\n\r\n" + probs);
+                    MessageDialogImpl dialog = new MessageDialogImpl(UIOManager.LOGIC_COUNTDOWN, getPhrase("FREEWAYDIAGNOSE_PROBLEMS") + probs);
                     try {
                         Dialog.getInstance().showDialog(dialog);
                     } catch (DialogNoAnswerException e) {
@@ -74,33 +74,46 @@ public class FreeWayDiagAction extends AbstractExtensionAction<ShutdownExtension
 
     public ArrayList<String> getDiagnose() {
         ArrayList<String> diagnose = new ArrayList<String>();
-
-        if (DownloadWatchDog.getInstance().isPaused()) {
-            diagnose.add("Sie haben den Pausemodus aktiviert. Dadurch ist die maximale Downloadgeschwindigkeit begrenzt!");
-        }
+        int numberofFreeWayAccounts = 0;
         List<Account> accs = AccountController.getInstance().getMultiHostAccounts("uploaded.to");
         for (Account acc : accs) {
             if (acc.getHoster().equals("free-way.me")) {
+                numberofFreeWayAccounts++;
                 if (!acc.isEnabled()) {
-                    diagnose.add("Der free-way Account " + acc.getUser() + " ist nicht aktiviert!");
+                    diagnose.add(String.format(getPhrase("FREEWAYDIAGNOSE_PROBLEMS_ACCOUNT_DEACTIVATED"), acc.getUser()));
                 } else if (acc.getAccountInfo().getBooleanProperty(jd.plugins.hoster.FreeWayMe.ACC_PROPERTY_DROSSEL_ACTIVE, false)) {
-                    diagnose.add("Der free-way Account " + acc.getUser() + " ist gedrosselt!");
+                    diagnose.add(String.format(getPhrase("FREEWAYDIAGNOSE_PROBLEMS_ACCOUNT_LIMITED"), acc.getUser()));
                 }
             }
         }
+        if (numberofFreeWayAccounts == 0) {
+            /*
+             * No free-way.me accounts available --> No 'problems' present! --> Should also already be covered inside the free-way.me
+             * plugin.
+             */
+            diagnose.clear();
+            return diagnose;
+        }
+
+        if (DownloadWatchDog.getInstance().isPaused()) {
+            diagnose.add(getPhrase("FREEWAYDIAGNOSE_PROBLEMS_PAUSE"));
+        }
 
         if (org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.getValue()) {
-            diagnose.add("Sie haben ein Geschwindigkeitslimit im JDownloader aktiviert!");
+            diagnose.add(getPhrase("FREEWAYDIAGNOSE_PROBLEMS_SPEEDLIMIT"));
         }
 
         if (org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS.getValue() < 2) {
-            diagnose.add("Es wird eine höhere Anzahl paralleler Downloads empfohlen!");
+            diagnose.add(getPhrase("FREEWAYDIAGNOSE_PROBLEMS_SIMULTANDLS"));
         }
 
         if (!org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.getValue()) {
-            diagnose.add("Sie haben die Verwendung von Premiumaccounts im JDownloader deaktiviert!");
+            diagnose.add(getPhrase("FREEWAYDIAGNOSE_PROBLEMS_ACCOUNTS_DEACTIVATED"));
         }
-
         return diagnose;
+    }
+
+    private String getPhrase(final String phrasekey) {
+        return jd.plugins.hoster.FreeWayMe.getPhrase(phrasekey);
     }
 }
