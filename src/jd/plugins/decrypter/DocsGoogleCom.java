@@ -75,7 +75,11 @@ public class DocsGoogleCom extends PluginForDecrypt {
             } catch (final Throwable e) {
                 final URLConnectionAdapter con = br.getHttpConnection();
                 if (con == null || con.getResponseCode() != 200 && con.getResponseCode() != 500) {
-                    throw e;
+                    if (e instanceof Exception) {
+                        throw (Exception) e;
+                    } else {
+                        throw new Exception(e);
+                    }
                 }
             }
             retry++;
