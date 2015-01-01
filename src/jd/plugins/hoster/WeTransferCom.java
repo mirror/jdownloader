@@ -98,22 +98,25 @@ public class WeTransferCom extends PluginForHost {
         if (br.containsHTML("\"error\":\"invalid_transfer\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String callback = br.getRegex("\"callback\":\"(\\{.*?)\"\\}\\}$").getMatch(0);
-        String action = getJson("action");
-        if (action == null || callback == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        action += "?";
-        final String[] values = { "unique", "profile", "filename", "expiration", "escaped", "signature" };
-        for (final String value : values) {
-            final String result = getJson(value);
-            if (result == null) {
+        DLLINK = getJson("direct_link");
+        if (DLLINK == null) {
+            final String callback = br.getRegex("\"callback\":\"(\\{.*?)\"\\}\\}$").getMatch(0);
+            String action = getJson("action");
+            if (action == null || callback == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            action += value + "=" + Encoding.urlEncode(result) + "&";
+            action += "?";
+            final String[] values = { "unique", "profile", "filename", "expiration", "escaped", "signature" };
+            for (final String value : values) {
+                final String result = getJson(value);
+                if (result == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                action += value + "=" + Encoding.urlEncode(result) + "&";
+            }
+            action += "callback=" + Encoding.urlEncode(callback);
+            DLLINK = action;
         }
-        action += "callback=" + Encoding.urlEncode(callback);
-        DLLINK = action;
         if (DLLINK != null) {
             String filename = new Regex(Encoding.htmlDecode(DLLINK), "filename=\"([^<>\"]*?)\"").getMatch(0);
             if (filename == null) {

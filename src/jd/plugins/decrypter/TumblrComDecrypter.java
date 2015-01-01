@@ -78,7 +78,9 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                     }
                 }
                 String fpName = br.getRegex("<title>([^/\"]*?)</title>").getMatch(0);
-                if (fpName == null) fpName = "Tumblr post " + new Regex(parameter, "(\\d+)$").getMatch(0);
+                if (fpName == null) {
+                    fpName = "Tumblr post " + new Regex(parameter, "(\\d+)$").getMatch(0);
+                }
                 fpName = Encoding.htmlDecode(fpName.trim());
                 fpName = fpName.replace("\n", "");
 
@@ -152,6 +154,11 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                     }
                     return decryptedLinks;
                 }
+                /* Access link if possible to get higher qualities e.g. *1280 */
+                final String picturelink = br.getRegex("class=\"photo\">[\t\n\r ]+<a href=\"(http://[a-z0-9\\-]+\\.tumblr\\.com/image/\\d+)\"").getMatch(0);
+                if (picturelink != null) {
+                    br.getPage(picturelink);
+                }
                 externID = getBiggestPicture();
                 if (externID != null) {
                     final DownloadLink dl = createDownloadlink("directhttp://" + externID);
@@ -173,10 +180,11 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                     return decryptedLinks;
                 }
                 String finallink = null;
-                if (parameter.contains("demo.tumblr.com/image/"))
+                if (parameter.contains("demo.tumblr.com/image/")) {
                     finallink = br.getRegex("data\\-src=\"(http://(www\\.)?tumblr\\.com/photo/[^<>\"]*?)\"").getMatch(0);
-                else
+                } else {
                     finallink = getBiggestPicture();
+                }
                 if (finallink == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
@@ -197,7 +205,9 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 }
                 while (nextPage != null) {
                     logger.info("Decrypting page " + counter);
-                    if (!nextPage.equals("1")) br.getPage(parameter + nextPage);
+                    if (!nextPage.equals("1")) {
+                        br.getPage(parameter + nextPage);
+                    }
                     final String[] allPosts = br.getRegex("\"(http://(www\\.)?[\\w\\.\\-]*?\\.tumblr\\.com/post/\\d+)").getColumn(0);
                     if (allPosts == null || allPosts.length == 0) {
                         logger.info("Found nothing here so the decrypter is either broken or there isn't anything to decrypt. Link: " + parameter);
@@ -208,7 +218,9 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                         fpost.setProperty("nopackagename", true);
                         decryptedLinks.add(fpost);
                     }
-                    if (decryptSingle) break;
+                    if (decryptSingle) {
+                        break;
+                    }
                     nextPage = br.getRegex("\"(/page/" + (counter + 1) + ")\"").getMatch(0);
                     counter++;
                 }
@@ -228,7 +240,9 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         // Try to find the biggest picture
         for (int i = 2000; i >= 10; i--) {
             image = br.getRegex("\"(http://\\d+\\.media\\.tumblr\\.com(/[a-z0-9]{32})?/tumblr_[A-Za-z0-9_]+_" + i + "\\.(jpg|gif|png))\"").getMatch(0);
-            if (image != null) break;
+            if (image != null) {
+                break;
+            }
         }
         return image;
     }

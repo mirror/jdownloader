@@ -131,13 +131,12 @@ public class VKontakteRuHoster extends PluginForHost {
         } else {
             // Only log in if needed
             final boolean noLogin = checkNoLoginNeeded(link);
-            Account aa = null;
-            if (!noLogin) {
-                aa = AccountController.getInstance().getValidAccount(this);
-                if (aa == null) {
-                    link.getLinkStatus().setStatusText("Only downlodable via account!");
-                    return AvailableStatus.UNCHECKABLE;
-                }
+            Account aa = AccountController.getInstance().getValidAccount(this);
+            if (!noLogin && aa == null) {
+                link.getLinkStatus().setStatusText("Only downlodable via account!");
+                return AvailableStatus.UNCHECKABLE;
+            } else if (aa != null) {
+                /* Always login if possible. */
                 this.login(this.br, aa, false);
             }
             if (link.getDownloadURL().matches(VKontakteRuHoster.AUDIOLINK)) {
