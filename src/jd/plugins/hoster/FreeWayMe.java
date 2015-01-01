@@ -34,6 +34,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.Icon;
 import javax.swing.JLabel;
@@ -116,7 +117,7 @@ public class FreeWayMe extends PluginForHost {
     public static final String                             ACC_PROPERTY_UNKOWN_FAILS             = "timesfailedfreewayme_unknown";
     public static final String                             ACC_PROPERTY_CURL_FAIL_RESOLVE_HOST   = "timesfailedfreewayme_curl_resolve_host";
 
-    public static FreeWayDiagnostic                        FW_DIAGNOSTIC                         = null;
+    public static AtomicBoolean                            DIAGNOSTIC                            = new AtomicBoolean(false);
 
     /**
      * @author flubshi
@@ -131,8 +132,8 @@ public class FreeWayMe extends PluginForHost {
     }
 
     private void addDiagnostic() {
-        if (FW_DIAGNOSTIC == null) {
-            FW_DIAGNOSTIC = new FreeWayDiagnostic();
+        if (DIAGNOSTIC.compareAndSet(false, true)) {
+            final FreeWayDiagnostic FW_DIAGNOSTIC = new FreeWayDiagnostic();
             MenuManagerMainToolbar.getInstance().registerExtender(FW_DIAGNOSTIC);
         }
     }
@@ -143,133 +144,133 @@ public class FreeWayMe extends PluginForHost {
     }
 
     public static HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("SETTING_RESUME", "Enable resume of stopped downloads (Warning: This can cause CRC errors)");
-            put("SETTING_BETA", "Enable beta service (Requires free-way beta account)");
-            put("SETTING_SPRITUSAGE", "Stop download if sprit would be used");
-            put("SETTING_ENABLE_FREE_WAY_DIAGNOSE", "Activate free-way diagnose?\r\nShows useful hints in the upper toolbar for optimal free-way experience.\r\nIMPORTANT: For this setting to take effect, a JD restart is required!");
-            put("ERROR_INVALID_LOGIN", "Invalid username/password!");
-            put("ERROR_BAN", "Account banned");
-            put("ERROR_UNKNOWN", "Unknown error");
-            put("ERROR_UNKNOWN_FULL", "Unknown account status (deactivated)!");
-            put("ERROR_NO_STABLE_ACCOUNTS", "Found no stable accounts");
-            put("SUPPORTED_HOSTS_1", "Account valid");
-            put("ERROR_INVALID_URL", "Invalid URL");
-            put("ERROR_RETRY_SECONDS", "Error: Retry in few secs");
-            put("ERROR_SERVER", "Server error");
-            put("ERROR_UNKNWON_CODE", "Unable to handle this errorcode!");
-            put("ERROR_HOST_TMP_DISABLED", "Host temporary disabled");
-            put("ERROR_INAVLID_HOST_URL", "Invalid host link");
-            put("ERROR_CONNECTIONS", "Too many simultan downloads");
-            put("ERROR_TRAFFIC_LIMIT", "Traffic limit");
-            put("ERROR_TRAFFIC_LIMIT_UNTER_ACCOUNT", "Traffic of free sub-account has been reached");
-            put("DETAILS_TITEL", "Account information");
-            put("DETAILS_CATEGORY_ACC", "Account");
-            put("DETAILS_ACCOUNT_NAME", "Account name:");
-            put("DETAILS_ACCOUNT_TYPE", "Account type:");
-            put("DETAILS_SIMULTAN_DOWNLOADS", "Simultaneous Downloads:");
-            put("DETAILS_FULLSPEED_TRAFFIC", "Fullspeed traffic used:");
-            put("DETAILS_FULLSPEED_REST_TRAFFIC", "Fullspeed traffic left:");
-            put("DETAILS_FULLSPEED_UNKOWN", "unknown");
-            put("DETAILS_FULLSPEED_REDUCED", "reduced");
-            put("DETAILS_NOTIFICATIONS", "Notifications:");
-            put("DETAILS_CATEGORY_HOSTS", "Supported Hosts");
-            put("DETAILS_HOSTS_AMOUNT", "Amount: ");
-            put("DETAILS_REVISION", "Plugin Revision:");
-            put("CLOSE", "Close");
-            put("ACCOUNTTYPE_FREE", "Free account");
-            put("ACCOUNTTYPE_FREE_SUB", "Free sub-account");
-            put("ACCOUNTTYPE_PREMIUM", "Flatrate account");
-            put("ACCOUNTTYPE_PREMIUM_SPENDER", "Flatrate donator account");
-            put("ERROR_PREVENT_SPRIT_USAGE", "Sprit usage prevented!");
-            put("FULLSPEED_TRAFFIC_NOTIFICATION_CAPTION", "Fullspeedlimit");
-            put("SETTINGS_FULLSPEED_NOTIFICATION_BUBBLE", "Show bubble notification if fullspeed limit is reached");
-            put("SETTINGS_FULLSPEED_NOTIFICATION_DIALOG", "Show dialog notification if fullspeed limit is reached");
-            put("SETTING_MAXRETRIES_UNKNOWN_ERROR", "Max retries on unknown errors");
-            put("SETTING_2FA_ALIAS", "Device name (Two-Factor Authentication)");
-            put("POPUP_2FA_TITLE", "Free-Way 2-Factor Authentication");
-            put("POPUP_2FA_DESCRIPTION", "Please authenticate this device or disable 2-factor authentication on free-way.me\n\n" + "Device: ");
-            put("SETTING_SHOW_TRAFFICLEFT", "Show remaining fullspeed traffic as 'traffic left'?\r\nNOTE: In case you have less than 10 GB fullspeed traffic left, it will be shown as 'Unlimited' again due to technical reasons!");
-            put("SETTINGSTEXT_SETTINGS_DOWNLOAD", "Download settings:");
-            put("SETTINGSTEXT_SETTINGS_GUI", "User interface settings:");
-            put("SETTINGSTEXT_SETTINGS_ACCOUNT", "Advanced account settings:");
-            put("FREEWAYDIAGNOSE_SETTINGS_OK", "Your JDownloader settings are fine for free-way.me!\r\nIf you have any problems please contact support@free-way.me");
-            put("FREEWAYDIAGNOSE_PROBLEMS", "The download via free-way.me could be limited because of the following problems:\r\n\r\n");
-            put("FREEWAYDIAGNOSE_PROBLEMS_PAUSE", "Pause mode is active. This limits the maximum download speed!");
-            put("FREEWAYDIAGNOSE_PROBLEMS_ACCOUNT_DEACTIVATED", "The free-way account %s is not activated!");
-            put("FREEWAYDIAGNOSE_PROBLEMS_ACCOUNT_LIMITED", "The free-way account %s is limited!");
-            put("FREEWAYDIAGNOSE_PROBLEMS_SPEEDLIMIT", "You activated a speedlimit in JDownloader!");
-            put("FREEWAYDIAGNOSE_PROBLEMS_SIMULTANDLS", "It is recommended to use a higher amount of simultaneous downloads!");
-            put("FREEWAYDIAGNOSE_PROBLEMS_ACCOUNTS_DEACTIVATED", "You deactivated the usage of premium accounts in JDownloader!");
-        }
-    };
+                                                        {
+                                                            put("SETTING_RESUME", "Enable resume of stopped downloads (Warning: This can cause CRC errors)");
+                                                            put("SETTING_BETA", "Enable beta service (Requires free-way beta account)");
+                                                            put("SETTING_SPRITUSAGE", "Stop download if sprit would be used");
+                                                            put("SETTING_ENABLE_FREE_WAY_DIAGNOSE", "Activate free-way diagnose?\r\nShows useful hints in the upper toolbar for optimal free-way experience.\r\nIMPORTANT: For this setting to take effect, a JD restart is required!");
+                                                            put("ERROR_INVALID_LOGIN", "Invalid username/password!");
+                                                            put("ERROR_BAN", "Account banned");
+                                                            put("ERROR_UNKNOWN", "Unknown error");
+                                                            put("ERROR_UNKNOWN_FULL", "Unknown account status (deactivated)!");
+                                                            put("ERROR_NO_STABLE_ACCOUNTS", "Found no stable accounts");
+                                                            put("SUPPORTED_HOSTS_1", "Account valid");
+                                                            put("ERROR_INVALID_URL", "Invalid URL");
+                                                            put("ERROR_RETRY_SECONDS", "Error: Retry in few secs");
+                                                            put("ERROR_SERVER", "Server error");
+                                                            put("ERROR_UNKNWON_CODE", "Unable to handle this errorcode!");
+                                                            put("ERROR_HOST_TMP_DISABLED", "Host temporary disabled");
+                                                            put("ERROR_INAVLID_HOST_URL", "Invalid host link");
+                                                            put("ERROR_CONNECTIONS", "Too many simultan downloads");
+                                                            put("ERROR_TRAFFIC_LIMIT", "Traffic limit");
+                                                            put("ERROR_TRAFFIC_LIMIT_UNTER_ACCOUNT", "Traffic of free sub-account has been reached");
+                                                            put("DETAILS_TITEL", "Account information");
+                                                            put("DETAILS_CATEGORY_ACC", "Account");
+                                                            put("DETAILS_ACCOUNT_NAME", "Account name:");
+                                                            put("DETAILS_ACCOUNT_TYPE", "Account type:");
+                                                            put("DETAILS_SIMULTAN_DOWNLOADS", "Simultaneous Downloads:");
+                                                            put("DETAILS_FULLSPEED_TRAFFIC", "Fullspeed traffic used:");
+                                                            put("DETAILS_FULLSPEED_REST_TRAFFIC", "Fullspeed traffic left:");
+                                                            put("DETAILS_FULLSPEED_UNKOWN", "unknown");
+                                                            put("DETAILS_FULLSPEED_REDUCED", "reduced");
+                                                            put("DETAILS_NOTIFICATIONS", "Notifications:");
+                                                            put("DETAILS_CATEGORY_HOSTS", "Supported Hosts");
+                                                            put("DETAILS_HOSTS_AMOUNT", "Amount: ");
+                                                            put("DETAILS_REVISION", "Plugin Revision:");
+                                                            put("CLOSE", "Close");
+                                                            put("ACCOUNTTYPE_FREE", "Free account");
+                                                            put("ACCOUNTTYPE_FREE_SUB", "Free sub-account");
+                                                            put("ACCOUNTTYPE_PREMIUM", "Flatrate account");
+                                                            put("ACCOUNTTYPE_PREMIUM_SPENDER", "Flatrate donator account");
+                                                            put("ERROR_PREVENT_SPRIT_USAGE", "Sprit usage prevented!");
+                                                            put("FULLSPEED_TRAFFIC_NOTIFICATION_CAPTION", "Fullspeedlimit");
+                                                            put("SETTINGS_FULLSPEED_NOTIFICATION_BUBBLE", "Show bubble notification if fullspeed limit is reached");
+                                                            put("SETTINGS_FULLSPEED_NOTIFICATION_DIALOG", "Show dialog notification if fullspeed limit is reached");
+                                                            put("SETTING_MAXRETRIES_UNKNOWN_ERROR", "Max retries on unknown errors");
+                                                            put("SETTING_2FA_ALIAS", "Device name (Two-Factor Authentication)");
+                                                            put("POPUP_2FA_TITLE", "Free-Way 2-Factor Authentication");
+                                                            put("POPUP_2FA_DESCRIPTION", "Please authenticate this device or disable 2-factor authentication on free-way.me\n\n" + "Device: ");
+                                                            put("SETTING_SHOW_TRAFFICLEFT", "Show remaining fullspeed traffic as 'traffic left'?\r\nNOTE: In case you have less than 10 GB fullspeed traffic left, it will be shown as 'Unlimited' again due to technical reasons!");
+                                                            put("SETTINGSTEXT_SETTINGS_DOWNLOAD", "Download settings:");
+                                                            put("SETTINGSTEXT_SETTINGS_GUI", "User interface settings:");
+                                                            put("SETTINGSTEXT_SETTINGS_ACCOUNT", "Advanced account settings:");
+                                                            put("FREEWAYDIAGNOSE_SETTINGS_OK", "Your JDownloader settings are fine for free-way.me!\r\nIf you have any problems please contact support@free-way.me");
+                                                            put("FREEWAYDIAGNOSE_PROBLEMS", "The download via free-way.me could be limited because of the following problems:\r\n\r\n");
+                                                            put("FREEWAYDIAGNOSE_PROBLEMS_PAUSE", "Pause mode is active. This limits the maximum download speed!");
+                                                            put("FREEWAYDIAGNOSE_PROBLEMS_ACCOUNT_DEACTIVATED", "The free-way account %s is not activated!");
+                                                            put("FREEWAYDIAGNOSE_PROBLEMS_ACCOUNT_LIMITED", "The free-way account %s is limited!");
+                                                            put("FREEWAYDIAGNOSE_PROBLEMS_SPEEDLIMIT", "You activated a speedlimit in JDownloader!");
+                                                            put("FREEWAYDIAGNOSE_PROBLEMS_SIMULTANDLS", "It is recommended to use a higher amount of simultaneous downloads!");
+                                                            put("FREEWAYDIAGNOSE_PROBLEMS_ACCOUNTS_DEACTIVATED", "You deactivated the usage of premium accounts in JDownloader!");
+                                                        }
+                                                    };
 
     public static HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-        {
-            put("SETTING_RESUME", "Aktiviere das Fortsetzen von gestoppen Downloads (Warnung: Kann CRC-Fehler verursachen)");
-            put("SETTING_BETA", "Aktiviere Betamodus (Erfordert einen free-way Beta-Account)");
-            put("SETTING_SPRITUSAGE", "Nicht Downloaden, falls Sprit verwendet wird (Spender-Account)");
-            put("SETTING_ENABLE_FREE_WAY_DIAGNOSE", "Aktiviere free-way Diagnose?\r\nZeigt in der oberen Toolbar nützliche Tipps zur optimalen free-way Nutzung.\r\nWICHTIG: Zum übernehmen der Einstellung ist ein JD Neustart erforderlich!");
-            put("ERROR_INVALID_LOGIN", "Ungültiger Benutzername oder ungültiges Passwort!");
-            put("ERROR_BAN", "Account gesperrt!");
-            put("ERROR_UNKNOWN", "Unbekannter Fehler");
-            put("ERROR_UNKNOWN_FULL", "Unbekannter Accountstatus (deaktiviert)!");
-            put("ERROR_NO_STABLE_ACCOUNTS", "Keine stabilen Accounts verfügbar");
-            put("SUPPORTED_HOSTS_1", "Account gültig");
-            put("ERROR_INVALID_URL", "Ungültige URL");
-            put("ERROR_RETRY_SECONDS", "Fehler: Erneuter Versuch in wenigen sek.");
-            put("ERROR_SERVER", "Server Fehler");
-            put("ERROR_UNKNWON_CODE", "Unbekannter Fehlercode!");
-            put("ERROR_HOST_TMP_DISABLED", "Hoster temporär deaktiviert!");
-            put("ERROR_INAVLID_HOST_URL", "Ungültiger Hoster Link");
-            put("ERROR_CONNECTIONS", "Zu viele parallele Downloads");
-            put("ERROR_TRAFFIC_LIMIT", "Traffic Begrenzung");
-            put("ERROR_TRAFFIC_LIMIT_UNTER_ACCOUNT", "Trafficlimit des kostenlosen Unter-Accounts wurde erreicht");
-            put("DETAILS_TITEL", "Account Zusatzinformationen");
-            put("DETAILS_CATEGORY_ACC", "Account");
-            put("DETAILS_ACCOUNT_NAME", "Account Name:");
-            put("DETAILS_ACCOUNT_TYPE", "Account Typ:");
-            put("DETAILS_SIMULTAN_DOWNLOADS", "Gleichzeitige Downloads:");
-            put("DETAILS_FULLSPEED_TRAFFIC", "Fullspeedvolumen verbraucht:");
-            put("DETAILS_FULLSPEED_REST_TRAFFIC", "Restliches Fullspeedvolumen:");
-            put("DETAILS_FULLSPEED_UNKOWN", "unbekannt");
-            put("DETAILS_FULLSPEED_REDUCED", "gedrosselt!");
-            put("DETAILS_NOTIFICATIONS", "Benachrichtigungen:");
-            put("DETAILS_CATEGORY_HOSTS", "Unterstützte Hoster");
-            put("DETAILS_HOSTS_AMOUNT", "Anzahl: ");
-            put("DETAILS_REVISION", "Plugin Revision:");
-            put("CLOSE", "Schließen");
-            put("ACCOUNTTYPE_FREE", "Kostenloser ('Free') Account");
-            put("ACCOUNTTYPE_FREE_SUB", "Kostenloser ('Free') Unter-Account");
-            put("ACCOUNTTYPE_PREMIUM", "Flatrate Account");
-            put("ACCOUNTTYPE_PREMIUM_SPENDER", "Flatrate Spender Account");
-            put("ERROR_PREVENT_SPRIT_USAGE", "Spritverbrauch verhindert!");
-            put("FULLSPEED_TRAFFIC_NOTIFICATION_CAPTION", "Fullspeed-Limit");
-            put("SETTINGS_FULLSPEED_NOTIFICATION_BUBBLE", "Zeige Bubble-Benachrichtigung wenn das Fullspeedlimit ausgeschöpft ist");
-            put("SETTINGS_FULLSPEED_NOTIFICATION_DIALOG", "Zeige Dialog-Benachrichtigung wenn das Fullspeedlimit ausgeschöpft ist");
-            put("SETTING_MAXRETRIES_UNKNOWN_ERROR", "Maximale Neuversuche bei unbekannten Fehlerfällen");
-            put("SETTING_2FA_ALIAS", "Gerätename (Zwei-Faktor Authentifizierung)");
-            put("POPUP_2FA_TITLE", "Free-Way 2-Faktor Authentifizierung");
-            put("POPUP_2FA_DESCRIPTION", "Bitte autorisiere das folgende Gerät oder deaktiviere die 2-Faktor Authent-\n" + "entifizierung auf der Free-Way Seite.\n\nGerät: ");
-            put("SETTING_SHOW_TRAFFICLEFT", "Zeige verbleibendes Fullspeedvolumen in der Accountübersicht bei 'Downloadtraffic übrig'?\r\nWICHTIG: Solltest du weniger als 10 GB Fullspeedvolumen haben, wird aus technischen Gründen wieder 'Unlimitiert' angezeigt!");
-            put("SETTINGSTEXT_SETTINGS_DOWNLOAD", "Downloadeinstellungen:");
-            put("SETTINGSTEXT_SETTINGS_GUI", "Benutzeroberflächen-Einstellungen:");
-            put("SETTINGSTEXT_SETTINGS_ACCOUNT", "Erweiterte Account Einstellungen:");
-            put("FREEWAYDIAGNOSE_SETTINGS_OK", "Ihre JDownloader Einstellungen sind für free-way in Ordnung!\r\nBei Problemen bitte an support@free-way.me wenden.");
-            put("FREEWAYDIAGNOSE_PROBLEMS", "Der Download über free-way.me könnte aufgrund folgender Probleme beschränkt sein:\r\n\r\n");
-            put("FREEWAYDIAGNOSE_PROBLEMS_PAUSE", "Sie haben den Pausemodus aktiviert. Dadurch ist die maximale Downloadgeschwindigkeit begrenzt!");
-            put("FREEWAYDIAGNOSE_PROBLEMS_ACCOUNT_DEACTIVATED", "Der free-way Account %s ist nicht aktiviert!");
-            put("FREEWAYDIAGNOSE_PROBLEMS_ACCOUNT_LIMITED", "Der free-way Account %s ist gedrosselt!");
-            put("FREEWAYDIAGNOSE_SPEEDLIMIT", "Sie haben ein Geschwindigkeitslimit im JDownloader aktiviert!");
-            put("FREEWAYDIAGNOSE_SIMULTANDLS", "Es wird eine höhere Anzahl paralleler Downloads empfohlen!");
-            put("FREEWAYDIAGNOSE_ACCOUNTS_DEACTIVATED", "Sie haben die Verwendung von Premiumaccounts im JDownloader deaktiviert!");
-        }
-    };
+                                                        {
+                                                            put("SETTING_RESUME", "Aktiviere das Fortsetzen von gestoppen Downloads (Warnung: Kann CRC-Fehler verursachen)");
+                                                            put("SETTING_BETA", "Aktiviere Betamodus (Erfordert einen free-way Beta-Account)");
+                                                            put("SETTING_SPRITUSAGE", "Nicht Downloaden, falls Sprit verwendet wird (Spender-Account)");
+                                                            put("SETTING_ENABLE_FREE_WAY_DIAGNOSE", "Aktiviere free-way Diagnose?\r\nZeigt in der oberen Toolbar nützliche Tipps zur optimalen free-way Nutzung.\r\nWICHTIG: Zum übernehmen der Einstellung ist ein JD Neustart erforderlich!");
+                                                            put("ERROR_INVALID_LOGIN", "Ungültiger Benutzername oder ungültiges Passwort!");
+                                                            put("ERROR_BAN", "Account gesperrt!");
+                                                            put("ERROR_UNKNOWN", "Unbekannter Fehler");
+                                                            put("ERROR_UNKNOWN_FULL", "Unbekannter Accountstatus (deaktiviert)!");
+                                                            put("ERROR_NO_STABLE_ACCOUNTS", "Keine stabilen Accounts verfügbar");
+                                                            put("SUPPORTED_HOSTS_1", "Account gültig");
+                                                            put("ERROR_INVALID_URL", "Ungültige URL");
+                                                            put("ERROR_RETRY_SECONDS", "Fehler: Erneuter Versuch in wenigen sek.");
+                                                            put("ERROR_SERVER", "Server Fehler");
+                                                            put("ERROR_UNKNWON_CODE", "Unbekannter Fehlercode!");
+                                                            put("ERROR_HOST_TMP_DISABLED", "Hoster temporär deaktiviert!");
+                                                            put("ERROR_INAVLID_HOST_URL", "Ungültiger Hoster Link");
+                                                            put("ERROR_CONNECTIONS", "Zu viele parallele Downloads");
+                                                            put("ERROR_TRAFFIC_LIMIT", "Traffic Begrenzung");
+                                                            put("ERROR_TRAFFIC_LIMIT_UNTER_ACCOUNT", "Trafficlimit des kostenlosen Unter-Accounts wurde erreicht");
+                                                            put("DETAILS_TITEL", "Account Zusatzinformationen");
+                                                            put("DETAILS_CATEGORY_ACC", "Account");
+                                                            put("DETAILS_ACCOUNT_NAME", "Account Name:");
+                                                            put("DETAILS_ACCOUNT_TYPE", "Account Typ:");
+                                                            put("DETAILS_SIMULTAN_DOWNLOADS", "Gleichzeitige Downloads:");
+                                                            put("DETAILS_FULLSPEED_TRAFFIC", "Fullspeedvolumen verbraucht:");
+                                                            put("DETAILS_FULLSPEED_REST_TRAFFIC", "Restliches Fullspeedvolumen:");
+                                                            put("DETAILS_FULLSPEED_UNKOWN", "unbekannt");
+                                                            put("DETAILS_FULLSPEED_REDUCED", "gedrosselt!");
+                                                            put("DETAILS_NOTIFICATIONS", "Benachrichtigungen:");
+                                                            put("DETAILS_CATEGORY_HOSTS", "Unterstützte Hoster");
+                                                            put("DETAILS_HOSTS_AMOUNT", "Anzahl: ");
+                                                            put("DETAILS_REVISION", "Plugin Revision:");
+                                                            put("CLOSE", "Schließen");
+                                                            put("ACCOUNTTYPE_FREE", "Kostenloser ('Free') Account");
+                                                            put("ACCOUNTTYPE_FREE_SUB", "Kostenloser ('Free') Unter-Account");
+                                                            put("ACCOUNTTYPE_PREMIUM", "Flatrate Account");
+                                                            put("ACCOUNTTYPE_PREMIUM_SPENDER", "Flatrate Spender Account");
+                                                            put("ERROR_PREVENT_SPRIT_USAGE", "Spritverbrauch verhindert!");
+                                                            put("FULLSPEED_TRAFFIC_NOTIFICATION_CAPTION", "Fullspeed-Limit");
+                                                            put("SETTINGS_FULLSPEED_NOTIFICATION_BUBBLE", "Zeige Bubble-Benachrichtigung wenn das Fullspeedlimit ausgeschöpft ist");
+                                                            put("SETTINGS_FULLSPEED_NOTIFICATION_DIALOG", "Zeige Dialog-Benachrichtigung wenn das Fullspeedlimit ausgeschöpft ist");
+                                                            put("SETTING_MAXRETRIES_UNKNOWN_ERROR", "Maximale Neuversuche bei unbekannten Fehlerfällen");
+                                                            put("SETTING_2FA_ALIAS", "Gerätename (Zwei-Faktor Authentifizierung)");
+                                                            put("POPUP_2FA_TITLE", "Free-Way 2-Faktor Authentifizierung");
+                                                            put("POPUP_2FA_DESCRIPTION", "Bitte autorisiere das folgende Gerät oder deaktiviere die 2-Faktor Authent-\n" + "entifizierung auf der Free-Way Seite.\n\nGerät: ");
+                                                            put("SETTING_SHOW_TRAFFICLEFT", "Zeige verbleibendes Fullspeedvolumen in der Accountübersicht bei 'Downloadtraffic übrig'?\r\nWICHTIG: Solltest du weniger als 10 GB Fullspeedvolumen haben, wird aus technischen Gründen wieder 'Unlimitiert' angezeigt!");
+                                                            put("SETTINGSTEXT_SETTINGS_DOWNLOAD", "Downloadeinstellungen:");
+                                                            put("SETTINGSTEXT_SETTINGS_GUI", "Benutzeroberflächen-Einstellungen:");
+                                                            put("SETTINGSTEXT_SETTINGS_ACCOUNT", "Erweiterte Account Einstellungen:");
+                                                            put("FREEWAYDIAGNOSE_SETTINGS_OK", "Ihre JDownloader Einstellungen sind für free-way in Ordnung!\r\nBei Problemen bitte an support@free-way.me wenden.");
+                                                            put("FREEWAYDIAGNOSE_PROBLEMS", "Der Download über free-way.me könnte aufgrund folgender Probleme beschränkt sein:\r\n\r\n");
+                                                            put("FREEWAYDIAGNOSE_PROBLEMS_PAUSE", "Sie haben den Pausemodus aktiviert. Dadurch ist die maximale Downloadgeschwindigkeit begrenzt!");
+                                                            put("FREEWAYDIAGNOSE_PROBLEMS_ACCOUNT_DEACTIVATED", "Der free-way Account %s ist nicht aktiviert!");
+                                                            put("FREEWAYDIAGNOSE_PROBLEMS_ACCOUNT_LIMITED", "Der free-way Account %s ist gedrosselt!");
+                                                            put("FREEWAYDIAGNOSE_SPEEDLIMIT", "Sie haben ein Geschwindigkeitslimit im JDownloader aktiviert!");
+                                                            put("FREEWAYDIAGNOSE_SIMULTANDLS", "Es wird eine höhere Anzahl paralleler Downloads empfohlen!");
+                                                            put("FREEWAYDIAGNOSE_ACCOUNTS_DEACTIVATED", "Sie haben die Verwendung von Premiumaccounts im JDownloader deaktiviert!");
+                                                        }
+                                                    };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
      * English.
-     *
+     * 
      * @param key
      * @return
      */
@@ -284,7 +285,7 @@ public class FreeWayMe extends PluginForHost {
 
     /**
      * Gets a unique device id for 2FA (fallback: device alias)
-     *
+     * 
      * @return
      */
     private String get2FADevID() {
@@ -313,7 +314,7 @@ public class FreeWayMe extends PluginForHost {
 
     /**
      * gets a page and shows 2FA input if necessary
-     *
+     * 
      * @param url
      * @return
      * @throws IOException
@@ -620,7 +621,7 @@ public class FreeWayMe extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -759,7 +760,7 @@ public class FreeWayMe extends PluginForHost {
                 || error.equalsIgnoreCase("Unbekannter Fehler #2") //
                 || error.equalsIgnoreCase("Unbekannter Fehler #3") //
                 || error.equalsIgnoreCase("Unbekannter Fehler #5") // internal
-                ) {
+        ) {
             /*
              * after x retries we disable this host and retry with normal plugin
              */
@@ -807,7 +808,7 @@ public class FreeWayMe extends PluginForHost {
 
     /**
      * TODO: Maybe move all or as many as possible errormessages in here to have a general errorhandling. Maybe with API V2.
-     *
+     * 
      * @throws PluginException
      */
     private void handleErrorsGeneral(final String error) throws PluginException {
@@ -1264,20 +1265,19 @@ public class FreeWayMe extends PluginForHost {
         @SuppressWarnings("rawtypes")
         @Override
         public MenuItemData updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
-            final PluginForHost frwplugin = JDUtilities.getPluginForHost("free-way.me");
-            int numberofFreeWayAccounts = 0;
-            final List<Account> accs = AccountController.getInstance().getMultiHostAccounts("uploaded.to");
-            if (accs != null) {
-                for (Account acc : accs) {
-                    if (acc.getHoster().equals("free-way.me")) {
-                        numberofFreeWayAccounts++;
+            if (manager instanceof MenuManagerMainToolbar) {
+                final PluginForHost frwplugin = JDUtilities.getPluginForHost("free-way.me");
+                if (frwplugin.getPluginConfig().getBooleanProperty("SETTING_ENABLE_FREEWAY_DIAGNOSE", true)) {
+                    final List<Account> accs = AccountController.getInstance().getMultiHostAccounts("uploaded.to");
+                    if (accs != null) {
+                        for (Account acc : accs) {
+                            if (acc.getHoster().equals("free-way.me")) {
+                                mr.getItems().add(Math.max(0, mr.getItems().size() - 1), new MenuItemData(new ActionData(jd.plugins.hoster.FreeWayDiagAction.class)));
+                                return null;
+                            }
+                        }
                     }
                 }
-            }
-            /* Only show settings if user wants it and if user has at least one free-way.me account. */
-            if (manager instanceof MenuManagerMainToolbar && frwplugin.getPluginConfig().getBooleanProperty("SETTING_ENABLE_FREEWAY_DIAGNOSE", true) && numberofFreeWayAccounts != 0) {
-                mr.getItems().add(Math.max(0, mr.getItems().size() - 1), new MenuItemData(new ActionData(jd.plugins.hoster.FreeWayDiagAction.class)));
-
             }
             return null;
         }
