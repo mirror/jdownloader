@@ -71,6 +71,7 @@ public class FileCryptCc extends PluginForDecrypt {
         int counter = 0;
         final int retry = 3;
         Form captchaform = null;
+        String captcha = null;
         while (counter++ < retry && br.containsHTML("class=\"safety\"")) {
             final Form[] allForms = br.getForms();
             if (allForms != null && allForms.length != 0) {
@@ -81,11 +82,7 @@ public class FileCryptCc extends PluginForDecrypt {
                     }
                 }
             }
-            String captcha = br.getRegex("(/captcha/[^<>\"]*?)\"").getMatch(0);
-            if (captcha == null && !captchaform.containsHTML("=\"g-recaptcha\"")) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
+            captcha = br.getRegex("(/captcha/[^<>\"]*?)\"").getMatch(0);
             if (captcha != null && captcha.contains("circle.php")) {
                 final File file = this.getLocalCaptchaFile();
                 br.cloneBrowser().getDownload(file, captcha);
@@ -114,9 +111,13 @@ public class FileCryptCc extends PluginForDecrypt {
                 }
                 captchaform.put("g-recaptcha-response", Encoding.urlEncode(responseToken));
                 br.submitForm(captchaform);
+            } else if (captcha != null) {
+                final String code = getCaptchaCode(captcha, param);
+                captchaform.put("recaptcha_response_field", Encoding.urlEncode(code));
+                br.submitForm(captchaform);
             }
         }
-        if (br.containsHTML("class=\"safety\"")) {
+        if (captcha != null) {
             throw new DecrypterException(DecrypterException.CAPTCHA);
         }
         final String fpName = br.getRegex("class=\"status (online|offline) shield\">([^<>\"]*?)<").getMatch(1);
