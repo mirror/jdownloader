@@ -261,7 +261,7 @@ public class FreeWayMe extends PluginForHost {
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
      * English.
-     *
+     * 
      * @param key
      * @return
      */
@@ -276,7 +276,7 @@ public class FreeWayMe extends PluginForHost {
 
     /**
      * Gets a unique device id for 2FA (fallback: device alias)
-     *
+     * 
      * @return
      */
     private String get2FADevID() {
@@ -305,7 +305,7 @@ public class FreeWayMe extends PluginForHost {
 
     /**
      * gets a page and shows 2FA input if necessary
-     *
+     * 
      * @param url
      * @return
      * @throws IOException
@@ -612,7 +612,7 @@ public class FreeWayMe extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -799,7 +799,7 @@ public class FreeWayMe extends PluginForHost {
 
     /**
      * TODO: Maybe move all or as many as possible errormessages in here to have a general errorhandling. Maybe with API V2.
-     *
+     * 
      * @throws PluginException
      */
     private void handleErrorsGeneral(final String error) throws PluginException {
@@ -1258,15 +1258,17 @@ public class FreeWayMe extends PluginForHost {
         public MenuItemData updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
             final PluginForHost frwplugin = JDUtilities.getPluginForHost("free-way.me");
             int numberofFreeWayAccounts = 0;
-            List<Account> accs = AccountController.getInstance().getMultiHostAccounts("uploaded.to");
-            for (Account acc : accs) {
-                if (acc.getHoster().equals("free-way.me")) {
-                    numberofFreeWayAccounts++;
+            final List<Account> accs = AccountController.getInstance().getMultiHostAccounts("uploaded.to");
+            if (accs != null) {
+                for (Account acc : accs) {
+                    if (acc.getHoster().equals("free-way.me")) {
+                        numberofFreeWayAccounts++;
+                    }
                 }
             }
             /* Only show settings if user wants it and if user has at least one free-way.me account. */
             if (manager instanceof MenuManagerMainToolbar && frwplugin.getPluginConfig().getBooleanProperty("SETTING_ENABLE_FREEWAY_DIAGNOSE", true) && numberofFreeWayAccounts != 0) {
-                mr.getItems().add(mr.getItems().size() - 1, new MenuItemData(new ActionData(jd.plugins.hoster.FreeWayDiagAction.class)));
+                mr.getItems().add(Math.max(0, mr.getItems().size() - 1), new MenuItemData(new ActionData(jd.plugins.hoster.FreeWayDiagAction.class)));
 
             }
             return null;
