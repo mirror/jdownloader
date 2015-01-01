@@ -339,9 +339,13 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     public MenuContainerRoot setupDefaultStructure() {
         MenuContainerRoot ret = createDefaultStructure();
         for (MenuExtenderHandler exHandler : extender) {
-            MenuItemData r = exHandler.updateMenuModel(this, ret);
-            if (r != null) {
-                ret.addBranch(ret, r);
+            try {
+                MenuItemData r = exHandler.updateMenuModel(this, ret);
+                if (r != null) {
+                    ret.addBranch(ret, r);
+                }
+            } catch (final Throwable e) {
+                getLogger().log(e);
             }
         }
         return ret;
