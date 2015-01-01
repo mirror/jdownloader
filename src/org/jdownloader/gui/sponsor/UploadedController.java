@@ -374,7 +374,11 @@ public class UploadedController implements AccountControllerListener, Sponsor {
         try {
             Dialog.getInstance().showDialog(d);
             StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/OK");
-            CrossSystem.openURL("http://ul.to/ref/12859436");
+            if ("uploaded.to".equals(plugin.getHost())) {
+                CrossSystem.openURL("http://ul.to/ref/12859436");
+            } else {
+                CrossSystem.openURL(AccountController.createFullBuyPremiumUrl(url, "controller/notify"));
+            }
         } catch (DialogNoAnswerException e) {
             e.printStackTrace();
             StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/CANCELED");
