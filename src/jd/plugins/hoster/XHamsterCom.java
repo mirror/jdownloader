@@ -273,6 +273,8 @@ public class XHamsterCom extends PluginForHost {
     @SuppressWarnings("unchecked")
     public void login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
+            // used in finally to restore browser redirect status.
+            final boolean frd = br.isFollowingRedirects();
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
@@ -311,12 +313,12 @@ public class XHamsterCom extends PluginForHost {
                         final String c = getCaptchaCode("recaptcha", cf, dummyLink);
                         final String loginlink = "http://xhamster.com/ajax/login.php?act=login&ref=http%3A%2F%2Fxhamster.com%2F&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on&_=" + System.currentTimeMillis() + "&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(c);
                         br.getPage(loginlink);
-                        if (br.containsHTML("\\'Recaptcha does not match")) {
+                        if (br.containsHTML("'Recaptcha does not match")) {
                             continue;
                         }
                         break;
                     }
-                    if (br.containsHTML("\\'Recaptcha does not match")) {
+                    if (br.containsHTML("'Recaptcha does not match")) {
                         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiges Login Captcha!\r\nVersuche es erneut und löse das Login Captcha richtig.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         } else {
@@ -340,9 +342,13 @@ public class XHamsterCom extends PluginForHost {
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
+                account.setProperty("lastlogin", System.currentTimeMillis());
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
+                account.setProperty("lastlogin", Property.NULL);
                 throw e;
+            } finally {
+                br.setFollowRedirects(frd);
             }
         }
     }
@@ -350,15 +356,26 @@ public class XHamsterCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
+        /*
+         * logic to manipulate full login. Useful for sites that show captcha when you login too many times in a given time period. Or sites
+         * that present captcha to users all the time!
+         */
+        if (account.getStringProperty("lastlogin", null) != null && (System.currentTimeMillis() - 6 * 3480000l <= Long.parseLong(account.getStringProperty("lastlogin")))) {
+            login(this.br, account, false);
+            // because we have used cached login, we should verify that the cookie is still valid...
+            br.getPage(MAINPAGE);
+            if (br.getCookie(MAINPAGE, "PWD") == null) {
+                // we should assume cookie is invalid, and perform a full login!
+                br = new Browser();
+                login(this.br, account, true);
+            }
+        } else {
             login(this.br, account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
         }
         ai.setUnlimitedTraffic();
         account.setValid(true);
-        ai.setStatus("Registered (free) User");
+        ai.setStatus("Free Account");
+        account.setProperty("free", true);
         return ai;
     }
 
