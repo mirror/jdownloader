@@ -56,10 +56,8 @@ public class FileCryptCc extends PluginForDecrypt {
         br = new Browser();
         br.setFollowRedirects(true);
         final String uid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
-        // using recaptcha v2, it doesn't seem skipable. I tried with new response value - raztoki
-        br.getPage(parameter);
-        // skip text captcha
-        // br.postPage(parameter, "recaptcha_response_field=");
+        // not all captcha types are skipable (recaptchav2 isn't). I tried with new response value - raztoki
+        getPage(parameter);
         if (br.getURL().contains("filecrypt.cc/404.html")) {
             try {
                 decryptedLinks.add(createOfflinelink(parameter));
@@ -71,18 +69,17 @@ public class FileCryptCc extends PluginForDecrypt {
         int counter = 0;
         final int retry = 3;
         Form captchaform = null;
-        String captcha = null;
-        while (counter++ < retry && br.containsHTML("class=\"safety\"")) {
+        while (counter++ < retry && containsCaptcha()) {
             final Form[] allForms = br.getForms();
             if (allForms != null && allForms.length != 0) {
                 for (final Form aForm : allForms) {
-                    if (aForm.containsHTML("captcha")) {
+                    if (aForm.containsHTML("/captcha/")) {
                         captchaform = aForm;
                         break;
                     }
                 }
             }
-            captcha = br.getRegex("(/captcha/[^<>\"]*?)\"").getMatch(0);
+            final String captcha = captchaform.getRegex("(/captcha/[^<>\"]*?)\"").getMatch(0);
             if (captcha != null && captcha.contains("circle.php")) {
                 final File file = this.getLocalCaptchaFile();
                 br.cloneBrowser().getDownload(file, captcha);
@@ -92,7 +89,7 @@ public class FileCryptCc extends PluginForDecrypt {
                 }
                 captchaform.put("button.x", String.valueOf(p.x));
                 captchaform.put("button.y", String.valueOf(p.y));
-                br.submitForm(captchaform);
+                submitForm(captchaform);
             } else if (captchaform.containsHTML("=\"g-recaptcha\"")) {
                 // recaptcha v2
                 boolean success = false;
@@ -110,14 +107,21 @@ public class FileCryptCc extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
                 captchaform.put("g-recaptcha-response", Encoding.urlEncode(responseToken));
-                br.submitForm(captchaform);
+                submitForm(captchaform);
             } else if (captcha != null) {
-                final String code = getCaptchaCode(captcha, param);
-                captchaform.put("recaptcha_response_field", Encoding.urlEncode(code));
-                br.submitForm(captchaform);
+                // they use recaptcha response field key for non recaptcha.. math sum and text =
+                // http://filecrypt.cc/captcha/captcha.php?namespace=container
+                // using bismarck original observation, this type is skipable.
+                if (counter > 1) {
+                    final String code = getCaptchaCode(captcha, param);
+                    captchaform.put("recaptcha_response_field", Encoding.urlEncode(code));
+                } else {
+                    captchaform.put("recaptcha_response_field", "");
+                }
+                submitForm(captchaform);
             }
         }
-        if (captcha != null) {
+        if (counter == retry && containsCaptcha()) {
             throw new DecrypterException(DecrypterException.CAPTCHA);
         }
         final String fpName = br.getRegex("class=\"status (online|offline) shield\">([^<>\"]*?)<").getMatch(1);
@@ -136,7 +140,7 @@ public class FileCryptCc extends PluginForDecrypt {
                 br.getPage(mirror);
             }
             /* First try DLC, then single links */
-            final String dlc_id = br.getRegex("DownloadDLC\\(\\'([^<>\"]*?)\\'\\)").getMatch(0);
+            final String dlc_id = br.getRegex("DownloadDLC\\('([^<>\"]*?)'\\)").getMatch(0);
             if (dlc_id != null) {
                 logger.info("DLC found - trying to add it");
                 decryptedLinks.addAll(loadcontainer("http://filecrypt.cc/DLC/" + dlc_id + ".dlc"));
@@ -150,26 +154,27 @@ public class FileCryptCc extends PluginForDecrypt {
         // this isn't always shown, see 104061178D - raztoki 20141118
 
         logger.info("Trying single link handling");
-        final String[] links = br.getRegex("openLink\\(\\'([^<>\"]*?)\\'").getColumn(0);
+        final String[] links = br.getRegex("openLink\\('([^<>\"]*?)'").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         br.setFollowRedirects(false);
         for (final String singleLink : links) {
-            br.getPage("http://filecrypt.cc/Link/" + singleLink + ".html");
+            final Browser br2 = br.cloneBrowser();
+            br2.getPage("http://filecrypt.cc/Link/" + singleLink + ".html");
             String finallink = null;
-            final String first_rd = br.getRedirectLocation();
+            final String first_rd = br2.getRedirectLocation();
             if (first_rd != null && first_rd.contains("filecrypt.cc/")) {
-                br.getPage(first_rd);
-                finallink = br.getRedirectLocation();
+                br2.getPage(first_rd);
+                finallink = br2.getRedirectLocation();
             } else if (first_rd != null && !first_rd.contains("filecrypt.cc/")) {
                 finallink = first_rd;
             } else {
-                final String nextlink = br.getRegex("\"(https?://(www\\.)?filecrypt\\.cc/index\\.php\\?Action=(G|g)o[^<>\"]*?)\"").getMatch(0);
+                final String nextlink = br2.getRegex("\"(https?://(www\\.)?filecrypt\\.cc/index\\.php\\?Action=(G|g)o[^<>\"]*?)\"").getMatch(0);
                 if (nextlink != null) {
-                    br.getPage(nextlink);
-                    finallink = br.getRedirectLocation();
+                    br2.getPage(nextlink);
+                    finallink = br2.getRedirectLocation();
                 }
             }
             if (finallink == null || finallink.contains("filecrypt.cc/")) {
@@ -186,6 +191,33 @@ public class FileCryptCc extends PluginForDecrypt {
         }
 
         return decryptedLinks;
+    }
+
+    private final boolean containsCaptcha() {
+        return new Regex(cleanHTML, containsCaptcha).matches();
+    }
+
+    private final String containsCaptcha = "class=\"safety\"";
+
+    private String       cleanHTML       = null;
+
+    private final void cleanUpHTML() {
+        String toClean = br.toString();
+        ArrayList<String> regexStuff = new ArrayList<String>();
+        // generic cleanup
+        regexStuff.add("<!(--.*?--)>");
+        regexStuff.add("(<\\s*(\\w+)\\s+[^>]*style\\s*=\\s*(\"|')(?:(?:[\\w:;\\s#-]*(visibility\\s*:\\s*hidden;|display\\s*:\\s*none;|font-size\\s*:\\s*0;)[\\w:;\\s#-]*)|font-size\\s*:\\s*0|visibility\\s*:\\s*hidden|display\\s*:\\s*none)\\3[^>]*(>.*?<\\s*/\\2[^>]*>|/\\s*>))");
+
+        for (String aRegex : regexStuff) {
+            String results[] = new Regex(toClean, aRegex).getColumn(0);
+            if (results != null) {
+                for (String result : results) {
+                    toClean = toClean.replace(result, "");
+                }
+            }
+        }
+
+        cleanHTML = toClean;
     }
 
     @SuppressWarnings("deprecation")
@@ -222,4 +254,29 @@ public class FileCryptCc extends PluginForDecrypt {
         }
         return links;
     }
+
+    private final void getPage(final String page) throws IOException, PluginException {
+        if (page == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage(page);
+        cleanUpHTML();
+    }
+
+    private final void postPage(final String url, final String post) throws IOException, PluginException {
+        if (url == null || post == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.postPage(url, post);
+        cleanUpHTML();
+    }
+
+    private final void submitForm(final Form form) throws Exception {
+        if (form == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.submitForm(form);
+        cleanUpHTML();
+    }
+
 }
