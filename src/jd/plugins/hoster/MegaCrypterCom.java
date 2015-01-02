@@ -58,7 +58,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.PluginTaskID;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megacrypter.com" }, urls = { "https?://(?:www\\.)?(megacrypter\\.com|megacrypter\\.linkcrypter\\.net)/\\![A-Za-z0-9\\-_\\!]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megacrypter.com" }, urls = { "https?://(?:www\\.)?(megacrypter\\.com|megacrypter\\.linkcrypter\\.net|megacrypter\\.megabuscame\\.me)/\\![A-Za-z0-9\\-_\\!]+" }, flags = { 2 })
 public class MegaCrypterCom extends PluginForHost {
 
     public MegaCrypterCom(PluginWrapper wrapper) {
@@ -72,7 +72,7 @@ public class MegaCrypterCom extends PluginForHost {
     }
 
     // TODO: Add decrypt part
-    private String       LINKPART  = null;
+    private String       linkPart  = null;
     // Encrpt stuff
     private final String USE_TMP   = "USE_TMP";
     private final String encrypted = ".encrypted";
@@ -201,8 +201,8 @@ public class MegaCrypterCom extends PluginForHost {
         this.setBrowserExclusive();
         setUrl(link);
         br.setFollowRedirects(true);
-        LINKPART = new Regex(link.getDownloadURL(), "/(\\!.+)").getMatch(0);
-        br.postPageRaw(mcUrl, "{\"m\": \"info\", \"link\":\"" + LINKPART + "\"}");
+        linkPart = new Regex(link.getDownloadURL(), "/(\\!.+)").getMatch(0);
+        br.postPageRaw(mcUrl, "{\"m\": \"info\", \"link\":\"" + linkPart + "\"}");
         try {
             checkError(br);
         } catch (final PluginException e) {
@@ -230,7 +230,7 @@ public class MegaCrypterCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getHeaders().put("Content-Type", "application/json");
-        br.postPageRaw(mcUrl, "{\"m\": \"dl\", \"link\":\"" + LINKPART + "\"}");
+        br.postPageRaw(mcUrl, "{\"m\": \"dl\", \"link\":\"" + linkPart + "\"}");
         checkError(br);
         String dllink = br.getRegex("\"url\":\"(https?:[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
