@@ -112,6 +112,12 @@ public class EightTracksCom extends PluginForDecrypt {
             single_track.setProperty("tracknumber", -1);
             single_track.setProperty("single_link", true);
             single_track.setAvailable(true);
+            try {
+                single_track.setContentUrl(parameter);
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+                single_track.setBrowserUrl(parameter);
+            }
             decryptedLinks.add(single_track);
         } else {
             String mixid = br.getRegex("mix_id=(\\d+)\"").getMatch(0);
@@ -120,9 +126,15 @@ public class EightTracksCom extends PluginForDecrypt {
             }
 
             String fpName = br.getRegex("<meta content=\"([^\"]+)\" property=\"og:title\"").getMatch(0);
-            if (fpName == null) fpName = br.getRegex("alt=\"([^\"]+)\" id=\"cover_art\"").getMatch(0);
-            if (fpName == null) fpName = br.getRegex("class=\"cover\" alt=\"([^\"]+)\"").getMatch(0);
-            if (fpName == null) fpName = "8tracks_playlist" + System.currentTimeMillis();
+            if (fpName == null) {
+                fpName = br.getRegex("alt=\"([^\"]+)\" id=\"cover_art\"").getMatch(0);
+            }
+            if (fpName == null) {
+                fpName = br.getRegex("class=\"cover\" alt=\"([^\"]+)\"").getMatch(0);
+            }
+            if (fpName == null) {
+                fpName = "8tracks_playlist" + System.currentTimeMillis();
+            }
             fpName = Encoding.htmlDecode(fpName.trim());
             fpName = encodeUnicode(fpName);
 
@@ -174,6 +186,12 @@ public class EightTracksCom extends PluginForDecrypt {
                     dl.setProperty("savedlink", dllink);
                     dl.setProperty("final_filename", filename);
                 }
+                try {
+                    dl.setContentUrl(parameter);
+                } catch (final Throwable e) {
+                    /* Not available in old 0.9.581 Stable */
+                    dl.setBrowserUrl(parameter);
+                }
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
@@ -211,9 +229,15 @@ public class EightTracksCom extends PluginForDecrypt {
         String album = getClipData("release_name");
         String title = name_and_artist.getMatch(0);
         String artist = name_and_artist.getMatch(1);
-        if (album == null || title == null) return null;
-        if (album.contains(":")) album = album.substring(0, album.indexOf(":"));
-        if (album.equals(title) || isEmpty(album)) album = null;
+        if (album == null || title == null) {
+            return null;
+        }
+        if (album.contains(":")) {
+            album = album.substring(0, album.indexOf(":"));
+        }
+        if (album.equals(title) || isEmpty(album)) {
+            album = null;
+        }
         title = encodeUnicode(Encoding.htmlDecode(title.trim()));
         artist = encodeUnicode(Encoding.htmlDecode(artist.trim()));
         if (album != null) {
