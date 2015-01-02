@@ -37,7 +37,6 @@ import javax.crypto.spec.SecretKeySpec;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.nutils.encoding.Base64;
@@ -58,12 +57,28 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.PluginTaskID;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megacrypter.com" }, urls = { "https?://(?:www\\.)?(megacrypter\\.com|megacrypter\\.linkcrypter\\.net|megacrypter\\.megabuscame\\.me)/\\![A-Za-z0-9\\-_\\!]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megacrypter" }, urls = { "https?://(?:www\\.)?(megacrypter\\.linkcrypter\\.net|megacrypter\\.megabuscame\\.me)/\\![A-Za-z0-9\\-_\\!]+" }, flags = { 2 })
 public class MegaCrypterCom extends PluginForHost {
 
     public MegaCrypterCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setConfigElements();
+    }
+
+    public boolean hasAutoCaptcha() {
+        return false;
+    }
+
+    public boolean hasCaptcha(final DownloadLink downloadLink, final jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return false;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return false;
+        }
+        return false;
     }
 
     @Override
@@ -170,28 +185,34 @@ public class MegaCrypterCom extends PluginForHost {
         }
     }
 
-    private final boolean supportsHTTPS       = true;
+    private boolean       supportsHTTPS       = false;
     private final String  preferHTTPS         = "preferHTTPS";
     private final boolean preferHTTPS_default = false;
-    private final boolean enforcesHTTPS       = true;
+    private boolean       enforcesHTTPS       = false;
 
     @SuppressWarnings({ "unused", "deprecation" })
     private void setConfigElements() {
-        if (supportsHTTPS && enforcesHTTPS) {
-            // preferhttps setting isn't needed! lets make sure preferhttps setting removed.
-            getPluginConfig().setProperty(preferHTTPS, Property.NULL);
-            getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "This Host Provider enforces secure communication requests via 'https' over SSL/TLS"));
-        } else if (supportsHTTPS && !enforcesHTTPS) {
-            getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), preferHTTPS, JDL.L("plugins.hoster.xfsCore.preferHTTPS", "Force secure communication requests via 'https' over SSL/TLS")).setDefaultValue(preferHTTPS_default));
-        } else {
-            // lets make sure preferhttps setting removed when hoster or we disable the plugin https ability.
-            getPluginConfig().setProperty(preferHTTPS, Property.NULL);
-        }
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), preferHTTPS, JDL.L("plugins.hoster.megacryptercom.preferHTTPS", "Force secure communication requests via HTTPS over SSL/TLS when supported. Not all hosts support HTTPS!")).setDefaultValue(preferHTTPS_default));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_TMP, JDL.L("plugins.hoster.megacryptercom.usetmp", "Use tmp decrypting file?")).setDefaultValue(false));
     }
 
     private void setUrl(final DownloadLink downloadLink) {
-        mcUrl = (enforcesHTTPS || this.getPluginConfig().getBooleanProperty(preferHTTPS, preferHTTPS_default) ? (Browser.getHost(downloadLink.getDownloadURL()).contains("megacrypter.com") ? "https" : "http") : "http") + "://" + new Regex(downloadLink.getDownloadURL(), "://([^/]+)").getMatch(0) + "/api";
+        if (downloadLink.getDownloadURL().contains("megacrypter.megabuscame.me/")) {
+            supportsHTTPS = false;
+            enforcesHTTPS = false;
+        } else if (downloadLink.getDownloadURL().contains("megacrypter.linkcrypter.net/")) {
+            supportsHTTPS = false;
+            enforcesHTTPS = false;
+        } else {
+            // the original megacrypter now RIP
+            // supportsHTTPS = true;
+            // enforcesHTTPS = true;
+        }
+        boolean useHTTPS = enforcesHTTPS;
+        if (supportsHTTPS && !enforcesHTTPS) {
+            useHTTPS = true;
+        }
+        mcUrl = (useHTTPS && this.getPluginConfig().getBooleanProperty(preferHTTPS, preferHTTPS_default) ? "https" : "http") + "://" + new Regex(downloadLink.getDownloadURL(), "://([^/]+)").getMatch(0) + "/api";
     }
 
     private String mcUrl = null;
