@@ -41,22 +41,22 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ctdisk.com" }, urls = { "http://(www\\.)?((ctdisk|400gb|pipipan|t00y)\\.com|bego\\.cc)/file/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bego.cc", "ctdisk.com" }, urls = { "http://(www\\.)?((ctdisk|400gb|pipipan|t00y)\\.com|bego\\.cc)/file/\\d+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2, 0 })
 public class CtDiskCom extends PluginForHost {
 
     private static final String DLLINKREGEX2  = ">电信限速下载</a>[\t\n\r ]+<a href=\"(http://.*?)\"";
-    private static final String MAINPAGE      = "http://www.400gb.com/";
+    private static final String MAINPAGE      = "http://www.bego.cc/";
     private static Object       LOCK          = new Object();
     private static Object       linkcheckLOCK = new Object();
 
     public CtDiskCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.400gb.com/premium.php");
+        this.enablePremium("http://www.bego.cc/premium.php");
         this.setStartIntervall(5 * 1000l);
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("((ctdisk|pipipan|t00y)\\.com|bego\\.cc)/", "400gb.com/"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("((ctdisk|pipipan|t00y)\\.com|bego\\.cc|400gb\\.com)/", "bego.cc/"));
     }
 
     public void prepBrowser(final Browser br) {
@@ -64,6 +64,16 @@ public class CtDiskCom extends PluginForHost {
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.setConnectTimeout(120000);
         br.setReadTimeout(120000);
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("ctdisk.com".equals(getHost()) || "400gb.com".equals(getHost())) {
+            if (host == null || "ctdisk.com".equals(host) || "400gb.com".equals(host)) {
+                return "bego.cc";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     @Override
@@ -229,23 +239,24 @@ public class CtDiskCom extends PluginForHost {
         return dllink;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
             login(account, false);
-            br.getPage("http://home.400gb.com/mydisk.php");
-            /** Only re-login if cookies are not valid anymore */
+            br.getPage("/mydisk.php");
+            /* Only re-login if cookies are not valid anymore */
             if (br.containsHTML("alert\\(\"请先 登录 或 注册会员后再继续使用本功能")) {
                 login(account, true);
             }
         } catch (PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
         ai.setUnlimitedTraffic();
         account.setValid(true);
-        ai.setStatus("Premium User");
+        ai.setStatus("Premium Account");
         return ai;
     }
 
@@ -282,8 +293,8 @@ public class CtDiskCom extends PluginForHost {
             if (downHTML == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getPage("http://www.400gb.com" + downHTML);
-            final String vipLinks = br.getRegex("<div class=\"viplist\">(.*?)<table class=\"intro_text\"").getMatch(0);
+            br.getPage("http://www.bego.cc" + downHTML);
+            final String vipLinks = br.getRegex("viplist\">(.*?)<table class=\"table table").getMatch(0);
             if (vipLinks == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -329,16 +340,26 @@ public class CtDiskCom extends PluginForHost {
                     return;
                 }
             }
-            br.getPage("http://www.400gb.com/index.php?item=account&action=login");
+            br.setFollowRedirects(true);
+            br.getPage("http://www.bego.cc/index.php?item=account&action=login");
             String hash = br.getRegex("name=\"formhash\" value=\"(.*?)\"").getMatch(0);
             if (hash == null) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            DownloadLink dummy = new DownloadLink(this, "Account login", "ctdisk.com", null, true);
-            String code = getCaptchaCode("http://www.400gb.com/randcode.php", dummy);
-            br.postPage("http://www.400gb.com/index.php", "item=account&action=login&task=login&ref=mydisk.php&formhash=" + Encoding.urlEncode(hash) + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&randcode=" + Encoding.urlEncode(code) + "&remember=on&btnToLogin.x=" + new Random().nextInt(100) + "&btnToLogin.y=" + new Random().nextInt(100));
+            String postData = "item=account&action=login&task=login&ref=mydisk.php&formhash=" + Encoding.urlEncode(hash) + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on&btnToLogin.x=" + new Random().nextInt(100) + "&btnToLogin.y=" + new Random().nextInt(100);
+            final String captchaURL = br.getRegex("\"(/randcodeV2_login\\.php\\?\\d+)\"").getMatch(0);
+            if (captchaURL != null) {
+                final DownloadLink dummy = new DownloadLink(this, "Account login", "bego.cc", null, true);
+                final String code = getCaptchaCode(captchaURL, dummy);
+                postData += "&randcodeV2=" + Encoding.urlEncode(code);
+            }
+            br.postPage("/index.php", postData);
             if (br.getCookie(MAINPAGE, "pubcookie") == null || "deleted".equals(br.getCookie(MAINPAGE, "pubcookie"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
             }
             // Save cookies
             final HashMap<String, String> cookies = new HashMap<String, String>();

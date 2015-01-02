@@ -30,6 +30,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -124,6 +125,7 @@ public class Freaksharenet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink downloadLink) throws Exception {
         final boolean resume = false;
         final int maxchunks = 1;
@@ -234,17 +236,28 @@ public class Freaksharenet extends PluginForHost {
                 if (finallink == null) {
                     continue;
                 }
+                /* Same as unknown server error below. */
+                if (finallink.length() <= 30) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 1 * 60 * 60 * 1000l);
+                }
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, resume, maxchunks);
-                captchaFailed = false;
-                break;
             } else {
                 captchaFailed = false;
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, resume, maxchunks);
             }
-            if (!dl.getConnection().isContentDisposition()) {
+            final URLConnectionAdapter con = dl.getConnection();
+            final long filesize_half = downloadLink.getDownloadSize() / 2;
+            final long realSize = con.getLongContentLength();
+            /*
+             * contentDisposition check is not enough - if the real filesize is smaller than half of our real filesize, something must be
+             * wrong!
+             */
+            if (!con.isContentDisposition() || realSize < filesize_half) {
                 br.followConnection();
                 if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|>Wrong Captcha)")) {
                     continue;
+                } else if (br.getURL().equals("http://freakshare.com/")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 1 * 60 * 60 * 1000l);
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
