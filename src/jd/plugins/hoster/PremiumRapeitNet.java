@@ -245,14 +245,19 @@ public class PremiumRapeitNet extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.getPage("http://premium.rapeit.net/?login");
                 String postData = "emailaddress=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                rc.findID();
-                rc.load();
-                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final DownloadLink dummyLink = new DownloadLink(this, "Account", NICE_HOST, MAINPAGE, true);
-                final String code = getCaptchaCode("recaptcha", cf, dummyLink);
-                postData += "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(code);
+                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    rc.findID();
+                    rc.load();
+                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    final String code = getCaptchaCode("recaptcha", cf, dummyLink);
+                    postData += "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(code);
+                } else {
+                    final String code = getCaptchaCode("/random_image.php", dummyLink);
+                    postData += "&txtCaptcha=" + Encoding.urlEncode(code);
+                }
                 br.postPage("http://premium.rapeit.net/?login", postData);
                 if (br.getCookie(MAINPAGE, "session") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
