@@ -154,23 +154,31 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                     }
                     return decryptedLinks;
                 }
-                /* Access link if possible to get higher qualities e.g. *1280 */
+                String[] pics = null;
+                /* Access link if possible to get higher qualities e.g. *1280 --> Only needed/possible for single links. */
                 final String picturelink = br.getRegex("class=\"photo\">[\t\n\r ]+<a href=\"(http://[a-z0-9\\-]+\\.tumblr\\.com/image/\\d+)\"").getMatch(0);
                 if (picturelink != null) {
                     br.getPage(picturelink);
+                    externID = getBiggestPicture();
+                    if (externID != null) {
+                        final DownloadLink dl = createDownloadlink("directhttp://" + externID);
+                        dl.setAvailable(true);
+                        decryptedLinks.add(dl);
+                        return decryptedLinks;
+                    }
+                } else {
+                    pics = br.getRegex("property=\"og:image\" content=\"(http://\\d+\\.media\\.tumblr\\.com/[^<>\"]*?)\"").getColumn(0);
+                    if (pics != null && pics.length != 0) {
+                        for (final String pic : pics) {
+                            final DownloadLink dl = createDownloadlink("directhttp://" + pic);
+                            dl.setAvailable(true);
+                            decryptedLinks.add(dl);
+                        }
+                        return decryptedLinks;
+                    }
                 }
-                externID = getBiggestPicture();
-                if (externID != null) {
-                    final DownloadLink dl = createDownloadlink("directhttp://" + externID);
-                    dl.setAvailable(true);
-                    decryptedLinks.add(dl);
-                    return decryptedLinks;
-                }
-
-                if (externID == null) {
-                    logger.info("Found nothing here so the decrypter is either broken or there isn't anything to decrypt. Link: " + parameter);
-                    return decryptedLinks;
-                }
+                logger.info("Found nothing here so the decrypter is either broken or there isn't anything to decrypt. Link: " + parameter);
+                return decryptedLinks;
 
             } else if (parameter.matches(".+tumblr\\.com/image/\\d+")) {
                 br.setFollowRedirects(false);

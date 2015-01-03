@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 public class EightTracksCom extends PluginForDecrypt {
 
     private static final String  MAINPAGE          = "http://8tracks.com/";
-    private static final String  UNSUPPORTEDLINKS  = "http://(www\\.)?8tracks\\.com/((assets_js/|explore|auth|settings|mixes|developers|users)/.+|[\\w\\-]+/homepage|sets/new|collections/.+)";
+    private static final String  UNSUPPORTEDLINKS  = "http://(www\\.)?8tracks\\.com/((assets_js|explore|auth|settings|mixes|developers|users|job)/.+|[\\w\\-]+/homepage|sets/new|collections/.+)";
     private static final String  TYPE_GENERAL      = "http://(www\\.)?8tracks\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+";
     private static final String  TYPE_SINGLE_TRACK = "http://(www\\.)?8tracks\\.com/tracks/\\d+";
     private static final String  TYPE_SHORT        = "http://(www\\.)?8trx\\.com/[A-Za-z0-9]+";
@@ -53,10 +53,15 @@ public class EightTracksCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>(0);
         String parameter = param.toString();
+        final DownloadLink offline = createDownloadlink("http://8tracksdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
+        offline.setName(new Regex(parameter, "8tracks\\.com/(.+)").getMatch(0));
+        offline.setAvailable(false);
+        offline.setProperty("offline", true);
         setBrowserExclusive();
 
         if (parameter.matches(UNSUPPORTEDLINKS)) {
             logger.info("Invalid link: " + parameter);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
 
@@ -74,10 +79,6 @@ public class EightTracksCom extends PluginForDecrypt {
             parameter = br.getURL();
         }
 
-        final DownloadLink offline = createDownloadlink("http://8tracksdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
-        offline.setName(new Regex(parameter, "8tracks\\.com/(.+)").getMatch(0));
-        offline.setAvailable(false);
-        offline.setProperty("offline", true);
         if (br.containsHTML(">Sorry, that page doesn\\'t exist")) {
             logger.info("Link offline: " + parameter);
             decryptedLinks.add(offline);
