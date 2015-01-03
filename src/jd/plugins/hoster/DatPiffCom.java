@@ -52,6 +52,7 @@ public class DatPiffCom extends PluginForHost {
         this.enablePremium("http://www.datpiff.com/register");
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) throws IOException {
         if (link.getDownloadURL().matches("http://(www\\.)?datpiff\\.com/mixtapes\\-detail\\.php\\?id=\\d+")) {
             link.setUrlDownload(link.getDownloadURL().replace("datpiff.com/mixtapes-detail.php?id=", "datpiff.com/pop-mixtape-download.php?id="));
@@ -68,6 +69,7 @@ public class DatPiffCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -93,6 +95,9 @@ public class DatPiffCom extends PluginForHost {
         filename = br.getRegex("<title>Download Mixtape \\&quot;(.*?)\\&quot;</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<span>Download Mixtape<em>(.*?)</em></span>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("<span>Download Track<em>([^<>\"]*?)</em>").getMatch(0);
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

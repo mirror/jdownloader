@@ -156,6 +156,7 @@ public class VKontakteRu extends PluginForDecrypt {
      * Information: General linkstructure: vk.com/ownerID_contentID --> ownerID is always positive for users, negative for communities (also
      * groups??)
      */
+    @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         decryptedLinks = new ArrayList<DownloadLink>() {
@@ -1794,12 +1795,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /** Sets basic values/cookies */
     private void prepBrowser(final Browser br) {
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:33.0) Gecko/20100101 Firefox/33.0");
-        // Set english language
-        br.setCookie("http://vk.com/", "remixlang", "3");
-        br.setReadTimeout(3 * 60 * 1000);
-        br.setCookiesExclusive(false);
-        br.setFollowRedirects(false);
+        jd.plugins.hoster.VKontakteRuHoster.prepBrowser(br);
     }
 
     /** Correct filenames for Windows users */
