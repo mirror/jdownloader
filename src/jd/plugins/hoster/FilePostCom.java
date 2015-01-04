@@ -144,7 +144,7 @@ public class FilePostCom extends PluginForHost {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see jd.plugins.PluginForHost#correctDownloadLink(jd.plugins.DownloadLink)
      */
     @Override
@@ -311,11 +311,25 @@ public class FilePostCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         String premiumlimit = br.getRegex("Files over (.*?) can be downloaded by premium").getMatch(0);
         if (premiumlimit != null) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
+            }
             throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium", "Files over " + premiumlimit + " are only downloadable for premium users"));
         }
         if (br.containsHTML(FREEBLOCKED)) {
             if (br.containsHTML("The file owner has limited free downloads of this file")) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium2", "Only downloadable for premium users"));
+                try {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } catch (final Throwable e) {
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
+                }
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
             }
         }
         if (br.containsHTML("We are sorry, the server where this file is")) {

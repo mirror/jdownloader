@@ -419,6 +419,13 @@ public class PremiumizeMe extends PluginForHost {
         try {
             int status = Integer.parseInt(statusCode);
             switch (status) {
+            case 0:
+                /* DB cnnection problem */
+                if (downloadLink.getLinkStatus().getRetryCount() >= 5) {
+                    /* Retried enough times --> Temporarily disable account! */
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                }
+                throw new PluginException(LinkStatus.ERROR_RETRY, "DB connection problem");
             case 200:
                 /* all okay */
                 return;
@@ -528,7 +535,7 @@ public class PremiumizeMe extends PluginForHost {
 
         public static class PremiumizeMePanel extends MigPanel implements EditAccountPanel {
             /**
-             * 
+             *
              */
             private static final long serialVersionUID = 1L;
 
