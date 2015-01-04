@@ -79,19 +79,29 @@ public class FileToLinkCom extends PluginForHost {
             }
         }
 
-        if (br.containsHTML(">Sorry, this file does not exist\\.<") || br.getURL().contains("filetolink.com/d/notfound.html") || br.getURL().equals("http://www.filetolink.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Sorry, this file does not exist\\.<|Removed due to abuse") || br.getURL().contains("filetolink.com/d/notfound.html") || br.getURL().equals("http://www.filetolink.com/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // For invalid links
-        if (br.containsHTML(">403 Forbidden<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">403 Forbidden<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.containsHTML(LOGINNEEDED)) {
             downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
             return AvailableStatus.TRUE;
         }
         String filename = br.getRegex("<title>[a-z0-9_\\-]+/([^<>\"]*?) : File Sharing \\- Upload and Send big Files : FileToLink</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex(">Downloading <a href=\"[^<>\"]*?\" >([^<>\"]*?)</a>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex(">Downloading <a href=\"[^<>\"]*?\" >([^<>\"]*?)</a>").getMatch(0);
+        }
         final String filesize = br.getRegex("Size:</td><td>([^<>\"]*?)</td></tr>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         downloadLink.setName(filename.trim());
-        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
 
     }
@@ -101,7 +111,9 @@ public class FileToLinkCom extends PluginForHost {
         requestFileInformation(downloadLink);
         boolean facebook = false;
         if (DLLINK == null) {
-            if (br.containsHTML(LOGINNEEDED)) throw new PluginException(LinkStatus.ERROR_FATAL, LOGINNEEDEDUSERTEXT);
+            if (br.containsHTML(LOGINNEEDED)) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, LOGINNEEDEDUSERTEXT);
+            }
             String DLLINK = br.getRegex("<META HTTP\\-EQUIV=\"Refresh\" CONTENT=\"0\\; URL=(/download/\\?h=[0-9a-z]+\\&t=\\d+\\&f=[0-9a-z]+)\"/>\\'").getMatch(0);
             if (DLLINK != null) {
                 DLLINK = new Regex(br.getURL(), "(https?://.*\\.com)/.*").getMatch(0) + DLLINK;
@@ -109,7 +121,9 @@ public class FileToLinkCom extends PluginForHost {
                 facebook = true;
                 // Maybe facebook login required, let's skip that shit
                 final Regex noFB = br.getRegex("\\&redirect_url=http%3A%2F%2F(www\\.)?filetolink\\.com%2Fd%2F%3Fh%3D([a-z0-9]+)%26t%3D(\\d+)%26f%3D([a-z0-9]+)\"");
-                if (noFB.getMatches().length < 2) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (noFB.getMatches().length < 2) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 DLLINK = "http://www.filetolink.com/download/?h=" + noFB.getMatch(1) + "&t=" + noFB.getMatch(2) + "&f=" + noFB.getMatch(3);
             }
         }
@@ -117,7 +131,9 @@ public class FileToLinkCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             // Also not downloadable via browser with useless Facebook App
             // (tested)
-            if (facebook) throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL Server error: Not downloadable");
+            if (facebook) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL Server error: Not downloadable");
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

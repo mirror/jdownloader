@@ -19,14 +19,14 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.html.Form;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -47,19 +47,44 @@ public class HostUjeNet extends PluginForHost {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws PluginException, IOException {
+        this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/34.0");
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML(">Podany plik nie został odnaleziony")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String filename = br.getRegex("name=\"name\" value=\"([^<>\"]*?)\"").getMatch(0);
+        final String filesize = br.getRegex("<b>Rozmiar:</b>([^<>\"]*?)<br>").getMatch(0);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        downloadLink.setName(Encoding.htmlDecode(filename).trim());
+        downloadLink.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize)));
+        return AvailableStatus.TRUE;
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String code = getCaptchaCode(br.getBaseURL() + "obraz.php", downloadLink);
-        Form captchaForm = br.getForm(1);
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        captchaForm.put("kod", code);
-        captchaForm.put("REG", "1");
         br.setFollowRedirects(false);
-        br.submitForm(captchaForm);
+        final String fidhash = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+        final String k = br.getRegex("name=\"k\" value=\"([^<>\"]*?)\"").getMatch(0);
+        final String mimetype = br.getRegex("name=\"mime\" value=\"([^<>\"]*?)\"").getMatch(0);
+        if (k == null || mimetype == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        // br.getPage("http://hostuje.net/obraz.php");
+        // br.getPage("http://hostuje.net/dll_kody.js.php?new7a&flash=0");
+        br.postPage(br.getURL(), "REG=1&OK=1&hasz=" + fidhash + "&id=" + fidhash + "&name=" + Encoding.urlEncode(downloadLink.getName()) + "&mime=" + Encoding.urlEncode(mimetype) + "&k=" + k);
         String link = null;
         link = br.getRedirectLocation();
-        if (link == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDL.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
+        if (link == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, false, 1);
         dl.startDownload();
     }
@@ -67,18 +92,6 @@ public class HostUjeNet extends PluginForHost {
     // do not add @Override here to keep 0.* compatibility
     public boolean hasCaptcha() {
         return true;
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
-        this.setBrowserExclusive();
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Podany plik nie zosta? odnaleziony")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String[] infos = br.getRegex("<b>Plik:</b> (.*?)<br><b>Rozmiar:</b> (.*?)<br>").getRow(0);
-        if (infos == null || infos[0] == null || infos[1] == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(infos[0].trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(infos[1].trim()));
-        return AvailableStatus.TRUE;
     }
 
     @Override

@@ -124,6 +124,16 @@ public class TeraFileCo extends PluginForHost {
     }
 
     @Override
+    public String rewriteHost(String host) {
+        if ("lumfile.com".equals(getHost())) {
+            if (host == null || "lumfile.com".equals(host)) {
+                return "terafile.co";
+            }
+        }
+        return super.rewriteHost(host);
+    }
+
+    @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
     }
@@ -204,6 +214,10 @@ public class TeraFileCo extends PluginForHost {
         }
         final String[] fileInfo = new String[3];
         scanInfo(fileInfo);
+        /* Workaround for serverside missing filename. */
+        if (fileInfo[0] == null || fileInfo[0].equals("")) {
+            fileInfo[0] = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
+        }
         if (fileInfo[0] == null || fileInfo[0].equals("")) {
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");

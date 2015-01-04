@@ -28,7 +28,6 @@ import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -126,9 +125,9 @@ public class GloriaTvDecrypt extends PluginForDecrypt {
             decryptedLinks.add(dl);
         }
 
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(videotitle);
-        fp.addLinks(decryptedLinks);
+        // final FilePackage fp = FilePackage.getInstance();
+        // fp.setName(videotitle);
+        // fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
     }

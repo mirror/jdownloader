@@ -372,6 +372,7 @@ public class PremiumTo extends PluginForHost {
                                 // filter the filename from content disposition and decode it...
                                 name = new Regex(name, "filename.=UTF-8\'\'([^\"]+)").getMatch(0);
                                 name = Encoding.UTF8Decode(name).replaceAll("%20", " ");
+                                name = Encoding.htmlDecode(name);
                                 if (name != null) {
                                     link.setFinalFileName(name);
                                 }
