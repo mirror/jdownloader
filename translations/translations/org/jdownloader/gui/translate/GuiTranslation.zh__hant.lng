@@ -1587,6 +1587,7 @@ lit_finished_package=完成的任務
 lit_hoster=主機商
 lit_image=圖片
 lit_import=匯入
+lit_name=名稱
 lit_no=否
 lit_offline=離線
 lit_open=開啟

@@ -17,6 +17,7 @@ action_unpauseDownload=取消暫停下載
 addScheduleEntryDialog_account=帳號
 addScheduleEntryDialog_actionParameters=操作和參數
 addScheduleEntryDialog_date=日期
+addScheduleEntryDialog_days=日期
 addScheduleEntryDialog_defaultScheduleName=排程
 addScheduleEntryDialog_downloads=下載
 addScheduleEntryDialog_header_time=時間 / 間隔
