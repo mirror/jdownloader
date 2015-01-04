@@ -1,0 +1,15 @@
+NONE=無
+ON_DOWNLOAD_CONTROLLER_START=已啟動一個下載
+ON_DOWNLOAD_CONTROLLER_STOPPED=一個下載已停止
+ON_JDOWNLOADER_STARTED=啟動 JDownloader
+deny=延遲
+description=監視內部的 JDownloader 事件，並允許執行有關指令碼 (JAVAscript)。
+edit_script=編輯指令碼
+editor_autoformat=自動格式
+editor_showhelp=顯示/隱藏說明
+editor_testrun=測試執行
+event_trigger=觸發器
+example_script_name=範例
+loading_editor_title=正在載入編輯器...
+script_editor_title=指令碼編輯器：%s1
+title=事件指令碼
