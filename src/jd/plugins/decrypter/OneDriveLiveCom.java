@@ -246,7 +246,18 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                 dl.setProperty("LINKDUPEID", "onedrivelive" + id + "_" + filename);
                 if (view_url != null) {
                     view_url = view_url.replace("\\", "");
-                    dl.setProperty("plain_view_url", view_url);
+                } else {
+                    view_url = "https://onedrive.live.com/?cid=" + cid + "&id=" + id;
+                    if (authkey != null) {
+                        view_url += "&authkey=" + authkey;
+                    }
+                }
+                dl.setProperty("plain_view_url", view_url);
+                try {
+                    dl.setContentUrl(view_url);
+                } catch (final Throwable e) {
+                    /* Not available in old 0.9.591 Stable */
+                    dl.setBrowserUrl(view_url);
                 }
                 if (download_url != null) {
                     download_url = download_url.replace("\\", "");
@@ -319,6 +330,8 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         br.getHeaders().put("Referer", "https://skyapi.onedrive.live.com/api/proxy?v=3");
         br.getHeaders().put("AppId", "1141147648");
         br.setCustomCharset("utf-8");
+        br.setConnectTimeout(3 * 60 * 1000);
+        br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(false);
     }
 

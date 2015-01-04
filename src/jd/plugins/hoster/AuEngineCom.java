@@ -57,6 +57,9 @@ public class AuEngineCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         dllink = br.getRegex("url: '(http[^']+auengine\\.com(%2F|/)videos[^']+)").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("video_link = \\'(http[^']+auengine\\.com[^']+)").getMatch(0);
+        }
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
