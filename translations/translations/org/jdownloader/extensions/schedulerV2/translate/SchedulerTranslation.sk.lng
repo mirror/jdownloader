@@ -1,3 +1,4 @@
+action_disableAccount=Zakázať účet
 action_disableSpeedLimit=Vypnúť rýchlostný limit
 action_enableAccount=Povoliť účet
 addScheduleEntryDialog_account=Účet
@@ -10,6 +11,7 @@ addScheduleEntryDialog_repeat=Opakovať
 addScheduleEntryDialog_speed=Rýchlosť
 addScheduleEntryDialog_time=Čas
 addScheduleEntryDialog_title_edit=Upraviť plán
+lit_copy=Kopírovať
 scheduleTable_column_action=Akcia
 scheduleTable_column_enable=Povoliť
 scheduleTable_column_name=Názov
