@@ -491,6 +491,7 @@ public class KingFilesNet extends PluginForHost {
             }
         }
         regexStuff.add("<!(--.*?--)>");
+        regexStuff.add("(<td[^>]+style=(\"|')[\\w:;\\s#-]*color\\s*:\\s*transparent\\s*;[^>]*>.*?</td>)");
         regexStuff.add("(<\\s*(\\w+)\\s+[^>]*style\\s*=\\s*(\"|')(?:(?:[\\w:;\\s#-]*(visibility\\s*:\\s*hidden;|display\\s*:\\s*none;|font-size\\s*:\\s*0;)[\\w:;\\s#-]*)|font-size\\s*:\\s*0|visibility\\s*:\\s*hidden|display\\s*:\\s*none)\\3[^>]*(>.*?<\\s*/\\2[^>]*>|/\\s*>))");
 
         for (String aRegex : regexStuff) {
