@@ -289,10 +289,15 @@ public class Tb7Pl extends PluginForHost {
                     boolean resetGeneratedLink = true;
                     String redirectConnection = br2.getRedirectLocation();
                     if (redirectConnection != null) {
-                        con = br2.openGetConnection(redirectConnection);
-                        if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                            resetGeneratedLink = true;
-                        } else {
+                        if (redirectConnection.contains("tb7.pl")) {
+                            con = br2.openGetConnection(redirectConnection);
+                            if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                                resetGeneratedLink = true;
+                            } else {
+                                resetGeneratedLink = false;
+                            }
+
+                        } else { // turbobit link is already redirected link
                             resetGeneratedLink = false;
                         }
                     }
