@@ -78,7 +78,7 @@ public class FileCryptCc extends PluginForDecrypt {
             final Form[] allForms = br.getForms();
             if (allForms != null && allForms.length != 0) {
                 for (final Form aForm : allForms) {
-                    if (aForm.containsHTML("/captcha/")) {
+                    if (aForm.containsHTML("captcha")) {
                         captchaform = aForm;
                         break;
                     }
