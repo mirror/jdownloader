@@ -67,7 +67,7 @@ public class YourUploadCom extends PluginForHost {
         correctDownloadLink(link);
         br.getPage(link.getDownloadURL());
         if (link.getDownloadURL().matches(".+(/embed_ext/|embed\\.(yourupload\\.com|yucache\\.net)/).+")) {
-            if (br.containsHTML("<h1>Error</h1>") || br.containsHTML("Embed\\+entry\\+doesnt\\+exist") || br.containsHTML("No htmlCode read")) {
+            if (br.containsHTML("<h1>Error</h1>") || br.containsHTML("Embed\\+entry\\+doesnt\\+exist") || br.containsHTML("No htmlCode read") || br.containsHTML("Could not redirect legacy")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
