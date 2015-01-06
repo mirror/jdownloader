@@ -338,7 +338,7 @@ public class UnrestrictLi extends PluginForHost {
                 logger.info("Invalid API response.");
                 tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
             } else if (br.containsHTML("Host not supported\\.")) {
-                logger.info("Host not supported.");
+                logger.info("\"invalid\":\"Host is not supported");
                 tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
             } else if (br.containsHTML("Error downloading file\\.")) {
                 logger.info("Error downloading file.");
@@ -568,7 +568,7 @@ public class UnrestrictLi extends PluginForHost {
             logger.info("File offline");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("invalid\":\"Host is not supported or unknown link format")) {
-            logger.info("Unknown link format");
+            logger.info("Unknown/unsupported link format/host");
             tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
         } else if (br.containsHTML("invalid\":\"You are not allowed to download from this host")) {
             logger.info("You are not allowed to download from this host");

@@ -162,7 +162,11 @@ public class NowVideoEu extends PluginForHost {
         correctDownloadLink(link);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        try {
+            br.getPage(link.getContentUrl());
+        } catch (final Throwable e) {
+            br.getPage(link.getDownloadURL());
+        }
         if (br.containsHTML("(>This file no longer exists on our servers|>Possible reasons:)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -209,6 +213,10 @@ public class NowVideoEu extends PluginForHost {
         if (fKey == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        /*
+         * http://www.nowvideo.ch/api/player.api.php?numOfErrors=0&user=undefined&key=79%2E216%2E193%2E67%2D
+         * 0bbb2d3c46961e28b0d2358e8609a055&file=c3eda0e32606f&cid=1&cid2=undefined&pass=undefined&cid3=undefined
+         */
         final String player = "/api/player.api.php?pass=undefined&user=undefined&codes=undefined&file=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&key=" + Encoding.urlEncode(fKey) + "&cid=" + cid1 + "&cid2=" + (cid2 == null ? "undefined" : cid2) + "&cid3=" + br.getHost() + "&numOfErrors=";
         final String host = new Regex(br.getURL(), "https?://[^/]+").getMatch(-1);
         int errCount = 0;
