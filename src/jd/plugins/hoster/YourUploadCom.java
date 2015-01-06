@@ -48,6 +48,9 @@ public class YourUploadCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
+        if (link.getDownloadURL().matches(".+/watch/.+")) {
+            link.setUrlDownload("http://embed.yourupload.com/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+        }
         // you can not convert embed formats back! will always show up offline!
         if (!link.getDownloadURL().matches(".+(/embed_ext/|embed\\.(yourupload\\.com|yucache\\.net)/).+")) {
             link.setUrlDownload("http://yourupload.com/file/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
