@@ -21,8 +21,10 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -32,7 +34,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "7958.com" }, urls = { "http://(www\\.)?[a-z0-9]+\\.7958\\.com/down_\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "7958.com" }, urls = { "http://(www\\.)?[a-z0-9]+\\.7958\\.com(\\.cn)?/down_\\d+\\.html" }, flags = { 0 })
 public class SevenNineFiveEightCom extends PluginForHost {
 
     public SevenNineFiveEightCom(PluginWrapper wrapper) {
@@ -45,11 +47,30 @@ public class SevenNineFiveEightCom extends PluginForHost {
     }
 
     @Override
+    public String rewriteHost(String host) {
+        if ("7958.com".equals(getHost())) {
+            if (host == null || "7958.com".equals(host)) {
+                return "7958.com.cn";
+            }
+        }
+        return super.rewriteHost(host);
+    }
+
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("7958.com/", "7958.com.cn/"));
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://www.7958.com/404.html")) {
+        try {
+            br.getPage(link.getDownloadURL());
+        } catch (final BrowserException e) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.getURL().contains("/404.html")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("/down_\\d+\\.html target=_blank>([^<>\"]*?)</a>").getMatch(0);
@@ -73,17 +94,19 @@ public class SevenNineFiveEightCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        link.setDownloadSize(SizeFormatter.getSize(filesize + "b"));
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
+            final String user_host = new Regex(downloadLink.getDownloadURL(), "(https?://[a-z0-9\\.]+\\.7958\\.com\\.cn)/").getMatch(0);
             br.getPage(downloadLink.getDownloadURL().replace("/down_", "/download_"));
-            dllink = br.getRegex("\"(http://[a-z0-9]+\\.7958\\.com/disk\\.php\\?mod=downfile[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("\"(/download/downfile\\?sid=\\d+)\"").getMatch(0);
             if (dllink == null) {
                 logger.info("Only downloadable via premium");
                 try {
@@ -95,8 +118,9 @@ public class SevenNineFiveEightCom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered/premium users");
             }
+            dllink = user_host + dllink;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -130,7 +154,7 @@ public class SevenNineFiveEightCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 3;
     }
 
     @Override

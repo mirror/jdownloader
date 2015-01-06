@@ -188,7 +188,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                 continue;
             }
             if (itemType.equals("32")) {
-                final String folder_id = new Regex(singleinfo, "\"((Non)?EmptyDocumentFolder|NonEmptyAlbum)\",\"id\":\"([^<>\"]*?)\"").getMatch(2);
+                final String folder_id = new Regex(singleinfo, "\"(?:(?:Non)?EmptyDocumentFolder|NonEmptyAlbum|EmptyAlbum)\",\"id\":\"([^<>\"]*?)\"").getMatch(0);
                 final String folder_cid = getJson("creatorCid", singleinfo);
                 if (folder_id == null || folder_cid == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
