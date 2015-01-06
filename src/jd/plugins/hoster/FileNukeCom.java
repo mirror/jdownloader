@@ -17,8 +17,10 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,29 +29,35 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filenuke.com" }, urls = { "https?://(www\\.)?filenuke\\.com/([a-z0-9]{12}|f/[A-Za-z0-9]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filenuke.com" }, urls = { "https?://(www\\.)?filenuke\\.com/([a-z0-9]{12}|f/[A-Za-z0-9]+)" }, flags = { 2 })
 public class FileNukeCom extends PluginForHost {
 
     private String               correctedBR                  = "";
-    private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private static final String  COOKIE_HOST                  = "http://filenuke.com";
+    private static final String  NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
+    private static final String  NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = "This server is under Maintenance";
     private static final String  ALLWAIT_SHORT                = "Waiting till new downloads can be started";
@@ -58,17 +66,31 @@ public class FileNukeCom extends PluginForHost {
     private static final boolean TYPE_2_PREMIUMONLY           = false;
     private static final String  TYPE_2                       = "https?://(www\\.)?filenuke\\.com/f/[A-Za-z0-9]+";
 
+    private static final boolean FREE_RESUME                  = true;
+    private static final int     FREE_MAXCHUNKS               = -2;
+    private static final int     FREE_MAXDOWNLOADS            = 1;
+    private static final boolean ACCOUNT_FREE_RESUME          = true;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS       = -2;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 1;
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = -2;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 1;
+
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
+
     /* don't touch the following! */
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
+    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
+    private static Object        LOCK                         = new Object();
+    private String               fuid                         = null;
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.5.3-raz
-    // mods: heavily modified, do NOT upgrade!
+    // mods: heavily modified, do NOT (never ever!) upgrade!
     // non account: 2 * 1
-    // free account:
-    // premium account:
+    // free account: 2 * 1
+    // premium account: untested, set FREE ACCOUNT limits
     // protocol: no https
     // captchatype: null
     // other: no redirects
@@ -85,7 +107,7 @@ public class FileNukeCom extends PluginForHost {
 
     public FileNukeCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/auth/signup");
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -105,10 +127,10 @@ public class FileNukeCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
-        this.setBrowserExclusive();
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(false);
         prepBrowser();
+        setFUID(link);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -164,11 +186,11 @@ public class FileNukeCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -2, "freelink");
+        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
     }
 
-    public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
-        String passCode = null;
+    @SuppressWarnings("deprecation")
+    public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         if (md5hash != null) {
             md5hash = md5hash.trim();
@@ -179,7 +201,7 @@ public class FileNukeCom extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         boolean force_premiumonly = false;
         if (dllink == null && useSpecialWay) {
-            postPage(br.getURL(), "method_free=Free");
+            specialWayPost();
             dllink = br.getRegex("file[\t\n\r ]+:[\t\n\r ]+\"(http://[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = getDllink();
@@ -203,10 +225,10 @@ public class FileNukeCom extends PluginForHost {
          * Video links can already be found here, if a link is found here we can skip wait times and captchas
          */
         if (dllink == null) {
-            checkErrors(downloadLink, false, passCode);
+            checkErrors(downloadLink, false);
             if (correctedBR.contains("\"download1\"")) {
                 postPage(br.getURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), "/([A-Za-z0-9]{12})$").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getStringProperty("plainfilename")) + "&referer=&method_free=Free+Download");
-                checkErrors(downloadLink, false, passCode);
+                checkErrors(downloadLink, false);
             }
             dllink = getDllink();
         }
@@ -233,12 +255,7 @@ public class FileNukeCom extends PluginForHost {
             for (int i = 0; i <= 3; i++) {
                 dlForm.remove(null);
                 final long timeBefore = System.currentTimeMillis();
-                boolean password = false;
                 boolean skipWaittime = false;
-                if (new Regex(correctedBR, PASSWORDTEXT).matches()) {
-                    password = true;
-                    logger.info("The downloadlink seems to be password protected.");
-                }
                 /* Captcha START */
                 if (correctedBR.contains(";background:#ccc;text-align")) {
                     logger.info("Detected captcha method \"plaintext captchas\" for this host");
@@ -298,15 +315,12 @@ public class FileNukeCom extends PluginForHost {
                     // skipWaittime = true;
                 }
                 /* Captcha END */
-                if (password) {
-                    passCode = handlePassword(passCode, dlForm, downloadLink);
-                }
                 if (!skipWaittime) {
                     waitTime(timeBefore, downloadLink);
                 }
                 sendForm(dlForm);
                 logger.info("Submitted DLForm");
-                checkErrors(downloadLink, true, passCode);
+                checkErrors(downloadLink, true);
                 dllink = getDllink();
                 if (dllink == null && br.containsHTML("(?i)<Form name=\"F1\" method=\"POST\" action=\"\"")) {
                     dlForm = br.getFormbyProperty("name", "F1");
@@ -328,10 +342,8 @@ public class FileNukeCom extends PluginForHost {
             checkServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        fixFilename(downloadLink);
         downloadLink.setProperty(directlinkproperty, dllink);
-        if (passCode != null) {
-            downloadLink.setProperty("pass", passCode);
-        }
         try {
             /* add a download slot */
             controlFree(+1);
@@ -341,6 +353,10 @@ public class FileNukeCom extends PluginForHost {
             /* remove download slot */
             controlFree(-1);
         }
+    }
+
+    private void specialWayPost() throws Exception {
+        postPage(br.getURL(), "method_free=Free");
     }
 
     @Override
@@ -418,12 +434,8 @@ public class FileNukeCom extends PluginForHost {
         correctBR();
     }
 
-    public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
+    public void checkErrors(DownloadLink theLink, boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
-            if (new Regex(correctedBR, PASSWORDTEXT).matches() || correctedBR.contains("Wrong password")) {
-                logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
-            }
             if (correctedBR.contains("Wrong captcha")) {
                 logger.warning("Wrong captcha or wrong password!");
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -557,16 +569,6 @@ public class FileNukeCom extends PluginForHost {
         return finallink;
     }
 
-    private String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
-        passCode = thelink.getStringProperty("pass", null);
-        if (passCode == null) {
-            passCode = Plugin.getUserInput("Password?", thelink);
-        }
-        pwform.put("password", passCode);
-        logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
-        return Encoding.urlEncode(passCode);
-    }
-
     private String checkDirectLink(DownloadLink downloadLink, String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
@@ -625,6 +627,301 @@ public class FileNukeCom extends PluginForHost {
         logger.info("maxFree was = " + maxFree.get());
         maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
         logger.info("maxFree now = " + maxFree.get());
+    }
+
+    /**
+     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date
+     * error.
+     *
+     * @param dl
+     *            : The DownloadLink
+     * @param error
+     *            : The name of the error
+     * @param maxRetries
+     *            : Max retries before out of date error is thrown
+     */
+    private void handlePluginBroken(final DownloadLink dl, final String error, final int maxRetries) throws PluginException {
+        int timesFailed = dl.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
+        dl.getLinkStatus().setRetryCount(0);
+        if (timesFailed <= maxRetries) {
+            logger.info(NICE_HOST + ": " + error + " -> Retrying");
+            timesFailed++;
+            dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error occured: " + error);
+        } else {
+            dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
+            logger.info(NICE_HOST + ": " + error + " -> Plugin is broken");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        /* reset maxPrem workaround on every fetchaccount info */
+        maxPrem.set(1);
+        try {
+            login(account, true);
+        } catch (final PluginException e) {
+            account.setValid(false);
+            throw e;
+        }
+        final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
+        if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
+            /* free users it's provided by default */
+            ai.setUsedSpace(space[0] + " " + space[1]);
+        } else if ((space != null && space.length != 0) && space[0] != null) {
+            /* premium users the Mb value isn't provided for some reason... */
+            ai.setUsedSpace(space[0] + "Mb");
+        }
+        account.setValid(true);
+        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
+        if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
+            availabletraffic.trim();
+            /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
+            if (!availabletraffic.startsWith("-")) {
+                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            } else {
+                ai.setTrafficLeft(0);
+            }
+        } else {
+            ai.setUnlimitedTraffic();
+        }
+        /* If the premium account is expired we'll simply accept it as a free account. */
+        final String expire = br.getRegex("(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
+        long expire_milliseconds = 0;
+        if (expire != null) {
+            expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
+        }
+        if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
+            maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
+            try {
+                account.setType(AccountType.FREE);
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(false);
+            } catch (final Throwable e) {
+                /* not available in old Stable 0.9.581 */
+            }
+            ai.setStatus("Registered (free) account");
+        } else {
+            ai.setValidUntil(expire_milliseconds);
+            maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            try {
+                account.setType(AccountType.PREMIUM);
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable e) {
+                /* not available in old Stable 0.9.581 */
+            }
+            ai.setStatus("Premium account");
+        }
+        return ai;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                /* Load cookies */
+                br.setCookiesExclusive(true);
+                prepBrowser();
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(COOKIE_HOST, key, value);
+                        }
+                        return;
+                    }
+                }
+                br.setFollowRedirects(true);
+                br.postPage("http://filenuke.com/auth/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                if (br.getCookie(COOKIE_HOST, "scheck") == null || br.getCookie(COOKIE_HOST, "sess") == null) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                if (!br.getURL().contains("/myaccount")) {
+                    getPage("/myaccount");
+                }
+                if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<|>Premium account expire)").matches()) {
+                    account.setProperty("nopremium", true);
+                } else {
+                    account.setProperty("nopremium", false);
+                }
+                /* Save cookies */
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(COOKIE_HOST);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
+            }
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+        requestFileInformation(downloadLink);
+        login(account, false);
+        String dllink = null;
+        String directlinkproperty = null;
+        if (account.getBooleanProperty("nopremium")) {
+            directlinkproperty = "freelink2";
+            dllink = checkDirectLink(downloadLink, directlinkproperty);
+            if (dllink == null) {
+                br.getPage(downloadLink.getDownloadURL());
+                this.specialWayPost();
+                dllink = new Regex(correctedBR, "\"(/f/download/[A-Za-z0-9]+)\"").getMatch(0);
+                if (dllink == null) {
+                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dllink = "http://filenuke.com" + dllink;
+            }
+            logger.info("Final downloadlink = " + dllink + " starting the download...");
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 503) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
+                }
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                correctBR();
+                checkServerErrors();
+                handlePluginBroken(downloadLink, "dllinknofile", 3);
+            }
+            fixFilename(downloadLink);
+            downloadLink.setProperty(directlinkproperty, dllink);
+            dl.startDownload();
+        } else {
+            directlinkproperty = "premlink";
+            /* Not yet checked - not sure whether they even have premium accounts. */
+            dllink = checkDirectLink(downloadLink, directlinkproperty);
+            if (dllink == null) {
+                br.setFollowRedirects(false);
+                getPage(downloadLink.getDownloadURL());
+                dllink = getDllink();
+                if (dllink == null) {
+                    Form dlform = br.getFormbyProperty("name", "F1");
+                    checkErrors(downloadLink, true);
+                    if (dlform == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    sendForm(dlform);
+                    checkErrors(downloadLink, true);
+                    dllink = getDllink();
+                }
+            }
+            if (dllink == null) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            logger.info("Final downloadlink = " + dllink + " starting the download...");
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 503) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
+                }
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                correctBR();
+                checkServerErrors();
+                handlePluginBroken(downloadLink, "dllinknofile", 3);
+            }
+            fixFilename(downloadLink);
+            downloadLink.setProperty(directlinkproperty, dllink);
+            dl.startDownload();
+        }
+    }
+
+    /**
+     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
+     *
+     * @param s
+     *            Imported String to match against.
+     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
+     * @author raztoki
+     * */
+    private boolean inValidate(final String s) {
+        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
+     * which is based on fuid.
+     *
+     * @version 0.2
+     * @author raztoki
+     * */
+    private void fixFilename(final DownloadLink downloadLink) {
+        String orgName = null;
+        String orgExt = null;
+        String servName = null;
+        String servExt = null;
+        String orgNameExt = downloadLink.getFinalFileName();
+        if (orgNameExt == null) {
+            orgNameExt = downloadLink.getName();
+        }
+        if (!inValidate(orgNameExt) && orgNameExt.contains(".")) {
+            orgExt = orgNameExt.substring(orgNameExt.lastIndexOf("."));
+        }
+        if (!inValidate(orgExt)) {
+            orgName = new Regex(orgNameExt, "(.+)" + orgExt).getMatch(0);
+        } else {
+            orgName = orgNameExt;
+        }
+        // if (orgName.endsWith("...")) orgName = orgName.replaceFirst("\\.\\.\\.$", "");
+        String servNameExt = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
+        if (!inValidate(servNameExt) && servNameExt.contains(".")) {
+            servExt = servNameExt.substring(servNameExt.lastIndexOf("."));
+            servName = new Regex(servNameExt, "(.+)" + servExt).getMatch(0);
+        } else {
+            servName = servNameExt;
+        }
+        String FFN = null;
+        if (orgName.equalsIgnoreCase(fuid.toLowerCase())) {
+            FFN = servNameExt;
+        } else if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName))) {
+            /* when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster */
+            FFN = servNameExt;
+        } else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt)) {
+            FFN = orgName + servExt;
+        } else {
+            FFN = orgNameExt;
+        }
+        downloadLink.setFinalFileName(FFN);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        /* workaround for free/premium issue on stable 09581 */
+        return maxPrem.get();
+    }
+
+    @SuppressWarnings("deprecation")
+    private void setFUID(final DownloadLink dl) {
+        fuid = new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */

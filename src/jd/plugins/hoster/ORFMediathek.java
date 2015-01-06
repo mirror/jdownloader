@@ -23,6 +23,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -32,8 +33,10 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "orf.at" }, urls = { "decrypted://(www\\.)?tvthek\\.orf\\.at/((programs?|topic)/.+\\&quality=\\w+\\&hash=\\w+|subtitles/\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "orf.at" }, urls = { "decrypted://(www\\.)?tvthek\\.orf\\.at/((programs?|topic)/.+\\&quality=\\w+\\&hash=\\w+|subtitles/\\d+)|http://ooe\\.orf\\.at/radio/stories/\\d+/" }, flags = { 0 })
 public class ORFMediathek extends PluginForHost {
+
+    private static final String TYPE_AUDIO  = "http://ooe\\.orf\\.at/radio/stories/\\d+/";
 
     private static final String Q_SUBTITLES = "Q_SUBTITLES";
     private static final String Q_BEST      = "Q_BEST";
@@ -59,7 +62,46 @@ public class ORFMediathek extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        if (link.getStringProperty("directURL", null) == null) {
+        URLConnectionAdapter con = null;
+        String dllink = null;
+        if (link.getDownloadURL().matches(TYPE_AUDIO)) {
+            br.getPage(link.getDownloadURL());
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            String filename = br.getRegex("role=\"article\">[\t\n\r ]+<h1>([^<>]*?)</h1>").getMatch(0);
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+            }
+            filename = Encoding.htmlDecode(filename).trim();
+            filename = encodeUnicode(filename);
+            filename += ".mp3";
+            link.setFinalFileName(filename);
+            final String audioID = br.getRegex("data\\-audio=\"(\\d+)\"").getMatch(0);
+            if (audioID == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage("http://bits.orf.at/filehandler/static-api/json/current/data.json?file=" + audioID);
+            dllink = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            try {
+                con = br.openGetConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                    link.setProperty("directURL", dllink);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                return AvailableStatus.TRUE;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        } else if (link.getStringProperty("directURL", null) == null) {
             if (link.getBooleanProperty("offline", false)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -80,9 +122,8 @@ public class ORFMediathek extends PluginForHost {
             final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);
-            URLConnectionAdapter con = null;
             try {
-                final String dllink = link.getStringProperty("directURL", null);
+                dllink = link.getStringProperty("directURL", null);
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -96,7 +137,7 @@ public class ORFMediathek extends PluginForHost {
             } finally {
                 try {
                     con.disconnect();
-                } catch (Throwable e) {
+                } catch (final Throwable e) {
                 }
             }
         }
@@ -121,8 +162,10 @@ public class ORFMediathek extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (dllink.contains("hinweis_fsk")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Nur von 20-06 Uhr verfügbar!", 30 * 60 * 1000l);
+        if (!downloadLink.getDownloadURL().matches(TYPE_AUDIO)) {
+            if (dllink.contains("hinweis_fsk")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Nur von 20-06 Uhr verfügbar!", 30 * 60 * 1000l);
+            }
         }
         if (dllink.startsWith("rtmp")) {
             downloadLink.setProperty("FLVFIXER", true);
@@ -142,6 +185,22 @@ public class ORFMediathek extends PluginForHost {
             }
             dl.startDownload();
         }
+    }
+
+    /** Avoid chars which are not allowed in filenames under certain OS' */
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     @Override
