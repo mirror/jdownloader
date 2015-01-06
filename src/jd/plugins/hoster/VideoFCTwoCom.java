@@ -169,7 +169,6 @@ public class VideoFCTwoCom extends PluginForHost {
                     ai.setStatus("Premium Account");
                     account.setProperty("free", false);
                 } else {
-                    // if (br.containsHTML("Free Member")) {
                     ai.setValidUntil(-1);
                     ai.setStatus("Free Account");
                     account.setProperty("free", true);
@@ -255,7 +254,7 @@ public class VideoFCTwoCom extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         br = new Browser();
         login(account, true, null);
         requestFileInformation(downloadLink);
@@ -303,7 +302,7 @@ public class VideoFCTwoCom extends PluginForHost {
         }
         br.setFollowRedirects(true);
         br.getPage(dllink);
-        String filename = br.getRegex("<title>.*?◎?(.*?) -.*?</title>").getMatch(0);
+        String filename = br.getRegex("<title>.*?◎?(.*?) \\-.*?</title>").getMatch(0);
         if (filename == null || filename.isEmpty() || filename.matches("[\\s\\p{Z}]+")) {
             filename = br.getRegex("title=\".*?◎([^\"]+)").getMatch(0);
         }
@@ -331,7 +330,8 @@ public class VideoFCTwoCom extends PluginForHost {
         final String encodedlink = Encoding.urlEncode(br.getURL()).replaceAll("\\.", "%2E").replaceFirst("%2F$", "");
         br.getHeaders().put("Accept", "*/*");
         br.getHeaders().put("Accept-Charset", null);
-        if (account != null) {
+        /* Extra step is only needed for premium accounts. */
+        if (account != null && !account.getBooleanProperty("free", true)) {
             if (tk == null || from == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

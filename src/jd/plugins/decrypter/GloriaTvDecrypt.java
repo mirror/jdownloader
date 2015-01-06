@@ -48,7 +48,8 @@ public class GloriaTvDecrypt extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("class=\"missing\"")) {
+        /* Article offline | no video (only text) */
+        if (br.containsHTML("class=\"missing\"") || !br.containsHTML("videojs\\(")) {
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
             offline.setAvailable(false);

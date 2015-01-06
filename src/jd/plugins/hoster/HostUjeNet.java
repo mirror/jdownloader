@@ -56,7 +56,7 @@ public class HostUjeNet extends PluginForHost {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">Podany plik nie został odnaleziony")) {
+        if (br.containsHTML(">Podany plik nie został odnaleziony|>Podany plik został skasowany z powodu naruszania praw autorskich")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("name=\"name\" value=\"([^<>\"]*?)\"").getMatch(0);
