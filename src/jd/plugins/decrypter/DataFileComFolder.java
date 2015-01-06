@@ -29,7 +29,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafile.com" }, urls = { "http://(www\\.)?datafile.com/f/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafile.com" }, urls = { "http://(www\\.)?datafile.com/f/[^/]+" }, flags = { 0 })
 public class DataFileComFolder extends PluginForDecrypt {
 
     public DataFileComFolder(PluginWrapper wrapper) {
@@ -42,6 +42,10 @@ public class DataFileComFolder extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.containsHTML("class=\"error\\-msg\"")) {
             logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         final String[] links = br.getRegex("<tr class=\"\">(.*?)</tr>").getColumn(0);
@@ -49,6 +53,10 @@ public class DataFileComFolder extends PluginForDecrypt {
             /* Check for empty folder */
             if (br.containsHTML("class=\"file\\-size\"")) {
                 logger.info("Link offline (folder empty): " + parameter);
+                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+                offline.setAvailable(false);
+                offline.setProperty("offline", true);
+                decryptedLinks.add(offline);
                 return decryptedLinks;
             }
             logger.warning("Decrypter broken for link: " + parameter);
@@ -62,6 +70,10 @@ public class DataFileComFolder extends PluginForDecrypt {
                 /* Check for empty folder */
                 if (br.containsHTML("class=\"file\\-size\"")) {
                     logger.info("Link offline (folder empty): " + parameter);
+                    final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+                    offline.setAvailable(false);
+                    offline.setProperty("offline", true);
+                    decryptedLinks.add(offline);
                     return decryptedLinks;
                 }
                 logger.warning("Decrypter broken for link: " + parameter);

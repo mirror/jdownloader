@@ -68,9 +68,13 @@ public class GloriaTvDecrypt extends PluginForDecrypt {
             br.getPage("http://gloria.tv/?media=" + fid + "&action=download&language=KiaLEJq2fBR&particular=&_=" + System.currentTimeMillis());
             finfo = br.getRegex("\"(http://[a-z0-9\\-\\.]+\\.gloria.tv/[a-z0-9\\-]+/mediafile[^<>\"]*?)\".*?>Download (video|audio), ([a-z0-9:]+).*?, (\\d+\\.\\d{2} MB)</a>").getMatches();
         } else {
-            finfo = new String[3][4];
             final String resolutions[] = { "686x432", "458x288", "228x144" };
             final String[] qualities = br.getRegex("\"(http://[a-z0-9\\-\\.]+\\.gloria\\.tv/[a-z0-9\\-]+/mediafile[^<>\"]*?)\"").getColumn(0);
+            if (qualities == null || qualities.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            finfo = new String[qualities.length][4];
             int counter = 0;
             for (String qualityurl : qualities) {
                 final String qualinfo[] = new String[4];
