@@ -176,6 +176,7 @@ public class OffCloudCom extends PluginForHost {
         handleDL(account, link, dllink);
     }
 
+    @SuppressWarnings("deprecation")
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
         final String requestID = link.getStringProperty("offcloudrequestId", null);
         /* we want to follow redirects in final stage */
@@ -815,6 +816,18 @@ public class OffCloudCom extends PluginForHost {
         return "Translation not found!";
     }
 
+    private String getUserDisplayChunks() {
+        String userchunks;
+        if (ACCOUNT_PREMIUM_MAXCHUNKS == 1) {
+            userchunks = "1";
+        } else if (ACCOUNT_PREMIUM_MAXCHUNKS == 0) {
+            userchunks = "20";
+        } else {
+            userchunks = Integer.toString(ACCOUNT_PREMIUM_MAXCHUNKS * (-1));
+        }
+        return userchunks;
+    }
+
     public void showAccountDetailsDialog(final Account account) {
         final AccountInfo ai = account.getAccountInfo();
         if (ai != null) {
@@ -847,8 +860,8 @@ public class OffCloudCom extends PluginForHost {
 
             panelGenerator.addCategory("Download");
             panelGenerator.addEntry(getPhrase("ACCOUNT_LINKSLEFT"), linksleft);
-            panelGenerator.addEntry(getPhrase("ACCOUNT_SIMULTANDLS"), "20");
-            panelGenerator.addEntry(getPhrase("ACCOUNT_CHUNKS"), "2");
+            panelGenerator.addEntry(getPhrase("ACCOUNT_SIMULTANDLS"), Integer.toString(ACCOUNT_PREMIUM_MAXDOWNLOADS));
+            panelGenerator.addEntry(getPhrase("ACCOUNT_CHUNKS"), getUserDisplayChunks());
             panelGenerator.addEntry(getPhrase("ACCOUNT_RESUME"), getPhrase("ACCOUNT_YES"));
 
             panelGenerator.addEntry("Plugin Revision:", revision);
