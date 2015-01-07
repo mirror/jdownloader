@@ -19,18 +19,18 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.config.Property;
+import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitcasa.com" }, urls = { "https://my\\.bitcasa\\.com/send/[a-z0-9]+/[a-z0-9]+|https?://l\\.bitcasa\\.com/[A-Za-z0-9\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitcasa.com" }, urls = { "https://drive\\.bitcasa\\.com/send/[A-Za-z0-9]+|https?://l\\.bitcasa\\.com/[A-Za-z0-9\\-]+" }, flags = { 0 })
 public class BitCasaCom extends PluginForHost {
 
     public BitCasaCom(PluginWrapper wrapper) {
@@ -42,7 +42,7 @@ public class BitCasaCom extends PluginForHost {
         return "https://www.bitcasa.com/legal";
     }
 
-    private static final String TYPE_NORMAL = "https://my\\.bitcasa\\.com/send/[a-z0-9]+/[a-z0-9]+";
+    private static final String TYPE_NORMAL = "https://drive\\.bitcasa\\.com/send/[A-Za-z0-9]+";
     private static final String TYPE_SHORT  = "https?://l\\.bitcasa\\.com/[A-Za-z0-9\\-]+";
 
     @Override
@@ -54,7 +54,8 @@ public class BitCasaCom extends PluginForHost {
         } catch (final BrowserException e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.containsHTML("class=\"errorPage\"") || br.getRequest().getHttpConnection().getResponseCode() == 404) {
+        /* 302 = happens when accessing old outdated linktypes. */
+        if (br.containsHTML("class=\"errorPage\"") || br.getHttpConnection().getResponseCode() == 301 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (!br.getURL().matches(TYPE_NORMAL) && !br.getURL().matches(TYPE_SHORT)) {
@@ -66,13 +67,19 @@ public class BitCasaCom extends PluginForHost {
             }
             link.setUrlDownload(br.getURL());
         }
-        /* Filename/size is not available for password protected links */
-        if (br.containsHTML("type=\"password\" name=\"password\"")) {
-            link.getLinkStatus().setStatusText("This link is password protected");
-            return AvailableStatus.TRUE;
+        br.getPage("https://drive.bitcasa.com/portal/v2/shares/" + getFID(link) + "/meta");
+        final String errcode = getJson("code");
+        if ("4002".equals(errcode)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("\"name\": \"([^<>\"]*?)\"").getMatch(0);
-        final String filesize = br.getRegex("\"size\": (\\d+)").getMatch(0);
+        /* Did not yet get any password protected links for V2. */
+        // /* Filename/size is not available for password protected links */
+        // if (br.containsHTML("type=\"password\" name=\"password\"")) {
+        // link.getLinkStatus().setStatusText("This link is password protected");
+        // return AvailableStatus.TRUE;
+        // }
+        final String filename = getJson("share_name");
+        final String filesize = getJson("share_size");
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -83,40 +90,109 @@ public class BitCasaCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        String passCode = downloadLink.getStringProperty("pass", null);
+        // String passCode = downloadLink.getStringProperty("pass", null);
         requestFileInformation(downloadLink);
-        if (br.containsHTML("type=\"password\" name=\"password\"")) {
-            if (passCode == null) {
-                passCode = Plugin.getUserInput("Password?", downloadLink);
-            }
-            if (passCode == null || passCode.equals("")) {
-                passCode = null;
-                logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
-                passCode = null;
-                downloadLink.setProperty("pass", Property.NULL);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
-            }
-            br.postPage(br.getURL(), "password=" + Encoding.urlEncode(passCode));
-            if (br.containsHTML("type=\"password\" name=\"password\"")) {
-                passCode = null;
-                logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
-                passCode = null;
-                downloadLink.setProperty("pass", Property.NULL);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
-            }
-            downloadLink.setProperty("pass", passCode);
-        }
-        String dllink = br.getRegex("\"(/download\\-send/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) {
+        final String digest = getJson("digest");
+        final String nonce = getJson("nonce");
+        final String payload = getJson("payload");
+        if (digest == null || nonce == null || payload == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = "https://my.bitcasa.com" + dllink;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        /* Did not yet get any password protected links for V2. */
+        // if (br.containsHTML("type=\"password\" name=\"password\"")) {
+        // if (passCode == null) {
+        // passCode = Plugin.getUserInput("Password?", downloadLink);
+        // }
+        // if (passCode == null || passCode.equals("")) {
+        // passCode = null;
+        // logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
+        // passCode = null;
+        // downloadLink.setProperty("pass", Property.NULL);
+        // throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+        // }
+        // br.postPage(br.getURL(), "password=" + Encoding.urlEncode(passCode));
+        // if (br.containsHTML("type=\"password\" name=\"password\"")) {
+        // passCode = null;
+        // logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
+        // passCode = null;
+        // downloadLink.setProperty("pass", Property.NULL);
+        // throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+        // }
+        // downloadLink.setProperty("pass", passCode);
+        // }
+        final String dllink = "https://bitcasa.cfsusercontent.io/download/v2/" + digest + "/" + nonce + "/" + payload;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getFID(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "([A-Za-z0-9\\-]+)$").getMatch(0);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from provided Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final Browser ibr, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value given JSon Array of Key from JSon response provided String source.
+     *
+     * @author raztoki
+     * */
+    private String getJsonArray(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJsonArray(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return String[] value from provided JSon Array
+     *
+     * @author raztoki
+     * @param source
+     * @return
+     */
+    private String[] getJsonResultsFromArray(final String source) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
     @Override
