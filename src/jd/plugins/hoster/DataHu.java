@@ -71,7 +71,7 @@ public class DataHu extends PluginForHost {
      */
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 4;
+        return 3;
     }
 
     @Override
