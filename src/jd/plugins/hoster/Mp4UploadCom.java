@@ -55,7 +55,7 @@ public class Mp4UploadCom extends PluginForHost {
     private static final String  COOKIE_HOST                  = "http://mp4upload.com";
     // domain names used within download links.
     private static final String  DOMAINS                      = "(mp4upload\\.com)";
-    private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
+    private static final String  MAINTENANCE                  = ">This server is in maintenance mode|>This file is currently unavailable";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
