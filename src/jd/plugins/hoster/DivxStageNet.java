@@ -99,11 +99,15 @@ public class DivxStageNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String dllink = checkDirectLink(downloadLink, "divxstagedirectlink");
-        if (dllink == null) {
+        if (dllink != null) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        } else {
+
             if (br.containsHTML("error_msg=The video is being transfered")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not downloadable at the moment, try again later...", 60 * 60 * 1000l);
             } else if (br.containsHTML("error_msg=The video has failed to convert")) {

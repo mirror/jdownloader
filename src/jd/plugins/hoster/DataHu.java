@@ -65,6 +65,10 @@ public class DataHu extends PluginForHost {
         return 3;
     }
 
+    /*
+     * Max 4 connections per downloadserver, if we try more this will end up in 503 responses. At the moment we allow 3 simultan DLs * 4
+     * Chunks each.
+     */
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 4;
@@ -223,8 +227,7 @@ public class DataHu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(true);
-        /* Max 4 connections per downloadserver so we prefer a total of 4 simultan downloads to avoid 503 server errors. */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, -4);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The finallink doesn't seem to be a file...");
             /*
