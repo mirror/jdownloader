@@ -219,10 +219,14 @@ public class TwojLimitPl extends PluginForHost {
             if (br.getBaseURL().contains("notfound")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "File not found.");
             }
+            if (br.containsHTML("15=Hosting nie obslugiwany")) {
+                /* Unsupported host */
+                tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
+            }
         }
 
         if (dl.getConnection().getResponseCode() == 404) {
-            /* file offline */
+            /* file offline (?) */
             dl.getConnection().disconnect();
             tempUnavailableHoster(acc, link, 20 * 60 * 1000l);
         }
