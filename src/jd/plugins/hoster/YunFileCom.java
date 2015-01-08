@@ -46,10 +46,11 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www|(p(?:age)?\\d)\\.)?(yunfile|filemarkets|yfdisk)\\.com/(file/(down/)?[a-z0-9]+/[a-z0-9]+|fs/[a-z0-9]+/)" }, flags = { 2 })
 public class YunFileCom extends PluginForHost {
 
-    private static final String            MAINPAGE = "http://yunfile.com/";
-    private static Object                  LOCK     = new Object();
-    private static AtomicReference<String> agent    = new AtomicReference<String>();
-    private static AtomicInteger           maxPrem  = new AtomicInteger(1);
+    private static final String            MAINPAGE    = "http://yunfile.com/";
+    private static final String            CAPTCHAPART = "/verifyimg/getPcv";
+    private static Object                  LOCK        = new Object();
+    private static AtomicReference<String> agent       = new AtomicReference<String>();
+    private static AtomicInteger           maxPrem     = new AtomicInteger(1);
 
     // Works like HowFileCom
     public YunFileCom(PluginWrapper wrapper) {
@@ -64,11 +65,14 @@ public class YunFileCom extends PluginForHost {
             /* we first have to load the plugin, before we can reference it */
             agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
         }
-        prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:32.0) Gecko/20100101 Firefox/32.0");
+        prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/34.0");
         prepBr.getHeaders().put("Accept-Language", "de,en-us;q=0.7,en;q=0.3");
         prepBr.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         prepBr.getHeaders().put("Accept-Charset", null);
         prepBr.setCookie("http://yunfile.com", "language", "en_us");
+        prepBr.setCookie("http://yunfile.com", "referer", "http%3A%2F%2Fgoogle.com%2F");
+        prepBr.setCookie("http://yunfile.com/", "lastViewTime", "1420752384826");
+        prepBr.setCookie("http://yunfile.com/", "lastDownTime", "1420752451808");
         // br.setCookie(this.getHost(), "language", "en_us");
         prepBr.setReadTimeout(3 * 60 * 1000);
         prepBr.setConnectTimeout(3 * 60 * 1000);
@@ -163,14 +167,13 @@ public class YunFileCom extends PluginForHost {
         doFree(downloadLink);
     }
 
+    @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         String postData = null;
         String action = null;
+        String userid = null;
+        String fileid = null;
         requestFileInformation(downloadLink);
-        final boolean pluginbroken = true;
-        if (pluginbroken) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         /* Try multiple times - it will also fail in browser, most times on first attempt because wrong domain is used. */
         for (int i = 1; i <= 3; i++) {
             if (br.getHttpConnection().getResponseCode() == 404) {
@@ -181,13 +184,9 @@ public class YunFileCom extends PluginForHost {
             }
             checkErrors();
             final Regex siteInfo = br.getRegex("<span style=\"font\\-weight:bold;\">\\&nbsp;\\&nbsp;<a href=\"(http://[a-z0-9]+\\.yunfile.com)/ls/([A-Za-z0-9\\-_]+)/\"");
-            String userid = siteInfo.getMatch(1);
+            userid = siteInfo.getMatch(1);
             if (userid == null) {
                 userid = new Regex(downloadLink.getDownloadURL(), "yunfile\\.com/file/(.*?)/").getMatch(0);
-            }
-            String fileid = new Regex(downloadLink.getDownloadURL(), "yunfile\\.com/file/.*?/([a-z0-9]+)").getMatch(0);
-            if (fileid == null) {
-                fileid = new Regex(downloadLink.getDownloadURL(), "yunfile\\.com/file/([A-Za-z0-9]+)/$").getMatch(0);
             }
             if (fileid == null) {
                 fileid = br.getRegex("\\&fileId=([A-Za-z0-9]+)\\&").getMatch(0);
@@ -195,73 +194,60 @@ public class YunFileCom extends PluginForHost {
             if (userid == null || fileid == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            String freelink = getFreelink();
             String domain = siteInfo.getMatch(0);
             if (domain == null) {
                 domain = new Regex(br.getURL(), "(http://.*?\\.?yunfile\\.com)").getMatch(0);
             }
-            if (i == 1) {
-                domain = this.getDomainFromLink(downloadLink.getDownloadURL());
-            }
-            br.setCookie("http://yunfile.com/", "validCodeUrl", "\"" + domain + ":8880/view?module=service&action=queryValidCode\"");
-            br.setCookie("http://yunfile.com/", "lastDownTime", "1412523424380");
-            if (freelink != null) {
-                freelink = domain + freelink;
-            } else {
-                freelink = domain + "/file/down/" + userid + "/" + fileid + ".html";
-            }
             if (!br.getURL().contains(domain)) {
+                logger.info("Domain mismatch, retrying...");
                 br.getPage(domain + "/file/" + userid + "/" + fileid + "/");
-                freelink = getFreelink();
-                if (freelink != null) {
-                    freelink = domain + freelink;
-                } else {
-                    freelink = domain + "/file/down/" + userid + "/" + fileid + ".html";
-                }
+                continue;
             }
+            String freelink = domain + "/file/down/" + userid + "/" + fileid + ".html";
             // Check if captcha needed
-            if (br.containsHTML("/verifyimg/getPcv/")) {
-                final String captchalink = br.getRegex("</script>[\t\n\r ]+<img   src=\"(/verifyimg/[^<>\"]*?)\"").getMatch(0);
+            if (br.containsHTML(CAPTCHAPART)) {
+                String captchalink = br.getRegex("cvimgvip2\\.setAttribute\\(\"src\",(.*?)\\)").getMatch(0);
                 if (captchalink == null) {
                     logger.warning("captchalink == null");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                captchalink = captchalink.replace("\"", "");
+                captchalink = captchalink.replace("+", "");
                 final String code = getCaptchaCode(domain + captchalink, downloadLink);
                 freelink = freelink.replace(".html", "/" + Encoding.urlEncode(code) + ".html");
             }
             try {
+                br.cloneBrowser().getPage("http://www.yunfile.com/ckcounter.jsp?userId=" + userid);
                 br.cloneBrowser().getPage("http://www.yunfile.com//counter.jsp?userId=" + userid + "&fileId=" + fileid + "&dr=" + downloadLink.getDownloadURL());
             } catch (final Throwable e) {
             }
             int wait = 30;
-            String shortWaittime = br.getRegex("id=\"wait_input\" style=\"font\\-size:22px; color: green;\">(\\d+)<").getMatch(0);
+            String shortWaittime = br.getRegex("\">(\\d+)</span> seconds</span> or").getMatch(0);
             if (shortWaittime != null) {
                 wait = Integer.parseInt(shortWaittime);
             }
             sleep(wait * 1001l, downloadLink);
             br.getPage(freelink);
-
-            /* Check here if the plugin is broken */
-            final String vid1 = br.getRegex("name=\"vid1\" value=\"([a-z0-9]+)\"").getMatch(0);
-            final String vid = br.getRegex("var vericode = \"([a-z0-9]+)\";").getMatch(0);
-            action = br.getRegex("\"(http://dl\\d+\\.yunfile\\.com/view\\?fid=[a-z0-9]+)\"").getMatch(0);
-            final String md5 = br.getRegex("name=\"md5\" value=\"([a-z0-9]{32})\"").getMatch(0);
-            logger.info("vid = " + vid + " vid1 = " + vid1 + " action = " + action + " md5 = " + md5);
-            if (vid == null || action == null || md5 == null || vid1 == null) {
+            if (br.containsHTML(CAPTCHAPART)) {
                 continue;
-                // if (br.containsHTML("/verifyimg/getPcv/")) {
-                // throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                // }
-                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else {
-                br.setFollowRedirects(true);
-                postData = "module=fileService&action=downfile&userId=" + userid + "&fileId=" + fileid + "&vid=" + vid + "&vid1=" + vid1 + "&md5=" + md5;
-                break;
             }
+            break;
         }
-        if (action == null || postData == null) {
+
+        /* Check here if the plugin is broken */
+        final String vid1 = br.getRegex("name=\"vid1\" value=\"([a-z0-9]+)\"").getMatch(0);
+        final String vid = br.getRegex("var vericode = \"([a-z0-9]+)\";").getMatch(0);
+        action = br.getRegex("\"(http://dl\\d+\\.yunfile\\.com/view\\?fid=[a-z0-9]+)\"").getMatch(0);
+        final String md5 = br.getRegex("name=\"md5\" value=\"([a-z0-9]{32})\"").getMatch(0);
+        logger.info("vid = " + vid + " vid1 = " + vid1 + " action = " + action + " md5 = " + md5);
+        if (action == null || vid1 == null || vid == null || md5 == null) {
+            if (br.containsHTML(CAPTCHAPART)) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        br.setFollowRedirects(true);
+        postData = "module=fileService&action=downfile&userId=" + userid + "&fileId=" + fileid + "&vid=" + vid + "&vid1=" + vid1 + "&md5=" + md5;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, action, postData, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
