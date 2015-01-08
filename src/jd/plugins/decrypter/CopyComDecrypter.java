@@ -186,15 +186,20 @@ public class CopyComDecrypter extends PluginForDecrypt {
                     /* Not available in old 0.9.581 Stable */
                     dl.setBrowserUrl(contenturl);
                 }
-                dl.setDownloadSize(Long.parseLong(filesize));
                 dl.setFinalFileName(name);
                 dl.setProperty("plain_name", name);
                 dl.setProperty("LINKDUPEID", "copycom" + additionalPath + "_" + name);
-                dl.setProperty("plain_size", filesize);
                 dl.setProperty("mainlink", parameter);
                 dl.setProperty("specified_link", url);
                 dl.setProperty("plain_path", path);
-                dl.setAvailable(true);
+                if (filesize.equals("null")) {
+                    dl.setAvailable(false);
+                    dl.setProperty("offline", true);
+                } else {
+                    dl.setDownloadSize(Long.parseLong(filesize));
+                    dl.setProperty("plain_size", filesize);
+                    dl.setAvailable(true);
+                }
                 decryptedLinks.add(dl);
             }
         }

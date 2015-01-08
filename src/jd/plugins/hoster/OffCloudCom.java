@@ -596,6 +596,8 @@ public class OffCloudCom extends PluginForHost {
                 statuscode = 201;
             } else if (br.containsHTML(">Error: We are sorry, but the requested URL cannot be downloaded now")) {
                 statuscode = 202;
+            } else if (br.containsHTML(">Error: \\[cURL:56\\] Problem")) {
+                statuscode = 203;
             } else {
                 /* No way to tell that something unpredictable happened here --> status should be fine. */
                 statuscode = 0;
@@ -718,6 +720,13 @@ public class OffCloudCom extends PluginForHost {
                 /* Specified link cannot be downloaded right now (for some time) */
                 statusMessage = "Link cannot be downloaded at the moment";
                 tempUnavailableLink(3 * 60 * 1000l);
+            case 203:
+                /*
+                 * Strange forwarded cURL error --> We know it usually only happens when traffic of a host is gone --> Disable it for a long
+                 * time
+                 */
+                statusMessage = "Strange cURL error -> Host traffic gone";
+                tempUnavailableLink(3 * 60 * 60 * 1000l);
             default:
                 /* Unknown error */
                 statusMessage = "Unknown error";

@@ -40,6 +40,7 @@ public class VplayRo extends PluginForHost {
         return "http://vplay.ro/";
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
         link.setUrlDownload("http://vplay.ro/watch/" + fid);
@@ -49,13 +50,14 @@ public class VplayRo extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Video does not exist")) {
+        if (br.containsHTML("Video does not exist|/alert256\\.png\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h2 title=\"([^<>\"]*?)\">").getMatch(0);
+        String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
+            filename = br.getRegex("<h2 title=\"([^<>\"]*?)\">").getMatch(0);
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
