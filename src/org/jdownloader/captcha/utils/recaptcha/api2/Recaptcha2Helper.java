@@ -25,7 +25,7 @@ public class Recaptcha2Helper {
 
     private String  siteKey;
     private Browser br;
-    private String  version  = "r20141202135649";
+    private String  version  = "r20150105184127";
     private String  language = "en";
 
     // private HashMap<String, String> apiProperties;
@@ -43,6 +43,7 @@ public class Recaptcha2Helper {
     private int     successIdentifier;
     private int     timeout;
     private long    verifyTime;
+    private String  tokenToReloadFbg;
 
     public static boolean isEmpty(final String ip) {
         return ip == null || ip.trim().length() == 0;
@@ -69,8 +70,8 @@ public class Recaptcha2Helper {
      * Browser can be null and new Browser session will be used. Be aware it will be using JDownloader default User-Agent <br />
      * Provided Browser referer is nullfied. <br />
      * Host can be null only when existing Browser is provided, host will be determined from current URL. <br />
-     *
-     *
+     * 
+     * 
      * @author raztoki
      * @param br
      * @param siteKey
@@ -211,15 +212,16 @@ public class Recaptcha2Helper {
         }
 
         // botGuard not supported
-        botGuardString = "";
+        botGuardString = "!A";
 
         final String rcFrameUrl = "https://www.google.com/recaptcha/api2/frame?c=" + tokenForFrameLoading + "&hl=" + language + "&v=" + version + "&bg=" + botGuardString + "&usegapi=1&jsh=" + Encoding.urlEncode(jshString);
 
         br.getPage(rcFrameUrl);
 
         tokenToReload = unjsonify(br.getRegex("\\[\\\\x22finput\\\\x22\\,\\s*\\\\x22([^\\\\]+)").getMatch(0));
+        tokenToReloadFbg = unjsonify(br.getRegex("\\[\\\\x22asconf\\\\x22\\]\\\\n\\]\\\\n\\,\\\\x22([^\\\\]+)").getMatch(0));
 
-        br.postPage("https://www.google.com/recaptcha/api2/reload", "c=" + tokenToReload + "&reason=fi");
+        br.postPage("https://www.google.com/recaptcha/api2/reload", "c=" + tokenToReload + "&reason=fi&fbg=" + tokenToReloadFbg);
         tokenForCaptchaChallengePayload = unjsonify(br.getRegex("\\[\"rresp\",\\s*\"([^\"]+)").getMatch(0));
 
         timeImageLoading = System.currentTimeMillis();
