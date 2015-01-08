@@ -69,11 +69,7 @@ public class YunFileCom extends PluginForHost {
         prepBr.getHeaders().put("Accept-Language", "de,en-us;q=0.7,en;q=0.3");
         prepBr.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         prepBr.getHeaders().put("Accept-Charset", null);
-        prepBr.setCookie("http://yunfile.com", "language", "en_us");
-        prepBr.setCookie("http://yunfile.com", "referer", "http%3A%2F%2Fgoogle.com%2F");
-        prepBr.setCookie("http://yunfile.com/", "lastViewTime", "1420752384826");
-        prepBr.setCookie("http://yunfile.com/", "lastDownTime", "1420752451808");
-        // br.setCookie(this.getHost(), "language", "en_us");
+        prepBr.setCookie(MAINPAGE, "language", "en_us");
         prepBr.setReadTimeout(3 * 60 * 1000);
         prepBr.setConnectTimeout(3 * 60 * 1000);
         return prepBr;
