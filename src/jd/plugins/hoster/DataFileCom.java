@@ -136,6 +136,9 @@ public class DataFileCom extends PluginForHost {
                 link.setName(urlFileName);
             }
             return AvailableStatus.UNCHECKABLE;
+        } else if (br.containsHTML("</head><body><style type=\"text/css\">a\\{color: white;\\}</style><script language=\"JavaScript\">s=")) {
+            logger.info("Cannot check link because of missing antiDDOS implementation - setting link to uncheckable so multihost plugins continue to work");
+            return AvailableStatus.UNCHECKABLE;
         }
         final String urlfilename = link.getStringProperty("urlfilename", null);
         final String decrypterfilename = link.getStringProperty("decrypterfilename", null);
@@ -720,7 +723,7 @@ public class DataFileCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from String source.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -736,7 +739,7 @@ public class DataFileCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -745,7 +748,7 @@ public class DataFileCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from provided Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
@@ -760,13 +763,13 @@ public class DataFileCom extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlSlot
      *            (+1|-1)
      * @author raztoki
