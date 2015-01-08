@@ -94,6 +94,9 @@ public class CopyCom extends PluginForHost {
     /** They got an API: https://www.copy.com/developer/documentation */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (link.getBooleanProperty("offline", false)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (link.getBooleanProperty("ddlink", false)) {
             /* Direct downloadlink */
             ddlink = link.getDownloadURL();
