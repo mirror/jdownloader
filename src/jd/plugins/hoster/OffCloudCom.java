@@ -582,6 +582,8 @@ public class OffCloudCom extends PluginForHost {
                 statuscode = 12;
             } else if (error.equals("Unregistered IP address detected.")) {
                 statuscode = 13;
+            } else if (error.equals("Incorrect url")) {
+                statuscode = 14;
             } else if (error.equals("premium")) {
                 statuscode = 100;
             } else {
@@ -696,6 +698,10 @@ public class OffCloudCom extends PluginForHost {
                     statusMessage = "\r\nPlease confirm your current IP adress via the activation link you got per mail to continue using this account.";
                 }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            case 14:
+                /* Invalid url --> Host probably not supported --> Disable it */
+                statusMessage = "Host is temporarily disabled";
+                tempUnavailableHoster(3 * 60 * 60 * 1000l);
             case 100:
                 /* Free account limits reached -> permanently disable account */
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {

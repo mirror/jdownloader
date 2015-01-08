@@ -63,14 +63,15 @@ public class LuckyShareNet extends PluginForHost {
         return "http://luckyshare.net/termsofservice";
     }
 
-    private final String                   MAINPAGE       = "http://luckyshare.net/";
-    private static Object                  LOCK           = new Object();
-    private static AtomicReference<String> agent          = new AtomicReference<String>();
-    private static AtomicBoolean           FAILED409      = new AtomicBoolean(false);
-    private final String                   ONLYBETAERROR  = "Downloading from luckyshare.net is only possible with the JDownloader 2 BETA";
-    private static AtomicInteger           maxPrem        = new AtomicInteger(1);
+    private final String                   MAINPAGE             = "http://luckyshare.net/";
+    private static Object                  LOCK                 = new Object();
+    private static AtomicReference<String> agent                = new AtomicReference<String>();
+    private static AtomicBoolean           FAILED409            = new AtomicBoolean(false);
+    private final String                   ONLYBETAERROR        = "Downloading from luckyshare.net is only possible with the JDownloader 2 BETA";
+    private static AtomicInteger           maxPrem              = new AtomicInteger(1);
 
-    private final String                   SSL_CONNECTION = "SSL_CONNECTION";
+    private final String                   SSL_CONNECTION       = "SSL_CONNECTION";
+    private final String                   ALLOW_FREE_DOWNLOADS = "ALLOW_FREE_DOWNLOADS";
 
     /**
      * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
@@ -152,13 +153,37 @@ public class LuckyShareNet extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink) throws Exception {
+        if (!this.getPluginConfig().getBooleanProperty(ALLOW_FREE_DOWNLOADS, false)) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+        }
         String dllink = downloadLink.getDownloadURL();
         final String filesizelimit = br.getRegex(">Files with filesize over ([^<>\"\\'/]+) are available only for Premium Users").getMatch(0);
         if (filesizelimit != null) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
+            }
             throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can only download files up to " + filesizelimit);
         }
         if (br.containsHTML("This file is Premium only\\. Only Premium Users can download this file")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Only Premium Users can download this file");
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
         }
         String reconnectWait = br.getRegex("id=\"waitingtime\">(\\d+)</span>").getMatch(0);
         if (reconnectWait != null) {
@@ -236,6 +261,10 @@ public class LuckyShareNet extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            logger.warning("Received html code instead of file");
+            if (br.containsHTML("class=\\'bottom\\'")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -503,6 +532,7 @@ public class LuckyShareNet extends PluginForHost {
 
     private void setConfigElements() {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.LuckyShareNet.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(false));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), ALLOW_FREE_DOWNLOADS, JDL.L("plugins.hoster.LuckyShareNet.allowFreeDownloads", "Allow free downloads?")).setDefaultValue(false));
     }
 
     @Override
