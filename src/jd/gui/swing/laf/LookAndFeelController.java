@@ -69,7 +69,6 @@ public class LookAndFeelController implements LAFManagerInterface {
     }
 
     private GraphicalUserInterfaceSettings config;
-    private String                         laf = null;
     private LogSource                      logger;
 
     /**
@@ -154,25 +153,17 @@ public class LookAndFeelController implements LAFManagerInterface {
     public synchronized void setUIManager() {
         if (uiInitated) {
             return;
+        } else {
+            uiInitated = true;
         }
-        uiInitated = true;
         initWindowManager();
         long t = System.currentTimeMillis();
         try {
             // de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setLookAndFeel("de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel");
             // if (true) return;
-
-            laf = DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL;
-            LogController.GL.info("Use Look & Feel: " + laf);
+            String laf = null;
             try {
-                LookAndFeelType theme = config.getLookAndFeelTheme();
-                if (theme == null || !theme.isAvailable()) {
-                    theme = LookAndFeelType.DEFAULT;
-                }
-
-                laf = theme.getClazz();
-
-                String customLookAndFeel = config.getCustomLookAndFeelClass();
+                final String customLookAndFeel = config.getCustomLookAndFeelClass();
                 if (StringUtils.isNotEmpty(customLookAndFeel)) {
                     try {
                         Class.forName(customLookAndFeel);
@@ -181,8 +172,19 @@ public class LookAndFeelController implements LAFManagerInterface {
                         logger.log(e);
                     }
                 }
+                if (laf == null) {
+                    final LookAndFeelType theme = config.getLookAndFeelTheme();
+                    if (theme == null || !theme.isAvailable()) {
+                        laf = LookAndFeelType.DEFAULT.getClazz();
+                    } else {
+                        laf = theme.getClazz();
+                    }
+                }
             } catch (Throwable e) {
                 logger.log(e);
+                laf = LookAndFeelType.DEFAULT.getClazz();
+            } finally {
+                LogController.GL.info("Use Look & Feel: " + laf);
             }
 
             if (laf.contains("Synthetica") || laf.equals(DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL)) {
