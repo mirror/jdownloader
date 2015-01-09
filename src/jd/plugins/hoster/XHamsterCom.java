@@ -71,14 +71,15 @@ public class XHamsterCom extends PluginForHost {
      * NOTE: They also have .mp4 version of the videos in the html code -> For mobile devices Those are a bit smaller in size
      * */
     public String getDllink() throws IOException, PluginException {
-        /* Example-ID: 685813 */
-        String dllink = br.getRegex("\"(https?://\\d+\\.xhcdn\\.com/key=[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("flashvars.*?file=(http%3.*?)&").getMatch(0);
+        String dllink = null;
+        int urlmodeint = 0;
+        final String urlmode = br.getRegex("url_mode=(\\d+)").getMatch(0);
+        if (urlmode != null) {
+            urlmodeint = Integer.parseInt(urlmode);
         }
-        if (dllink == null || dllink.contains("%2Fplayer_config.php")) {
-            /* Example-ID: 1815274 */
-            final Regex secondway = br.getRegex("\\&srv=(https?[A-Za-z0-9%]+\\.xhcdn\\.com)\\&file=([^<>\"]*?)\\&");
+        if (urlmodeint == 1) {
+            /* Example-ID: 1815274, 1980180 */
+            final Regex secondway = br.getRegex("\\&srv=(https?[A-Za-z0-9%\\.]+\\.xhcdn\\.com)\\&file=([^<>\"]*?)\\&");
             String server = br.getRegex("\\'srv\\': \\'(.*?)\\'").getMatch(0);
             if (server == null) {
                 server = secondway.getMatch(0);
@@ -96,6 +97,16 @@ public class XHamsterCom extends PluginForHost {
             } else {
                 // Examplelink (ID): 986043
                 dllink = server + "/key=" + file;
+            }
+        } else {
+            /* E.g. url_mode == 3 */
+            /* Example-ID: 685813 */
+            dllink = br.getRegex("\"(https?://\\d+\\.xhcdn\\.com/key=[^<>\"]*?)\" class=\"mp4Thumb\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("\"(https?://\\d+\\.xhcdn\\.com/key=[^<>\"]*?)\"").getMatch(0);
+            }
+            if (dllink == null) {
+                dllink = br.getRegex("flashvars.*?file=(http%3.*?)&").getMatch(0);
             }
         }
         DLLINK = Encoding.htmlDecode(dllink);
