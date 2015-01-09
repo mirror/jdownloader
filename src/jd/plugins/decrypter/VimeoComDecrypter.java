@@ -259,8 +259,12 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 if (url == null) {
                     continue;
                 }
-                if (!url.startsWith("http://")) {
-                    url = "http://vimeo.com" + url;
+                if (!url.startsWith("http")) {
+                    if (!url.startsWith("/")) {
+                        url = "http://vimeo.com/" + url;
+                    } else {
+                        url = "http://vimeo.com" + url;
+                    }
                 }
 
                 final DownloadLink link = createDownloadlink(parameter.replace("http://", "decryptedforVimeoHosterPlugin" + format + "://"));
