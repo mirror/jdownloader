@@ -50,7 +50,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flashx.tv" }, urls = { "https?://(www\\.)?flashx\\.tv/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flashx.tv" }, urls = { "https?://(www\\.)?flashx\\.tv/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class FlashxTv extends PluginForHost {
 
     private String                         correctedBR                  = "";
@@ -100,13 +100,22 @@ public class FlashxTv extends PluginForHost {
     // captchatype: null
     // other:
 
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
+        String lnk = link.getDownloadURL();
         /* link cleanup, but respect users protocol choosing or forced protocol */
         if (!SUPPORTSHTTPS) {
-            link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
+            lnk = lnk.replaceFirst("https://", "http://");
         } else if (SUPPORTSHTTPS && SUPPORTSHTTPS_FORCED) {
-            link.setUrlDownload(link.getDownloadURL().replaceFirst("http://", "https://"));
+            lnk = lnk.replaceFirst("http://", "https://");
+        }
+        lnk = lnk.replaceAll("/((vid)?embed\\-)", "/");
+        link.setUrlDownload(lnk);
+        try {
+            link.setContentUrl(lnk);
+        } catch (final Throwable e) {
+            /* Not available in old 0.9.581 Stable */
         }
     }
 
