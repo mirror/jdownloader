@@ -36,14 +36,14 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ctdisk.com" }, urls = { "https?://(www\\.)?(ctdisk|400gb|pipipan|t00y)\\.com/u/\\d{6,7}(/\\d{6,7})?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ctdisk.com" }, urls = { "https?://(www\\.)?((ctdisk|400gb|pipipan|t00y)\\.com|bego\\.cc)/u/\\d{6,7}(/\\d{6,7})?" }, flags = { 0 })
 public class CtDiskComFolder extends PluginForDecrypt {
 
     // DEV NOTES
     // protocol: no https.
     // t00y doesn't seem to work as alias but ill add it anyway.
 
-    private static final String domains = "(ctdisk|400gb|pipipan|t00y)\\.com";
+    private static final String domains = "((ctdisk|400gb|pipipan|t00y)\\.com|bego\\.cc)";
     // user unique id
     private String              uuid    = null;
     // folder unique id
@@ -71,14 +71,16 @@ public class CtDiskComFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("https://", "http://").replaceAll(domains + "/", "400gb.com/");
+        String parameter = param.toString().replace("https://", "http://").replaceAll(domains + "/", "bego.cc/");
         prepBrowser(br);
         // lock to one thread!
         synchronized (LOCK) {
             getPage(br, parameter);
-            uuid = new Regex(parameter, domains + "/u/(\\d+)").getMatch(1);
-            fuid = new Regex(parameter, domains + "/u/\\d+/(\\d+)").getMatch(1);
-            if (fuid == null) fuid = "0";
+            uuid = new Regex(parameter, "/u/(\\d+)").getMatch(0);
+            fuid = new Regex(parameter, "/u/\\d+/(\\d+)").getMatch(0);
+            if (fuid == null) {
+                fuid = "0";
+            }
             if (br.containsHTML("(Due to the limitaion of local laws, this url has been disabled!<|该用户还未打开完全共享\\。|您目前无法访问他的资源列表\\。)")) {
                 logger.info("Invalid URL: " + parameter);
                 return decryptedLinks;
@@ -89,7 +91,9 @@ public class CtDiskComFolder extends PluginForDecrypt {
                 // covers sub directories. /u/uuid/fuid/
                 fpName = br.getRegex("href=\"/u/" + uuid + "/" + fuid + "\">(.*?)</a>").getMatch(0);
                 // fail over
-                if (fpName == null && uuid != null) fpName = "User " + uuid + " - Sub Directory " + fuid;
+                if (fpName == null && uuid != null) {
+                    fpName = "User " + uuid + " - Sub Directory " + fuid;
+                }
             }
             // covers base /u/\d+ directories,
             // no fpName for these as results of base directory returns subdirectories.
@@ -113,6 +117,7 @@ public class CtDiskComFolder extends PluginForDecrypt {
     }
 
     private void parsePage(ArrayList<DownloadLink> ret, String parameter) throws Exception {
+        // "/iajax_guest.php?item=file_act&action=file_list&folder_id=0&uid=1942919&task=file_list&t=1420817115&k=40d90e63574e9dce0af62dfb94aafdf7"
         String ajaxSource = br.getRegex("\"sAjaxSource\": \"(/iajax_guest\\.php\\?item=file_act&action=file_list&folder_id=" + fuid + "&uid=" + uuid + "&task=file_list&t=\\d+&k=[a-f0-9]{32})\"").getMatch(0);
         if (ajaxSource == null) {
             logger.warning("Can not find 'ajax source' : " + parameter);
@@ -138,7 +143,9 @@ public class CtDiskComFolder extends PluginForDecrypt {
                 DownloadLink dl = createDownloadlink(args[1]);
                 if (args[1] != null) {
                     dl.setName(unescape(args[2]));
-                    if (args[4] != null) dl.setDownloadSize(SizeFormatter.getSize(args[4]));
+                    if (args[4] != null) {
+                        dl.setDownloadSize(SizeFormatter.getSize(args[4]));
+                    }
                     dl.setAvailable(true);
                 }
                 ret.add(dl);
@@ -159,19 +166,22 @@ public class CtDiskComFolder extends PluginForDecrypt {
 
     /**
      * site has really bad connective issues, this method helps retry over throwing exception at the first try
-     * 
+     *
      * @author raztoki
      * */
     private boolean getPage(Browser ibr, final String url) throws Exception {
-        if (ibr == null || url == null) return false;
+        if (ibr == null || url == null) {
+            return false;
+        }
         final Browser obr = ibr.cloneBrowser();
         boolean failed = false;
         int repeat = 4;
         for (int i = 0; i <= repeat; i++) {
             if (failed) {
                 long meep = 0;
-                while (meep == 0)
+                while (meep == 0) {
                     meep = new Random().nextInt(4) * 1371;
+                }
                 Thread.sleep(meep);
                 failed = false;
                 ibr = obr.cloneBrowser();
@@ -202,7 +212,9 @@ public class CtDiskComFolder extends PluginForDecrypt {
         /* we have to make sure the youtube plugin is loaded */
         if (pluginloaded == false) {
             final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+            if (plugin == null) {
+                throw new IllegalStateException("youtube plugin not found!");
+            }
             pluginloaded = true;
         }
         return jd.plugins.hoster.Youtube.unescape(s);

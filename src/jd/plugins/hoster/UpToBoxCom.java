@@ -567,6 +567,10 @@ public class UpToBoxCom extends PluginForHost {
             logger.warning("Server says link offline, please recheck that!");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        /* Error 500 without 500 response. */
+        if (correctedBR.contains(">Service Unavailable, Service temporairement indisponible<")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500");
+        }
     }
 
     private String decodeDownloadLink(String s) {
@@ -668,7 +672,7 @@ public class UpToBoxCom extends PluginForHost {
                 maxPrem.set(20);
                 // free accounts can still have captcha.
                 totalMaxSimultanFreeDownload.set(maxPrem.get());
-                account.setMaxSimultanDownloads(1);
+                account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
             }
