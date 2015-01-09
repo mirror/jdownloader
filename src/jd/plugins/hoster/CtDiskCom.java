@@ -109,6 +109,10 @@ public class CtDiskCom extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink, final boolean premium, final int maxchunks) throws Exception, PluginException {
+        final boolean pluginbroken = true;
+        if (pluginbroken) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getPage(downloadLink.getDownloadURL());
         final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         String dllink = checkDirectLink(downloadLink, "directlink");
@@ -121,7 +125,11 @@ public class CtDiskCom extends PluginForHost {
         if (dllink == null) {
             try {
                 /* Without this, site won't accept the captcha! */
-                br.cloneBrowser().getPage("http://www.400gb.com/advview2013.php?ad_pos=0");
+                br.cloneBrowser().getPage("http://www.bego.cc/advview2013.php?ad_pos=0");
+                br.cloneBrowser().getPage("http://www.bego.cc/advview2013.php?ad_pos=1");
+                br.cloneBrowser().getPage("http://www.bego.cc/advview2013.php?ad_pos=2");
+                br.cloneBrowser().getPage("http://www.bego.cc/advview2013.php?ad_pos=3");
+                br.cloneBrowser().getPage("http://www.bego.cc/adm.js");
             } catch (final Throwable e) {
             }
             final Form free = br.getFormbyProperty("name", "user_form");
@@ -147,7 +155,7 @@ public class CtDiskCom extends PluginForHost {
             if (hash_key == null) {
                 try {
                     final Browser brc = br.cloneBrowser();
-                    brc.getPage("http://www.400gb.com/getdownloadkey.php?id=" + fid);
+                    brc.getPage("http://www.bego.cc/getdownloadkey.php?id=" + fid);
                     final String b64 = Encoding.Base64Decode(brc.getRegex("eval\\(\\$\\.base64\\.decode\\(\"(.*?)\"\\)\\);").getMatch(0));
                     hash_key = new Regex(b64, "\\$\\(\"#hash_key\"\\)\\.val\\(\"([^<>\"]*?)\"\\)").getMatch(0);
                 } catch (final Throwable e) {
