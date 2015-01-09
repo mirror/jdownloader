@@ -40,7 +40,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file4go.com" }, urls = { "http://(www\\.)?file4go\\.com/(d/|download\\.php\\?id=)[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file4go.com" }, urls = { "http://(www\\.)?file4go\\.com/(r/|d/|download\\.php\\?id=)[a-z0-9]+" }, flags = { 2 })
 public class File4GoCom extends PluginForHost {
 
     public File4GoCom(PluginWrapper wrapper) {
@@ -67,10 +67,14 @@ public class File4GoCom extends PluginForHost {
         br.setCookie(MAINPAGE, "noadvtday", "0");
         br.setCookie(MAINPAGE, "hellpopab", "1");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Arquivo Temporariamente Indisponivel|ARQUIVO DELATADO PELO USUARIO OU REMOVIDO POR <|ARQUIVO DELATADO POR <b>INATIVIDADE") || br.getURL().contains("file4go.com/404.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Arquivo Temporariamente Indisponivel|ARQUIVO DELATADO PELO USUARIO OU REMOVIDO POR <|ARQUIVO DELATADO POR <b>INATIVIDADE") || br.getURL().contains("file4go.com/404.php")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = br.getRegex("<b>Nome( do arquivo)?:</b>([^<>\"]*?)</span>").getMatch(1);
         final String filesize = br.getRegex("<b>Tamanho:</b>([^<>\"]*?)</span>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -80,10 +84,14 @@ public class File4GoCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         final String reconnectWait = br.getRegex("var time = (\\d+)").getMatch(0);
-        if (reconnectWait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWait) * 1001l);
+        if (reconnectWait != null) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWait) * 1001l);
+        }
         final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
         final String rcID = br.getRegex("\\?k=([^<>\"]*?)\"").getMatch(0);
-        if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (rcID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
         rc.setId(rcID);
@@ -91,10 +99,14 @@ public class File4GoCom extends PluginForHost {
         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
         final String c = getCaptchaCode("recaptcha", cf, downloadLink);
         br.postPage("http://www.file4go.com/getdownload.php", "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&id=" + fid);
-        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         br.setFollowRedirects(false);
         final String dllink = getDllink();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // Waittime can be skipped
         // int wait = 60;
         // final String waittime =
@@ -111,7 +123,9 @@ public class File4GoCom extends PluginForHost {
         /* resume no longer supported */
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("BAIXE SIMULTANEAMENTE COM VELOCIDADE MÁXIMA")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l);
+            if (br.containsHTML("BAIXE SIMULTANEAMENTE COM VELOCIDADE MÁXIMA")) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -125,14 +139,18 @@ public class File4GoCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            if ("FREE".equalsIgnoreCase(key)) continue;
+                            if ("FREE".equalsIgnoreCase(key)) {
+                                continue;
+                            }
                             this.br.setCookie(MAINPAGE, key, value);
                         }
                         return;
@@ -159,7 +177,9 @@ public class File4GoCom extends PluginForHost {
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
                 for (final Cookie c : add.getCookies()) {
-                    if ("FREE".equalsIgnoreCase(c.getKey())) continue;
+                    if ("FREE".equalsIgnoreCase(c.getKey())) {
+                        continue;
+                    }
                     cookies.put(c.getKey(), c.getValue());
                 }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
@@ -220,7 +240,9 @@ public class File4GoCom extends PluginForHost {
 
     private String getDllink() {
         String dllink = br.getRegex("\"(http://[a-z0-9]+\\.file4go\\.com:\\d+/[^<>\"]+/dll/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("<span id=\"boton_download\" ><a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("<span id=\"boton_download\" ><a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+        }
         return dllink;
     }
 
