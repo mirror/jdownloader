@@ -657,12 +657,35 @@ public class OneFichierCom extends PluginForHost {
                 }
             }
             if (dllink == null) {
-                if (br.containsHTML("\">Warning \\! Without premium status, you can download only")) {
-                    logger.info("Seems like this is no premium account or it's vot valid anymore -> Disabling it");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                // non direct links && coded from html from logs - raztoki 20150109
+
+                // form here
+                final Form dl = br.getFormbyKey("dl");
+                if (dl != null) {
+                    /* note that this uses non ssl download.... we should probably request data based on user preference */
+
+                    // standard ssl
+                    dl.remove("dlssl");
+                    // inline ssl
+                    dl.remove("dlissl");
+                    // inline dl
+                    dl.remove("dli");
+                    // save to account
+                    dl.remove("save");
+                    //
+                    dl.put("did", "0");
+                    br.submitForm(dl);
+                    // value is found from redirect
+                    dllink = br.getRedirectLocation();
+                }
+                if (dllink == null) {
+                    if (br.containsHTML("\">Warning \\! Without premium status, you can download only")) {
+                        logger.info("Seems like this is no premium account or it's vot valid anymore -> Disabling it");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
             }
             for (int i = 0; i != 2; i++) {
