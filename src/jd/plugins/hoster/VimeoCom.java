@@ -150,8 +150,8 @@ public class VimeoCom extends PluginForHost {
             // match refreshed qualities to stored reference, to make sure we have the same format for resume! we never want to cross over!
             if (downloadLink.getStringProperty("videoQuality", null).equalsIgnoreCase(quality[2])) {
                 finalURL = quality[0];
-                if (finalURL != null && !finalURL.startsWith("http://")) {
-                    finalURL = "http://vimeo.com" + finalURL;
+                if (finalURL != null && !finalURL.startsWith("http")) {
+                    finalURL = MAINPAGE + finalURL;
                 }
                 break;
             }
@@ -208,10 +208,12 @@ public class VimeoCom extends PluginForHost {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!dllink.startsWith("/")) {
-            dllink = MAINPAGE + "/" + dllink;
-        } else {
-            dllink = MAINPAGE + dllink;
+        if (!dllink.startsWith("http")) {
+            if (!dllink.startsWith("/")) {
+                dllink = MAINPAGE + "/" + dllink;
+            } else {
+                dllink = MAINPAGE + dllink;
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
