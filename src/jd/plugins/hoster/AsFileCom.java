@@ -17,17 +17,8 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.net.URL;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -36,7 +27,6 @@ import jd.http.Cookies;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -50,10 +40,9 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "asfile.com" }, urls = { "http://(www\\.)?asfile\\.com/file/[A-Za-z0-9]+" }, flags = { 2 })
-public class AsFileCom extends PluginForHost {
+public class AsFileCom extends antiDDoSForHost {
 
     public AsFileCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -66,38 +55,18 @@ public class AsFileCom extends PluginForHost {
         return "http://asfile.com/en/page/offer";
     }
 
-    private static Object                  LOCK     = new Object();
-    private static final String            MAINPAGE = "http://asfile.com";
+    private static Object       LOCK     = new Object();
+    private static final String MAINPAGE = "http://asfile.com";
 
-    private static AtomicReference<String> agent    = new AtomicReference<String>(null);
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
 
-    private Browser prepBrowser(final Browser prepBr) {
-        // required for native cloudflare support, without the need to repeat requests.
-        try {
-            /* not available in old stable */
-            prepBr.setAllowedResponseCodes(new int[] { 503 });
-        } catch (Throwable e) {
-        }
-        prepBr.getHeaders().put("Accept-Language", "en-EN");
-        HashMap<String, String> map = null;
-        synchronized (cloudflareCookies) {
-            map = new HashMap<String, String>(cloudflareCookies);
-            if (!map.isEmpty()) {
-                for (final Map.Entry<String, String> cookieEntry : map.entrySet()) {
-                    final String key = cookieEntry.getKey();
-                    final String value = cookieEntry.getValue();
-                    prepBr.setCookie(this.getHost(), key, value);
-                }
-            }
-        }
-        if (agent.get() == null) {
-            /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
-        }
-        prepBr.getHeaders().put("User-Agent", agent.get());
+    @Override
+    protected Browser prepBrowser(final Browser prepBr) {
         prepBr.setRequestIntervalLimit(this.getHost(), 1500);
-        return prepBr;
+        return super.prepBrowser(prepBr);
     }
 
     @Override
@@ -168,7 +137,7 @@ public class AsFileCom extends PluginForHost {
             if (passCode == null) {
                 passCode = Plugin.getUserInput("Password?", downloadLink);
             }
-            br.postPage(br.getURL(), "password=" + passCode);
+            postPage(br.getURL(), "password=" + passCode);
             if (br.getURL().contains("/password/")) {
                 downloadLink.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
@@ -233,7 +202,7 @@ public class AsFileCom extends PluginForHost {
         waitTime(System.currentTimeMillis(), downloadLink, false);
         final Browser brc = br.cloneBrowser();
         brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        brc.postPage("http://asfile.com/en/index/convertHashToLink", "hash=" + hash + "&path=" + fileID + "&storage=" + Encoding.urlEncode(storage) + "&name=" + Encoding.urlEncode(downloadLink.getName()));
+        postPage(brc, "http://asfile.com/en/index/convertHashToLink", "hash=" + hash + "&path=" + fileID + "&storage=" + Encoding.urlEncode(storage) + "&name=" + Encoding.urlEncode(downloadLink.getName()));
         final String correctedBR = brc.toString().replace("\\", "");
         dllink = new Regex(correctedBR, "\"url\":\"(http:[^<>\"\\']+)\"").getMatch(0);
         if (dllink == null) {
@@ -320,7 +289,7 @@ public class AsFileCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                br.getPage("http://asfile.com/en/profile");
+                getPage("http://asfile.com/en/profile");
                 if (br.containsHTML("Your account is: FREE<br")) {
                     logger.info("Free accounts are not supported!");
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -432,7 +401,7 @@ public class AsFileCom extends PluginForHost {
             dllink = getDllink();
         }
         if (dllink == null) {
-            br.getPage("http://asfile.com/en/count_files/" + uid);
+            getPage("http://asfile.com/en/count_files/" + uid);
             dllink = getDllink();
             if (dllink == null) {
                 logger.warning("Couldn't find 'dllink' value");
@@ -506,217 +475,6 @@ public class AsFileCom extends PluginForHost {
             return true;
         }
         return false;
-    }
-
-    private static HashMap<String, String> cloudflareCookies = new HashMap<String, String>();
-
-    /**
-     * Gets page <br />
-     * - natively supports silly cloudflare anti DDoS crapola
-     *
-     * @author raztoki
-     */
-    private void getPage(final String page) throws Exception {
-        if (page == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final boolean follows_redirects = br.isFollowingRedirects();
-        br.setFollowRedirects(true);
-        try {
-            br.getPage(page);
-        } catch (Exception e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
-            }
-            // should only be picked up now if not JD2
-            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
-                logger.warning("Cloudflare anti DDoS measures enabled, your version of JD can not support this. In order to go any further you will need to upgrade to JDownloader 2");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cloudflare anti DDoS measures enabled");
-            } else {
-                throw e;
-            }
-        }
-        // prevention is better than cure
-        try {
-            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
-                String host = new Regex(page, "https?://([^/]+)(:\\d+)?/").getMatch(0);
-                Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
-                if (cloudflare == null) {
-                    cloudflare = br.getFormbyProperty("id", "challenge-form");
-                }
-                if (cloudflare != null) {
-                    String math = br.getRegex("\\$\\('#jschl_answer'\\)\\.val\\(([^\\)]+)\\);").getMatch(0);
-                    if (math == null) {
-                        math = br.getRegex("a\\.value = ([\\d\\-\\.\\+\\*/]+);").getMatch(0);
-                    }
-                    if (math == null) {
-                        String variableName = br.getRegex("(\\w+)\\s*=\\s*\\$\\(\'#jschl_answer\'\\);").getMatch(0);
-                        if (variableName != null) {
-                            variableName = variableName.trim();
-                        }
-                        math = br.getRegex(variableName + "\\.val\\(([^\\)]+)\\)").getMatch(0);
-                    }
-                    if (math == null) {
-                        logger.warning("Couldn't find 'math'");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    // use js for now, but change to Javaluator as the provided string doesn't get evaluated by JS according to Javaluator
-                    // author.
-                    ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
-                    ScriptEngine engine = mgr.getEngineByName("JavaScript");
-                    final long value = ((Number) engine.eval("(" + math + ") + " + host.length())).longValue();
-                    cloudflare.put("jschl_answer", value + "");
-                    Thread.sleep(5500);
-                    br.submitForm(cloudflare);
-                    if (br.getFormbyProperty("id", "ChallengeForm") != null || br.getFormbyProperty("id", "challenge-form") != null) {
-                        logger.warning("Possible plugin error within cloudflare handling");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    // lets save cloudflare cookie to reduce the need repeat cloudFlare()
-                    final HashMap<String, String> cookies = new HashMap<String, String>();
-                    final Cookies add = br.getCookies(this.getHost());
-                    for (final Cookie c : add.getCookies()) {
-                        if (new Regex(c.getKey(), "(cfduid|cf_clearance)").matches()) {
-                            cookies.put(c.getKey(), c.getValue());
-                        }
-                    }
-                    synchronized (cloudflareCookies) {
-                        cloudflareCookies.clear();
-                        cloudflareCookies.putAll(cookies);
-                    }
-                }
-            }
-        } finally {
-            br.setFollowRedirects(follows_redirects);
-        }
-    }
-
-    @SuppressWarnings("unused")
-    private void postPage(String page, final String postData) throws Exception {
-        if (page == null || postData == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        // stable sucks
-        if (isJava7nJDStable() && page.startsWith("https")) {
-            page = page.replaceFirst("https://", "http://");
-        }
-        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-        try {
-            br.postPage(page, postData);
-        } finally {
-            br.getHeaders().put("Content-Type", null);
-        }
-    }
-
-    private void sendForm(final Form form) throws Exception {
-        if (form == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        // stable sucks && lame to the max, lets try and send a form outside of desired protocol. (works with oteupload)
-        if (Form.MethodType.POST.equals(form.getMethod())) {
-            // if the form doesn't contain an action lets set one based on current br.getURL().
-            if (form.getAction() == null || form.getAction().equals("")) {
-                form.setAction(br.getURL());
-            }
-            if (isJava7nJDStable() && (form.getAction().contains("https://") || /* relative path */(!form.getAction().startsWith("http")))) {
-                if (!form.getAction().startsWith("http") && br.getURL().contains("https://")) {
-                    // change relative path into full path, with protocol correction
-                    String basepath = new Regex(br.getURL(), "(https?://.+)/[^/]+$").getMatch(0);
-                    String basedomain = new Regex(br.getURL(), "(https?://[^/]+)").getMatch(0);
-                    String path = form.getAction();
-                    String finalpath = null;
-                    if (path.startsWith("/")) {
-                        finalpath = basedomain.replaceFirst("https://", "http://") + path;
-                    } else if (!path.startsWith(".")) {
-                        finalpath = basepath.replaceFirst("https://", "http://") + path;
-                    } else {
-                        // lacking builder for ../relative paths. this will do for now.
-                        logger.info("Missing relative path builder. Must abort now... Try upgrading to JDownloader 2");
-                        throw new PluginException(LinkStatus.ERROR_FATAL);
-                    }
-                    form.setAction(finalpath);
-                } else {
-                    form.setAction(form.getAction().replaceFirst("https?://", "http://"));
-                }
-                if (!stableSucks.get()) {
-                    showSSLWarning(this.getHost());
-                }
-            }
-            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-        }
-        try {
-            br.submitForm(form);
-        } finally {
-            br.getHeaders().put("Content-Type", null);
-        }
-    }
-
-    private boolean isJava7nJDStable() {
-        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+")) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private static AtomicBoolean stableSucks = new AtomicBoolean(false);
-
-    public static void showSSLWarning(final String domain) {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        String lng = System.getProperty("user.language");
-                        String message = null;
-                        String title = null;
-                        boolean xSystem = CrossSystem.isOpenBrowserSupported();
-                        if ("de".equalsIgnoreCase(lng)) {
-                            title = domain + " :: Java 7+ && HTTPS Post Requests.";
-                            message = "Wegen einem Bug in in Java 7+ in dieser JDownloader version koennen wir keine HTTPS Post Requests ausfuehren.\r\n";
-                            message += "Wir haben eine Notloesung ergaenzt durch die man weiterhin diese JDownloader Version nutzen kann.\r\n";
-                            message += "Bitte bedenke, dass HTTPS Post Requests als HTTP gesendet werden. Nutzung auf eigene Gefahr!\r\n";
-                            message += "Falls du keine unverschluesselten Daten versenden willst, update bitte auf JDownloader 2!\r\n";
-                            if (xSystem) {
-                                message += "JDownloader 2 Installationsanleitung und Downloadlink: Klicke -OK- (per Browser oeffnen)\r\n ";
-                            } else {
-                                message += "JDownloader 2 Installationsanleitung und Downloadlink:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
-                            }
-                        } else if ("es".equalsIgnoreCase(lng)) {
-                            title = domain + " :: Java 7+ && HTTPS Solicitudes Post.";
-                            message = "Debido a un bug en Java 7+, al utilizar esta versión de JDownloader, no se puede enviar correctamente las solicitudes Post en HTTPS\r\n";
-                            message += "Por ello, hemos añadido una solución alternativa para que pueda seguir utilizando esta versión de JDownloader...\r\n";
-                            message += "Tenga en cuenta que las peticiones Post de HTTPS se envían como HTTP. Utilice esto a su propia discreción.\r\n";
-                            message += "Si usted no desea enviar información o datos desencriptados, por favor utilice JDownloader 2!\r\n";
-                            if (xSystem) {
-                                message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación: Hacer Click en -Aceptar- (El navegador de internet se abrirá)\r\n ";
-                            } else {
-                                message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación, enlace :\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
-                            }
-                        } else {
-                            title = domain + " :: Java 7+ && HTTPS Post Requests.";
-                            message = "Due to a bug in Java 7+ when using this version of JDownloader, we can not successfully send HTTPS Post Requests.\r\n";
-                            message += "We have added a work around so you can continue to use this version of JDownloader...\r\n";
-                            message += "Please be aware that HTTPS Post Requests are sent as HTTP. Use at your own discretion.\r\n";
-                            message += "If you do not want to send unecrypted data, please upgrade to JDownloader 2!\r\n";
-                            if (xSystem) {
-                                message += "Jdownloader 2 install instructions and download link: Click -OK- (open in browser)\r\n ";
-                            } else {
-                                message += "JDownloader 2 install instructions and download link:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
-                            }
-                        }
-                        int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
-                        if (xSystem && JOptionPane.OK_OPTION == result) {
-                            CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));
-                        }
-                        stableSucks.set(true);
-                    } catch (Throwable e) {
-                    }
-                }
-            });
-        } catch (Throwable e) {
-        }
     }
 
 }
