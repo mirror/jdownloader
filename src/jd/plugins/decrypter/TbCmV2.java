@@ -159,6 +159,12 @@ public class TbCmV2 extends PluginForDecrypt {
 
     private static Object DIALOGLOCK = new Object();
 
+    private String        videoID;
+    private String        watch_videos;
+    private String        playlistID;
+    private String        channelID;
+    private String        userID;
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         cfg = PluginJsonConfig.get(YoutubeConfig.class);
 
@@ -182,16 +188,17 @@ public class TbCmV2 extends PluginForDecrypt {
             requestedVariant = Encoding.urlDecode(requestedVariant, false);
         }
         cleanedurl = cleanedurl.replace("\\&variant=[a-z\\_0-9]+", "");
-        String videoID = getVideoIDByUrl(cleanedurl);
+        cleanedurl = cleanedurl.replace("/embed/", "/watch?v=");
+        videoID = getVideoIDByUrl(cleanedurl);
         // for watch_videos, found within youtube.com music
-        String watch_videos = new Regex(cleanedurl, "video_ids=([a-zA-Z0-9\\-_,]+)").getMatch(0);
+        watch_videos = new Regex(cleanedurl, "video_ids=([a-zA-Z0-9\\-_,]+)").getMatch(0);
         if (watch_videos != null) {
             // first uid in array is the video the user copy url on.
             videoID = new Regex(watch_videos, "([a-zA-Z0-9\\-_]+)").getMatch(0);
         }
-        String playlistID = getListIDByUrls(cleanedurl);
-        String userID = new Regex(cleanedurl, "/user/([A-Za-z0-9\\-_]+)").getMatch(0);
-        String channelID = new Regex(cleanedurl, "/channel/([A-Za-z0-9\\-_]+)").getMatch(0);
+        playlistID = getListIDByUrls(cleanedurl);
+        userID = new Regex(cleanedurl, "/user/([A-Za-z0-9\\-_]+)").getMatch(0);
+        channelID = new Regex(cleanedurl, "/channel/([A-Za-z0-9\\-_]+)").getMatch(0);
 
         YoutubeHelper helper = getCachedHelper();
 
@@ -896,7 +903,7 @@ public class TbCmV2 extends PluginForDecrypt {
 
     /**
      * Parse a playlist id and return all found video ids
-     * 
+     *
      * @param decryptedLinks
      * @param dupeCheckSet
      * @param base
@@ -1027,6 +1034,19 @@ public class TbCmV2 extends PluginForDecrypt {
     public ArrayList<YoutubeClipData> parseUsergrid(String userID) throws IOException, InterruptedException {
         // http://www.youtube.com/user/Gronkh/videos
         // channel: http://www.youtube.com/channel/UCYJ61XIK64sp6ZFFS8sctxw
+        if (false && userID != null) {
+            /** TEST CODE for 1050 playlist max size issue. below comment is incorrect, both grid and channelid return 1050. raztoki **/
+            // this format only ever returns 1050 results, its a bug on youtube end. We can resolve this by finding the youtube id and let
+            // parseChannelgrid(channelid) find the results.
+            ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
+            Browser li = br.cloneBrowser();
+            li.getPage(getBase() + "/user/" + userID + "/videos?view=0");
+            this.channelID = li.getRegex("'CHANNEL_ID', \"(UC[^\"]+)\"").getMatch(0);
+            if (StringUtils.isNotEmpty(this.channelID)) {
+                return ret;
+            }
+        }
+
         Browser li = br.cloneBrowser();
         ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
         int counter = 1;
