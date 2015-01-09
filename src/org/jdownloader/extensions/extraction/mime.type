@@ -28,7 +28,7 @@ MPEG:::0000010.*::::::((.*\.mpg)|(.*\.mpeg)):::.*\.avi
 PDF:::255044462d31.*:::Portable Document Format:::.*\.pdf
 WM:::3026[a-f0-9]{2}75[a-f0-9]{2}66.*:::Windows Media:::((.*\.wma)|(.*\.wmv))
 XCF:::67696d702078.*::::::.*\.xcf
-ZIP:::504b0304.*::::::.*\.zip
+ZIP:::504b0304.*::::::.*\.(zip|cbz)
 JAR:::504b030414.*:::Java executable:::.*\.jar
 SWF:::4[a-f0-9]{1}575307.*:::Shockwave film:::.+\.swf
 JPG:::ffd8ffe117.*:::JPG Image:::.*\.(jpg|jpeg)
