@@ -99,7 +99,7 @@ public class TnaFlixCom extends PluginForHost {
         br.setCookie("http://tnaflix.com/", "content_filter2", "type%3Dstraight%26filter%3Dcams");
         br.setCookie("http://tnaflix.com/", "content_filter3", "type%3Dstraight%2Ctranny%2Cgay%26filter%3Dcams");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("class=\"errorPage page404\"")) {
+        if (br.containsHTML("class=\"errorPage page404\"|> This video is set to private")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String redirect = br.getRedirectLocation();
