@@ -141,29 +141,32 @@ public class CtDiskCom extends PluginForHost {
              * Check hash_key handling if ever plugin is broken - if it does not work with the correct hash_key, check if it works via
              * browser with adblocker enabled!
              */
-            String hash_key = br.getRegex("\\$\\(\"#hash_key\"\\)\\.val\\(\"([^<>\"]*?)\"\\)").getMatch(0);
-            if (hash_key == null) {
-                hash_key = br.getRegex("name=\"hash_key\" value=\"([^<>\"]*?)\"").getMatch(0);
-            }
-            if ((hash_key == null || hash_key.equals("")) && free.hasInputFieldByName("hash_info")) {
-                String tmp = free.getInputFieldByName("hash_info").getValue();
-                if (tmp != null) {
-                    tmp = Encoding.htmlDecode(tmp);
-                    hash_key = Encoding.Base64Decode(tmp);
-                }
-            }
-            if (hash_key == null) {
-                try {
-                    final Browser brc = br.cloneBrowser();
-                    brc.getPage("http://www.bego.cc/getdownloadkey.php?id=" + fid);
-                    final String b64 = Encoding.Base64Decode(brc.getRegex("eval\\(\\$\\.base64\\.decode\\(\"(.*?)\"\\)\\);").getMatch(0));
-                    hash_key = new Regex(b64, "\\$\\(\"#hash_key\"\\)\\.val\\(\"([^<>\"]*?)\"\\)").getMatch(0);
-                } catch (final Throwable e) {
-                }
-            }
-            if (hash_key != null) {
-                free.put("hash_key", hash_key);
-            }
+            // String hash_key = br.getRegex("\\$\\(\"#hash_key\"\\)\\.val\\(\"([^<>\"]*?)\"\\)").getMatch(0);
+            // if (hash_key == null) {
+            // hash_key = br.getRegex("name=\"hash_key\" value=\"([^<>\"]*?)\"").getMatch(0);
+            // }
+            // if ((hash_key == null || hash_key.equals("")) && free.hasInputFieldByName("hash_info")) {
+            // String tmp = free.getInputFieldByName("hash_info").getValue();
+            // if (tmp != null) {
+            // tmp = Encoding.htmlDecode(tmp);
+            // hash_key = Encoding.Base64Decode(tmp);
+            // }
+            // }
+            // if (hash_key == null) {
+            // try {
+            // final Browser brc = br.cloneBrowser();
+            // brc.getPage("http://www.bego.cc/getdownloadkey.php?id=" + fid);
+            // final String b64 = Encoding.Base64Decode(brc.getRegex("eval\\(\\$\\.base64\\.decode\\(\"(.*?)\"\\)\\);").getMatch(0));
+            // hash_key = new Regex(b64, "\\$\\(\"#hash_key\"\\)\\.val\\(\"([^<>\"]*?)\"\\)").getMatch(0);
+            // } catch (final Throwable e) {
+            // }
+            // }
+            // if (hash_key != null) {
+            // free.put("hash_key", hash_key);
+            // }
+            String b64page = Encoding.Base64Encode(br.toString());
+            b64page = Encoding.urlEncode(b64page);
+            free.put("page_content", b64page);
             captcha += "0." + new Random().nextInt(999999999);
             String code = getCaptchaCode(captcha, downloadLink);
             free.put("randcode", code);
