@@ -63,7 +63,7 @@ public class DctpTv extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String rtmpurl = "rtmp://mf.dctpvod.c.nmdn.net:1935/" + app;
+        final String rtmpurl = "rtmp://mf.dctpvod.c.nmdn.net/" + app;
         try {
             dl = new RTMPDownload(this, downloadLink, rtmpurl);
         } catch (final NoClassDefFoundError e) {
@@ -90,7 +90,7 @@ public class DctpTv extends PluginForHost {
         }
         final String playpath = "mp4:" + playpathpart + "_dctp_0500_" + aspect + ".m4v";
         rtmp.setPlayPath(playpath);
-        rtmp.setTcUrl("rtmp://mf.dctpvod.c.nmdn.net:1935/dctpvod/");
+        rtmp.setTcUrl("rtmp://mf.dctpvod.c.nmdn.net/dctpvod/");
         rtmp.setPageUrl(br.getURL());
         rtmp.setApp(app);
         rtmp.setFlashVer("WIN 16,0,0,235");

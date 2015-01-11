@@ -23,6 +23,7 @@ import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
@@ -264,7 +265,8 @@ public class FilePostCom extends PluginForHost {
             account.setValid(false);
             return ai;
         } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMMM dd, yyyy", null));
+            /* Add one day more re: http://board.jdownloader.org/showthread.php?t=61588 */
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMMM dd, yyyy", Locale.ENGLISH) + 24 * 60 * 60 * 1000l);
             account.setValid(true);
         }
         ai.setStatus("Premium User");
