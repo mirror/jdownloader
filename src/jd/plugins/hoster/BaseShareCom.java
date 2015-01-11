@@ -61,7 +61,7 @@ public class BaseShareCom extends PluginForHost {
         String filename = null;
         DLLINK = checkDirectLink(downloadLink, "directlink");
         if (DLLINK == null) {
-            DLLINK = br.getRegex("(/uploads/songs/[^<>\"]*?\\.mp3)\"").getMatch(0);
+            DLLINK = br.getRegex("(/uploads/(songs|zips)/[^<>\"]*?\\.mp3)\"").getMatch(0);
             if (DLLINK != null) {
                 DLLINK = "http://baseshare.com" + DLLINK;
             }
