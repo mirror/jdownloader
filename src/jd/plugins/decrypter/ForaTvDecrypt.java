@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fora.tv" }, urls = { "http://(www\\.)?fora\\.tv/\\d{4}/\\d{2}/\\d{2}/[A-Za-z0-9\\-_]+|http://library\\.fora\\.tv/program_landing\\.php\\?year=\\d{4}\\&month=\\d{2}\\&day=\\d{2}\\&title=[^<>\"/]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fora.tv" }, urls = { "http://(www\\.)?(library\\.)?fora\\.tv/\\d{4}/\\d{2}/\\d{2}/[A-Za-z0-9\\-_]+|http://library\\.fora\\.tv/program_landing\\.php\\?year=\\d{4}\\&month=\\d{2}\\&day=\\d{2}\\&title=[^<>\"/]+" }, flags = { 0 })
 public class ForaTvDecrypt extends PluginForDecrypt {
 
     public ForaTvDecrypt(PluginWrapper wrapper) {
@@ -64,18 +64,21 @@ public class ForaTvDecrypt extends PluginForDecrypt {
         title = Encoding.htmlDecode(title).trim();
         int counter = 1;
         for (final String slinkinfo : links) {
-            String downloadlink = new Regex(slinkinfo, "\"(/download[^<>\"]*?)\"").getMatch(0);
-            final String type = new Regex(slinkinfo, "itemprop=\"name\">(Video|Audio)</span>").getMatch(0);
-            final String size = new Regex(slinkinfo, "itemprop=\"contentSize\">([^<>\"]*?)</span>").getMatch(0);
+            String downloadlink = new Regex(slinkinfo, "itemprop=\"contentURL\" href=\"(/[^<>\"]*?)\"").getMatch(0);
+            final String type = new Regex(slinkinfo, "itemprop=\"name\">([^<>\"]*?)</span>").getMatch(0);
+            String size = new Regex(slinkinfo, "itemprop=\"contentSize\">([^<>\"]*?)</span>").getMatch(0);
             if (downloadlink == null || type == null || size == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             downloadlink = "directhttp://http://library.fora.tv/" + Encoding.htmlDecode(downloadlink);
+            size = size.replace("~", "");
             final DownloadLink dl = createDownloadlink(downloadlink);
             String ext;
             if (type.equals("Video")) {
                 ext = ".mp4";
+            } else if (type.contains("transcript")) {
+                ext = ".pdf";
             } else {
                 ext = ".mp3";
             }
