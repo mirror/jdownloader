@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -69,33 +70,57 @@ public class HostUjeNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        // Browser o = br.cloneBrowser();
-        // o.getHeaders().put("Accept", "*/*");
-        // o.cloneBrowser().getPage("/show_ads.js");
-        // o.cloneBrowser().getPage("/swfobject2.js?sr");
-        // o.cloneBrowser().getPage("/style.css?10");
-        // o.cloneBrowser().getPage("/dll_kody.js.php?new7a&flash=0");
-        // o.cloneBrowser().getPage("/swfobject_34a.js?srmmaaserr");
-        // o.cloneBrowser().getPage("/obraz.php");
-        final String[] imgs = br.getRegex("(\"|')([^\"'\r\n\t]+\\.(?:png|jpe?g|gif))\\1").getColumn(1);
-        // HashSet<String> dupe = new HashSet<String>();
-        if (imgs != null) {
-            // for (final String img : imgs) {
-            // if (dupe.add(img)) {
-            // this.simulateBrowser(br, img);
-            // }
-            // }
+        final String cryptedScripts[] = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+        String decoded = "";
+        if (cryptedScripts != null && cryptedScripts.length != 0) {
+            for (String crypted : cryptedScripts) {
+                try {
+                    Regex params = new Regex(crypted, "'(.*?[^\\\\])',(\\d+),(\\d+),'(.*?)'");
 
-            /**
-             * THIS IS REQUIRED <br>
-             * captcha image is used to detect automation - raztoki 20150106
-             **/
-            this.simulateBrowser(br, "/oc123.php");
+                    String p = params.getMatch(0).replaceAll("\\\\", "");
+                    int a = Integer.parseInt(params.getMatch(1));
+                    int c = Integer.parseInt(params.getMatch(2));
+                    String[] k = params.getMatch(3).split("\\|");
+
+                    while (c != 0) {
+                        c--;
+                        if (k[c].length() != 0) {
+                            p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+                        }
+                    }
+
+                    decoded += "\r\n" + p;
+                } catch (Exception e) {
+                }
+            }
+        }
+        Browser o = br.cloneBrowser();
+        o.getHeaders().put("Accept", "*/*");
+        // this is obstructed in packaged
+        // o.cloneBrowser().getPage("/swfobject_34a.js?srmmaaserr");
+        // fix decoded and get swfojbect
+        if (decoded != null) {
+            decoded = decoded.replaceAll("\\s*('|\")\\s*\\+\\1", "");
+            final String swfobject = new Regex(decoded, "swfobject[^\"]+").getMatch(-1);
+            if (swfobject != null) {
+                Browser a = o.cloneBrowser();
+                a.getPage(swfobject);
+                // now we want that capture image
+                String[] captchas = a.getRegex("preload\\(('|\")(\\w+\\.php)\\1\\);").getColumn(1);
+                if (captchas != null) {
+                    for (final String captcha : captchas) {
+                        /**
+                         * THIS IS REQUIRED <br>
+                         * captcha image is used to detect automation - raztoki 20150106
+                         **/
+                        this.simulateBrowser(br, "/" + captcha);
+                    }
+                }
+            }
         }
 
         // do not use static posts!
