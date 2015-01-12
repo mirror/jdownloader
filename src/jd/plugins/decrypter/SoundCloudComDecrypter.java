@@ -574,7 +574,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         int offset = 0;
 
         while (true) {
-            br.getPage("https://api-v2.soundcloud.com/users/" + userID + "/spotlight?limit=" + maxPerCall + "&offset=" + offset + "&linked_partitioning=1&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID);
+            br.getPage("https://api-v2.soundcloud.com/profile/soundcloud%3Ausers%3A" + userID + "?limit=" + maxPerCall + "&offset=" + offset + "&linked_partitioning=1");
 
             List<Map<String, Object>> collection = parseCollection();
             if (collection == null || collection.size() != maxPerCall) {
