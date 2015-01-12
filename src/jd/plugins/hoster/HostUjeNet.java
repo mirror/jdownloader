@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.LinkedHashSet;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -103,8 +104,8 @@ public class HostUjeNet extends PluginForHost {
         // this is obstructed in packaged
         // o.cloneBrowser().getPage("/swfobject_34a.js?srmmaaserr");
         // fix decoded and get swfojbect
-        if (decoded != null) {
-            decoded = decoded.replaceAll("\\s*('|\")\\s*\\+\\1", "");
+        if (decoded != null && !"".equals(decoded)) {
+            decoded = decoded.replaceAll("\\s*('|\")\\s*\\+\\s*\\1", "");
             final String swfobject = new Regex(decoded, "swfobject[^\"]+").getMatch(-1);
             if (swfobject != null) {
                 Browser a = o.cloneBrowser();
@@ -121,8 +122,31 @@ public class HostUjeNet extends PluginForHost {
                     }
                 }
             }
+        } else {
+            // hes been a dick
+            final String[] swfobject = br.getRegex("(\"|')([^\"']+(?:swf|\\.js)[^\"']*)\\1").getColumn(1);
+            final LinkedHashSet<String> dupe = new LinkedHashSet<String>();
+            if (swfobject != null) {
+                for (final String s : swfobject) {
+                    if (!dupe.add(s) || s.startsWith("://") || (s.startsWith("http") && !Browser.getHost(s).contains(this.getHost()))) {
+                        continue;
+                    }
+                    Browser a = o.cloneBrowser();
+                    a.getPage(s);
+                    // now we want that capture image
+                    String[] captchas = a.getRegex("(?:preload\\()?('|\")(\\w+\\.php[^\"']*)\\1\\);").getColumn(1);
+                    if (captchas != null) {
+                        for (final String captcha : captchas) {
+                            /**
+                             * THIS IS REQUIRED <br>
+                             * captcha image is used to detect automation - raztoki 20150106
+                             **/
+                            this.simulateBrowser(br, "/" + captcha);
+                        }
+                    }
+                }
+            }
         }
-
         // do not use static posts!
         Form f = br.getForm(1);
         if (f == null) {
