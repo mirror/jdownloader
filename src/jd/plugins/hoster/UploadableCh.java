@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -41,6 +43,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -51,6 +54,7 @@ public class UploadableCh extends PluginForHost {
     public UploadableCh(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.uploadable.ch/extend.php");
+        this.setConfigElements();
     }
 
     @Override
@@ -58,8 +62,9 @@ public class UploadableCh extends PluginForHost {
         return "http://www.uploadable.ch/terms.php";
     }
 
-    private static AtomicInteger maxPrem        = new AtomicInteger(1);
-    private static final long    FREE_SIZELIMIT = 1073741824;
+    private static AtomicInteger maxPrem                 = new AtomicInteger(1);
+    private static final long    FREE_SIZELIMIT          = 1073741824;
+    private static final String  PREMIUM_UNLIMITEDCHUNKS = "PREMIUM_UNLIMITEDCHUNKS";
 
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
@@ -359,7 +364,12 @@ public class UploadableCh extends PluginForHost {
                 logger.warning("Final link is null");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            int maxchunks = 1;
+            if (this.getPluginConfig().getBooleanProperty(PREMIUM_UNLIMITEDCHUNKS, false)) {
+                logger.info("User is allowed to use more than 1 chunk in premiummode");
+                maxchunks = 0;
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxchunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -378,7 +388,7 @@ public class UploadableCh extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 1;
+        return -1;
     }
 
     @Override
@@ -412,5 +422,9 @@ public class UploadableCh extends PluginForHost {
             return true;
         }
         return false;
+    }
+
+    private void setConfigElements() {
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), PREMIUM_UNLIMITEDCHUNKS, JDL.L("plugins.hoster.uploadablech.allowPremiumUnlimitedChunks", "Allow unlimited (=20) chunks for premium mode [may cause issues]?")).setDefaultValue(false));
     }
 }

@@ -336,7 +336,8 @@ public class IFileIt extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        /* Tested 12.01.15, trying more than one will result in empty page on download-try of finallink */
+        return 1;
     }
 
     @Override
@@ -360,7 +361,11 @@ public class IFileIt extends PluginForHost {
         final String apikey = getUrlEncodedAPIkey(account, this, br);
         if (apikey == null) {
             logger.info("Couldn't find akey (APIKEY) -> Account must be invalid!");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         }
     }
 
@@ -423,7 +428,11 @@ public class IFileIt extends PluginForHost {
                     break;
                 }
                 if (!accountValid) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -452,7 +461,7 @@ public class IFileIt extends PluginForHost {
             br.postPage((br.getHttpConnection() == null ? MAINPAGE : "") + "/api-fetch_account_details.api", "akey=" + getUrlEncodedAPIkey(account, this, br));
         } catch (final PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
         // Only free acc support till now
         if ("0".equals(getJson("is_premium", br))) {
