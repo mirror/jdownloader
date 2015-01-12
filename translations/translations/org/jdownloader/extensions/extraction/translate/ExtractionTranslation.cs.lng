@@ -10,6 +10,7 @@ ValidateArchiveAction_ValidateArchiveAction_multi=Zkontrolovat archivy
 ValidateArchiveAction_ValidateArchiveAction_object_=Zkontrolovat archivy
 ValidateArchiveAction_actionPerformed_=Archiv má %s1 částí a je kompletní.
 ValidateArchiveAction_actionPerformed_bad=Archiv má %s1 částí a není kompletní.
+ValidateArchiveAction_actionPerformed_information=Informace o archivu: %s1
 and=a alespoň
 archive=Archiv:
 archive_file=Soubor:
