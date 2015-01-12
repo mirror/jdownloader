@@ -10,6 +10,7 @@ ValidateArchiveAction_ValidateArchiveAction_multi=Validar Arquivos
 ValidateArchiveAction_ValidateArchiveAction_object_=Validar Arquivo(s)
 ValidateArchiveAction_actionPerformed_=O arquivo possui %s1 parte(s) e está completo
 ValidateArchiveAction_actionPerformed_bad=O arquivo possui %s1 parte(s) e está incompleto.
+ValidateArchiveAction_actionPerformed_information=Informações do arquivo: %s1
 and=e pelo menos
 archive=Arquivo:
 archive_file=Arquivo:
