@@ -9,26 +9,28 @@ import java.util.List;
 import org.appwork.storage.Storable;
 
 public class FileBytesMap {
-    
+
     private final static class FileBytesMapEntry {
         private final long    begin;
         private volatile long length = 0;
         private volatile long end    = 0;
-        
+
         private FileBytesMapEntry(final long begin) {
             this(begin, 0);
         }
-        
+
         private FileBytesMapEntry(final long begin, final long length) {
-            if (length < 0) throw new IllegalArgumentException("length is negative");
+            if (length < 0) {
+                throw new IllegalArgumentException("length is negative");
+            }
             this.begin = begin;
             modifyLength(length);
         }
-        
+
         private final void updateEnd() {
             end = getBegin() + getLength() - 1;
         }
-        
+
         /**
          * return the begin of the first byte(inclusive)
          * 
@@ -37,7 +39,7 @@ public class FileBytesMap {
         private final long getBegin() {
             return begin;
         }
-        
+
         /**
          * return the end of the last byte(inclusive)
          * 
@@ -46,7 +48,7 @@ public class FileBytesMap {
         private final long getEnd() {
             return end;
         }
-        
+
         /**
          * return the length of this entry
          * 
@@ -55,46 +57,53 @@ public class FileBytesMap {
         private final long getLength() {
             return length;
         }
-        
+
         private final void modifyLength(long length) {
-            if (length < 0) throw new IllegalArgumentException("length is negative");
+            if (length < 0) {
+                throw new IllegalArgumentException("length is negative");
+            }
             this.length += length;
             updateEnd();
         }
-        
+
         @Override
         public String toString() {
             return getBegin() + "-" + getEnd() + "=" + getLength();
         }
     }
-    
-    protected final ArrayList<FileBytesMapEntry>         fileBytesMapEntries = new ArrayList<FileBytesMapEntry>();
-    protected final static Comparator<FileBytesMapEntry> sorter              = new Comparator<FileBytesMapEntry>() {
-                                                                                 
-                                                                                 private int compare(long x, long y) {
-                                                                                     return (x < y) ? -1 : ((x == y) ? 0 : 1);
-                                                                                 }
-                                                                                 
-                                                                                 @Override
-                                                                                 public int compare(FileBytesMapEntry o1, FileBytesMapEntry o2) {
-                                                                                     return compare(o1.getBegin(), o2.getBegin());
-                                                                                 }
-                                                                             };
-    
-    protected volatile long                              finalSize           = -1;
-    protected volatile long                              markedBytes         = 0;
-    
+
+    protected final ArrayList<FileBytesMapEntry> fileBytesMapEntries = new ArrayList<FileBytesMapEntry>();
+
+    protected ArrayList<FileBytesMapEntry> getFileBytesMapEntries() {
+        return fileBytesMapEntries;
+    }
+
+    protected final static Comparator<FileBytesMapEntry> sorter      = new Comparator<FileBytesMapEntry>() {
+
+                                                                         private int compare(long x, long y) {
+                                                                             return (x < y) ? -1 : ((x == y) ? 0 : 1);
+                                                                         }
+
+                                                                         @Override
+                                                                         public int compare(FileBytesMapEntry o1, FileBytesMapEntry o2) {
+                                                                             return compare(o1.getBegin(), o2.getBegin());
+                                                                         }
+                                                                     };
+
+    protected volatile long                              finalSize   = -1;
+    protected volatile long                              markedBytes = 0;
+
     public static class FileBytesMapViewInterfaceStorable implements Storable {
         protected long finalSize = -1;
-        
+
         public long getFinalSize() {
             return finalSize;
         }
-        
+
         public void setFinalSize(long finalSize) {
             this.finalSize = finalSize;
         }
-        
+
         /**
          * return a list of begin/length entries of the map
          * 
@@ -103,16 +112,16 @@ public class FileBytesMap {
         public List<Long[]> getMarkedAreas() {
             return markedAreas;
         }
-        
+
         public void setMarkedAreas(List<Long[]> markedAreas) {
             this.markedAreas = markedAreas;
         }
-        
+
         protected List<Long[]> markedAreas = null;
-        
+
         private FileBytesMapViewInterfaceStorable(/* Storable */) {
         }
-        
+
         public FileBytesMapViewInterfaceStorable(FileBytesMapViewInterface fileBytesMapInfo) {
             this.finalSize = fileBytesMapInfo.getFinalSize();
             markedAreas = new ArrayList<Long[]>(fileBytesMapInfo.getMarkedAreas().length);
@@ -120,25 +129,26 @@ public class FileBytesMap {
                 markedAreas.add(new Long[] { markedArea[0], markedArea[1] });
             }
         }
-        
+
         public FileBytesMapViewInterfaceStorable(FileBytesMap fileBytesMap) {
             synchronized (fileBytesMap) {
                 this.finalSize = fileBytesMap.getFinalSize();
-                markedAreas = new ArrayList<Long[]>(fileBytesMap.fileBytesMapEntries.size());
-                for (int index = 0; index < fileBytesMap.fileBytesMapEntries.size(); index++) {
-                    FileBytesMapEntry fileBytesMapEntry = fileBytesMap.fileBytesMapEntries.get(index);
+                final List<FileBytesMapEntry> mapEntries = fileBytesMap.getFileBytesMapEntries();
+                markedAreas = new ArrayList<Long[]>(mapEntries.size());
+                for (int index = 0; index < mapEntries.size(); index++) {
+                    final FileBytesMapEntry fileBytesMapEntry = mapEntries.get(index);
                     markedAreas.add(new Long[] { fileBytesMapEntry.getBegin(), fileBytesMapEntry.getLength() });
                 }
             }
         }
-        
+
     }
-    
+
     public static class FileBytesMapView implements FileBytesMapViewInterface {
         protected final long finalSize;
         protected final long marked;
         protected final long size;
-        
+
         /**
          * return a list of begin/length entries of the map
          * 
@@ -148,32 +158,33 @@ public class FileBytesMap {
         public long[][] getMarkedAreas() {
             return markedAreas;
         }
-        
+
         protected final long[][] markedAreas;
-        
+
         @Override
         public long getFinalSize() {
             return finalSize;
         }
-        
+
         public long getSize() {
             return size;
         }
-        
+
         public long getUnMarkedBytes() {
             return Math.max(0, getSize()) - getMarkedBytes();
         }
-        
+
         public long getMarkedBytes() {
             return marked;
         }
-        
+
         public FileBytesMapView(FileBytesMap fileBytesMap) {
             synchronized (fileBytesMap) {
                 this.finalSize = fileBytesMap.getFinalSize();
-                markedAreas = new long[fileBytesMap.fileBytesMapEntries.size()][2];
-                for (int index = 0; index < fileBytesMap.fileBytesMapEntries.size(); index++) {
-                    FileBytesMapEntry fileBytesMapEntry = fileBytesMap.fileBytesMapEntries.get(index);
+                final List<FileBytesMapEntry> mapEntries = fileBytesMap.getFileBytesMapEntries();
+                markedAreas = new long[mapEntries.size()][2];
+                for (int index = 0; index < mapEntries.size(); index++) {
+                    FileBytesMapEntry fileBytesMapEntry = mapEntries.get(index);
                     markedAreas[index][0] = fileBytesMapEntry.getBegin();
                     markedAreas[index][1] = fileBytesMapEntry.getLength();
                 }
@@ -182,11 +193,11 @@ public class FileBytesMap {
             }
         }
     }
-    
+
     public long getFinalSize() {
         return finalSize;
     }
-    
+
     public synchronized void set(FileBytesMapViewInterface fileBytesMapInfo) {
         reset();
         setFinalSize(fileBytesMapInfo.getFinalSize());
@@ -194,26 +205,27 @@ public class FileBytesMap {
             mark(markedArea[0], markedArea[1]);
         }
     }
-    
+
     public synchronized void set(FileBytesMap fileBytesMap) {
         synchronized (fileBytesMap) {
             reset();
             setFinalSize(fileBytesMap.getFinalSize());
-            for (int index = 0; index < fileBytesMap.fileBytesMapEntries.size(); index++) {
-                FileBytesMapEntry fileBytesMapEntry = fileBytesMap.fileBytesMapEntries.get(index);
-                fileBytesMapEntries.add(new FileBytesMapEntry(fileBytesMapEntry.getBegin(), fileBytesMapEntry.getLength()));
+            final List<FileBytesMapEntry> mapEntries = fileBytesMap.getFileBytesMapEntries();
+            for (int index = 0; index < mapEntries.size(); index++) {
+                FileBytesMapEntry fileBytesMapEntry = mapEntries.get(index);
+                mark(fileBytesMapEntry.getBegin(), fileBytesMapEntry.getLength());
             }
         }
     }
-    
+
     public void setFinalSize(long finalSize) {
         this.finalSize = Math.max(-1, finalSize);
     }
-    
+
     public synchronized void resetMarkedBytesLive() {
         markedBytes = 0;
     }
-    
+
     public static void main(String[] args) {
         FileBytesMap test = new FileBytesMap();
         test.setFinalSize(100);
@@ -231,7 +243,7 @@ public class FileBytesMap {
             System.out.println("Skip:" + skip);
         }
     }
-    
+
     public synchronized long skippable(long markedAreaBegin, long markedAreaLength) {
         final long markedAreaEnd = markedAreaBegin + markedAreaLength - 1;
         for (int index = 0; index < fileBytesMapEntries.size(); index++) {
@@ -247,7 +259,7 @@ public class FileBytesMap {
         }
         return 0l;
     }
-    
+
     /**
      * return how much area got marked
      * 
@@ -258,10 +270,14 @@ public class FileBytesMap {
      * @return
      */
     public synchronized long mark(long markedAreaBegin, long markedAreaLength) {
-        if (markedAreaLength <= 0) throw new IllegalArgumentException("invalid length");
+        if (markedAreaLength <= 0) {
+            throw new IllegalArgumentException("invalid length");
+        }
         final long markedAreaEnd = markedAreaBegin + markedAreaLength - 1;
         final long finalSize = getFinalSize();
-        if (finalSize >= 0 && markedAreaEnd + 1 > finalSize) throw new IllegalArgumentException("invalid mark:finalSize:" + finalSize + "|markEnd:" + (markedAreaEnd + 1));
+        if (finalSize >= 0 && markedAreaEnd + 1 > finalSize) {
+            throw new IllegalArgumentException("invalid mark:finalSize:" + finalSize + "|markEnd:" + (markedAreaEnd + 1));
+        }
         int checkOverlapIndex = -1;
         for (int index = 0; index < fileBytesMapEntries.size(); index++) {
             final FileBytesMapEntry currentFileBytesMapEntry = fileBytesMapEntries.get(index);
@@ -322,7 +338,7 @@ public class FileBytesMap {
         Collections.sort(fileBytesMapEntries, sorter);
         return markedAreaLength;
     }
-    
+
     public synchronized List<Long[]> getUnMarkedAreas() {
         ArrayList<Long[]> ret = new ArrayList<Long[]>();
         for (int index = 0; index < fileBytesMapEntries.size(); index++) {
@@ -357,13 +373,13 @@ public class FileBytesMap {
         }
         return ret;
     }
-    
+
     public synchronized void reset() {
         fileBytesMapEntries.clear();
         markedBytes = 0;
         finalSize = -1;
     }
-    
+
     /**
      * return known size of this map
      * 
@@ -371,7 +387,9 @@ public class FileBytesMap {
      */
     public synchronized long getSize() {
         long size = getFinalSize();
-        if (size >= 0) return size;
+        if (size >= 0) {
+            return size;
+        }
         if (fileBytesMapEntries.size() > 0) {
             //
             long end = fileBytesMapEntries.get(fileBytesMapEntries.size() - 1).getEnd();
@@ -380,7 +398,7 @@ public class FileBytesMap {
         }
         return -1;
     }
-    
+
     /**
      * return size of unmarked area
      * 
@@ -389,7 +407,7 @@ public class FileBytesMap {
     public synchronized long getUnMarkedBytes() {
         return Math.max(0, getSize()) - getMarkedBytes();
     }
-    
+
     /**
      * return a "live" size marked area
      * 
@@ -398,7 +416,7 @@ public class FileBytesMap {
     public long getMarkedBytesLive() {
         return markedBytes;
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -421,7 +439,7 @@ public class FileBytesMap {
         }
         return sb.toString();
     }
-    
+
     /**
      * return size of marked area
      * 
