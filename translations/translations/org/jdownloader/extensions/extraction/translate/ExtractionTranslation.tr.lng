@@ -10,6 +10,7 @@ ValidateArchiveAction_ValidateArchiveAction_multi=Arşivleri doğrula
 ValidateArchiveAction_ValidateArchiveAction_object_=Arşiv(leri)i doğrula
 ValidateArchiveAction_actionPerformed_=Arşiv %s1 parçadan oluşuyor ve tamamlandı
 ValidateArchiveAction_actionPerformed_bad=Arşiv %s1 parçadan oluşuyor ve tamamlanmadı.
+ValidateArchiveAction_actionPerformed_information=Arşiv bilgisi: %s1
 and=ve en az
 archive=Arşiv:
 archive_file=Dosya:
