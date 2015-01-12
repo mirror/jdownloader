@@ -106,9 +106,9 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     private void log(StatsLogInterface dl) {
         if (isEnabled()) {
-            if (Math.random() > 0.1d && !(dl instanceof AbstractTrackEntry)) {
-                return;
-            }
+            // if (Math.random() > 0.1d && !(dl instanceof AbstractTrackEntry)) {
+            // return;
+            // }
             synchronized (list) {
                 if (list.size() > 20) {
                     list.clear();
