@@ -8,6 +8,10 @@ public class DummyOpener implements IArchiveOpenCallback, ICryptoGetTextPassword
 
     private final String password;
 
+    public DummyOpener() {
+        this(null);
+    }
+
     public DummyOpener(final String password) {
         if (password == null) {
             /* password null will crash jvm */

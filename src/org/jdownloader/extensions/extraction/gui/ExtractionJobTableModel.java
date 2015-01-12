@@ -153,8 +153,9 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
                 case PASSWORD_FOUND:
                     return T._.plugins_optional_extraction_status_passfound();
                 case EXTRACTING:
-                    if (value.getArchiv().getExtractedFiles().size() > 0) {
-                        return T._.plugins_optional_extraction_status_extracting_filename(value.getArchiv().getExtractedFiles().get(value.getArchiv().getExtractedFiles().size() - 1).getName());
+                    final int size = value.getArchiv().getExtractedFiles().size();
+                    if (size > 0) {
+                        return T._.plugins_optional_extraction_status_extracting_filename(value.getArchiv().getExtractedFiles().get(size - 1).getName());
                     } else {
                         return T._.plugins_optional_extraction_status_extracting2();
                     }
