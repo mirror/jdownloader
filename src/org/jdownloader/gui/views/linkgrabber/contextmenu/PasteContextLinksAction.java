@@ -73,7 +73,6 @@ public class PasteContextLinksAction extends CustomizableTableContextAppAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        System.out.println(1);
         new Thread("Add Links Thread") {
             @Override
             public void run() {
