@@ -24,6 +24,9 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Archive has %s1 part(s) and is incomplete." })
     String ValidateArchiveAction_actionPerformed_bad(int size);
 
+    @Default(lngs = { "en" }, values = { "Archive information: %s1" })
+    String ValidateArchiveAction_actionPerformed_information(String string);
+
     @Default(lngs = { "en" }, values = { "Validate Archive(s)" })
     String ValidateArchiveAction_ValidateArchiveAction_object_();
 

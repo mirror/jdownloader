@@ -37,7 +37,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.RuTubeRuDecrypter.RuTubeVariant;
+import jd.plugins.components.RuTubeVariant;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;

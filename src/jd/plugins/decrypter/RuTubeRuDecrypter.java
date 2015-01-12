@@ -19,7 +19,6 @@ package jd.plugins.decrypter;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 
-import javax.swing.Icon;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
@@ -33,11 +32,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.RuTubeVariant;
 
-import org.appwork.storage.Storable;
-import org.jdownloader.controlling.linkcrawler.LinkVariant;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.images.AbstractIcon;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -102,7 +98,7 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
 
     /**
      * error message types on the embeded link url
-     *
+     * 
      */
     private String getErrorMessage() {
         String msg = null;
@@ -114,88 +110,6 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
             msg = "Video does not exist";
         }
         return msg;
-    }
-
-    public static class RuTubeVariant implements LinkVariant, Storable {
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == null || !(obj instanceof RuTubeVariant)) {
-                return false;
-            }
-            return _getUniqueId().equals(((RuTubeVariant) obj)._getUniqueId());
-        }
-
-        private String width;
-
-        public String getWidth() {
-            return width;
-        }
-
-        public void setWidth(String width) {
-            this.width = width;
-        }
-
-        public String getBitrate() {
-            return bitrate;
-        }
-
-        public void setBitrate(String bitrate) {
-            this.bitrate = bitrate;
-        }
-
-        public String getHeight() {
-            return height;
-        }
-
-        public void setHeight(String height) {
-            this.height = height;
-        }
-
-        public String getStreamID() {
-            return streamID;
-        }
-
-        public void setStreamID(String streamID) {
-            this.streamID = streamID;
-        }
-
-        private String       bitrate;
-        private String       height;
-        private String       streamID;
-        private AbstractIcon icon;
-
-        public RuTubeVariant(/* storable */) {
-
-        }
-
-        public RuTubeVariant(String width, String height, String bitrate, String streamID) {
-            this.width = width;
-            this.height = height;
-            this.bitrate = bitrate;
-            this.streamID = streamID;
-            icon = new AbstractIcon(IconKey.ICON_VIDEO, 16);
-        }
-
-        @Override
-        public String _getUniqueId() {
-            return width + "x" + height + "_bitrate_" + streamID;
-        }
-
-        @Override
-        public String _getName() {
-            return height + "p";
-        }
-
-        @Override
-        public Icon _getIcon() {
-            return icon;
-        }
-
-        @Override
-        public String _getExtendedName() {
-            return height + "p (" + bitrate + "bps)";
-        }
-
     }
 
     @Override
@@ -232,7 +146,7 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
 
                 NodeList f4mUrls = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
                 Node best = f4mUrls.item(f4mUrls.getLength() - 1);
-                ArrayList<RuTubeVariant> variantsVideo = new ArrayList<RuTubeRuDecrypter.RuTubeVariant>();
+                ArrayList<RuTubeVariant> variantsVideo = new ArrayList<RuTubeVariant>();
                 RuTubeVariant bestVariant = null;
                 for (int i = 0; i < f4mUrls.getLength(); i++) {
                     best = f4mUrls.item(i);
@@ -280,7 +194,7 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
 
     /**
      * lets try and prevent possible NPE from killing the progress.
-     *
+     * 
      * @author raztoki
      * @param n
      * @param item

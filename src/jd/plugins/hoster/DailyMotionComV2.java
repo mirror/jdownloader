@@ -31,7 +31,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.decrypter.DailyMotionComDecrypterV2.DailyMotionVariant;
+import jd.plugins.components.DailyMotionVariant;
 
 import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
 import org.jdownloader.controlling.ffmpeg.FFmpeg;

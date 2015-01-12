@@ -3,8 +3,8 @@ package org.jdownloader.extensions.extraction.gui.config;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.TreeSet;
 
 import javax.swing.AbstractAction;
 import javax.swing.JMenu;
@@ -366,7 +366,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                 @Override
                 protected Void run() throws RuntimeException {
                     final String[] list = txt.split("[\r\n]{1,2}");
-                    final TreeSet<String> passwords = new TreeSet<String>();
+                    final LinkedHashSet<String> passwords = new LinkedHashSet<String>();
                     for (String ss : list) {
                         passwords.add(ss);
                     }
@@ -382,7 +382,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                 @Override
                 protected Void run() throws RuntimeException {
                     final String[] list = Regex.getLines(txt);
-                    final TreeSet<String> ignoreList = new TreeSet<String>();
+                    final LinkedHashSet<String> ignoreList = new LinkedHashSet<String>();
                     for (String ss : list) {
                         ignoreList.add(ss);
                     }

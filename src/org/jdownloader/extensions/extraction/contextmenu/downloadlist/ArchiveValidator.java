@@ -69,42 +69,31 @@ public class ArchiveValidator {
 
         nextLink: for (Object l : si.getChildren()) {
             if (l instanceof CrawledLink) {
-                // if (((CrawledLink) l).getLinkState() != LinkState.OFFLINE) {
                 CrawledLinkFactory clf = new CrawledLinkFactory(((CrawledLink) l));
-                if (extractor.isLinkSupported(clf)) {
-
-                    for (Archive a : archives) {
-                        if (a.contains(clf)) {
-                            continue nextLink;
-                        }
+                for (Archive a : archives) {
+                    if (a.contains(clf)) {
+                        continue nextLink;
                     }
-
+                }
+                if (extractor.isLinkSupported(clf)) {
                     Archive archive = extractor.getArchiveByFactory(clf);
                     if (archive != null) {
                         archives.add(archive);
                     }
-
-                    // }
                 }
             } else if (l instanceof DownloadLink) {
-                // if (((DownloadLink) l).isAvailable() || new File(((DownloadLink) l).getFileOutput()).exists()) {
                 DownloadLinkArchiveFactory clf = new DownloadLinkArchiveFactory(((DownloadLink) l));
-                if (extractor.isLinkSupported(clf)) {
-
-                    for (Archive a : archives) {
-                        if (a.contains(clf)) {
-                            continue nextLink;
-                        }
+                for (Archive a : archives) {
+                    if (a.contains(clf)) {
+                        continue nextLink;
                     }
-
+                }
+                if (extractor.isLinkSupported(clf)) {
                     Archive archive = extractor.getArchiveByFactory(clf);
                     if (archive != null) {
                         archives.add(archive);
                     }
-
                 }
-                // }
-
             }
         }
         return archives;

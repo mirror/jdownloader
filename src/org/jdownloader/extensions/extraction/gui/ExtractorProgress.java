@@ -174,11 +174,13 @@ public class ExtractorProgress extends IconedProcessIndicator {
     public void mouseClicked(MouseEvent e) {
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
 
-            if (table.isEditing()) table.getCellEditor().stopCellEditing();
-            tModel.getTableData().clear();
+            if (table.isEditing()) {
+                table.getCellEditor().stopCellEditing();
+            }
             java.util.List<ExtractionController> jpobs = extension.getJobQueue().getJobs();
             if (jpobs.size() > 0) {
-                tModel.addAllElements(jpobs);
+                tModel._fireTableStructureChanged(jpobs, true);
+                ;
                 ToolTipController.getInstance().unregister(this);
                 Dimension psize = pu.getPreferredSize();
                 pu.show(this, -psize.width + getWidth(), -psize.height);
@@ -214,7 +216,9 @@ public class ExtractorProgress extends IconedProcessIndicator {
                 }
             }
             if (pu.isVisible()) {
-                if (table.isEditing()) table.getCellEditor().stopCellEditing();
+                if (table.isEditing()) {
+                    table.getCellEditor().stopCellEditing();
+                }
 
                 tModel.getTableData().clear();
                 tModel.addAllElements(extension.getJobQueue().getJobs());
@@ -224,7 +228,9 @@ public class ExtractorProgress extends IconedProcessIndicator {
         case CLEANUP:
             setIndeterminate(false);
             if (pu.isVisible()) {
-                if (table.isEditing()) table.getCellEditor().stopCellEditing();
+                if (table.isEditing()) {
+                    table.getCellEditor().stopCellEditing();
+                }
 
                 tModel.getTableData().clear();
                 tModel.addAllElements(extension.getJobQueue().getJobs());
