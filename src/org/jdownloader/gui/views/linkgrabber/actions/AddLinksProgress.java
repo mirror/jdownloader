@@ -216,12 +216,14 @@ public class AddLinksProgress extends AbstractDialog<Object> {
                         }
                     }
                 } finally {
-                    new EDTRunner() {
-                        @Override
-                        protected void runInEDT() {
-                            dispose(currentThread);
-                        }
-                    };
+                    if (isInitialized()) {
+                        new EDTRunner() {
+                            @Override
+                            protected void runInEDT() {
+                                dispose(currentThread);
+                            }
+                        };
+                    }
                 }
             }
         };
