@@ -40,7 +40,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file4go.com" }, urls = { "http://(?:www\\.)?file4go\\.(?:com|net)/(?:r/|d/|download\\.php\\?id=)([a-z0-9]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file4go.com" }, urls = { "http://(?:www\\.)?file4go\\.(?:com|net)/(?:r/|d/|download\\.php\\?id=)([a-f0-9]{20})" }, flags = { 2 })
 public class File4GoCom extends PluginForHost {
 
     public File4GoCom(PluginWrapper wrapper) {
@@ -85,7 +85,7 @@ public class File4GoCom extends PluginForHost {
         br.setCookie(MAINPAGE, "noadvtday", "0");
         br.setCookie(MAINPAGE, "hellpopab", "1");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Arquivo Temporariamente Indisponivel|ARQUIVO DELATADO PELO USUARIO OU REMOVIDO POR <|ARQUIVO DELATADO POR <b>INATIVIDADE") || br.getURL().contains("file4go.com/404.php")) {
+        if (br.containsHTML("Arquivo Temporariamente Indisponivel|ARQUIVO DELATADO PELO USUARIO OU REMOVIDO POR <|ARQUIVO DELATADO POR <b>INATIVIDADE") || br.getURL().endsWith("/404.php")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("<b>Nome( do arquivo)?:</b>([^<>\"]*?)</span>").getMatch(1);
@@ -116,7 +116,7 @@ public class File4GoCom extends PluginForHost {
         rc.load();
         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
         final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-        br.postPage("http://www.file4go.com/getdownload.php", "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&id=" + fid);
+        br.postPage("/getdownload.php", "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&id=" + fid);
         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
@@ -175,7 +175,7 @@ public class File4GoCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage("http://www.file4go.com/login.html", "acao=logar&login=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass()));
+                br.postPage(MAINPAGE + "/login.html", "acao=logar&login=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass()));
                 final String lang = System.getProperty("user.language");
                 if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
                     if ("de".equalsIgnoreCase(lang)) {
