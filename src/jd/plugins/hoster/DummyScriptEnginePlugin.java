@@ -55,6 +55,12 @@ import org.mozilla.javascript.Wrapper;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DummyScriptEnginePlugin" }, urls = { "donotmatch://neverever" }, flags = { 2 })
 public class DummyScriptEnginePlugin extends PluginForHost {
+
+    public static interface ThrowingRunnable<S extends Throwable> {
+
+        public void run() throws S;
+    }
+
     public DummyScriptEnginePlugin(PluginWrapper wrapper) {
         super(wrapper);
     }
