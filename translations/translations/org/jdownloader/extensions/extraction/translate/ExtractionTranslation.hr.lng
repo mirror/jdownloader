@@ -10,6 +10,7 @@ ValidateArchiveAction_ValidateArchiveAction_multi=Provjera arhive
 ValidateArchiveAction_ValidateArchiveAction_object_=Provjera arhive
 ValidateArchiveAction_actionPerformed_=Arhiva ima %s1 dio(djelova) i kompletna je.
 ValidateArchiveAction_actionPerformed_bad=Arhiva ima %s1 dio(djelova) i nije kompletna.
+ValidateArchiveAction_actionPerformed_information=Informacija o arhivi: %s1
 and=i barem
 archive=Arhiva:
 archive_file=Datoteka:
