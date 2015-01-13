@@ -30,6 +30,7 @@ import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -129,8 +130,8 @@ public class BinBoxIo extends PluginForDecrypt {
                     logger.info("Link offline: " + parameter);
                 }
             } else if (br.containsHTML(/* DCMA */"<div id=\"paste-deleted\"" +
-            /* suspended or deactivated account */"|This link is unavailable because |" +
-            /* content deleted */"The content you have requested has been deleted\\.")) {
+                    /* suspended or deactivated account */"|This link is unavailable because |" +
+                    /* content deleted */"The content you have requested has been deleted\\.")) {
                 try {
                     decryptedLinks.add(createOfflinelink(parameter, fpName != null ? Encoding.htmlDecode(fpName.trim()) : null, null));
                 } catch (final Throwable t) {
@@ -169,7 +170,8 @@ public class BinBoxIo extends PluginForDecrypt {
         if (isEmpty(result)) {
             return null;
         }
-        return result.split("[\r\n]+");
+        final String[] links = HTMLParser.getHttpLinks(result, null);
+        return links;
     }
 
     private void doThis() throws Exception {
