@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "onf.ca" }, urls = { "https?://(www\\.)?(onf|nfb)\\.ca/film/[a-z0-9\\-_]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "onf.ca" }, urls = { "https?://(www\\.)?(onf|nfb)\\.ca/film/[a-z0-9\\-_]+" }, flags = { 0 })
 public class OnfCa extends PluginForHost {
 
     public OnfCa(PluginWrapper wrapper) {
@@ -71,7 +71,7 @@ public class OnfCa extends PluginForHost {
         if (playpaths == null || playpaths.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String currentdomain = new Regex(br.getURL(), "https?://(?:www\\.)?([^<>\"/])+/").getMatch(0);
+        final String currentdomain = new Regex(br.getURL(), "https?://(?:www\\.)?([^<>\"/]+)/").getMatch(0);
         final String filmtitle_url = new Regex(br.getURL(), "/film/([^<>/\"]+)/").getMatch(0);
         final String rtmpurl = "rtmp://nfbca-stream-rtmp.nfbcdn.ca/" + app;
         final String pageurl = "http://www." + currentdomain + "/film/" + filmtitle_url + "/embed/player?player_mode=&embed_mode=0&context_type=film";
