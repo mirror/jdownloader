@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Locale;
@@ -25,6 +26,9 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
@@ -33,6 +37,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -46,9 +51,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.scripting.envjs.EnvJSBrowser;
+import org.jdownloader.scripting.envjs.EnvJSBrowser.DebugLevel;
+import org.jdownloader.scripting.envjs.PermissionFilter;
+import org.jdownloader.scripting.envjs.XHRResponse;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafile.com" }, urls = { "https?://(www\\.)?datafile\\.com/d/[A-Za-z0-9]+(/[^<>\"/]+)?" }, flags = { 2 })
 public class DataFileCom extends PluginForHost {
@@ -85,13 +96,14 @@ public class DataFileCom extends PluginForHost {
      * They have a linkchecker but it doesn't show filenames if they're not included in the URL: http://www.datafile.com/linkchecker.html
      */
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         // Offline links should also have nice filenames
         final String urlFileName = link.getStringProperty("urlfilename", null);
         this.setBrowserExclusive();
         prepBrowser(br);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
+        redirectAntiDDos(br);
         br.setFollowRedirects(false);
         String filesize = null;
         // Limit reached -> Let's use their linkchecker to at least find the filesize and onlinestatus
@@ -136,9 +148,6 @@ public class DataFileCom extends PluginForHost {
                 link.setName(urlFileName);
             }
             return AvailableStatus.UNCHECKABLE;
-        } else if (br.containsHTML("</head><body><style type=\"text/css\">a\\{color: white;\\}</style><script language=\"JavaScript\">s=")) {
-            logger.info("Cannot check link because of missing antiDDOS implementation - setting link to uncheckable so multihost plugins continue to work");
-            return AvailableStatus.UNCHECKABLE;
         }
         final String urlfilename = link.getStringProperty("urlfilename", null);
         final String decrypterfilename = link.getStringProperty("decrypterfilename", null);
@@ -165,6 +174,116 @@ public class DataFileCom extends PluginForHost {
             link.getLinkStatus().setStatusText("This file can only be downloaded by premium users");
         }
         return AvailableStatus.TRUE;
+    }
+
+    public static void main(String[] args) {
+        final String parameter = "http://www.datafile.com/d/TXpVMU56RTROdz0F9";
+        final Browser br = new Browser();
+        br.setProxy(new HTTPProxy(HTTPProxy.TYPE.HTTP, "127.0.0.1", 8888));
+        final EnvJSBrowser envJs = new EnvJSBrowser(br);
+        try {
+            envJs.setDebugLevel(DebugLevel.DEBUG);
+            envJs.setPermissionFilter(new PermissionFilter() {
+
+                @Override
+                public String onBeforeExecutingInlineJavaScript(String type, String js) {
+                    if (js.contains("liveinternet")) {
+
+                        // ads ... do not evaluate
+                        return "console.log('Blocked js')";
+                    }
+                    return js;
+                }
+
+                @Override
+                public Request onBeforeXHRRequest(Request request) {
+                    try {
+                        // only load websites with the same domain.
+                        if (StringUtils.equalsIgnoreCase(new URL(request.getUrl()).getHost(), new URL(parameter).getHost())) {
+                            return request;
+                        }
+                    } catch (MalformedURLException e) {
+                        e.printStackTrace();
+                    }
+
+                    // do not load the request
+                    return null;
+                }
+
+                @Override
+                public Request onBeforeLoadingExternalJavaScript(String type, String src, Request request) {
+                    // do not load external js
+                    return null;
+                }
+
+                @Override
+                public void onAfterXHRRequest(Request request, XHRResponse ret) {
+
+                    System.out.println(request + "");
+                }
+
+                @Override
+                public String onAfterLoadingExternalJavaScript(String type, String src, String sourceCode, Request request) {
+
+                    return sourceCode;
+                }
+            });
+
+            envJs.getPage(parameter);
+            String doc2 = envJs.getDocument();
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static class ScriptEnv {
+        public static String atob(String string) {
+            String ret = Encoding.Base64Decode(string);
+            return ret;
+        }
+
+    }
+
+    private void redirectAntiDDos(Browser br) throws Exception {
+
+        String js = br.getRegex("<style type=\"text/css\">a\\{color\\: white\\;\\}</style><script language=\"JavaScript\">(.*)</script>").getMatch(0);
+        if (js != null) {
+
+            ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+            final ScriptEngine engine = mgr.getEngineByName("JavaScript");
+            // history.length<1){document.body.innerHTML=''
+            engine.eval("document={};document.body={};");
+            engine.eval("window={};window.location={};");
+            engine.eval("history=[];");
+            // load java environment trusted
+            DummyScriptEnginePlugin.runTrusted(new ThrowingRunnable<ScriptException>() {
+
+                @Override
+                public void run() throws ScriptException {
+                    // atob requires String to be loaded for its parameter and return type
+                    engine.eval("var string=" + String.class.getName() + ";");
+                    engine.eval("var scriptEnv=Packages." + ScriptEnv.class.getName() + ";");
+
+                    // create the atob function and redirect it to our java function
+                    engine.eval("atob=function(str){return Packages." + ScriptEnv.class.getName() + ".atob(str)+\"\";}");
+                    // cleanup
+                    engine.eval("delete java;");
+                    engine.eval("delete jd;");
+                }
+
+            });
+
+            engine.eval(js);
+
+            Object redirect = engine.eval("window.location.href");
+            if (redirect != null) {
+                br.getPage(redirect + "");
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "AntiDDOS JS failed");
+            }
+
+        }
+
     }
 
     @Override
@@ -723,7 +842,7 @@ public class DataFileCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from String source.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -739,7 +858,7 @@ public class DataFileCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -748,7 +867,7 @@ public class DataFileCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from provided Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
@@ -763,13 +882,13 @@ public class DataFileCom extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     *
+     * 
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     *
+     * 
      * @param controlSlot
      *            (+1|-1)
      * @author raztoki

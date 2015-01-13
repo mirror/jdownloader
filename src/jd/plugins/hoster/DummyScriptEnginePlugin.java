@@ -34,6 +34,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.reflection.Clazz;
+import org.jdownloader.scripting.JSHtmlUnitPermissionRestricter;
+import org.jdownloader.scripting.JSPermissionRestricter;
 import org.mozilla.javascript.ConsString;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
@@ -1316,5 +1318,16 @@ public class DummyScriptEnginePlugin extends PluginForHost {
 
     public static Map<String, Object> jsonToJavaMap(String string) throws Exception {
         return (Map<String, Object>) jsonToJavaObject(string);
+    }
+
+    public static <T extends Exception> void runTrusted(ThrowingRunnable<T> runnable) throws T {
+        try {
+            JSPermissionRestricter.TRUSTED_THREAD.put(Thread.currentThread(), true);
+            JSHtmlUnitPermissionRestricter.TRUSTED_THREAD.put(Thread.currentThread(), true);
+            runnable.run();
+        } finally {
+            JSHtmlUnitPermissionRestricter.TRUSTED_THREAD.remove(Thread.currentThread());
+            JSPermissionRestricter.TRUSTED_THREAD.remove(Thread.currentThread());
+        }
     }
 }
