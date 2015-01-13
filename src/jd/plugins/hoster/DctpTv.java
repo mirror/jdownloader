@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dctp.tv" }, urls = { "http://(www\\.)?dctp\\.tv/filme/[a-z0-9_\\-]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dctp.tv" }, urls = { "http://(www\\.)?dctp\\.tv/filme/[a-z0-9_\\-]+/" }, flags = { 0 })
 public class DctpTv extends PluginForHost {
 
     public DctpTv(PluginWrapper wrapper) {
