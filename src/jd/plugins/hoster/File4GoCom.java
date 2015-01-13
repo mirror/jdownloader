@@ -53,7 +53,7 @@ public class File4GoCom extends PluginForHost {
         return MAINPAGE;
     }
 
-    private static final String MAINPAGE = "http://file4go.com";
+    private static final String MAINPAGE = "http://file4go.net";
     private static Object       LOCK     = new Object();
 
     @Override
@@ -63,13 +63,13 @@ public class File4GoCom extends PluginForHost {
             link.setLinkID(getHost() + "://" + id);
         } catch (final Throwable t) {
         }
-        link.setUrlDownload(link.getDownloadURL().replace("file4go.net/", "file4go.com/"));
+        link.setUrlDownload(MAINPAGE + "/d/" + id);
     }
 
     @Override
     public String rewriteHost(String host) {
-        if ("file4go.com".equals(host) || "file4go.net".equals(host)) {
-            return "file4go.com";
+        if (host == null || "file4go.com".equals(host) || "file4go.net".equals(host)) {
+            return "file4go.net";
         }
         return super.rewriteHost(host);
     }
