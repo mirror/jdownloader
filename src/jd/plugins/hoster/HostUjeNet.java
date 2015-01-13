@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.LinkedHashSet;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -31,6 +32,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -51,12 +53,19 @@ public class HostUjeNet extends PluginForHost {
         return -1;
     }
 
+    private static final AtomicReference<String> userAgent = new AtomicReference<String>();
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws PluginException, IOException {
         br = new Browser();
         this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36");
+        if (userAgent.get() == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            userAgent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+        }
+        br.getHeaders().put("User-Agent", userAgent.get());
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(">Podany plik nie został odnaleziony|>Podany plik został skasowany z powodu naruszania praw autorskich")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -124,11 +133,11 @@ public class HostUjeNet extends PluginForHost {
             }
         } else {
             // hes been a dick
-            final String[] swfobject = br.getRegex("(\"|')([^\"']+(?:swf|\\.js)[^\"']*)\\1").getColumn(1);
+            final String[] swfobject = br.getRegex("<script\\s+type=('|\")text/javascript\\1[^>]+src=(\"|')(.*?)\\2").getColumn(2);
             final LinkedHashSet<String> dupe = new LinkedHashSet<String>();
             if (swfobject != null) {
                 for (final String s : swfobject) {
-                    if (!dupe.add(s) || s.startsWith("://") || (s.startsWith("http") && !Browser.getHost(s).contains(this.getHost()))) {
+                    if (!dupe.add(s) || ((s.startsWith("://") || s.startsWith("http")) && !Browser.getHost(s).contains(this.getHost()))) {
                         continue;
                     }
                     Browser a = o.cloneBrowser();
