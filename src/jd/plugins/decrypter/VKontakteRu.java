@@ -48,7 +48,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(www\\.)?(vk\\.com|vkontakte\\.ru)/(?!doc\\d+)(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)(\\-)?\\d+|audios\\d+|page\\-\\d+_\\d+|(video(\\-)?\\d+_\\d+(\\?list=[a-z0-9]+)?|videos\\d+|(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged)|video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+(\\&hash=[a-z0-9]+)?|video\\?gid=\\d+|public\\d+\\?z=video(\\-)?\\d+_\\d+((%2F|/)[a-z0-9]+)?|search\\?(c\\[q\\]|c%5Bq%5D)=[^<>\"/]*?\\&c(\\[section\\]|%5Bsection%5D)=video(\\&c(\\[sort\\]|%5Bsort%5D)=\\d+)?\\&z=video(\\-)?\\d+_\\d+)|(photos|tag)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album(\\-)?\\d+_\\d+|photo(\\-)?\\d+_\\d+|(wall\\-\\d+_\\d+|wall\\-\\d+\\-maxoffset=\\d+\\-currentoffset=\\d+|wall\\-\\d+)|[A-Za-z0-9\\-_\\.]+)|https?://(www\\.)?vk\\.cc/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(www\\.)?(vk\\.com|vkontakte\\.ru)/(?!doc\\d+)(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)(\\-)?\\d+|audios\\d+|page\\-\\d+_\\d+|(video(\\-)?\\d+_\\d+(\\?list=[a-z0-9]+)?|videos\\d+|(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged)|video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+(\\&hash=[a-z0-9]+)?|video\\?gid=\\d+|public\\d+\\?z=video(\\-)?\\d+_\\d+((%2F|/)[a-z0-9]+)?|search\\?(c\\[q\\]|c%5Bq%5D)=[^<>\"/]*?\\&c(\\[section\\]|%5Bsection%5D)=video(\\&c(\\[sort\\]|%5Bsort%5D)=\\d+)?\\&z=video(\\-)?\\d+_\\d+)|(photos|tag)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album(\\-)?\\d+_\\d+|photo(\\-)?\\d+_\\d+|(wall\\-\\d+_\\d+|[A-Za-z0-9\\-_\\.]+\\?z=photo\\-\\d+_\\d+%2Fwall\\-\\d+_\\d+|wall\\-\\d+\\-maxoffset=\\d+\\-currentoffset=\\d+|wall\\-\\d+)|[A-Za-z0-9\\-_\\.]+)|https?://(www\\.)?vk\\.cc/[A-Za-z0-9]+" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
@@ -91,6 +91,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private boolean                 wall_grabvideo;
     private boolean                 wall_grablink;
     private boolean                 wall_grabdocs;
+
     /* Some supported url patterns */
     private static final String     PATTERN_SHORT                        = "https?://(www\\.)?vk\\.cc/[A-Za-z0-9]+";
     private static final String     PATTERN_GENERAL_AUDIO                = "https?://(www\\.)?vk\\.com/audio.*?";
@@ -107,6 +108,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_VIDEO_ALBUM                  = "https?://(www\\.)?vk\\.com/(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged|videos(\\-)?\\d+)";
     private static final String     PATTERN_VIDEO_COMMUNITY_ALBUM        = "https?://(www\\.)?vk\\.com/video\\?gid=\\d+";
     private static final String     PATTERN_PHOTO_SINGLE                 = "https?://(www\\.)?vk\\.com/photo(\\-)?\\d+_\\d+";
+    private static final String     PATTERN_PHOTO_SINGLE_WALL_POST       = "https?://(www\\.)?vk\\.com/[A-Za-z0-9\\-_\\.]+\\?z=photo\\-\\d+_\\d+(%2F|/)wall\\-\\d+_\\d+";
     private static final String     PATTERN_PHOTO_ALBUM                  = ".*?(tag|album(\\-)?\\d+_|photos)\\d+";
     private static final String     PATTERN_PHOTO_ALBUMS                 = "https?://(www\\.)?vk\\.com/(albums(\\-)?\\d+|id\\d+\\?z=albums\\d+)";
     private static final String     PATTERN_GENERAL_WALL_LINK            = "https?://(www\\.)?vk\\.com/wall(\\-)?\\d+(\\-maxoffset=\\d+\\-currentoffset=\\d+)?";
@@ -261,7 +263,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_WALL_LOOPBACK_LINK)) {
                     /* Remove loopback-part as it only contains information which we need later but not in the link */
                     newLink = new Regex(CRYPTEDLINK_FUNCTIONAL, "(http://(www\\.)?vk\\.com/wall(\\-)?\\d+)").getMatch(0);
-                } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_PUBLIC_EXTENDED) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUMS) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_PAGE) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_VIDEO_SINGLE) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_WALL_LINK) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_AUDIO) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_COMMUNITY_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_WALL_POST_LINK)) {
+                } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_PUBLIC_EXTENDED) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUMS) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_PAGE) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_VIDEO_SINGLE) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_WALL_LINK) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_AUDIO) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_COMMUNITY_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_WALL_POST_LINK) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_SINGLE_WALL_POST)) {
                     /* Don't change anything */
                 } else {
                     /* We either have a public community or profile --> Get the owner_id and change the link to a wall-link */
@@ -334,6 +336,8 @@ public class VKontakteRu extends PluginForDecrypt {
                     if (decryptedLinks.size() == 0) {
                         logger.info("Check your plugin settings -> They affect the results!");
                     }
+                } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_PHOTO_SINGLE_WALL_POST)) {
+                    decryptWallPostSpecifiedPhoto();
                 } else if (this.CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_GENERAL_WALL_LINK)) {
                     if (br.containsHTML("You are not allowed to view this community\\&#39;s wall|Вы не можете просматривать стену этого сообщества|Nie mo\\&#380;esz ogl\\&#261;da\\&#263; \\&#347;ciany tej spo\\&#322;eczno\\&#347;ci")) {
                         throw new DecrypterException(EXCEPTION_LINKOFFLINE);
@@ -1149,12 +1153,12 @@ public class VKontakteRu extends PluginForDecrypt {
                     final String owner_id = typeObject.get("owner_id").toString();
                     final String content_id = typeObject.get("pid").toString();
 
-                    final DownloadLink dl = getSinglePhotoDownloadLink(owner_id + "_" + content_id + ".jpg");
+                    final DownloadLink dl = getSinglePhotoDownloadLink(owner_id + "_" + content_id);
 
                     dl.setProperty("albumid", album_id);
                     dl.setProperty("owner_id", owner_id);
                     dl.setProperty("content_id", content_id);
-                    dl.setProperty("directlinks", entry);
+                    dl.setProperty("directlinks", typeObject);
                     fp.add(dl);
                     decryptedLinks.add(dl);
                 } else if (type.equals("doc") && wall_grabdocs) {
@@ -1248,10 +1252,62 @@ public class VKontakteRu extends PluginForDecrypt {
                 decryptWallPost((Map<String, Object>) entry, fp);
             }
         }
-
         // decryptWallPost(br.toString(), fp);
         logger.info("Found " + decryptedLinks.size() + " links");
+    }
 
+    /** Using API, finds a single photo link out of a single wall post which can contain multiple photos */
+    private void decryptWallPostSpecifiedPhoto() throws Exception {
+        final String targetPhotoID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "photo\\-\\d+_(\\d+)").getMatch(0);
+        final String postID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "wall(\\-\\d+_\\d+)$").getMatch(0);
+
+        getPage(br, "https://api.vk.com/method/wall.getById?&posts=" + postID + "&extended=0");
+        Map<String, Object> map = (Map<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+
+        if (map == null) {
+            return;
+        }
+
+        /* The part below is basically simply from the decryptWallPost function */
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(postID);
+        List<Object> response = (List<Object>) map.get("response");
+        for (Object entry : response) {
+            if (entry instanceof Map) {
+                Map<String, Object> test = ((Map<String, Object>) entry);
+                List<Map<String, Object>> attachments = (List<Map<String, Object>>) test.get("attachments");
+                if (attachments == null) {
+                    return;
+                }
+                for (Map<String, Object> attachment : attachments) {
+                    final String type = (String) attachment.get("type");
+                    if (type == null) {
+                        return;
+                    }
+                    Map<String, Object> typeObject = (Map<String, Object>) attachment.get(type);
+                    if (typeObject == null) {
+                        System.out.println("No Attachment for type " + type + " in " + attachment);
+                    }
+                    final String content_id = typeObject.get("pid").toString();
+                    if (type.equals("photo") && targetPhotoID.equals(content_id)) {
+                        final String album_id = typeObject.get("aid").toString();
+                        final String owner_id = typeObject.get("owner_id").toString();
+
+                        final DownloadLink dl = getSinglePhotoDownloadLink(owner_id + "_" + content_id);
+
+                        dl.setProperty("albumid", album_id);
+                        dl.setProperty("owner_id", owner_id);
+                        dl.setProperty("content_id", content_id);
+                        dl.setProperty("directlinks", typeObject);
+                        fp.add(dl);
+                        decryptedLinks.add(dl);
+                        return;
+                    }
+                }
+            }
+        }
+        // decryptWallPost(br.toString(), fp);
+        logger.info("Found " + decryptedLinks.size() + " links");
     }
 
     /** NOT using API - general method --> NEVER change a running system! */

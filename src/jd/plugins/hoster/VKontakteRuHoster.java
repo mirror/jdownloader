@@ -198,9 +198,9 @@ public class VKontakteRuHoster extends PluginForHost {
                 this.finalUrl = link.getStringProperty("picturedirectlink", null);
                 if (this.finalUrl == null) {
                     // For photos which are actually offline but their directlinks still exist
-                    String directLinks = link.getStringProperty("directlinks", null);
-                    if (directLinks != null) {
-                        getHighestQualityPic(link, directLinks);
+                    final Object decryptersaveddirectlinks = link.getProperty("directlinks");
+                    if (decryptersaveddirectlinks != null) {
+                        getHighestQualityPicFromSavedJson(link, decryptersaveddirectlinks);
                     }
                     if (this.finalUrl == null) {
                         final String photoID = new Regex(link.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?[\\d\\-]+_[\\d\\-]+)").getMatch(0);
@@ -222,7 +222,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                         this.br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
                         this.postPageSafe(aa, link, "http://vk.com/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
-                        if (this.br.containsHTML(">Unfortunately, this photo has been deleted")) {
+                        if (this.br.containsHTML(">Unfortunately, this photo has been deleted") || this.br.containsHTML(">Access denied<")) {
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         }
                         final String correctedBR = this.br.toString().replace("\\", "");
@@ -647,6 +647,30 @@ public class VKontakteRuHoster extends PluginForHost {
                     break;
                 }
             }
+        }
+    }
+
+    /**
+     * Try to get best quality and test links till a working link is found as it can happen that the found link is offline but others are
+     * online. This function is mae to check the information which has been saved via decrypter as a property on the DownloadLink.
+     *
+     * @throws IOException
+     */
+    private void getHighestQualityPicFromSavedJson(final DownloadLink dl, final Object o) throws Exception {
+        if (o == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        Map<String, Object> attachments = (Map<String, Object>) o;
+        final String qualities[] = { "src_big", "src", "src_small" };
+        for (final String quality : qualities) {
+            final Object finurl = attachments.get(quality);
+            if (finurl != null) {
+                this.finalUrl = finurl.toString();
+            }
+            if (quality != null && this.photolinkOk(dl, null)) {
+                break;
+            }
+            continue;
         }
     }
 

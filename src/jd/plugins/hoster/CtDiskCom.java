@@ -170,6 +170,7 @@ public class CtDiskCom extends PluginForHost {
             captcha += "0." + new Random().nextInt(999999999);
             String code = getCaptchaCode(captcha, downloadLink);
             free.put("randcode", code);
+            // br.postPageRaw("/guest_loginV3.php", "file_id=" + fid + "&randcode=" + code + "&page_content=" + b64page);
             br.submitForm(free);
             if (br.containsHTML(">验证码输入错误或<b>广告被拦截</b>")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
