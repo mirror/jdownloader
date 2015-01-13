@@ -51,9 +51,9 @@ import jd.utils.JDUtilities;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(www\\.)?(vk\\.com|vkontakte\\.ru)/(?!doc\\d+)(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)(\\-)?\\d+|audios\\d+|page\\-\\d+_\\d+|(video(\\-)?\\d+_\\d+(\\?list=[a-z0-9]+)?|videos\\d+|(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged)|video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+(\\&hash=[a-z0-9]+)?|video\\?gid=\\d+|public\\d+\\?z=video(\\-)?\\d+_\\d+((%2F|/)[a-z0-9]+)?|search\\?(c\\[q\\]|c%5Bq%5D)=[^<>\"/]*?\\&c(\\[section\\]|%5Bsection%5D)=video(\\&c(\\[sort\\]|%5Bsort%5D)=\\d+)?\\&z=video(\\-)?\\d+_\\d+)|(photos|tag)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album(\\-)?\\d+_\\d+|photo(\\-)?\\d+_\\d+|(wall\\-\\d+_\\d+|[A-Za-z0-9\\-_\\.]+\\?z=photo\\-\\d+_\\d+%2Fwall\\-\\d+_\\d+|wall\\-\\d+\\-maxoffset=\\d+\\-currentoffset=\\d+|wall\\-\\d+)|[A-Za-z0-9\\-_\\.]+)|https?://(www\\.)?vk\\.cc/[A-Za-z0-9]+" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt {
 
-    /* must be static so all plugins share same lock */
-    // Note: PATTERN_VIDEO_SINGLE links should all be decryptable without account but this is not implemented (yet)
+    /** TODO: Note: PATTERN_VIDEO_SINGLE links should all be decryptable without account but this is not implemented (yet) */
 
+    /* must be static so all plugins share same lock */
     private static Object LOCK = new Object();
 
     public VKontakteRu(PluginWrapper wrapper) {
@@ -399,6 +399,7 @@ public class VKontakteRu extends PluginForDecrypt {
      *
      * @throws Exception
      */
+    @SuppressWarnings("deprecation")
     private void decryptAudioAlbum() throws Exception {
         this.getPageSafe(this.CRYPTEDLINK_FUNCTIONAL);
         String fpName = br.getRegex("\"htitle\":\"([^<>\"]*?)\"").getMatch(0);
@@ -430,6 +431,12 @@ public class VKontakteRu extends PluginForDecrypt {
             final String owner_id = singleAudioDataAsArray[0];
             final String content_id = singleAudioDataAsArray[1];
             final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/audiolink/" + owner_id.replace("-", "") + "_" + content_id);
+            try {
+                dl.setContentUrl(CRYPTEDLINK_FUNCTIONAL);
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+            }
+            dl.setBrowserUrl(CRYPTEDLINK_FUNCTIONAL);
             dl.setProperty("directlink", Encoding.htmlDecode(singleAudioDataAsArray[2]));
             dl.setProperty("content_id", content_id);
             dl.setProperty("owner_id", owner_id);
@@ -442,7 +449,7 @@ public class VKontakteRu extends PluginForDecrypt {
         }
     }
 
-    /** NOT using API audio pages and audio playlists are similar */
+    /** NOT using API audio pages and audio playlists are similar, TODO: Return host-plugin links here to improve the overall stability. */
     private void decryptAudioPlaylist() throws Exception {
         this.getPageSafe(this.CRYPTEDLINK_FUNCTIONAL);
         if (br.containsHTML("id=\"not_found\"")) {
@@ -458,7 +465,7 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         int overallCounter = 1;
         final DecimalFormat df = new DecimalFormat("00000");
-        final String[][] audioLinks = br.getRegex("\"(https?://cs\\d+\\.(vk\\.com|userapi\\.com|vk\\.me)/u\\d+/audio/[a-z0-9]+\\.mp3),\\d+\".*?return false\">([^<>\"]*?)</a></b> &ndash; <span class=\"title\">([^<>\"]*?)</span><span class=\"user\"").getMatches();
+        final String[][] audioLinks = br.getRegex("\"(https?://cs\\d+\\.(vk\\.com|userapi\\.com|vk\\.me)/u\\d+/audio/[a-z0-9]+\\.mp3),\\d+\".*?return false\">([^<>\"]*?)</a></b> \\&ndash; <span class=\"title\">([^<>\"]*?)</span><span class=\"user\"").getMatches();
         if (audioLinks == null || audioLinks.length == 0) {
             decryptedLinks = null;
             return;
@@ -487,7 +494,7 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /**
-     * NOT Using API
+     * NOT Using API, TODO: Return host-plugin links here to improve the overall stability.
      *
      * @throws Exception
      */
@@ -792,6 +799,9 @@ public class VKontakteRu extends PluginForDecrypt {
         final String albumID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "((\\-)?\\d+)$").getMatch(0);
         String numberofentries = getJson("videoCount");
         if (numberofentries == null) {
+            numberofentries = br.getRegex("class=\"video_summary_count\">(\\d+)<").getMatch(0);
+        }
+        if (numberofentries == null) {
             numberofentries = getJson("count");
         }
         final int numberOfEntrys = Integer.parseInt(numberofentries);
@@ -809,7 +819,7 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             String[] videos = null;
             if (totalCounter < 12) {
-                final String jsVideoArray = br.getRegex("videoList: \\{\"all\":\\{\"silent\":1,\"list\":\\[(.*?)\\],\"count\"").getMatch(0);
+                final String jsVideoArray = br.getRegex("\"all\":\\{\"silent\":1,\"list\":\\[(.*?)\\],\"count\"").getMatch(0);
                 if (jsVideoArray == null) {
                     logger.warning("Decrypter broken for link: " + this.CRYPTEDLINK_FUNCTIONAL);
                     decryptedLinks = null;
@@ -818,7 +828,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 videos = new Regex(jsVideoArray, "\\[((\\-)?\\d+,\\d+),\"").getColumn(0);
             } else {
                 br.postPage("https://vk.com/al_video.php", "act=load_videos_silent&al=1&offset=" + totalCounter + "&oid=" + albumID);
-                videos = br.getRegex("\\[\"(\\d+\",\"\\d+)\",\"").getColumn(0);
+                videos = br.getRegex("\\[\"((\\-)?\\d+\",\"\\d+)\",\"").getColumn(0);
             }
             if (videos == null || videos.length == 0) {
                 break;
@@ -1126,12 +1136,14 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /** Decrypts media of single API wall-post json objects */
+    @SuppressWarnings("deprecation")
     private void decryptWallPost(final Map<String, Object> entry, FilePackage fp) throws IOException {
 
-        long id = ((Number) entry.get("id")).longValue();
-        long fromId = ((Number) entry.get("from_id")).longValue();
-        long toId = ((Number) entry.get("to_id")).longValue();
+        final long id = ((Number) entry.get("id")).longValue();
+        final long fromId = ((Number) entry.get("from_id")).longValue();
+        final long toId = ((Number) entry.get("to_id")).longValue();
         String postType = (String) entry.get("post_type");
+        final String wall_single_post_url = "https://vk.com/wall" + fromId + "_" + id;
 
         List<Map<String, Object>> attachments = (List<Map<String, Object>>) entry.get("attachments");
         if (attachments == null) {
@@ -1183,6 +1195,16 @@ public class VKontakteRu extends PluginForDecrypt {
                     final long content_id = ((Number) typeObject.get("aid")).longValue();
 
                     final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/audiolink/" + owner_id + "_" + content_id);
+                    /*
+                     * Audiolinks have their directlinks and IDs but no "nice" links so let's simply use the link to the source wall post
+                     * here so the user can easily find the title when opening it in browser.
+                     */
+                    try {
+                        dl.setContentUrl(wall_single_post_url);
+                    } catch (final Throwable e) {
+                        /* Not available in old 0.9.581 Stable */
+                    }
+                    dl.setBrowserUrl(wall_single_post_url);
                     dl.setProperty("postID", id);
                     dl.setProperty("fromId", fromId);
                     dl.setProperty("toId", toId);
@@ -1256,11 +1278,12 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /** Using API, finds a single photo link out of a single wall post which can contain multiple photos */
+    @SuppressWarnings("deprecation")
     private void decryptWallPostSpecifiedPhoto() throws Exception {
         final String targetPhotoID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "photo\\-\\d+_(\\d+)").getMatch(0);
-        final String postID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "wall(\\-\\d+_\\d+)$").getMatch(0);
+        final String wall_postID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "wall(\\-\\d+_\\d+)$").getMatch(0);
 
-        getPage(br, "https://api.vk.com/method/wall.getById?&posts=" + postID + "&extended=0");
+        getPage(br, "https://api.vk.com/method/wall.getById?&posts=" + wall_postID + "&extended=0");
         Map<String, Object> map = (Map<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
 
         if (map == null) {
@@ -1268,8 +1291,6 @@ public class VKontakteRu extends PluginForDecrypt {
         }
 
         /* The part below is basically simply from the decryptWallPost function */
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(postID);
         List<Object> response = (List<Object>) map.get("response");
         for (Object entry : response) {
             if (entry instanceof Map) {
@@ -1293,12 +1314,18 @@ public class VKontakteRu extends PluginForDecrypt {
                         final String owner_id = typeObject.get("owner_id").toString();
 
                         final DownloadLink dl = getSinglePhotoDownloadLink(owner_id + "_" + content_id);
+                        try {
+                            dl.setContentUrl(CRYPTEDLINK_FUNCTIONAL);
+                        } catch (final Throwable e) {
+                            /* Not available in old 0.9.581 stable */
+                        }
+                        dl.setBrowserUrl(CRYPTEDLINK_FUNCTIONAL);
 
                         dl.setProperty("albumid", album_id);
                         dl.setProperty("owner_id", owner_id);
                         dl.setProperty("content_id", content_id);
                         dl.setProperty("directlinks", typeObject);
-                        fp.add(dl);
+                        dl.setProperty("wall_list_id", "wall" + wall_postID);
                         decryptedLinks.add(dl);
                         return;
                     }

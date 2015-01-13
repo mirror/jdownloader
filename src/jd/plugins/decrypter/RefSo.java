@@ -20,7 +20,9 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -39,10 +41,31 @@ public class RefSo extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.containsHTML(">Wrong<|Url not Found<") || br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
+        final String fid = parameter.substring(parameter.lastIndexOf("/") + 1);
+        String captchaurl = br.getRegex("\"(/verifyimg/get[^<>\"/]+)\"").getMatch(0);
+        if (captchaurl != null) {
+            for (int i = 0; i <= 3; i++) {
+                final String code = getCaptchaCode(captchaurl, param);
+                br.postPage(br.getURL(), "dr=&module=short&action=showShort&fileId=" + fid + "&vcode=" + Encoding.urlEncode(code));
+                captchaurl = br.getRegex("\"(/verifyimg/get[^<>\"/]+)\"").getMatch(0);
+                if (captchaurl == null) {
+                    break;
+                }
+            }
+            if (captchaurl != null) {
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
+        }
         String link = br.getRegex("class=\"img_btn hide fleft\">[\t\n\r ]+<a href=\"(http[^<>\"]*?)\"").getMatch(0);
-        if (link == null && !br.getURL().contains("ref.so/")) link = br.getURL();
+        if (link == null && !br.getURL().contains("ref.so/")) {
+            link = br.getURL();
+        }
         if (link == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

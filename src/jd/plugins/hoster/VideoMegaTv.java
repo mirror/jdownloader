@@ -47,10 +47,16 @@ public class VideoMegaTv extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
+        br.setFollowRedirects(false);
         final String fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-        br.getPage("http://videomega.tv/iframe.php?ref=" + fid + "&width=595&height=340");
-        if (br.containsHTML(">VIDEO NOT FOUND")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.getPage("http://videomega.tv/?ref=" + fid + "&width=595&height=340");
+        final String redirect = br.getRedirectLocation();
+        if (redirect != null && !redirect.contains("videomega.tv/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML(">VIDEO NOT FOUND")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         link.setFinalFileName(fid + ".mp4");
         return AvailableStatus.TRUE;
     }
@@ -59,11 +65,17 @@ public class VideoMegaTv extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String escaped = br.getRegex("document\\.write\\(unescape\\(\"([^<>\"]*?)\"").getMatch(0);
-        if (escaped == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (escaped == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         escaped = Encoding.htmlDecode(escaped);
         String dllink = new Regex(escaped, "file: \"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = new Regex(escaped, "\"(http://[a-z0-9]+\\.videomega\\.tv/vids/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.mp4)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            dllink = new Regex(escaped, "\"(http://[a-z0-9]+\\.videomega\\.tv/vids/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.mp4)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
