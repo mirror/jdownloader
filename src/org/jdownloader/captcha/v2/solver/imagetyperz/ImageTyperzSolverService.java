@@ -60,8 +60,7 @@ public class ImageTyperzSolverService extends AbstractSolverService implements S
     public AbstractCaptchaSolverConfigPanel getConfigPanel() {
         AbstractCaptchaSolverConfigPanel ret = new AbstractCaptchaSolverConfigPanel() {
             private TextInput     username;
-            private TextInput     blacklist;
-            private TextInput     whitelist;
+
             private PasswordInput password;
 
             @Override
@@ -70,7 +69,7 @@ public class ImageTyperzSolverService extends AbstractSolverService implements S
             }
 
             {
-                addHeader(getTitle(), NewTheme.I().getIcon(ID, 32));
+                addHeader(getTitle(), NewTheme.I().getIcon("image_typerz", 32));
                 addDescription(_GUI._.AntiCaptchaConfigPanel_onShow_description_ces());
 
                 add(new SettingsButton(new AppAction() {
@@ -87,8 +86,6 @@ public class ImageTyperzSolverService extends AbstractSolverService implements S
                 }), "gapleft 37,spanx,pushx,growx");
                 username = new TextInput(CFG_IMAGE_TYPERZ.USER_NAME);
                 password = new PasswordInput(CFG_IMAGE_TYPERZ.PASSWORD);
-                blacklist = new TextInput(CFG_IMAGE_TYPERZ.BLACK_LIST);
-                whitelist = new TextInput(CFG_IMAGE_TYPERZ.WHITE_LIST);
 
                 this.addHeader(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), NewTheme.I().getIcon(IconKey.ICON_LOGINS, 32));
                 // addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
@@ -99,8 +96,7 @@ public class ImageTyperzSolverService extends AbstractSolverService implements S
 
                 addPair(_GUI._.DeatchbyCaptcha_Service_createPanel_feedback(), null, new Checkbox(CFG_IMAGE_TYPERZ.FEED_BACK_SENDING_ENABLED));
 
-                addPair(_GUI._.DeatchbyCaptcha_Service_createPanel_blacklist(), null, blacklist);
-                addPair(_GUI._.DeatchbyCaptcha_Service_createPanel_whitelist(), null, whitelist);
+                addBlackWhiteList(CFG_IMAGE_TYPERZ.CFG);
 
             }
 

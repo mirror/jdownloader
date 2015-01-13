@@ -71,26 +71,26 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> impleme
 
     private void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws InterruptedException {
 
-        if (config.getWhiteList() != null) {
-            if (config.getWhiteList().length() > 5) {
-                if (config.getWhiteList().contains(challenge.getTypeID())) {
-                    job.getLogger().info("Hoster on WhiteList for ImageTyperz.com. - " + challenge.getTypeID());
-                } else {
-                    job.getLogger().info("Hoster not on WhiteList for ImageTyperz.com. - " + challenge.getTypeID());
-                    return;
-                }
-            }
-        }
-        if (config.getBlackList() != null) {
-            if (config.getBlackList().length() > 5) {
-                if (config.getBlackList().contains(challenge.getTypeID())) {
-                    job.getLogger().info("Hoster on BlackList for ImageTyperz.com. - " + challenge.getTypeID());
-                    return;
-                } else {
-                    job.getLogger().info("Hoster not on BlackList for ImageTyperz.com. - " + challenge.getTypeID());
-                }
-            }
-        }
+        // if (config.getWhiteList() != null) {
+        // if (config.getWhiteList().length() > 5) {
+        // if (config.getWhiteList().contains(challenge.getTypeID())) {
+        // job.getLogger().info("Hoster on WhiteList for ImageTyperz.com. - " + challenge.getTypeID());
+        // } else {
+        // job.getLogger().info("Hoster not on WhiteList for ImageTyperz.com. - " + challenge.getTypeID());
+        // return;
+        // }
+        // }
+        // }
+        // if (config.getBlackList() != null) {
+        // if (config.getBlackList().length() > 5) {
+        // if (config.getBlackList().contains(challenge.getTypeID())) {
+        // job.getLogger().info("Hoster on BlackList for ImageTyperz.com. - " + challenge.getTypeID());
+        // return;
+        // } else {
+        // job.getLogger().info("Hoster not on BlackList for ImageTyperz.com. - " + challenge.getTypeID());
+        // }
+        // }
+        // }
         job.showBubble(this);
         checkInterruption();
         try {

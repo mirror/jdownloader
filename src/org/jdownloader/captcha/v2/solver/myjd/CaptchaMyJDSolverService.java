@@ -114,7 +114,7 @@ public class CaptchaMyJDSolverService extends AbstractSolverService implements S
 
             {
                 addHeader(getTitle(), NewTheme.I().getIcon("myjdownloader", 32));
-                addDescription(_GUI._.MyJDownloaderService_createPanel_description_());
+                addDescription(_GUI._.MyJDownloaderService_createPanel_description_2());
                 SettingsButton openMyJDownloader = new SettingsButton(new AppAction() {
                     {
                         setName(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_open_());
@@ -130,6 +130,9 @@ public class CaptchaMyJDSolverService extends AbstractSolverService implements S
                     }
                 });
                 add(openMyJDownloader, "gapleft 37,spanx,pushx,growx");
+
+                addBlackWhiteList(config);
+
             }
 
             public String getDescription() {

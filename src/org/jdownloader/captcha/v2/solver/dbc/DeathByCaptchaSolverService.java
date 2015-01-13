@@ -60,8 +60,7 @@ public class DeathByCaptchaSolverService extends AbstractSolverService implement
     public AbstractCaptchaSolverConfigPanel getConfigPanel() {
         AbstractCaptchaSolverConfigPanel ret = new AbstractCaptchaSolverConfigPanel() {
             private TextInput     username;
-            private TextInput     blacklist;
-            private TextInput     whitelist;
+
             private PasswordInput password;
 
             @Override
@@ -87,8 +86,6 @@ public class DeathByCaptchaSolverService extends AbstractSolverService implement
                 }), "gapleft 37,spanx,pushx,growx");
                 username = new TextInput(CFG_DBC.USER_NAME);
                 password = new PasswordInput(CFG_DBC.PASSWORD);
-                blacklist = new TextInput(CFG_DBC.BLACK_LIST);
-                whitelist = new TextInput(CFG_DBC.WHITE_LIST);
 
                 this.addHeader(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), NewTheme.I().getIcon(IconKey.ICON_LOGINS, 32));
                 // addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
@@ -99,8 +96,7 @@ public class DeathByCaptchaSolverService extends AbstractSolverService implement
 
                 addPair(_GUI._.DeatchbyCaptcha_Service_createPanel_feedback(), null, new Checkbox(CFG_DBC.FEED_BACK_SENDING_ENABLED));
 
-                addPair(_GUI._.DeatchbyCaptcha_Service_createPanel_blacklist(), null, blacklist);
-                addPair(_GUI._.DeatchbyCaptcha_Service_createPanel_whitelist(), null, whitelist);
+                addBlackWhiteList(config);
 
             }
 

@@ -1,13 +1,19 @@
 package org.jdownloader.api.captcha;
 
+import java.awt.event.ActionEvent;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.swing.Icon;
 
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
+import jd.gui.swing.jdgui.views.settings.panels.MyJDownloaderSettingsPanel;
 import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
 
 import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.captcha.v2.ChallengeSolverConfig;
 import org.jdownloader.captcha.v2.solver.captchabrotherhood.CBSolverService;
 import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolverService;
@@ -19,7 +25,8 @@ import org.jdownloader.captcha.v2.solver.service.DialogSolverService;
 import org.jdownloader.captcha.v2.solver.solver9kw.NineKwSolverService;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
 public class CaptchaAPIManualRemoteSolverService extends AbstractSolverService {
@@ -37,17 +44,70 @@ public class CaptchaAPIManualRemoteSolverService extends AbstractSolverService {
 
     @Override
     public Icon getIcon(int size) {
-        return NewTheme.I().getIcon(IconKey.ICON_MYJDOWNLOADER, size);
+        return new AbstractIcon(IconKey.ICON_MYJDOWNLOADER, size);
     }
 
     @Override
     public AbstractCaptchaSolverConfigPanel getConfigPanel() {
-        return null;
+        AbstractCaptchaSolverConfigPanel ret = new AbstractCaptchaSolverConfigPanel() {
+
+            // public Icon getIcon(int i) {
+            // return NewTheme.I().getIcon("myjdownloader", i);
+            // }
+
+            {
+                addHeader(getTitle(), new AbstractIcon(IconKey.ICON_MYJDOWNLOADER, 32));
+                addDescription(_GUI._.CaptchaAPIManualRemoteSolverService_getConfigPanel_description());
+                SettingsButton openMyJDownloader = new SettingsButton(new AppAction() {
+                    {
+                        setName(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_open_());
+
+                    }
+
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
+                        JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
+                        ConfigurationView.getInstance().setSelectedSubPanel(MyJDownloaderSettingsPanel.class);
+
+                    }
+                });
+                add(openMyJDownloader, "gapleft 37,spanx,pushx,growx");
+
+                addBlackWhiteList(config);
+
+            }
+
+            @Override
+            public Icon getIcon() {
+                return CaptchaAPIManualRemoteSolverService.this.getIcon(32);
+            }
+
+            @Override
+            public String getPanelID() {
+                return "CES_" + getTitle();
+            }
+
+            @Override
+            public String getTitle() {
+                return CaptchaAPIManualRemoteSolverService.this.getName();
+            }
+
+            @Override
+            public void save() {
+            }
+
+            @Override
+            public void updateContents() {
+            }
+
+        };
+        return ret;
     }
 
     @Override
     public boolean hasConfigPanel() {
-        return false;
+        return true;
     }
 
     @Override

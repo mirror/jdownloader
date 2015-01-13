@@ -165,11 +165,9 @@ public class ChallengeResponseController {
             logger = this.logger;
         }
         logger.info("Log to " + logger.getName());
-
+        logger.info("Handle Challenge: " + c);
         solver = createList(c);
         logger.info("Solver: " + solver);
-
-        logger.info("Handle Challenge: " + c);
 
         @SuppressWarnings({ "rawtypes", "unchecked" })
         final SolverJob<T> job = new SolverJob<T>(this, c, solver);

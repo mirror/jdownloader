@@ -43,12 +43,46 @@ public class JacSolverService extends AbstractSolverService implements SolverSer
 
     @Override
     public AbstractCaptchaSolverConfigPanel getConfigPanel() {
-        return null;
+        AbstractCaptchaSolverConfigPanel ret = new AbstractCaptchaSolverConfigPanel() {
+
+            {
+                addHeader(getTitle(), JacSolverService.this.getIcon(32));
+                addDescription(JacSolverService.this.getType());
+
+                addBlackWhiteList(config);
+
+            }
+
+            @Override
+            public Icon getIcon() {
+                return JacSolverService.this.getIcon(32);
+            }
+
+            @Override
+            public String getPanelID() {
+                return "JAC_" + getTitle();
+            }
+
+            @Override
+            public String getTitle() {
+                return JacSolverService.this.getName();
+            }
+
+            @Override
+            public void save() {
+            }
+
+            @Override
+            public void updateContents() {
+            }
+
+        };
+        return ret;
     }
 
     @Override
     public boolean hasConfigPanel() {
-        return false;
+        return true;
     }
 
     @Override

@@ -20,19 +20,9 @@ public class CFG_DBC {
     // wrong.
 
     /**
-     * Captcha BlackList for hoster
-     **/
-    public static final StringKeyHandler                       BLACK_LIST                = SH.getKeyHandler("BlackList", StringKeyHandler.class);
-
-    /**
      * Max. Captchas Parallel
      **/
     public static final IntegerKeyHandler                      THREADPOOL_SIZE           = SH.getKeyHandler("ThreadpoolSize", IntegerKeyHandler.class);
-
-    /**
-     * Captcha WhiteList for hoster
-     **/
-    public static final StringKeyHandler                       WHITE_LIST                = SH.getKeyHandler("WhiteList", StringKeyHandler.class);
 
     /**
      * Active the deathbycaptcha.eu service

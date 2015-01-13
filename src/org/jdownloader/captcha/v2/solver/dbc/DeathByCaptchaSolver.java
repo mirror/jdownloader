@@ -72,26 +72,6 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements 
 
     private void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws InterruptedException {
 
-        if (config.getWhiteList() != null) {
-            if (config.getWhiteList().length() > 5) {
-                if (config.getWhiteList().contains(challenge.getTypeID())) {
-                    job.getLogger().info("Hoster on WhiteList for deathbycaptcha.eu. - " + challenge.getTypeID());
-                } else {
-                    job.getLogger().info("Hoster not on WhiteList for deathbycaptcha.eu. - " + challenge.getTypeID());
-                    return;
-                }
-            }
-        }
-        if (config.getBlackList() != null) {
-            if (config.getBlackList().length() > 5) {
-                if (config.getBlackList().contains(challenge.getTypeID())) {
-                    job.getLogger().info("Hoster on BlackList for deathbycaptcha.eu. - " + challenge.getTypeID());
-                    return;
-                } else {
-                    job.getLogger().info("Hoster not on BlackList for deathbycaptcha.eu. - " + challenge.getTypeID());
-                }
-            }
-        }
         job.showBubble(this);
         checkInterruption();
         try {

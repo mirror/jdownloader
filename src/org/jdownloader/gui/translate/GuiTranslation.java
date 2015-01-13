@@ -2795,8 +2795,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Some captchas are too hard for JDownloader to auto recognize. There are a few Captcha Solver Services that help you to get these captchas solved anyways..." })
     String AntiCaptchaConfigPanel_onShow_description_solver();
 
-    @Default(lngs = { "en" }, values = { "The my.JDownloader.org Service sends all captcha requests to your mobile or any other internet device. Use this service if you want to solve captchas remotely." })
-    String MyJDownloaderService_createPanel_description_();
+    @Default(lngs = { "en" }, values = { "The my.JDownloader.org Service tries to solve all captchas fully automated by sending them to our Captcha Solver Service" })
+    String MyJDownloaderService_createPanel_description_2();
 
     @Default(lngs = { "en" }, values = { "Earn 'credits' by solving captchas for others. In return, others solve your captchas while you are not in front of your computer. Check out the service's website for more details." })
     String AntiCaptchaConfigPanel_onShow_description_ces();
@@ -5649,5 +5649,35 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Account required" })
     String CandidateTooltipTableModel_configureRendererComponent_account_required();
+
+    @Default(lngs = { "en" }, values = { "Black & Whitelist" })
+    String captcha_settings_black_whitelist_header();
+
+    @Default(lngs = { "en" }, values = { "If you do not want this solver to handle a certain type of captchas (e.g. recaptcha) or domains(e.g. share-online.biz), add them here as a regular expression. One expression per line!\r\nTip 1: If you only want to handle certain types, and ignore all others, use  the 'match all' expression in the blacklist: .*, and add the desired captcha types to the exceptions list.\r\nTip 2: You can filter on either the hostname (e.g. uploaded.to) or the captcha type id (e.g. recaptcha) or a combination like 'uploaded.to-recaptcha'" })
+    String captcha_settings_black_whitelist_description();
+
+    @Default(lngs = { "en" }, values = { "%s1 (Regular Expression OK)" })
+    String RegexListTextPane_createExtTooltip_ok(String pattern);
+
+    @Default(lngs = { "en" }, values = { "%s1 (INVALID Regular Expression!)" })
+    String RegexListTextPane_createExtTooltip_bad(String pattern);
+
+    @Default(lngs = { "en" }, values = { "%s1 (Bad letters or malformed regular expression)" })
+    String CaptchaRegexListTextPane_createExtTooltip_bad(String p);
+
+    @Default(lngs = { "en" }, values = { "%s1 (OK)" })
+    String CaptchaRegexListTextPane_createExtTooltip_ok(String p);
+
+    @Default(lngs = { "en" }, values = { "The my.JDownloader.org Service sends all captcha requests to your mobile or any other internet device. Use this service if you want to solve captchas remotely." })
+    String CaptchaAPIManualRemoteSolverService_getConfigPanel_description();
+
+    @Default(lngs = { "en" }, values = { "Do not handle these expressions" })
+    String captcha_settings_blacklist();
+
+    @Default(lngs = { "en" }, values = { "but handle these anyway" })
+    String captcha_settings_whitelist();
+
+    @Default(lngs = { "en" }, values = { "Black/White Listing enabled" })
+    String captcha_settings_blacklist_enabled();
 
 }

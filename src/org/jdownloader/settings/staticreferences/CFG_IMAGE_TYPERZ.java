@@ -26,11 +26,6 @@ public class CFG_IMAGE_TYPERZ {
     public static final BooleanKeyHandler                          FEED_BACK_SENDING_ENABLED = SH.getKeyHandler("FeedBackSendingEnabled", BooleanKeyHandler.class);
 
     /**
-     * Captcha WhiteList for hoster
-     **/
-    public static final StringKeyHandler                           WHITE_LIST                = SH.getKeyHandler("WhiteList", StringKeyHandler.class);
-
-    /**
      * Your ImageTyperz.com Password
      **/
     public static final StringKeyHandler                           PASSWORD                  = SH.getKeyHandler("Password", StringKeyHandler.class);
@@ -38,7 +33,6 @@ public class CFG_IMAGE_TYPERZ {
     /**
      * Captcha BlackList for hoster
      **/
-    public static final StringKeyHandler                           BLACK_LIST                = SH.getKeyHandler("BlackList", StringKeyHandler.class);
 
     public static final BooleanKeyHandler                          ENABLED                   = SH.getKeyHandler("Enabled", BooleanKeyHandler.class);
 
