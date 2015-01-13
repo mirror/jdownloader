@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Locale;
@@ -37,7 +36,6 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -49,17 +47,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DummyScriptEnginePlugin.ThrowingRunnable;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.scripting.envjs.EnvJSBrowser;
-import org.jdownloader.scripting.envjs.EnvJSBrowser.DebugLevel;
-import org.jdownloader.scripting.envjs.PermissionFilter;
-import org.jdownloader.scripting.envjs.XHRResponse;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafile.com" }, urls = { "https?://(www\\.)?datafile\\.com/d/[A-Za-z0-9]+(/[^<>\"/]+)?" }, flags = { 2 })
 public class DataFileCom extends PluginForHost {
@@ -174,66 +167,6 @@ public class DataFileCom extends PluginForHost {
             link.getLinkStatus().setStatusText("This file can only be downloaded by premium users");
         }
         return AvailableStatus.TRUE;
-    }
-
-    public static void main(String[] args) {
-        final String parameter = "http://www.datafile.com/d/TXpVMU56RTROdz0F9";
-        final Browser br = new Browser();
-        br.setProxy(new HTTPProxy(HTTPProxy.TYPE.HTTP, "127.0.0.1", 8888));
-        final EnvJSBrowser envJs = new EnvJSBrowser(br);
-        try {
-            envJs.setDebugLevel(DebugLevel.DEBUG);
-            envJs.setPermissionFilter(new PermissionFilter() {
-
-                @Override
-                public String onBeforeExecutingInlineJavaScript(String type, String js) {
-                    if (js.contains("liveinternet")) {
-
-                        // ads ... do not evaluate
-                        return "console.log('Blocked js')";
-                    }
-                    return js;
-                }
-
-                @Override
-                public Request onBeforeXHRRequest(Request request) {
-                    try {
-                        // only load websites with the same domain.
-                        if (StringUtils.equalsIgnoreCase(new URL(request.getUrl()).getHost(), new URL(parameter).getHost())) {
-                            return request;
-                        }
-                    } catch (MalformedURLException e) {
-                        e.printStackTrace();
-                    }
-
-                    // do not load the request
-                    return null;
-                }
-
-                @Override
-                public Request onBeforeLoadingExternalJavaScript(String type, String src, Request request) {
-                    // do not load external js
-                    return null;
-                }
-
-                @Override
-                public void onAfterXHRRequest(Request request, XHRResponse ret) {
-
-                    System.out.println(request + "");
-                }
-
-                @Override
-                public String onAfterLoadingExternalJavaScript(String type, String src, String sourceCode, Request request) {
-
-                    return sourceCode;
-                }
-            });
-
-            envJs.getPage(parameter);
-            String doc2 = envJs.getDocument();
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
     }
 
     public static class ScriptEnv {
