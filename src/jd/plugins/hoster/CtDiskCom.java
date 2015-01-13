@@ -78,6 +78,7 @@ public class CtDiskCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        br = new Browser();
         this.setBrowserExclusive();
         prepBrowser(br);
         br.setFollowRedirects(true);
@@ -124,12 +125,15 @@ public class CtDiskCom extends PluginForHost {
         }
         if (dllink == null) {
             try {
+                Browser ad = br.cloneBrowser();
+                ad.getHeaders().put("Accept", "*/*");
                 /* Without this, site won't accept the captcha! */
-                br.cloneBrowser().getPage("http://www.bego.cc/advview2013.php?ad_pos=0");
-                br.cloneBrowser().getPage("http://www.bego.cc/advview2013.php?ad_pos=1");
-                br.cloneBrowser().getPage("http://www.bego.cc/advview2013.php?ad_pos=2");
-                br.cloneBrowser().getPage("http://www.bego.cc/advview2013.php?ad_pos=3");
-                br.cloneBrowser().getPage("http://www.bego.cc/adm.js");
+                ad.cloneBrowser().getPage("/min/g=css1?v=0.002");
+                ad.cloneBrowser().getPage("/min/g=css1?v=0.003");
+                ad.cloneBrowser().getPage("/min/g=js_1?v=0.001");
+                ad.cloneBrowser().getPage("/min/g=js_1?v=0.002");
+                ad.cloneBrowser().getPage("/adm.js");
+                ad.cloneBrowser().getPage("/advview2013.php?ad_pos=0");
             } catch (final Throwable e) {
             }
             final Form free = br.getFormbyProperty("name", "user_form");
@@ -141,40 +145,57 @@ public class CtDiskCom extends PluginForHost {
              * Check hash_key handling if ever plugin is broken - if it does not work with the correct hash_key, check if it works via
              * browser with adblocker enabled!
              */
-            // String hash_key = br.getRegex("\\$\\(\"#hash_key\"\\)\\.val\\(\"([^<>\"]*?)\"\\)").getMatch(0);
-            // if (hash_key == null) {
-            // hash_key = br.getRegex("name=\"hash_key\" value=\"([^<>\"]*?)\"").getMatch(0);
-            // }
-            // if ((hash_key == null || hash_key.equals("")) && free.hasInputFieldByName("hash_info")) {
-            // String tmp = free.getInputFieldByName("hash_info").getValue();
-            // if (tmp != null) {
-            // tmp = Encoding.htmlDecode(tmp);
-            // hash_key = Encoding.Base64Decode(tmp);
-            // }
-            // }
-            // if (hash_key == null) {
-            // try {
-            // final Browser brc = br.cloneBrowser();
-            // brc.getPage("http://www.bego.cc/getdownloadkey.php?id=" + fid);
-            // final String b64 = Encoding.Base64Decode(brc.getRegex("eval\\(\\$\\.base64\\.decode\\(\"(.*?)\"\\)\\);").getMatch(0));
-            // hash_key = new Regex(b64, "\\$\\(\"#hash_key\"\\)\\.val\\(\"([^<>\"]*?)\"\\)").getMatch(0);
-            // } catch (final Throwable e) {
-            // }
-            // }
-            // if (hash_key != null) {
-            // free.put("hash_key", hash_key);
-            // }
-            String b64page = Encoding.Base64Encode(br.toString());
-            b64page = Encoding.urlEncode(b64page);
-            free.put("page_content", b64page);
+            String hash_key = br.getRegex("\\$\\(\"#hash_key\"\\)\\.val\\(\"([^<>\"]*?)\"\\)").getMatch(0);
+            if (hash_key == null) {
+                hash_key = br.getRegex("name=\"hash_key\" value=\"([^<>\"]*?)\"").getMatch(0);
+            }
+            if ((hash_key == null || hash_key.equals("")) && free.hasInputFieldByName("hash_info")) {
+                String tmp = free.getInputFieldByName("hash_info").getValue();
+                if (tmp != null) {
+                    tmp = Encoding.htmlDecode(tmp);
+                    hash_key = Encoding.Base64Decode(tmp);
+                }
+            }
+            if (free.hasInputFieldByName("page_content")) {
+                final String p1 = br.toString();
+                final String p2 = LZString.compressToBase64(p1);
+                final String p3 = Encoding.urlEncode(p2);
+                free.put("page_content", p3);
+            } else {
+                // if (hash_key == null) {
+                // try {
+                // final Browser brc = br.cloneBrowser();
+                // brc.getPage("http://www.bego.cc/getdownloadkey.php?id=" + fid);
+                // final String b64 = Encoding.Base64Decode(brc.getRegex("eval\\(\\$\\.base64\\.decode\\(\"(.*?)\"\\)\\);").getMatch(0));
+                // hash_key = new Regex(b64, "\\$\\(\"#hash_key\"\\)\\.val\\(\"([^<>\"]*?)\"\\)").getMatch(0);
+                // } catch (final Throwable e) {
+                // }
+                // }
+                // if (hash_key != null) {
+                // free.put("hash_key", hash_key);
+                // }
+            }
             captcha += "0." + new Random().nextInt(999999999);
             String code = getCaptchaCode(captcha, downloadLink);
             free.put("randcode", code);
-            // br.postPageRaw("/guest_loginV3.php", "file_id=" + fid + "&randcode=" + code + "&page_content=" + b64page);
+            // other test
+            Browser ad = br.cloneBrowser();
+            ad.getHeaders().put("Accept", "*/*");
+            ad.cloneBrowser().getPage("http://bdimg.share.baidu.com/static/js/shell_v2.js?cdnversion=394683");
+            ad.cloneBrowser().getPage("http://hm.baidu.com/h.js?74590c71164d9fba556697bee04ad65c");
+            // send form
             br.submitForm(free);
             if (br.containsHTML(">验证码输入错误或<b>广告被拦截</b>")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
+            // and again
+            ad = br.cloneBrowser();
+            ad.getHeaders().put("Accept", "*/*");
+            ad.cloneBrowser().getPage("http://www.bego.cc/advview2013.php?ad_pos=1");
+            ad.cloneBrowser().getPage("http://www.bego.cc/adm.js");
+            ad.cloneBrowser().getPage("http://www.bego.cc/advview2013.php?ad_pos=2");
+            ad.cloneBrowser().getPage("http://www.bego.cc/advview2013.php?ad_pos=3");
+
             if (!br.getURL().matches(".+/downhtml/\\d+/.+")) {
                 String continueLink = br.getRegex("\"\\&downlink=(/downhtml/[^<>\"]*?)\";").getMatch(0);
                 if (continueLink == null) {
