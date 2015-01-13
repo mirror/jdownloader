@@ -18,7 +18,7 @@ public abstract class ImageCaptchaChallenge<T> extends Challenge<T> {
     }
 
     public String toString() {
-        return "CaptchaChallenge by " + plugin.getHost() + " File: " + imageFile;
+        return "CaptchaChallenge by " + plugin.getHost() + "-" + getTypeID() + " File: " + imageFile;
     }
 
     public Plugin getPlugin() {

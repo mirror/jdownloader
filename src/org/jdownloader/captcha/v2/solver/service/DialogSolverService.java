@@ -23,8 +23,10 @@ import org.jdownloader.images.NewTheme;
 public class DialogSolverService extends AbstractSolverService {
     public static final String               ID       = "dialog";
     private static final DialogSolverService INSTANCE = new DialogSolverService();
+    private static DialogCaptchaSolverConfig config;
 
     public static DialogSolverService getInstance() {
+        config = JsonConfig.create(DialogCaptchaSolverConfig.class);
         return INSTANCE;
     }
 
@@ -45,12 +47,46 @@ public class DialogSolverService extends AbstractSolverService {
 
     @Override
     public AbstractCaptchaSolverConfigPanel getConfigPanel() {
-        return null;
+        AbstractCaptchaSolverConfigPanel ret = new AbstractCaptchaSolverConfigPanel() {
+
+            {
+                addHeader(getTitle(), DialogSolverService.this.getIcon(32));
+                addDescription(DialogSolverService.this.getType());
+
+                addBlackWhiteList(config);
+
+            }
+
+            @Override
+            public Icon getIcon() {
+                return DialogSolverService.this.getIcon(32);
+            }
+
+            @Override
+            public String getPanelID() {
+                return "JAC_" + getTitle();
+            }
+
+            @Override
+            public String getTitle() {
+                return DialogSolverService.this.getName();
+            }
+
+            @Override
+            public void save() {
+            }
+
+            @Override
+            public void updateContents() {
+            }
+
+        };
+        return ret;
     }
 
     @Override
     public boolean hasConfigPanel() {
-        return false;
+        return true;
     }
 
     @Override

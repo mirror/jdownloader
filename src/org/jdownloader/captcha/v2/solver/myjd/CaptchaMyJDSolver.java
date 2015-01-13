@@ -22,7 +22,6 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
-import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolverConfig.BlackOrWhitelist;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderException;
@@ -117,42 +116,6 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
         job.getLogger().info(this + ": Start. GetTypeID: " + challenge.getTypeID() + " - Plugin: " + challenge.getPlugin());
 
         // int timeoutthing = (JsonConfig.create(CaptchaSettings.class).getCaptchaDialogMyJDCESTimeout() / 1000);
-
-        BlackOrWhitelist type = config.getBlackOrWhitelistType();
-        if (type != null) {
-
-            switch (type) {
-            case BLACKLIST:
-                String[] blacklist = config.getBlacklist();
-                if (blacklist != null) {
-                    for (String s : blacklist) {
-                        if (s.equalsIgnoreCase(challenge.getTypeID())) {
-                            job.getLogger().info(this + ": Did not solve because of blacklist entry");
-                            return;
-                        }
-                    }
-                }
-                break;
-            case WHITELIST:
-                String[] whitelist = config.getWhitelist();
-                boolean allowed = false;
-                if (whitelist != null) {
-                    for (String s : whitelist) {
-                        if (s.equalsIgnoreCase(challenge.getTypeID())) {
-                            allowed = true;
-                            break;
-                        }
-                    }
-                }
-                if (!allowed) {
-                    job.getLogger().info(this + ": Did not solve because of missing whitlist entry");
-                    return;
-                }
-                break;
-            default:
-
-            }
-        }
 
         job.getLogger().info(this + ": Upload Captcha. GetTypeID: " + challenge.getTypeID() + " - Plugin: " + challenge.getPlugin());
         try {

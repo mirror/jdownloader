@@ -31,18 +31,6 @@ public interface DeathByCaptchaSettings extends ChallengeSolverConfig {
     void setThreadpoolSize(int size);
 
     @AboutConfig
-    @DescriptionForConfigEntry("Captcha WhiteList for hoster")
-    String getWhiteList();
-
-    void setWhiteList(String jser);
-
-    @AboutConfig
-    @DescriptionForConfigEntry("Captcha BlackList for hoster")
-    String getBlackList();
-
-    void setBlackList(String jser);
-
-    @AboutConfig
     @DefaultBooleanValue(false)
     @DescriptionForConfigEntry("Activate the Captcha Feedback")
     boolean isFeedBackSendingEnabled();

@@ -17,15 +17,4 @@ public interface CaptchaBrotherHoodSettings extends ChallengeSolverConfig {
 
     void setPass(String jser);
 
-    @AboutConfig
-    @DescriptionForConfigEntry("Captcha WhiteList for hoster")
-    String getWhiteList();
-
-    void setWhiteList(String jser);
-
-    @AboutConfig
-    @DescriptionForConfigEntry("Captcha BlackList for hoster")
-    String getBlackList();
-
-    void setBlackList(String jser);
 }

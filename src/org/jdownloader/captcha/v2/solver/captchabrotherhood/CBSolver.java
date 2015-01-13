@@ -95,27 +95,6 @@ public class CBSolver extends CESChallengeSolver<String> implements ChallengeRes
 
         BasicCaptchaChallenge challenge = (BasicCaptchaChallenge) job.getChallenge();
 
-        if (config.getWhiteList() != null) {
-            if (config.getWhiteList().length() > 5) {
-                if (config.getWhiteList().contains(challenge.getTypeID())) {
-                    job.getLogger().info("Hoster on WhiteList for CaptchaBrotherHood. - " + challenge.getTypeID());
-                } else {
-                    job.getLogger().info("Hoster not on WhiteList for CaptchaBrotherHood. - " + challenge.getTypeID());
-                    return;
-                }
-            }
-        }
-        if (config.getBlackList() != null) {
-            if (config.getBlackList().length() > 5) {
-                if (config.getBlackList().contains(challenge.getTypeID())) {
-                    job.getLogger().info("Hoster on BlackList for CaptchaBrotherHood. - " + challenge.getTypeID());
-                    return;
-                } else {
-                    job.getLogger().info("Hoster not on BlackList for CaptchaBrotherHood. - " + challenge.getTypeID());
-                }
-            }
-        }
-
         job.showBubble(this);
         checkInterruption();
         try {

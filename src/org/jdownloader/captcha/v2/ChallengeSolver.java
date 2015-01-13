@@ -11,9 +11,11 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import jd.controlling.captcha.SkipException;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 
@@ -167,7 +169,69 @@ public abstract class ChallengeSolver<T> {
     }
 
     public boolean canHandle(Challenge<?> c) {
-        return getResultType().isAssignableFrom(c.getResultType());
+        if (!getResultType().isAssignableFrom(c.getResultType())) {
+            return false;
+        }
+        if (!validateBlackWhite(c)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    protected boolean validateBlackWhite(Challenge<?> c) {
+        if (getService().getConfig().isBlackWhiteListingEnabled()) {
+            String host = Challenge.getHost(c);
+            ArrayList<String> whitelist = getService().getConfig().getWhitelistEntries();
+            if (whitelist != null) {
+                for (String s : whitelist) {
+                    try {
+                        Pattern pattern = Pattern.compile(s, Pattern.CASE_INSENSITIVE);
+                        if (!StringUtils.equalsIgnoreCase(host, c.getTypeID())) {
+                            if (pattern.matcher(host + "-" + c.getTypeID()).matches()) {
+                                return true;
+                            }
+                            if (pattern.matcher(host).matches()) {
+                                return true;
+                            }
+                        }
+
+                        if (pattern.matcher(c.getTypeID()).matches()) {
+                            return true;
+                        }
+
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            ArrayList<String> blacklist = getService().getConfig().getBlacklistEntries();
+            if (blacklist != null) {
+                for (String s : blacklist) {
+                    try {
+                        Pattern pattern = Pattern.compile(s, Pattern.CASE_INSENSITIVE);
+
+                        if (!StringUtils.equalsIgnoreCase(host, c.getTypeID())) {
+
+                            if (pattern.matcher(host + "-" + c.getTypeID()).matches()) {
+                                return false;
+                            }
+                            if (pattern.matcher(host).matches()) {
+                                return false;
+                            }
+                        }
+                        if (pattern.matcher(c.getTypeID()).matches()) {
+                            return false;
+                        }
+
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     public long getTimeout() {
