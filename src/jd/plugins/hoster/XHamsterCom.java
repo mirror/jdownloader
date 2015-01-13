@@ -155,7 +155,7 @@ public class XHamsterCom extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText("This video is password protected");
             return AvailableStatus.TRUE;
         }
-        if (downloadLink.getFinalFileName() == null) {
+        if (downloadLink.getFinalFileName() == null || DLLINK == null) {
             final String filename = getFilename();
             if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
