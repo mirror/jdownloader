@@ -138,7 +138,7 @@ public class HostUjeNet extends PluginForHost {
             final ArrayList<String> s0 = new ArrayList<String>();
             if (s1 != null) {
                 for (String s : s1) {
-                    if (s != null && new Regex(s, "type=('|\")text/javascript\\1").matches()) {
+                    if (s != null /* && new Regex(s, "type=('|\")text/javascript\\1").matches() */) {
                         final String s2 = new Regex(s, "src=(\"|')(.*?)\\1").getMatch(1);
                         if (s2 != null) {
                             s0.add(s2);
