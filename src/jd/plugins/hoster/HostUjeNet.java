@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -133,25 +134,34 @@ public class HostUjeNet extends PluginForHost {
             }
         } else {
             // hes been a dick
-            final String[] swfobject = br.getRegex("<script\\s+type=('|\")text/javascript\\1[^>]+src=(\"|')(.*?)\\2").getColumn(2);
-            final LinkedHashSet<String> dupe = new LinkedHashSet<String>();
-            if (swfobject != null) {
-                for (final String s : swfobject) {
-                    if (!dupe.add(s) || ((s.startsWith("://") || s.startsWith("http")) && !Browser.getHost(s).contains(this.getHost()))) {
-                        continue;
-                    }
-                    Browser a = o.cloneBrowser();
-                    a.getPage(s);
-                    // now we want that capture image
-                    String[] captchas = a.getRegex("(?:preload\\()?('|\")(\\w+\\.php[^\"']*)\\1\\);").getColumn(1);
-                    if (captchas != null) {
-                        for (final String captcha : captchas) {
-                            /**
-                             * THIS IS REQUIRED <br>
-                             * captcha image is used to detect automation - raztoki 20150106
-                             **/
-                            this.simulateBrowser(br, "/" + captcha);
+            final String[] s1 = br.getRegex("<script[^>]+>").getColumn(-1);
+            final ArrayList<String> s0 = new ArrayList<String>();
+            if (s1 != null) {
+                for (String s : s1) {
+                    if (s != null && new Regex(s, "type=('|\")text/javascript\\1").matches()) {
+                        final String s2 = new Regex(s, "src=(\"|')(.*?)\\1").getMatch(1);
+                        if (s2 != null) {
+                            s0.add(s2);
                         }
+                    }
+                }
+            }
+            final LinkedHashSet<String> dupe = new LinkedHashSet<String>();
+            for (final String s : s0) {
+                if (!dupe.add(s) || ((s.startsWith("://") || s.startsWith("http")) && !Browser.getHost(s).contains(this.getHost()))) {
+                    continue;
+                }
+                Browser a = o.cloneBrowser();
+                a.getPage(s);
+                // now we want that capture image
+                String[] captchas = a.getRegex("(?:preload\\()?('|\")(\\w+\\.php[^\"']*)\\1\\);").getColumn(1);
+                if (captchas != null) {
+                    for (final String captcha : captchas) {
+                        /**
+                         * THIS IS REQUIRED <br>
+                         * captcha image is used to detect automation - raztoki 20150106
+                         **/
+                        this.simulateBrowser(br, "/" + captcha);
                     }
                 }
             }
