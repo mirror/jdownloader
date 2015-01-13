@@ -35,6 +35,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -465,20 +466,22 @@ public class IFileIt extends PluginForHost {
         }
         // Only free acc support till now
         if ("0".equals(getJson("is_premium", br))) {
-            ai.setStatus("Normal User");
-            account.setProperty("typ", "free");
+            ai.setStatus("Registered (free) account");
+            account.setProperty("free", true);
             try {
+                account.setType(AccountType.FREE);
                 maxPrem.set(1);
-                // free accounts can still have captcha.
                 account.setMaxSimultanDownloads(1);
+                // free accounts can still have captcha.
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
             }
         } else {
-            ai.setStatus("Premium User");
-            account.setProperty("typ", "premium");
+            ai.setStatus("Premium Account");
+            account.setProperty("free", false);
             ai.setValidUntil(Long.parseLong(getJson("premium_until", br)) * 1000);
             try {
+                account.setType(AccountType.PREMIUM);
                 maxPrem.set(5);
                 account.setMaxSimultanDownloads(5);
                 account.setConcurrentUsePossible(true);
@@ -496,7 +499,7 @@ public class IFileIt extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, UNDERMAINTENANCEUSERTEXT);
         }
         login(account);
-        if ("premium".equals(account.getStringProperty("typ", null))) {
+        if (!account.getBooleanProperty("free", false)) {
             final String apikey = getUrlEncodedAPIkey(account, this, br);
             final String fid = getFid(link);
             if (apikey == null) {

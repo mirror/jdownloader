@@ -134,7 +134,7 @@ public class VKontakteRuHoster extends PluginForHost {
         } else {
             // Only log in if needed
             final boolean noLogin = checkNoLoginNeeded(link);
-            Account aa = AccountController.getInstance().getValidAccount(this);
+            final Account aa = AccountController.getInstance().getValidAccount(this);
             if (!noLogin && aa == null) {
                 link.getLinkStatus().setStatusText("Only downlodable via account!");
                 return AvailableStatus.UNCHECKABLE;
@@ -197,20 +197,19 @@ public class VKontakteRuHoster extends PluginForHost {
             } else {
                 this.finalUrl = link.getStringProperty("picturedirectlink", null);
                 if (this.finalUrl == null) {
-                    // For photos which are actually offline but their directlinks still exist
-                    final Object decryptersaveddirectlinks = link.getProperty("directlinks");
-                    if (decryptersaveddirectlinks != null) {
-                        getHighestQualityPicFromSavedJson(link, decryptersaveddirectlinks);
-                    }
-                    if (this.finalUrl == null) {
-                        final String photoID = new Regex(link.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?[\\d\\-]+_[\\d\\-]+)").getMatch(0);
+                    final String wall_list_id = link.getStringProperty("wall_list_id", null);
+                    final String photoID = new Regex(link.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?[\\d\\-]+_[\\d\\-]+)").getMatch(0);
+                    if (wall_list_id != null) {
+                        /* Access photo inside wall-post */
+                        this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                        this.br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                        this.postPageSafe(aa, link, "http://vk.com/al_photos.php", "act=show&al=1&list=" + wall_list_id + "&module=wall&photo=" + photoID);
+                    } else {
+                        /* Access normal photo / photo inside album */
                         String albumID = link.getStringProperty("albumid");
                         if (albumID == null) {
                             this.getPageSafe(aa, link, "http://vk.com/photo" + photoID);
-                            if (this.br.containsHTML("Unknown error|Unbekannter Fehler")) {
-                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                            }
-                            if (this.br.containsHTML("Access denied")) {
+                            if (this.br.containsHTML("Unknown error|Unbekannter Fehler|Access denied")) {
                                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                             }
                             albumID = this.br.getRegex("class=\"active_link\">[\t\n\r ]+<a href=\"/(.*?)\"").getMatch(0);
@@ -222,17 +221,17 @@ public class VKontakteRuHoster extends PluginForHost {
                         this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                         this.br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
                         this.postPageSafe(aa, link, "http://vk.com/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
-                        if (this.br.containsHTML(">Unfortunately, this photo has been deleted") || this.br.containsHTML(">Access denied<")) {
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        }
-                        final String correctedBR = this.br.toString().replace("\\", "");
-                        final String id_source = new Regex(correctedBR, "\\{(\"id\":\"" + photoID + ".*?)(\"id\"|\\}\\}|\\]\\},\\{|\\]\\}\\]<)").getMatch(0);
-                        getHighestQualityPic(link, id_source);
-                        /* Handle special case here, avoid plugin defect messages. */
-                        if (photolinkHasServerIssues(link)) {
-                            link.getLinkStatus().setStatusText("Photo is temporarily unavailable (server issues)");
-                            return AvailableStatus.TRUE;
-                        }
+                    }
+                    if (this.br.containsHTML(">Unfortunately, this photo has been deleted") || this.br.containsHTML(">Access denied<")) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    final String correctedBR = this.br.toString().replace("\\", "");
+                    final String id_source = new Regex(correctedBR, "\\{(\"id\":\"" + photoID + ".*?)(\"id\"|\\}\\}|\\]\\},\\{|\\]\\}\\]<)").getMatch(0);
+                    getHighestQualityPic(link, id_source);
+                    /* Handle special case here, avoid plugin defect messages. */
+                    if (photolinkHasServerIssues(link)) {
+                        link.getLinkStatus().setStatusText("Photo is temporarily unavailable (server issues)");
+                        return AvailableStatus.TRUE;
                     }
                 }
                 if (this.finalUrl == null) {
@@ -652,10 +651,12 @@ public class VKontakteRuHoster extends PluginForHost {
 
     /**
      * Try to get best quality and test links till a working link is found as it can happen that the found link is offline but others are
-     * online. This function is mae to check the information which has been saved via decrypter as a property on the DownloadLink.
+     * online. This function is made to check the information which has been saved via decrypter as the property "directlinks" on the
+     * DownloadLink.
      *
      * @throws IOException
      */
+    @SuppressWarnings("unused")
     private void getHighestQualityPicFromSavedJson(final DownloadLink dl, final Object o) throws Exception {
         if (o == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
