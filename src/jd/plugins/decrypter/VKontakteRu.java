@@ -1252,7 +1252,6 @@ public class VKontakteRu extends PluginForDecrypt {
                 decryptWallPost((Map<String, Object>) entry, fp);
             }
         }
-        // decryptWallPost(br.toString(), fp);
         logger.info("Found " + decryptedLinks.size() + " links");
     }
 
