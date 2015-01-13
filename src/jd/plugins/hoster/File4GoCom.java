@@ -40,7 +40,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file4go.com" }, urls = { "http://(www\\.)?file4go\\.com/(r/|d/|download\\.php\\?id=)[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file4go.com" }, urls = { "http://(?:www\\.)?file4go\\.(?:com|net)/(?:r/|d/|download\\.php\\?id=)([a-z0-9]+)" }, flags = { 2 })
 public class File4GoCom extends PluginForHost {
 
     public File4GoCom(PluginWrapper wrapper) {
@@ -55,6 +55,24 @@ public class File4GoCom extends PluginForHost {
 
     private static final String MAINPAGE = "http://file4go.com";
     private static Object       LOCK     = new Object();
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        String id = new Regex(link.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
+        try {
+            link.setLinkID(getHost() + "://" + id);
+        } catch (final Throwable t) {
+        }
+        link.setUrlDownload(link.getDownloadURL().replace("file4go.net/", "file4go.com/"));
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("file4go.com".equals(host) || "file4go.net".equals(host)) {
+            return "file4go.com";
+        }
+        return super.rewriteHost(host);
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
