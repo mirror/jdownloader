@@ -100,5 +100,6 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="ressourcen/libs/jsyntaxpane.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/sqljet.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
