@@ -808,7 +808,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoS
             } else if (parameter.contains("linkdecode.com/") || parameter.contains("fastdecode.com/")) {
                 // linkdecode typically returns results to fastdecode. best to return back and run again incase it doesn't or ppl share
                 // fastdecode links instead.
-                finallink = br.getRegex("class=\"Visit_Link\"[^\r\n]+onclick=\"window\\.open\\(('|\")(https?://.*?)\\1").getMatch(1);
+                finallink = br.getRegex("class=\"Visit_Link\"[^\r\n]+onclick=\"window\\.open\\((?:'|\")(htt.*?)(?:'|\")").getMatch(0);
             } else if (parameter.contains("re-direcciona.me/")) {
                 // no need to get page they are just multiple based encoded, usually 4 times!
                 String base64 = new Regex(parameter, "/r/(.*)").getMatch(0);
