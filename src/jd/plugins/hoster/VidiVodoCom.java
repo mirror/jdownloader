@@ -50,6 +50,7 @@ public class VidiVodoCom extends PluginForHost {
 
     private static final String EMBEDDEDLINK = "http://(www\\.)?(en\\.)?vidivodo\\.com/VideoPlayerShare\\.swf\\?u=[A-Za-z0-9=]+";
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
@@ -59,11 +60,15 @@ public class VidiVodoCom extends PluginForHost {
             final String id = new Regex(downloadLink.getDownloadURL(), "\\?u=(.+)").getMatch(0);
             br.getPage("http://www.vidivodo.com/player/getxml?mediaid=" + id + "&publisherid=vidivodoEmbed&type=");
             final String newurl = br.getRegex("<pagelink>(http://[^<>\"]*?)</pagelink>").getMatch(0);
-            if (newurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (newurl == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             downloadLink.setUrlDownload(newurl);
         }
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(>404\\. That\\'s an error\\.<|The video you have requested is not available<)") || br.containsHTML("<span>404</span>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>404\\. That\\'s an error\\.<|The video you have requested is not available<)") || br.containsHTML("<span>404</span>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("property=\"og:title\" content=\"(.*?)\"").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("target=\"_blank\" title=\"(.*?)\"").getMatch(0);
@@ -72,11 +77,17 @@ public class VidiVodoCom extends PluginForHost {
             }
         }
         String encryptID = br.getRegex("encrypt_id:\"([^<>\"]*?)\"").getMatch(0);
-        if (encryptID == null) encryptID = br.getRegex("vid:\\'([^<>\"]*?)\\'").getMatch(0);
-        if (encryptID == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        br.getPage("http://en.vidivodo.com/player/getxml?mediaid=" + encryptID);
-        dllink = br.getRegex("<url><\\!\\[CDATA\\[(http://[^<>\"]*?)\\]\\]></url>").getMatch(0);
-        if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (encryptID == null) {
+            encryptID = br.getRegex("vid:\\'([^<>\"]*?)\\'").getMatch(0);
+        }
+        if (encryptID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage("http://www.vidivodo.com/player/getxml?mediaid=" + encryptID + "");
+        dllink = br.getRegex("<source><\\!\\[CDATA\\[(http://[^<>\"]*?)\\]\\]></source>").getMatch(0);
+        if (filename == null || dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".flv");
         final Browser br2 = br.cloneBrowser();

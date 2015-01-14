@@ -52,12 +52,15 @@ public class ZeveraCom extends PluginForHost {
     // supports last09 based on pre-generated links and jd2
 
     private static final String                            mName              = "zevera.com";
+    private static final String                            NICE_HOSTproperty  = mName.replaceAll("(\\.|\\-)", "");
     private static final String                            mProt              = "http://";
     private static final String                            mServ              = mProt + "api." + mName;
     private static Object                                  LOCK               = new Object();
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
     private static final String                            NOCHUNKS           = "NOCHUNKS";
+    private Account                                        currAcc            = null;
+    private DownloadLink                                   currDownloadLink   = null;
 
     public ZeveraCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -184,12 +187,18 @@ public class ZeveraCom extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        setConstants(account, link);
         login(account, false);
         showMessage(link, "Phase 1/3: URL check for pre-generated links!");
         requestFileInformation(link);
         showMessage(link, "Pgase 2/3: Download ready!");
         handleDL(link, link.getDownloadURL());
+    }
+
+    private void setConstants(final Account acc, final DownloadLink dl) {
+        this.currAcc = acc;
+        this.currDownloadLink = dl;
     }
 
     private void handleDL(final DownloadLink link, String dllink) throws Exception {
@@ -212,18 +221,7 @@ public class ZeveraCom extends PluginForHost {
         } catch (final PluginException e) {
             if ("Redirectloop".equals(e.getErrorMessage())) {
                 logger.info("zevera.com: Download failed because of a Redirectloop -> This is caused by zevera and NOT a JD issue!");
-                int timesFailed = link.getIntegerProperty("timesfailedzeveracom_redirectloop", 1);
-                link.getLinkStatus().setRetryCount(0);
-                if (timesFailed <= 20) {
-                    timesFailed++;
-                    link.setProperty("timesfailedzeveracom_redirectloop", timesFailed);
-                    logger.info("zevera.com: Download failed because of a Redirectloop -> This is caused by zevera and NOT a JD issue! -> Retrying!");
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Server error (redirectloop)");
-                } else {
-                    link.setProperty("timesfailedzeveracom_redirectloop", Property.NULL);
-                    logger.info("zevera.com: Download failed because of a Redirectloop -> This is caused by zevera and NOT a JD issue! -> Throwing temporarily unavailable server error");
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (redirectloop)", 5 * 60 * 1000l);
-                }
+                handleErrorRetries("redirectloop", 20, 2 * 60 * 1000l);
             }
             /* unknown error, we disable multiple chunks */
             if (link.getBooleanProperty(ZeveraCom.NOCHUNKS, false) == false) {
@@ -235,35 +233,16 @@ public class ZeveraCom extends PluginForHost {
             throw e;
         } catch (final SocketTimeoutException e) {
             logger.info("zevera.com: Download failed because of a timeout -> This is caused by zevera and NOT a JD issue!");
-            int timesFailed = link.getIntegerProperty("timesfailedzeveracom_timeout", 1);
-            link.getLinkStatus().setRetryCount(0);
-            if (timesFailed <= 20) {
-                timesFailed++;
-                link.setProperty("timesfailedzeveracom_timeout", timesFailed);
-                logger.info("zevera.com: Download failed because of a timeout -> This is caused by zevera and NOT a JD issue! -> Retrying!");
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
-            } else {
-                link.setProperty("timesfailedzeveracom_timeout", Property.NULL);
-                logger.info("zevera.com: Download failed because of a timeout -> This is caused by zevera and NOT a JD issue! -> Throwing exception!");
-                throw e;
-            }
+            handleErrorRetries("timeout", 20, 5 * 60 * 1000l);
         } catch (final SocketException e) {
             logger.info("Zevera download failed because of a timeout/connection problem -> This is probably caused by zevera and NOT a JD issue!");
-            int timesFailed = link.getIntegerProperty("timesfailedzeveracom_timeout", 1);
-            link.getLinkStatus().setRetryCount(0);
-            if (timesFailed <= 20) {
-                timesFailed++;
-                link.setProperty("timesfailedzeveracom_timeout", timesFailed);
-                logger.info("zevera.com: Download failed because of a timeout -> This is caused by zevera and NOT a JD issue! -> Retrying!");
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
-            } else {
-                link.setProperty("timesfailedzeveracom_timeout", Property.NULL);
-                logger.info("zevera.com: Download failed because of a timeout -> This is caused by zevera and NOT a JD issue! -> Throwing exception!");
-                throw e;
-            }
+            handleErrorRetries("timeout", 20, 5 * 60 * 1000l);
         } catch (final Exception e) {
             logger.info("Zevera download FATAL failed because: " + e.getMessage());
             throw e;
+        }
+        if (dl.getConnection().getResponseCode() == 404) {
+            handleErrorRetries("servererror404", 20, 2 * 60 * 1000l);
         }
         if (!dl.getConnection().getContentType().contains("html")) {
             /* contentdisposition, lets download it */
@@ -297,29 +276,46 @@ public class ZeveraCom extends PluginForHost {
              * download is not contentdisposition, so remove this host from premiumHosts list
              */
             if (dl.getConnection().getResponseCode() == 500) {
-                logger.info("zevera.com: Download failed because of a server error 500 -> This is caused by zevera and NOT a JD issue!");
-                int timesFailed = link.getIntegerProperty("timesfailedzeveracom_servererror500", 1);
-                link.getLinkStatus().setRetryCount(0);
-                if (timesFailed <= 20) {
-                    timesFailed++;
-                    link.setProperty("timesfailedzeveracom_servererror500", timesFailed);
-                    logger.info("zevera.com: Download failed because of a server error 500 -> This is caused by zevera and NOT a JD issue! -> Retrying");
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Server error (500)");
-                } else {
-                    link.setProperty("timesfailedzeveracom_servererror500", Property.NULL);
-                    logger.info("zevera.com: Download failed because of a server error 500 -> This is caused by zevera and NOT a JD issue! -> Throwing temporarily unavailable server error 500");
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (500)", 5 * 60 * 1000l);
-                }
+                handleErrorRetries("servererror500", 20, 5 * 60 * 1000l);
             }
             br.followConnection();
         }
+        try {
+            handleErrorRetries("unknowndlerroratend", 50, 10 * 60 * 1000l);
+        } catch (final Throwable xxe) {
+            if (xxe instanceof PluginException && ((PluginException) xxe).getLinkStatus() != LinkStatus.ERROR_RETRY) {
+                /* Finally, failed! */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+    }
 
-        /* temp disabled the host */
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    /**
+     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
+     * from the host list.
+     *
+     * @param error
+     *            : The name of the error
+     * @param maxRetries
+     *            : Max retries before out of date error is thrown
+     */
+    private void handleErrorRetries(final String error, final int maxRetries, final long timeout) throws PluginException {
+        int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
+        this.currDownloadLink.getLinkStatus().setRetryCount(0);
+        if (timesFailed <= maxRetries) {
+            logger.info(mName + ": " + error + " -> Retrying");
+            timesFailed++;
+            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
+            throw new PluginException(LinkStatus.ERROR_RETRY, error);
+        } else {
+            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
+            logger.info(mName + ": " + error + " -> Disabling current host");
+            tempUnavailableHoster(timeout);
+        }
     }
 
     /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
+    public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
         prepBrowser();
         login(acc, false);
         showMessage(link, "Task 1: Generating Link");
@@ -338,18 +334,8 @@ public class ZeveraCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (dllink.contains("/member/systemmessage.aspx")) {
-            logger.info("zevera.com: unknown error");
-            int timesFailed = link.getIntegerProperty("timesfailedzeveracom_unknown", 1);
-            link.getLinkStatus().setRetryCount(0);
-            if (timesFailed <= 20) {
-                timesFailed++;
-                link.setProperty("timesfailedzeveracom_unknown", timesFailed);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
-            } else {
-                logger.info("zevera.com: Current host doesn't seem to work, deactivating it for 1 hour...");
-                link.setProperty("timesfailedzeveracom_unknown", Property.NULL);
-                tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
-            }
+            logger.info("zevera.com: known unknown error");
+            handleErrorRetries("known_unknownerror", 20, 1 * 60 * 60 * 1000l);
         }
         showMessage(link, "Task 2: Download begins!");
         handleDL(link, dllink);
@@ -357,6 +343,7 @@ public class ZeveraCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        setConstants(account, null);
         AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
@@ -462,18 +449,18 @@ public class ZeveraCom extends PluginForHost {
         }
     }
 
-    private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) {
+    private void tempUnavailableHoster(final long timeout) throws PluginException {
+        if (this.currDownloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         }
         synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(this.currAcc);
             if (unavailableMap == null) {
                 unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(account, unavailableMap);
+                hostUnavailableMap.put(this.currAcc, unavailableMap);
             }
-            /* wait to retry this host */
-            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
+            /* wait 30 mins to retry this host */
+            unavailableMap.put(this.currDownloadLink.getHost(), (System.currentTimeMillis() + timeout));
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
