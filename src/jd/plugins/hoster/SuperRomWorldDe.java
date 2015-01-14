@@ -54,7 +54,7 @@ public class SuperRomWorldDe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("<title>([^<>\"]*?)\\- Super ROM World</title>").getMatch(0);
-        final String filesize = br.getRegex(">Größe</div>[\t\n\r ]+<div class=\"data_right\">([^<>\"]*?)</div>").getMatch(0);
+        final String filesize = br.getRegex(">Größe</span><span class=\"data_right\">([^<>\"]*?)</span></li>").getMatch(0);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

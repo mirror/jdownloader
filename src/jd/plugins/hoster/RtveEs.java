@@ -86,7 +86,7 @@ public class RtveEs extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestVideo(downloadLink);
         if (DLURL == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -100,10 +100,9 @@ public class RtveEs extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         requestVideo(downloadLink);
         setBrowserExclusive();
-        br.setFollowRedirects(true);
         try {
             if (!br.openGetConnection(DLURL).getContentType().contains("html")) {
                 downloadLink.setDownloadSize(br.getHttpConnection().getLongContentLength());
@@ -118,10 +117,10 @@ public class RtveEs extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    private AvailableStatus requestVideo(DownloadLink downloadLink) throws IOException, PluginException {
-        setBrowserExclusive();
+    @SuppressWarnings("deprecation")
+    private AvailableStatus requestVideo(final DownloadLink downloadLink) throws IOException, PluginException {
+        br.setFollowRedirects(true);
         String dllink = downloadLink.getDownloadURL();
-
         br.getPage(dllink);
         if (br.containsHTML("La página solicitada no está disponible por haber cambiado la dirección \\(URL\\) o no existir\\.")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -135,6 +134,10 @@ public class RtveEs extends PluginForHost {
         String getEncData = org.appwork.utils.encoding.Base64.encodeToString(getBlowfish(JDHexUtils.getByteArray(JDHexUtils.getHexString(flashVars[0] + "_default_" + ("audios".equals(flashVars[2]) ? "audio" : "video") + "_" + flashVars[1])), false), false);
         Browser enc = br.cloneBrowser();
         enc.getPage("http://ztnr.rtve.es/ztnr/res/" + getEncData);
+        /* Check for empty page */
+        if (enc.toString().length() <= 22) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         /* decrypt response body */
         DLURL = getLink(JDHexUtils.toString(JDHexUtils.getHexString(getBlowfish(org.appwork.utils.encoding.Base64.decode(enc.toString()), true))));
 

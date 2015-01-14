@@ -51,14 +51,20 @@ public class UploadsWs extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>Error:<|The requested page you are attempting to view does not exist|>Page not found<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>Error:<|The requested page you are attempting to view does not exist|>Page not found<)") || !br.containsHTML("id=\"fileInfo\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("alt=\"Share ([^<>\"]+)\"").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("\" alt=\"Sumbit ([^<>\"]+) to ").getMatch(0);
-            if (filename == null) filename = br.getRegex("<noscript>To download ([^<>\"]+), please activate javascript</noscript>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<noscript>To download ([^<>\"]+), please activate javascript</noscript>").getMatch(0);
+            }
         }
         String filesize = br.getRegex("<b>File size:</b>([^<>\"]+)</div>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -68,11 +74,15 @@ public class UploadsWs extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         final String s = br.getRegex("t\\[1\\] = \"([^<>\"]+)\"").getMatch(0);
-        if (s == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (s == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://srv.upl.me/d.php", "s=" + s + "&k=" + new Regex(downloadLink.getDownloadURL(), "uploads\\.ws/(.+)").getMatch(0), false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("Access denied for user 'www-data'@'localhost'")) throw new PluginException(LinkStatus.ERROR_FATAL, "Hoster problem, Please contact hoster for resolution");
+            if (br.containsHTML("Access denied for user 'www-data'@'localhost'")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Hoster problem, Please contact hoster for resolution");
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
