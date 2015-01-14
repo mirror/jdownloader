@@ -84,7 +84,7 @@ public class UninstalledExtension {
                             public void run() {
                                 try {
 
-                                    UpdateController.getInstance().setGuiVisible(true);
+                                    // UpdateController.getInstance().setGuiVisible(true);
 
                                     UpdaterListener listener;
                                     UpdateController.getInstance().getEventSender().addListener(listener = new UpdaterListener() {
