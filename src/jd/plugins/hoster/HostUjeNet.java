@@ -39,7 +39,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.utils.recaptcha.api2.Recaptcha2Helper;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hostuje.net" }, urls = { "http://[\\w\\.]*?hostuje\\.net/file\\.php\\?id=[a-zA-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hostuje.net" }, urls = { "http://[\\w\\.]*?hostuje\\.net/file\\.php\\?id=[a-zA-Z0-9]+" }, flags = { 0 })
 public class HostUjeNet extends PluginForHost {
 
     public HostUjeNet(PluginWrapper wrapper) {
