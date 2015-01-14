@@ -22,6 +22,7 @@ import java.util.Random;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -51,9 +52,11 @@ public class PCloudCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         /* Links before big change */
-        if (link.getDownloadURL().matches(TYPE_OLD))
+        if (link.getDownloadURL().matches(TYPE_OLD)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        else if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (link.getBooleanProperty("offline", false)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.setBrowserExclusive();
         prepBR();
         final String code = link.getStringProperty("plain_code", null);
@@ -61,14 +64,20 @@ public class PCloudCom extends PluginForHost {
         if (isCompleteFolder(link)) {
             br.getPage("http://api.pcloud.com/showpublink?code=" + code);
             /* 7002 = deleted by the owner */
-            if (br.containsHTML("\"error\": \"Invalid link") || br.containsHTML("\"result\": 7002")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("\"error\": \"Invalid link") || br.containsHTML("\"result\": 7002")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         } else {
             br.getPage("https://api.pcloud.com/getpublinkdownload?code=" + code + "&forcedownload=1&fileid=" + fileid);
-            if (br.containsHTML("\"error\": \"Invalid link \\'code\\'\\.\"|\"error\": \"File not found\\.\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("\"error\": \"Invalid link \\'code\\'\\.\"|\"error\": \"File not found\\.\"")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         final String filename = link.getStringProperty("plain_name", null);
         final String filesize = link.getStringProperty("plain_size", null);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(filename);
         link.setDownloadSize(Long.parseLong(filesize));
         return AvailableStatus.TRUE;
@@ -77,6 +86,9 @@ public class PCloudCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if ("5002".equals(getJson("result"))) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 'Internal error, no servers available. Try again later.'", 5 * 60 * 1000l);
+        }
         final String dllink = getdllink(downloadLink);
         boolean resume = true;
         int maxchunks = 0;
@@ -92,18 +104,14 @@ public class PCloudCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String getJson(final String parameter) {
-        String result = br.getRegex("\"" + parameter + "\": (\\d+)").getMatch(0);
-        if (result == null) result = br.getRegex("\"" + parameter + "\": \"([^<>\"]*?)\"").getMatch(0);
-        return result;
-    }
-
     private String getdllink(final DownloadLink dl) throws PluginException {
         String dllink = null;
         if (isCompleteFolder(dl)) {
             /* Select all IDs of the folder to download all as .zip */
             final String[] fileids = br.getRegex("\"fileid\": (\\d+)").getColumn(0);
-            if (fileids == null || fileids.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (fileids == null || fileids.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             dllink = "https://api.pcloud.com/getpubzip?fileids=";
             for (int i = 0; i < fileids.length; i++) {
                 final String currentID = fileids[i];
@@ -116,10 +124,14 @@ public class PCloudCom extends PluginForHost {
             dllink += "&filename=" + dl.getStringProperty("plain_name", null) + "&code=" + dl.getStringProperty("plain_code", null);
         } else {
             final String hoststext = br.getRegex("\"hosts\": \\[(.*?)\\]").getMatch(0);
-            if (hoststext == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (hoststext == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final String[] hosts = new Regex(hoststext, "\"([^<>\"]*?)\"").getColumn(0);
             dllink = getJson("path");
-            if (dllink == null || hosts == null || hosts.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null || hosts == null || hosts.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             dllink = dllink.replace("\\", "");
             dllink = "https://" + hosts[new Random().nextInt(hosts.length - 1)] + dllink;
         }
@@ -137,6 +149,68 @@ public class PCloudCom extends PluginForHost {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
         br.getHeaders().put("Accept-Charset", null);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from provided Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final Browser ibr, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value given JSon Array of Key from JSon response provided String source.
+     *
+     * @author raztoki
+     * */
+    private String getJsonArray(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJsonArray(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return String[] value from provided JSon Array
+     *
+     * @author raztoki
+     * @param source
+     * @return
+     */
+    private String[] getJsonResultsFromArray(final String source) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
     private void setConfigElements() {

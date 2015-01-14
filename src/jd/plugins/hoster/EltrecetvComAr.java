@@ -70,7 +70,7 @@ public class EltrecetvComAr extends PluginForHost {
 
     private void download(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        final String[] qualities = { "720", "480", "360", "240" };
+        final String[] qualities = { "1080", "720", "480", "360", "240" };
         String qualitiesjson = br.getRegex("data\\-levels=\\'\\[(.*?)\\]").getMatch(0);
         final String streamer = br.getRegex("data\\-streamer=\"([^<>\"]*?)\"").getMatch(0);
         if (streamer == null || qualitiesjson == null) {

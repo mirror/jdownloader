@@ -49,6 +49,7 @@ public class LiveLeakCom extends PluginForHost {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -56,11 +57,18 @@ public class LiveLeakCom extends PluginForHost {
         br.setCookie("http://liveleak.com/", "liveleak_safe_mode", "0");
         String filename = downloadLink.getName();
         // This should never happen
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getPage("http://www.liveleak.com/ll_embed?f=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
-        if (br.containsHTML("File not found or deleted\\!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("File not found or deleted\\!")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String ext = ".mp4";
         DLLINK = br.getRegex("hd_file_url=(http[^<>\"]+)\\&preview_image_url=").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("file: \"(http://[^<>\"]*?)\"").getMatch(0);
+        }
         if (DLLINK == null) {
             ext = ".flv";
             filename = filename.replace(".mp4", "");
@@ -68,9 +76,13 @@ public class LiveLeakCom extends PluginForHost {
         }
         if (filename.contains(".")) {
             String oldExt = filename.substring(filename.lastIndexOf("."));
-            if (oldExt != null && oldExt.length() <= 5) filename = filename.replace(oldExt, "");
+            if (oldExt != null && oldExt.length() <= 5) {
+                filename = filename.replace(oldExt, "");
+            }
         }
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
@@ -80,10 +92,11 @@ public class LiveLeakCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
