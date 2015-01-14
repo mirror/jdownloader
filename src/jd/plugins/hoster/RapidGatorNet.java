@@ -650,6 +650,7 @@ public class RapidGatorNet extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     public AccountInfo fetchAccountInfo_web(final Account account, final AccountInfo ai) throws Exception {
         RapidGatorNet.maxPrem.set(1);
         try {
@@ -672,6 +673,7 @@ public class RapidGatorNet extends PluginForHost {
         } else {
             this.br.getPage("http://rapidgator.net/profile/index");
             String availableTraffic = this.br.getRegex(">Bandwith available</td>\\s+<td>\\s+([^<>\"]*?) of").getMatch(0);
+            final String availableTrafficMax = this.br.getRegex(">Bandwith available</td>\\s+<td>\\s+[^<>\"]*? of (\\d+(\\.\\d+)? (?:MB|GB|TB))").getMatch(0);
             logger.info("availableTraffic = " + availableTraffic);
             if (availableTraffic != null) {
                 Long avtr = SizeFormatter.getSize(availableTraffic.trim());
@@ -679,12 +681,14 @@ public class RapidGatorNet extends PluginForHost {
                     availableTraffic = "1024 GB"; // SizeFormatter can't handle TB (Temporary workaround)
                 }
                 ai.setTrafficLeft(SizeFormatter.getSize(availableTraffic.trim()));
+                if (availableTrafficMax != null) {
+                    ai.setTrafficMax(SizeFormatter.getSize(availableTrafficMax));
+                }
             } else {
                 /* Probably not true but our errorhandling for empty traffic should work well */
                 ai.setUnlimitedTraffic();
             }
-            this.br.getPage("http://rapidgator.net/Payment/Payment");
-            final String expire = this.br.getRegex("style=\"width:100px;\">\\d+</td><td>([^<>\"]*?)</td>").getMatch(0);
+            final String expire = this.br.getRegex("Premium services will end on ([^<>\"]*?)\\.<br").getMatch(0);
             if (expire == null) {
                 this.logger.warning("Could not find expire date!");
                 account.setValid(false);
