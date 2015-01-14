@@ -193,6 +193,10 @@ public class RTLnowDe extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        final String redirect = br.getRegex("window\\.location\\.href = \"(/[^<>\"]*?)\"").getMatch(0);
+        if (redirect != null) {
+            br.getPage(redirect);
+        }
         if (br.containsHTML("<\\!\\-\\- Payment\\-Teaser \\-\\->")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Download nicht möglich (muss gekauft werden)");
         }
@@ -203,6 +207,7 @@ public class RTLnowDe extends PluginForHost {
         download(downloadLink);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
@@ -217,6 +222,9 @@ public class RTLnowDe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String folge = br.getRegex("Folge: '(.*?)'").getMatch(0);
+        if (folge == null) {
+            folge = new Regex(dllink, "folge\\-(\\d+)").getMatch(0);
+        }
         if (folge != null && filename.contains(folge)) {
             filename = filename.substring(0, filename.lastIndexOf("-")).trim();
         }

@@ -600,6 +600,8 @@ public class OffCloudCom extends PluginForHost {
                 statuscode = 202;
             } else if (br.containsHTML(">Error: \\[cURL:56\\] Problem")) {
                 statuscode = 203;
+            } else if (br.containsHTML(">Error: Premium account is out of bandwidth")) {
+                statuscode = 204;
             } else {
                 /* No way to tell that something unpredictable happened here --> status should be fine. */
                 statuscode = 0;
@@ -732,6 +734,12 @@ public class OffCloudCom extends PluginForHost {
                  * time
                  */
                 statusMessage = "Strange cURL error -> Host traffic gone";
+                tempUnavailableLink(3 * 60 * 60 * 1000l);
+            case 204:
+                /*
+                 * Traffic of host account of multihost is empty.
+                 */
+                statusMessage = "Host traffic gone";
                 tempUnavailableLink(3 * 60 * 60 * 1000l);
             default:
                 /* Unknown error */

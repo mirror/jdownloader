@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1mbup.com" }, urls = { "http://[\\w\\.]*?1mbup\\.com/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1mbup.com" }, urls = { "http://(www\\.)??1mbup\\.com/(?!img/).+" }, flags = { 0 })
 public class OneMbUpCom extends PluginForHost {
 
     public OneMbUpCom(PluginWrapper wrapper) {
@@ -44,7 +44,7 @@ public class OneMbUpCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("<b>Enlace de Descarga No Valido\\.</center")) {
+        if (br.containsHTML("<b>Enlace de Descarga No Valido\\.</center") || !br.containsHTML("\\'report\\.php")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("\\?file=\\d+(.*?)'").getMatch(0);

@@ -25,6 +25,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -39,6 +40,7 @@ public class RtveEs extends PluginForHost {
 
     private String DLURL       = null;
     private String BLOWFISHKEY = "eWVMJmRhRDM=";
+    private String dl_now_now  = null;
 
     public RtveEs(PluginWrapper wrapper) {
         super(wrapper);
@@ -88,6 +90,9 @@ public class RtveEs extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestVideo(downloadLink);
+        if (dl_now_now != null) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: " + dl_now_now);
+        }
         if (DLURL == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -103,6 +108,9 @@ public class RtveEs extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         requestVideo(downloadLink);
         setBrowserExclusive();
+        if (dl_now_now != null) {
+            return AvailableStatus.TRUE;
+        }
         try {
             if (!br.openGetConnection(DLURL).getContentType().contains("html")) {
                 downloadLink.setDownloadSize(br.getHttpConnection().getLongContentLength());
@@ -125,6 +133,20 @@ public class RtveEs extends PluginForHost {
         if (br.containsHTML("La página solicitada no está disponible por haber cambiado la dirección \\(URL\\) o no existir\\.")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        String filename = br.getRegex("<h1><span title=\"([^\"]+)").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("class=\"last\">([^<]+)").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        filename = Encoding.htmlDecode(filename.trim());
+        dl_now_now = br.getRegex(">(Lunes a jueves a las \\d{2}\\.\\d{2} y \\d{2}\\.\\d{2} horas)<").getMatch(0);
+        if (dl_now_now != null) {
+            downloadLink.getLinkStatus().setStatusText("Server error: " + dl_now_now);
+            downloadLink.setName(filename + ".mp4");
+            return AvailableStatus.TRUE;
+        }
 
         String[] flashVars = br.getRegex("assetID=(\\d+)_([a-z]{2,3})_(audios|videos)\\&location=alacarta").getRow(0);
         if (flashVars == null || flashVars.length != 3) {
@@ -141,12 +163,7 @@ public class RtveEs extends PluginForHost {
         /* decrypt response body */
         DLURL = getLink(JDHexUtils.toString(JDHexUtils.getHexString(getBlowfish(org.appwork.utils.encoding.Base64.decode(enc.toString()), true))));
 
-        String filename = br.getRegex("<h1><span title=\"([^\"]+)").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("class=\"last\">([^<]+)").getMatch(0);
-        }
-
-        if (DLURL == null || filename == null) {
+        if (DLURL == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String ext = DLURL.substring(DLURL.lastIndexOf("."));
