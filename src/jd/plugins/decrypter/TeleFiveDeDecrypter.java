@@ -43,7 +43,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tele5.de" }, urls = { "http://(www\\.)?tele5\\.de/(videos/)?[\\w/\\-]+/(video/)?[\\w/\\-]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tele5.de" }, urls = { "http://(www\\.)?tele5\\.de/.*?/video/[\\w/\\-]+\\.html" }, flags = { 0 })
 public class TeleFiveDeDecrypter extends PluginForDecrypt {
     // we cannot do core updates right now, and should keep this class internal until we can do core updates
     public class SWFDecompressor {
@@ -87,7 +87,7 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
 
         /**
          * Strips the uncompressed header bytes from a swf file byte array
-         * 
+         *
          * @param bytes
          *            of the swf
          * @return bytes array minus the uncompressed header bytes
@@ -136,57 +136,72 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
-        /* parse flash url */
         br.setFollowRedirects(true);
         br.getPage(parameter);
 
-        /* embed or singleVideo */
-        boolean singleVideo = parameter.matches("http://(www\\.)?tele5\\.de/videos/[\\w/\\-]+/video/[\\w/\\-]+\\.html");
-        String regex = "<div id=\"[^\"]+\" class=\"[^\"]+\".*?rel=\"media:video\"\\s*resource=\"(http[^\"]+)\"";
-        if (singleVideo) regex = "<div class=\"video\">.*?rel=\"media:video\"\\s*resource=\"(http[^\"]+)\"";
+        final String[] videosinfo = br.getRegex("<div class=\"video\"><script(.*?)</script></div>").getColumn(0);
 
-        for (String flashUrl : br.getRegex(regex).getColumn(0)) {
-            String streamerType = br.getRegex("value=\"streamerType=(http|rtmp)").getMatch(0);
-            if (streamerType == null) streamerType = "http";
-            if (flashUrl == null) {
+        /* parse flash url */
+        for (final String vidinfo : videosinfo) {
+            final String entry_id = getJson(vidinfo, "entry_id");
+            final String wid = getJson(vidinfo, "wid");
+            final String uiconf_id = getJson(vidinfo, "uiconf_id");
+            final String cache_st = getJson(vidinfo, "cache_st");
+            String streamerType = getJson(vidinfo, "streamerType");
+            if (streamerType == null) {
+                streamerType = "http";
+            }
+            if (entry_id == null || wid == null || uiconf_id == null || cache_st == null) {
                 logger.warning("tele5 Decrypter broken!");
                 return null;
             }
+            final String flashUrl = "http://api.medianac.com/index.php/kwidget/wid/" + wid + "/uiconf_id/" + uiconf_id + "/entry_id/" + entry_id + "/cache_st/" + cache_st;
+
             /* decompress flash */
             String result = getUrlValues(flashUrl);
-            if (result == null) return null;
+            if (result == null) {
+                return null;
+            }
             String kdpUrl = new Regex(result, "kdpUrl=([^#]+)#").getMatch(0);
-            if (kdpUrl == null) return null;
+            if (kdpUrl == null) {
+                return null;
+            }
             kdpUrl = Encoding.htmlDecode(kdpUrl);
 
             /* put url vars into map */
             Map<String, String> v = new HashMap<String, String>();
             for (String s : kdpUrl.split("&")) {
-                if (!s.contains("=")) s += "=placeholder";
-                if ("referer=".equals(s)) s += br.getURL();
+                if (!s.contains("=")) {
+                    s += "=placeholder";
+                }
+                if ("referer=".equals(s)) {
+                    s += br.getURL();
+                }
                 v.put(s.split("=")[0], s.split("=")[1]);
             }
             v.put("streamerType", streamerType);
             boolean isRtmp = "rtmp".equals(streamerType);
             Browser br2 = br.cloneBrowser();
             /* create final request */
-            String postData = "2:entryId=" + v.get("entryId");
-            postData += "&2:service=flavorasset";
-            postData += "&clientTag=kdp:3.4.10.3," + v.get("clientTag");
-            postData += "&2:action=getWebPlayableByEntryId";
-            postData += "&3:entryId=" + v.get("entryId");
-            postData += "&1:version=-1";
-            postData += "&3:service=baseentry";
-            postData += "&ks=" + v.get("ks");
-            postData += "&1:service=baseentry";
-            postData += "&3:action=getContextData";
-            postData += "&3:contextDataParams:objectType=KalturaEntryContextDataParams";
-            postData += "&1:entryId=" + v.get("entryId");
-            postData += "&3:contextDataParams:referrer=" + v.get("referer");
-            postData += "&1:action=get";
-            postData += "&ignoreNull=1";
-            Document doc = JDUtilities.parseXmlString(br2.postPage("http://medianac.nacamar.de//api_v3/index.php?service=multirequest&action=null", postData), false);
+            String getData = "?service=multirequest&action=null&";
+            getData += "2:entryId=" + v.get("entryId");
+            getData += "&2:service=flavorasset";
+            getData += "&clientTag=kdp:3.4.10.3," + v.get("clientTag");
+            getData += "&2:action=getWebPlayableByEntryId";
+            getData += "&3:entryId=" + v.get("entryId");
+            getData += "&1:version=-1";
+            getData += "&3:service=baseentry";
+            getData += "&ks=" + v.get("ks");
+            getData += "&1:service=baseentry";
+            getData += "&3:action=getContextData";
+            getData += "&3:contextDataParams:objectType=KalturaEntryContextDataParams";
+            getData += "&1:entryId=" + v.get("entryId");
+            getData += "&3:contextDataParams:referrer=" + v.get("referer");
+            getData += "&1:action=get";
+            getData += "&ignoreNull=1";
+            final String getpage = "http://api.medianac.com//api_v3/index.php" + getData;
+            br2.getPage(getpage);
+            Document doc = JDUtilities.parseXmlString(br2.toString(), false);
 
             /* xml data --> HashMap */
             // /xml/result/item --> name, ext etc.
@@ -219,10 +234,16 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
                     fileInfo.put(g.getNodeName(), g.getTextContent());
                 }
             }
-            if (fileInfo.size() == 0) return null;
+            if (fileInfo.size() == 0) {
+                return null;
+            }
 
-            if (!isEmpty(fileInfo.get("categories"))) fileInfo.put("categories", new String(fileInfo.get("categories").getBytes("ISO-8859-1"), "UTF-8"));
-            if (!isEmpty(fileInfo.get("name"))) fileInfo.put("name", new String(fileInfo.get("name").getBytes("ISO-8859-1"), "UTF-8"));
+            if (!isEmpty(fileInfo.get("categories"))) {
+                fileInfo.put("categories", new String(fileInfo.get("categories").getBytes("ISO-8859-1"), "UTF-8"));
+            }
+            if (!isEmpty(fileInfo.get("name"))) {
+                fileInfo.put("name", new String(fileInfo.get("name").getBytes("ISO-8859-1"), "UTF-8"));
+            }
 
             ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
             boolean r = true;
@@ -244,13 +265,19 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
                     logger.warning("tele5 Decrypter: null in API Antwort entdeckt!");
                     logger.warning("tele5 Decrypter: " + dllink);
                 }
-                if (r) br2.getPage(dllink);
+                if (r) {
+                    br2.getPage(dllink);
+                }
                 /* make dllink */
                 dllink = br2.getRegex("<media url=\"([^\"]+" + KalturaFlavorAsset.get("id") + ".*?)\"").getMatch(0);
                 final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://") + "&quality=" + KalturaFlavorAsset.get("bitrate") + "&vId=" + KalturaFlavorAsset.get("id"));
                 link.setAvailable(true);
                 link.setFinalFileName(filename);
-               try{/*JD2 only*/link.setContentUrl(parameter);}catch(Throwable e){/*Stable*/ link.setBrowserUrl(parameter);}
+                try {/* JD2 only */
+                    link.setContentUrl(parameter);
+                } catch (Throwable e) {/* Stable */
+                    link.setBrowserUrl(parameter);
+                }
                 link.setDownloadSize(SizeFormatter.getSize(KalturaFlavorAsset.get("size") + "kb"));
                 link.setProperty("streamerType", v.get("streamerType"));
                 link.setProperty("directURL", dllink);
@@ -272,6 +299,9 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
                 fp.addLinks(newRet);
             }
             decryptedLinks.addAll(newRet);
+
+            /* Above RegEx is greedy - we simply stop after the first entry as this is all we want! */
+            break;
         }
         return decryptedLinks;
     }
@@ -279,7 +309,9 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
     private String getUrlValues(String s) throws UnsupportedEncodingException {
         SWFDecompressor swfd = new SWFDecompressor();
         byte[] swfdec = swfd.decompress(s);
-        if (swfdec == null || swfdec.length == 0) return null;
+        if (swfdec == null || swfdec.length == 0) {
+            return null;
+        }
 
         for (int i = 0; i < swfdec.length; i++) {
             if (swfdec[i] < 33 || swfdec[i] > 127) {
@@ -287,6 +319,68 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             }
         }
         return new String(swfdec, "UTF8");
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from provided Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final Browser ibr, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value given JSon Array of Key from JSon response provided String source.
+     *
+     * @author raztoki
+     * */
+    private String getJsonArray(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJsonArray(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return String[] value from provided JSon Array
+     *
+     * @author raztoki
+     * @param source
+     * @return
+     */
+    private String[] getJsonResultsFromArray(final String source) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
     private boolean isEmpty(String ip) {

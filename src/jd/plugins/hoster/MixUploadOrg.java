@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixupload.org" }, urls = { "http://(www\\.)?mixupload\\.org/track/[^<>\"/]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixupload.org" }, urls = { "http://(www\\.)?mixupload\\.(org|com)/(es/)?track/[^<>\"/]+" }, flags = { 0 })
 public class MixUploadOrg extends PluginForHost {
 
     public MixUploadOrg(PluginWrapper wrapper) {
@@ -36,7 +36,22 @@ public class MixUploadOrg extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://mixupload.org/about/agreement";
+        return "http://mixupload.com/about/agreement";
+    }
+
+    public void correctDownloadLink(final DownloadLink link) {
+        final String trackid = link.getDownloadURL().substring(link.getDownloadURL().lastIndexOf("/") + 1);
+        link.setUrlDownload("http://mixupload.com/track/" + trackid);
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("mixupload.org".equals(getHost())) {
+            if (host == null || "mixupload.org".equals(host)) {
+                return "mixupload.com";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     @Override
@@ -46,7 +61,9 @@ public class MixUploadOrg extends PluginForHost {
         String trackID = link.getStringProperty("trackid", null);
         if (trackID == null) {
             br.getPage(link.getDownloadURL());
-            if (br.containsHTML(">Page not found<|>Error<|\"/img/404\\-img\\.png\"|\"/img/forbidden\\.png\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML(">Page not found<|>Error<|\"/img/404\\-img\\.png\"|\"/img/forbidden\\.png\"")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             trackID = br.getRegex("id=\"pl_track(\\d+)\"").getMatch(0);
             if (trackID == null) {
                 trackID = br.getRegex("p\\.playTrackId\\((\\d+)\\)").getMatch(0);
@@ -57,14 +74,20 @@ public class MixUploadOrg extends PluginForHost {
                     }
                 }
             }
-            if (trackID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (trackID == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             link.setProperty("trackid", trackID);
         }
         br.getPage("http://mixupload.org/player/getTrackInfo/" + trackID);
-        if ("[]".equals(br.toString().trim())) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if ("[]".equals(br.toString().trim())) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = getJson("artist") + " - " + getJson("title");
         final String filesize = getJson("sizebyte");
-        if (filename.contains("null") || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename.contains("null") || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
         link.setDownloadSize(Long.parseLong(filesize));
         return AvailableStatus.TRUE;
@@ -84,7 +107,9 @@ public class MixUploadOrg extends PluginForHost {
 
     private String getJson(final String parameter) {
         String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
-        if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        if (result == null) {
+            result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        }
         return result;
     }
 
