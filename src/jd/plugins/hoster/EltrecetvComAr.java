@@ -25,12 +25,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eltrecetv.com.ar" }, urls = { "http://(www\\.)?eltrecetv\\.com\\.ar/[^<>\"/]+/[^<>\"/]+" }, flags = { 0 })
 public class EltrecetvComAr extends PluginForHost {
-
-    private String DLLINK = null;
 
     public EltrecetvComAr(final PluginWrapper wrapper) {
         super(wrapper);
@@ -46,67 +43,63 @@ public class EltrecetvComAr extends PluginForHost {
         return -1;
     }
 
+    private static final String app = "vod/13tv/";
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        this.setBrowserExclusive();
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("<title>(.*?) \\|.*?</title>").getMatch(0);
+
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        filename = Encoding.htmlDecode(filename).trim();
+        downloadLink.setFinalFileName(filename + ".mp4");
+        return AvailableStatus.TRUE;
+    }
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         download(downloadLink);
     }
 
-    private void setupRTMPConnection(String[] stream, DownloadInterface dl) {
-        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-        rtmp.setPlayPath("mp4:" + stream[1]);
-        rtmp.setUrl(stream[0]);
-        rtmp.setApp(new Regex(DLLINK, "//.*?/(.*?)@").getMatch(0));
-        rtmp.setSwfVfy(stream[2]);
-        rtmp.setPageUrl(stream[3]);
-        rtmp.setFlashVer("WIN 10,1,102,64");
-        rtmp.setResume(false);
-        rtmp.setTimeOut(10);
-    }
-
     private void download(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String[] stream = DLLINK.split("@");
-        if (DLLINK.startsWith("rtmp")) {
-            dl = new RTMPDownload(this, downloadLink, stream[0] + stream[1]);
-            setupRTMPConnection(stream, dl);
-            ((RTMPDownload) dl).startDownload();
-        } else {
+        final String[] qualities = { "720", "480", "360", "240" };
+        String qualitiesjson = br.getRegex("data\\-levels=\\'\\[(.*?)\\]").getMatch(0);
+        final String streamer = br.getRegex("data\\-streamer=\"([^<>\"]*?)\"").getMatch(0);
+        if (streamer == null || qualitiesjson == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-    }
+        qualitiesjson = qualitiesjson.replace("\\", "");
+        String playpath = null;
+        for (final String quality : qualities) {
+            playpath = new Regex(qualitiesjson, "\"file\":\"([^<>\"]*?\\-" + quality + ".mp4)\"").getMatch(0);
+            if (playpath != null) {
+                break;
+            }
+        }
+        if (playpath == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        playpath = "mp4:13tv/" + playpath;
+        final String rtmp_r = "rtmp://" + streamer + "/" + app;
 
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        /*
-         * Information on how to avouud RTMP for this host:
-         * http://www.taringa.net/posts/videos/9656281/Bajar-videos-de-eltrecetv-mejorada.html --> Does not work
-         */
-        setBrowserExclusive();
-        String dllink = downloadLink.getDownloadURL();
-        br.getPage(dllink);
-        if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = br.getRegex("<title>(.*?) \\|.*?</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("\\s+<h1>(.*?)</h1>").getMatch(0);
-        }
-        final String id = new Regex(dllink, "(\\d+)$").getMatch(0);
-        if (id == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        br.getPage("http://www.eltrecetv.com.ar/playlist/" + id);
-        String streamer = br.getRegex("<jwplayer:streamer>(rtmp.*?)</jwplayer:streamer>").getMatch(0);
-        String playpath = br.getRegex("<media:content bitrate=\"\\d+\" url=\"([^\"]+)").getMatch(0);
-
-        if (filename == null || streamer == null || playpath == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        filename = Encoding.htmlDecode(filename).trim();
-        DLLINK = streamer + "@" + playpath + "@http://cdn.eltrecetv.com.ar/sites/all/libraries/jwplayer/player.swf@" + downloadLink.getDownloadURL();
-        downloadLink.setFinalFileName(filename + ".mp4");
-        return AvailableStatus.TRUE;
+        dl = new RTMPDownload(this, downloadLink, rtmp_r);
+        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+        rtmp.setPlayPath(playpath);
+        rtmp.setUrl(rtmp_r);
+        rtmp.setApp(app);
+        rtmp.setSwfVfy("http://eltrecetv.cdncmd.com/sites/all/libraries/jwplayer5/player-licensed.swf");
+        rtmp.setPageUrl(br.getURL());
+        rtmp.setFlashVer("WIN 16,0,0,257");
+        rtmp.setResume(false);
+        ((RTMPDownload) dl).startDownload();
     }
 
     @Override

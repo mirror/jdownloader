@@ -94,7 +94,7 @@ public class CloudSixMe extends PluginForHost {
     // mods: waitTime
     // limit-info:
     // protocol: no https
-    // captchatype: null 4dignum solvemedia recaptcha
+    // captchatype: null
     // other:
     // TODO: Add case maintenance + alternative filesize check
 
