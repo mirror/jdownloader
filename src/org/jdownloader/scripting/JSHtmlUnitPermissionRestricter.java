@@ -126,6 +126,7 @@ public class JSHtmlUnitPermissionRestricter {
             return makeContext(null);
         }
 
+        //
         protected Context makeContext(final ContextCallback contextCallback) {
             Context cx = new Context() {
                 @Override
