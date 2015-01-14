@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -36,6 +37,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.utils.recaptcha.api2.Recaptcha2Helper;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hostuje.net" }, urls = { "http://[\\w\\.]*?hostuje\\.net/file\\.php\\?id=[a-zA-Z0-9]+" }, flags = { 0 })
 public class HostUjeNet extends PluginForHost {
@@ -171,6 +173,31 @@ public class HostUjeNet extends PluginForHost {
         if (f == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (br.containsHTML("'sitekey'\\s*:\\s*'[\\w+]+'") && br.containsHTML("document\\.getElementById\\('pobierz'\\)\\.disabled=false")) {
+            // recaptcha v2
+            final String siteKey = br.getRegex("sitekey'\\s*:\\s*('|\")([\\w-]+)\\1").getMatch(1);
+            if (siteKey == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            boolean success = false;
+            String responseToken = null;
+            int counter = 0;
+            int retry = 4;
+            do {
+                Recaptcha2Helper rchelp = new Recaptcha2Helper();
+                rchelp.init(this.br, siteKey, this.getHost());
+                final File outputFile = rchelp.loadImageFile();
+                String code = getCaptchaCode("recaptcha", outputFile, this.getDownloadLink());
+                success = rchelp.sendResponse(code);
+                responseToken = rchelp.getResponseToken();
+                counter++;
+            } while (!success && counter <= retry);
+            if (!success) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            f.put("g-recaptcha-response", Encoding.urlEncode(responseToken));
+        }
+
         br.submitForm(f);
         String link = null;
         link = br.getRedirectLocation();
