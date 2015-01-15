@@ -39,10 +39,10 @@ public class ZyvNt extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        final String artist = br.getRegex("class=\"box\\-artist__name\">([^<>\"]*?)</span>").getMatch(0);
-        String[] fileInfo = br.getRegex("class=\"musicset\\-track__control\"></i><a href=\"(/pages/\\d+/\\d+\\.shtml)\"").getColumn(0);
+        final String artist = br.getRegex("class=\"artist-page__name\">([^<>\"]*?)</span>").getMatch(0);
+        String[] fileInfo = br.getRegex("href=\"(/pages/\\d+/\\d+\\.shtml)\" class='musicset-track__link'").getColumn(0);
         if (fileInfo == null || fileInfo.length == 0) {
-            if (br.containsHTML(">Нет информации<")) {
+            if (br.containsHTML(">Нет информации<|>Композиций не найдено<")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
