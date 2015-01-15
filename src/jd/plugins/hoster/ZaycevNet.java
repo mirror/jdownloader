@@ -168,6 +168,9 @@ public class ZaycevNet extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML(">In this country site zaycev\\.net is not accessable\\.<")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Download blocked by hoster with Geolocation filter!");
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // id3 and packagename can be tag due to directlink imports
