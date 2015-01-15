@@ -48,7 +48,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(www\\.)?(vk\\.com|vkontakte\\.ru)/(?!doc\\d+)(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)(\\-)?\\d+|audios\\d+|page\\-\\d+_\\d+|(video(\\-)?\\d+_\\d+(\\?list=[a-z0-9]+)?|videos\\d+|(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged)|video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+(\\&hash=[a-z0-9]+)?|video\\?gid=\\d+|public\\d+\\?z=video(\\-)?\\d+_\\d+((%2F|/)[a-z0-9]+)?|search\\?(c\\[q\\]|c%5Bq%5D)=[^<>\"/]*?\\&c(\\[section\\]|%5Bsection%5D)=video(\\&c(\\[sort\\]|%5Bsort%5D)=\\d+)?\\&z=video(\\-)?\\d+_\\d+)|(photos|tag)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album(\\-)?\\d+_\\d+|photo(\\-)?\\d+_\\d+|(wall\\-\\d+_\\d+|[A-Za-z0-9\\-_\\.]+\\?z=photo\\-\\d+_\\d+%2Fwall\\-\\d+_\\d+|wall\\-\\d+\\-maxoffset=\\d+\\-currentoffset=\\d+|wall\\-\\d+)|[A-Za-z0-9\\-_\\.]+)|https?://(www\\.)?vk\\.cc/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(www\\.)?(vk\\.com|vkontakte\\.ru)/(?!doc\\d+)(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)(\\-)?\\d+|audios\\d+|page\\-\\d+_\\d+|(video(\\-)?\\d+_\\d+(\\?list=[a-z0-9]+)?|videos\\d+|(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged)|video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+(\\&hash=[a-z0-9]+)?|video\\?gid=\\d+|public\\d+\\?z=video(\\-)?\\d+_\\d+((%2F|/)[a-z0-9]+)?|search\\?(c\\[q\\]|c%5Bq%5D)=[^<>\"/]*?\\&c(\\[section\\]|%5Bsection%5D)=video(\\&c(\\[sort\\]|%5Bsort%5D)=\\d+)?\\&z=video(\\-)?\\d+_\\d+)|(photos|tag)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album(\\-)?\\d+_\\d+|photo(\\-)?\\d+_\\d+|([A-Za-z0-9\\-_\\.]+\\?z=photo(\\-)?\\d+_\\d+%2Fwall\\-\\d+_\\d+|wall\\-\\d+_\\d+|wall\\-\\d+\\-maxoffset=\\d+\\-currentoffset=\\d+|wall\\-\\d+)|[A-Za-z0-9\\-_\\.]+)|https?://(www\\.)?vk\\.cc/[A-Za-z0-9]+" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt {
 
     /** TODO: Note: PATTERN_VIDEO_SINGLE links should all be decryptable without account but this is not implemented (yet) */
@@ -108,7 +108,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_VIDEO_ALBUM                  = "https?://(www\\.)?vk\\.com/(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged|videos(\\-)?\\d+)";
     private static final String     PATTERN_VIDEO_COMMUNITY_ALBUM        = "https?://(www\\.)?vk\\.com/video\\?gid=\\d+";
     private static final String     PATTERN_PHOTO_SINGLE                 = "https?://(www\\.)?vk\\.com/photo(\\-)?\\d+_\\d+";
-    private static final String     PATTERN_PHOTO_SINGLE_WALL_POST       = "https?://(www\\.)?vk\\.com/[A-Za-z0-9\\-_\\.]+\\?z=photo\\-\\d+_\\d+(%2F|/)wall\\-\\d+_\\d+";
+    private static final String     PATTERN_PHOTO_SINGLE_WALL_POST       = "https?://(www\\.)?vk\\.com/[A-Za-z0-9\\-_\\.]+\\?z=photo(\\-)?\\d+_\\d+(%2F|/)wall\\-\\d+_\\d+";
     private static final String     PATTERN_PHOTO_ALBUM                  = ".*?(tag|album(\\-)?\\d+_|photos)\\d+";
     private static final String     PATTERN_PHOTO_ALBUMS                 = "https?://(www\\.)?vk\\.com/(albums(\\-)?\\d+|id\\d+\\?z=albums\\d+)";
     private static final String     PATTERN_GENERAL_WALL_LINK            = "https?://(www\\.)?vk\\.com/wall(\\-)?\\d+(\\-maxoffset=\\d+\\-currentoffset=\\d+)?";
@@ -1076,6 +1076,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private void decryptWallLink() throws Exception {
         long total_numberof_entries;
         final String userID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/wall((\\-)?\\d+)").getMatch(0);
+        final String wallID = "wall" + userID;
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(userID);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -1118,7 +1119,7 @@ public class VKontakteRu extends PluginForDecrypt {
             List<Object> response = (List<Object>) map.get("response");
             for (Object entry : response) {
                 if (entry instanceof Map) {
-                    decryptWallPost((Map<String, Object>) entry, fp);
+                    decryptWallPost(wallID, (Map<String, Object>) entry, fp);
                 }
             }
 
@@ -1137,13 +1138,13 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /** Decrypts media of single API wall-post json objects */
     @SuppressWarnings("deprecation")
-    private void decryptWallPost(final Map<String, Object> entry, FilePackage fp) throws IOException {
-
+    private void decryptWallPost(final String wall_ID, final Map<String, Object> entry, FilePackage fp) throws IOException {
         final long id = ((Number) entry.get("id")).longValue();
         final long fromId = ((Number) entry.get("from_id")).longValue();
         final long toId = ((Number) entry.get("to_id")).longValue();
-        String postType = (String) entry.get("post_type");
-        final String wall_single_post_url = "https://vk.com/wall" + fromId + "_" + id;
+        final String wall_list_id = wall_ID + "_" + id;
+        /* URL to show this post. */
+        final String wall_single_post_url = "https://vk.com/" + wall_list_id;
 
         List<Map<String, Object>> attachments = (List<Map<String, Object>>) entry.get("attachments");
         if (attachments == null) {
@@ -1164,13 +1165,23 @@ public class VKontakteRu extends PluginForDecrypt {
                     final String album_id = typeObject.get("aid").toString();
                     final String owner_id = typeObject.get("owner_id").toString();
                     final String content_id = typeObject.get("pid").toString();
+                    final String wall_single_photo_content_url = "http://vk.com/" + wall_ID + "?z=photo" + owner_id + "_" + content_id + "/" + wall_list_id;
 
                     final DownloadLink dl = getSinglePhotoDownloadLink(owner_id + "_" + content_id);
+                    /* Ovverride previously set content URL as this really is the direct link to the picture which works fine via browser. */
+                    try {
+                        dl.setContentUrl(wall_single_photo_content_url);
+                    } catch (final Throwable e) {
+                        /* Not available in old 0.9.581 Stable */
+                    }
+                    dl.setBrowserUrl(wall_single_photo_content_url);
 
+                    dl.setProperty("postID", id);
                     dl.setProperty("albumid", album_id);
                     dl.setProperty("owner_id", owner_id);
                     dl.setProperty("content_id", content_id);
                     dl.setProperty("directlinks", typeObject);
+                    dl.setProperty("wall_list_id", wall_list_id);
                     fp.add(dl);
                     decryptedLinks.add(dl);
                 } else if (type.equals("doc") && wall_grabdocs) {
@@ -1257,6 +1268,7 @@ public class VKontakteRu extends PluginForDecrypt {
     /** Using API */
     private void decryptWallPost() throws Exception {
         final String postID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/wall(\\-\\d+_\\d+)").getMatch(0);
+        final String wallID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/(wall\\-\\d+)_\\d+").getMatch(0);
 
         getPage(br, "https://api.vk.com/method/wall.getById?&posts=" + postID + "&extended=0");
         Map<String, Object> map = (Map<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
@@ -1271,69 +1283,31 @@ public class VKontakteRu extends PluginForDecrypt {
         List<Object> response = (List<Object>) map.get("response");
         for (Object entry : response) {
             if (entry instanceof Map) {
-                decryptWallPost((Map<String, Object>) entry, fp);
+                decryptWallPost(wallID, (Map<String, Object>) entry, fp);
             }
         }
         logger.info("Found " + decryptedLinks.size() + " links");
     }
 
-    /** Using API, finds a single photo link out of a single wall post which can contain multiple photos */
+    /** Works offline, simply converts the added link into a link for the host plugin and sets needed IDs. */
     @SuppressWarnings("deprecation")
     private void decryptWallPostSpecifiedPhoto() throws Exception {
-        final String targetPhotoID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "photo\\-\\d+_(\\d+)").getMatch(0);
-        final String wall_postID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "wall(\\-\\d+_\\d+)$").getMatch(0);
-
-        getPage(br, "https://api.vk.com/method/wall.getById?&posts=" + wall_postID + "&extended=0");
-        Map<String, Object> map = (Map<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-
-        if (map == null) {
-            return;
+        final String wall_list_id = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "(wall(\\-)?\\d+_\\d+)$").getMatch(0);
+        final String owner_id = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "photo((\\-)?\\d+)_\\d+").getMatch(0);
+        final String content_id = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "photo\\d+_(\\d+)").getMatch(0);
+        final DownloadLink dl = getSinglePhotoDownloadLink(owner_id + "_" + content_id);
+        try {
+            dl.setContentUrl(CRYPTEDLINK_FUNCTIONAL);
+        } catch (final Throwable e) {
+            /* Not available in old 0.9.581 stable */
         }
+        dl.setBrowserUrl(CRYPTEDLINK_FUNCTIONAL);
 
-        /* The part below is basically simply from the decryptWallPost function */
-        List<Object> response = (List<Object>) map.get("response");
-        for (Object entry : response) {
-            if (entry instanceof Map) {
-                Map<String, Object> test = ((Map<String, Object>) entry);
-                List<Map<String, Object>> attachments = (List<Map<String, Object>>) test.get("attachments");
-                if (attachments == null) {
-                    return;
-                }
-                for (Map<String, Object> attachment : attachments) {
-                    final String type = (String) attachment.get("type");
-                    if (type == null) {
-                        return;
-                    }
-                    Map<String, Object> typeObject = (Map<String, Object>) attachment.get(type);
-                    if (typeObject == null) {
-                        System.out.println("No Attachment for type " + type + " in " + attachment);
-                    }
-                    final String content_id = typeObject.get("pid").toString();
-                    if (type.equals("photo") && targetPhotoID.equals(content_id)) {
-                        final String album_id = typeObject.get("aid").toString();
-                        final String owner_id = typeObject.get("owner_id").toString();
-
-                        final DownloadLink dl = getSinglePhotoDownloadLink(owner_id + "_" + content_id);
-                        try {
-                            dl.setContentUrl(CRYPTEDLINK_FUNCTIONAL);
-                        } catch (final Throwable e) {
-                            /* Not available in old 0.9.581 stable */
-                        }
-                        dl.setBrowserUrl(CRYPTEDLINK_FUNCTIONAL);
-
-                        dl.setProperty("albumid", album_id);
-                        dl.setProperty("owner_id", owner_id);
-                        dl.setProperty("content_id", content_id);
-                        dl.setProperty("directlinks", typeObject);
-                        dl.setProperty("wall_list_id", "wall" + wall_postID);
-                        decryptedLinks.add(dl);
-                        return;
-                    }
-                }
-            }
-        }
-        // decryptWallPost(br.toString(), fp);
-        logger.info("Found " + decryptedLinks.size() + " links");
+        dl.setProperty("owner_id", owner_id);
+        dl.setProperty("content_id", content_id);
+        dl.setProperty("wall_list_id", wall_list_id);
+        decryptedLinks.add(dl);
+        return;
     }
 
     /** NOT using API - general method --> NEVER change a running system! */

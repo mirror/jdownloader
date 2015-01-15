@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -25,6 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
@@ -112,11 +112,37 @@ public class VipfileIn extends PluginForHost {
         }
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    @SuppressWarnings("deprecation")
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String filename;
         String filesize;
+        /* Get filename & size - only possible via account! */
+        final Account aa = AccountController.getInstance().getValidAccount(this);
+        if (aa != null && !aa.getBooleanProperty("free", false)) {
+            this.login(aa, false);
+            URLConnectionAdapter con = null;
+            try {
+                try {
+                    con = br.openGetConnection(link.getDownloadURL());
+                } catch (final BrowserException e) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (!con.getContentType().contains("html")) {
+                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                    link.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                return AvailableStatus.TRUE;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
         if (available_CHECK_OVER_INFO_PAGE) {
             br.getPage(link.getDownloadURL() + "~i");
             if (!br.getURL().contains("~i")) {
@@ -331,7 +357,7 @@ public class VipfileIn extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
