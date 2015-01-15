@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -30,10 +28,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sankakucomplex.com" }, urls = { "https?://(www\\.)?chan\\.sankakucomplex\\.com/post/show/\\d+" }, flags = { 0 })
-public class SankakucomplexCom extends PluginForHost {
+public class SankakucomplexCom extends antiDDoSForHost {
 
     public SankakucomplexCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,7 +51,21 @@ public class SankakucomplexCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public void init() {
+        try {
+            if (isNewJD()) {
+                Browser.setRequestIntervalLimitGlobal(this.getHost(), 3000, 20, 60000);
+            } else {
+                // law of averages, client shouldn't be making a heap of requests every second...
+                Browser.setRequestIntervalLimitGlobal(this.getHost(), 1500);
+            }
+        } catch (final Throwable t) {
+            t.printStackTrace();
+        }
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("https://chan.sankakucomplex.com/", "locale", "en");
@@ -62,7 +73,7 @@ public class SankakucomplexCom extends PluginForHost {
         br.setCookie("https://chan.sankakucomplex.com/", "auto_page", "1");
         br.setCookie("https://chan.sankakucomplex.com/", "hide_resized_notice", "1");
         br.setCookie("https://chan.sankakucomplex.com/", "blacklisted_tags", "");
-        br.getPage(downloadLink.getDownloadURL());
+        getPage(downloadLink.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

@@ -522,7 +522,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         }
     }
 
-    private boolean isNewJD() {
+    protected final boolean isNewJD() {
         return System.getProperty("jd.revision.jdownloaderrevision") != null ? true : false;
     }
 
