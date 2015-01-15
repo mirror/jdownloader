@@ -688,7 +688,14 @@ public class RapidGatorNet extends PluginForHost {
                 /* Probably not true but our errorhandling for empty traffic should work well */
                 ai.setUnlimitedTraffic();
             }
-            final String expire = this.br.getRegex("Premium services will end on ([^<>\"]*?)\\.<br").getMatch(0);
+            String expire = this.br.getRegex("Premium services will end on ([^<>\"]*?)\\.<br").getMatch(0);
+            if (expire == null) {
+                /**
+                 * eg subscriptions
+                 */
+                this.br.getPage("http://rapidgator.net/Payment/Payment");
+                expire = this.br.getRegex("style=\"width:100px;\">\\d+</td><td>([^<>\"]*?)</td>").getMatch(0);
+            }
             if (expire == null) {
                 this.logger.warning("Could not find expire date!");
                 account.setValid(false);
