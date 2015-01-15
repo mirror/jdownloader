@@ -707,6 +707,15 @@ public class SaveTv extends PluginForHost {
         server_filename = fixCharIssues(server_filename);
         server_filename = server_filename.substring(0, server_filename.lastIndexOf("."));
         downloadLink.setProperty("server_filename", server_filename);
+        try {
+            /* This is for checking server speed. */
+            final String previouscomment = downloadLink.getComment();
+            if (previouscomment == null || previouscomment.contains("Aktuell/Zuletzt verwendeter direkter Downloadlink:")) {
+                downloadLink.setComment("Aktuell/Zuletzt verwendeter direkter Downloadlink: " + dllink);
+            }
+        } catch (final Throwable e) {
+            /* Not available in old 0.9.581 Stable */
+        }
 
         final String final_filename = getFilename(downloadLink);
         downloadLink.setFinalFileName(final_filename);
