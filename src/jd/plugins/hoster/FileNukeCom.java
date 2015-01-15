@@ -93,7 +93,7 @@ public class FileNukeCom extends PluginForHost {
     // premium account: untested, set FREE ACCOUNT limits
     // protocol: no https
     // captchatype: null
-    // other: no redirects
+    // other: no redirects, Plugins which belong together (same owner?): FileNukeCom, ShareSixCom
 
     @Override
     public void correctDownloadLink(DownloadLink link) {

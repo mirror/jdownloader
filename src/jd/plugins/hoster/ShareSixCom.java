@@ -109,8 +109,8 @@ public class ShareSixCom extends PluginForHost {
     // XfileShare Version 3.0.8.4
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: null
-    // other: no redirects
     // mods: heavily modified, do NOT upgrade!
+    // other: no redirects, Plugins which belong together (same owner?): FileNukeCom, ShareSixCom
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -278,6 +278,11 @@ public class ShareSixCom extends PluginForHost {
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</?b>|\\.html)", "");
         fileInfo[0] = Encoding.htmlDecode(fileInfo[0]);
+        /* Such links can never be downloaded - others might at least return a final downloadlink although they will often time out */
+        if (fileInfo[0].equals("file.mp4")) {
+            logger.info("Seems like this link is offline (workaround-offline-detection)");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         downloadLink.setName(fileInfo[0].trim());
         if (getAvailableStatus(downloadLink).toString().equals("UNCHECKED")) {
             downloadLink.setAvailable(true);
@@ -320,6 +325,9 @@ public class ShareSixCom extends PluginForHost {
         }
         if (inValidate(fileInfo[0])) {
             fileInfo[0] = cbr.getRegex("direct=1\\&(amp;)?fn=([^<>\"]*?)\\&").getMatch(1);
+        }
+        if (fileInfo[0] == null) {
+            fileInfo[0] = cbr.getRegex("class=\"file_name\">Download File ([^<>\"]*?) \\(\\d+(\\.\\d+)? (?:KB|MB|GB)\\)</p>").getMatch(0);
         }
         if (inValidate(fileInfo[1])) {
             fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
