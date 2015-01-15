@@ -66,7 +66,7 @@ public class VidiVodoCom extends PluginForHost {
             downloadLink.setUrlDownload(newurl);
         }
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(>404\\. That\\'s an error\\.<|The video you have requested is not available<)") || br.containsHTML("<span>404</span>")) {
+        if (br.containsHTML("(>404\\. That\\'s an error\\.<|The video you have requested is not available<)") || br.containsHTML("<span>404</span>") || br.getURL().contains("arama?q=")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("property=\"og:title\" content=\"(.*?)\"").getMatch(0);

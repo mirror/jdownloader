@@ -47,6 +47,10 @@ public class OneMbUpCom extends PluginForHost {
         if (br.containsHTML("<b>Enlace de Descarga No Valido\\.</center") || !br.containsHTML("\\'report\\.php")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String lastDownload = br.getRegex(">Ultima Descarga: </td><td bgcolor=#EEF4FB background=\"img/button03\\.gif\"><font color=#000080>([^<>\"]*?)</td>").getMatch(0);
+        if (lastDownload != null && lastDownload.contains("1970")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("\\?file=\\d+(.*?)'").getMatch(0);
         String filesize = br.getRegex("Tamaño de Archivo:</td><td bgcolor=#EEF4FB background=\"img/button03\\.gif\"><font color=#000080>(.*?)</td><").getMatch(0);
         if (filename == null || filesize == null) {

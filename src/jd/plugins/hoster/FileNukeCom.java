@@ -151,6 +151,9 @@ public class FileNukeCom extends PluginForHost {
                 }
             }
         }
+        if (filename == null) {
+            filename = new Regex(correctedBR, "class=\"file_name\">Download File ([^<>\"]*?) \\(\\d+(\\.\\d+)? (?:KB|MB|GB)\\)</p>").getMatch(0);
+        }
         String filesize = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
         if (filesize == null) {
             filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
