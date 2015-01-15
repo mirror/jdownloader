@@ -16,9 +16,8 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -26,10 +25,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videomega.tv" }, urls = { "http://(www\\.)?videomega\\.tv/(iframe\\.php)?\\?ref=[A-Za-z0-9]+" }, flags = { 0 })
-public class VideoMegaTv extends PluginForHost {
+public class VideoMegaTv extends antiDDoSForHost {
 
     public VideoMegaTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,25 +43,44 @@ public class VideoMegaTv extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    protected boolean useRUA() {
+        return true;
+    }
+
+    private String fuid = null;
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+        br = new Browser();
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        final String fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-        br.getPage("http://videomega.tv/?ref=" + fid + "&width=595&height=340");
-        final String redirect = br.getRedirectLocation();
-        if (redirect != null && !redirect.contains("videomega.tv/")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        fuid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+        final String page = "http://videomega.tv/?ref=" + fuid + "&width=595&height=340";
+        getPage(page);
+        String redirect = br.getRedirectLocation();
+        if (redirect != null) {
+            if (redirect.contains("google.com/")) {
+                // without referer it will most likely redirect to google
+                br.getHeaders().put("Referer", page);
+                getPage(page);
+                redirect = br.getRedirectLocation();
+            }
+            if (!redirect.contains("videomega.tv/")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         if (br.containsHTML(">VIDEO NOT FOUND")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        link.setFinalFileName(fid + ".mp4");
+        link.setFinalFileName(fuid + ".mp4");
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        // cdn
+        getPage("/cdn.php?ref=" + fuid + "&width=1000&height=450");
         String escaped = br.getRegex("document\\.write\\(unescape\\(\"([^<>\"]*?)\"").getMatch(0);
         if (escaped == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

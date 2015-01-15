@@ -519,7 +519,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
         }
     }
 
-    private boolean isNewJD() {
+    protected final boolean isNewJD() {
         return System.getProperty("jd.revision.jdownloaderrevision") != null ? true : false;
     }
 
