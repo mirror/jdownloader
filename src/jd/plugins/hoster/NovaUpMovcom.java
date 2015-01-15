@@ -119,10 +119,12 @@ public class NovaUpMovcom extends PluginForHost {
                 filename = br.getRegex("<title>Watch(.*?)online \\| NovaMov - Free and reliable flash video hosting</title>").getMatch(0);
             }
             if (filename == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                // filename isn't always present!
+                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                filename = filename.trim();
+                downloadLink.setFinalFileName(filename.replace(filename.substring(filename.length() - 4, filename.length()), "") + ".flv");
             }
-            filename = filename.trim();
-            downloadLink.setFinalFileName(filename.replace(filename.substring(filename.length() - 4, filename.length()), "") + ".flv");
             if (br.containsHTML("error_msg=The video is being transfered")) {
                 downloadLink.getLinkStatus().setStatusText("Not downloadable at the moment, try again later...");
                 return AvailableStatus.TRUE;
