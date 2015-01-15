@@ -48,7 +48,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(www\\.)?(vk\\.com|vkontakte\\.ru)/(?!doc\\d+)(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)(\\-)?\\d+|audios\\d+|page\\-\\d+_\\d+|(video(\\-)?\\d+_\\d+(\\?list=[a-z0-9]+)?|videos\\d+|(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged)|video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+(\\&hash=[a-z0-9]+)?|video\\?gid=\\d+|public\\d+\\?z=video(\\-)?\\d+_\\d+((%2F|/)[a-z0-9]+)?|search\\?(c\\[q\\]|c%5Bq%5D)=[^<>\"/]*?\\&c(\\[section\\]|%5Bsection%5D)=video(\\&c(\\[sort\\]|%5Bsort%5D)=\\d+)?\\&z=video(\\-)?\\d+_\\d+)|(photos|tag)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album(\\-)?\\d+_\\d+|photo(\\-)?\\d+_\\d+|([A-Za-z0-9\\-_\\.]+\\?z=photo(\\-)?\\d+_\\d+%2Fwall\\-\\d+_\\d+|wall\\-\\d+_\\d+|wall\\-\\d+\\-maxoffset=\\d+\\-currentoffset=\\d+|wall\\-\\d+)|[A-Za-z0-9\\-_\\.]+)|https?://(www\\.)?vk\\.cc/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(www\\.)?(vk\\.com|vkontakte\\.ru)/(?!doc\\d+)(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)(\\-)?\\d+|audios\\d+|page\\-\\d+_\\d+|(video(\\-)?\\d+_\\d+(\\?list=[a-z0-9]+)?|videos\\d+|(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged)|video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+(\\&hash=[a-z0-9]+)?|video\\?gid=\\d+|public\\d+\\?z=video(\\-)?\\d+_\\d+((%2F|/)[a-z0-9]+)?|search\\?(c\\[q\\]|c%5Bq%5D)=[^<>\"/]*?\\&c(\\[section\\]|%5Bsection%5D)=video(\\&c(\\[sort\\]|%5Bsort%5D)=\\d+)?\\&z=video(\\-)?\\d+_\\d+)|(photos|tag)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album(\\-)?\\d+_\\d+|photo(\\-)?\\d+_\\d+|([A-Za-z0-9\\-_\\.]+\\?z=photo(\\-)?\\d+_\\d+%2Fwall\\-\\d+_\\d+|wall(\\-)?\\d+_\\d+|wall\\-\\d+\\-maxoffset=\\d+\\-currentoffset=\\d+|wall\\-\\d+)|[A-Za-z0-9\\-_\\.]+)|https?://(www\\.)?vk\\.cc/[A-Za-z0-9]+" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt {
 
     /** TODO: Note: PATTERN_VIDEO_SINGLE links should all be decryptable without account but this is not implemented (yet) */
@@ -113,7 +113,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_PHOTO_ALBUMS                 = "https?://(www\\.)?vk\\.com/(albums(\\-)?\\d+|id\\d+\\?z=albums\\d+)";
     private static final String     PATTERN_GENERAL_WALL_LINK            = "https?://(www\\.)?vk\\.com/wall(\\-)?\\d+(\\-maxoffset=\\d+\\-currentoffset=\\d+)?";
     private static final String     PATTERN_WALL_LOOPBACK_LINK           = "https?://(www\\.)?vk\\.com/wall\\-\\d+\\-maxoffset=\\d+\\-currentoffset=\\d+";
-    private static final String     PATTERN_WALL_POST_LINK               = "https?://(www\\.)?vk\\.com/wall\\-\\d+_\\d+";
+    private static final String     PATTERN_WALL_POST_LINK               = "https?://(www\\.)?vk\\.com/wall(\\-)?\\d+_\\d+";
     private static final String     PATTERN_PUBLIC_LINK                  = "https?://(www\\.)?vk\\.com/public\\d+";
     private static final String     PATTERN_CLUB_LINK                    = "https?://(www\\.)?vk\\.com/club\\d+";
     private static final String     PATTERN_EVENT_LINK                   = "https?://(www\\.)?vk\\.com/event\\d+";
@@ -1267,8 +1267,8 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /** Using API */
     private void decryptWallPost() throws Exception {
-        final String postID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/wall(\\-\\d+_\\d+)").getMatch(0);
-        final String wallID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/(wall\\-\\d+)_\\d+").getMatch(0);
+        final String postID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/wall((\\-)?\\d+_\\d+)").getMatch(0);
+        final String wallID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/(wall(\\-)?\\d+)_\\d+").getMatch(0);
 
         getPage(br, "https://api.vk.com/method/wall.getById?&posts=" + postID + "&extended=0");
         Map<String, Object> map = (Map<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());

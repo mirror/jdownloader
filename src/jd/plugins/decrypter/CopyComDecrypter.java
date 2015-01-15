@@ -180,15 +180,17 @@ public class CopyComDecrypter extends PluginForDecrypt {
                     return null;
                 }
                 final String contenturl = root_url + path;
+                final String linkdupeid = "copycom" + additionalPath + "_" + name;
                 try {
                     dl.setContentUrl(contenturl);
+                    dl.setLinkID(linkdupeid);
                 } catch (Throwable e) {
                     /* Not available in old 0.9.581 Stable */
                     dl.setBrowserUrl(contenturl);
+                    dl.setProperty("LINKDUPEID", linkdupeid);
                 }
                 dl.setFinalFileName(name);
                 dl.setProperty("plain_name", name);
-                dl.setProperty("LINKDUPEID", "copycom" + additionalPath + "_" + name);
                 dl.setProperty("mainlink", parameter);
                 dl.setProperty("specified_link", url);
                 dl.setProperty("plain_path", path);
