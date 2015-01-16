@@ -48,8 +48,8 @@ public class FoxLeechCom extends PluginForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            NOCHUNKS           = "NOCHUNKS";
     private static final String                            MAINPAGE           = "http://foxleech.com";
-    private static final String                            NICE_HOST          = MAINPAGE.replaceAll("(https://|http://)", "");
-    private static final String                            NICE_HOSTproperty  = MAINPAGE.replaceAll("(https://|http://|\\.|\\-)", "");
+    private static final String                            NICE_HOST          = MAINPAGE.replaceAll("https?://", "");
+    private static final String                            NICE_HOSTproperty  = MAINPAGE.replaceAll("https?://|\\.|\\-", "");
     private static final String                            USE_API            = "USE_API";
 
     public FoxLeechCom(PluginWrapper wrapper) {
@@ -135,7 +135,7 @@ public class FoxLeechCom extends PluginForHost {
     }
 
     /**
-     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
+     * Is intended to handle out of date errors which might occur seldom by retry a couple of times before we temporarily remove the host
      * from the host list.
      *
      * @param dl
@@ -186,7 +186,7 @@ public class FoxLeechCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        final String[] hosts = br.getRegex("title=\"([^<>\"]*?)\" data\\-placement=\"bottom\"><img class=\"host\\-cool\"").getColumn(0);
+        final String[] hosts = br.getRegex("title=\"([^<>\"]*?)\" data-placement=\"bottom\"\\s*><img class=\"host-cool\"").getColumn(0);
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         for (final String host : hosts) {
             supportedHosts.add(host);
