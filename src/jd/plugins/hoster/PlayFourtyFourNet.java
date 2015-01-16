@@ -60,12 +60,52 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
         // Offline links should also have nice filenames
         downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "play44\\.net/embed\\.php\\?(.+)").getMatch(0));
         this.setBrowserExclusive();
-        getPage(downloadLink.getDownloadURL());
-        {
-            final int rc = (br.getHttpConnection() != null ? br.getHttpConnection().getResponseCode() : -1);
-            if (rc == 403 || rc == 404 || rc == -1) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String link = downloadLink.getDownloadURL();
+        URLConnectionAdapter con = null;
+        if (link.matches(".+://gateway\\d*\\.play44\\.net/.+")) {
+            prepBrowser(br);
+            // In case the link are directlinks! current cloudflare implementation will actually open them!
+            br.setFollowRedirects(true);
+            try {
+                if (isNewJD()) {
+                    con = br.openHeadConnection(link);
+                    if (!con.getContentType().contains("html")) {
+                        // is file
+                        downloadLink.setFinalFileName(getFileNameFromHeader(con));
+                        downloadLink.setDownloadSize(con.getLongContentLength());
+                        return AvailableStatus.TRUE;
+                    } else {
+                        // is html
+                        con = br.openGetConnection(link);
+                        br.followConnection();
+                    }
+                } else {
+                    con = br.openGetConnection(link);
+                    if (!con.getContentType().contains("html")) {
+                        // is file
+                        downloadLink.setFinalFileName(getFileNameFromHeader(con));
+                        downloadLink.setDownloadSize(con.getLongContentLength());
+                        return AvailableStatus.TRUE;
+                    } else {
+                        // is html
+                        br.followConnection();
+                    }
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
+        } else {
+            // standard links which are like gogoanime type of embed links. though these seem to always return gateway.play44.net so safe to
+            // keep here.
+            getPage(link);
+        }
+        // only way to check for made up links... or offline is here
+        final int rc = (br.getHttpConnection() != null ? br.getHttpConnection().getResponseCode() : -1);
+        if (rc == 403 || rc == 404 || rc == -1) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dllink = br.getRedirectLocation();
         if (dllink == null) {
@@ -78,17 +118,31 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
+        con = null;
         try {
-            con = br2.openGetConnection(dllink);
+            if (isNewJD()) {
+                con = br.openHeadConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    // is file
+                    downloadLink.setFinalFileName(getFileNameFromHeader(con));
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                    return AvailableStatus.TRUE;
+                } else {
+                    // is html
+                }
+            } else {
+                con = br.openGetConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    // is file
+                    downloadLink.setFinalFileName(getFileNameFromHeader(con));
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                    return AvailableStatus.TRUE;
+                } else {
+                    // is html
+                }
+            }
             // only way to check for made up links... or offline is here
             if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setFinalFileName(getFileNameFromHeader(con));
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             return AvailableStatus.TRUE;
