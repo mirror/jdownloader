@@ -178,7 +178,7 @@ public class FoxLeechCom extends PluginForHost {
         }
         br.getPage("http://www.foxleech.com/account");
         /* No downloads possible throuh free accounts --> Supporting them makes no sense! */
-        if (br.containsHTML("<li>Account : <b>Free</b></li>")) {
+        if (br.containsHTML(">Free Member <span>")) {
             logger.info("Free accounts are not supported!");
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);

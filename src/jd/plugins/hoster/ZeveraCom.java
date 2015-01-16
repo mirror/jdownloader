@@ -202,7 +202,6 @@ public class ZeveraCom extends PluginForHost {
     }
 
     private void handleDL(final DownloadLink link, String dllink) throws Exception {
-
         // Zevera uses this redirect logic to wait for the actual file in the backend. This means: follow the redirects until we get Data!
         // After 10 redirects Zevera shows an error. We do not allow more than 10 redirects - so we probably never see this error page
         //
@@ -318,6 +317,7 @@ public class ZeveraCom extends PluginForHost {
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
         prepBrowser();
         login(acc, false);
+        setConstants(acc, link);
         showMessage(link, "Task 1: Generating Link");
         /* request Download */
         if (link.getStringProperty("pass", null) != null) {

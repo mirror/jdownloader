@@ -41,7 +41,13 @@ public class ShorteSt extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         String redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"\\d+\\;url=(.*?)\" \\/>").getMatch(0);
-        if (redirect != null) {
+        if (redirect != null && redirect.contains("sh.st/login")) {
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
+        } else if (redirect != null) {
             parameter = redirect;
             br.getPage(parameter);
         }

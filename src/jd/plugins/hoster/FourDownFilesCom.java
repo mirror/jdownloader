@@ -109,6 +109,16 @@ public class FourDownFilesCom extends PluginForHost {
     }
 
     @Override
+    public String rewriteHost(String host) {
+        if ("4downfiles.com".equals(getHost())) {
+            if (host == null || "4downfiles.com".equals(host)) {
+                return "4downfiles.net";
+            }
+        }
+        return super.rewriteHost(host);
+    }
+
+    @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
     }

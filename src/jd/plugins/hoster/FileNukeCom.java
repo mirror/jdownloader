@@ -126,13 +126,14 @@ public class FileNukeCom extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         prepBrowser();
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) {
+        if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches() || br.getURL().equals(COOKIE_HOST + "/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (correctedBR.contains(MAINTENANCE)) {
@@ -164,22 +165,28 @@ public class FileNukeCom extends PluginForHost {
                 filesize = new Regex(correctedBR, "(?i)([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
             }
         }
-        if (filename == null || filename.equals("")) {
-            if (correctedBR.contains("You have reached the download\\-limit")) {
-                logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
-                return AvailableStatus.UNCHECKABLE;
+        /* Workaround for the stupid cloudflare e-mail protection which also kicks in if there is an @ inside the filename... */
+        if (filename == null && correctedBR.contains("=\"file_name\"") && correctedBR.contains("class=\"__cf_email__\"")) {
+            filename = this.fuid;
+            link.setName(filename);
+        } else {
+            if (filename == null || filename.equals("")) {
+                if (correctedBR.contains("You have reached the download\\-limit")) {
+                    logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
+                    return AvailableStatus.UNCHECKABLE;
+                }
+                logger.warning("The filename equals null, throwing \"plugin defect\" now...");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            logger.warning("The filename equals null, throwing \"plugin defect\" now...");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
+            /* Such links can never be downloaded - others might at least return a final downloadlink although they will often time out */
+            if (filename.equals("file.mp4")) {
+                logger.info("Seems like this link is offline (workaround-offline-detection)");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            link.setProperty("plainfilename", filename);
+            link.setFinalFileName(filename.trim());
         }
-        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
-        /* Such links can never be downloaded - others might at least return a final downloadlink although they will often time out */
-        if (filename.equals("file.mp4")) {
-            logger.info("Seems like this link is offline (workaround-offline-detection)");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        link.setProperty("plainfilename", filename);
-        link.setFinalFileName(filename.trim());
         if (filesize != null && !filesize.equals("")) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -194,6 +201,7 @@ public class FileNukeCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        final String plainname = downloadLink.getStringProperty("plainfilename", null);
         String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         if (md5hash != null) {
             md5hash = md5hash.trim();
@@ -230,7 +238,19 @@ public class FileNukeCom extends PluginForHost {
         if (dllink == null) {
             checkErrors(downloadLink, false);
             if (correctedBR.contains("\"download1\"")) {
-                postPage(br.getURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), "/([A-Za-z0-9]{12})$").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getStringProperty("plainfilename")) + "&referer=&method_free=Free+Download");
+                /* Workaround for cloudflare email protection issue. */
+                if (plainname == null) {
+                    logger.info("Only downloadable via premium");
+                    try {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                    } catch (final Throwable e) {
+                        if (e instanceof PluginException) {
+                            throw (PluginException) e;
+                        }
+                    }
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium or registered");
+                }
+                postPage(br.getURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), "/([A-Za-z0-9]{12})$").getMatch(0) + "&fname=" + plainname + "&referer=&method_free=Free+Download");
                 checkErrors(downloadLink, false);
             }
             dllink = getDllink();
@@ -698,6 +718,7 @@ public class FileNukeCom extends PluginForHost {
             expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
         }
         if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
+            ai.setProperty("free", true);
             maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
             try {
                 account.setType(AccountType.FREE);
@@ -708,6 +729,7 @@ public class FileNukeCom extends PluginForHost {
             }
             ai.setStatus("Registered (free) account");
         } else {
+            ai.setProperty("free", false);
             ai.setValidUntil(expire_milliseconds);
             maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             try {
@@ -746,7 +768,7 @@ public class FileNukeCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage("http://filenuke.com/auth/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.postPage(COOKIE_HOST + "/auth/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(COOKIE_HOST, "scheck") == null || br.getCookie(COOKIE_HOST, "sess") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -758,9 +780,9 @@ public class FileNukeCom extends PluginForHost {
                     getPage("/myaccount");
                 }
                 if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<|>Premium account expire)").matches()) {
-                    account.setProperty("nopremium", true);
+                    account.setProperty("free", true);
                 } else {
-                    account.setProperty("nopremium", false);
+                    account.setProperty("free", false);
                 }
                 /* Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -785,7 +807,7 @@ public class FileNukeCom extends PluginForHost {
         login(account, false);
         String dllink = null;
         String directlinkproperty = null;
-        if (account.getBooleanProperty("nopremium")) {
+        if (account.getBooleanProperty("free", false)) {
             directlinkproperty = "freelink2";
             dllink = checkDirectLink(downloadLink, directlinkproperty);
             if (dllink == null) {
@@ -796,7 +818,7 @@ public class FileNukeCom extends PluginForHost {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                dllink = "http://filenuke.com" + dllink;
+                dllink = COOKIE_HOST + dllink;
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
@@ -876,6 +898,7 @@ public class FileNukeCom extends PluginForHost {
      *
      * @version 0.2
      * @author raztoki
+     * @author psp
      * */
     private void fixFilename(final DownloadLink downloadLink) {
         String orgName = null;
@@ -903,7 +926,10 @@ public class FileNukeCom extends PluginForHost {
             servName = servNameExt;
         }
         String FFN = null;
-        if (orgName.equalsIgnoreCase(fuid.toLowerCase())) {
+        /* Special case - workaround for cloudflare email protection filename issue */
+        if (orgName.equalsIgnoreCase(fuid.toLowerCase()) && servName.equals("v")) {
+            FFN = orgName + servExt;
+        } else if (orgName.equalsIgnoreCase(fuid.toLowerCase())) {
             FFN = servNameExt;
         } else if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName))) {
             /* when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster */

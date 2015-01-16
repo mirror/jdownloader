@@ -411,9 +411,10 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             lint = languageVersion;
         } else if (versionCode.equals("VA") || versionCode.equals("VA-STA") || versionCode.equals("VO")) {
             lint = 1;
-        } else if (versionCode.startsWith("VF") || versionCode.equals("VOF")) {
+        } else if (versionCode.startsWith("VF") || versionCode.equals("VOF") || versionCode.equals("VOF-STF")) {
+            /* Special case: http://www.arte.tv/guide/fr/049810-000/frere-et-soeur */
             lint = 2;
-        } else if ("VOF-STF".equals(versionCode) || "VOF-STMF".equals(versionCode) || "VA-STMA".equals(versionCode)) {
+        } else if ("VOF-STMF".equals(versionCode) || "VA-STMA".equals(versionCode)) {
             lint = 3;
         } else if (versionCode.equals("VOA-STMA")) {
             lint = 4;

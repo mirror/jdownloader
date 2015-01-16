@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -198,7 +199,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 this.finalUrl = link.getStringProperty("picturedirectlink", null);
                 if (this.finalUrl == null) {
                     final String wall_list_id = link.getStringProperty("wall_list_id", null);
-                    final String photoID = new Regex(link.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?[\\d\\-]+_[\\d\\-]+)").getMatch(0);
+                    final String photoID = getPhotoID(link);
                     if (wall_list_id != null) {
                         /* Access photo inside wall-post */
                         this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -217,6 +218,7 @@ public class VKontakteRuHoster extends PluginForHost {
                                 this.logger.info("vk.com: albumID is null");
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
+                            link.setProperty("albumid", albumID);
                         }
                         this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                         this.br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
@@ -225,21 +227,7 @@ public class VKontakteRuHoster extends PluginForHost {
                     if (this.br.containsHTML(">Unfortunately, this photo has been deleted") || this.br.containsHTML(">Access denied<")) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    final String correctedBR = this.br.toString().replace("\\", "");
-                    final String id_source = new Regex(correctedBR, "\\{(\"id\":\"" + photoID + ".*?)(\"id\"|\\}\\}|\\]\\},\\{|\\]\\}\\]<)").getMatch(0);
-                    getHighestQualityPic(link, id_source);
-                    /* Handle special case here, avoid plugin defect messages. */
-                    if (photolinkHasServerIssues(link)) {
-                        link.getLinkStatus().setStatusText("Photo is temporarily unavailable (server issues)");
-                        return AvailableStatus.TRUE;
-                    }
                 }
-                if (this.finalUrl == null) {
-                    this.logger.warning("vk.com: Finallink is null!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                photo_correctLink();
-                link.setProperty("picturedirectlink", this.finalUrl);
             }
         }
         return AvailableStatus.TRUE;
@@ -250,8 +238,22 @@ public class VKontakteRuHoster extends PluginForHost {
             if (this.br.containsHTML("This document is available only to its owner\\.")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This document is available only to its owner");
             }
-        } else if (this.finalUrl == null && photolinkHasServerIssues(downloadLink)) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Photo is temporarily unavailable (server issues)", 30 * 60 * 1000l);
+        } else if (downloadLink.getDownloadURL().matches(PICTURELINK)) {
+            if (this.finalUrl == null) {
+                /*
+                 * Because of the availableCheck, we already know that the picture is online but we can't be sure that it really is
+                 * downloadable!
+                 */
+                final String correctedBR = this.br.toString().replace("\\", "");
+                final String id_source = new Regex(correctedBR, "\\{(\"id\":\"" + getPhotoID(downloadLink) + ".*?)(\"id\"|\\}\\}|\\]\\},\\{|\\]\\}\\]<)").getMatch(0);
+                if (id_source == null) {
+                    logger.warning("Failed to find source json of picturelink");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                getHighestQualityPic(downloadLink, id_source);
+                downloadLink.setProperty("picturedirectlink", this.finalUrl);
+            }
+            photo_correctLink();
         }
         br.getHeaders().put("Accept-Encoding", "identity");
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, this.finalUrl, true, this.MAXCHUNKS);
@@ -275,8 +277,8 @@ public class VKontakteRuHoster extends PluginForHost {
         }
     }
 
-    private boolean photolinkHasServerIssues(final DownloadLink dl) {
-        return dl.getBooleanProperty("photo_server_error", false);
+    private String getPhotoID(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?[\\d\\-]+_[\\d\\-]+)").getMatch(0);
     }
 
     @Override
@@ -469,17 +471,18 @@ public class VKontakteRuHoster extends PluginForHost {
             try {
                 con = br2.openGetConnection(this.finalUrl);
             } catch (final BrowserException ebr) {
-                /* This happens e.g. for temporarily unavailable videos. */
-                throw ebr;
+                logger.info("BrowserException on directlink: " + this.finalUrl);
+                return false;
+            } catch (final ConnectException ec) {
+                logger.info("Directlink timed out: " + this.finalUrl);
+                return false;
             } catch (final Throwable e) {
                 return false;
             }
             if (con.getLongContentLength() <= 100 || con.getResponseCode() == 404 || con.getResponseCode() == 502) {
                 /* Photo is supposed to be online but it's not downloadable */
-                downloadLink.setProperty("photo_server_error", true);
                 return false;
             }
-            downloadLink.setProperty("photo_server_error", false);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
                 if (finalfilename == null) {
@@ -599,12 +602,13 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     /**
-     * Try to get best quality and test links till a working link is found as it can happen that the found link is offline but others are
-     * online
+     * Try to get best quality and test links until a working link is found. will also handle errors in case
      *
      * @throws IOException
      */
     private void getHighestQualityPic(final DownloadLink dl, String source) throws Exception {
+        /* Count how many possible downloadlinks we have */
+        int links_count = 0;
         if (source == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -622,30 +626,39 @@ public class VKontakteRuHoster extends PluginForHost {
             final String[] qs = { "w_", "z_", "y_", "x_", "m_" };
             final String base = new Regex(source, "base(?:\\'|\")?:(?:\"|\\')(http://[^<>\"]*?)(\"|\\')").getMatch(0);
             for (final String q : qs) {
-                /* large image */
-                if (this.finalUrl == null || this.finalUrl != null && !this.photolinkOk(dl, null)) {
-                    this.finalUrl = new Regex(source, q + "src\":\"(http[^<>\"]+)\"").getMatch(0);
-                    if (this.finalUrl == null) {
-                        this.finalUrl = new Regex(source, q + "(\\'|\")?:\\[(\"|\\')([^<>\"]*?)(\"|\\')").getMatch(2);
+                this.finalUrl = new Regex(source, q + "src\":\"(http[^<>\"]+)\"").getMatch(0);
+                if (this.finalUrl == null) {
+                    this.finalUrl = new Regex(source, q + "(\\'|\")?:\\[(\"|\\')([^<>\"]*?)(\"|\\')").getMatch(2);
+                }
+                if (this.finalUrl != null) {
+                    if (!this.finalUrl.startsWith("http") && base == null) {
+                        this.finalUrl = null;
+                        continue;
+                    } else if (!this.finalUrl.startsWith("http")) {
+                        this.finalUrl = base + this.finalUrl;
                     }
-                    if (this.finalUrl != null) {
-                        if (!this.finalUrl.startsWith("http") && base == null) {
-                            this.finalUrl = null;
-                            continue;
-                        } else if (!this.finalUrl.startsWith("http")) {
-                            this.finalUrl = base + this.finalUrl;
-                        }
-                        if (!this.finalUrl.endsWith(".jpg")) {
-                            this.finalUrl += ".jpg";
-                        }
-                    } else {
-                        /* Other source has complete links */
-                        this.finalUrl = new Regex(source, "\"" + q + "src\":\"(http[^<>\"]*?)\"").getMatch(0);
+                    if (!this.finalUrl.endsWith(".jpg")) {
+                        this.finalUrl += ".jpg";
                     }
                 } else {
-                    break;
+                    /* Other source has complete links */
+                    this.finalUrl = new Regex(source, "\"" + q + "src\":\"(http[^<>\"]*?)\"").getMatch(0);
                 }
+                /* Check if the link we eventually found is downloadable. */
+                if (this.finalUrl != null) {
+                    links_count++;
+                    if (this.photolinkOk(dl, null)) {
+                        break;
+                    }
+                }
+                this.finalUrl = null;
             }
+        }
+        if (links_count == 0) {
+            logger.warning("Found no possible downloadlink for current picturelink --> Plugin broken");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (links_count > 0 && this.finalUrl == null) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Photo is temporarily unavailable or offline (server issues)", 30 * 60 * 1000l);
         }
     }
 
