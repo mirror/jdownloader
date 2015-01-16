@@ -61,6 +61,12 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
         downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "play44\\.net/embed\\.php\\?(.+)").getMatch(0));
         this.setBrowserExclusive();
         getPage(downloadLink.getDownloadURL());
+        {
+            final int rc = (br.getHttpConnection() != null ? br.getHttpConnection().getResponseCode() : -1);
+            if (rc == 403 || rc == 404 || rc == -1) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        }
         dllink = br.getRedirectLocation();
         if (dllink == null) {
             dllink = br.getRegex("playlist:.*?url: \\'(http[^']+play44\\.net[^']+)\\'").getMatch(0);
