@@ -66,8 +66,11 @@ public class AkatsukiSubsNet extends PluginForDecrypt {
             }
             fpName = Encoding.htmlDecode(fpName.trim());
             // Get all tables
-            final String[] tables = br.getRegex("<table (class|id)=\"dl\"(.*?)</table>").getColumn(1);
+            String[] tables = br.getRegex("<table(.*?)</table>").getColumn(0);
             for (final String table : tables) {
+                if (!table.contains("downloads.akatsuki")) {
+                    continue;
+                }
                 // Get entries of each table
                 final String[] tableEntries = new Regex(table, "<tr(.*?)</tr>").getColumn(0);
                 for (final String tableEntry : tableEntries) {
