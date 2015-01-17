@@ -106,6 +106,13 @@ public class DropboxCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
+        if (!account.getUser().matches(".+@.+\\..+")) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
         br.setDebug(true);
         try {
             login(account, true);
@@ -246,7 +253,7 @@ public class DropboxCom extends PluginForHost {
                 }
             }
             try {
-                br.getPage("https://www.dropbox.com");
+                br.getPage("https://www.dropbox.com/login");
                 final String lang = System.getProperty("user.language");
                 final String t = br.getRegex("type=\"hidden\" name=\"t\" value=\"([^<>\"]*?)\"").getMatch(0);
                 if (t == null) {
@@ -256,8 +263,10 @@ public class DropboxCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                br.postPage("https://www.dropbox.com/login", "login_submit=1&remember_me=on&login_submit_dummy=Sign+in&t=" + t + "&display=desktop&login_email=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie("https://www.dropbox.com", "puc") == null) {
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.postPage("/sso_state", "is_xhr=true&t=" + t + "&email=" + Encoding.urlEncode(account.getUser()));
+                br.postPage("/ajax_login", "recaptcha_response_field=&recaptcha_public_key=6LeAbPQSAAAAAB_-BzhpAZbgz51jHD2pGIKsM6L0&remember_me=True&is_xhr=true&t=" + t + "&cont=%2F&require_role=&signup_data=&signup_tag=&login_email=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()));
+                if (br.getCookie("https://www.dropbox.com", "forumlid") == null) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {

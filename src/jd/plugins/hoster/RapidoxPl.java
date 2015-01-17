@@ -16,11 +16,11 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -39,6 +39,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidox.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class RapidoxPl extends PluginForHost {
@@ -275,32 +278,32 @@ public class RapidoxPl extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         br.getPage("/panel/twoje-informacje");
-        /* TODO: Find information about account type, remaining traffic and so on... */
-        // String userpackage = null;
-        // final String packagetype = getJson(userpackage, "type");
-        // if ((userpackage == null && br.containsHTML("-increase")) || userpackage.equals("") ||
-        // packagetype.equals("premium-link-increase")) {
-        // account.setType(AccountType.FREE);
-        // ai.setStatus("Registered (free) account");
-        // /* Important: If we found our package, get the remaining links count from there as the other one might be wrong! */
-        // if ("premium-link-increase".equals(packagetype)) {
-        // remaininglinksnum = getJson(userpackage, "remainingLinksCount");
-        // }
-        // account.setProperty("accinfo_linksleft", remaininglinksnum);
-        // if (remaininglinksnum.equals("0")) {
-        // /* No links downloadable anymore --> No traffic left --> Free account limit reached */
-        // ai.setTrafficLeft(0);
-        // }
-        // } else {
-        account.setType(AccountType.PREMIUM);
-        account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-        ai.setStatus("Premium account");
-        ai.setUnlimitedTraffic();
-        // String expiredate = getJson(userpackage, "activeTill");
-        // expiredate = expiredate.replaceAll("Z$", "+0000");
-        // ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate, "yyyy-MM-dd'T'HH:mm:ss.S", Locale.ENGLISH));
-        // account.setProperty("accinfo_linksleft", remaininglinksnum);
-        // }
+        String traffic_max = br.getRegex("Dopuszczalny transfer:</b>[\t\n\r ]+([0-9 ]+ MB)").getMatch(0);
+        String traffic_available = br.getRegex("Do wykorzystania:[\t\n\r ]+([0-9 ]+ MB)").getMatch(0);
+        if (traffic_max == null || traffic_available == null) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
+        /* Fix e.g. 500 000 MB (500 GB) --> 500000MB */
+        traffic_max = traffic_max.replace(" ", "");
+        traffic_available = traffic_available.replace(" ", "");
+        /* Free users = They have no package --> Accept them but set zero traffic left */
+        if (traffic_max.equals("0MB")) {
+            account.setType(AccountType.FREE);
+            ai.setStatus("Registered (free) account");
+            /* Free accounts have no traffic - set this so they will not be used (accidently) but still accept them. */
+            ai.setTrafficLeft(0);
+        } else {
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            ai.setStatus("Premium account");
+            ai.setUnlimitedTraffic();
+            ai.setTrafficLeft(SizeFormatter.getSize(traffic_available));
+            ai.setTrafficMax(SizeFormatter.getSize(traffic_max));
+        }
         account.setValid(true);
         /* Only add hosts which are listed as 'on' (working) */
         this.getAPISafe("http://rapidox.pl/panel/status_hostingow");
@@ -313,7 +316,7 @@ public class RapidoxPl extends PluginForHost {
             final String status = new Regex(domaininfo, "<td>(on|off)").getMatch(0);
             if (crippledhost == null || status == null) {
                 continue;
-            } else if (status.equals("off")) {
+            } else if (status.equals("off") || !status.equals("on")) {
                 logger.info("This host is currently not active, NOT adding it to the supported host array: " + crippledhost);
                 continue;
             }
@@ -364,21 +367,46 @@ public class RapidoxPl extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                postAPISafe("http://rapidox.pl/panel/login", "x=" + new Random().nextInt(100) + "&y=" + new Random().nextInt(100) + "&login83=" + Encoding.urlEncode(currAcc.getUser()) + "&password83=" + Encoding.urlEncode(currAcc.getPass()));
+                String postData = "login83=" + Encoding.urlEncode(currAcc.getUser()) + "&password83=" + Encoding.urlEncode(currAcc.getPass());
+                this.getAPISafe("http://rapidox.pl/zaloguj_sie");
+
+                /*
+                 * TODO: Check if login with captcha works and prevent captchas from appearing when auto account refresh is done! Maybe add
+                 * a method to try to prevent login captcha as they identify the user who made a lot of login attempts only via User-Agent,
+                 * not via IP.
+                 */
+                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                    /* Handle stupid login captcha */
+                    final String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
+                    if (rcID == null) {
+                        logger.warning("Expected login captcha is not there!");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    rc.setId(rcID);
+                    rc.load();
+                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "rapidox.pl", DOMAIN, true);
+                    final String c = getCaptchaCode("recaptcha", cf, dummyLink);
+                    postData += "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&redirect=";
+                }
+
+                this.postAPISafe("/panel/login", postData);
                 if (br.containsHTML(">Wystąpił błąd\\! Nieprawidłowy login lub hasło\\.")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                br.getPage("/panel/index");
+                this.getAPISafe("/panel/index");
                 /* Double check */
                 if (!br.containsHTML(">Wyloguj się<")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 /* Save cookies */
@@ -431,6 +459,9 @@ public class RapidoxPl extends PluginForHost {
      * with the API errors.
      */
     private void updatestatuscode() {
+        if (br.containsHTML("Wybierz linki z innego hostingu\\.")) {
+            statuscode = 1;
+        }
         statuscode = 0;
     }
 
@@ -440,6 +471,11 @@ public class RapidoxPl extends PluginForHost {
             switch (statuscode) {
             case 0:
                 /* Everything ok */
+                break;
+            case 1:
+                /* Host currently not supported --> deactivate it for some hours. */
+                statusMessage = "Host is currently not supported";
+                tempUnavailableHoster(3 * 60 * 60 * 1000l);
                 break;
             default:
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
