@@ -79,16 +79,17 @@ public class SpaceForFilesCom extends PluginForHost {
     private final boolean                  ENABLE_RANDOM_UA             = true;
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     // Connection stuff
-    private final boolean                  FREE_RESUME                  = false;
-    private final int                      FREE_MAXCHUNKS               = 1;
+    private static final boolean           FREE_RESUME                  = false;
+    private static final int               FREE_MAXCHUNKS               = 1;
+    private static final int               FREE_MAXDOWNLOADS            = 20;
     private final boolean                  ACCOUNT_FREE_RESUME          = false;
-    private final int                      ACCOUNT_FREE_MAXCHUNKS       = 1;
-    private final int                      ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private final boolean                  ACCOUNT_PREMIUM_RESUME       = true;
-    private final int                      ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
-    private final int                      ACCOUNT_PREMIUM_MAXDOWNLOADS = 10;
+    private static final int               ACCOUNT_FREE_MAXCHUNKS       = 1;
+    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
+    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 10;
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     // don't touch the following!
     private static AtomicInteger           maxFree                      = new AtomicInteger(1);
     private static AtomicInteger           maxPrem                      = new AtomicInteger(1);
@@ -133,6 +134,7 @@ public class SpaceForFilesCom extends PluginForHost {
     public SpaceForFilesCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.setStartIntervall(2 * 1000l);
     }
 
     // do not add @Override here to keep 0.* compatibility
