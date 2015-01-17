@@ -661,7 +661,7 @@ public class SaveTv extends PluginForHost {
                     }
                 }
                 if (br.containsHTML("\"NOK\",\"unknown error\"")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler - finaler Downloadlink wurde nicht zurückgegeben: '\"NOK\",\"unknown error\"'", 30 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler - finaler Downloadlink wurde nicht zurückgegeben: '\"NOK\",\"unknown error\"'", 15 * 60 * 1000l);
                 }
             }
             dllink = br.getRegex("(\\'|\")(http://[^<>\"\\']+/\\?m=dl)(\\'|\")").getMatch(1);

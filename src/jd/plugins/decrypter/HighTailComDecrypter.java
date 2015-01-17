@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hightail.com" }, urls = { "http(s)?://(www\\.)?yousendit\\.com/download/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hightail.com" }, urls = { "http(s)?://(www\\.)?(yousendit|hightail)\\.com/download/[A-Za-z0-9]+" }, flags = { 0 })
 public class HighTailComDecrypter extends PluginForDecrypt {
 
     public HighTailComDecrypter(PluginWrapper wrapper) {
@@ -65,7 +65,7 @@ public class HighTailComDecrypter extends PluginForDecrypt {
             }
         } else {
             // Single link
-            final DownloadLink dl = createDownloadlink(parameter.replace("yousendit.com/", "yousenditdecrypted.com/"));
+            final DownloadLink dl = createDownloadlink(parameter.replaceAll("(yousendit|hightail)\\.com/", "yousenditdecrypted.com/"));
             dl.setProperty("mainlink", parameter);
             if (br.containsHTML("Download link is invalid|Download link is invalid|>Access has expired<|class=\"fileIcons disabledFile\"")) {
                 dl.setProperty("offline", true);

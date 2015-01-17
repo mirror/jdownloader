@@ -39,7 +39,7 @@ public class YouSendItCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://yousendit.com/aboutus/legal/terms-of-service";
+        return "https://www.hightail.com/aboutus/legal/terms-of-service";
     }
 
     public void correctDownloadLink(DownloadLink link) {
@@ -52,13 +52,27 @@ public class YouSendItCom extends PluginForHost {
     }
 
     @Override
+    public String rewriteHost(String host) {
+        if ("yousendit.com".equals(getHost())) {
+            if (host == null || "yousendit.com".equals(host)) {
+                return "hightail.com";
+            }
+        }
+        return super.rewriteHost(host);
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (link.getBooleanProperty("offline", false)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         br.setFollowRedirects(true);
         br.getPage(link.getStringProperty("mainlink", null));
         // File offline
-        if (br.containsHTML("Download link is invalid|>Access has expired<|class=\"fileIcons disabledFile\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Download link is invalid|>Access has expired<|class=\"fileIcons disabledFile\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (link.getStringProperty("fileurl", null) != null) {
             link.setFinalFileName(link.getStringProperty("directname", null));
             link.setDownloadSize(SizeFormatter.getSize(link.getStringProperty("directsize", null)));
@@ -74,7 +88,9 @@ public class YouSendItCom extends PluginForHost {
                 logger.info("hightail.com: Continuing...");
             }
             link.setFinalFileName(filename.trim());
-            if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+            if (filesize != null) {
+                link.setDownloadSize(SizeFormatter.getSize(filesize));
+            }
         }
         return AvailableStatus.TRUE;
     }
@@ -91,8 +107,12 @@ public class YouSendItCom extends PluginForHost {
                 if (DLLINK == null) {
                     DLLINK = br.getRegex("\"(e\\?phi_action=app/directDownload[^<>\"]*?)\"").getMatch(0);
                 }
-                if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                if (!DLLINK.contains("hightail.com")) DLLINK = "https://www.hightail.com/" + DLLINK;
+                if (DLLINK == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (!DLLINK.contains("hightail.com")) {
+                    DLLINK = "https://www.hightail.com/" + DLLINK;
+                }
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);

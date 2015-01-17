@@ -57,9 +57,13 @@ public class ShutterStockCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.getPage(link.getDownloadURL().replace("/pic-", "/language.en/pic-"));
-        if (br.containsHTML("<div class=\"photo\\-error\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<div class=\"photo\\-error\">")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("\"title\":\"\\\\\"([^<>\"]*?)\\\\\"\"").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()) + ".jpg");
         return AvailableStatus.TRUE;
     }
@@ -70,8 +74,12 @@ public class ShutterStockCom extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         String dllink = br.getRegex("class=\"thumb_image\"  src=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://image\\.shutterstock\\.com/display_pic_with_logo/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://image\\.shutterstock\\.com/display_pic_with_logo/[^<>\"]*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -86,10 +94,11 @@ public class ShutterStockCom extends PluginForHost {
         final String newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
         if (newExtension != null && !downloadLink.getName().endsWith(newExtension)) {
             final String oldExtension = downloadLink.getName().substring(downloadLink.getName().lastIndexOf("."));
-            if (oldExtension != null)
+            if (oldExtension != null) {
                 downloadLink.setFinalFileName(downloadLink.getName().replace(oldExtension, newExtension));
-            else
+            } else {
                 downloadLink.setFinalFileName(downloadLink.getName() + newExtension);
+            }
         }
     }
 
@@ -104,7 +113,9 @@ public class ShutterStockCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -124,7 +135,11 @@ public class ShutterStockCom extends PluginForHost {
                     final String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
                     if (rcID == null) {
                         logger.warning("Expected login captcha is not there!");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
                     final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                     final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
@@ -234,7 +249,9 @@ public class ShutterStockCom extends PluginForHost {
                     }
                 }
             }
-            if (dLink == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Link might not be downloadable!");
+            if (dLink == null) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Link might not be downloadable!");
+            }
             // Captcha cannot be skipped without anti captcha method!
             for (int i = 0; i <= 3; i++) {
                 final String captchaLink = br.getRegex("\"(show_verify_image_lim\\-\\d+\\.jpg\\?x=\\d+)\"").getMatch(0);
@@ -254,10 +271,14 @@ public class ShutterStockCom extends PluginForHost {
                 }
                 final String code = getCaptchaCode("http://www.shutterstock.com/" + captchaLink, link);
                 br.getPage(dLink + "&chosen_subscription=redownload_standard&code=" + code + "&method=download");
-                if (br.containsHTML(">Please re-enter the security code<")) continue;
+                if (br.containsHTML(">Please re-enter the security code<")) {
+                    continue;
+                }
                 break;
             }
-            if (br.containsHTML(">Please re-enter the security code<")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML(">Please re-enter the security code<")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
             dllink = br.getRegex("(http://download\\.shutterstock\\.com/gatekeeper/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
