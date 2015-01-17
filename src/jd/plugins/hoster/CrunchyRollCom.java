@@ -336,7 +336,7 @@ public class CrunchyRollCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        ai.setStatus(JDL.L("plugins.hoster.crunchyrollcom.accountok", "Account is OK."));
+        ai.setStatus("Premium Account");
         ai.setValidUntil(-1);
         account.setValid(true);
         return ai;
@@ -445,7 +445,11 @@ public class CrunchyRollCom extends PluginForHost {
                     }
                     // Set account to invalid and quit
                     account.setValid(false);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
 
                 final HashMap<String, String> cookies = new HashMap<String, String>();
