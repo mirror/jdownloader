@@ -214,10 +214,17 @@ public class TeraFileCo extends PluginForHost {
         }
         final String[] fileInfo = new String[3];
         scanInfo(fileInfo);
-        /* Workaround for serverside missing filename. */
-        if (fileInfo[0] == null || fileInfo[0].equals("")) {
-            fileInfo[0] = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
+
+        // /* Workaround for serverside missing filename. */
+        // if (fileInfo[0] == null || fileInfo[0].equals("")) {
+        // fileInfo[0] = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
+        // }
+
+        // MISSING FILENAME and having random (FAKE) FILESIZE = offline - raztoki 20150117
+        if (inValidate(fileInfo[0]) && !inValidate(fileInfo[1])) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+
         if (fileInfo[0] == null || fileInfo[0].equals("")) {
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
@@ -239,23 +246,23 @@ public class TeraFileCo extends PluginForHost {
 
     private String[] scanInfo(final String[] fileInfo) {
         // standard traits from base page
-        if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(2);
-            if (fileInfo[0] == null) {
-                fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
-                if (fileInfo[0] == null) {
-                    fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
+        if (inValidate(fileInfo[0])) {
+            fileInfo[0] = new Regex(br, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(2);
+            if (inValidate(fileInfo[0])) {
+                fileInfo[0] = new Regex(br, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
+                if (inValidate(fileInfo[0])) {
+                    fileInfo[0] = new Regex(br, "<h2>Download File(.*?)</h2>").getMatch(0);
                     // traits from download1 page below.
-                    if (fileInfo[0] == null) {
-                        fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                    if (inValidate(fileInfo[0])) {
+                        fileInfo[0] = new Regex(br, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
                         // next two are details from sharing box
-                        if (fileInfo[0] == null) {
-                            fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
-                            if (fileInfo[0] == null) {
-                                fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
-                                if (fileInfo[0] == null) {
+                        if (inValidate(fileInfo[0])) {
+                            fileInfo[0] = new Regex(br, "copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
+                            if (inValidate(fileInfo[0])) {
+                                fileInfo[0] = new Regex(br, "copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                                if (inValidate(fileInfo[0])) {
                                     // Link of the box without filesize
-                                    fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + DOMAINS + "/[a-z0-9]{12}/([^<>\"]*?)</textarea").getMatch(2);
+                                    fileInfo[0] = new Regex(br, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + DOMAINS + "/[a-z0-9]{12}/([^<>\"]*?)</textarea").getMatch(2);
                                 }
                             }
                         }
@@ -263,17 +270,14 @@ public class TeraFileCo extends PluginForHost {
                 }
             }
         }
-        if (fileInfo[1] == null) {
-            fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
-            if (fileInfo[1] == null) {
-                fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-                if (fileInfo[1] == null) {
-                    fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+        if (inValidate(fileInfo[1])) {
+            fileInfo[1] = new Regex(br, "\\(([0-9]+ bytes)\\)").getMatch(0);
+            if (inValidate(fileInfo[1])) {
+                fileInfo[1] = new Regex(br, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                if (inValidate(fileInfo[1])) {
+                    fileInfo[1] = new Regex(br, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
                 }
             }
-        }
-        if (fileInfo[2] == null) {
-            fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         }
         return fileInfo;
     }
@@ -1102,6 +1106,10 @@ public class TeraFileCo extends PluginForHost {
                 dllink = getDllink();
                 if (dllink == null) {
                     Form dlform = br.getFormbyProperty("name", "F1");
+                    if (dlform == null) {
+                        // they have serious platform issues
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Please enable direct download mode (on hoster website) and resume download!");
+                    }
                     if (dlform != null && new Regex(correctedBR, PASSWORDTEXT).matches()) {
                         passCode = handlePassword(dlform, downloadLink);
                     }
@@ -1224,6 +1232,22 @@ public class TeraFileCo extends PluginForHost {
     public int getMaxSimultanPremiumDownloadNum() {
         /* workaround for free/premium issue on stable 09581 */
         return maxPrem.get();
+    }
+
+    /**
+     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
+     *
+     * @param s
+     *            Imported String to match against.
+     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
+     * @author raztoki
+     * */
+    private boolean inValidate(final String s) {
+        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
