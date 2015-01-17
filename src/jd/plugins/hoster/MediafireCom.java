@@ -82,7 +82,8 @@ public class MediafireCom extends PluginForHost {
                 // release:
                 // ie9: "Stable release     9.0.26 (April 8, 2014;" http://en.wikipedia.org/wiki/Internet_Explorer_9
                 // ie10: "Stable release    10.0.11 (12 November 2013;" http://en.wikipedia.org/wiki/Internet_Explorer_10
-                // ie11: "Stable release 11.0.13 (v11.0.9600.17358) / 14 October 2014; 24 days ago" http://en.wikipedia.org/wiki/Internet_Explorer_11
+                // ie11: "Stable release 11.0.13 (v11.0.9600.17358) / 14 October 2014; 24 days ago"
+                // http://en.wikipedia.org/wiki/Internet_Explorer_11
                 // notes: only version 9 and 10
                 // notes: chromeframe http://en.wikipedia.org/wiki/Google_Chrome_Frame 32.0.1700.76 (January 14, 2014;
                 stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.0; Trident/5.0)");
@@ -152,8 +153,8 @@ public class MediafireCom extends PluginForHost {
 
                 // safari
                 // "Stable release http://en.wikipedia.org/wiki/Safari_(web_browser)
-                // OS X Mavericks       7.1 (September 18, 2014; 3 months ago)" 
-                // OS X Yosemite        8.0 (October 16, 2014; 2 months ago)"
+                // OS X Mavericks 7.1 (September 18, 2014; 3 months ago)"
+                // OS X Yosemite 8.0 (October 16, 2014; 2 months ago)"
                 stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_4) AppleWebKit/537.78.2 (KHTML, like Gecko) Version/7.0.6 Safari/537.78.2");
                 stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_5) AppleWebKit/537.78.2 (KHTML, like Gecko) Version/7.0.6 Safari/537.78.2");
 
@@ -313,16 +314,16 @@ public class MediafireCom extends PluginForHost {
         }
     }
 
-    private static AtomicReference<String> agent             = new AtomicReference<String>(stringUserAgent());
+    private static AtomicReference<String> agent                      = new AtomicReference<String>(stringUserAgent());
 
-    static private final String            offlinelink       = "tos_aup_violation";
+    static private final String            offlinelink                = "tos_aup_violation";
 
     /** The name of the error page used by MediaFire */
-    private static final String            ERROR_PAGE        = "error.php";
+    private static final String            ERROR_PAGE                 = "error.php";
     /**
-     * The number of retries to be performed in order to determine if a file is available
+     * The number of retries to be performed in order to determine if a file is availableor to try captcha/password.
      */
-    private int                            NUMBER_OF_RETRIES = 3;
+    private int                            max_number_of_free_retries = 3;
 
     private String                         fileID;
 
@@ -420,11 +421,12 @@ public class MediafireCom extends PluginForHost {
 
     public void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
         String url = null;
+        int trycounter = 0;
         boolean captchaCorrect = false;
         if (account == null) {
             this.br.getHeaders().put("User-Agent", MediafireCom.agent.get());
         }
-        for (int i = 0; i < NUMBER_OF_RETRIES; i++) {
+        do {
             if (url != null) {
                 break;
             }
@@ -454,11 +456,26 @@ public class MediafireCom extends PluginForHost {
                     // TODO: This errorhandling is missing for premium users!
                     captchaCorrect = false;
                     Form form = br.getFormbyProperty("name", "form_captcha");
-                    if (br.getRegex("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
+                    final String freeArea = br.getRegex("class=\"nonOwner nonpro_adslayout dl\\-page dlCaptchaActive\"(.*?)class=\"captiaLink\"").getMatch(0);
+                    if (freeArea != null && freeArea.contains("solvemedia.com/papi/")) {
+                        logger.info("Detected captcha method \"solvemedia\" for this host");
+                        final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                        final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+                        final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                        String code = getCaptchaCode(cf, downloadLink);
+                        String chid = sm.getChallenge(code);
+                        form.put("adcopy_challenge", chid);
+                        form.put("adcopy_response", code.replace(" ", "+"));
+                        br.submitForm(form);
+                        if (br.getFormbyProperty("name", "form_captcha") != null) {
+                            logger.info("solvemedia captcha wrong");
+                            continue;
+                        }
+                    } else if (freeArea != null && new Regex(freeArea, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
                         logger.info("Detected captcha method \"Re Captcha\" for this host");
                         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                         final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br);
-                        String id = br.getRegex("challenge\\?k=(.+?)\"").getMatch(0);
+                        String id = new Regex(freeArea, "challenge\\?k=(.+?)\"").getMatch(0);
                         if (id != null) {
                             logger.info("CaptchaID found, Form found " + (form != null));
                             rc.setId(id);
@@ -482,17 +499,9 @@ public class MediafireCom extends PluginForHost {
                                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                                 }
                                 if (id != null) {
-                                    try {
-                                        invalidateLastChallengeResponse();
-                                    } catch (final Throwable e) {
-                                    }
                                     /* captcha wrong */
+                                    logger.info("reCaptcha captcha wrong");
                                     continue;
-                                } else {
-                                    try {
-                                        validateLastChallengeResponse();
-                                    } catch (final Throwable e) {
-                                    }
                                 }
                             } catch (final PluginException e) {
                                 if (defect) {
@@ -501,21 +510,8 @@ public class MediafireCom extends PluginForHost {
                                 /**
                                  * captcha input timeout run out.. try to reconnect
                                  */
-                                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
+                                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Try reconnect to avoid more captchas", 5 * 60 * 1000l);
                             }
-                        }
-                    } else if (br.containsHTML("solvemedia\\.com/papi/")) {
-                        logger.info("Detected captcha method \"solvemedia\" for this host");
-                        final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                        final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
-                        final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                        String code = getCaptchaCode(cf, downloadLink);
-                        String chid = sm.getChallenge(code);
-                        form.put("adcopy_challenge", chid);
-                        form.put("adcopy_response", code.replace(" ", "+"));
-                        br.submitForm(form);
-                        if (br.getFormbyProperty("name", "form_captcha") != null) {
-                            continue;
                         }
                     }
                 }
@@ -569,7 +565,8 @@ public class MediafireCom extends PluginForHost {
                     }
                 }
             }
-        }
+            trycounter++;
+        } while (trycounter < max_number_of_free_retries && url == null);
         if (url == null) {
             if (!captchaCorrect) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -581,18 +578,25 @@ public class MediafireCom extends PluginForHost {
         this.br.setDebug(true);
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, 0);
         if (!this.dl.getConnection().isContentDisposition()) {
-            if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (404), ", 30 * 60 * 1000l);
-            }
+            handleServerErrors();
             logger.info("Error (3)");
             logger.info(dl.getConnection() + "");
             this.br.followConnection();
+            handleNonAPIErrors(downloadLink, this.br);
             if (br.containsHTML("We apologize, but we are having difficulties processing your download request")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Please be patient while we try to repair your download request", 2 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.dl.startDownload();
+    }
+
+    private void handleServerErrors() throws PluginException {
+        if (dl.getConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403, ", 30 * 60 * 1000l);
+        } else if (dl.getConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404, ", 30 * 60 * 1000l);
+        }
     }
 
     private String getID(DownloadLink link) {
@@ -704,10 +708,11 @@ public class MediafireCom extends PluginForHost {
             this.br.setFollowRedirects(true);
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (!this.dl.getConnection().isContentDisposition()) {
-                handleNonAPIErrors(downloadLink, this.br);
+                handleServerErrors();
                 logger.info("Error (4)");
                 logger.info(dl.getConnection() + "");
                 this.br.followConnection();
+                handleNonAPIErrors(downloadLink, this.br);
                 lastChangeErrorhandling(downloadLink, account, passwordprotected);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

@@ -50,6 +50,7 @@ import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -173,10 +174,12 @@ public class SaveTv extends PluginForHost {
         return "http://free.save.tv/STV/S/misc/miscShowTermsConditionsInMainFrame.cfm";
     }
 
+    @SuppressWarnings("unused")
     private boolean isJDStable() {
         return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("http://", "https://"));
@@ -278,6 +281,7 @@ public class SaveTv extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     public static String getFilename(final DownloadLink dl) throws ParseException {
         /*
          * No custom filename if not all required tags are given, if the user prefers original filenames or if custom user regexes for
@@ -656,6 +660,9 @@ public class SaveTv extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler: 'Leider enthält Ihre Aufnahme nur Werbung' (Ausweichen auf HQ Format hat nichts gebracht)", 12 * 60 * 60 * 1000l);
                     }
                 }
+                if (br.containsHTML("\"NOK\",\"unknown error\"")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler - finaler Downloadlink wurde nicht zurückgegeben: '\"NOK\",\"unknown error\"'", 30 * 60 * 1000l);
+                }
             }
             dllink = br.getRegex("(\\'|\")(http://[^<>\"\\']+/\\?m=dl)(\\'|\")").getMatch(1);
         }
@@ -842,6 +849,11 @@ public class SaveTv extends PluginForHost {
                 if (totalLinks != null) {
                     account.setProperty("acc_count_telecast_ids", totalLinks);
                 }
+            }
+            try {
+                account.setType(AccountType.PREMIUM);
+            } catch (final Throwable e) {
+                account.setProperty("free", false);
             }
         } catch (final Throwable e) {
             /* Should not happen but it won't hurt */
@@ -1208,6 +1220,7 @@ public class SaveTv extends PluginForHost {
         return stv_request_selected_format;
     }
 
+    @SuppressWarnings("deprecation")
     public static int getConfiguredVideoFormat() {
         switch (SubConfiguration.getConfig("save.tv").getIntegerProperty(selected_video_format, -1)) {
         case 0:
@@ -1308,6 +1321,7 @@ public class SaveTv extends PluginForHost {
     }
 
     /* Corrects all kinds of data which Stv provides, makes filenames look better */
+    @SuppressWarnings("deprecation")
     public static String correctData(final String input) {
         String output = Encoding.htmlDecode(input);
         output = output.replace("_", " ");
@@ -1325,6 +1339,7 @@ public class SaveTv extends PluginForHost {
         return output;
     }
 
+    @SuppressWarnings("deprecation")
     private static String getTelecastId(final DownloadLink link) {
         return new Regex(link.getDownloadURL(), "TelecastID=(\\d+)").getMatch(0);
     }
@@ -1343,6 +1358,7 @@ public class SaveTv extends PluginForHost {
         return randomnumber;
     }
 
+    @SuppressWarnings("deprecation")
     public static String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
         final SubConfiguration cfg = SubConfiguration.getConfig("save.tv");
         final String customStringForEmptyTags = cfg.getStringProperty(CUSTOM_FILENAME_EMPTY_TAG_STRING, defaultCustomStringForEmptyTags);
@@ -1460,6 +1476,7 @@ public class SaveTv extends PluginForHost {
     }
 
     /** Returns either the original server filename or one that is very similar to the original */
+    @SuppressWarnings("deprecation")
     public static String getFakeOriginalFilename(final DownloadLink downloadLink) throws ParseException {
         final SubConfiguration cfg = SubConfiguration.getConfig("save.tv");
         final String ext = downloadLink.getStringProperty("type", EXTENSION);
@@ -1509,6 +1526,11 @@ public class SaveTv extends PluginForHost {
 
             formattedFilename += formattedDate + "_";
             formattedFilename += time + "_" + acc_username;
+            /*
+             * Finally, make sure we got no double underscores. Do this before we set the file extension es dots will be replaced within the
+             * convertNormalDataToServer method!
+             */
+            formattedFilename = convertNormalDataToServer(formattedFilename);
             formattedFilename += ext;
             formattedFilename = encodeUnicode(formattedFilename);
         }
@@ -1516,6 +1538,7 @@ public class SaveTv extends PluginForHost {
         return formattedFilename;
     }
 
+    @SuppressWarnings("deprecation")
     private static String getEpisodeNumber(final DownloadLink dl) {
         /* Old way TODO: Remove after 11.2014 */
         String episodenumber = Long.toString(getLongProperty(dl, "episodenumber", 0l));
@@ -1533,6 +1556,7 @@ public class SaveTv extends PluginForHost {
     /**
      * @return true: DownloadLink is a series false: DownloadLink is no series based on existing information.
      */
+    @SuppressWarnings("deprecation")
     private static boolean isSeries(final DownloadLink dl) {
         final SubConfiguration cfg = SubConfiguration.getConfig("save.tv");
         final String customStringForEmptyTags = cfg.getStringProperty(CUSTOM_FILENAME_EMPTY_TAG_STRING, defaultCustomStringForEmptyTags);
@@ -1552,15 +1576,19 @@ public class SaveTv extends PluginForHost {
 
     /**
      * Helps to get good looking original server-filenames, correct things, before corrected by correctData, in the end data/filename should
-     * be 99% close to the originals.
+     * be 99% close to the originals. After all this does not have to be perfect as this data is only displayed to the user (e.g. a faked
+     * 'original server filename' but NEVER used e.g. as a final filename.
      */
     private static String convertNormalDataToServer(String parameter) {
         /* Corrections with spaces */
         parameter = parameter.replace(" - ", "_");
         parameter = parameter.replace(" + ", "_");
+        parameter = parameter.replace("(", "_");
+        parameter = parameter.replace(")", "_");
 
         /* Correction via replaces */
         parameter = parameter.replace(" ", "_");
+        parameter = parameter.replace("é", "_");
         parameter = parameter.replace("ä", "ae");
         parameter = parameter.replace("Ä", "Ae");
         parameter = parameter.replace("ö", "oe");
@@ -1577,10 +1605,18 @@ public class SaveTv extends PluginForHost {
         parameter = parameter.replace(",", "");
         parameter = parameter.replace(".", "");
         parameter = parameter.replace("?", "");
+        /* Multiple underscores do never occur in server filenames --> Fix this here */
+        final String[] underscores = new Regex(parameter, "(_{2,})").getColumn(0);
+        if (underscores != null && underscores.length != 0) {
+            for (final String underscoress : underscores) {
+                parameter = parameter.replace(underscoress, "_");
+            }
+        }
         return parameter;
     }
 
     /* Helps to get good looking custom filenames out of server filenames */
+    @SuppressWarnings("unused")
     private static String convertServerDataToNormal(String parameter) {
         parameter = parameter.replace("_", " ");
 
@@ -1668,7 +1704,7 @@ public class SaveTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Allgemeine Einstellungen:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEAPI, JDL.L("plugins.hoster.SaveTv.UseAPI", "API verwenden?\r\nINFO: Aktiviert man die API, sind einige Features wie folgt betroffen:\r\n-ENTFÄLLT: Option 'Nur Aufnahmen mit angewandter Schnittliste laden'\r\n-ENTFÄLLT: Anzeigen der Account Details in der Account-Verwaltung (Account Typ, Ablaufdatum, ...)\r\n-EINGESCHRÄNKT NUTZBAR: Benutzerdefinierte Dateinamen")));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DISABLE_LINKCHECK, JDL.L("plugins.hoster.SaveTv.DisableLinkcheck", "Linkcheck deaktivieren [Nicht empfohlen]?\r\n<html><p style=\"color:#F62817\">Vorteile:\r\n-Links landen schneller im Linkgrabber und können auch bei Serverproblemen oder wenn die save.tv Seite komplett offline ist gesammelt werden\r\nNachteile:\r\n-Im Linkgrabber werden zunächst nur die telecastIDs als Dateinamen angezeigt\r\n-Die endgültigen Dateinamen werden erst beim Downloadstart angezeigt</p></html>")).setDefaultValue(defaultDisableLinkcheck));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DISABLE_LINKCHECK, JDL.L("plugins.hoster.SaveTv.DisableLinkcheck", "Linkcheck deaktivieren <html><b>[Nicht empfohlen]</b>?\r\n<p style=\"color:#F62817\"><b>Vorteile:\r\n</b>-Links landen schneller im Linkgrabber und können auch bei Serverproblemen oder wenn die save.tv Seite komplett offline ist gesammelt werden\r\n<b>Nachteile:\r\n</b>-Im Linkgrabber werden zunächst nur die telecastIDs als Dateinamen angezeigt\r\n-Die endgültigen Dateinamen werden erst beim Downloadstart angezeigt</p></html>")).setDefaultValue(defaultDisableLinkcheck));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
 
         /* Crawler settings */
@@ -1697,7 +1733,7 @@ public class SaveTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Dateiname Einstellungen:"));
-        final ConfigEntry origName = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEORIGINALFILENAME, JDL.L("plugins.hoster.SaveTv.UseOriginalFilename", "Original (Server) Dateinamen verwenden? [Erst beim Downloadstart sichtbar!]")).setDefaultValue(defaultUseOriginalFilename);
+        final ConfigEntry origName = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEORIGINALFILENAME, JDL.L("plugins.hoster.SaveTv.UseOriginalFilename", "Original (Server) Dateinamen verwenden? <html><b>[Erst beim Downloadstart sichtbar!]</b></html>")).setDefaultValue(defaultUseOriginalFilename);
         getConfig().addEntry(origName);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, JDL.L("plugins.hoster.savetv.customdate", "Setze das Datumsformat:\r\nWichtige Information dazu:\r\nDas Datum erscheint im angegebenen Format im Dateinamen, allerdings nur,\r\nwenn man das *datum* Tag auch verwendet (siehe Benutzerdefinierte Dateinamen für Filme und Serien unten)")).setDefaultValue("dd.MM.yyyy").setEnabledCondidtion(origName, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
@@ -1766,7 +1802,7 @@ public class SaveTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Erweiterte Einstellungen:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Soll die telecastID in irgendeinem Fall aus dem save.tv Archiv gelöscht werden?\r\n<html><p style=\"color:#F62817\">Warnung: Gelöschte telecastIDs können nicht wiederhergestellt werden!\r\nFalls diese Funktionen Fehler enthalten ist Datenverlust möglich!</p></html>"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Soll die telecastID in irgendeinem Fall aus dem save.tv Archiv gelöscht werden?\r\n<html><p style=\"color:#F62817\"><v>Warnung:</b> Gelöschte telecastIDs können nicht wiederhergestellt werden!\r\nFalls diese Funktionen Fehler enthalten ist Datenverlust möglich!</p></html>"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DELETE_TELECAST_ID_AFTER_DOWNLOAD, JDL.L("plugins.hoster.SaveTv.deleteFromArchiveAfterDownload", "Erfolgreich geladene telecastIDs aus dem save.tv Archiv löschen?")).setDefaultValue(defaultDeleteTelecastIDAfterDownload));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DELETE_TELECAST_ID_IF_FILE_ALREADY_EXISTS, JDL.L("plugins.hoster.SaveTv.deleteFromArchiveIfFileAlreadyExists", "Falls Datei bereits auf der Festplatte existiert telecastIDs aus dem save.tv Archiv löschen?")).setDefaultValue(defaultDeleteTelecastIDIfFileAlreadyExists));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
@@ -1800,6 +1836,7 @@ public class SaveTv extends PluginForHost {
         return message;
     }
 
+    @SuppressWarnings("deprecation")
     private void checkAccountNeededDialog() {
         SubConfiguration config = null;
         try {
@@ -1855,6 +1892,7 @@ public class SaveTv extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void checkFeatureDialogAll() {
         SubConfiguration config = null;
         try {

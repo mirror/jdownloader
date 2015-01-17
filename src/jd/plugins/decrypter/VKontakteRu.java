@@ -82,6 +82,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     VKWALL_GRAB_AUDIO                    = "VKWALL_GRAB_AUDIO";
     private static final String     VKWALL_GRAB_VIDEO                    = "VKWALL_GRAB_VIDEO";
     private static final String     VKWALL_GRAB_LINK                     = "VKWALL_GRAB_LINK";
+    private static final String     VKWALL_GRAB_DOCS                     = "VKWALL_GRAB_DOCS";
     private static final String     VKVIDEO_USEIDASPACKAGENAME           = "VKVIDEO_USEIDASPACKAGENAME";
 
     /* Settings 'in action' */
@@ -122,18 +123,16 @@ public class VKontakteRu extends PluginForDecrypt {
     /* Some html text patterns: English, Russian, German, Polish */
     public static final String      TEMPORARILYBLOCKED                   = "You tried to load the same page more than once in one second|Вы попытались загрузить более одной однотипной страницы в секунду|Pr\\&#243;bujesz za\\&#322;adowa\\&#263; wi\\&#281;cej ni\\&#380; jedn\\&#261; stron\\&#281; w ci\\&#261;gu sekundy|Sie haben versucht die Seite mehrfach innerhalb einer Sekunde zu laden";
     private static final String     FILEOFFLINE                          = "(id=\"msg_back_button\">Wr\\&#243;\\&#263;</button|B\\&#322;\\&#261;d dost\\&#281;pu)";
-    private static final String     domain                               = "http://vk.com";
 
-    /* Used whenever we request arrays via API */
-    private static final int        API_MAX_ENTRIES_PER_REQUEST          = 100;
-
-    /* Internal settings */
+    /* Internal settings / constants */
     /*
-     * Whenever we found this number of links or more, quit the decrypter and add a [b]LOOPBACK_LINK[/b] to cuntinue later in order to avoid
+     * Whenever we found this number of links or more, quit the decrypter and add a [b]LOOPBACK_LINK[/b] to continue later in order to avoid
      * memory problems/freezes.
      */
     private static final short      MAX_LINKS_PER_RUN                    = 5000;
-    private static final String     VKWALL_GRAB_DOCS                     = "VKWALL_GRAB_DOCS";
+
+    /* Used whenever we request arrays via API */
+    private static final int        API_MAX_ENTRIES_PER_REQUEST          = 100;
 
     private SubConfiguration        cfg                                  = null;
     private String                  MAINPAGE                             = null;
@@ -158,7 +157,7 @@ public class VKontakteRu extends PluginForDecrypt {
      * Information: General linkstructure: vk.com/ownerID_contentID --> ownerID is always positive for users, negative for communities (also
      * groups??)
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({ "deprecation", "serial" })
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         decryptedLinks = new ArrayList<DownloadLink>() {
@@ -539,6 +538,7 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /** Using API */
+    @SuppressWarnings("deprecation")
     private void decryptSingleVideo(final String parameter) throws Exception {
         // Check if it's really offline
         final String[] ids = findVideoIDs(parameter);
@@ -626,9 +626,11 @@ public class VKontakteRu extends PluginForDecrypt {
                 if (finallink != null) {
                     final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/videolink/" + System.currentTimeMillis() + new Random().nextInt(1000000));
 
-                    try {/* JD2 only */
+                    try {
+                        /* JD2 only */
                         dl.setContentUrl("https://vk.com/video" + oid + "_" + id);
-                    } catch (Throwable e) {/* Stable */
+                    } catch (Throwable e) {
+                        /* Stable */
                         dl.setBrowserUrl("https://vk.com/video" + oid + "_" + id);
                     }
 
@@ -736,6 +738,7 @@ public class VKontakteRu extends PluginForDecrypt {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private DownloadLink getSinglePhotoDownloadLink(final String photoID) throws IOException {
         final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/picturelink/" + photoID);
         if (fastcheck_photo) {
@@ -1073,6 +1076,7 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /** Using API */
+    @SuppressWarnings("unchecked")
     private void decryptWallLink() throws Exception {
         long total_numberof_entries;
         final String userID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/wall((\\-)?\\d+)").getMatch(0);
@@ -1091,8 +1095,6 @@ public class VKontakteRu extends PluginForDecrypt {
             total_numberof_entries = Long.parseLong(br.getRegex("\\{\"response\"\\:\\[(\\d+)").getMatch(0));
             logger.info("PATTERN_WALL_LINK has a max offset of " + total_numberof_entries + " and a current offset of " + currentOffset);
         }
-        // final BigDecimal bd = new BigDecimal((double) total_numberof_entries / entries_per_request);
-        // final int total_numberof_requests = bd.setScale(0, BigDecimal.ROUND_UP).intValue();
 
         while (currentOffset < total_numberof_entries) {
             try {
@@ -1106,16 +1108,12 @@ public class VKontakteRu extends PluginForDecrypt {
             logger.info("Starting to decrypt offset " + currentOffset + " / " + total_numberof_entries);
             this.sleep(500, CRYPTEDLINK);
             getPage(br, "https://api.vk.com/method/wall.get?format=json&owner_id=" + userID + "&count=" + API_MAX_ENTRIES_PER_REQUEST + "&offset=" + currentOffset + "&filter=all&extended=0");
-            // apiPostPageSafe("https://vk.com/api.php", "v=" + api_version + "&format=json&owner_id=" + userID + "&count=" +
-            // api_max_entries_per_request + "&offset=" + currentOffset + "&filter=all&extended=0&method=wall.get&access_token=" +
-            // Encoding.Base64Decode(api_access_token_vkopt) + "&oauth=1");
 
             Map<String, Object> map = (Map<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
 
             if (map == null) {
                 return;
             }
-            // final String[] posts = poststext.split("\\}\\,\\{");
             List<Object> response = (List<Object>) map.get("response");
             for (Object entry : response) {
                 if (entry instanceof Map) {
@@ -1137,7 +1135,7 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /** Decrypts media of single API wall-post json objects */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({ "deprecation", "unchecked" })
     private void decryptWallPost(final String wall_ID, final Map<String, Object> entry, FilePackage fp) throws IOException {
         final long id = ((Number) entry.get("id")).longValue();
         final long fromId = ((Number) entry.get("from_id")).longValue();
@@ -1265,7 +1263,8 @@ public class VKontakteRu extends PluginForDecrypt {
 
     }
 
-    /** Using API */
+    /** Using API, finds and adds contents of a single wall post. */
+    @SuppressWarnings("unchecked")
     private void decryptWallPost() throws Exception {
         final String postID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/wall((\\-)?\\d+_\\d+)").getMatch(0);
         final String wallID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/(wall(\\-)?\\d+)_\\d+").getMatch(0);
@@ -1279,7 +1278,6 @@ public class VKontakteRu extends PluginForDecrypt {
 
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(postID);
-        // final String[] posts = poststext.split("\\}\\,\\{");
         List<Object> response = (List<Object>) map.get("response");
         for (Object entry : response) {
             if (entry instanceof Map) {
@@ -1521,6 +1519,7 @@ public class VKontakteRu extends PluginForDecrypt {
         } while (apiHandleErrors() && counter <= 3);
     }
 
+    @SuppressWarnings("unused")
     private void apiPostPageSafe(final String page, final String postData) throws Exception {
         int counter = 1;
         do {
@@ -1712,6 +1711,7 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /** Log in the account of the hostplugin */
+    @SuppressWarnings("deprecation")
     private boolean getUserLogin(final boolean force) throws Exception {
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost("vkontakte.ru");
         final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
@@ -1728,6 +1728,7 @@ public class VKontakteRu extends PluginForDecrypt {
         return true;
     }
 
+    @SuppressWarnings("deprecation")
     private boolean siteHandleSecurityCheck(final String parameter) throws Exception {
         final Browser ajaxBR = br.cloneBrowser();
         boolean hasPassed = false;

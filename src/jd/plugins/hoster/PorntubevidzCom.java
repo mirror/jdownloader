@@ -31,21 +31,32 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yoxhub.com" }, urls = { "http://(www\\.)?yoxhub\\.com/videos/\\d+/[a-z0-9\\-_]+/" }, flags = { 0 })
-public class YoxhubCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "porntubevidz.com" }, urls = { "http://(www\\.)?porntubevidz\\.com/videos/\\d+/[a-z0-9\\-_]+/" }, flags = { 0 })
+public class PorntubevidzCom extends PluginForHost {
 
-    public YoxhubCom(PluginWrapper wrapper) {
+    public PorntubevidzCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String default_Extension = ".mp4";
+    /* DEV NOTES */
+    // Porn_get_file_basic Version 0.1
+    // mods: filename RegEx
+    // limit-info:
+    // protocol: no https
+    // other:
 
-    private String              DLLINK            = null;
+    /* Extension which will be used if no correct extension is found */
+    private static final String  default_Extension = ".mp4";
+    /* Connection stuff */
+    private static final boolean free_resume       = true;
+    private static final int     free_maxchunks    = 0;
+    private static final int     free_maxdownloads = -1;
+
+    private String               DLLINK            = null;
 
     @Override
     public String getAGBLink() {
-        return "http://yoxhub.com/privacy-and-terms/";
+        return "http://www.porntubevidz.com/sharing.php";
     }
 
     @SuppressWarnings("deprecation")
@@ -57,7 +68,10 @@ public class YoxhubCom extends PluginForHost {
         if (br.getURL().contains("/404.php") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        String filename = br.getRegex("<h2>([^<>\"]*?)</h2>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>Porn Tube Vidz \\- ([^<>\"]*?)</title>").getMatch(0);
+        }
         DLLINK = checkDirectLink(downloadLink, "directlink");
         if (DLLINK == null) {
             DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\')").getMatch(0);
@@ -106,7 +120,7 @@ public class YoxhubCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -161,7 +175,7 @@ public class YoxhubCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return free_maxdownloads;
     }
 
     @Override
