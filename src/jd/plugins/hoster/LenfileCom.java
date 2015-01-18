@@ -139,7 +139,7 @@ public class LenfileCom extends PluginForHost {
         prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches() || !correctedBR.contains("value=\"download2\"") || !correctedBR.contains("value=\"" + this.fuid + "\"")) {
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches() || (!correctedBR.contains("value=\"download\\d*\"") && !correctedBR.contains("value=\"" + this.fuid + "\""))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
