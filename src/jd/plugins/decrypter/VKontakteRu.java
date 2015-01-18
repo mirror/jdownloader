@@ -113,6 +113,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_PHOTO_SINGLE_WALL_POST       = "https?://(www\\.)?vk\\.com/[A-Za-z0-9\\-_\\.]+\\?z=photo(\\-)?\\d+_\\d+(%2F|/)wall\\-\\d+_\\d+";
     private static final String     PATTERN_PHOTO_ALBUM                  = ".*?(tag|album(\\-)?\\d+_|photos)\\d+";
     private static final String     PATTERN_PHOTO_ALBUMS                 = "https?://(www\\.)?vk\\.com/(albums(\\-)?\\d+|id\\d+\\?z=albums\\d+)";
+    private static final String     PATTERN_PHOTO_ALBUMS_USERNAME_Z      = "https?://(www\\.)?vk\\.com/[^<>\"/]+\\?z=albums\\d+";
     private static final String     PATTERN_GENERAL_WALL_LINK            = "https?://(www\\.)?vk\\.com/wall(\\-)?\\d+(\\-maxoffset=\\d+\\-currentoffset=\\d+)?";
     private static final String     PATTERN_WALL_LOOPBACK_LINK           = "https?://(www\\.)?vk\\.com/wall\\-\\d+\\-maxoffset=\\d+\\-currentoffset=\\d+";
     private static final String     PATTERN_WALL_POST_LINK               = "https?://(www\\.)?vk\\.com/wall(\\-)?\\d+_\\d+";
@@ -264,12 +265,21 @@ public class VKontakteRu extends PluginForDecrypt {
                 } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_WALL_LOOPBACK_LINK)) {
                     /* Remove loopback-part as it only contains information which we need later but not in the link */
                     newLink = new Regex(CRYPTEDLINK_FUNCTIONAL, "(http://(www\\.)?vk\\.com/wall(\\-)?\\d+)").getMatch(0);
+                } else if (this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUMS_USERNAME_Z)) {
+                    /* Change PATTERN_PHOTO_ALBUMS_USERNAME_Z --> PATTERN_PHOTO_ALBUMS */
+                    newLink = "https://vk.com/albums" + new Regex(CRYPTEDLINK_FUNCTIONAL, "albums(\\d+)").getMatch(0);
                 } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_PUBLIC_EXTENDED) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUMS) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_PAGE) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_VIDEO_SINGLE) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_WALL_LINK) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_AUDIO) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_COMMUNITY_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_WALL_POST_LINK) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_SINGLE_WALL_POST)) {
                     /* Don't change anything */
                 } else {
                     /* We either have a public community or profile --> Get the owner_id and change the link to a wall-link */
-                    final String ownerName = resolveScreenNameAPI(new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/(.+)").getMatch(0));
-                    if (ownerName.contains("?") || ownerName.contains("&") || ownerName.contains("?")) {
+                    final String url_owner = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/(.+)").getMatch(0);
+                    if (url_owner.contains("?") || url_owner.contains("&") || url_owner.contains("?")) {
+                        logger.warning("Decryption failed - unsupported link? --> " + CRYPTEDLINK_FUNCTIONAL);
+                        return null;
+                    }
+                    /* We either have a public community or profile --> Get the owner_id and change the link to a wall-link */
+                    final String ownerName = resolveScreenNameAPI(url_owner);
+                    if (ownerName == null) {
                         logger.warning("Decryption failed - unsupported link? --> " + CRYPTEDLINK_FUNCTIONAL);
                         return null;
                     }
