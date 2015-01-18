@@ -525,10 +525,11 @@ public class RapidoxPl extends PluginForHost {
             case 2:
                 /* Host currently not supported --> deactivate it for some hours. */
                 statusMessage = "Your IP is banned";
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                final String userLanguage = System.getProperty("user.language");
+                if ("de".equalsIgnoreCase(userLanguage)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDeine IP wurde gebannt!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nmissing_lang", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else if ("pl".equalsIgnoreCase(userLanguage)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nTwój adres IP został zablokowany!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour IP has been banned!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
@@ -544,7 +545,7 @@ public class RapidoxPl extends PluginForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
      * from the host list.
-     *
+     * 
      * @param error
      *            : The name of the error
      * @param maxRetries
