@@ -280,8 +280,6 @@ public class RapidoxPl extends PluginForHost {
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        /* User-Agent might have been changed through the login process --> Make sure we're using the standard UA now. */
-        agent.set(default_UA);
         br.getPage("/panel/twoje-informacje");
         String traffic_max = br.getRegex("Dopuszczalny transfer:</b>[\t\n\r ]+([0-9 ]+ MB)").getMatch(0);
         String traffic_available = br.getRegex("Do wykorzystania:[\t\n\r ]+(-?[0-9 ]+ MB)").getMatch(0);
@@ -451,6 +449,8 @@ public class RapidoxPl extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
+                /* User-Agent might have been changed through the login process --> Make sure we're using the standard UA now. */
+                agent.set(default_UA);
                 /* Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(DOMAIN);

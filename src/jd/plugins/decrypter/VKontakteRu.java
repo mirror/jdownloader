@@ -837,6 +837,10 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /** NOT Using API */
     private void decryptPhotoAlbums() throws NumberFormatException, Exception {
+        /*
+         * Another possibility to get these (but still no API): https://vk.com/al_photos.php act=show_albums&al=1&owner=<owner_id> AblumsXXX
+         * --> XXX may also be the owner_id, depending on linktype.
+         */
         this.getPageSafe(this.CRYPTEDLINK_FUNCTIONAL);
         final String type = "multiplephotoalbums";
         if (this.CRYPTEDLINK_FUNCTIONAL.matches(".*?vk\\.com/id\\d+\\?z=albums\\d+")) {
