@@ -48,6 +48,9 @@ public class CnetCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>Whoops\\! You broke the Internet\\!<|>No, really,  it looks like you clicked on a borked link)") || br.getURL().contains("/most-popular/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.containsHTML("class=\"download-now floating-button-dln\"")) {
+            /* No downloadable content */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // // External mirrors are of course not supported
         // if (br.containsHTML(">Visit Site<")) {

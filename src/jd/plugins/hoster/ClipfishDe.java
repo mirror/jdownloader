@@ -53,13 +53,43 @@ public class ClipfishDe extends PluginForHost {
         return 20;
     }
 
+    private String dllink = null;
+
+    @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        String dllink = downloadLink.getStringProperty("dlURL", "");
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        dllink = downloadLink.getStringProperty("dlURL", "");
         if ("".equals(dllink)) {
             dllink = downloadLink.getDownloadURL();
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (dllink.startsWith("http") && !dllink.contains(".hds.")) {
+            final URLConnectionAdapter con = br.openHeadConnection(dllink);
+            try {
+                if (con.getResponseCode() == 200 && StringUtils.containsIgnoreCase(con.getContentType(), "video") && con.getCompleteContentLength() > 0) {
+                    downloadLink.setVerifiedFileSize(con.getCompleteContentLength());
+                } else {
+                    return AvailableStatus.FALSE;
+                }
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
+            }
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if ("".equals(dllink)) {
+            dllink = downloadLink.getDownloadURL();
+        } else if (dllink.contains(".hds.")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "HDS protocol not (yet) supported");
         }
         String type = downloadLink.getStringProperty("MEDIA_TYPE");
         if (type != null && !"video".equalsIgnoreCase(type)) {
@@ -84,31 +114,6 @@ public class ClipfishDe extends PluginForHost {
             logger.severe("Plugin out of date for link: " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        String dllink = downloadLink.getStringProperty("dlURL", "");
-        if ("".equals(dllink)) {
-            dllink = downloadLink.getDownloadURL();
-        } else if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (dllink.startsWith("http")) {
-            final URLConnectionAdapter con = br.openHeadConnection(dllink);
-            try {
-                if (con.getResponseCode() == 200 && StringUtils.containsIgnoreCase(con.getContentType(), "video") && con.getCompleteContentLength() > 0) {
-                    downloadLink.setVerifiedFileSize(con.getCompleteContentLength());
-                } else {
-                    return AvailableStatus.FALSE;
-                }
-            } finally {
-                if (con != null) {
-                    con.disconnect();
-                }
-            }
-        }
-        return AvailableStatus.TRUE;
     }
 
     @Override
