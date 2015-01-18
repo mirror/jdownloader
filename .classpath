@@ -45,7 +45,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs_ext/fest-swing-1.2.jar" sourcepath="ressourcen/code-ressourcen/fest-swing-1.2-sources.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/fest-swing-junit-4.5-1.2.jar" sourcepath="ressourcen/code-ressourcen/fest-swing-junit-4.5-1.2-sources.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/fest-util-1.1.2.jar" sourcepath="ressourcen/code-ressourcen/fest-util-1.1.2-sources.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/svnkit.jar" sourcepath="ressourcen/code-ressourcen/svnkitsrc.zip"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/junit-4.8.2.jar" sourcepath="ressourcen/code-ressourcen/junit-4.8.2-src.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbinding.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/jpathwatch-0-93-rc1.jar"/>
@@ -101,5 +100,7 @@
 	</classpathentry>
 	<classpathentry kind="lib" path="ressourcen/libs/jsyntaxpane.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/sqljet.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/sequence-library.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/svnkit.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
