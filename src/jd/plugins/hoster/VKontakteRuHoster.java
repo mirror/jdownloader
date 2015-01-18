@@ -152,7 +152,13 @@ public class VKontakteRuHoster extends PluginForHost {
                 this.finalUrl = link.getStringProperty("directlink", null);
                 if (!this.linkOk(link, finalFilename)) {
                     this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    String post = "act=get_wall_playlist&al=1&local_id=" + link.getProperty("postID") + "&oid=" + link.getProperty("fromId") + "&wall_type=own";
+                    final String postID = link.getStringProperty("postID", null);
+                    final String fromId = link.getStringProperty("fromId", null);
+                    /** TODO: Make sure that these IDs do always exist! */
+                    if (postID == null || fromId == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    String post = "act=get_wall_playlist&al=1&local_id=" + postID + "&oid=" + fromId + "&wall_type=own";
                     br.postPage("https://vk.com/audio", post);
                     String url = br.getRegex("\"0\"\\:\"" + Pattern.quote(link.getProperty("owner_id") + "") + "\"\\,\"1\"\\:\"" + Pattern.quote(link.getProperty("content_id") + "") + "\"\\,\"2\"\\:(\"[^\"]+\")").getMatch(0);
                     // Decodes the json String

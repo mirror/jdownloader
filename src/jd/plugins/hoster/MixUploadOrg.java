@@ -17,9 +17,14 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.List;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
+import jd.http.Browser.BrowserException;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -54,6 +59,13 @@ public class MixUploadOrg extends PluginForHost {
         return super.rewriteHost(host);
     }
 
+    private String DLLINK = null;
+
+    /**
+     * TODO: Add account support & show filesizes based on accounts e.g. show full size (available via '/player/getTrackInfo/') for premium
+     * users and stream size for free users.
+     */
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -84,9 +96,46 @@ public class MixUploadOrg extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = getJson("artist") + " - " + getJson("title");
-        final String filesize = getJson("sizebyte");
-        if (filename.contains("null") || filesize == null) {
+        if (filename.contains("null")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        Account premiumAcc = null;
+        List<Account> accs = AccountController.getInstance().getValidAccounts("mixupload.org");
+        if (accs != null && accs.size() > 0) {
+            for (Account acc : accs) {
+                if (acc.isEnabled() && !acc.getBooleanProperty("free", true)) {
+                    premiumAcc = acc;
+                }
+            }
+        }
+        String filesize = null;
+        if (premiumAcc != null) {
+            /* Premium users can download the high quality track --> Filesize is given via 'API' */
+            DLLINK = "http://mixupload.org/download/" + trackID;
+            filesize = getJson("sizebyte");
+            if (filesize == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        } else {
+            DLLINK = "http://mixupload.org/player/play/" + trackID + "/0/track.mp3";
+            URLConnectionAdapter con = null;
+            try {
+                try {
+                    con = br.openGetConnection(DLLINK);
+                } catch (final BrowserException e) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (!con.getContentType().contains("html")) {
+                    filesize = Long.toString(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
         }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
         link.setDownloadSize(Long.parseLong(filesize));
@@ -96,8 +145,7 @@ public class MixUploadOrg extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String dllink = "http://mixupload.org/player/play/" + downloadLink.getStringProperty("trackid", null) + "/0/track.mp3";
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
