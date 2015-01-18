@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -61,7 +62,9 @@ public class RapidoxPl extends PluginForHost {
     /* How long do we want to wait until the file is on their servers so we can download it? */
     private int                                            maxreloads                   = 200;
     private int                                            wait_between_reload          = 3;
+    private static final String                            default_UA                   = "JDownloader";
 
+    private static AtomicReference<String>                 agent                        = new AtomicReference<String>(null);
     private static Object                                  LOCK                         = new Object();
     private int                                            statuscode                   = 0;
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap           = new HashMap<Account, HashMap<String, Long>>();
@@ -81,7 +84,7 @@ public class RapidoxPl extends PluginForHost {
     private Browser newBrowser() {
         br = new Browser();
         br.setCookiesExclusive(true);
-        br.getHeaders().put("User-Agent", "JDownloader");
+        br.getHeaders().put("User-Agent", default_UA);
         br.setCustomCharset("utf-8");
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
@@ -277,6 +280,8 @@ public class RapidoxPl extends PluginForHost {
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
         login(account, true);
+        /* User-Agent might have been changed through the login process --> Make sure we're using the standard UA now. */
+        agent.set(default_UA);
         br.getPage("/panel/twoje-informacje");
         String traffic_max = br.getRegex("Dopuszczalny transfer:</b>[\t\n\r ]+([0-9 ]+ MB)").getMatch(0);
         String traffic_available = br.getRegex("Do wykorzystania:[\t\n\r ]+(-?[0-9 ]+ MB)").getMatch(0);
@@ -293,7 +298,9 @@ public class RapidoxPl extends PluginForHost {
         /* Fix e.g. 500 000 MB (500 GB) --> 500000MB */
         traffic_max = traffic_max.replace(" ", "");
         traffic_available = traffic_available.replace(" ", "");
-        /* Free users = They have no package --> Accept them but set zero traffic left */
+        /*
+         * Free users = They have no package --> Accept them but set zero traffic left. Of couse traffic left <= 0 --> Also free account.
+         */
         if (traffic_max.equals("0MB") || traffic_available.indexOf("-") == 0) {
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
@@ -358,7 +365,7 @@ public class RapidoxPl extends PluginForHost {
                 if (acmatch) {
                     acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
                 }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
@@ -366,7 +373,19 @@ public class RapidoxPl extends PluginForHost {
                             final String value = cookieEntry.getValue();
                             this.br.setCookie(DOMAIN, key, value);
                         }
-                        return;
+                        if (force) {
+                            /* Even though lopgin is forced first check if our cookies are still valid --> If not, force login! */
+                            br.getPage("http://rapidox.pl/panel/index");
+                            if (br.containsHTML(">Wyloguj się<")) {
+                                return;
+                            }
+                            /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
+                            if (br.getCookies(DOMAIN) != null) {
+                                br.clearCookies(DOMAIN);
+                            }
+                        } else {
+                            return;
+                        }
                     }
                 }
                 br.setFollowRedirects(true);
@@ -374,11 +393,26 @@ public class RapidoxPl extends PluginForHost {
                 this.getAPISafe("http://rapidox.pl/zaloguj_sie");
 
                 /*
-                 * TODO: Check if login with captcha works and prevent captchas from appearing when auto account refresh is done! Maybe add
-                 * a method to try to prevent login captcha as they identify the user who made a lot of login attempts only via User-Agent,
-                 * not via IP.
+                 * Captcha is shown on too many failed login attempts. Shoud usually not happen inside JD - especially as it is bound to the
+                 * current session (cookies) + User-Agent.This small function should try to prevent login captchas in case one appears.
                  */
+                int captcha_prevention_counter_max = 3;
+                int captcha_prevention_counter = 0;
+                while (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)") && captcha_prevention_counter <= captcha_prevention_counter_max) {
+                    Thread.sleep(3000l);
+                    logger.info("Trying to prevent captcha by changing User-Agent " + captcha_prevention_counter + " / " + captcha_prevention_counter_max);
+                    /* we first have to load the plugin, before we can reference it */
+                    JDUtilities.getPluginForHost("mediafire.com");
+                    agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+                    if (br.getCookies(DOMAIN) != null) {
+                        br.clearCookies(DOMAIN);
+                    }
+                    this.getAPISafe("/zaloguj_sie");
+                    captcha_prevention_counter++;
+                }
+
                 if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                    logger.info("Failed to prevent captcha - asking user!");
                     /* Handle stupid login captcha */
                     final String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
                     if (rcID == null) {
@@ -469,8 +503,11 @@ public class RapidoxPl extends PluginForHost {
     private void updatestatuscode() {
         if (br.containsHTML("Wybierz linki z innego hostingu\\.")) {
             statuscode = 1;
+        } else if (br.containsHTML("Jeśli widzisz ten komunikat prosimy niezwłocznie skontaktować się z nami pod")) {
+            statuscode = 2;
+        } else {
+            statuscode = 0;
         }
-        statuscode = 0;
     }
 
     private void handleAPIErrors(final Browser br) throws PluginException {
@@ -485,6 +522,16 @@ public class RapidoxPl extends PluginForHost {
                 statusMessage = "Host is currently not supported";
                 tempUnavailableHoster(3 * 60 * 60 * 1000l);
                 break;
+            case 2:
+                /* Host currently not supported --> deactivate it for some hours. */
+                statusMessage = "Your IP is banned";
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDeine IP wurde gebannt!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nmissing_lang", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour IP has been banned!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                }
             default:
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
             }
@@ -497,7 +544,7 @@ public class RapidoxPl extends PluginForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
      * from the host list.
-     * 
+     *
      * @param error
      *            : The name of the error
      * @param maxRetries

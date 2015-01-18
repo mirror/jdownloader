@@ -76,6 +76,9 @@ public class PorntubevidzCom extends PluginForHost {
         if (DLLINK == null) {
             DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\')").getMatch(0);
         }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("video_url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
+        }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

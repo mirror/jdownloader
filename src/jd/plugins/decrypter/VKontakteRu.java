@@ -182,6 +182,7 @@ public class VKontakteRu extends PluginForDecrypt {
         };
         br.setFollowRedirects(true);
         CRYPTEDLINK_ORIGINAL = Encoding.htmlDecode(param.toString()).replace("vkontakte.ru/", "vk.com/").replace("https://", "http://");
+        CRYPTEDLINK_ORIGINAL = CRYPTEDLINK_ORIGINAL.replace("?profile=1", "");
         CRYPTEDLINK_FUNCTIONAL = CRYPTEDLINK_ORIGINAL;
         CRYPTEDLINK = param;
         /* Set settings */
@@ -267,16 +268,20 @@ public class VKontakteRu extends PluginForDecrypt {
                     /* Don't change anything */
                 } else {
                     /* We either have a public community or profile --> Get the owner_id and change the link to a wall-link */
-                    final String ownerID = resolveScreenNameAPI(new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/(.+)").getMatch(0));
+                    final String ownerName = resolveScreenNameAPI(new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/(.+)").getMatch(0));
+                    if (ownerName.contains("?") || ownerName.contains("&") || ownerName.contains("?")) {
+                        logger.warning("Decryption failed - unsupported link? --> " + CRYPTEDLINK_FUNCTIONAL);
+                        return null;
+                    }
                     final String type = this.getJson("type");
-                    if (ownerID == null || type == null) {
-                        logger.warning("Failed to find ownerID for link: " + CRYPTEDLINK_FUNCTIONAL);
+                    if (type == null) {
+                        logger.warning("Failed to find type for link: " + CRYPTEDLINK_FUNCTIONAL);
                         return null;
                     }
                     if (type.equals("user")) {
-                        newLink = MAINPAGE + "/albums" + ownerID;
+                        newLink = MAINPAGE + "/albums" + ownerName;
                     } else {
-                        newLink = MAINPAGE + "/wall-" + ownerID;
+                        newLink = MAINPAGE + "/wall-" + ownerName;
                     }
                 }
                 if (newLink.equals(CRYPTEDLINK_FUNCTIONAL)) {

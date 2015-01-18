@@ -79,6 +79,10 @@ public class LenfileCom extends PluginForHost {
     private static final boolean           SUPPORTSHTTPS_FORCED         = false;
     private static final boolean           SUPPORTS_ALT_AVAILABLECHECK  = true;
     private final boolean                  ENABLE_RANDOM_UA             = true;
+    private static final boolean           enable_hardcore              = false;
+    private static final int               waitsecondsmax               = 200;
+    private static final int               waitsecondsforced            = 30;
+
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = true;
@@ -101,7 +105,6 @@ public class LenfileCom extends PluginForHost {
     private short                          maybeoncount                 = 0;
     private short                          oncount                      = 0;
     private short                          offcount                     = 0;
-    private static final boolean           hardcore                     = false;
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.6
@@ -144,7 +147,7 @@ public class LenfileCom extends PluginForHost {
         prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (hardcore) {
+        if (enable_hardcore) {
             scanInfo(fileInfo);
             final String fname_normal = fileInfo[0];
             final String fname_abuse = this.getFnameViaAbuseLink(altbr, link);
@@ -249,7 +252,14 @@ public class LenfileCom extends PluginForHost {
             link.setName(fileInfo[0].trim());
         }
         if (fileInfo[1] != null && !fileInfo[1].equals("")) {
-            link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
+            final long fsize = SizeFormatter.getSize(fileInfo[1]);
+            boolean allowFilesize = (fileInfo[0] != null && fileInfo[0].endsWith(".mp3") && fsize <= 500000000l);
+            if (!allowFilesize) {
+                allowFilesize = fsize <= 5000000000l;
+            }
+            if (allowFilesize) {
+                link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
+            }
         }
         return AvailableStatus.TRUE;
     }
@@ -753,6 +763,10 @@ public class LenfileCom extends PluginForHost {
         }
         if (ttt != null) {
             int wait = Integer.parseInt(ttt);
+            if (wait >= waitsecondsmax) {
+                logger.warning("Wait exceeds max, using forced wait!");
+                wait = waitsecondsforced;
+            }
             wait -= passedTime;
             logger.info("[Seconds] Waittime on the page: " + ttt);
             logger.info("[Seconds] Passed time: " + passedTime);
