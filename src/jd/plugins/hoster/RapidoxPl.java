@@ -279,10 +279,13 @@ public class RapidoxPl extends PluginForHost {
         login(account, true);
         br.getPage("/panel/twoje-informacje");
         String traffic_max = br.getRegex("Dopuszczalny transfer:</b>[\t\n\r ]+([0-9 ]+ MB)").getMatch(0);
-        String traffic_available = br.getRegex("Do wykorzystania:[\t\n\r ]+([0-9 ]+ MB)").getMatch(0);
+        String traffic_available = br.getRegex("Do wykorzystania:[\t\n\r ]+(-?[0-9 ]+ MB)").getMatch(0);
         if (traffic_max == null || traffic_available == null) {
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+            final String userLanguage = System.getProperty("user.language");
+            if ("de".equalsIgnoreCase(userLanguage)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if ("pl".equalsIgnoreCase(userLanguage)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
@@ -291,7 +294,7 @@ public class RapidoxPl extends PluginForHost {
         traffic_max = traffic_max.replace(" ", "");
         traffic_available = traffic_available.replace(" ", "");
         /* Free users = They have no package --> Accept them but set zero traffic left */
-        if (traffic_max.equals("0MB")) {
+        if (traffic_max.equals("0MB") || traffic_available.indexOf("-") == 0) {
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
             /* Free accounts have no traffic - set this so they will not be used (accidently) but still accept them. */
@@ -393,9 +396,12 @@ public class RapidoxPl extends PluginForHost {
                 }
 
                 this.postAPISafe("/panel/login", postData);
+                final String userLanguage = System.getProperty("user.language");
                 if (br.containsHTML(">Wystąpił błąd\\! Nieprawidłowy login lub hasło\\.")) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    if ("de".equalsIgnoreCase(userLanguage)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else if ("pl".equalsIgnoreCase(userLanguage)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
@@ -405,6 +411,8 @@ public class RapidoxPl extends PluginForHost {
                 if (!br.containsHTML(">Wyloguj się<")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else if ("pl".equalsIgnoreCase(userLanguage)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
@@ -489,7 +497,7 @@ public class RapidoxPl extends PluginForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
      * from the host list.
-     *
+     * 
      * @param error
      *            : The name of the error
      * @param maxRetries
