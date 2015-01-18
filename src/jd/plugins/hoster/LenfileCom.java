@@ -97,6 +97,11 @@ public class LenfileCom extends PluginForHost {
     private static AtomicInteger           maxPrem                      = new AtomicInteger(1);
     private static Object                  LOCK                         = new Object();
     private String                         fuid                         = null;
+    private Browser                        altbr                        = null;
+    private short                          maybeoncount                 = 0;
+    private short                          oncount                      = 0;
+    private short                          offcount                     = 0;
+    private static final boolean           hardcore                     = false;
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.6
@@ -132,90 +137,116 @@ public class LenfileCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        final String[] fileInfo = new String[3];
-        final Browser altbr = br.cloneBrowser();
+        String[] fileInfo = new String[3];
+        altbr = br.cloneBrowser();
         br.setFollowRedirects(true);
         correctDownloadLink(link);
         prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches() || (!correctedBR.contains("value=\"download\\d*\"") && !correctedBR.contains("value=\"" + this.fuid + "\""))) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (new Regex(correctedBR, MAINTENANCE).matches()) {
-            fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
-            if (fileInfo[0] != null) {
-                link.setName(Encoding.htmlDecode(fileInfo[0]).trim());
-                return AvailableStatus.TRUE;
+        if (hardcore) {
+            scanInfo(fileInfo);
+            final String fname_normal = fileInfo[0];
+            final String fname_abuse = this.getFnameViaAbuseLink(altbr, link);
+            final String fsize_normal = fileInfo[1];
+            final String fsize_alt = performAltAvailablecheck(link, fileInfo);
+            fileInfo = new String[3];
+            if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches() || (!correctedBR.contains("value=\"download\\d*\"") && !correctedBR.contains("value=\"" + this.fuid + "\""))) {
+                offcount++;
             }
-            link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
-            return AvailableStatus.UNCHECKABLE;
-        }
-        if (br.getURL().contains("/?op=login&redirect=")) {
-            logger.info("PREMIUMONLY handling: Trying alternative linkcheck");
-            link.getLinkStatus().setStatusText(PREMIUMONLY2);
-            try {
+            if (offcount == 3 && oncount == 0 && maybeoncount == 0) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (fname_abuse != null) {
+                fileInfo[0] = fname_abuse;
+            } else {
+                fileInfo[0] = fname_normal;
+            }
+            if (fsize_alt != null) {
+                fileInfo[1] = fsize_alt;
+            } else {
+                fileInfo[1] = fsize_normal;
+            }
+
+        } else {
+            if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches() || (!correctedBR.contains("value=\"download\\d*\"") && !correctedBR.contains("value=\"" + this.fuid + "\""))) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (new Regex(correctedBR, MAINTENANCE).matches()) {
                 fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
-                if (br.containsHTML(">No such file<")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                altbr.getPage("http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
-                if (altbr.containsHTML(">No such file<")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                fileInfo[0] = altbr.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
-                if (SUPPORTS_ALT_AVAILABLECHECK) {
-                    altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
-                    fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
-                }
-                /* 2nd offline check */
-                if ((SUPPORTS_ALT_AVAILABLECHECK && altbr.containsHTML("(>" + link.getDownloadURL() + "</td><td style=\"color:red;\">Not found\\!</td>|" + this.fuid + " not found\\!</font>)")) && fileInfo[0] == null) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (fileInfo[0] != null || fileInfo[1] != null) {
-                    /* We know the link is online, set all information we got */
-                    link.setAvailable(true);
-                    if (fileInfo[0] != null) {
-                        link.setName(Encoding.htmlDecode(fileInfo[0].trim()));
-                    } else {
-                        link.setName(fuid);
-                    }
-                    if (fileInfo[1] != null) {
-                        link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
-                    }
+                if (fileInfo[0] != null) {
+                    link.setName(Encoding.htmlDecode(fileInfo[0]).trim());
                     return AvailableStatus.TRUE;
                 }
-            } catch (final Throwable e) {
-                logger.info("Unknown error occured in alternative linkcheck:");
-                e.printStackTrace();
+                link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
+                return AvailableStatus.UNCHECKABLE;
             }
-            logger.warning("Alternative linkcheck failed!");
-            return AvailableStatus.UNCHECKABLE;
-        }
-        scanInfo(fileInfo);
-        if (fileInfo[0] == null || fileInfo[0].equals("")) {
-            fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
-            if (fileInfo[0] == null || fileInfo[0].equals("")) {
-                if (correctedBR.contains("You have reached the download(\\-| )limit")) {
-                    logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
-                    return AvailableStatus.UNCHECKABLE;
+            if (br.getURL().contains("/?op=login&redirect=")) {
+                logger.info("PREMIUMONLY handling: Trying alternative linkcheck");
+                link.getLinkStatus().setStatusText(PREMIUMONLY2);
+                try {
+                    fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
+                    if (br.containsHTML(">No such file<")) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    altbr.getPage("http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
+                    if (altbr.containsHTML(">No such file<")) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    fileInfo[0] = altbr.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
+                    if (SUPPORTS_ALT_AVAILABLECHECK) {
+                        fileInfo[1] = performAltAvailablecheck(link, fileInfo);
+                    }
+                    /* 2nd offline check */
+                    if ((SUPPORTS_ALT_AVAILABLECHECK && altbr.containsHTML("(>" + link.getDownloadURL() + "</td><td style=\"color:red;\">Not found\\!</td>|" + this.fuid + " not found\\!</font>)")) && fileInfo[0] == null) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else if (fileInfo[0] != null || fileInfo[1] != null) {
+                        /* We know the link is online, set all information we got */
+                        link.setAvailable(true);
+                        if (fileInfo[0] != null) {
+                            link.setName(Encoding.htmlDecode(fileInfo[0].trim()));
+                        } else {
+                            link.setName(fuid);
+                        }
+                        if (fileInfo[1] != null) {
+                            link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
+                        }
+                        return AvailableStatus.TRUE;
+                    }
+                } catch (final Throwable e) {
+                    logger.info("Unknown error occured in alternative linkcheck:");
+                    e.printStackTrace();
                 }
-                logger.warning("filename equals null, throwing \"plugin defect\"");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                logger.warning("Alternative linkcheck failed!");
+                return AvailableStatus.UNCHECKABLE;
+            }
+            scanInfo(fileInfo);
+            if (fileInfo[0] == null || fileInfo[0].equals("")) {
+                fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
+                if (fileInfo[0] == null || fileInfo[0].equals("")) {
+                    if (correctedBR.contains("You have reached the download(\\-| )limit")) {
+                        logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
+                        return AvailableStatus.UNCHECKABLE;
+                    }
+                    logger.warning("filename equals null, throwing \"plugin defect\"");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            if (fileInfo[1] == null && SUPPORTS_ALT_AVAILABLECHECK) {
+                /* Do alt availablecheck here but don't check availibility because we already know that the file must be online! */
+                logger.info("Filesize not available, trying altAvailablecheck");
+                try {
+                    fileInfo[1] = performAltAvailablecheck(link, fileInfo);
+                } catch (final Throwable e) {
+                }
             }
         }
         if (fileInfo[2] != null && !fileInfo[2].equals("")) {
             link.setMD5Hash(fileInfo[2].trim());
         }
-        fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
-        link.setName(fileInfo[0].trim());
-        if (fileInfo[1] == null && SUPPORTS_ALT_AVAILABLECHECK) {
-            /* Do alt availablecheck here but don't check availibility because we already know that the file must be online! */
-            logger.info("Filesize not available, trying altAvailablecheck");
-            try {
-                altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
-                fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
-            } catch (final Throwable e) {
-            }
+        if (fileInfo[0] != null) {
+            fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
+            link.setName(fileInfo[0].trim());
         }
         if (fileInfo[1] != null && !fileInfo[1].equals("")) {
             link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
@@ -271,12 +302,38 @@ public class LenfileCom extends PluginForHost {
         if (fileInfo[2] == null) {
             fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         }
+        if (fileInfo[0] != null || fileInfo[1] != null) {
+            maybeoncount++;
+        }
         return fileInfo;
     }
 
+    @SuppressWarnings("deprecation")
+    private String performAltAvailablecheck(final DownloadLink dl, final String[] fileInfo) throws IOException {
+        altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(dl.getDownloadURL()));
+        final String fsize = altbr.getRegex(">" + dl.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
+        if (altbr.containsHTML("style=\"color:green;\">Found</td>")) {
+            oncount++;
+        }
+        if (altbr.containsHTML("style=\"color:red;\">Not found\\!</td>")) {
+            offcount++;
+        }
+        if (fsize != null) {
+            maybeoncount++;
+        }
+        return fsize;
+    }
+
     private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws IOException, PluginException {
-        br.getPage("http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
-        return br.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
+        this.altbr.getPage("http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
+        final String filename = this.altbr.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
+        if (this.altbr.containsHTML(">No such file</font>")) {
+            offcount++;
+        }
+        if (filename != null) {
+            maybeoncount++;
+        }
+        return filename;
     }
 
     @Override

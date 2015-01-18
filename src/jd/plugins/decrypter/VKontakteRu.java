@@ -48,7 +48,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(www\\.)?(vk\\.com|vkontakte\\.ru)/(?!doc\\d+)(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)(\\-)?\\d+|audios\\d+|page\\-\\d+_\\d+|(video(\\-)?\\d+_\\d+(\\?list=[a-z0-9]+)?|videos\\d+|(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged)|video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+(\\&hash=[a-z0-9]+)?|video\\?gid=\\d+|public\\d+\\?z=video(\\-)?\\d+_\\d+((%2F|/)[a-z0-9]+)?|search\\?(c\\[q\\]|c%5Bq%5D)=[^<>\"/]*?\\&c(\\[section\\]|%5Bsection%5D)=video(\\&c(\\[sort\\]|%5Bsort%5D)=\\d+)?\\&z=video(\\-)?\\d+_\\d+)|(photos|tag)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album(\\-)?\\d+_\\d+|photo(\\-)?\\d+_\\d+|([A-Za-z0-9\\-_\\.]+\\?z=photo(\\-)?\\d+_\\d+%2Fwall\\-\\d+_\\d+|wall(\\-)?\\d+_\\d+|wall\\-\\d+\\-maxoffset=\\d+\\-currentoffset=\\d+|wall\\-\\d+)|[A-Za-z0-9\\-_\\.]+)|https?://(www\\.)?vk\\.cc/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(www\\.)?(vk\\.com|vkontakte\\.ru)/(?!doc|picturelink|audiolink|videolink).+" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt {
 
     /** TODO: Note: PATTERN_VIDEO_SINGLE links should all be decryptable without account but this is not implemented (yet) */
@@ -98,6 +98,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_GENERAL_AUDIO                = "https?://(www\\.)?vk\\.com/audio.*?";
     private static final String     PATTERN_AUDIO_ALBUM                  = "https?://(www\\.)?vk\\.com/(audio(\\.php)?\\?id=(\\-)?\\d+|audios(\\-)?\\d+)";
     private static final String     PATTERN_AUDIO_PAGE                   = "https?://(www\\.)?vk\\.com/page\\-\\d+_\\d+";
+    private static final String     PATTERN_AUDIO_AUDIOS_ALBUM           = "https?://(www\\.)?vk\\.com/audios\\-\\d+\\?album_id=\\d+";
     private static final String     PATTERN_GENERAL_VIDEO_SINGLE         = "https?://(www\\.)?vk\\.com/(video(\\-)?\\d+_\\d+(\\?list=[a-z0-9]+)?|video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+(\\&hash=[a-z0-9]+)?|public\\d+\\?z=video(\\-)?\\d+_\\d+((%2F|/)[a-z0-9]+)?|search\\?(c\\[q\\]|c%5Bq%5D)=[^<>\"/]*?\\&c(\\[section\\]|%5Bsection%5D)=video(\\&c(\\[sort\\]|%5Bsort%5D)=\\d+)?\\&z=video(\\-)?\\d+_\\d+)";
     private static final String     PATTERN_VIDEO_SINGLE_PUBLIC          = "https?://(www\\.)?vk\\.com/public\\d+\\?z=video(\\-)?\\d+_\\d+";
     private static final String     PATTERN_VIDEO_SINGLE_PUBLIC_EXTENDED = "https?://(www\\.)?vk\\.com/public\\d+\\?z=video(\\-)?\\d+_\\d+((%2F|/)[a-z0-9]+)?";
@@ -294,6 +295,8 @@ public class VKontakteRu extends PluginForDecrypt {
                     if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_AUDIO_ALBUM)) {
                         /* Audio album */
                         decryptAudioAlbum();
+                    } else if (this.CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_AUDIO_AUDIOS_ALBUM)) {
+                        decryptAudiosAlbum();
                     } else {
                         /* Single playlists */
                         decryptAudioPlaylist();
@@ -446,6 +449,67 @@ public class VKontakteRu extends PluginForDecrypt {
             fp.add(dl);
             decryptedLinks.add(dl);
         }
+    }
+
+    /** NOT using API audio pages and audio playlists are similar, TODO: Return host-plugin links here to improve the overall stability. */
+    @SuppressWarnings("deprecation")
+    private void decryptAudiosAlbum() throws Exception {
+        this.getPageSafe(this.CRYPTEDLINK_FUNCTIONAL);
+        if (br.containsHTML("id=\"not_found\"")) {
+            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+        }
+        final String audiotabletext = br.getRegex("<table class=\"audio_table\" cellspacing=\"0\" cellpadding=\"0\">(.*?)</table>").getMatch(0);
+
+        final String albumID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "album_id=(\\d+)").getMatch(0);
+        final String fpName = "audios_album " + albumID;
+        FilePackage fp = null;
+        fp = FilePackage.getInstance();
+        fp.setName(Encoding.htmlDecode(fpName.trim()));
+        int overallCounter = 1;
+        final DecimalFormat df = new DecimalFormat("00000");
+        final String[] audioinfo = new Regex(audiotabletext, "class=\"audio  no_actions fl_l\"(.*?)class=\"duration fl_r\"").getColumn(0);
+        if (audioinfo == null || audioinfo.length == 0) {
+            decryptedLinks = null;
+            return;
+        }
+        for (String audnfo : audioinfo) {
+            final String artist = new Regex(audnfo, "event: event, name: \\'([^<>\"]*?)\\'").getMatch(0);
+            final String title = new Regex(audnfo, "return cancelEvent\\(event\\);\">([^<>\"]*?)</a>").getMatch(0);
+            final Regex idinfo = new Regex(audnfo, "id=\"play\\-(\\d+)_(\\d+)\"");
+            final String owner_id = idinfo.getMatch(0);
+            final String content_id = idinfo.getMatch(1);
+            final String finallink = new Regex(audnfo, "\"(https?://cs[a-z0-9]+\\.(vk\\.com|userapi\\.com|vk\\.me)/u\\d+/audios?/[^<>\"/]+)\"").getMatch(0);
+            if (finallink == null || artist == null || title == null || owner_id == null || content_id == null) {
+                decryptedLinks = null;
+                return;
+            }
+            final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/audiolink/" + owner_id + "_" + content_id);
+            // Set filename so we have nice filenames here ;)
+            dl.setFinalFileName(Encoding.htmlDecode(artist) + " - " + Encoding.htmlDecode(title) + ".mp3");
+            if (fastcheck_audio) {
+                dl.setAvailable(true);
+            }
+            fp.add(dl);
+            /*
+             * Audiolinks have their directlinks and IDs but no "nice" links so let's simply use the link to the album to display to the
+             * user.
+             */
+            try {
+                dl.setContentUrl(this.CRYPTEDLINK_FUNCTIONAL);
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+                dl.setBrowserUrl(this.CRYPTEDLINK_FUNCTIONAL);
+            }
+            dl.setProperty("directlink", finallink);
+            dl.setProperty("content_id", content_id);
+            dl.setProperty("owner_id", owner_id);
+            fp.add(dl);
+            decryptedLinks.add(dl);
+            decryptedLinks.add(dl);
+            logger.info("Decrypted link number " + df.format(overallCounter) + " :" + finallink);
+            overallCounter++;
+        }
+
     }
 
     /** NOT using API audio pages and audio playlists are similar, TODO: Return host-plugin links here to improve the overall stability. */
