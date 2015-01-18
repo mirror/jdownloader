@@ -663,12 +663,12 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     /**
      * *
-     *
+     * 
      * @param html5PlayerJs
      *            TODO
      * @param br
      * @param s
-     *
+     * 
      * @return
      * @throws IOException
      * @throws PluginException
@@ -988,7 +988,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 // try to bypass
                 getVideoInfoWorkaroundUsed = true;
 
-                cw.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&hl=en&gl=US&ptk=vevo&el=detailpage");
+                cw.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&hl=en&gl=US&el=embedded");
                 if (cw.containsHTML("requires_purchase=1")) {
                     logger.warning("Download not possible: You have to pay to watch this video");
                     throw new Exception("Paid Video");
