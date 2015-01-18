@@ -70,7 +70,7 @@ public class FreepornvsCom extends PluginForHost {
         }
         String filename = br.getRegex("<h3>([^<>\"]*?)</h3>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>Porn Tube Vidz \\- ([^<>\"]*?)</title>").getMatch(0);
+            filename = br.getRegex("<title>([^<>\"]*?) \\| Free Porn VS</title>").getMatch(0);
         }
         DLLINK = checkDirectLink(downloadLink, "directlink");
         if (DLLINK == null) {
