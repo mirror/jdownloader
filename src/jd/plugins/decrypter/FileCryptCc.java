@@ -59,6 +59,8 @@ public class FileCryptCc extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br = new Browser();
+        JDUtilities.getPluginForHost("mediafire.com");
+        br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
         br.setFollowRedirects(true);
         final String uid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         // not all captcha types are skipable (recaptchav2 isn't). I tried with new response value - raztoki
@@ -73,8 +75,8 @@ public class FileCryptCc extends PluginForDecrypt {
         }
         int counter = 0;
         final int retry = 3;
-        Form captchaform = null;
         while (counter++ < retry && containsCaptcha()) {
+            Form captchaform = null;
             final Form[] allForms = br.getForms();
             if (allForms != null && allForms.length != 0) {
                 for (final Form aForm : allForms) {
@@ -84,7 +86,7 @@ public class FileCryptCc extends PluginForDecrypt {
                     }
                 }
             }
-            final String captcha = captchaform.getRegex("(/captcha/[^<>\"]*?)\"").getMatch(0);
+            final String captcha = captchaform != null ? captchaform.getRegex("(/captcha/[^<>\"]*?)\"").getMatch(0) : null;
             if (captcha != null && captcha.contains("circle.php")) {
                 final File file = this.getLocalCaptchaFile();
                 br.cloneBrowser().getDownload(file, captcha);
@@ -92,10 +94,14 @@ public class FileCryptCc extends PluginForDecrypt {
                 if (p == null) {
                     throw new DecrypterException(DecrypterException.CAPTCHA);
                 }
-                captchaform.put("button.x", String.valueOf(p.x));
-                captchaform.put("button.y", String.valueOf(p.y));
-                submitForm(captchaform);
-            } else if (captchaform.containsHTML("=\"g-recaptcha\"")) {
+                // captchaform.remove("button.x");
+                // captchaform.remove("button.y");
+                // captchaform.put("button.x", String.valueOf(p.x));
+                // captchaform.put("button.y", String.valueOf(p.y));
+                // submitForm(captchaform);
+                br.postPage(br.getURL(), "button.x=" + p.x + "&button.y=" + p.y);
+
+            } else if (captchaform != null && captchaform.containsHTML("=\"g-recaptcha\"")) {
                 // recaptcha v2
                 boolean success = false;
                 String responseToken = null;
@@ -124,6 +130,8 @@ public class FileCryptCc extends PluginForDecrypt {
                     captchaform.put("recaptcha_response_field", "");
                 }
                 submitForm(captchaform);
+            } else {
+                break;
             }
         }
         if (counter == retry && containsCaptcha()) {
@@ -202,7 +210,7 @@ public class FileCryptCc extends PluginForDecrypt {
         return new Regex(cleanHTML, containsCaptcha).matches();
     }
 
-    private final String containsCaptcha = "class=\"safety\"";
+    private final String containsCaptcha = "class=\"safety\">Sicherheitsabfrage<";
 
     private String       cleanHTML       = null;
 
