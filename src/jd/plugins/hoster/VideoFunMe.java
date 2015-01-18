@@ -73,7 +73,7 @@ public class VideoFunMe extends PluginForHost {
         this.setBrowserExclusive();
         prepBrowser(br);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">Error 404")) {
+        if (br.containsHTML(">Error 404|>404 not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dllink = br.getRedirectLocation();
