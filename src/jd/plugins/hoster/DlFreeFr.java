@@ -42,6 +42,14 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dl.free.fr" }, urls = { "http://(www\\.)?dl\\.free\\.fr/(getfile\\.pl\\?file=/[\\w]+|[\\w]+/?)" }, flags = { 0 })
 public class DlFreeFr extends PluginForHost {
 
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null || "dl.free.fr".equals(host) || "free.fr".equals(host)) {
+            return "dl.free.fr";
+        }
+        return super.rewriteHost(host);
+    }
+
     private enum CaptchaTyp {
         image,
         audio,

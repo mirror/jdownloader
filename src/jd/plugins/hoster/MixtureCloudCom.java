@@ -43,7 +43,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixturecloud.com" }, urls = { "https?://((www|audio|doc|file|image|video)\\.)?mixture(cloud|audio|doc|file|image|video)\\.com/(media/(download/)?|download=)[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixturecloud.com" }, urls = { "https?://((www|audio|doc|file|image|video)\\.)?mixturecloud\\.com/(media/(download/)?|download=)[A-Za-z0-9]+" }, flags = { 2 })
 public class MixtureCloudCom extends PluginForHost {
 
     // free: 1maxdl * 1 chunk

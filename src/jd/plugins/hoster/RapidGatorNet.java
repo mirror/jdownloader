@@ -102,6 +102,14 @@ public class RapidGatorNet extends PluginForHost {
     }
 
     @Override
+    public String rewriteHost(String host) {
+        if (host == null || "rapidgator.net".equals(host) || "rg.to".equals(host)) {
+            return "rapidgator.net";
+        }
+        return super.rewriteHost(host);
+    }
+
+    @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
         if (link.getDownloadURL().contains("rg.to/")) {
             String url = link.getDownloadURL();
@@ -225,8 +233,8 @@ public class RapidGatorNet extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (filename.startsWith(".")) {
-            /* Temp workaround for mac user */
+        if (filename.startsWith(".") && /* effectively unix based filesystems */!CrossSystem.isWindows()) {
+            /* Temp workaround for hidden files */
             filename = filename.substring(1);
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
