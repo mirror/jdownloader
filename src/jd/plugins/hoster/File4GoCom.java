@@ -40,7 +40,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file4go.com" }, urls = { "http://(?:www\\.)?file4go\\.(?:com|net)/(?:r/|d/|download\\.php\\?id=)([a-f0-9]{20})" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file4go.net", "file4go.com" }, urls = { "http://(?:www\\.)?file4go\\.(?:com|net)/(?:r/|d/|download\\.php\\?id=)([a-f0-9]{20})", "regex://nullfied/ranoasdahahdom" }, flags = { 2, 0 })
 public class File4GoCom extends PluginForHost {
 
     public File4GoCom(PluginWrapper wrapper) {
