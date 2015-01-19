@@ -29,7 +29,7 @@ import jd.plugins.download.DownloadInterface;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornative.com" }, urls = { "http://(www\\.)?pornative\\.com/\\d+\\.html" }, flags = { 32 })
 public class PornativeCom extends PluginForHost {
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     public PornativeCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -46,43 +46,48 @@ public class PornativeCom extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() != null && "http://www.pornative.com".equalsIgnoreCase(br.getRedirectLocation())) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.getRedirectLocation() != null) {
+            br.getPage(br.getRedirectLocation());
+        }
+        String filename = br.getRegex("<title>Pornative.com \\- (.*?)</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+        }
+        dllink = br.getRegex("netConnectionUrl: \"(rtmp://[^<>\"]*?)\"").getMatch(0);
+        String url = br.getRegex("url: \"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null || dllink == null || url == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dllink = dllink + "&url=" + url;
+        downloadLink.setFinalFileName(filename + ".mp4");
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         download(downloadLink);
     }
 
     private void download(final DownloadLink downloadLink) throws Exception {
-        if (DLLINK.startsWith("rtmp")) {
-            if (!DLLINK.contains("&id=")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            dl = new RTMPDownload(this, downloadLink, DLLINK);
-            setupRTMPConnection(dl);
-            ((RTMPDownload) dl).startDownload();
-
-        } else {
-            br.setFollowRedirects(true);
-            if (DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            if (DLLINK.startsWith("mms")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Protocol (mms://) not supported!"); }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
-                if (dl.getConnection().getResponseCode() == 403) throw new PluginException(LinkStatus.ERROR_FATAL, "This Content is not longer available!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl.startDownload();
-        }
+        dl = new RTMPDownload(this, downloadLink, dllink);
+        setupRTMPConnection(dl);
+        ((RTMPDownload) dl).startDownload();
     }
 
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null && "http://www.pornative.com".equalsIgnoreCase(br.getRedirectLocation())) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-        String filename = br.getRegex("<title>Pornative.com \\- (.*?)</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-        DLLINK = br.getRegex("netConnectionUrl: \"(rtmp://[^<>\"]*?)\"").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setFinalFileName(filename + ".mp4");
-        return AvailableStatus.TRUE;
+    private void setupRTMPConnection(DownloadInterface dl) {
+        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+        rtmp.setPlayPath(dllink.split("\\&url=")[1]);
+        rtmp.setUrl(dllink.split("\\&url=")[0]);
+        rtmp.setSwfVfy("http://www.pornative.com/flash/player_new.swf");
+        rtmp.setToken(Encoding.Base64Decode("ZG12N3NuMjl2bWJuZmQ2czg="));
+        rtmp.setResume(false);
+        rtmp.setTimeOut(5);
     }
 
     @Override
@@ -95,16 +100,6 @@ public class PornativeCom extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
-    }
-
-    private void setupRTMPConnection(DownloadInterface dl) {
-        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-        rtmp.setPlayPath(DLLINK.split("\\&id=")[1]);
-        rtmp.setUrl(DLLINK.split("\\&id=")[0]);
-        rtmp.setSwfVfy("http://www.pornative.com/flash/player_new.swf");
-        rtmp.setToken(Encoding.Base64Decode("ZG12N3NuMjl2bWJuZmQ2czg="));
-        rtmp.setResume(false);
-        rtmp.setTimeOut(5);
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
