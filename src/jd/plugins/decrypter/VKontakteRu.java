@@ -48,7 +48,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(www\\.)?(vk\\.com|vkontakte\\.ru)/(?!doc|picturelink|audiolink|videolink).+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(www\\.)?(vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc|picturelink|audiolink|videolink).+" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt {
 
     /** TODO: Note: PATTERN_VIDEO_SINGLE links should all be decryptable without account but this is not implemented (yet) */
@@ -182,7 +182,7 @@ public class VKontakteRu extends PluginForDecrypt {
             }
         };
         br.setFollowRedirects(true);
-        CRYPTEDLINK_ORIGINAL = Encoding.htmlDecode(param.toString()).replace("vkontakte.ru/", "vk.com/").replace("https://", "http://");
+        CRYPTEDLINK_ORIGINAL = Encoding.htmlDecode(param.toString()).replaceAll("vkontakte\\.(ru|com)/", "vk.com/").replace("https://", "http://");
         CRYPTEDLINK_ORIGINAL = CRYPTEDLINK_ORIGINAL.replace("?profile=1", "");
         CRYPTEDLINK_FUNCTIONAL = CRYPTEDLINK_ORIGINAL;
         CRYPTEDLINK = param;
