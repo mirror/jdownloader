@@ -76,7 +76,7 @@ public class TnaFlixCom extends PluginForHost {
         }
         dllink = Encoding.htmlDecode(dllink);
         Browser brc = br.cloneBrowser();
-        brc.setHeader("Range", "bytes=0-");
+        brc.getHeaders().put("Range", "bytes=0-");
         final URLConnectionAdapter con = brc.openHeadConnection(dllink);
         final long fileSize = con.getCompleteContentLength();
         con.disconnect();
