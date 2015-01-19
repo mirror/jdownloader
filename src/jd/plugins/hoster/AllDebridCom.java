@@ -51,6 +51,7 @@ public class AllDebridCom extends PluginForHost {
     private static final String NOCHUNKS = "NOCHUNKS";
     private final String        hash1    = "593f356a67e32332c13d6692d1fe10b7";
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         prepBrowser(br);
@@ -112,13 +113,12 @@ public class AllDebridCom extends PluginForHost {
                     supportedHosts.add(host);
                 }
             }
-            String daysLeft = accDetails.get("date");
-            if (daysLeft != null && !"0".equals(daysLeft)) {
+            /* Timestamp given in remaining seconds. */
+            final String secondsLeft = accDetails.get("timestamp");
+            if (secondsLeft != null) {
                 account.setValid(true);
-                long validuntil = System.currentTimeMillis() + (Long.parseLong(daysLeft) * 1000 * 60 * 60 * 24);
+                final long validuntil = System.currentTimeMillis() + 1001 * Long.parseLong(secondsLeft);
                 ac.setValidUntil(validuntil);
-            } else if ("0".equals(daysLeft)) {
-                logger.info("User has less than 24 hours premium left --> Do not set any expire date");
             } else {
                 /* no daysleft available?! */
                 account.setValid(false);
