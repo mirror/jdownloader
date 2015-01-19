@@ -411,10 +411,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             lint = languageVersion;
         } else if (versionCode.equals("VA") || versionCode.equals("VA-STA") || versionCode.equals("VO")) {
             lint = 1;
-        } else if (versionCode.startsWith("VF") || versionCode.equals("VOF") || versionCode.equals("VOF-STF")) {
-            /* Special case: http://www.arte.tv/guide/fr/049810-000/frere-et-soeur */
+        } else if (versionCode.equals("VOF") || versionCode.equals("VOF-STF")) {
             lint = 2;
-        } else if ("VOF-STMF".equals(versionCode) || "VA-STMA".equals(versionCode)) {
+        } else if ("VF-STMF".equals(versionCode) || "VOF-STMF".equals(versionCode) || "VOF-STF".equals(versionCode) || "VA-STMA".equals(versionCode)) {
             lint = 3;
         } else if (versionCode.equals("VOA-STMA")) {
             lint = 4;
@@ -434,7 +433,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
      */
     private void setAvailableVersion(final String vsr, final int preferredversion) {
         /* Needed for checks later - only set languageVersion user selected value if we know that it's actually available! */
-        if (preferredversion == 1 && vsr.matches(".+\"versionCode\":\"(VOF-STMF|VOF-STF|VA-STMA)\".+")) {
+        if (preferredversion == 1 && vsr.matches(".+\"versionCode\":\"(VF-STMF|VOF-STMF|VOF-STF|VA-STMA)\".+")) {
             logger.info("Subtitled versions available!");
             languageVersion = 3;
         } else if (preferredversion == 2 && vsr.contains("\"versionCode\":\"VOA-STMA\"")) {
