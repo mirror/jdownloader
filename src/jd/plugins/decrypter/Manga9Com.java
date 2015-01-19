@@ -53,7 +53,8 @@ public class Manga9Com extends PluginForDecrypt {
             fpName = new Regex(parameter, "manga9\\.com/([a-z0-9\\-_]+)/").getMatch(0);
         }
         final String maxpage = br.getRegex(">(\\d+)</option></select>").getMatch(0);
-        final String[][] linkinfo = br.getRegex("(http://z\\.mhcdn\\.net/store/manga/\\d+/\\d{3}\\.0/compressed/p\\d{3})\\-\\d{3}\\.jpg\\?v=(\\d+)").getMatches();
+        // http://z.mhcdn.net/store/manga/15494/033.0/compressed/c001.jpg?v=11421676781
+        final String[][] linkinfo = br.getRegex("(http://z\\.mhcdn\\.net/store/manga/\\d+/\\d{3}\\.0/compressed/[a-z])\\d{3}\\.jpg\\?v=(\\d+)").getMatches();
         if (maxpage == null || linkinfo.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -63,7 +64,7 @@ public class Manga9Com extends PluginForDecrypt {
         final String v = linkinfo[0][1];
         for (int i = 1; i <= Integer.parseInt(maxpage); i++) {
             final String formattednumber = df.format(i);
-            final String directlink = "directhttp://" + serverpart + "-" + formattednumber + ".jpg?v=" + v;
+            final String directlink = "directhttp://" + serverpart + formattednumber + ".jpg?v=" + v;
             final DownloadLink dl = createDownloadlink(directlink);
             dl.setFinalFileName(fpName + "_" + formattednumber + ".jpg");
             dl.setAvailable(true);

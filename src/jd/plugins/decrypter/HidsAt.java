@@ -32,7 +32,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hides.at" }, urls = { "https?://(www\\.)?hides\\.at/(link/)?[a-f0-9]{32}" }, flags = { 0 })
 public class HidsAt extends PluginForDecrypt {
@@ -54,51 +53,69 @@ public class HidsAt extends PluginForDecrypt {
         br.setFollowRedirects(true);
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("Error loading list or invalid list")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        if (!br.containsHTML(CAPTCHATEXT)) return null;
-        String linkID = new Regex(parameter, "hides\\.at/(link/)?(.+)").getMatch(1);
+        if (br.containsHTML("Error loading list or invalid list")) {
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
+        }
+        if (br.containsHTML(CAPTCHATEXT)) {
 
-        Browser br2 = br.cloneBrowser();
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection("http://hides.at/include/securimage-1.0.3.1/securimage_show.php");
-            if (con.getContentType().contains("html")) {
-                br2.followConnection();
-                if (br2.containsHTML("<b>Fatal error</b>:"))
-                    br.getPage(parameter + "?captcha_code=+&hash=" + linkID);
-                else
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else {
-                int repeat = 4;
-                for (int i = 0; i <= repeat; i++) {
-                    String code = getCaptchaCode("http://hides.at/include/securimage-1.0.3.1/securimage_show.php", param);
-                    Browser cap = br.cloneBrowser();
-                    cap.getPage("http://hides.at/link/" + linkID + "?captcha_code=" + code + "&hash=" + linkID + "&btnSubmit=Submit");
-                    if (i + 1 == repeat && cap.containsHTML(CAPTCHATEXT)) {
-                        throw new DecrypterException(DecrypterException.CAPTCHA);
-                    } else if (cap.containsHTML(CAPTCHATEXT)) {
-                        continue;
+            String linkID = new Regex(parameter, "hides\\.at/(link/)?(.+)").getMatch(1);
+
+            Browser br2 = br.cloneBrowser();
+            URLConnectionAdapter con = null;
+            try {
+                con = br2.openGetConnection("http://hides.at/include/securimage-1.0.3.1/securimage_show.php");
+                if (con.getContentType().contains("html")) {
+                    br2.followConnection();
+                    if (br2.containsHTML("<b>Fatal error</b>:")) {
+                        br.getPage(parameter + "?captcha_code=+&hash=" + linkID);
                     } else {
-                        br = cap.cloneBrowser();
-                        break;
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                } else {
+                    int repeat = 4;
+                    for (int i = 0; i <= repeat; i++) {
+                        String code = getCaptchaCode("http://hides.at/include/securimage-1.0.3.1/securimage_show.php", param);
+                        Browser cap = br.cloneBrowser();
+                        cap.getPage("http://hides.at/link/" + linkID + "?captcha_code=" + code + "&hash=" + linkID + "&btnSubmit=Submit");
+                        if (i + 1 == repeat && cap.containsHTML(CAPTCHATEXT)) {
+                            throw new DecrypterException(DecrypterException.CAPTCHA);
+                        } else if (cap.containsHTML(CAPTCHATEXT)) {
+                            continue;
+                        } else {
+                            br = cap.cloneBrowser();
+                            break;
+                        }
                     }
                 }
-            }
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) throw (PluginException) e;
-            if (e instanceof DecrypterException) throw (DecrypterException) e;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Exception e) {
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
+                if (e instanceof DecrypterException) {
+                    throw (DecrypterException) e;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Exception e) {
+                }
             }
         }
         String list = br.getRegex("id=\"list2Copy\" style=\"display: none;\">(.*?)</div>").getMatch(0);
-        if (list == null) return null;
+        if (list == null) {
+            return null;
+        }
         String[] links = HTMLParser.getHttpLinks(list, "");
-        if (links == null || links.length == 0) return null;
-        for (String dl : links)
+        if (links == null || links.length == 0) {
+            return null;
+        }
+        for (String dl : links) {
             decryptedLinks.add(createDownloadlink(dl));
+        }
         return decryptedLinks;
     }
 
