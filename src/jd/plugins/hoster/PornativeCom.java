@@ -54,6 +54,9 @@ public class PornativeCom extends PluginForHost {
         if (br.getRedirectLocation() != null) {
             br.getPage(br.getRedirectLocation());
         }
+        if (!br.getURL().contains(".html")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>Pornative.com \\- (.*?)</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
