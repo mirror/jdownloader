@@ -454,12 +454,23 @@ public class ShareOnlineBiz extends PluginForHost {
                 ai.setValidUntil(-1);
             }
             if (userTrafficWorkaround()) {
-                long max = 100 * 1024 * 1024 * 1024l;// 100 GB per day - 420 GB per week
-                String traffic = infos.get("traffic_1d");// traffic_7d = week
-                String trafficdata[] = traffic.split(";");
-                long current = Long.parseLong(trafficdata[0].trim());
-                ai.setTrafficMax(Math.max(max, current));
-                ai.setTrafficLeft((max - current));
+                final long maxDay = 100 * 1024 * 1024 * 1024l;// 100 GB per day
+                final long maxWeek = 450 * 1024 * 1024 * 1024l;// 450 GB per week
+                final String trafficDay = infos.get("traffic_1d");
+                final String trafficWeek = infos.get("traffic_7d");
+                final String trafficDayData[] = trafficDay.split(";");
+                final String trafficWeekData[] = trafficWeek.split(";");
+                final long usedDay = Long.parseLong(trafficDayData[0].trim());
+                final long usedWeek = Long.parseLong(trafficWeekData[0].trim());
+                final long freeWeek = maxWeek - usedWeek;
+                final long freeDay = maxDay - usedDay;
+                if (freeWeek < maxDay) {
+                    ai.setTrafficMax(maxWeek);
+                    ai.setTrafficLeft(freeWeek);
+                } else {
+                    ai.setTrafficMax(maxDay);
+                    ai.setTrafficLeft(freeDay);
+                }
             }
         }
         if (infos.containsKey("points")) {
