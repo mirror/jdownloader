@@ -54,17 +54,25 @@ public class Manga9Com extends PluginForDecrypt {
         }
         final String maxpage = br.getRegex(">(\\d+)</option></select>").getMatch(0);
         // http://z.mhcdn.net/store/manga/15494/033.0/compressed/c001.jpg?v=11421676781
-        final String[][] linkinfo = br.getRegex("(http://z\\.mhcdn\\.net/store/manga/\\d+/\\d{3}\\.0/compressed/[a-z])\\d{3}\\.jpg\\?v=(\\d+)").getMatches();
-        if (maxpage == null || linkinfo.length == 0) {
+        final Regex finallinkdata = br.getRegex("(http://z\\.mhcdn\\.net/store/manga/\\d+/\\d{3}\\.0/compressed/[a-z]+|http://(?:www\\.)?manga9\\.com/wp\\-content/manga/\\d+/\\d+/)");
+        final String serverpart = finallinkdata.getMatch(0);
+        final String v = br.getRegex("\\?v=(\\d+)").getMatch(0);
+        if (serverpart == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         final DecimalFormat df = new DecimalFormat("000");
-        final String serverpart = linkinfo[0][0];
-        final String v = linkinfo[0][1];
+        final DecimalFormat df2 = new DecimalFormat("00");
         for (int i = 1; i <= Integer.parseInt(maxpage); i++) {
-            final String formattednumber = df.format(i);
-            final String directlink = "directhttp://" + serverpart + formattednumber + ".jpg?v=" + v;
+            String formattednumber;
+            String directlink = "directhttp://" + serverpart;
+            if (serverpart.contains("/compressed/")) {
+                formattednumber = df.format(i);
+                directlink += formattednumber + ".jpg?v=" + v;
+            } else {
+                formattednumber = df2.format(i);
+                directlink += formattednumber + ".jpg";
+            }
             final DownloadLink dl = createDownloadlink(directlink);
             dl.setFinalFileName(fpName + "_" + formattednumber + ".jpg");
             dl.setAvailable(true);

@@ -58,7 +58,7 @@ public class BangYouLaterCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         // ">This video is no longer available" is always in the html
-        if (br.getURL().equals("http://www.bangyoulater.com/") || br.containsHTML("display: block")) {
+        if (br.getURL().equals("http://www.bangyoulater.com/") || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"thumbnail err\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1 itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
