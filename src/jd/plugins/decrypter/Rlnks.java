@@ -281,7 +281,7 @@ public class Rlnks extends PluginForDecrypt {
 
         if (b) {
             ALLFORM = br.getForm(0);
-            ALLFORM = ALLFORM != null && ALLFORM.getAction().startsWith("http://www.relink.us/container_password.php") ? ALLFORM : null;
+            ALLFORM = ALLFORM != null && ALLFORM.getAction() != null && ALLFORM.getAction().matches("^https?://(\\w+\\.)?relink\\.us/container_password\\.php.*") ? ALLFORM : null;
         }
         if (ALLFORM != null) {
             for (int i = 0; i < 5; i++) {
