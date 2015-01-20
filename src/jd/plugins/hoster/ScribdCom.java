@@ -331,6 +331,7 @@ public class ScribdCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private String[] getDllink(final DownloadLink parameter) throws PluginException, IOException {
         try {
             br.getPage(ORIGURL);
@@ -347,7 +348,7 @@ public class ScribdCom extends PluginForHost {
         if (fileId == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final Browser xmlbrowser = br.cloneBrowser();
+        Browser xmlbrowser = br.cloneBrowser();
         xmlbrowser.setFollowRedirects(false);
         xmlbrowser.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         xmlbrowser.getHeaders().put("Accept", "*/*");
@@ -367,18 +368,17 @@ public class ScribdCom extends PluginForHost {
         }
         xmlbrowser.getHeaders().put("X-Tried-CSRF", "1");
         xmlbrowser.getHeaders().put("X-CSRF-Token", authenticity_token);
-        xmlbrowser.postPage("http://de.scribd.com/document_downloads/register_download_attempt", "doc_id=" + fileId + "&next_screen=download_lightbox&source=read");
-        dlinfo[0] = "http://de.scribd.com/document_downloads/" + fileId + "?extension=" + dlinfo[1];
-        xmlbrowser.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        xmlbrowser.getHeaders().put("Accept-Language", "de,en-us;q=0.7,en;q=0.3");
-        xmlbrowser.getHeaders().remove("Accept-Charset");
-        xmlbrowser.getHeaders().put("Accept-Charset", null);
-        xmlbrowser.getHeaders().put("Referer", ORIGURL);
-        xmlbrowser.getHeaders().put("X-Tried-CSRF", null);
-        xmlbrowser.getHeaders().put("X-CSRF-Token", null);
-        final String check = getSessionCookie(xmlbrowser);
-        xmlbrowser.clearCookies("http://scribd.com/");
-        xmlbrowser.setCookie("http://scribd.com/", "_scribd_session", check);
+        /* Seems like this is not needed anymore. */
+        // xmlbrowser.postPage("/document_downloads/register_download_attempt", "doc_id=" + fileId +
+        // "&next_screen=download_lightbox&source=read");
+        dlinfo[0] = "https://de.scribd.com/document_downloads/" + fileId + "?extension=" + dlinfo[1];
+        xmlbrowser = new Browser();
+        final String scribdsession = getSpecifiedCookie(this.br, "_scribd_session");
+        final String scribdexpire = getSpecifiedCookie(this.br, "_scribd_expire");
+        xmlbrowser.setCookie("http://scribd.com/", "_scribd_session", scribdsession);
+        xmlbrowser.setCookie("http://scribd.com/", "_scribd_expire", scribdexpire);
+        this.br.setCookie("http://scribd.com/", "_scribd_expire", scribdexpire);
+        this.br.setCookie("http://scribd.com/", "_scribd_expire", scribdexpire);
         xmlbrowser.getPage(dlinfo[0]);
         if (br.containsHTML("Sorry, downloading this document in the requested format has been disallowed")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, dlinfo[1] + " format is not available for this file!");
@@ -406,7 +406,7 @@ public class ScribdCom extends PluginForHost {
         return authenticity_token;
     }
 
-    private String getSessionCookie(final Browser brc) {
+    private String getSpecifiedCookie(final Browser brc, final String paramname) {
         ArrayList<String> sessionids = new ArrayList<String>();
         final HashMap<String, String> cookies = new HashMap<String, String>();
         final Cookies add = this.br.getCookies("http://scribd.com/");
@@ -417,7 +417,7 @@ public class ScribdCom extends PluginForHost {
             for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                 final String key = cookieEntry.getKey();
                 final String value = cookieEntry.getValue();
-                if (key.equals("_scribd_session")) {
+                if (key.equals(paramname)) {
                     sessionids.add(value);
                 }
             }
