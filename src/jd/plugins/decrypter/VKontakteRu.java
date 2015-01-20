@@ -183,7 +183,14 @@ public class VKontakteRu extends PluginForDecrypt {
         };
         br.setFollowRedirects(true);
         CRYPTEDLINK_ORIGINAL = Encoding.htmlDecode(param.toString()).replaceAll("vkontakte\\.(ru|com)/", "vk.com/").replace("https://", "http://");
-        CRYPTEDLINK_ORIGINAL = CRYPTEDLINK_ORIGINAL.replace("?profile=1", "");
+        /* Remove unneeded things */
+        final String[] unwantedParts = { "(\\?profile=\\d+)", "(\\?rev=\\d+)" };
+        for (final String unwantedPart : unwantedParts) {
+            final String unwantedData = new Regex(this.CRYPTEDLINK_ORIGINAL, unwantedPart).getMatch(0);
+            if (unwantedData != null) {
+                this.CRYPTEDLINK_ORIGINAL = this.CRYPTEDLINK_ORIGINAL.replace(unwantedData, "");
+            }
+        }
         CRYPTEDLINK_FUNCTIONAL = CRYPTEDLINK_ORIGINAL;
         CRYPTEDLINK = param;
         /* Set settings */

@@ -52,9 +52,7 @@ public class NowVideoEu extends PluginForHost {
 
     public NowVideoEu(PluginWrapper wrapper) {
         super(wrapper);
-        if ("nowvideo.eu".equals(getHost())) {
-            this.enablePremium(MAINPAGE.get() + "/premium.php");
-        }
+        this.enablePremium(MAINPAGE.get() + "/premium.php");
     }
 
     @Override

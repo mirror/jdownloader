@@ -68,7 +68,7 @@ public class BcVc extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        if (br.getURL().equals("http://bc.vc/") || br.containsHTML("top\\.location\\.href = \"http://bc\\.vc/\"") || br.containsHTML(">404 Not Found<") || br.containsHTML(">Sorry the page you are looking for does not exist")) {
+        if (br.getURL().equals("http://bc.vc/") || br.containsHTML("top\\.location\\.href = \"http://bc\\.vc/\"") || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">404 Not Found<") || br.containsHTML(">Sorry the page you are looking for does not exist")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
