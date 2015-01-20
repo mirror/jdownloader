@@ -123,12 +123,18 @@ public class DebridItaliaCom extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
+    @SuppressWarnings("deprecation")
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
         setConstants(acc, link);
         showMessage(link, "Generating link");
         String dllink = checkDirectLink(link, "debriditaliadirectlink");
         if (dllink == null) {
-            final String encodedLink = Encoding.urlEncode(link.getDownloadURL());
+            String host_downloadlink = link.getDownloadURL();
+            /* Workaround for serverside debriditalia bug. */
+            if (link.getHost().equals("share-online.biz") && host_downloadlink.contains("https://")) {
+                host_downloadlink = host_downloadlink.replace("https://", "http://");
+            }
+            final String encodedLink = Encoding.urlEncode(host_downloadlink);
             br.getPage("https://debriditalia.com/api.php?generate=on&u=" + Encoding.urlEncode(acc.getUser()) + "&p=" + Encoding.urlEncode(acc.getPass()) + "&link=" + encodedLink);
             /* Either server error or the host is broken (we have to find out by retrying) */
             if (br.containsHTML("ERROR: not_available")) {
