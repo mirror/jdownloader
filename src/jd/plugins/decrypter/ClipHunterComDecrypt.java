@@ -45,7 +45,7 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // [0] =
+    /* [0] = Value for LinkedHashMap, [1] or higher = To display in filename. */
     /**
      * sync with hoster
      */
