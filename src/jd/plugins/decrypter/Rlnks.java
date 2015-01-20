@@ -44,7 +44,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink.us" }, urls = { "http://(www\\.)?relink\\.us/(f/|(go|view|container_captcha)\\.php\\?id=)[0-9a-f]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink.us" }, urls = { "http://(www\\.)?relink\\.us/(f/|(go|view|container_captcha)\\.php\\?id=)[0-9a-f]{30}" }, flags = { 0 })
 public class Rlnks extends PluginForDecrypt {
 
     ProgressController   PROGRESS;
@@ -265,6 +265,20 @@ public class Rlnks extends PluginForDecrypt {
         br.getPage(partLink);
         ALLFORM = br.getFormbyProperty("name", "form");
         boolean b = ALLFORM == null ? true : false;
+        // 20150120 - raztoki
+        if (ALLFORM == null && br.containsHTML(">Please Wait\\.\\.\\.<") && br.containsHTML("class=\"timer\">\\d+</span>\\s*seconds</div>")) {
+            // pile of redirects happen here
+            final String link = br.getRegex("class=\"timer\">\\d+</span>\\s*seconds</div>\\s*<a href=\"\\s*(https?://(\\w+\\.)?relink\\.us/.*?)\\s*\"").getMatch(0);
+            if (link != null) {
+                br.getPage(link.trim());
+                ALLFORM = br.getFormbyProperty("name", "form");
+                b = ALLFORM == null ? true : false;
+            } else {
+                // possible plugin defect
+                logger.warning("Possible Plugin Defect!");
+            }
+        }
+
         if (b) {
             ALLFORM = br.getForm(0);
             ALLFORM = ALLFORM != null && ALLFORM.getAction().startsWith("http://www.relink.us/container_password.php") ? ALLFORM : null;
