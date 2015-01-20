@@ -49,7 +49,7 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
     /**
      * sync with hoster
      */
-    private final String[][] qualities = { { "_h.flv", "540p.flv" }, { "_p.mp4", "_p480.mp4", "480p.mp4" }, { "_l.flv", "_p360.mp4", "360pflv.flv" }, { "_i.mp4", "360p.mp4" } };
+    private final String[][] qualities = { { "_fhd.mp4", "p1080.mp4" }, { "_hd.mp4", "p720.mp4" }, { "_h.flv", "540p.flv" }, { "_p.mp4", "_p480.mp4", "480p.mp4" }, { "_l.flv", "_p360.mp4", "360pflv.flv" }, { "_i.mp4", "360p.mp4" } };
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -98,11 +98,15 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
         boolean q360pflv = cfg.getBooleanProperty("ALLOW_360PFLV", false);
         boolean q480p = cfg.getBooleanProperty("ALLOW_480P", false);
         boolean q540p = cfg.getBooleanProperty("ALLOW_540P", false);
-        if (q360p == false && q360pflv == false && q480p == false && q540p == false) {
+        boolean q720p = cfg.getBooleanProperty("ALLOW_720P", false);
+        boolean q1080p = cfg.getBooleanProperty("ALLOW_1080P", false);
+        if (q360p == false && q360pflv == false && q480p == false && q540p == false && q720p == false && q1080p == false) {
             q360p = true;
             q360pflv = true;
             q480p = true;
             q540p = true;
+            q720p = true;
+            q1080p = true;
         }
         if (q360p) {
             selectedQualities.add("_i.mp4");
@@ -115,6 +119,12 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
         }
         if (q540p) {
             selectedQualities.add("_h.flv");
+        }
+        if (q720p) {
+            selectedQualities.add("_hd.mp4");
+        }
+        if (q1080p) {
+            selectedQualities.add("_fhd.mp4");
         }
         final boolean fastLinkcheck = cfg.getBooleanProperty("FASTLINKCHECK", false);
         if (cfg.getBooleanProperty("ALLOW_BEST", false)) {
@@ -161,6 +171,7 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
                             dl.setAvailable(true);
                         }
                         decryptedLinks.add(dl);
+                        break;
                     }
                 }
             }
@@ -205,11 +216,9 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
                         foundQualities.put(quality[0], tmpUrl);
                         break;
                     }
-                } else {
-                    if (tmpUrl.contains(quality[0])) {
-                        foundQualities.put(quality[0], tmpUrl);
-                        break;
-                    }
+                } else if (tmpUrl.contains(quality[1])) {
+                    foundQualities.put(quality[0], tmpUrl);
+                    break;
                 }
             }
         }

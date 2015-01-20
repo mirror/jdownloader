@@ -52,6 +52,8 @@ public class ClipHunterCom extends PluginForHost {
     private static final String ALLOW_360PFLV = "ALLOW_360PFLV";
     private static final String ALLOW_480P    = "ALLOW_480P";
     private static final String ALLOW_540P    = "ALLOW_540P";
+    private static final String ALLOW_720P    = "ALLOW_720P";
+    private static final String ALLOW_1080P   = "ALLOW_1080P";
     private static final String FASTLINKCHECK = "FASTLINKCHECK";
     /**
      * sync with decrypter
@@ -203,10 +205,12 @@ public class ClipHunterCom extends PluginForHost {
         final ConfigEntry hq = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_BEST, JDL.L("plugins.hoster.cliphuntercom.checkbest", "Only grab the best available resolution")).setDefaultValue(false);
         getConfig().addEntry(hq);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_360P, JDL.L("plugins.hoster.cliphuntercom.check360mp4", "Grab low (i) (360p MP4)?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_360PFLV, JDL.L("plugins.hoster.cliphuntercom.check360flv", "Grab medium (l) (360p FLV)?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_480P, JDL.L("plugins.hoster.cliphuntercom.check480mp4", "Grab medium (p) (480p MP4)?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_540P, JDL.L("plugins.hoster.cliphuntercom.check540mp4", "Grab high (h) (540p FLV)?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_360P, JDL.L("plugins.hoster.cliphuntercom.check360mp4", "Grab low (i) (360p mp4)?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_360PFLV, JDL.L("plugins.hoster.cliphuntercom.check360flv", "Grab medium (l) (360p flv)?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_480P, JDL.L("plugins.hoster.cliphuntercom.check480mp4", "Grab medium (p) (480p mp4)?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_540P, JDL.L("plugins.hoster.cliphuntercom.check540flv", "Grab high (h) (540p flv)?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_720P, JDL.L("plugins.hoster.cliphuntercom.check720mp4", "Grab HD (hd) (720p mp4)?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_1080P, JDL.L("plugins.hoster.cliphuntercom.check1080mp4", "Grab Full HD (fhd) (1080p mp4)?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
     }
 
     @Override
