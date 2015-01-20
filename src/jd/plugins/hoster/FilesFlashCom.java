@@ -69,6 +69,7 @@ public class FilesFlashCom extends PluginForHost {
      *
      *
      */
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) throws PluginException {
         // find fuid
         final String fuid = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
@@ -84,8 +85,16 @@ public class FilesFlashCom extends PluginForHost {
         // set primary based on user settings
         setConfiguredDomain();
         // record userPreference link!
-        link.setProperty("userEndURL", "http://" + userDomain + "/" + fuid);
-        link.setUrlDownload(mainDomain + "/" + fuid);
+        final String content_url = "http://" + userDomain + "/" + fuid;
+        final String url_to_use = mainDomain + fuid;
+        link.setProperty("userEndURL", content_url);
+        try {
+            link.setContentUrl(content_url);
+        } catch (final Throwable e) {
+            /* Not available in old 0.9.581 Stable */
+        }
+        link.setBrowserUrl(content_url);
+        link.setUrlDownload(url_to_use);
     }
 
     @Override
