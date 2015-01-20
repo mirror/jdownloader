@@ -126,7 +126,8 @@ public class SimplyDebridCom extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(DownloadLink link, Account account) throws Exception {
+    @SuppressWarnings("deprecation")
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         prepareBrowser(br);
         String url = link.getDownloadURL();
         url = Encoding.urlEncode(url);
