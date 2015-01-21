@@ -180,10 +180,10 @@ public class DebridItaliaCom extends PluginForHost {
             br.followConnection();
             if (br.containsHTML("No htmlCode read")) {
                 logger.info("debriditalia.com: Unknown download error");
-                handleErrorRetries("unknowndlerror", MAXRETRIES_timesfaileddebriditalia_unknowndlerror);
+                handleErrorRetries("unknowndlerror", MAXRETRIES_timesfaileddebriditalia_unknowndlerror, 5 * 60 * 1000l);
             }
             logger.info("debriditalia.com: Unknown download error 2" + br.toString());
-            handleErrorRetries("unknowndlerror2", MAXRETRIES_timesfaileddebriditalia_unknowndlerror);
+            handleErrorRetries("unknowndlerror2", MAXRETRIES_timesfaileddebriditalia_unknowndlerror, 1 * 60 * 60 * 1000l);
         }
         // Directlinks can be used for up to 2 days
         link.setProperty("debriditaliadirectlink", dllink);
@@ -305,7 +305,7 @@ public class DebridItaliaCom extends PluginForHost {
      * @param maxRetries
      *            : Max retries before out of date error is thrown
      */
-    private void handleErrorRetries(final String error, final int maxRetries) throws PluginException {
+    private void handleErrorRetries(final String error, final int maxRetries, final long timeout) throws PluginException {
         int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
         this.currDownloadLink.getLinkStatus().setRetryCount(0);
         if (timesFailed <= maxRetries) {
