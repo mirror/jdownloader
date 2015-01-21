@@ -54,7 +54,7 @@ public class Manga9Com extends PluginForDecrypt {
         }
         final String maxpage = br.getRegex(">(\\d+)</option></select>").getMatch(0);
         // http://z.mhcdn.net/store/manga/15494/033.0/compressed/c001.jpg?v=11421676781
-        String serverpart = br.getRegex("(http://z\\.mhcdn\\.net/store/manga/\\d+/\\d{3}\\.0/compressed/[a-z]+(\\d+\\-)?)").getMatch(0);
+        String serverpart = br.getRegex("(http://z\\.mhcdn\\.net/store/manga/\\d+/[0-9\\-]+\\.0/compressed/[a-z]+(\\d+\\-)?)").getMatch(0);
         if (serverpart == null) {
             serverpart = br.getRegex("(http://(?:www\\.)?manga9\\.com/wp\\-content/manga/\\d+/\\d+/)").getMatch(0);
         }

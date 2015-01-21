@@ -17,11 +17,17 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
+import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -39,13 +45,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "http://(www\\.)?flickrdecrypted\\.com/photos/[^<>\"/]+/\\d+" }, flags = { 2 })
 public class FlickrCom extends PluginForHost {
 
     public FlickrCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium();
+        this.enablePremium("https://edit.yahoo.com/registration?.src=flickrsignup");
+        setConfigElements();
     }
 
     @Override
@@ -53,14 +61,19 @@ public class FlickrCom extends PluginForHost {
         return "http://flickr.com";
     }
 
-    private String              DLLINK    = null;
+    /* Settings */
+    private static final String CUSTOM_DATE                      = "CUSTOM_DATE";
+    private static final String CUSTOM_FILENAME                  = "CUSTOM_FILENAME";
+    private static final String CUSTOM_FILENAME_EMPTY_TAG_STRING = "CUSTOM_FILENAME_EMPTY_TAG_STRING";
 
-    private static Object       LOCK      = new Object();
-    private static final String MAINPAGE  = "http://flickr.com";
-    private static final String intl      = "us";
-    private static final String lang_post = "en-US";
-    private String              user      = null;
-    private String              id        = null;
+    private static final String MAINPAGE                         = "http://flickr.com";
+
+    private static Object       LOCK                             = new Object();
+    private String              dllink                           = null;
+    private static final String intl                             = "us";
+    private static final String lang_post                        = "en-US";
+    private String              user                             = null;
+    private String              id                               = null;
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
@@ -82,6 +95,11 @@ public class FlickrCom extends PluginForHost {
         return false;
     }
 
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
     /**
      * Keep in mind that there is this nice oauth API which might be useful in the future: https://www.flickr.com/services/oembed?url=
      *
@@ -98,6 +116,10 @@ public class FlickrCom extends PluginForHost {
         correctDownloadLink(downloadLink);
         id = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         user = new Regex(downloadLink.getDownloadURL(), "flickr\\.com/photos/([^<>\"/]+)/").getMatch(0);
+        /* Needed for custom filenames! */
+        if (downloadLink.getStringProperty("username", null) == null) {
+            downloadLink.setProperty("username", user);
+        }
         br.clearCookies(MAINPAGE);
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
@@ -138,50 +160,57 @@ public class FlickrCom extends PluginForHost {
             }
             br.getPage("https://api.flickr.com/services/rest?photo_id=" + id + "&secret=" + secret + "&method=flickr.video.getStreamInfo&csrf=&api_key=" + api_key + "&format=json&hermes=1&hermesClient=1&reqId=&nojsoncallback=1");
 
-            DLLINK = br.getRegex("\"type\":\"orig\",\\s*?\"_content\":\"(https[^<>\"]*?)\"").getMatch(0);
-            if (DLLINK == null) {
+            dllink = br.getRegex("\"type\":\"orig\",\\s*?\"_content\":\"(https[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            DLLINK = DLLINK.replace("\\", "");
-            if (DLLINK.contains("mp4")) {
-                filename += ".mp4";
+            dllink = dllink.replace("\\", "");
+            String videoExt;
+            if (dllink.contains("mp4")) {
+                videoExt = ".mp4";
             } else {
-                filename += ".flv";
+                videoExt = ".flv";
             }
+            filename += videoExt;
+            /* Needed for custom filenames! */
+            downloadLink.setProperty("ext", videoExt);
         } else {
             br.getPage(downloadLink.getDownloadURL() + "/in/photostream");
-            DLLINK = getFinalLink();
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("\"(https?://farm\\d+\\.(static\\.flickr|staticflickr)\\.com/\\d+/.*?)\"").getMatch(0);
+            final String uploadedDate = getJson("datePosted");
+            if (uploadedDate != null) {
+                downloadLink.setProperty("dateadded", Long.parseLong(uploadedDate) * 1000);
             }
-            if (DLLINK == null) {
+            dllink = getFinalLink();
+            if (dllink == null) {
+                dllink = br.getRegex("\"(https?://farm\\d+\\.(static\\.flickr|staticflickr)\\.com/\\d+/.*?)\"").getMatch(0);
+            }
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+            String ext = dllink.substring(dllink.lastIndexOf("."));
             if (ext == null || ext.length() > 5) {
-                ext = ".jpg";
+                ext = defaultPhotoExt;
             }
             if (!filename.endsWith(ext)) {
                 filename = filename + ext;
             }
+            /* Needed for custom filenames! */
+            downloadLink.setProperty("photo_id", id);
+            downloadLink.setProperty("custom_filenames_allowed", true);
         }
-        // Cut filenames if they're too long
-        if (filename.length() > 180) {
-            final String ext = filename.substring(filename.lastIndexOf("."));
-            int extLength = ext.length();
-            filename = filename.substring(0, 180 - extLength);
-            filename += ext;
-        }
+        /* Save it for the getFormattedFilename function. */
+        downloadLink.setProperty("decryptedfilename", filename);
+        filename = getFormattedFilename(downloadLink);
         downloadLink.setFinalFileName(filename);
         Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
+        /* In case the link redirects to the finallink */
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
-                con = br.openHeadConnection(DLLINK);
+                con = br.openHeadConnection(dllink);
             } else {
-                con = br.openGetConnection(DLLINK);
+                con = br.openGetConnection(dllink);
             }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
@@ -210,7 +239,7 @@ public class FlickrCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -218,6 +247,7 @@ public class FlickrCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -242,7 +272,7 @@ public class FlickrCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -403,6 +433,7 @@ public class FlickrCom extends PluginForHost {
         return post_data;
     }
 
+    @SuppressWarnings("unused")
     private String createGuid() {
         String a = "";
         final String b = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._";
@@ -465,13 +496,12 @@ public class FlickrCom extends PluginForHost {
         return finallink;
     }
 
+    @SuppressWarnings("deprecation")
     private String getFilename(final DownloadLink dl) {
         final String linkid = new Regex(dl.getDownloadURL(), "(\\d+)$").getMatch(0);
         String filename = dl.getStringProperty("decryptedfilename", null);
         if (filename == null) {
-            if (filename == null) {
-                filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
-            }
+            filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("class=\"photo\\-title\">(.*?)</h1").getMatch(0);
             }
@@ -483,7 +513,7 @@ public class FlickrCom extends PluginForHost {
             }
             if (filename != null) {
                 filename = Encoding.htmlDecode(filename).trim();
-                // trim
+                /* trim */
                 while (filename != null) {
                     if (filename.endsWith(".")) {
                         filename = filename.substring(0, filename.length() - 1);
@@ -495,13 +525,134 @@ public class FlickrCom extends PluginForHost {
                 }
                 filename += "_" + linkid;
             }
+            /* Needed for custom filenames! */
+            if (dl.getStringProperty("title", null) == null) {
+                dl.setProperty("title", filename);
+            }
         }
         return filename;
     }
 
+    /* Stable workaround */
+    public static long getLongProperty(final Property link, final String key, final long def) {
+        try {
+            return link.getLongProperty(key, def);
+        } catch (final Throwable e) {
+            try {
+                Object r = link.getProperty(key, def);
+                if (r instanceof String) {
+                    r = Long.parseLong((String) r);
+                } else if (r instanceof Integer) {
+                    r = ((Integer) r).longValue();
+                }
+                final Long ret = (Long) r;
+                return ret;
+            } catch (final Throwable e2) {
+                return def;
+            }
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    public static String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
+        String formattedFilename = null;
+        if (downloadLink.getBooleanProperty("custom_filenames_allowed", false)) {
+            final SubConfiguration cfg = SubConfiguration.getConfig("flickr.com");
+            final String customStringForEmptyTags = getCustomStringForEmptyTags();
+            final String owner = cfg.getStringProperty("owner", customStringForEmptyTags);
+
+            final String site_title = downloadLink.getStringProperty("title", customStringForEmptyTags);
+            final String ext = downloadLink.getStringProperty("ext", defaultPhotoExt);
+            final String username = downloadLink.getStringProperty("username", customStringForEmptyTags);
+            final String photo_id = downloadLink.getStringProperty("photo_id", customStringForEmptyTags);
+
+            final long date = getLongProperty(downloadLink, "dateadded", 0l);
+            String formattedDate = null;
+            final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, defaultCustomDate);
+            Date theDate = new Date(date);
+            if (userDefinedDateFormat != null) {
+                try {
+                    final SimpleDateFormat formatter = new SimpleDateFormat(userDefinedDateFormat);
+                    formattedDate = formatter.format(theDate);
+                } catch (Exception e) {
+                    /* prevent user error killing the custom filename function. */
+                    formattedDate = defaultCustomStringForEmptyTags;
+                }
+            }
+
+            formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
+            if (formattedFilename == null || formattedFilename.equals("")) {
+                formattedFilename = defaultCustomFilename;
+            }
+            formattedFilename = formattedFilename.toLowerCase();
+            /* Make sure that the user entered a VALID custom filename - if not, use the default name */
+            if (!formattedFilename.contains("*extension*") || (!formattedFilename.contains("*photo_id*") && !formattedFilename.contains("*date*") && !formattedFilename.contains("*username*") && !formattedFilename.contains("*owner*"))) {
+                formattedFilename = defaultCustomFilename;
+            }
+
+            formattedFilename = formattedFilename.replace("*photo_id*", photo_id);
+            formattedFilename = formattedFilename.replace("*date*", formattedDate);
+            formattedFilename = formattedFilename.replace("*extension*", ext);
+            formattedFilename = formattedFilename.replace("*username*", username);
+            formattedFilename = formattedFilename.replace("*owner*", owner);
+            formattedFilename = formattedFilename.replace("*title*", site_title);
+        } else {
+            formattedFilename = downloadLink.getStringProperty("decryptedfilename", null);
+        }
+        /* Cut filenames if they're too long */
+        if (formattedFilename.length() > 180) {
+            final String ext = formattedFilename.substring(formattedFilename.lastIndexOf("."));
+            int extLength = ext.length();
+            formattedFilename = formattedFilename.substring(0, 180 - extLength);
+            formattedFilename += ext;
+        }
+        return formattedFilename;
+    }
+
+    public static String getCustomStringForEmptyTags() {
+        final SubConfiguration cfg = SubConfiguration.getConfig("flickr.com");
+        String emptytag = cfg.getStringProperty(CUSTOM_FILENAME_EMPTY_TAG_STRING, defaultCustomStringForEmptyTags);
+        if (emptytag.equals("")) {
+            emptytag = defaultCustomStringForEmptyTags;
+        }
+        return emptytag;
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
+    }
+
+    private static final String defaultCustomDate               = "MM-dd-yyyy";
+    private static final String defaultCustomFilename           = "*username*_*photo_id*_*title**extension*";
+    public final static String  defaultCustomStringForEmptyTags = "-";
+    public final static String  defaultPhotoExt                 = ".jpg";
+
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public String getDescription() {
+        return "JDownloader's flickr.com Plugin helps downloading media from flickr. Here you can define custom filenames.";
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, JDL.L("plugins.hoster.flickrcom.customdate", "Define how the date should look like:")).setDefaultValue(defaultCustomDate));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        /* Filename settings */
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME, JDL.L("plugins.hoster.flickrcom.customfilename", "Custom filename:")).setDefaultValue(defaultCustomFilename));
+        final StringBuilder sbtags = new StringBuilder();
+        sbtags.append("Explanation of the available tags:\r\n");
+        sbtags.append("*photo_id* = ID of the photo\r\n");
+        sbtags.append("*owner* = Name of the owner of the photo\r\n");
+        sbtags.append("*username* = Username taken out of the url\r\n");
+        sbtags.append("*date* = ate when the photo was uploaded - custom date format will be used here\r\n");
+        sbtags.append("*title* = Title of the photo\r\n");
+        sbtags.append("*extension* = Extension of the photo - usually '.jpg'");
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sbtags.toString()));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_EMPTY_TAG_STRING, JDL.L("plugins.hoster.flirkrcom.customEmptyTagsString", "Char which will be used for empty tags (e.g. missing data):")).setDefaultValue(defaultCustomStringForEmptyTags));
     }
 
     @Override

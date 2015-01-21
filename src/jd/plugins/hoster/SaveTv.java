@@ -1381,7 +1381,7 @@ public class SaveTv extends PluginForHost {
 
         final long date = getLongProperty(downloadLink, "originaldate", 0l);
         String formattedDate = null;
-        final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, "dd.MM.yyyy");
+        final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, defaultCustomDate);
         Date theDate = new Date(date);
         if (userDefinedDateFormat != null) {
             try {
@@ -1696,6 +1696,7 @@ public class SaveTv extends PluginForHost {
     private static final boolean defaultInfoDialogsDisable                  = false;
     private static final boolean defaultPreferAdsFree                       = true;
     private static final boolean defaultUseOriginalFilename                 = false;
+    private static final String  defaultCustomDate                          = "dd.MM.yyyy";
     private static final boolean defaultDeleteTelecastIDAfterDownload       = false;
     private static final boolean defaultDeleteTelecastIDIfFileAlreadyExists = false;
 
@@ -1735,7 +1736,7 @@ public class SaveTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Dateiname Einstellungen:"));
         final ConfigEntry origName = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEORIGINALFILENAME, JDL.L("plugins.hoster.SaveTv.UseOriginalFilename", "Original (Server) Dateinamen verwenden? <html><b>[Erst beim Downloadstart sichtbar!]</b></html>")).setDefaultValue(defaultUseOriginalFilename);
         getConfig().addEntry(origName);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, JDL.L("plugins.hoster.savetv.customdate", "Setze das Datumsformat:\r\nWichtige Information dazu:\r\nDas Datum erscheint im angegebenen Format im Dateinamen, allerdings nur,\r\nwenn man das *datum* Tag auch verwendet (siehe Benutzerdefinierte Dateinamen für Filme und Serien unten)")).setDefaultValue("dd.MM.yyyy").setEnabledCondidtion(origName, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, JDL.L("plugins.hoster.savetv.customdate", "Setze das Datumsformat:\r\nWichtige Information dazu:\r\nDas Datum erscheint im angegebenen Format im Dateinamen, allerdings nur,\r\nwenn man das *datum* Tag auch verwendet (siehe Benutzerdefinierte Dateinamen für Filme und Serien unten)")).setDefaultValue(defaultCustomDate).setEnabledCondidtion(origName, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         /* General settings description */
         final StringBuilder sbinfo = new StringBuilder();
