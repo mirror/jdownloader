@@ -487,6 +487,9 @@ public class FaceBookComGallery extends PluginForDecrypt {
         if (profileID == null) {
             profileID = br.getRegex("follow_profile\\.php\\?profile_id=(\\d+)").getMatch(0);
         }
+        if (profileID == null) {
+            profileID = br.getRegex("\"profile_id\\\\\":(\\d+)").getMatch(0);
+        }
         collection_token = br.getRegex("\\[\"pagelet_timeline_app_collection_([^<>\"]*?)\"\\]").getMatch(0);
         if (collection_token != null) {
             activecollection = new Regex(collection_token, ":(\\d+)$").getMatch(0);
