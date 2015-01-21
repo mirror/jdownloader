@@ -475,8 +475,11 @@ public class PreFilesCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This service does not allow downloads from your country", 3 * 60 * 60 * 1000l);
         }
         /** Error handling for only-premium links */
-        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>File owner set free user can download max|for Premium Users only<)").matches()) {
+        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>File owner set free user can download max|for Premium Users only<|can be downloaded by premium members only)").matches()) {
             String filesizelimit = new Regex(correctedBR, "You can download files up to(.*?)only").getMatch(0);
+            if (filesizelimit == null) {
+                filesizelimit = new Regex(correctedBR, ">Files over ([^<>\"]*?) can be downloaded by premium members only").getMatch(0);
+            }
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
                 logger.warning("As free user you can download files up to " + filesizelimit + " only");

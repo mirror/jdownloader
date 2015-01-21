@@ -131,7 +131,7 @@ public class UpleaCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             handleServerErrors();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
         }
         dl.startDownload();
     }
@@ -218,7 +218,10 @@ public class UpleaCom extends PluginForHost {
         }
         br.getPage("/account");
         ai.setUnlimitedTraffic();
-        final String expire = br.getRegex("premium member until <span class=\"cyan\">([^<>\"]*?) \\(\\d+ day").getMatch(0);
+        String expire = br.getRegex("You\\'re premium member until  <span class=\"cyan\">([^<>\"]*?) \\(").getMatch(0);
+        if (expire == null) {
+            expire = br.getRegex("(\\d{2}/\\d{2}/\\d{4}) \\(\\d+ days\\(s\\) ").getMatch(0);
+        }
         if (expire != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy", Locale.ENGLISH));
             account.setProperty("free", false);
@@ -233,6 +236,7 @@ public class UpleaCom extends PluginForHost {
         return ai;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
