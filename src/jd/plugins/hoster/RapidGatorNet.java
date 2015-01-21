@@ -406,6 +406,9 @@ public class RapidGatorNet extends PluginForHost {
             final String sid = br2.getRegex("sid\":\"([a-zA-Z0-9]{32})").getMatch(0);
             String state = br2.getRegex("state\":\"([^\"]+)").getMatch(0);
             if (!"started".equalsIgnoreCase(state)) {
+                if (br2.toString().equals("No htmlCode read")) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unknown server error", 2 * 60 * 1000l);
+                }
                 this.logger.info(br2.toString());
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -512,8 +515,9 @@ public class RapidGatorNet extends PluginForHost {
                     this.br.submitForm(captcha);
                 }
             }
+            final String redirect = br.getRedirectLocation();
             // Set-Cookie: failed_on_captcha=1; path=/ response if the captcha expired.
-            if ("1".equals(this.br.getCookie("http://rapidgator.net", "failed_on_captcha")) || this.br.containsHTML("(>Please fix the following input errors|>The verification code is incorrect|api\\.recaptcha\\.net/|google\\.com/recaptcha/api/|//api\\.solvemedia\\.com/papi|//api\\.adscaptcha\\.com)")) {
+            if ("1".equals(this.br.getCookie("http://rapidgator.net", "failed_on_captcha")) || this.br.containsHTML("(>Please fix the following input errors|>The verification code is incorrect|api\\.recaptcha\\.net/|google\\.com/recaptcha/api/|//api\\.solvemedia\\.com/papi|//api\\.adscaptcha\\.com)") || (redirect != null && redirect.matches("https?://rapidgator\\.net/file/[a-z0-9]+"))) {
                 try {
                     this.invalidateLastChallengeResponse();
                 } catch (final Throwable e) {

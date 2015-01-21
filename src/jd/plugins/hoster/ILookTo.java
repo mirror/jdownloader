@@ -329,6 +329,8 @@ public class ILookTo extends PluginForHost {
                 }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, errortext_ERROR_PREMIUMONLY);
+        } else if (br.containsHTML(">Database Error:<")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 'Database error'", 10 * 60 * 1000l);
         }
     }
 
