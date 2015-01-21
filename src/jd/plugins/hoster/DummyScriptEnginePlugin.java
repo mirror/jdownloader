@@ -1146,79 +1146,6 @@ public class DummyScriptEnginePlugin extends PluginForHost {
         }
     }
 
-    public static void main(String[] args) {
-
-        new Thread("a") {
-            @Override
-            public void run() {
-                ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(null);
-                ScriptEngine engine = mgr.getEngineByName("javascript");
-                // engine = new ScriptEngineManager().getEngineByName("js");
-                Object result = null;
-                String js = "var n='qAh';   var u='alik00'+'/8/'+'16223268'+n.charAt(2)+n.charAt(0)+n.charAt(1); var src=\"http://b0.eu.icdn.ru/\"+u.charAt(0);  document.getElementById('big_pic').src=src;";
-                String doc = "var document = { getElementById: function (a) { if (!this[a]) { this[a] = new Object();} return this[a]; }};";
-                try {
-                    // org.mozilla.javascript.NativeJavaObject
-                    // engine.eval(doc);
-
-                    engine.eval("var u='16223268'+'qAh'.charAt(2);");
-                    Object u = engine.eval("u");
-                    // engine.eval("var src=u.charAt(0);");
-
-                    System.out.println(engine.get("src"));
-                    //
-                    //
-                    // Object src = engine.get("src");
-
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                }
-
-            }
-        }.start();
-        // new Thread("c") {
-        // @Override
-        // public void run() {
-        //
-        // ScriptEngine engine = new ScriptEngineManager().getEngineByName("js");
-        // try {
-        // // org.mozilla.javascript.NativeJavaObject
-        // // engine.eval(doc);
-        // engine.eval("var u='16223268'+'qAh'.charAt(2);");
-        // Object u = engine.eval("u");
-        // // com.sun.script.javascript.ExternalScriptable.class.getName();
-        // //
-        // //
-        // // new com.sun.script.javascript.ExternalScriptable()
-        // // new sun.org.mozilla.javascript.internal.NativeString();
-        // Object src = engine.get("src");
-        // System.out.println(src);
-        // } catch (Throwable e) {
-        // e.printStackTrace();
-        // }
-        //
-        // }
-        // }.start();
-        new Thread("b") {
-            @Override
-            public void run() {
-
-                Context context = Context.enter();
-
-                ScriptableObject scope = context.initStandardObjects();
-                // engine.eval("var u='16223268'+'qAh'.charAt(2);");
-                // Object u = engine.eval("u");
-                context.evaluateString(scope, "var u='16223268'+'qAh'.charAt(2);", "test", 2, null);
-                Object u = context.evaluateString(scope, "u;", "test", 2, null);
-                System.out.println(u);
-
-                // NativeString.class.getName();
-
-                Context.exit();
-            }
-        }.start();
-    }
-
     public static ScriptEngineManager getScriptEngineManager(Object requestor) {
         return new CustomizedScriptEngineManager();
     }
@@ -1255,7 +1182,9 @@ public class DummyScriptEnginePlugin extends PluginForHost {
 
     public static Object jsonToJavaObject(String string) throws Exception {
         try {
-
+            if (true) {
+                throw new Exception("DEBUG");
+            }
             return org.appwork.storage.JSonStorage.restoreFromString(string, new org.appwork.storage.TypeRef<Object>() {
             });
         } catch (Throwable e) {
@@ -1291,6 +1220,7 @@ public class DummyScriptEnginePlugin extends PluginForHost {
                     ret.put((String) s, toMap(((org.mozilla.javascript.NativeObject) obj).get(s)));
                 } else {
                     System.out.println("Unknown Key: " + s + " " + s.getClass());
+                    ret.put(s + "", toMap(((org.mozilla.javascript.NativeObject) obj).get(s)));
                 }
 
             }
@@ -1308,6 +1238,7 @@ public class DummyScriptEnginePlugin extends PluginForHost {
                     ret.put((String) s, toMap(((net.sourceforge.htmlunit.corejs.javascript.NativeObject) obj).get(s)));
                 } else {
                     System.out.println("Unknown Key: " + s + " " + s.getClass());
+                    ret.put(s + "", toMap(((org.mozilla.javascript.NativeObject) obj).get(s)));
                 }
 
             }
