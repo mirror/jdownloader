@@ -81,24 +81,47 @@ public class VideoMegaTv extends antiDDoSForHost {
         requestFileInformation(downloadLink);
         // cdn
         getPage("/cdn.php?ref=" + fuid + "&width=1000&height=450");
-        String escaped = br.getRegex("document\\.write\\(unescape\\(\"([^<>\"]*?)\"").getMatch(0);
+        if (br.containsHTML(">Sorry an error has occurred converting this video\\.<")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster issue converting video.", 30 * 60 * 1000l);
+        }
+        String[] escaped = br.getRegex("document\\.write\\(unescape\\(\"([^<>\"]*?)\"").getColumn(0);
         if (escaped == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        escaped = Encoding.htmlDecode(escaped);
-        String dllink = new Regex(escaped, "file: \"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = new Regex(escaped, "\"(http://[a-z0-9]+\\.videomega\\.tv/vids/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.mp4)\"").getMatch(0);
+        for (String escape : escaped) {
+            Browser br2 = br.cloneBrowser();
+            escape = Encoding.htmlDecode(escape);
+            String dllink = new Regex(escape, "file:\\s*\"(https?://[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = new Regex(escape, "\"(https?://([a-z0-9]+\\.){1,}videomega\\.tv/vid(?eo)?s/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.mp4)\"").getMatch(0);
+            }
+            if (dllink == null) {
+                if (!escaped[escaped.length - 1].equals(escape)) {
+                    // this tests if link is last in array
+                    continue;
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            try {
+                dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, dllink, true, 0);
+            } catch (final Throwable t) {
+                if (!escaped[escaped.length - 1].equals(escape)) {
+                    // this tests if link is last in array
+                    continue;
+                }
+                throw t;
+            }
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (!escaped[escaped.length - 1].equals(escape)) {
+                    // this tests if link is last in array
+                    continue;
+                }
+                br2.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+            break;
         }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
     }
 
     @Override
