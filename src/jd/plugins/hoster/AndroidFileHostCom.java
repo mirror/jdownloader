@@ -105,7 +105,7 @@ public class AndroidFileHostCom extends PluginForHost {
             }
         }
         // Disabled chunks and resume because different downloadserver = different connection limits
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
 
         if (dl.getConnection().getContentType().contains("html")) {
             /* Check again for server error 404 just to make sure... */

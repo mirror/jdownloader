@@ -49,21 +49,37 @@ public class DhSt extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        if (link.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (link.getDownloadURL().matches(INVALIDLINKS)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>File Not Found<|>The file you were looking for could not be found)") || br.getURL().equals("http://d-h.st/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>File Not Found<|>The file you were looking for could not be found)") || br.getURL().equals("http://d-h.st/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // site issue?
-        if (br.containsHTML(tempSiteIssue)) { return AvailableStatus.UNCHECKABLE; }
+        if (br.containsHTML(tempSiteIssue)) {
+            return AvailableStatus.UNCHECKABLE;
+        }
         // For invalid links
-        if (br.containsHTML(">403 Forbidden<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">403 Forbidden<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex(">Filename:</span> <div title=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>Dev\\-Host \\- ([^<>\"]*?) \\- The Ultimate Free File Hosting / File Sharing Service</title>").getMatch(0);
-        String filesize = br.getRegex("\\((\\d+ bytes)\\)").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            filename = br.getRegex("<title>Dev\\-Host \\- ([^<>\"]*?) \\- The Ultimate Free File Hosting / File Sharing Service</title>").getMatch(0);
+        }
+        String filesize = br.getRegex("\\((\\d+(?:\\.\\d{1,2})? (?:bytes|MB))\\)").getMatch(0);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         final String md5 = br.getRegex(">MD5 Sum:</span> ([a-z0-9]{32})</div>").getMatch(0);
-        if (md5 != null) link.setMD5Hash(md5);
+        if (md5 != null) {
+            link.setMD5Hash(md5);
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -75,10 +91,14 @@ public class DhSt extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster is having problems!");
         }
         String dllink = getDllink();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
         int maxChunks = 0;
-        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
+            maxChunks = 1;
+        }
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -88,7 +108,9 @@ public class DhSt extends PluginForHost {
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
@@ -110,8 +132,12 @@ public class DhSt extends PluginForHost {
 
     private String getDllink() {
         String dllink = br.getRegex("<form style=\"margin\\-top: \\-27px; margin\\-bottom: \\-2px;\" action=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://[a-z0-9]+\\.d\\-h\\.st/[A-Za-z0-9]+/\\d+/[^<>\"/]+\\?key=\\d+)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("(\"|')(http://[a-z0-9]+\\.d\\-h\\.st/[A-Za-z0-9]+/\\d+/[^<>\"/]+/[^<>\"/]+)(\"|')").getMatch(1);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://[a-z0-9]+\\.d\\-h\\.st/[A-Za-z0-9]+/\\d+/[^<>\"/]+\\?key=\\d+)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            dllink = br.getRegex("(\"|')(http://[a-z0-9]+\\.d\\-h\\.st/[A-Za-z0-9]+/\\d+/[^<>\"/]+/[^<>\"/]*?)(\"|')").getMatch(1);
+        }
         return dllink;
     }
 
