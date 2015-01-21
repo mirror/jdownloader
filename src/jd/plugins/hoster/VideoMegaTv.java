@@ -77,7 +77,7 @@ public class VideoMegaTv extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         // cdn
         getPage("/cdn.php?ref=" + fuid + "&width=1000&height=450");
@@ -104,7 +104,7 @@ public class VideoMegaTv extends antiDDoSForHost {
             }
             try {
                 dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, dllink, true, 0);
-            } catch (final Throwable t) {
+            } catch (final Exception t) {
                 if (!escaped[escaped.length - 1].equals(escape)) {
                     // this tests if link is last in array
                     continue;
