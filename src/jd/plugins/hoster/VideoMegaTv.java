@@ -93,7 +93,7 @@ public class VideoMegaTv extends antiDDoSForHost {
             escape = Encoding.htmlDecode(escape);
             String dllink = new Regex(escape, "file:\\s*\"(https?://[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = new Regex(escape, "\"(https?://([a-z0-9]+\\.){1,}videomega\\.tv/vid(?eo)?s/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.mp4)\"").getMatch(0);
+                dllink = new Regex(escape, "\"(https?://([a-z0-9]+\\.){1,}videomega\\.tv/vid(?:eo)?s/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.mp4)\"").getMatch(0);
             }
             if (dllink == null) {
                 if (!escaped[escaped.length - 1].equals(escape)) {
