@@ -85,16 +85,15 @@ public class FilesFlashCom extends PluginForHost {
         // set primary based on user settings
         setConfiguredDomain();
         // record userPreference link!
-        final String content_url = "http://" + userDomain + "/" + fuid;
-        final String url_to_use = mainDomain + fuid;
-        link.setProperty("userEndURL", content_url);
+        final String userEndURL = "http://" + userDomain + "/" + fuid;
+        link.setProperty("userEndURL", userEndURL);
         try {
-            link.setContentUrl(content_url);
+            link.setContentUrl(userEndURL);
         } catch (final Throwable e) {
             /* Not available in old 0.9.581 Stable */
+            link.setBrowserUrl(userEndURL);
         }
-        link.setBrowserUrl(content_url);
-        link.setUrlDownload(url_to_use);
+        link.setUrlDownload(mainDomain + fuid);
     }
 
     @Override
