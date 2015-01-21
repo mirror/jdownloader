@@ -99,7 +99,7 @@ public class LineStorageCom extends PluginForHost {
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.2-raz
     // mods: requestFileInformation[Added altAvailablecheck to get filesize, taken out of XFS 2.6.6.6, checkErrors[Added support for session
-    // expired error]
+    // expired error], heavily modified, do NOT upgrade!
     // limit-info:
     // protocol: no https
     // captchatype: recaptcha
@@ -1022,6 +1022,7 @@ public class LineStorageCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         passCode = downloadLink.getStringProperty("pass");
@@ -1037,20 +1038,36 @@ public class LineStorageCom extends PluginForHost {
                 getPage(downloadLink.getDownloadURL());
                 dllink = getDllink();
                 if (dllink == null) {
-                    Form dlform = br.getFormbyProperty("name", "F1");
-                    if (dlform != null && new Regex(correctedBR, PASSWORDTEXT).matches()) {
-                        passCode = handlePassword(dlform, downloadLink);
+                    /* Premium user has direct downloads disabled... */
+                    final int maxtries = 5;
+                    int counter = 0;
+                    /*
+                     * Workaround for serverside issue - 2nd workaround would be to enable "direct downloads" in premium account settings on
+                     * the linestorage.com site.
+                     */
+                    Form dlform = null;
+                    do {
+                        logger.info("Premium download try " + counter + " of " + maxtries);
+                        getPage(downloadLink.getDownloadURL());
+                        dlform = br.getFormbyProperty("name", "F1");
+                        if (dlform == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        if (new Regex(correctedBR, PASSWORDTEXT).matches()) {
+                            passCode = handlePassword(dlform, downloadLink);
+                        }
+                        this.sleep(2 * 1000l, downloadLink);
+                        sendForm(dlform);
+                        counter++;
+                    } while (br.containsHTML(">Skipped countdown</div>") && counter <= maxtries);
+                    if (br.containsHTML(">Skipped countdown</div>")) {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Server error 'Skipped countdown' - try enabling direct downloads in your account settings");
                     }
-                    checkErrors(downloadLink, true);
-                    if (dlform == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    sendForm(dlform);
-                    checkErrors(downloadLink, true);
                     dllink = getDllink();
                 }
             }
             if (dllink == null) {
+                checkErrors(downloadLink, true);
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
