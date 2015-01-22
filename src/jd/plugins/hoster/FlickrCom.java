@@ -149,18 +149,19 @@ public class FlickrCom extends PluginForHost {
              * TODO: Add correct API csrf cookie handling so we can use this while being logged in to download videos and do not have to
              * remove the cookies here - that's just a workaround!
              */
-            br.clearCookies("http://flickr.com");
-            br.getPage(downloadLink.getDownloadURL());
+            br.clearCookies(MAINPAGE);
+            br.getPage(downloadLink.getDownloadURL() + "/in/photostream");
             final String secret = br.getRegex("\"secret\":\"([^<>\"]*)\"").getMatch(0);
+            final Browser apibr = br.cloneBrowser();
             // we need to load it before calling!!
             JDUtilities.getPluginForDecrypt("flickr.com");
-            final String api_key = jd.plugins.decrypter.FlickrCom.getPublicAPIKey(this.br);
+            final String api_key = jd.plugins.decrypter.FlickrCom.getPublicAPIKey(apibr);
             if (api_key == null || secret == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getPage("https://api.flickr.com/services/rest?photo_id=" + id + "&secret=" + secret + "&method=flickr.video.getStreamInfo&csrf=&api_key=" + api_key + "&format=json&hermes=1&hermesClient=1&reqId=&nojsoncallback=1");
+            apibr.getPage("https://api.flickr.com/services/rest?photo_id=" + id + "&secret=" + secret + "&method=flickr.video.getStreamInfo&csrf=&api_key=" + api_key + "&format=json&hermes=1&hermesClient=1&reqId=&nojsoncallback=1");
 
-            dllink = br.getRegex("\"type\":\"orig\",\\s*?\"_content\":\"(https[^<>\"]*?)\"").getMatch(0);
+            dllink = apibr.getRegex("\"type\":\"orig\",\\s*?\"_content\":\"(https[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -176,10 +177,6 @@ public class FlickrCom extends PluginForHost {
             downloadLink.setProperty("ext", videoExt);
         } else {
             br.getPage(downloadLink.getDownloadURL() + "/in/photostream");
-            final String uploadedDate = getJson("datePosted");
-            if (uploadedDate != null) {
-                downloadLink.setProperty("dateadded", Long.parseLong(uploadedDate) * 1000);
-            }
             dllink = getFinalLink();
             if (dllink == null) {
                 dllink = br.getRegex("\"(https?://farm\\d+\\.(static\\.flickr|staticflickr)\\.com/\\d+/.*?)\"").getMatch(0);
@@ -196,10 +193,16 @@ public class FlickrCom extends PluginForHost {
             }
             /* Needed for custom filenames! */
             downloadLink.setProperty("photo_id", id);
-            downloadLink.setProperty("custom_filenames_allowed", true);
+        }
+        /* Needed for custom filenames! */
+        final String uploadedDate = getJson("datePosted");
+        if (uploadedDate != null) {
+            downloadLink.setProperty("dateadded", Long.parseLong(uploadedDate) * 1000);
         }
         /* Save it for the getFormattedFilename function. */
         downloadLink.setProperty("decryptedfilename", filename);
+        /* TODO: Remove this backwards compatibility in March 2015 */
+        downloadLink.setProperty("custom_filenames_allowed", true);
         filename = getFormattedFilename(downloadLink);
         downloadLink.setFinalFileName(filename);
         Browser br2 = br.cloneBrowser();

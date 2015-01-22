@@ -91,8 +91,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String parameter = param.toString().replace("#!/", "");
         PARAMETER = parameter;
-        if (PARAMETER.matches(TYPE_SINGLE_VIDEO_ALL) || PARAMETER.matches(TYPE_SINGLE_VIDEO_EMBED) || PARAMETER.contains("/video.php?v")) {
-            final String id = new Regex(PARAMETER, "(\\d+)$").getMatch(0);
+        if (PARAMETER.matches(TYPE_SINGLE_VIDEO_ALL) || PARAMETER.matches(TYPE_SINGLE_VIDEO_EMBED) || PARAMETER.contains("/video.php?v=")) {
+            final String id = new Regex(PARAMETER, "(?:v|video_id)=(\\d+)").getMatch(0);
             final DownloadLink fina = createDownloadlink("https://www.facebookdecrypted.com/video.php?v=" + id);
             decryptedLinks.add(fina);
             return decryptedLinks;
