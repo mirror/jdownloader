@@ -536,6 +536,7 @@ public class FlickrCom extends PluginForDecrypt {
             fina.setProperty("ext", default_photo_ext);
             fina.setProperty("username", user);
             fina.setProperty("photo_id", photo_id);
+            /* TODO: Remove this backwards compatibility in March 2015 */
             fina.setProperty("custom_filenames_allowed", true);
             fina.setProperty("title", site_title);
 
