@@ -45,6 +45,10 @@ public class PinterestCom extends PluginForHost {
         return "https://about.pinterest.com/de/terms-service";
     }
 
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
+    }
+
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = false;
     private static final int     FREE_MAXCHUNKS               = 1;
