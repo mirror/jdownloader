@@ -179,15 +179,20 @@ public class FlickrCom extends PluginForDecrypt {
         String owner = null;
         if (parameter.matches(TYPE_SET)) {
             final String setid = new Regex(parameter, "(\\d+)/?$").getMatch(0);
-            apilink = "https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&photoset_id=" + Encoding.urlEncode(setid) + "&method=flickr.photosets.getPhotos" + "&hermes=1&hermesClient=1&nojsoncallback=1";
-            api_getPage(apilink.replace("GETJDPAGE", "1"));
+            /* This request is only needed to get the title and owner of the photoset, */
+            api_getPage("https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&method=flickr.photosets.getInfo&photoset_id=" + Encoding.urlEncode(setid));
             owner = getJson("owner");
             if (owner == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 decryptedLinks = null;
                 return;
             }
-            fpName = "flickr.com set " + setid + " of user " + this.username;
+            fpName = br.getRegex("\"title\":\\{\"_content\":\"([^<>\"]*?)\"\\}").getMatch(0);
+            if (fpName == null || fpName.equals("")) {
+                fpName = "flickr.com set " + setid + " of user " + this.username;
+            }
+            apilink = "https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&photoset_id=" + Encoding.urlEncode(setid) + "&method=flickr.photosets.getPhotos" + "&hermes=1&hermesClient=1&nojsoncallback=1";
+            api_getPage(apilink.replace("GETJDPAGE", "1"));
         } else if (parameter.matches(".+/sets/?") && !parameter.matches(TYPE_SET)) {
             apiGetSetsOfUser();
             return;
@@ -272,7 +277,9 @@ public class FlickrCom extends PluginForDecrypt {
                 fina.setProperty("photo_id", photo_id);
                 fina.setProperty("owner", owner);
                 fina.setProperty("username", username);
-                fina.setProperty("dateadded", Long.parseLong(dateadded) * 1000);
+                if (dateadded != null) {
+                    fina.setProperty("dateadded", Long.parseLong(dateadded) * 1000);
+                }
                 if (title != null) {
                     fina.setProperty("title", title);
                 }
