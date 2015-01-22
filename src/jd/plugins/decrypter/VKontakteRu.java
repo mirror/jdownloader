@@ -110,7 +110,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_VIDEO_ALBUM                  = "https?://(www\\.)?vk\\.com/(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged|videos(\\-)?\\d+)";
     private static final String     PATTERN_VIDEO_COMMUNITY_ALBUM        = "https?://(www\\.)?vk\\.com/video\\?gid=\\d+";
     private static final String     PATTERN_PHOTO_SINGLE                 = "https?://(www\\.)?vk\\.com/photo(\\-)?\\d+_\\d+";
-    private static final String     PATTERN_PHOTO_SINGLE_WALL_POST       = "https?://(www\\.)?vk\\.com/[A-Za-z0-9\\-_\\.]+\\?z=photo(\\-)?\\d+_\\d+(%2F|/)wall\\-\\d+_\\d+";
+    private static final String     PATTERN_PHOTO_MODULE                 = "https?://(www\\.)?vk\\.com/[A-Za-z0-9\\-_\\.]+\\?z=photo(\\-)?\\d+_\\d+/(wall|album)\\-\\d+_\\d+";
     private static final String     PATTERN_PHOTO_ALBUM                  = ".*?(tag|album(\\-)?\\d+_|photos)\\d+";
     private static final String     PATTERN_PHOTO_ALBUMS                 = "https?://(www\\.)?vk\\.com/(albums(\\-)?\\d+|id\\d+\\?z=albums\\d+)";
     private static final String     PATTERN_PHOTO_ALBUMS_USERNAME_Z      = "https?://(www\\.)?vk\\.com/[^<>\"/]+\\?z=albums\\d+";
@@ -184,7 +184,7 @@ public class VKontakteRu extends PluginForDecrypt {
         br.setFollowRedirects(true);
         CRYPTEDLINK_ORIGINAL = Encoding.htmlDecode(param.toString()).replaceAll("vkontakte\\.(ru|com)/", "vk.com/").replace("https://", "http://");
         /* Remove unneeded things */
-        final String[] unwantedParts = { "(\\?profile=\\d+)", "(\\?rev=\\d+)" };
+        final String[] unwantedParts = { "(\\?profile=\\d+)", "(\\?rev=\\d+)", "(/rev)$" };
         for (final String unwantedPart : unwantedParts) {
             final String unwantedData = new Regex(this.CRYPTEDLINK_ORIGINAL, unwantedPart).getMatch(0);
             if (unwantedData != null) {
@@ -243,6 +243,8 @@ public class VKontakteRu extends PluginForDecrypt {
             }
         } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_ALBUM)) {
             loginrequired = false;
+        } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_MODULE)) {
+            loginrequired = false;
         }
         /* Check/fix links before browser access END */
         synchronized (LOCK) {
@@ -275,7 +277,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 } else if (this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUMS_USERNAME_Z)) {
                     /* Change PATTERN_PHOTO_ALBUMS_USERNAME_Z --> PATTERN_PHOTO_ALBUMS */
                     newLink = "https://vk.com/albums" + new Regex(CRYPTEDLINK_FUNCTIONAL, "albums(\\d+)").getMatch(0);
-                } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_PUBLIC_EXTENDED) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUMS) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_PAGE) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_VIDEO_SINGLE) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_WALL_LINK) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_AUDIO) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_COMMUNITY_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_WALL_POST_LINK) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_SINGLE_WALL_POST)) {
+                } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_PUBLIC_EXTENDED) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUMS) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_PAGE) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_VIDEO_SINGLE) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_WALL_LINK) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_AUDIO) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_COMMUNITY_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_WALL_POST_LINK) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_MODULE)) {
                     /* Don't change anything */
                 } else {
                     /* We either have a public community or profile --> Get the owner_id and change the link to a wall-link */
@@ -313,7 +315,9 @@ public class VKontakteRu extends PluginForDecrypt {
                 /* Replace section end */
 
                 /* Decryption process START */
-                if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_GENERAL_AUDIO)) {
+                if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_PHOTO_MODULE)) {
+                    decryptWallPostSpecifiedPhoto();
+                } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_GENERAL_AUDIO)) {
                     if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_AUDIO_ALBUM)) {
                         /* Audio album */
                         decryptAudioAlbum();
@@ -360,8 +364,6 @@ public class VKontakteRu extends PluginForDecrypt {
                     if (decryptedLinks.size() == 0) {
                         logger.info("Check your plugin settings -> They affect the results!");
                     }
-                } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_PHOTO_SINGLE_WALL_POST)) {
-                    decryptWallPostSpecifiedPhoto();
                 } else if (this.CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_GENERAL_WALL_LINK)) {
                     if (br.containsHTML("You are not allowed to view this community\\&#39;s wall|Вы не можете просматривать стену этого сообщества|Nie mo\\&#380;esz ogl\\&#261;da\\&#263; \\&#347;ciany tej spo\\&#322;eczno\\&#347;ci")) {
                         throw new DecrypterException(EXCEPTION_LINKOFFLINE);
@@ -1380,9 +1382,16 @@ public class VKontakteRu extends PluginForDecrypt {
     /** Works offline, simply converts the added link into a link for the host plugin and sets needed IDs. */
     @SuppressWarnings("deprecation")
     private void decryptWallPostSpecifiedPhoto() throws Exception {
-        final String wall_list_id = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "(wall(\\-)?\\d+_\\d+)$").getMatch(0);
-        final String owner_id = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "photo((\\-)?\\d+)_\\d+").getMatch(0);
-        final String content_id = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "photo\\d+_(\\d+)").getMatch(0);
+        String module;
+        String list_id = null;
+        list_id = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "((?:wall|album)(\\-)?\\d+_\\d+)$").getMatch(0);
+        if (list_id.contains("wall")) {
+            module = "wall";
+        } else {
+            module = "public";
+        }
+        final String owner_id = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "photo((?:\\-)?\\d+)_\\d+").getMatch(0);
+        final String content_id = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "photo(?:\\-)?\\d+_(\\d+)").getMatch(0);
         final DownloadLink dl = getSinglePhotoDownloadLink(owner_id + "_" + content_id);
         try {
             dl.setContentUrl(CRYPTEDLINK_FUNCTIONAL);
@@ -1393,7 +1402,8 @@ public class VKontakteRu extends PluginForDecrypt {
 
         dl.setProperty("owner_id", owner_id);
         dl.setProperty("content_id", content_id);
-        dl.setProperty("wall_list_id", wall_list_id);
+        dl.setProperty("photo_module", module);
+        dl.setProperty("photo_list_id", list_id);
         decryptedLinks.add(dl);
         return;
     }

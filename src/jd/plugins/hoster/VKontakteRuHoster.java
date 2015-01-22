@@ -204,13 +204,14 @@ public class VKontakteRuHoster extends PluginForHost {
             } else {
                 this.finalUrl = link.getStringProperty("picturedirectlink", null);
                 if (this.finalUrl == null) {
-                    final String wall_list_id = link.getStringProperty("wall_list_id", null);
+                    final String photo_list_id = link.getStringProperty("photo_list_id", null);
+                    final String module = link.getStringProperty("photo_module", null);
                     final String photoID = getPhotoID(link);
-                    if (wall_list_id != null) {
+                    if (module != null && photo_list_id != null) {
                         /* Access photo inside wall-post */
                         this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                         this.br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-                        this.postPageSafe(aa, link, "http://vk.com/al_photos.php", "act=show&al=1&list=" + wall_list_id + "&module=wall&photo=" + photoID);
+                        this.postPageSafe(aa, link, "http://vk.com/al_photos.php", "act=show&al=1&list=" + photo_list_id + "&module=" + module + "&photo=" + photoID);
                     } else {
                         /* Access normal photo / photo inside album */
                         String albumID = link.getStringProperty("albumid");
