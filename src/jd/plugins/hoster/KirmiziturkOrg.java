@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kirmiziturk.org" }, urls = { "http://(www\\.)?kirmiziturk\\.org/video/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kirmiziturk.org" }, urls = { "http://(www\\.)?kirmiziturkdecrypted\\.org/video/\\d+" }, flags = { 0 })
 public class KirmiziturkOrg extends PluginForHost {
 
     public KirmiziturkOrg(PluginWrapper wrapper) {
@@ -59,9 +59,16 @@ public class KirmiziturkOrg extends PluginForHost {
         return "http://kirmiziturk.org/";
     }
 
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("kirmiziturkdecrypted.org/", "kirmiziturk.org/"));
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        if (downloadLink.getBooleanProperty("offline", false)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
