@@ -27,13 +27,16 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-//EmbedDecrypter 0.1.9
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xshufuni.com" }, urls = { "http://(www\\.)?xshufuni\\.com/gallery/[a-z0-9\\-]+/index\\.html" }, flags = { 0 })
 public class XShufuniCom extends PluginForDecrypt {
 
     public XShufuniCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    /* Using playerConfig script */
+    /* Tags: playerConfig.php */
+    // EmbedDecrypter 0.1.9
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String externID = null;

@@ -31,14 +31,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornstarnetwork.com" }, urls = { "http://(www\\.)?pornstarnetwork\\.com/video/([a-z0-9\\-_]+)?\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornstarnetwork.com" }, urls = { "http://(www\\.)?pornstarnetwork\\.com/video/(([a-z0-9\\-_]+)?\\d+\\.html|embed\\?id=\\d+)" }, flags = { 0 })
 public class PornStarNetworkCom extends PluginForHost {
 
     public PornStarNetworkCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private static final String type_embed = "http://(www\\.)?pornstarnetwork\\.com/video/embed\\?id=\\d+";
+
+    private String              DLLINK     = null;
 
     @Override
     public String getAGBLink() {
@@ -50,25 +52,41 @@ public class PornStarNetworkCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(>Page not Found<|>Sorry, the page you are looking for cannot be found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div id=\"viewTitle\"><h1>Video \\- ([^<>\"]*?) \\&nbsp;</h1></div>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        br.getPage("http://www.pornstarnetwork.com/streaming/getVideosZ/cntid/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0) + "/quality/sd/" + new Random().nextInt(1000));
-        DLLINK = br.getRegex("swfUrl=(http[^<>\"]*?)\\&").getMatch(0);
-        if (DLLINK == null) {
-            br.getPage("http://www.pornstarnetwork.com/streaming/getAuthUrl/cntid/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0) + "/quality/sd/format/h264/" + new Random().nextInt(1000));
-            DLLINK = br.getRegex("swfUrl=(http[^<>\"]*?)\\&").getMatch(0);
+        if (br.containsHTML("(>Page not Found<|>Sorry, the page you are looking for cannot be found)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String filename = null;
+        if (downloadLink.getDownloadURL().matches(type_embed)) {
+            DLLINK = br.getRegex("\"(http://download\\d+\\.pornstarnetwork\\.com/[^<>\"]*?)\"").getMatch(0);
+            filename = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+            if (DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        } else {
+            filename = br.getRegex("<div id=\"viewTitle\"><h1>Video \\- ([^<>\"]*?) \\&nbsp;</h1></div>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+            }
+            br.getPage("http://www.pornstarnetwork.com/streaming/getVideosZ/cntid/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0) + "/quality/sd/" + new Random().nextInt(1000));
+            DLLINK = br.getRegex("swfUrl=(http[^<>\"]*?)\\&").getMatch(0);
+            if (DLLINK == null) {
+                br.getPage("http://www.pornstarnetwork.com/streaming/getAuthUrl/cntid/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0) + "/quality/sd/format/h264/" + new Random().nextInt(1000));
+                DLLINK = br.getRegex("swfUrl=(http[^<>\"]*?)\\&").getMatch(0);
+            }
+            if (filename == null || DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if ((ext == null || ext.length() > 5) && ext.contains(".mp4"))
+        if ((ext == null || ext.length() > 5) && ext.contains(".mp4")) {
             ext = ".mp4";
-        else if ((ext == null || ext.length() > 5) && ext.contains(".flv"))
+        } else if ((ext == null || ext.length() > 5) && ext.contains(".flv")) {
             ext = ".flv";
-        else
+        } else {
             ext = ".mp4";
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -76,10 +94,11 @@ public class PornStarNetworkCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

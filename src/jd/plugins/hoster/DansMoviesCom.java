@@ -31,10 +31,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bestbigmovs.com" }, urls = { "http://(www\\.)?bestbigmovs\\.com/content/\\d+/[a-z0-9\\-_]+\\.html" }, flags = { 0 })
-public class BestbigmovsCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dansmovies.com" }, urls = { "http://(www\\.)?dansmovies\\.com/video/[a-z0-9\\-]+\\.html" }, flags = { 0 })
+public class DansMoviesCom extends PluginForHost {
 
-    public BestbigmovsCom(PluginWrapper wrapper) {
+    public DansMoviesCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -49,7 +49,7 @@ public class BestbigmovsCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.bestbigmovs.com/terms.html";
+        return "http://www.dansmovies.com/tos/";
     }
 
     @SuppressWarnings("deprecation")
@@ -58,20 +58,23 @@ public class BestbigmovsCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains(">This Video Was Not Found On Our Servers<") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("class=\\'notification error\\'") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h2 class=\"left\">([^<>\"]*?)</h1>").getMatch(0);
+        String filename = br.getRegex("<div class=\"title\">[\t\n\r ]+<h1>([^<>]*?)</h1>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+            filename = br.getRegex("<title>([^<>\"]*?) \\- Dansmovies\\.com</title>").getMatch(0);
         }
         if (DLLINK == null) {
             DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
             if (DLLINK == null) {
-                DLLINK = br.getRegex("\\'file\\':[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+                DLLINK = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
             }
             if (DLLINK == null) {
-                DLLINK = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
+                DLLINK = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
+            }
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
             }
         }
         if (filename == null || DLLINK == null) {

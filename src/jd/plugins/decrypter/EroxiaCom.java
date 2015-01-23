@@ -33,6 +33,9 @@ public class EroxiaCom extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /* Using playerConfig script */
+    /* Tags: playerConfig.php */
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
@@ -46,8 +49,12 @@ public class EroxiaCom extends PluginForDecrypt {
         if (tempID == null) {
             tempID = br.getRegex("(http://(www\\.)?homesexdaily\\.com/video/[^<>\"/]*?\\.html)").getMatch(0);
             if (tempID == null) {
-                if (tempID == null) tempID = br.getRegex("config=(http://(www\\.)?homesexdaily\\.com/flv_player/data/playerConfigEmbed/\\d+\\.xml)\\'").getMatch(0);
-                if (tempID == null) tempID = br.getRegex("src=\"(http://www.homesexdaily.com/stp/embed\\.php\\?video=[^\"]+)").getMatch(0);
+                if (tempID == null) {
+                    tempID = br.getRegex("config=(http://(www\\.)?homesexdaily\\.com/flv_player/data/playerConfigEmbed/\\d+\\.xml)\\'").getMatch(0);
+                }
+                if (tempID == null) {
+                    tempID = br.getRegex("src=\"(http://www.homesexdaily.com/stp/embed\\.php\\?video=[^\"]+)").getMatch(0);
+                }
                 if (tempID != null) {
                     br.getPage(tempID);
                     if (br.containsHTML("is marked as crashed and should be repaired")) {
@@ -56,7 +63,9 @@ public class EroxiaCom extends PluginForDecrypt {
                     }
                 }
                 tempID = br.getRegex("\\'flashvars\\',\\'\\&file=(http://[^<>\"]*?)\\&").getMatch(0);
-                if (tempID == null) tempID = br.getRegex(" escape\\(\'(http://[^\'\\)]+)").getMatch(0);
+                if (tempID == null) {
+                    tempID = br.getRegex(" escape\\(\'(http://[^\'\\)]+)").getMatch(0);
+                }
                 if (tempID != null) {
                     dh = true;
                     filename = tempID.endsWith(".mp4") ? filename + ".mp4" : filename + ".flv";
@@ -68,7 +77,9 @@ public class EroxiaCom extends PluginForDecrypt {
             String file = br.getRegex("<param name=\"FlashVars\" value=\"file=(.*?)\\&").getMatch(0);
             br.getPage("http://www.freeadultmedia.com/famconfig.xml");
             String server = br.getRegex("<server>(.*?)</server>").getMatch(0);
-            if (server == null || file == null) return null;
+            if (server == null || file == null) {
+                return null;
+            }
             tempID = server + file;
             filename = filename + ".flv";
 
@@ -83,9 +94,13 @@ public class EroxiaCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        if (dh) tempID = "directhttp://" + tempID;
+        if (dh) {
+            tempID = "directhttp://" + tempID;
+        }
         final DownloadLink dl = createDownloadlink(tempID);
-        if (filename != null) dl.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        if (filename != null) {
+            dl.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        }
         decryptedLinks.add(dl);
         return decryptedLinks;
     }

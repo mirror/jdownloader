@@ -31,15 +31,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornwhite.com" }, urls = { "http://(www\\.)?pornwhite\\.com/videos/\\d+/[a-z0-9\\-_]+/" }, flags = { 0 })
-public class PornWhiteCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gayfall.com" }, urls = { "http://(www\\.)?gayfall\\.com/videos/[a-z0-9\\-]+/" }, flags = { 0 })
+public class GayfallCom extends PluginForHost {
 
-    public PornWhiteCom(PluginWrapper wrapper) {
+    public GayfallCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
-    // Porn_get_file_/videos/_basic Version 0.1
+    // Porn_get_file_/videos/_basic Version 0.2
     // Tags: Script, template
     // mods: filename RegEx
     // limit-info:
@@ -57,7 +57,7 @@ public class PornWhiteCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "";
+        return "http://gayfall.com/terms.php";
     }
 
     @SuppressWarnings("deprecation")
@@ -66,17 +66,23 @@ public class PornWhiteCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("/404.php") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getURL().contains("404.php") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h2>([^<>\"]*?)</h2>").getMatch(0);
+        String filename = br.getRegex("class=\"video_info\">[\t\n\r ]+<h2>([^<>]*?)</h2>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>Free Porn Videos \\|([^<>\"]*?)</title>").getMatch(0);
+            filename = br.getRegex("target=\"_blank\" style=\"color: #fff;\">([^<>]*?)<").getMatch(0);
         }
-        DLLINK = checkDirectLink(downloadLink, "directlink");
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<h1 style=\"font\\-size:\\d+px;\">([^<>]*?)</h1>").getMatch(0);
         }
+        if (filename == null) {
+            filename = br.getRegex("<h3>([^<>\"]*?)</h3>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        }
+        DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

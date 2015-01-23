@@ -30,14 +30,17 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sex.com" }, urls = { "http://(www\\.)?sex\\.com/(pin/\\d+/|picture/\\d+|video/\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sex.com" }, urls = { "http://(www\\.)?sex\\.com/(pin/\\d+/|picture/\\d+|video/\\d+|galleries/[a-z0-9\\-_]+/\\d+)" }, flags = { 0 })
 public class SexCom extends PluginForDecrypt {
 
     public SexCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_VIDEO     = "http://(www\\.)?sex\\.com/video/\\d+";
+    /* Using playerConfig script */
+    /* Tags: playerConfig.php */
+
+    private static final String TYPE_VIDEO     = "http://(www\\.)?sex\\.com/video/\\d+.*?";
 
     ArrayList<DownloadLink>     decryptedLinks = new ArrayList<DownloadLink>();
     private String              PARAMETER      = null;
@@ -55,7 +58,11 @@ public class SexCom extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        if (PARAMETER.matches(TYPE_VIDEO)) {
+        final String redirect = br.getRegex("onclick=\"window\\.location\\.href=\\'(/[^<>\"]*?)\\'").getMatch(0);
+        if (redirect != null) {
+            br.getPage(redirect);
+        }
+        if (br.getURL().matches(TYPE_VIDEO)) {
             this.findLink();
         } else {
             filename = br.getRegex("<title>([^<>\"]*?) \\| Sex Videos and Pictures \\| Sex\\.com</title>").getMatch(0);
@@ -98,7 +105,7 @@ public class SexCom extends PluginForDecrypt {
     }
 
     private void findLink() throws DecrypterException, IOException {
-        String filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)</span>").getMatch(0);
+        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)-  Pin #\\d+ \\| Sex\\.com\"").getMatch(0);
         // xvideos.com 1
         String externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
         if (externID != null) {
@@ -533,6 +540,12 @@ public class SexCom extends PluginForDecrypt {
             final DownloadLink dl = createDownloadlink(externID);
             dl.setProperty("5ilthydirectfilename", filename);
             decryptedLinks.add(dl);
+            return;
+
+        }
+        externID = br.getRegex("\"(http://(www\\.)?pornstarnetwork\\.com/video/[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
             return;
 
         }

@@ -35,16 +35,29 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final String unsupported_urls = "https://(www\\.)?pinterest\\.com/(business/create/|android\\-app:/.+|ios\\-app:/.+)";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("http://", "https://");
+        br.setFollowRedirects(true);
+        if (parameter.matches(unsupported_urls)) {
+            decryptedLinks.add(getOffline(parameter));
+            return decryptedLinks;
+        }
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            decryptedLinks.add(getOffline(parameter));
+            return decryptedLinks;
+        }
+        final String numberof_pins = br.getRegex("class=\"value\">(\\d+)</span> <span class=\"label\">Pins</span>").getMatch(0);
+        if (numberof_pins == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        final long lnumberof_pins = Long.parseLong(numberof_pins);
+        if (lnumberof_pins == 0) {
+            decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }
         String fpName = br.getRegex("class=\"boardName\">([^<>]*?)<").getMatch(0);
@@ -78,6 +91,14 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         }
 
         return decryptedLinks;
+    }
+
+    private DownloadLink getOffline(final String parameter) {
+        final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+        offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
+        offline.setAvailable(false);
+        offline.setProperty("offline", true);
+        return offline;
     }
 
 }

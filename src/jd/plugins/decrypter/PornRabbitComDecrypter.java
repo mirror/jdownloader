@@ -36,6 +36,9 @@ public class PornRabbitComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /* Using playerConfig script */
+    /* Tags: playerConfig.php */
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();

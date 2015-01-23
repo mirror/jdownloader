@@ -31,13 +31,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fantasy8.com", "pornstep.com", "erotictube.me", "freepornsite.me" }, urls = { "http://(www\\.)?fantasy8\\.com/video/\\d+", "http://(www\\.)?pornstep\\.com/video/\\d+", "http://(www\\.)?erotictube\\.me/video/\\d+", "http://(www\\.)?freepornsite\\.me/video/\\d+" }, flags = { 0, 0, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vid2c.com", "xxxkinky.com", "pornper.com", "pornmobo.com", "kinkytube.me", "sexytube.me", "hottube.me", "fantasy8.com", "pornstep.com", "erotictube.me", "freepornsite.me", "bestporntube.me", "sweetkiss.me", "freepornvideo.me" }, urls = { "http://(www\\.)?vid2c\\.com/video/\\d+", "http://(www\\.)?xxxkinky\\.com/video/\\d+", "http://(www\\.)?pornper\\.com/video/\\d+", "http://(www\\.)?pornmobo\\.com/video/\\d+", "http://(www\\.)?kinkytube\\.me/video/\\d+", "http://(www\\.)?sexytube\\.me/video/\\d+", "http://(www\\.)?hottube\\.me/video/\\d+", "http://(www\\.)?fantasy8\\.com/video/\\d+", "http://(www\\.)?pornstep\\.com/video/\\d+", "http://(www\\.)?erotictube\\.me/video/\\d+", "http://(www\\.)?freepornsite\\.me/video/\\d+", "http://(www\\.)?bestporntube\\.me/video/\\d+",
+        "http://(www\\.)?sweetkiss\\.me/video/\\d+", "http://(www\\.)?freepornvideo\\.me/video/\\d+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class Fantasy8Com extends PluginForHost {
 
     public Fantasy8Com(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    /* Porn_static_terms_script V0.1 */
+    /* Tags: Script, template */
     /* Extension which will be used if no correct extension is found */
     private static final String default_Extension = ".flv";
 

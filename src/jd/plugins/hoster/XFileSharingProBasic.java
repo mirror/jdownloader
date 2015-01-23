@@ -100,6 +100,7 @@ public class XFileSharingProBasic extends PluginForHost {
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.7
+    // Tags: Script, template
     // mods:
     // limit-info:
     // protocol: no https

@@ -19,8 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.config.Property;
-import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -31,20 +29,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornwhite.com" }, urls = { "http://(www\\.)?pornwhite\\.com/videos/\\d+/[a-z0-9\\-_]+/" }, flags = { 0 })
-public class PornWhiteCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freeshemaletube.com", "ballbustingtube.com", "freegrannytube.com", "crossdresserstube.com" }, urls = { "http://(www\\.)?freeshemaletube\\.com/video/\\d+", "http://(www\\.)?ballbustingtube\\.com/video/\\d+", "http://(www\\.)?freegrannytube\\.com/video/\\d+", "http://(www\\.)?crossdresserstube\\.com/video/\\d+" }, flags = { 0, 0, 0, 0 })
+public class FreeshemaletubeCom extends PluginForHost {
 
-    public PornWhiteCom(PluginWrapper wrapper) {
+    public FreeshemaletubeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /* DEV NOTES */
-    // Porn_get_file_/videos/_basic Version 0.1
-    // Tags: Script, template
-    // mods: filename RegEx
-    // limit-info:
-    // protocol: no https
-    // other:
+    /* Static_tos_porn_script V0.1 */
+    /* Tags: Script, template */
 
     /* Extension which will be used if no correct extension is found */
     private static final String  default_Extension = ".mp4";
@@ -57,7 +50,7 @@ public class PornWhiteCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "";
+        return "http://www.freeshemaletube.com/static/siteinfo";
     }
 
     @SuppressWarnings("deprecation")
@@ -65,22 +58,17 @@ public class PornWhiteCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setCookie(downloadLink.getHost(), "googtrans", "/en/en");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("/404.php") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getURL().contains("/error/video_missing") || br.containsHTML(">This video cannot be found") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h2>([^<>\"]*?)</h2>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>Free Porn Videos \\|([^<>\"]*?)</title>").getMatch(0);
-        }
-        DLLINK = checkDirectLink(downloadLink, "directlink");
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
-        }
-        if (filename == null || DLLINK == null) {
+        String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+        final String token = br.getRegex("\\'token\\', ?\\'([^<>\"]*?)\\'").getMatch(0);
+        DLLINK = br.getRegex("\\'file\\', ?\\'(http[^<>\"]*?)\\'").getMatch(0);
+        if (DLLINK == null || token == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
@@ -92,14 +80,11 @@ public class PornWhiteCom extends PluginForHost {
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        downloadLink.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
+        DLLINK += "?ec_seek=0&token=" + token;
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openGetConnection(DLLINK);
+                con = br.openGetConnection(DLLINK);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -109,13 +94,14 @@ public class PornWhiteCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             downloadLink.setProperty("directlink", DLLINK);
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (final Throwable e) {
             }
         }
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -132,30 +118,6 @@ public class PornWhiteCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        }
-        return dllink;
     }
 
     /* Avoid chars which are not allowed in filenames under certain OS' */

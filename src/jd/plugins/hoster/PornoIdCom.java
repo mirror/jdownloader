@@ -39,7 +39,8 @@ public class PornoIdCom extends PluginForHost {
     }
 
     /* DEV NOTES */
-    // Porn_get_file_basic Version 0.1
+    // Porn_get_file_/videos/_basic Version 0.1
+    // Tags: Script, template
     // mods: filename RegEx
     // limit-info:
     // protocol: no https

@@ -31,15 +31,18 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hottube.me" }, urls = { "http://(www\\.)?hottube\\.me/video/\\d+" }, flags = { 0 })
-public class HottubeMe extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tube.rampant.tv" }, urls = { "http://(www\\.)?tube\\.rampant\\.tv/videos/[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
+public class TubeRampantTv extends PluginForHost {
 
-    public HottubeMe(PluginWrapper wrapper) {
+    public TubeRampantTv(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    /* Using playerConfig script */
+    /* Tags: playerConfig.php */
+
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".flv";
+    private static final String  default_Extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
@@ -49,7 +52,7 @@ public class HottubeMe extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.hottube.me/static/terms";
+        return "http://emohotties.com/contact.php";
     }
 
     @SuppressWarnings("deprecation")
@@ -58,30 +61,34 @@ public class HottubeMe extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("?") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getURL().contains("404.php") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
+        String filename = br.getRegex("class=\"header playerspace\"><h2>([^<>\"]*?)</h2>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?)\\- Free Porn Videos and Sex Movies").getMatch(0);
+            filename = br.getRegex("<title>([^<>\"]*?) at Rampant\\.tv Tube</title>").getMatch(0);
         }
-        DLLINK = checkDirectLink(downloadLink, "directlink");
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("\\'file\\':[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
-            }
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("file:\"(http[^<>\"]*?)\"").getMatch(0);
-            }
-        }
-        if (filename == null || DLLINK == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
+        DLLINK = checkDirectLink(downloadLink, "directlink");
+        if (DLLINK == null) {
+            if (br.containsHTML("/premium/unleashed\\.php")) {
+                downloadLink.getLinkStatus().setStatusText("Only downloadable for premium users");
+                downloadLink.setName(filename + default_Extension);
+                return AvailableStatus.TRUE;
+            }
+            final String playerConfigUrl = br.getRegex("(http://(www\\.)?tube\\.rampant\\.tv/playerConfig\\.php\\?[a-z0-9]+\\.mp4)").getMatch(0);
+            if (playerConfigUrl == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage(playerConfigUrl);
+            DLLINK = br.getRegex("defaultVideo:(http://[^<>\"]*?);").getMatch(0);
+        }
+        DLLINK = Encoding.htmlDecode(DLLINK);
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
@@ -119,6 +126,16 @@ public class HottubeMe extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (DLLINK == null && br.containsHTML("/premium/unleashed\\.php")) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {

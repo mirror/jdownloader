@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornup.me" }, urls = { "http://(www\\.)?pornupdecrypted\\.me/video/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornup.me" }, urls = { "http://(www\\.)?pornupdecrypted\\.me/video/\\d+/[a-z0-9\\-]+" }, flags = { 0 })
 public class PornUpMe extends PluginForHost {
 
     private String DLLINK = null;
@@ -54,6 +54,7 @@ public class PornUpMe extends PluginForHost {
     }
 
     /** Uses the same script as pornper.com */
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -62,17 +63,11 @@ public class PornUpMe extends PluginForHost {
         if (br.getURL().contains("pornup.me/videos/?m=e") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h1>(.*?)(<a href=\"|</h1>)").getMatch(0);
+        String filename = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>(.*?)\\- Free Porn Videos and Sex Movies at pornper Kinky Porn Tube</title>").getMatch(0);
+            filename = br.getRegex("<title>(.*?) \\- Porn Video</title>").getMatch(0);
         }
-        DLLINK = br.getRegex("\\'file\\': \\'(http://.*?)\\'").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\\'(http://cdn\\.vidreactor\\.com/vid2c/d\\d+/[a-z0-9]+\\.flv\\?key=[a-z0-9]+\\&viddir=d\\d+&vkey=[a-z0-9]+)\\'").getMatch(0);
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("file=(http[^<>\"]*?)\\'").getMatch(0);
-            }
-        }
+        DLLINK = br.getRegex("var videoFile=\"(http[^<>\"]*?)\";").getMatch(0);
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -82,6 +77,7 @@ public class PornUpMe extends PluginForHost {
         if (ext == null || ext.length() > 5) {
             ext = ".flv";
         }
+        ext = ext.replace("/", "");
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink

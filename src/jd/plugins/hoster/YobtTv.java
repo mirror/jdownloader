@@ -31,7 +31,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yobt.tv" }, urls = { "http://(www\\.)?yobt\\.tv/content/\\d+/.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yobt.tv", "bestbigmovs.com", "coolmovs.com", "gayspower.com", "bigxvideos.com", "hdporn.in", "fetishok.com", "nastymovs.com", "angrymovs.com", "madmovs.com" }, urls = { "http://(www\\.)?yobt\\.tv/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?bestbigmovs\\.com/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?coolmovs\\.com/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?gayspower\\.com/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?bigxvideos\\.com/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?hdporn\\.in/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?fetishok\\.com/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?nastymovs\\.com/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?angrymovs\\.com/content/\\d+/[a-z0-9\\-]+\\.html",
+"http://(www\\.)?madmovs\\.com/content/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class YobtTv extends PluginForHost {
 
     private String DLLINK = null;
@@ -40,23 +41,54 @@ public class YobtTv extends PluginForHost {
         super(wrapper);
     }
 
+    /* Porn_terms_html_script V0.1 */
+    /* Tags: Script, template */
+    // Notes: yobt.com also belongs to these but has not been added here as it also has it's own decrypter.
+    // Notes 2: Old .bismarck decrypt handling was disabled AFTER revision 24665 because it was not needed anymore (though still working)
+    // because more domains were added to this plugin
+
+    @Override
+    public String getAGBLink() {
+        return "http://www.yobt.tv/terms.html";
+    }
+
+    private static final boolean useCryptHandling = false;
+
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(>This Video Was Not Found On Our Servers<|>404<|<title>Porn tube, Free HD Porn Videos, XXX Porno Tube Movies, Online Streaming Porn and Free Sex Clips, Pornute</title>)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("<h1 itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        if (br.containsHTML("class=\"error404\"") || br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        br.getPage("http://www.yobt.tv/freeporn/" + new Regex(downloadLink.getDownloadURL(), "yobt\\.tv/content/(\\d+)/").getMatch(0) + ".xml");
-        final String bismarkishID = br.getRegex("file=\\'(.*?)\\'").getMatch(0);
-        if (bismarkishID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (bismarkishID.equals("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        DLLINK = decryptTheSecret(bismarkishID);
-        if (DLLINK == null || !DLLINK.startsWith("http")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String filename = br.getRegex("<h2 class=\"left\">([^<>\"]*?)</hh>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<h2 style=\"[^<>\"]+\">([^<>\"]*?)</h2>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (useCryptHandling) {
+            br.getPage("http://www." + downloadLink.getHost() + "/freeporn/" + new Regex(downloadLink.getDownloadURL(), "yobt\\.tv/content/(\\d+)/").getMatch(0) + ".xml");
+            final String bismarkishID = br.getRegex("file=\\'(.*?)\\'").getMatch(0);
+            if (bismarkishID == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (bismarkishID.equals("")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            DLLINK = decryptTheSecret(bismarkishID);
+        } else {
+            DLLINK = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
+        }
+        if (DLLINK == null || !DLLINK.startsWith("http")) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
@@ -96,11 +128,6 @@ public class YobtTv extends PluginForHost {
             i += 2;
         }
         return plain;
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "http://www.yobt.tv/terms.html";
     }
 
     @Override

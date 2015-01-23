@@ -31,21 +31,33 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freegrannytube.com" }, urls = { "http://(www\\.)?freegrannytube\\.com/video/\\d+" }, flags = { 0 })
-public class FreegrannytubeCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sheshaft.com" }, urls = { "http://(www\\.)?sheshaft\\.com/videos/\\d+/[a-z0-9\\-]+/" }, flags = { 0 })
+public class SheshaftCom extends PluginForHost {
 
-    public FreegrannytubeCom(PluginWrapper wrapper) {
+    public SheshaftCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String default_Extension = ".mp4";
+    /* DEV NOTES */
+    // Porn_get_file_/videos/_basic Version 0.2
+    // Tags: Script, template
+    // mods: filename RegEx
+    // limit-info:
+    // protocol: no https
+    // other:
 
-    private String              DLLINK            = null;
+    /* Extension which will be used if no correct extension is found */
+    private static final String  default_Extension = ".mp4";
+    /* Connection stuff */
+    private static final boolean free_resume       = true;
+    private static final int     free_maxchunks    = 0;
+    private static final int     free_maxdownloads = -1;
+
+    private String               DLLINK            = null;
 
     @Override
     public String getAGBLink() {
-        return "http://www.freegrannytube.com/static/siteinfo";
+        return "";
     }
 
     @SuppressWarnings("deprecation")
@@ -54,20 +66,24 @@ public class FreegrannytubeCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("/error")) {
+        if (br.getURL().contains("404.php") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<>\"]*?) \\| Watch Free Granny").getMatch(0);
-        DLLINK = checkDirectLink(downloadLink, "directlink");
-        if (DLLINK == null) {
-            final String token = br.getRegex("\\'token\\', ?\\'([^<>\"]*?)\\'").getMatch(0);
-            DLLINK = br.getRegex("\\'file\\', ?\\'(http[^<>\"]*?)\\'").getMatch(0);
-            if (DLLINK == null || token == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            DLLINK += "?ec_seek=0&token=" + token;
+        String filename = br.getRegex("class=\"video_info\">[\t\n\r ]+<h2>([^<>]*?)</h2>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("target=\"_blank\" style=\"color: #fff;\">([^<>]*?)<").getMatch(0);
         }
         if (filename == null) {
+            filename = br.getRegex("<h1 style=\"font\\-size:\\d+px;\">([^<>]*?)</h1>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("<h3>([^<>\"]*?)</h3>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        }
+        DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
+        if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
@@ -111,7 +127,7 @@ public class FreegrannytubeCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -155,8 +171,8 @@ public class FreegrannytubeCom extends PluginForHost {
         output = output.replace("|", "¦");
         output = output.replace("<", "[");
         output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
+        output = output.replace("/", "/");
+        output = output.replace("\\", "");
         output = output.replace("*", "#");
         output = output.replace("?", "¿");
         output = output.replace("!", "¡");
@@ -166,7 +182,7 @@ public class FreegrannytubeCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return free_maxdownloads;
     }
 
     @Override
