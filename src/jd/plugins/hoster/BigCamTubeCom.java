@@ -31,20 +31,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornwhite.com" }, urls = { "http://(www\\.)?pornwhite\\.com/videos/\\d+/[a-z0-9\\-_]+/" }, flags = { 0 })
-public class PornWhiteCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bigcamtube.com" }, urls = { "http://(www\\.)?bigcamtube\\.com/videos/[a-z0-9\\-]+/" }, flags = { 0 })
+public class BigCamTubeCom extends PluginForHost {
 
-    public PornWhiteCom(PluginWrapper wrapper) {
+    public BigCamTubeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
-    /* DEV NOTES */
-    // Porn_get_file_/videos/_basic Version 0.1
-    // Tags: Script, template
-    // mods: filename RegEx
-    // limit-info:
-    // protocol: no https
-    // other:
 
     /* Extension which will be used if no correct extension is found */
     private static final String  default_Extension = ".mp4";
@@ -57,7 +49,7 @@ public class PornWhiteCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "";
+        return "http://www.bigcamtube.com/2257/";
     }
 
     @SuppressWarnings("deprecation")
@@ -66,16 +58,27 @@ public class PornWhiteCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("/404.php") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("File Not Found") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h2>([^<>\"]*?)</h2>").getMatch(0);
+        String filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>Free Porn Videos \\|([^<>\"]*?)</title>").getMatch(0);
+            filename = br.getRegex("<title>([^<>\"]*?), Blondes, Video \\- Big Cam Tube</title>").getMatch(0);
         }
-        DLLINK = checkDirectLink(downloadLink, "directlink");
         if (DLLINK == null) {
             DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+            }
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("file:[\t\n\r ]*?\"(http[^<>\"]*?)\"").getMatch(0);
+            }
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=\"video/(?:mp4|flv)\"").getMatch(0);
+            }
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
+            }
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -32,6 +32,9 @@ public class XXXAPornComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /* Using playerConfig script */
+    /* Tags: playerConfig.php */
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
@@ -54,7 +57,9 @@ public class XXXAPornComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("flashvars=\"config=(http://(www\\.)?book\\-mark\\.net/playerconfig/\\d+/\\d+\\.xml)\"").getMatch(0);
-        if (externID == null) externID = br.getRegex("value=\\'conf(ig)?=(http://media\\.amateurcumshots\\.org/flv_player/data/playerConfigEmbed/\\d+\\.xml)").getMatch(1);
+        if (externID == null) {
+            externID = br.getRegex("value=\\'conf(ig)?=(http://media\\.amateurcumshots\\.org/flv_player/data/playerConfigEmbed/\\d+\\.xml)").getMatch(1);
+        }
         if (externID != null) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;

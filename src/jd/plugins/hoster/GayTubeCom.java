@@ -22,7 +22,6 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -60,30 +59,44 @@ public class GayTubeCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(<title>GayTube Presents </title>|>This Video does not exist\\!<|>The following errors have occurred:<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>GayTube Presents (.*?)</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("\\&title=(.*?)\"").getMatch(0);
-        br.getPage("http://www.gaytube.com/flv_player/data/playerConfig/" + new Regex(downloadLink.getDownloadURL(), "gaytube\\.com/media/(\\d+)").getMatch(0) + ".xml");
-        DLLINK = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML("(<title>GayTube Presents </title>|>This Video does not exist\\!<|>The following errors have occurred:<)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("class=\"video\\-title font\\-bold font\\-24\">[\t\n\r ]+<div>([^<>\"]*?)</div>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?)\\- Gaytube\\.com</title>").getMatch(0);
+        }
+        final String[] qualities = { "1080", "720", "480", "360", "240", "180" };
+        for (final String quality : qualities) {
+            DLLINK = br.getRegex("flashvars\\.quality_" + quality + "p = \"(http[^<>\"]*?)\"").getMatch(0);
+            if (DLLINK != null) {
+                break;
+            }
+        }
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        filename = Encoding.htmlDecode(filename).trim();
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
+        downloadLink.setFinalFileName(filename + ".mp4");
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

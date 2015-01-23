@@ -33,6 +33,9 @@ public class TimeKillerEroticCom extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /* Using playerConfig script */
+    /* Tags: playerConfig.php */
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
@@ -46,7 +49,9 @@ public class TimeKillerEroticCom extends PluginForDecrypt {
             }
             br.getPage(continueLink);
             String pornHubLink = br.getRegex("(http://(www\\.)?pornhub\\.com/embed_player\\.php\\?id=[a-z0-9]+)").getMatch(0);
-            if (pornHubLink == null) pornHubLink = br.getRegex("\"(http://(www\\.)?pornhub\\.com/embed/[a-z0-9]+)\"").getMatch(0);
+            if (pornHubLink == null) {
+                pornHubLink = br.getRegex("\"(http://(www\\.)?pornhub\\.com/embed/[a-z0-9]+)\"").getMatch(0);
+            }
             if (pornHubLink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -105,7 +110,9 @@ public class TimeKillerEroticCom extends PluginForDecrypt {
                 return decryptedLinks;
             }
             externID = br.getRegex("addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
-            if (externID == null) externID = br.getRegex("\\'(http://(www\\.)?amateurdumper\\.com/videos/.*?)\\'").getMatch(0);
+            if (externID == null) {
+                externID = br.getRegex("\\'(http://(www\\.)?amateurdumper\\.com/videos/.*?)\\'").getMatch(0);
+            }
             if (externID != null) {
                 DownloadLink dl = createDownloadlink("directhttp://" + externID);
                 dl.setFinalFileName(filename + ".flv");
@@ -126,7 +133,9 @@ public class TimeKillerEroticCom extends PluginForDecrypt {
                 return decryptedLinks;
             }
             externID = br.getRegex("timekiller\\-erotic\\.com/player/pikoplayer\\.php\\?video=(http://.*?)\"").getMatch(0);
-            if (externID == null) externID = br.getRegex("(http://(www\\.)?video\\.timekiller\\-erotic\\.com/flv/.*?)\"").getMatch(0);
+            if (externID == null) {
+                externID = br.getRegex("(http://(www\\.)?video\\.timekiller\\-erotic\\.com/flv/.*?)\"").getMatch(0);
+            }
             if (externID != null) {
                 DownloadLink dl = createDownloadlink("directhttp://" + externID);
                 dl.setFinalFileName(filename + ".flv");
@@ -158,15 +167,21 @@ public class TimeKillerEroticCom extends PluginForDecrypt {
                 return decryptedLinks;
             }
             externID = br.getRegex("redtube\\.com/player/\"><param name=\"FlashVars\" value=\"id=(\\d+)\\&").getMatch(0);
-            if (externID == null) externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+            if (externID == null) {
+                externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+            }
             if (externID != null) {
                 DownloadLink dl = createDownloadlink("http://www.redtube.com/" + externID);
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
             externID = br.getRegex("pornhub\\.com/embed/(\\d+)").getMatch(0);
-            if (externID == null) externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
-            if (externID == null) externID = br.getRegex("pornhubplayer\\.php\\?video=(\\d+)\"").getMatch(0);
+            if (externID == null) {
+                externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
+            }
+            if (externID == null) {
+                externID = br.getRegex("pornhubplayer\\.php\\?video=(\\d+)\"").getMatch(0);
+            }
             if (externID != null) {
                 DownloadLink dl = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=" + externID);
                 decryptedLinks.add(dl);

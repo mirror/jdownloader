@@ -32,6 +32,9 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "watchgfporn.com" }, urls = { "http://(www\\.)?watchgfporn\\.com/videos/.*?\\-\\d+\\.html" }, flags = { 0 })
 public class WatchGfPornCom extends PluginForHost {
 
+    /* Using playerConfig script */
+    /* Tags: playerConfig.php */
+
     private String DLLINK = null;
 
     public WatchGfPornCom(PluginWrapper wrapper) {
@@ -53,7 +56,9 @@ public class WatchGfPornCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("watchgfporn.com/404.php") || br.containsHTML("(The file you have requested was not found on this server\\.|<title>404: File Not Found</title>)") || !br.getURL().contains("watchgfporn.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("watchgfporn.com/404.php") || br.containsHTML("(The file you have requested was not found on this server\\.|<title>404: File Not Found</title>)") || !br.getURL().contains("watchgfporn.com/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<span class=\"watchingnow\">(.*?)</span></div>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("Title: <span style=\"color:#930\">(.*?)</span>").getMatch(0);
@@ -62,10 +67,14 @@ public class WatchGfPornCom extends PluginForHost {
             }
         }
         DLLINK = br.getRegex("addParam\\(\"flashvars\",\"settings=(http://.*?)\"").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getPage(Encoding.htmlDecode(DLLINK));
         DLLINK = br.getRegex("defaultVideo:(http://.*?);").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
@@ -75,10 +84,11 @@ public class WatchGfPornCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

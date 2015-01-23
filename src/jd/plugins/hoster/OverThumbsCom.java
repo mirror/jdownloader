@@ -53,33 +53,57 @@ public class OverThumbsCom extends PluginForHost {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getRequest().getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("/galleries/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("/galleries/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<h2>([^<>\"]*?)<").getMatch(0);
-        String vid = br.getRegex("\"/jwplayer/playvideo\\.php\\?id=(\\d+)\"").getMatch(0);
-        if (vid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        /* New/Alternative way: jwplayer/playvideo.php?id= */
-        br.getPage("http://overthumbs.com/flvplayer/player/xml_connect.php?code=" + vid);
-        DLLINK = br.getRegex("<urlMOV1>(http://.*?)</urlMOV1>").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\\'(http://cdn\\.empflix\\.com/empflv/.*?)\\'").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String vid = br.getRegex("\"/jwplayer/playvideo\\.php\\?id=(\\d+)\"").getMatch(0);
+        if (filename == null || vid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final boolean new_way = false;
+        if (new_way) {
+            /* New/Alternative way: jwplayer/playvideo.php?id= */
+            br.getPage("http://overthumbs.com/jwplayer/playvideo.php?id=" + vid);
+            // --> Unpack js and RegEx finallink
+        } else {
+            /* Use old way - avoids packed JS althougs js is just packed, nothing else. */
+            br.getPage("http://overthumbs.com/flvplayer/player/xml_connect.php?code=" + vid);
+            DLLINK = br.getRegex("<urlMOV1>(http://.*?)</urlMOV1>").getMatch(0);
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("\\'(http://cdn\\.empflix\\.com/empflv/.*?)\\'").getMatch(0);
+            }
+            if (DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            /* Fix old links. */
+            final Regex vinfos = new Regex(DLLINK, "http://vdelivery.overthumbs.com/flv/(\\d+)/([^<>]*?)\\.(?:flv|mp4)");
+            final String server = vinfos.getMatch(0);
+            final String evelse = vinfos.getMatch(1);
+            if (server != null && evelse != null) {
+                DLLINK = "http://" + server + ".staticvalley.com/mp4/" + server + "/" + evelse + ".mp4";
+            }
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

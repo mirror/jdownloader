@@ -31,33 +31,58 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kinkytube.me" }, urls = { "http://(www\\.)?kinkytube\\.me/video/\\d+" }, flags = { 0 })
-public class KinkyTubeMe extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xbabe.com" }, urls = { "http://(www\\.)?xbabe\\.com/videos/[a-z0-9\\-]+/" }, flags = { 0 })
+public class XbabeCom extends PluginForHost {
 
-    public KinkyTubeMe(PluginWrapper wrapper) {
+    public XbabeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    /* DEV NOTES */
+    // Porn_get_file_/videos/_basic Version 0.2
+    // Tags: Script, template
+    // mods: filename RegEx
+    // limit-info:
+    // protocol: no https
+    // other:
+
+    /* Extension which will be used if no correct extension is found */
+    private static final String  default_Extension = ".mp4";
+    /* Connection stuff */
+    private static final boolean free_resume       = true;
+    private static final int     free_maxchunks    = 0;
+    private static final int     free_maxdownloads = -1;
+
+    private String               DLLINK            = null;
 
     @Override
     public String getAGBLink() {
-        return "http://www.kinkytube.me/static/terms";
+        return "http://xbabe.com/terms/";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (!br.getURL().contains("/video/")) {
+        if (br.getURL().contains("404.php") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<>\"]*?)- Free Porn Videos and Sex Movies at kinkytube\\.me Kinky Porn Tube</title>").getMatch(0);
-        DLLINK = checkDirectLink(downloadLink, "directlink");
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\\'file\\': \\'(http[^<>\"]*?)\\'").getMatch(0);
+        String filename = br.getRegex("class=\"video_info\">[\t\n\r ]+<h2>([^<>]*?)</h2>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("target=\"_blank\" style=\"color: #fff;\">([^<>]*?)<").getMatch(0);
         }
+        if (filename == null) {
+            filename = br.getRegex("<h1 style=\"font\\-size:\\d+px;\">([^<>]*?)</h1>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("<h3>([^<>\"]*?)</h3>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?) \\- XBabe</title>").getMatch(0);
+        }
+        DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -66,10 +91,14 @@ public class KinkyTubeMe extends PluginForHost {
         filename = filename.trim();
         filename = encodeUnicode(filename);
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".flv";
+        /* Make sure that we get a correct extension */
+        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
+            ext = default_Extension;
         }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        if (!filename.endsWith(ext)) {
+            filename += ext;
+        }
+        downloadLink.setFinalFileName(filename);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -98,8 +127,13 @@ public class KinkyTubeMe extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -109,17 +143,22 @@ public class KinkyTubeMe extends PluginForHost {
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                con = br2.openGetConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
-                con.disconnect();
             } catch (final Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
         return dllink;
@@ -132,8 +171,8 @@ public class KinkyTubeMe extends PluginForHost {
         output = output.replace("|", "¦");
         output = output.replace("<", "[");
         output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
+        output = output.replace("/", "/");
+        output = output.replace("\\", "");
         output = output.replace("*", "#");
         output = output.replace("?", "¿");
         output = output.replace("!", "¡");
@@ -143,7 +182,7 @@ public class KinkyTubeMe extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return free_maxdownloads;
     }
 
     @Override

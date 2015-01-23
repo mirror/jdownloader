@@ -31,21 +31,25 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornmobo.com" }, urls = { "http://(www\\.)?pornmobo\\.com/video/\\d+" }, flags = { 0 })
-public class PornmoboCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornologo.com" }, urls = { "http://(www\\.)?pornologo\\.com/videos/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
+public class PornologoCom extends PluginForHost {
 
-    public PornmoboCom(PluginWrapper wrapper) {
+    public PornologoCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* Extension which will be used if no correct extension is found */
-    private static final String default_Extension = ".mp4";
+    private static final String  default_Extension = ".flv";
+    /* Connection stuff */
+    private static final boolean free_resume       = true;
+    private static final int     free_maxchunks    = 0;
+    private static final int     free_maxdownloads = -1;
 
-    private String              DLLINK            = null;
+    private String               DLLINK            = null;
 
     @Override
     public String getAGBLink() {
-        return "http://www.pornmobo.com/static/terms";
+        return "http://www.pornologo.com/terms.php";
     }
 
     @SuppressWarnings("deprecation")
@@ -54,16 +58,27 @@ public class PornmoboCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("?")) {
+        if (br.getURL().contains("404.php") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<div class=\"left span\\-630\">[\t\n\r ]+<h1>([^<>]*?)</h1>").getMatch(0);
+        String filename = br.getRegex("name=\"title\" content=\"([^<>\"]*?) free porn \\d+\"").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?)- Free Porn Videos and Sex Movies at pornmobo\\.com Kinky Porn Tube</title>").getMatch(0);
+            filename = br.getRegex("<h2>([^<>\"]*?)</h2>").getMatch(0);
         }
-        DLLINK = checkDirectLink(downloadLink, "directlink");
         if (DLLINK == null) {
-            DLLINK = br.getRegex("\\'file\\': \\'(http[^<>\"]*?)\\'").getMatch(0);
+            DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+            }
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("file:[\t\n\r ]*?\"(http[^<>\"]*?)\"").getMatch(0);
+            }
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=\"video/(?:mp4|flv)\"").getMatch(0);
+            }
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=\"video/(?:mp4|flv)\"").getMatch(0);
+            }
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -109,7 +124,7 @@ public class PornmoboCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -153,8 +168,8 @@ public class PornmoboCom extends PluginForHost {
         output = output.replace("|", "¦");
         output = output.replace("<", "[");
         output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
+        output = output.replace("/", "/");
+        output = output.replace("\\", "");
         output = output.replace("*", "#");
         output = output.replace("?", "¿");
         output = output.replace("!", "¡");
@@ -164,7 +179,7 @@ public class PornmoboCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return free_maxdownloads;
     }
 
     @Override

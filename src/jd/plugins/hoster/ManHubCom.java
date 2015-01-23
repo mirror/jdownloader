@@ -31,20 +31,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornwhite.com" }, urls = { "http://(www\\.)?pornwhite\\.com/videos/\\d+/[a-z0-9\\-_]+/" }, flags = { 0 })
-public class PornWhiteCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "manhub.com" }, urls = { "http://(www\\.)?manhub.com/watch/\\d+/" }, flags = { 0 })
+public class ManHubCom extends PluginForHost {
 
-    public PornWhiteCom(PluginWrapper wrapper) {
+    public ManHubCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
-    /* DEV NOTES */
-    // Porn_get_file_/videos/_basic Version 0.1
-    // Tags: Script, template
-    // mods: filename RegEx
-    // limit-info:
-    // protocol: no https
-    // other:
 
     /* Extension which will be used if no correct extension is found */
     private static final String  default_Extension = ".mp4";
@@ -57,7 +49,7 @@ public class PornWhiteCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "";
+        return "http://www.manhub.com/static/terms/";
     }
 
     @SuppressWarnings("deprecation")
@@ -66,16 +58,30 @@ public class PornWhiteCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("/404.php") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML(">This video has been removed</") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h2>([^<>\"]*?)</h2>").getMatch(0);
+        String filename = br.getRegex("<h2 class=\"h2-head\">([^<>\"]*?)</h2>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>Free Porn Videos \\|([^<>\"]*?)</title>").getMatch(0);
+            filename = br.getRegex("<title>([^<>\"]*?) \\| Man Hub \\&trade;</title>").getMatch(0);
         }
-        DLLINK = checkDirectLink(downloadLink, "directlink");
         if (DLLINK == null) {
             DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+            }
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("file:[\t\n\r ]*?\"(http[^<>\"]*?)\"").getMatch(0);
+            }
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=\"video/(?:mp4|flv)\"").getMatch(0);
+            }
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
+            }
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("var url = \"(https?://[^<>\"]*?)\";").getMatch(0);
+            }
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -43,19 +43,33 @@ public class DownloadAndroidRomCom extends PluginForHost {
 
     private static final String NOCHUNKS = "NOCHUNKS";
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">The file you are looking for doesn\\'t exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">The file you are looking for doesn\\'t exist")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        /* User added wrong link */
+        if (!br.containsHTML("id=\"download_link\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<b>Name:</b>([^<>\"]*?)</p>").getMatch(0);
-        String filesize = br.getRegex("<b>File Size:</b>([^<>\"]*?)</p>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            filename = br.getRegex("\">([^<>\"]*?)</a><span style=\"font-size:0.9em;\">").getMatch(0);
+        }
+        String filesize = br.getRegex("File (?:s|S)ize:[\t\n\r ]*?</b>([^<>\"]*?)<").getMatch(0);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         final String md5 = br.getRegex("<b>MD5 Checksum:</b> ([a-z0-9]{32})</p>").getMatch(0);
-        if (md5 != null) link.setMD5Hash(md5);
+        if (md5 != null) {
+            link.setMD5Hash(md5);
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -63,20 +77,28 @@ public class DownloadAndroidRomCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex("\"http://(www\\.)?(downloadandroidrom\\.com/download/[^<>\"]*?)\"").getMatch(1);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // this.sleep(5 * 1001l, downloadLink);
         br.postPage("http://downloadandroidrom.com/gettoken2.php", "");
         String token = br.toString();
-        if (token.length() >= 50) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (token.length() >= 50) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.postPage("http://downloadandroidrom.com/testbusy.php", "");
         final String server = br.toString();
-        if (server.length() >= 50) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (server.length() >= 50) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         token = Encoding.htmlDecode(token.trim());
         dllink = "http://mirror" + server + "." + dllink + token;
         br.getPage("http://downloadandroidrom.com/ip/ip.php");
 
         int maxchunks = 0;
-        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) maxchunks = 1;
+        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
+            maxchunks = 1;
+        }
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -86,7 +108,9 @@ public class DownloadAndroidRomCom extends PluginForHost {
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */

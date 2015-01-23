@@ -32,6 +32,9 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "homemoviestube.com" }, urls = { "http://(www\\.)?homemoviestube\\.com/videos/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
 public class HomeMoviesTubeCom extends PluginForHost {
 
+    /* Using playerConfig script */
+    /* Tags: playerConfig.php */
+
     private String DLLINK = null;
 
     public HomeMoviesTubeCom(PluginWrapper wrapper) {
@@ -54,7 +57,9 @@ public class HomeMoviesTubeCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("(filthyrx.com , it's owners, designers, partners, representatives and this   web site are not responsible for any action taken by its members on this|Liability for any content contained in a post is the sole   responsibility of the person\\(s\\) who submitted them|material offensive or are not of legal age please leave now|EDIT PLAYER SKIN COLORS BELOW|ui\\.skin\\.colors\\.video)")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            if (br.containsHTML("(filthyrx.com , it's owners, designers, partners, representatives and this   web site are not responsible for any action taken by its members on this|Liability for any content contained in a post is the sole   responsibility of the person\\(s\\) who submitted them|material offensive or are not of legal age please leave now|EDIT PLAYER SKIN COLORS BELOW|ui\\.skin\\.colors\\.video)")) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -65,19 +70,33 @@ public class HomeMoviesTubeCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(The file you have requested was not found and/or has been deleted|\">Sorry, this video has been deleted|<title>404: File Not Found </title>)") || br.getURL().contains("homemoviestube.com/404.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(The file you have requested was not found and/or has been deleted|\">Sorry, this video has been deleted|<title>404: File Not Found </title>)") || br.getURL().contains("homemoviestube.com/404.php")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>(.*?) at HomeMoviesTube\\.com</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<h1 class=\"header\">[\t\n\r ]+<span class=\"cnt\">([^<>\"]*?)</span>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<h1 class=\"header\">[\t\n\r ]+<span class=\"cnt\">([^<>\"]*?)</span>").getMatch(0);
+        }
         DLLINK = br.getRegex("settings=(http://.*?)\"").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("(http://(www\\.)?homemoviestube\\.com/playerConfig\\.php\\?.*?)\"").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("(http://(www\\.)?homemoviestube\\.com/playerConfig\\.php\\?.*?)\"").getMatch(0);
+        }
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getPage(Encoding.htmlDecode(DLLINK));
         DLLINK = br.getRegex("defaultVideo:(http://.*?);").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("flvMask:(http://.*?);").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("flvMask:(http://.*?);").getMatch(0);
+        }
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".flv";
+        if (ext == null || ext.length() > 5) {
+            ext = ".flv";
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -85,10 +104,11 @@ public class HomeMoviesTubeCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

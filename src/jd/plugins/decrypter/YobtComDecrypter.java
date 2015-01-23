@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yobt.com" }, urls = { "http://(www\\.)?yobt\\.com/content/\\d+/.*\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yobt.com" }, urls = { "http://(www\\.)?yobt\\.com/content/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
 public class YobtComDecrypter extends PluginForDecrypt {
 
     public YobtComDecrypter(PluginWrapper wrapper) {

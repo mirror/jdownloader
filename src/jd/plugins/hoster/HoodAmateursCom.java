@@ -24,6 +24,7 @@ import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,20 +32,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornwhite.com" }, urls = { "http://(www\\.)?pornwhite\\.com/videos/\\d+/[a-z0-9\\-_]+/" }, flags = { 0 })
-public class PornWhiteCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hoodamateurs.com" }, urls = { "http://(www\\.)?hoodamateurs\\.com/\\d+/[A-Za-z0-9\\-_]+/[a-z0-9\\-]+" }, flags = { 0 })
+public class HoodAmateursCom extends PluginForHost {
 
-    public PornWhiteCom(PluginWrapper wrapper) {
+    public HoodAmateursCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
-    /* DEV NOTES */
-    // Porn_get_file_/videos/_basic Version 0.1
-    // Tags: Script, template
-    // mods: filename RegEx
-    // limit-info:
-    // protocol: no https
-    // other:
 
     /* Extension which will be used if no correct extension is found */
     private static final String  default_Extension = ".mp4";
@@ -57,7 +50,7 @@ public class PornWhiteCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "";
+        return "http://www.hoodamateurs.com/static/terms/";
     }
 
     @SuppressWarnings("deprecation")
@@ -66,24 +59,27 @@ public class PornWhiteCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("/404.php") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h2>([^<>\"]*?)</h2>").getMatch(0);
+        String filename = br.getRegex("<h1 class=\"title\">([^<>]*?)</h1>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>Free Porn Videos \\|([^<>\"]*?)</title>").getMatch(0);
+            filename = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\"").getMatch(0);
         }
-        DLLINK = checkDirectLink(downloadLink, "directlink");
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        filename = Encoding.htmlDecode(filename);
+        filename = filename.trim();
+        filename = encodeUnicode(filename);
         if (DLLINK == null) {
-            DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
+            br.getPage("http://www.hoodamateurs.com/modules/video/player/nuevo/config.php?id=" + new Regex(downloadLink.getDownloadURL(), "hoodamateurs\\.com/(\\d+)/").getMatch(0));
+            DLLINK = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {

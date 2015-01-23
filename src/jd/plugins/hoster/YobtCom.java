@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yobt.com" }, urls = { "http://(www\\.)?yobtdecrypted\\.com/content/\\d+/.*\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yobt.com" }, urls = { "http://(www\\.)?yobtdecrypted\\.com/content/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
 public class YobtCom extends PluginForHost {
 
     private String dllink = null;

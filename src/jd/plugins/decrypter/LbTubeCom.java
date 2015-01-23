@@ -27,13 +27,16 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-//EmbedDecrypter 0.1.9
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lbtube.com" }, urls = { "http://(www\\.)?lbtube\\.com/videos/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
 public class LbTubeCom extends PluginForDecrypt {
 
     public LbTubeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    /* Using playerConfig script */
+    /* Tags: playerConfig.php */
+    // EmbedDecrypter 0.1.9
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String externID = null;
