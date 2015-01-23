@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -34,6 +33,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -44,6 +44,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.jdownloader.controlling.ffmpeg.json.Stream;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "http://twitchdecrypted\\.tv/\\d+" }, flags = { 2 })
 public class JustinTv extends PluginForHost {
@@ -75,41 +79,98 @@ public class JustinTv extends PluginForHost {
     private String              dllink                    = null;
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, ParseException {
-        dllink = downloadLink.getStringProperty("plain_directlink", null);
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        dllink = downloadLink.getStringProperty("plain_directlink", downloadLink.getStringProperty("m3u", null));
         if (downloadLink.getBooleanProperty("offline", false) || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        this.setBrowserExclusive();
-        URLConnectionAdapter con = null;
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        try {
-            con = br2.openGetConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (dllink.endsWith("m3u8")) {
+
+            checkFFProbe(downloadLink, "File Checking a HLS Stream");
+            if (downloadLink.getBooleanProperty("encrypted")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Encrypted HLS is not supported");
             }
-        } finally {
+
+            br.getHeaders().put("Accept", "*/*");
+            br.getHeaders().put("X-Requested-With", "ShockwaveFlash/16.0.0.257");
+            br.getHeaders().put("Referer", downloadLink.getContentUrl());
+            HLSDownloader downloader = new HLSDownloader(downloadLink, br, downloadLink.getStringProperty("m3u", null));
+            StreamInfo streamInfo = downloader.getProbe();
+            if (streamInfo == null) {
+                return AvailableStatus.FALSE;
+            }
+
+            String extension = ".m4a";
+
+            for (Stream s : streamInfo.getStreams()) {
+                if ("video".equalsIgnoreCase(s.getCodec_type())) {
+                    extension = ".mp4";
+                    if (s.getHeight() > 0) {
+                        downloadLink.setProperty("videoQuality", s.getHeight() + "p");
+                    }
+                    if (s.getCodec_name() != null) {
+                        downloadLink.setProperty("videoCodec", s.getCodec_name());
+                    }
+                } else if ("audio".equalsIgnoreCase(s.getCodec_type())) {
+                    if (s.getBit_rate() != null) {
+                        downloadLink.setProperty("audioBitrate", (Integer.parseInt(s.getBit_rate()) / 1024) + "kbits");
+                    }
+                    if (s.getCodec_name() != null) {
+                        downloadLink.setProperty("audioCodec", s.getCodec_name());
+                    }
+                }
+            }
+            downloadLink.setProperty("extension", extension);
+
+            downloadLink.setName(getFormattedFilename(downloadLink));
+            return AvailableStatus.TRUE;
+        } else {
+            this.setBrowserExclusive();
+            URLConnectionAdapter con = null;
+            final Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
             try {
-                con.disconnect();
-            } catch (Throwable e) {
+                con = br2.openGetConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
+            final String formattedFilename = getFormattedFilename(downloadLink);
+            downloadLink.setFinalFileName(formattedFilename);
+            return AvailableStatus.TRUE;
         }
-        final String formattedFilename = getFormattedFilename(downloadLink);
-        downloadLink.setFinalFileName(formattedFilename);
-        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        doFree(downloadLink);
+        if (dllink != null && dllink.endsWith("m3u8")) {
+            doHLS(downloadLink);
+        } else {
+            doFree(downloadLink);
+        }
     }
 
-    public void doFree(final DownloadLink downloadLink) throws Exception {
+    private final void doHLS(final DownloadLink downloadLink) throws Exception {
+        checkFFmpeg(downloadLink, "Download a HLS Stream");
+        if (downloadLink.getBooleanProperty("encrypted")) {
+
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Encrypted HLS is not supported");
+        }
+        // requestFileInformation(downloadLink);
+        dl = new HLSDownloader(downloadLink, br, dllink);
+        dl.startDownload();
+    }
+
+    private void doFree(final DownloadLink downloadLink) throws Exception {
         int maxChunks = 0;
         if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
             maxChunks = 1;
@@ -163,7 +224,12 @@ public class JustinTv extends PluginForHost {
         final String date = downloadLink.getStringProperty("originaldate", null);
         final String channelName = downloadLink.getStringProperty("channel", null);
         final int partNumber = downloadLink.getIntegerProperty("partnumber", -1);
-        final String quality = downloadLink.getStringProperty("quality", null);
+        final String quality = downloadLink.getStringProperty("quality", "");
+        final String videoQuality = downloadLink.getStringProperty("videoQuality", "");
+        final String videoCodec = downloadLink.getStringProperty("videoCodec", "");
+        final String audioBitrate = downloadLink.getStringProperty("audioBitrate", "");
+        final String audioCodec = downloadLink.getStringProperty("audioCodec", "");
+        final String extension = downloadLink.getStringProperty("extension", ".flv");
 
         String formattedDate = null;
         if (date != null) {
@@ -178,20 +244,25 @@ public class JustinTv extends PluginForHost {
             formatter = new SimpleDateFormat(userDefinedDateFormat);
             formattedDate = formatter.format(theDate);
         }
-
-        formattedFilename = formattedFilename.replace("*partnumber*", df.format(partNumber));
-        formattedFilename = formattedFilename.replace("*quality*", quality);
-        if (channelName != null) {
-            formattedFilename = formattedFilename.replace("*channelname*", channelName);
+        // parse for user characters outside of wild card, only used as separators.
+        String p = new Regex(formattedFilename, "\\*?([^\\*]*)?\\*partnumber\\*([^\\*]*)?").getMatch(-1);
+        if (partNumber == -1) {
+            formattedFilename = formattedFilename.replace(p, "");
         } else {
-            formattedFilename = formattedFilename.replace("*channelname*", "");
+            formattedFilename = formattedFilename.replace("*partnumber*", df.format(partNumber));
         }
+        formattedFilename = formattedFilename.replace("*quality*", quality);
+        formattedFilename = formattedFilename.replace("*channelname*", channelName);
+        formattedFilename = formattedFilename.replace("*videoQuality*", videoQuality);
+        formattedFilename = formattedFilename.replace("*videoCodec*", videoCodec);
+        formattedFilename = formattedFilename.replace("*audioBitrate*", audioBitrate);
+        formattedFilename = formattedFilename.replace("*audioCodec*", audioCodec);
         if (formattedDate != null) {
             formattedFilename = formattedFilename.replace("*date*", formattedDate);
         } else {
             formattedFilename = formattedFilename.replace("*date*", "");
         }
-        formattedFilename = formattedFilename.replace("*ext*", ".flv");
+        formattedFilename = formattedFilename.replace("*ext*", extension);
         // Insert filename at the end to prevent errors with tags
         formattedFilename = formattedFilename.replace("*videoname*", videoName);
 

@@ -36,6 +36,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -43,7 +44,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.logging2.LogSource;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "http://((www\\.|[a-z]{2}\\.)?(twitchtv\\.com|twitch\\.tv)/(?!directory)[^<>/\"]+/((b|c)/\\d+|videos(\\?page=\\d+)?)|(www\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "http://((www\\.|[a-z]{2}\\.)?(twitchtv\\.com|twitch\\.tv)/(?!directory)[^<>/\"]+/((b|c|v)/\\d+|videos(\\?page=\\d+)?)|(www\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+)" }, flags = { 0 })
 public class JustinTvDecrypt extends PluginForDecrypt {
 
     public JustinTvDecrypt(PluginWrapper wrapper) {
@@ -60,12 +61,21 @@ public class JustinTvDecrypt extends PluginForDecrypt {
         ajax.getPage(string);
     }
 
-    private final String FASTLINKCHECK = "FASTLINKCHECK";
-    private final String SINGLEVIDEO   = "http://((www\\.|[a-z]{2}\\.)?(twitchtv\\.com|twitch\\.tv)/[^<>/\"]+/((b|c)/\\d+)|(www\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+)";
+    private void ajaxGetPagePlayer(final String string) throws IOException {
+        ajax = br.cloneBrowser();
+        ajax.getHeaders().put("Accept", "*/*");
+        ajax.getHeaders().put("X-Requested-With", "ShockwaveFlash/16.0.0.257");
+        ajax.getPage(string);
+    }
+
+    private final String FASTLINKCHECK  = "FASTLINKCHECK";
+    private final String videoSingleWeb = "https?://(?:(?:www\\.|[a-z]{2}\\.)?(?:twitchtv\\.com|twitch\\.tv)/[^<>/\"]+/((b|c)/\\d+)|(?:www\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+)";
+    private final String videoSingleHDS = "https?://(?:(?:www\\.|[a-z]{2}\\.)?(?:twitchtv\\.com|twitch\\.tv)/[^<>/\"]+/v/\\d+)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final SubConfiguration cfg = this.getPluginConfig();
+        br = new Browser();
         br.setCookie("http://twitch.tv", "language", "en-au");
         // redirects occur to de.domain when browser accept language set to German!
         br.getHeaders().put("Accept-Language", "en-gb");
@@ -138,133 +148,236 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 }
             }
         } else {
-            if (!br.getURL().matches(SINGLEVIDEO)) {
+            if (br.getURL().matches(videoSingleWeb)) {
+                // no longer get videoname from html, it requires api call.
+                ajaxGetPage("http://api.twitch.tv/kraken/videos/" + (new Regex(parameter, "/b/\\d+$").matches() ? "a" : "c") + vid + "?on_site=1&");
+                String filename = getJson(ajax, "title");
+                final String channelName = getJson(ajax, "display_name");
+                final String date = getJson(ajax, "recorded_at");
+                final String vdne = "Video does not exist";
+                if (ajax != null && vdne.equals(getJson(ajax, "message"))) {
+                    try {
+                        decryptedLinks.add(createOfflinelink(parameter, vid + " - " + vdne, vdne));
+                    } catch (final Throwable t) {
+                        logger.info("OfflineLink :" + parameter);
+                    }
+                    return decryptedLinks;
+                }
+                String failreason = "Unknown server error";
+                boolean failed = true;
+                for (int i = 1; i <= 10; i++) {
+                    try {
+                        ajaxGetPage("https://api.twitch.tv/api/videos/" + (new Regex(parameter, "/b/\\d+$").matches() ? "a" : "c") + vid + additionalparameters);
+                        if (ajax.containsHTML("\"restrictions\":\\{\"live\":\"chansub\"")) {
+                            failreason = "Only downloadable for subscribers";
+                        } else {
+                            failed = false;
+                        }
+                        break;
+                    } catch (final BrowserException e) {
+                        this.sleep(5000l, param);
+                    }
+                }
+                if (failed) {
+                    try {
+                        decryptedLinks.add(createOfflinelink(parameter, vid + " - " + failreason, failreason));
+                    } catch (final Throwable t) {
+                        logger.info("OfflineLink :" + parameter);
+                    }
+                    return decryptedLinks;
+                }
+                if (filename == null) {
+                    filename = vid;
+                }
+                /** Prefer highest quality */
+                String used_quality = null;
+                final String[][] qualities = { { "live_user_[A-Za-z0-9]+", "high" }, { "format_720p", "720p" }, { "format_480p", "480p" }, { "format_360p", "360p" }, { "format_240p", "240p" } };
+                String[] links = null;
+                for (final String current_quality[] : qualities) {
+                    final String qual_regex = current_quality[0];
+                    final String qual_name = current_quality[1];
+                    links = ajax.getRegex("\"url\":\"(https?://[^<>\"]*?" + qual_regex + "[^\"]*_\\d+\\.flv)\"").getColumn(0);
+                    if (links != null && links.length > 0) {
+                        used_quality = qual_name;
+                        break;
+                    }
+                }
+                if (links == null || links.length == 0) {
+                    used_quality = "standard";
+                    links = ajax.getRegex("\"url\":\"(https?://[^<>\"]*?)\"").getColumn(0);
+                }
+                if (links == null || links.length == 0) {
+                    logger.warning("Decrypter broken: " + parameter);
+                    return null;
+                }
+                filename = Encoding.htmlDecode(filename.trim());
+                filename = filename.replaceAll("[\r\n#]+", "");
+                int counter = 1;
+
+                for (final String directlink : links) {
+                    final DownloadLink dlink = createDownloadlink("http://twitchdecrypted.tv/" + System.currentTimeMillis() + new Random().nextInt(100000000));
+                    dlink.setProperty("directlink", "true");
+                    dlink.setProperty("plain_directlink", directlink);
+                    dlink.setProperty("plainfilename", filename);
+                    dlink.setProperty("partnumber", counter);
+                    dlink.setProperty("quality", used_quality);
+                    if (date != null) {
+                        dlink.setProperty("originaldate", date);
+                    }
+                    if (channelName != null) {
+                        dlink.setProperty("channel", Encoding.htmlDecode(channelName.trim()));
+                    }
+                    dlink.setProperty("LINKDUPEID", "twitch" + vid + "_" + counter);
+                    final String formattedFilename = jd.plugins.hoster.JustinTv.getFormattedFilename(dlink);
+                    dlink.setName(formattedFilename);
+                    if (cfg.getBooleanProperty(FASTLINKCHECK, false)) {
+                        dlink.setAvailable(true);
+                    }
+                    try {
+                        dlink.setContentUrl(parameter);
+                    } catch (final Throwable e) {
+                        /* Not available in old 0.9.581 Stable */
+                    }
+                    decryptedLinks.add(dlink);
+                    counter++;
+                }
+
+                String fpName = "";
+                if (channelName != null) {
+                    fpName += Encoding.htmlDecode(channelName.trim()) + " - ";
+                }
+                if (date != null) {
+                    try {
+                        final String userDefinedDateFormat = cfg.getStringProperty("CUSTOM_DATE_2", "dd.MM.yyyy_HH-mm-ss");
+                        final String[] dateStuff = date.split("T");
+                        final String input = dateStuff[0] + ":" + dateStuff[1].replace("Z", "GMT");
+                        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:HH:mm:ssZ");
+                        Date dateStr = formatter.parse(input);
+                        String formattedDate = formatter.format(dateStr);
+                        Date theDate = formatter.parse(formattedDate);
+
+                        formatter = new SimpleDateFormat(userDefinedDateFormat);
+                        formattedDate = formatter.format(theDate);
+                        fpName += formattedDate + " - ";
+                    } catch (final Throwable e) {
+                        LogSource.exception(logger, e);
+                    }
+                }
+                fpName += filename;
+                fpName += " - [" + links.length + "]" + " - " + used_quality;
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(fpName);
+                fp.addLinks(decryptedLinks);
+            } else if (br.getURL().matches(videoSingleHDS)) {
+                if (System.getProperty("jd.revision.jdownloaderrevision") == null) {
+                    logger.warning("HLS is only supported in JDownloader 2.");
+                    return decryptedLinks;
+                }
+                // TODO: HDS
+                // they have multiple qualities, this would be defendant on uploaders original quality.
+                // we need sig for next request
+                // https://api.twitch.tv/api/vods/3707868/access_token?as3=t
+                this.ajaxGetPage("http://api.twitch.tv/kraken/videos/v" + vid + "?on_site=1");
+                String filename = getJson(ajax, "title");
+                final String channelName = getJson(ajax, "display_name");
+                final String date = getJson(ajax, "recorded_at");
+                if (filename == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                filename = Encoding.htmlDecode(filename.trim());
+                filename = filename.replaceAll("[\r\n#]+", "");
+                this.ajaxGetPagePlayer("http://api.twitch.tv/api/vods/" + vid + "/access_token?as3=t");
+                // {"token":"{\"user_id\":null,\"vod_id\":3707868,\"expires\":1421924057,\"chansub\":{\"restricted_bitrates\":[]},\"privileged\":false}","sig":"a73d0354f84e8122d78b14f47552e0f83217a89e"}
+                final String auth = getJson(ajax, "sig");
+                final String expire = getJson(ajax.toString().replaceAll("\\\\\"", "\""), "expires");
+                // auth required
+                // http://usher.twitch.tv/vod/3707868?nauth=%7B%22user_id%22%3Anull%2C%22vod_id%22%3A3707868%2C%22expires%22%3A1421885482%2C%22chansub%22%3A%7B%22restricted_bitrates%22%3A%5B%5D%7D%2C%22privileged%22%3Afalse%7D&nauthsig=d4ecb4772b28b224accbbc4711dff1c786725ce9
+                final String a = Encoding.urlEncode("{\"user_id\":null,\"vod_id\":" + vid + ",\"expires\":" + expire + ",\"chansub\":{\"restricted_bitrates\":[]},\"privileged\":false}") + "&nauthsig=" + auth;
+                ajaxGetPagePlayer("http://usher.twitch.tv/vod/" + vid + "?nauth=" + a);
+                // #EXTM3U
+                // #EXT-X-MEDIA:TYPE=VIDEO,GROUP-ID="chunked",NAME="Source",AUTOSELECT=YES,DEFAULT=YES
+                // #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=3428253,CODECS="avc1.4D4029,mp4a.40.2",VIDEO="chunked"
+                // http://vod.ak.hls.ttvnw.net/v1/AUTH_system/vods_edbf/adren_tv_12744116464_192799820/chunked/index-dvr.m3u8
+                // #EXT-X-MEDIA:TYPE=VIDEO,GROUP-ID="high",NAME="High",AUTOSELECT=YES,DEFAULT=YES
+                // #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=1590189,CODECS="avc1.42C01F,mp4a.40.2",VIDEO="high"
+                // http://vod.ak.hls.ttvnw.net/v1/AUTH_system/vods_edbf/adren_tv_12744116464_192799820/high/index-dvr.m3u8
+                // #EXT-X-MEDIA:TYPE=VIDEO,GROUP-ID="medium",NAME="Medium",AUTOSELECT=YES,DEFAULT=YES
+                // #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=880744,CODECS="avc1.42C01E,mp4a.40.2",VIDEO="medium"
+                // http://vod.ak.hls.ttvnw.net/v1/AUTH_system/vods_edbf/adren_tv_12744116464_192799820/medium/index-dvr.m3u8
+                // #EXT-X-MEDIA:TYPE=VIDEO,GROUP-ID="low",NAME="Low",AUTOSELECT=YES,DEFAULT=YES
+                // #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=617200,CODECS="avc1.42C01E,mp4a.40.2",VIDEO="low"
+                // http://vod.ak.hls.ttvnw.net/v1/AUTH_system/vods_edbf/adren_tv_12744116464_192799820/low/index-dvr.m3u8
+                // #EXT-X-MEDIA:TYPE=VIDEO,GROUP-ID="mobile",NAME="Mobile",AUTOSELECT=YES,DEFAULT=YES
+                // #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=271909,CODECS="avc1.42C00D,mp4a.40.2",VIDEO="mobile"
+                // http://vod.ak.hls.ttvnw.net/v1/AUTH_system/vods_edbf/adren_tv_12744116464_192799820/mobile/index-dvr.m3u8
+                final String[] medias = ajax.getRegex("#EXT-X-MEDIA([^\r\n]+[\r\n]+){3}").getColumn(-1);
+                if (medias == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                for (final String media : medias) {
+                    // name = quality
+                    // final String quality = new Regex(media, "NAME=\"(.*?)\"").getMatch(0);
+                    final String bw = new Regex(media, "BANDWIDTH=(\\d+)").getMatch(0);
+                    final String m3u8 = new Regex(media, "https?://[^\r\n]+").getMatch(-1);
+
+                    final DownloadLink dlink = createDownloadlink("http://twitchdecrypted.tv/" + System.currentTimeMillis() + new Random().nextInt(100000000));
+                    dlink.setProperty("directlink", "true");
+                    dlink.setProperty("m3u", m3u8);
+                    dlink.setProperty("plainfilename", filename);
+                    // dlink.setProperty("quality", quality);
+                    if (date != null) {
+                        dlink.setProperty("originaldate", date);
+                    }
+                    if (channelName != null) {
+                        dlink.setProperty("channel", Encoding.htmlDecode(channelName.trim()));
+                    }
+                    dlink.setProperty("LINKDUPEID", "twitch:" + vid + ":HDS:" + bw);
+                    final String formattedFilename = jd.plugins.hoster.JustinTv.getFormattedFilename(dlink);
+                    dlink.setName(formattedFilename);
+                    // quality/audio probing needs to be done so fast linkcheck shouldn't happen.
+                    // if (cfg.getBooleanProperty(FASTLINKCHECK, false)) {
+                    // dlink.setAvailable(true);
+                    // }
+                    try {
+                        dlink.setContentUrl(parameter);
+                    } catch (final Throwable e) {
+                        /* Not available in old 0.9.581 Stable */
+                    }
+                    decryptedLinks.add(dlink);
+                }
+                String fpName = "";
+                if (channelName != null) {
+                    fpName += Encoding.htmlDecode(channelName.trim()) + " - ";
+                }
+                if (date != null) {
+                    try {
+                        final String userDefinedDateFormat = cfg.getStringProperty("CUSTOM_DATE_2", "dd.MM.yyyy_HH-mm-ss");
+                        final String[] dateStuff = date.split("T");
+                        final String input = dateStuff[0] + ":" + dateStuff[1].replace("Z", "GMT");
+                        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:HH:mm:ssZ");
+                        Date dateStr = formatter.parse(input);
+                        String formattedDate = formatter.format(dateStr);
+                        Date theDate = formatter.parse(formattedDate);
+
+                        formatter = new SimpleDateFormat(userDefinedDateFormat);
+                        formattedDate = formatter.format(theDate);
+                        fpName += formattedDate + " - ";
+                    } catch (final Throwable e) {
+                        LogSource.exception(logger, e);
+                    }
+                }
+                fpName += filename;
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(fpName);
+                fp.addLinks(decryptedLinks);
+            } else {
+                // unsupported feature
                 try {
                     decryptedLinks.add(createOfflinelink(parameter, null));
                 } catch (final Throwable t) {
                     logger.info("OfflineLink :" + parameter);
                 }
-                return decryptedLinks;
             }
-            // no longer get videoname from html, it requires api call.
-            ajaxGetPage("http://api.twitch.tv/kraken/videos/" + (new Regex(parameter, "/b/\\d+$").matches() ? "a" : "c") + vid + "?on_site=1&");
-            String filename = getJson(ajax, "title");
-            final String channelName = getJson(ajax, "display_name");
-            final String date = getJson(ajax, "recorded_at");
-            final String vdne = "Video does not exist";
-            if (ajax != null && vdne.equals(getJson(ajax, "message"))) {
-                try {
-                    decryptedLinks.add(createOfflinelink(parameter, vid + " - " + vdne, vdne));
-                } catch (final Throwable t) {
-                    logger.info("OfflineLink :" + parameter);
-                }
-                return decryptedLinks;
-            }
-            String failreason = "Unknown server error";
-            boolean failed = true;
-            for (int i = 1; i <= 10; i++) {
-                try {
-                    ajaxGetPage("https://api.twitch.tv/api/videos/" + (new Regex(parameter, "/b/\\d+$").matches() ? "a" : "c") + vid + additionalparameters);
-                    if (ajax.containsHTML("\"restrictions\":\\{\"live\":\"chansub\"")) {
-                        failreason = "Only downloadable for subscribers";
-                    } else {
-                        failed = false;
-                    }
-                    break;
-                } catch (final BrowserException e) {
-                    this.sleep(5000l, param);
-                }
-            }
-            if (failed) {
-                try {
-                    decryptedLinks.add(createOfflinelink(parameter, vid + " - " + failreason, failreason));
-                } catch (final Throwable t) {
-                    logger.info("OfflineLink :" + parameter);
-                }
-                return decryptedLinks;
-            }
-            if (filename == null) {
-                filename = vid;
-            }
-            /** Prefer highest quality */
-            String used_quality = null;
-            final String[][] qualities = { { "live_user_[A-Za-z0-9]+", "high" }, { "format_720p", "720p" }, { "format_480p", "480p" }, { "format_360p", "360p" }, { "format_240p", "240p" } };
-            String[] links = null;
-            for (final String current_quality[] : qualities) {
-                final String qual_regex = current_quality[0];
-                final String qual_name = current_quality[1];
-                links = ajax.getRegex("\"url\":\"(https?://[^<>\"]*?" + qual_regex + "[^\"]*_\\d+\\.flv)\"").getColumn(0);
-                if (links != null && links.length > 0) {
-                    used_quality = qual_name;
-                    break;
-                }
-            }
-            if (links == null || links.length == 0) {
-                used_quality = "standard";
-                links = ajax.getRegex("\"url\":\"(https?://[^<>\"]*?)\"").getColumn(0);
-            }
-            if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken: " + parameter);
-                return null;
-            }
-            filename = Encoding.htmlDecode(filename.trim());
-            filename = filename.replaceAll("[\r\n#]+", "");
-            int counter = 1;
-
-            for (final String directlink : links) {
-                final DownloadLink dlink = createDownloadlink("http://twitchdecrypted.tv/" + System.currentTimeMillis() + new Random().nextInt(100000000));
-                dlink.setProperty("directlink", "true");
-                dlink.setProperty("plain_directlink", directlink);
-                dlink.setProperty("plainfilename", filename);
-                dlink.setProperty("partnumber", counter);
-                dlink.setProperty("quality", used_quality);
-                if (date != null) {
-                    dlink.setProperty("originaldate", date);
-                }
-                if (channelName != null) {
-                    dlink.setProperty("channel", Encoding.htmlDecode(channelName.trim()));
-                }
-                dlink.setProperty("LINKDUPEID", "twitch" + vid + "_" + counter);
-                final String formattedFilename = jd.plugins.hoster.JustinTv.getFormattedFilename(dlink);
-                dlink.setName(formattedFilename);
-                if (cfg.getBooleanProperty(FASTLINKCHECK, false)) {
-                    dlink.setAvailable(true);
-                }
-                try {
-                    dlink.setContentUrl(parameter);
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
-                }
-                decryptedLinks.add(dlink);
-                counter++;
-            }
-
-            String fpName = "";
-            if (channelName != null) {
-                fpName += Encoding.htmlDecode(channelName.trim()) + " - ";
-            }
-            if (date != null) {
-                try {
-                    final String userDefinedDateFormat = cfg.getStringProperty("CUSTOM_DATE_2", "dd.MM.yyyy_HH-mm-ss");
-                    final String[] dateStuff = date.split("T");
-                    final String input = dateStuff[0] + ":" + dateStuff[1].replace("Z", "GMT");
-                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:HH:mm:ssZ");
-                    Date dateStr = formatter.parse(input);
-                    String formattedDate = formatter.format(dateStr);
-                    Date theDate = formatter.parse(formattedDate);
-
-                    formatter = new SimpleDateFormat(userDefinedDateFormat);
-                    formattedDate = formatter.format(theDate);
-                    fpName += formattedDate + " - ";
-                } catch (final Throwable e) {
-                    LogSource.exception(logger, e);
-                }
-            }
-            fpName += filename;
-            fpName += " - [" + links.length + "]" + " - " + used_quality;
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName);
-            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }
