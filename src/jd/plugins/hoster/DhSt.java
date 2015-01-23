@@ -76,7 +76,7 @@ public class DhSt extends PluginForHost {
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
-        final String md5 = br.getRegex(">MD5 Sum:</span> ([a-z0-9]{32})</div>").getMatch(0);
+        final String md5 = br.getRegex(">MD5 Sum</span>: \\&nbsp;([a-z0-9]{32})<").getMatch(0);
         if (md5 != null) {
             link.setMD5Hash(md5);
         }
