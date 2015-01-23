@@ -67,6 +67,7 @@ public class ExtremeTubeCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -79,9 +80,12 @@ public class ExtremeTubeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1 class=\"title\\-video\\-box float\\-left\" title=\"(.*?)\"").getMatch(0);
-        DLLINK = br.getRegex("flashvars\\.video_url = \\'(http.*?)\\'").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("flashvars\" .+video\\_url=(.*?)\\&amp\\;").getMatch(0);
+        final String[] qualities = { "1080p", "720p", "480p", "360p", "240p", "180p" };
+        for (final String quality : qualities) {
+            DLLINK = br.getRegex("amp;quality_" + quality + "=(http[^<>\"]*?)\\&amp;").getMatch(0);
+            if (DLLINK != null) {
+                break;
+            }
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

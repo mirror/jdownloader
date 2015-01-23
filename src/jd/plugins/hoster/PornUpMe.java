@@ -59,7 +59,7 @@ public class PornUpMe extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("pornup.me/videos/?m=e")) {
+        if (br.getURL().contains("pornup.me/videos/?m=e") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1>(.*?)(<a href=\"|</h1>)").getMatch(0);

@@ -73,7 +73,9 @@ public class AndroidFileHostCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String dllink = checkDirectLink(downloadLink, "directlink");
+        /* Re-usage of old links disabled for testing. */
+        // String dllink = checkDirectLink(downloadLink, "directlink");
+        String dllink = null;
         if (dllink == null) {
             /* Old handling removed AFTER revision 26995 */
             final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
