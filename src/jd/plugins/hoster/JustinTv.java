@@ -389,8 +389,13 @@ public class JustinTv extends PluginForHost {
         sb.append("*date* = date when the video was posted - appears in the user-defined format above\r\n");
         sb.append("*videoname* = name of the video without extension\r\n");
         sb.append("*partnumber* = number of the part of the video - if there is only 1 part, it's 1\r\n");
-        sb.append("*ext* = the extension of the file, in this case usually '.flv'");
-        sb.append("*quality* = the quality of the file, e.g. '720p'");
+        sb.append("*ext* = the extension of the file, in this case usually '.flv'\r\n");
+        sb.append("*quality* = the quality of the file, e.g. '720p'. (used for older formats, not present new /v/ videos)\r\n");
+        sb.append("\r\nThese following tags are only used for HLS /v/ urls\r\n");
+        sb.append("*videoQuality* = the frame size/quality, e.g. '720p'\r\n");
+        sb.append("*videoCodec* = video codec used, e.g. 'h264'\r\n");
+        sb.append("*audioBitrate* = audio bitrate, e.g. '128kbits'\r\n");
+        sb.append("*audioCodec* = audio encoding type, e.g. 'aac'");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
     }
 
