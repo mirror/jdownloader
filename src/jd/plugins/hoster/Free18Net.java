@@ -44,27 +44,38 @@ public class Free18Net extends PluginForHost {
         return "http://www.free18.net/terms.html";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("HTTP\\-EQUIV=\"Refresh\" CONTENT=\"1;URL=http://www\\.free18\\.net/\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("face=\"Verdana\" size=\"2\"><strong>Title: ([^<>\"]*?)<br /> ").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)(, Watch, Free Porn Video| - Free18\\.net)</title>").getMatch(0);
+        if (br.containsHTML("HTTP\\-EQUIV=\"Refresh\" CONTENT=\"1;URL=http://www\\.free18\\.net/\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("<h1 class=\"wat_title\">([^<>\"]*?)</h1>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?)\\- Www\\.Free18\\.Net</title>").getMatch(0);
+        }
         final String cryptedScripts[] = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
         if (cryptedScripts != null && cryptedScripts.length != 0) {
             for (String crypted : cryptedScripts) {
                 DLLINK = decodeDownloadLink(crypted);
-                if (DLLINK != null) break;
+                if (DLLINK != null) {
+                    break;
+                }
             }
         }
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".flv";
+        if (ext == null || ext.length() > 5) {
+            ext = ".flv";
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -72,10 +83,11 @@ public class Free18Net extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -109,7 +121,9 @@ public class Free18Net extends PluginForHost {
 
             while (c != 0) {
                 c--;
-                if (k[c].length() != 0) p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+                if (k[c].length() != 0) {
+                    p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+                }
             }
 
             decoded = p;
