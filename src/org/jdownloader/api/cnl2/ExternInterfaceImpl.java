@@ -72,7 +72,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
 
     /**
      * writes given String to response and sets content-type to text/html
-     * 
+     *
      * @param response
      * @param string
      * @throws InternalApiException
@@ -464,18 +464,29 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                     link.setCustomCrawledLinkModifier(new CrawledLinkModifier() {
 
                         public void modifyCrawledLink(CrawledLink link) {
-                            DownloadLink dl = link.getDownloadLink();
-                            if (downloadPassword != null) {
-                                dl.setDownloadPassword(downloadPassword);
-                            }
-                            if (!dl.hasBrowserUrl()) {
-                                dl.setBrowserUrl(referer);
-                            }
-                            if (index2 < desc.length) {
-                                dl.setComment(desc[index2]);
-                            }
-                            if (index2 < fnames.length) {
-                                dl.setForcedFileName(fnames[index2]);
+                            final DownloadLink dl = link.getDownloadLink();
+                            if (dl != null) {
+                                if (StringUtils.isNotEmpty(downloadPassword)) {
+                                    dl.setDownloadPassword(downloadPassword);
+                                }
+                                if (!dl.hasBrowserUrl() && StringUtils.isNotEmpty(referer)) {
+                                    dl.setBrowserUrl(referer);
+                                }
+                                if (index2 < desc.length) {
+                                    dl.setComment(desc[index2]);
+                                }
+                                if (index2 < fnames.length) {
+                                    dl.setForcedFileName(fnames[index2]);
+                                }
+                                if (StringUtils.isNotEmpty(cookies)) {
+                                    dl.setProperty("cookies", cookies);
+                                }
+                                if (StringUtils.isNotEmpty(post)) {
+                                    dl.setProperty("post", post);
+                                }
+                                if (StringUtils.isNotEmpty(referer)) {
+                                    dl.setProperty("referer", referer);
+                                }
                             }
                         }
                     });
@@ -492,7 +503,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                             } catch (final Throwable e) {
                                 Log.exception(e);
                             }
-                            DownloadLink direct = new DownloadLink(defaultplg, name, "DirectHTTP", url, true);
+                            final DownloadLink direct = new DownloadLink(defaultplg, name, "DirectHTTP", url, true);
                             if (downloadPassword != null) {
                                 direct.setDownloadPassword(downloadPassword);
                             }
