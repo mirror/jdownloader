@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videarn.com" }, urls = { "http://(www\\.)?(videarn\\.com/(video\\.php\\?id=||[a-z0-9\\-]+/)|embed\\.videarn\\.com/embed\\.php\\?id=)\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videarn.com" }, urls = { "http://(www\\.)?((videarn|pornxs)\\.com/(video\\.php\\?id=|[a-z0-9\\-]+/)|embed\\.videarn\\.com/embed\\.php\\?id=)\\d+" }, flags = { 0 })
 public class VidEarnDecrypter extends PluginForDecrypt {
 
     public VidEarnDecrypter(PluginWrapper wrapper) {
@@ -38,8 +38,8 @@ public class VidEarnDecrypter extends PluginForDecrypt {
     // This plugin takes videarn links and checks if there is also a filearn.com link available (partnersite)
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = "http://videarn.com/video.php?id=" + new Regex(param.toString(), "(\\d+)$").getMatch(0);
-        final DownloadLink mainlink = createDownloadlink(parameter.replace("videarn.com/", "videarndecrypted.com/"));
+        final String parameter = "http://pornxs.com/video.php?id=" + new Regex(param.toString(), "(\\d+)$").getMatch(0);
+        final DownloadLink mainlink = createDownloadlink(parameter.replace("pornxs.com/", "pornxsdecrypted.com/"));
         try {
             br.getPage(parameter);
         } catch (final Exception e) {
@@ -47,33 +47,23 @@ public class VidEarnDecrypter extends PluginForDecrypt {
             decryptedLinks.add(mainlink);
             return decryptedLinks;
         }
-        String fpName = br.getRegex("<h3 class=\"page\\-title\"><strong>(.*?)</strong></h3>").getMatch(0);
-        if (fpName == null) {
-            fpName = br.getRegex("<title>Video \\- (.*?)</title>").getMatch(0);
-            if (fpName == null) {
-                fpName = new Regex(parameter, "videarn\\.com/video\\.php\\?id=(\\d+)").getMatch(0);
-            }
-        }
+        String fpName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        fpName = Encoding.htmlDecode(fpName);
         fpName = fpName.trim();
         String additionalDownloadlink = br.getRegex("\"(http://(www\\.)?filearn\\.com/files/get/.*?)\"").getMatch(0);
-        if (additionalDownloadlink == null) additionalDownloadlink = br.getRegex("<div class=\"video\\-actions\">[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
+        if (additionalDownloadlink == null) {
+            additionalDownloadlink = br.getRegex("<div class=\"video\\-actions\">[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
+        }
         if (additionalDownloadlink != null) {
             final DownloadLink xdl = createDownloadlink(additionalDownloadlink);
             xdl.setProperty("videarnname", fpName);
             decryptedLinks.add(xdl);
         }
 
-        if (!br.containsHTML("\\w+")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             mainlink.setAvailable(false);
         } else {
-            String filename = br.getRegex("<h3 class=\"page\\-title\"><strong>(.*?)</strong></h3>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>Video \\- (.*?)</title>").getMatch(0);
-                if (filename == null) {
-                    filename = parameter.substring(parameter.lastIndexOf("/"));
-                }
-            }
-            mainlink.setName(Encoding.htmlDecode(filename.trim()) + ".flv");
+            mainlink.setName(fpName + ".mp4");
             mainlink.setAvailable(true);
         }
         decryptedLinks.add(mainlink);
