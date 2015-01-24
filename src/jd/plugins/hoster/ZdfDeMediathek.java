@@ -127,7 +127,9 @@ public class ZdfDeMediathek extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxChunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
-                if (br.getHttpConnection().getResponseCode() == 404) {
+                if (br.getHttpConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 3 * 60 * 1000l);
+                } else if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 3 * 60 * 1000l);
                 }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
@@ -183,7 +185,7 @@ public class ZdfDeMediathek extends PluginForHost {
             } finally {
                 in.close();
             }
-            /* Subtitle type used in ZdfDeMediathek and WdrDeMediathek */
+            /* Subtitle type used in ZdfDeMediathek and WdrDeMediathek, NdrDe */
             final String[][] matches = new Regex(xml.toString(), "<p begin=\"([^<>\"]*)\" end=\"([^<>\"]*)\" tts:textAlign=\"center\">?(.*?)</p>").getMatches();
             try {
                 final int starttime = Integer.parseInt(downloadlink.getStringProperty("starttime", null));

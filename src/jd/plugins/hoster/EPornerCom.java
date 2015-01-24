@@ -65,17 +65,27 @@ public class EPornerCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.eporner.com/") || br.containsHTML("\\'File has been removed due to copyright owner request|eprncdn\\.com/new/delete\\.ico\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://www.eporner.com/") || br.containsHTML("id=\"deletedfile\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>([^<>\"]*?) \\- EPORNER Free HD Porn Tube</title>").getMatch(0);
         final String correctedBR = br.toString().replace("\\", "");
         String continueLink = new Regex(correctedBR, "(\"|\\')(/config\\d+/\\d+/[0-9a-f]+(/)?)(\"|\\')").getMatch(1);
-        if (continueLink == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (continueLink == null || filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         continueLink = "http://www.eporner.com" + continueLink;
         br.getPage(Encoding.htmlDecode(continueLink) + (continueLink.endsWith("/") ? "1920" : "/1920"));
         DLLINK = br.getRegex("<hd\\.file>(http://.*?)</hd\\.file>").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("file: \"(https?://[^<>\"]*?)\"").getMatch(0);
-        if (DLLINK == null || "http://download.eporner.com/na.flv".equalsIgnoreCase(DLLINK)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
+        }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("file: \"(https?://[^<>\"]*?)\"").getMatch(0);
+        }
+        if (DLLINK == null || "http://download.eporner.com/na.flv".equalsIgnoreCase(DLLINK)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".mp4");
         Browser br2 = br.cloneBrowser();
@@ -84,10 +94,11 @@ public class EPornerCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
