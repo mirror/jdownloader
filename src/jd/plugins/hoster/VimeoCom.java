@@ -92,10 +92,19 @@ public class VimeoCom extends PluginForHost {
         return -1;
     }
 
+    private void prepBrGeneral(final DownloadLink dl) {
+        final String vimeo_forced_referer = dl != null ? dl.getStringProperty("vimeo_forced_referer", null) : null;
+        if (vimeo_forced_referer != null) {
+            br.getHeaders().put("Referer", vimeo_forced_referer);
+        }
+        /* we do not want German headers! */
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
+        prepBrGeneral(downloadLink);
         if (downloadLink.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -104,7 +113,13 @@ public class VimeoCom extends PluginForHost {
         finalURL = downloadLink.getStringProperty("directURL", null);
         if (finalURL != null) {
             try {
-                con = br.openGetConnection(finalURL);
+                try {
+                    /* @since JD2 */
+                    con = br.openHeadConnection(finalURL);
+                } catch (final Throwable t) {
+                    /* Not supported in old 0.9.581 Stable */
+                    con = br.openGetConnection(finalURL);
+                }
                 if (con.getContentType() != null && !con.getContentType().contains("html")) {
                     downloadLink.setDownloadSize(con.getLongContentLength());
                     downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
@@ -128,17 +143,25 @@ public class VimeoCom extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("vimeo.com", "v6f", "1");
-        // we do not want German headers!
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
-        br.getPage("http://vimeo.com/" + ID);
+        prepBrGeneral(downloadLink);
+        if (isPrivateLink(downloadLink)) {
+            br.getPage("http://player.vimeo.com/video/" + ID);
+            if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || "This video does not exist\\.".equals(getJson("message"))) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        } else {
+            br.getPage("http://vimeo.com/" + ID);
 
-        /* Workaround for User from Iran */
-        if (br.containsHTML("<body><iframe src=\"http://10\\.10\\.\\d+\\.\\d+\\?type=(Invalid Site)?\\&policy=MainPolicy")) {
-            br.getPage("http://player.vimeo.com/config/" + ID);
+            /* Workaround for User from Iran */
+            if (br.containsHTML("<body><iframe src=\"http://10\\.10\\.\\d+\\.\\d+\\?type=(Invalid Site)?\\&policy=MainPolicy")) {
+                br.getPage("http://player.vimeo.com/config/" + ID);
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            }
+
+            handlePW(downloadLink, br, "http://vimeo.com/" + ID + "/password");
         }
-
-        handlePW(downloadLink, br, "http://vimeo.com/" + ID + "/password");
-        String newURL = null;
         // because names can often change by the uploader, like youtube.
         String name = getTitle(br);
         final String qualities[][] = getQualities(br, ID);
@@ -184,6 +207,11 @@ public class VimeoCom extends PluginForHost {
         dl.startDownload();
     }
 
+    private boolean isPrivateLink(final DownloadLink dl) {
+        return dl.getBooleanProperty("private_player_link", false);
+    }
+
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         // TODO: review this method, for now everything ports into free, as every link will have directURL.
@@ -194,8 +222,11 @@ public class VimeoCom extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("\">Sorry, not available for download")) {
+        final boolean isPrivateLink = isPrivateLink(link);
+        if (!isPrivateLink) {
+            br.getPage(link.getDownloadURL());
+        }
+        if (isPrivateLink || br.containsHTML("\">Sorry, not available for download")) {
             logger.info("No download available for link: " + link.getDownloadURL() + " , downloading as unregistered user...");
             doFree(link);
             return;
@@ -267,6 +298,7 @@ public class VimeoCom extends PluginForHost {
         synchronized (LOCK) {
             try {
                 setBrowserExclusive();
+                this.prepBrGeneral(null);
                 br.setFollowRedirects(true);
                 br.setDebug(true);
                 final Object ret = account.getProperty("cookies", null);
@@ -358,15 +390,14 @@ public class VimeoCom extends PluginForHost {
         // qx[3] = frameSize (\d+x\d+)
         // qx[4] = bitrate (\d+)
         // qx[5] = fileSize (\d [a-zA-Z]{2})
-
         String configURL = ibr.getRegex("data-config-url=\"(https?://player\\.vimeo\\.com/(v2/)?video/\\d+/config.*?)\"").getMatch(0);
         if (ibr.containsHTML("iconify_down_b")) {
-            // download button.. does this give you all qualities? If not we should drop this.
+            /* download button.. does this give you all qualities? If not we should drop this. */
             Browser gq = ibr.cloneBrowser();
             /* With dl button */
             gq.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             gq.getPage("http://vimeo.com/" + ID + "?action=download");
-            // german accept language will effect the language of this response, Datei instead of file.
+            /* german accept language will effect the language of this response, Datei instead of file. */
             String[][] q = gq.getRegex("href=\"([^\"]*/" + ID + "/download.*?)\" download=\"(.*?)\".*?>([A-Za-z0-9]+) \\.[A-Z0-9]+ file<.*?\\((\\d+x\\d+) / (.*?)\\)").getMatches();
             qualities = new String[q.length][6];
             for (int i = 0; i < q.length; i++) {
@@ -379,11 +410,14 @@ public class VimeoCom extends PluginForHost {
                 qualities[i][5] = q[i][4];
             }
         }
-        if (configURL != null && (qualities == null || (qualities != null && qualities.length == 0))) {
+        /* player.vimeo.com links = Special case as the needed information is already in our current browser. */
+        if (configURL != null && (qualities == null || (qualities != null && qualities.length == 0)) || ibr.getURL().contains("player.vimeo.com/")) {
             // iconify_down_b could fail, revert to the following if statements.
             Browser gq = ibr.cloneBrowser();
-            configURL = configURL.replaceAll("&amp;", "&");
-            gq.getPage(configURL);
+            if (configURL != null) {
+                configURL = configURL.replaceAll("&amp;", "&");
+                gq.getPage(configURL);
+            }
             final String fmts = gq.getRegex("\"files\":\\{\"(h264|vp6)\":\\{(.*?)\\}\\}").getMatch(1);
             if (fmts != null) {
                 String quality[][] = new Regex(fmts, "\"(.*?)\":\\{(.*?)(\\}|$)").getMatches();
@@ -393,7 +427,10 @@ public class VimeoCom extends PluginForHost {
                     final String height = new Regex(quality[i][1], "\"height\":(\\d+)").getMatch(0);
                     final String width = new Regex(quality[i][1], "\"width\":(\\d+)").getMatch(0);
                     final String bitrate = new Regex(quality[i][1], "\"bitrate\":(\\d+)").getMatch(0);
-                    final String ext = new Regex(url, ".+(\\.[a-z0-9]{3,4})$").getMatch(0);
+                    String ext = new Regex(url, "(\\.[a-z0-9]{3,4})\\?token2=").getMatch(0);
+                    if (ext == null) {
+                        ext = new Regex(url, ".+(\\.[a-z0-9]{3,4})$").getMatch(0);
+                    }
                     qualities[i][0] = url;
                     qualities[i][1] = ext;
                     qualities[i][2] = quality[i][0];
@@ -447,7 +484,7 @@ public class VimeoCom extends PluginForHost {
         final String videoID = downloadLink.getStringProperty("videoID", null);
 
         String formattedDate = null;
-        if (date != null && formattedFilename.contains("*date*")) {
+        if (date != null) {
             final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, defaultCustomDate);
             final String[] dateStuff = date.split("T");
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:HH:mm:ss");
@@ -465,11 +502,11 @@ public class VimeoCom extends PluginForHost {
                     formattedDate = "";
                 }
             }
-            if (formattedDate != null) {
-                formattedFilename = formattedFilename.replace("*date*", formattedDate);
-            } else {
-                formattedFilename = formattedFilename.replace("*date*", "");
-            }
+        }
+        if (formattedDate != null) {
+            formattedFilename = formattedFilename.replace("*date*", formattedDate);
+        } else {
+            formattedFilename = formattedFilename.replace("*date*", "");
         }
         if (formattedFilename.contains("*videoid*")) {
             formattedFilename = formattedFilename.replace("*videoid*", videoID);
@@ -552,6 +589,16 @@ public class VimeoCom extends PluginForHost {
             ut_pluginLoaded = true;
         }
         return jd.plugins.hoster.Youtube.unescape(s);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(this.br, key);
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
