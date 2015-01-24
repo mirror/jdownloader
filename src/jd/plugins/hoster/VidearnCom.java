@@ -26,23 +26,23 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videarn.com" }, urls = { "http://(www\\.)?videarndecrypted\\.com/video\\.php\\?id=\\d+" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videarn.com" }, urls = { "http://(www\\.)?pornxsdecrypted\\.com/video\\.php\\?id=\\d+" }, flags = { 32 })
 public class VidearnCom extends PluginForHost {
 
     public VidearnCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
         // Links come from a decrypter
-        link.setUrlDownload(link.getDownloadURL().replace("videarndecrypted.com/", "videarn.com/"));
+        link.setUrlDownload(link.getDownloadURL().replace("pornxsdecrypted.com/", "pornxs.com/"));
     }
 
     @Override
     public String getAGBLink() {
-        return "http://videarn.com/tos.php";
+        return "http://pornxs.com/tos/";
     }
 
     @Override
@@ -51,24 +51,28 @@ public class VidearnCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        setBrowserExclusive();
-        final String dllink = downloadLink.getDownloadURL();
-        br.getPage(dllink);
-        if (!br.containsHTML("\\w+")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = br.getRegex("<h3 class=\"page\\-title\"><strong>(.*?)</strong></h3>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>Video \\- (.*?)</title>").getMatch(0);
-            if (filename == null) {
-                filename = dllink.substring(dllink.lastIndexOf("/"));
+    public String rewriteHost(String host) {
+        if ("videarn.com".equals(getHost())) {
+            if (host == null || "videarn.com".equals(host)) {
+                return "pornxs.com";
             }
         }
-        if (filename == null) {
+        return super.rewriteHost(host);
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        setBrowserExclusive();
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        downloadLink.setName(Encoding.htmlDecode(filename.trim()) + ".flv");
+        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        downloadLink.setName(Encoding.htmlDecode(filename.trim()) + ".mp4");
         return AvailableStatus.TRUE;
     }
 
@@ -76,59 +80,16 @@ public class VidearnCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
 
-        final String playpath = br.getRegex("file:'(.*?)',").getMatch(0);
-        final String url = br.getRegex("streamer:'(.*?)',").getMatch(0);
-        if (playpath == null && url == null) {
-            /* videarn now also supports download of the flv stream */
-            String directURL = br.getRegex("player\\.swf.*?file: \"(http://.*?)\"").getMatch(0);
-            if (directURL == null) {
-                directURL = br.getRegex("file:\"(http://[^<>\"]*?)\"").getMatch(0);
-            }
-            if (directURL != null) {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, directURL, true, 0);
-                if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("text")) {
-                    br.followConnection();
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                dl.startDownload();
-                return;
-            }
-        }
-        if (playpath == null || url == null) {
+        final String finallink = br.getRegex("config\\-final\\-url=\"(http[^<>\"]*?)\"").getMatch(0);
+        if (finallink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (oldStyle()) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This host only works in the JDownloader 2 BETA version.");
-        }
-        dl = new RTMPDownload(this, downloadLink, url + playpath);
-        final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-
-        final String host = url.substring(0, url.lastIndexOf("lb/"));
-        final String app = "videarn";
-        if (host == null || app == null) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
+        if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("text")) {
+            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
-        rtmp.setResume(false); // Must be set on false
-        rtmp.setPlayPath(playpath);
-        rtmp.setUrl(host + app);
-        rtmp.setSwfUrl("http://videarn.com/player.swf");
-
-        ((RTMPDownload) dl).startDownload();
-    }
-
-    private boolean oldStyle() {
-        String prev = JDUtilities.getRevision();
-        if (prev == null || prev.length() < 3) {
-            prev = "0";
-        } else {
-            prev = prev.replaceAll(",|\\.", "");
-        }
-        int rev = Integer.parseInt(prev);
-        if (rev < 14000) {
-            return true;
-        }
-        return false;
+        dl.startDownload();
     }
 
     @Override

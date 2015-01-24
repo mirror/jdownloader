@@ -233,12 +233,13 @@ public class FilesFlashCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account);
         br.setFollowRedirects(false);
-        br.getPage(br.getURL());
+        br.getPage(link.getDownloadURL());
         final String dllink = br.getRedirectLocation();
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
