@@ -25,7 +25,9 @@ import jd.config.Property;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -52,8 +54,9 @@ public class FastShareCz extends PluginForHost {
     private static final String MAINPAGE = "http://www.fastshare.cz";
     private static Object       LOCK     = new Object();
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie(MAINPAGE, "lang", "cs");
@@ -69,6 +72,9 @@ public class FastShareCz extends PluginForHost {
         String filesize = br.getRegex("<tr><td>Velikost: </td><td style=font\\-weight:bold>([^<>\"]*?)</td></tr>").getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex("Velikost: ([0-9]+ .*?),").getMatch(0);
+        }
+        if (filesize == null) {
+            filesize = br.getRegex("<strong>Velikost :</strong>([^<>\"]*?)<").getMatch(0);
         }
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -86,27 +92,26 @@ public class FastShareCz extends PluginForHost {
         }
         br.setFollowRedirects(false);
         final String captchaLink = br.getRegex("\"(/securimage_show\\.php\\?sid=[a-z0-9]+)\"").getMatch(0);
-        String action = br.getRegex("(/free/\\?u=\\d+\\&r=[^<>\"/]*?)>").getMatch(0);
-        if (action == null) {
-            action = br.getRegex("(/free/\\?u=.*?=>)").getMatch(0);
-        }
+        String action = br.getRegex("=(/free/[^<>\"]*?)>").getMatch(0);
         if (captchaLink == null || action == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.postPage(MAINPAGE + action, "code=" + getCaptchaCode(MAINPAGE + captchaLink, downloadLink));
+        br.postPage(action, "code=" + getCaptchaCode(MAINPAGE + captchaLink, downloadLink));
         if (br.containsHTML("Pres FREE muzete stahovat jen jeden soubor najednou")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 60 * 1000l);
+        } else if (br.containsHTML("Špatně zadaný kód. Zkuste to znovu")) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
+            if (br.containsHTML("No htmlCode read")) {
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Server error", 30 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("securimage_show")) {
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
             if (br.containsHTML("No htmlCode read")) {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
             }
@@ -152,7 +157,7 @@ public class FastShareCz extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.postPage("http://fastshare.cz/sql.php", "login=" + Encoding.urlEncode(account.getUser()) + "&heslo=" + Encoding.urlEncode(account.getPass()));
-                if (br.getURL().contains("fastshare.cz/error=1") || !br.containsHTML(">Kredit</td>")) {
+                if (br.getURL().contains("fastshare.cz/error=1") || !br.containsHTML(">Kredit[\t\n\r ]+:[\t\n\r ]+</td>")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 // Save cookies
@@ -171,8 +176,9 @@ public class FastShareCz extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
@@ -180,7 +186,7 @@ public class FastShareCz extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String availabletraffic = br.getRegex(">Kredit</td>[\r\n\t ]+<td[^>]+>([^<>\"&]+)").getMatch(0);
+        String availabletraffic = br.getRegex(">Kredit[\t\n\r ]+:[\t\n\r ]+</td>[\r\n\t ]+<td[^>]*?>([^<>\"&]+)").getMatch(0);
         if (availabletraffic != null) {
             ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
         } else {
@@ -188,29 +194,29 @@ public class FastShareCz extends PluginForHost {
             return ai;
         }
         account.setValid(true);
-        account.setProperty("free", false);
-        ai.setStatus("Premium User");
+        try {
+            account.setType(AccountType.PREMIUM);
+        } catch (final Throwable e) {
+            /* Not available in old 0.9.581 Stable */
+            account.setProperty("free", false);
+        }
+        ai.setStatus("Premium Account");
         return ai;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        String dllink = br.getRedirectLocation();
-        if (dllink == null) {
-            if (br.containsHTML("máte dostatečný kredit pro stažení tohoto souboru")) {
-                logger.info("Trafficlimit reached!");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            }
-            dllink = br.getRegex("(http://data(\\d+)?\\.fastshare\\.cz/download\\.php\\?id=\\d+\\&[^<>\"]*?)\"").getMatch(0);
+        if (br.containsHTML("máte dostatečný kredit pro stažení tohoto souboru")) {
+            logger.info("Trafficlimit reached!");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        final Regex dlinkregex = new Regex(link.getDownloadURL(), "fastshare.cz/(\\d+)/(.+)");
+        final String dllink = "http://data.fastshare.cz/download.php?id=" + dlinkregex.getMatch(0) + "&" + dlinkregex.getMatch(1);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

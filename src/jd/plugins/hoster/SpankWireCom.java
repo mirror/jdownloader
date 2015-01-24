@@ -65,7 +65,7 @@ public class SpankWireCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Link offline
-        if (br.containsHTML(">This (article|video) has been (deleted|disabled)") || br.containsHTML("id=\"disclaimer_arrow\"")) {
+        if (br.containsHTML(">This (article|video) has been (deleted|disabled)") || br.containsHTML("id=\"disclaimer_arrow\"") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String fileID = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);

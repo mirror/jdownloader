@@ -41,6 +41,7 @@ public class HqMirrorDe extends PluginForHost {
         return "http://www.hq-mirror.de/index/impressum";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -50,15 +51,19 @@ public class HqMirrorDe extends PluginForHost {
         } catch (Exception e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.containsHTML(">Page not found<")) {
+        if (br.containsHTML(">Page not found<") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        String filename = br.getRegex("title\" content=\"([^<>\"]*?)\"").getMatch(0);
         final String filesize = br.getRegex("<b>HQ</b> \\(([^<>\"]*?)\\)").getMatch(0);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        filename = Encoding.htmlDecode(filename).trim();
+        if (!filename.endsWith(".otrkey")) {
+            filename += ".otrkey";
+        }
+        link.setName(filename);
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }

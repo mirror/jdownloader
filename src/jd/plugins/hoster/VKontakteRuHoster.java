@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.net.ConnectException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -240,6 +241,7 @@ public class VKontakteRuHoster extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         if (downloadLink.getDownloadURL().matches(VKontakteRuHoster.DOCLINK)) {
             if (this.br.containsHTML("This document is available only to its owner\\.")) {
@@ -251,13 +253,7 @@ public class VKontakteRuHoster extends PluginForHost {
                  * Because of the availableCheck, we already know that the picture is online but we can't be sure that it really is
                  * downloadable!
                  */
-                final String correctedBR = this.br.toString().replace("\\", "");
-                final String id_source = new Regex(correctedBR, "\\{(\"id\":\"" + getPhotoID(downloadLink) + ".*?)(\"id\"|\\}\\}|\\]\\},\\{|\\]\\}\\]<)").getMatch(0);
-                if (id_source == null) {
-                    logger.warning("Failed to find source json of picturelink");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                getHighestQualityPic(downloadLink, id_source);
+                getHighestQualityPic(downloadLink);
                 downloadLink.setProperty("picturedirectlink", this.finalUrl);
             }
             photo_correctLink();
@@ -613,52 +609,44 @@ public class VKontakteRuHoster extends PluginForHost {
      *
      * @throws IOException
      */
-    private void getHighestQualityPic(final DownloadLink dl, String source) throws Exception {
-        /* Count how many possible downloadlinks we have */
-        int links_count = 0;
-        if (source == null) {
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private void getHighestQualityPic(final DownloadLink dl) throws Exception {
+        final String json = br.getRegex("<\\!json>(.*?)<\\!><\\!json>").getMatch(0);
+        if (json == null) {
+            logger.warning("Failed to find source json of picturelink");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        source = Encoding.htmlDecode(source).replace("\\", "");
-        /* New way */
-        if (source.contains("\"type\":\"photo\"")) {
-            final String[] qualitylinks = new Regex(source, "\"photo_\\d+\":\"(http[^<>\"]*?)\"").getColumn(0);
-            if (qualitylinks != null && qualitylinks.length > 0) {
-                this.finalUrl = qualitylinks[qualitylinks.length - 1];
-                /* Do this to set the final filename and get size */
-                this.linkOk(dl, null);
+        Map<String, Object> sourcemap = null;
+        final String thisid = getPhotoID(dl);
+        ArrayList<String> entries = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+        for (final Object entry : entries) {
+            if (entry instanceof Map) {
+                Map<String, Object> entrymap = (Map<String, Object>) entry;
+                final String entry_id = (String) entrymap.get("id");
+                if (entry_id.equals(thisid)) {
+                    sourcemap = entrymap;
+                    break;
+                }
+
             }
-        } else {
-            /* Old way */
-            final String[] qs = { "w_", "z_", "y_", "x_", "m_" };
-            final String base = new Regex(source, "base(?:\\'|\")?:(?:\"|\\')(http://[^<>\"]*?)(\"|\\')").getMatch(0);
-            for (final String q : qs) {
-                this.finalUrl = new Regex(source, q + "src\":\"(http[^<>\"]+)\"").getMatch(0);
-                if (this.finalUrl == null) {
-                    this.finalUrl = new Regex(source, q + "(\\'|\")?:\\[(\"|\\')([^<>\"]*?)(\"|\\')").getMatch(2);
+        }
+        if (sourcemap == null) {
+            logger.warning("Failed to find specified source json of picturelink");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* Count how many possible downloadlinks we have */
+        int links_count = 0;
+        final String[] qs = { "w_", "z_", "y_", "x_", "m_" };
+        for (final String q : qs) {
+            final String srcstring = q + "src";
+            final Object picobject = sourcemap.get(srcstring);
+            /* Check if the link we eventually found is downloadable. */
+            if (picobject != null) {
+                this.finalUrl = (String) picobject;
+                links_count++;
+                if (this.photolinkOk(dl, null)) {
+                    break;
                 }
-                if (this.finalUrl != null) {
-                    if (!this.finalUrl.startsWith("http") && base == null) {
-                        this.finalUrl = null;
-                        continue;
-                    } else if (!this.finalUrl.startsWith("http")) {
-                        this.finalUrl = base + this.finalUrl;
-                    }
-                    if (!this.finalUrl.endsWith(".jpg")) {
-                        this.finalUrl += ".jpg";
-                    }
-                } else {
-                    /* Other source has complete links */
-                    this.finalUrl = new Regex(source, "\"" + q + "src\":\"(http[^<>\"]*?)\"").getMatch(0);
-                }
-                /* Check if the link we eventually found is downloadable. */
-                if (this.finalUrl != null) {
-                    links_count++;
-                    if (this.photolinkOk(dl, null)) {
-                        break;
-                    }
-                }
-                this.finalUrl = null;
             }
         }
         if (links_count == 0) {

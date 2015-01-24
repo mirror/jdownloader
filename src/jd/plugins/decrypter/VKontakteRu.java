@@ -1270,7 +1270,8 @@ public class VKontakteRu extends PluginForDecrypt {
                     dl.setProperty("owner_id", owner_id);
                     dl.setProperty("content_id", content_id);
                     dl.setProperty("directlinks", typeObject);
-                    dl.setProperty("wall_list_id", wall_list_id);
+                    dl.setProperty("photo_list_id", wall_list_id);
+                    dl.setProperty("photo_module", "wall");
                     fp.add(dl);
                     decryptedLinks.add(dl);
                 } else if (type.equals("doc") && wall_grabdocs) {
