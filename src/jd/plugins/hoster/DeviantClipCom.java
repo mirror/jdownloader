@@ -31,15 +31,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantclip.com" }, urls = { "http://(www\\.)?deviantclipdecrypted\\.com/watch/[a-z0-9\\-]+(\\?fileid=[A-Za-z0-9]+)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantclip.com", "dachix.com", "dagay.com" }, urls = { "http://(www\\.)?deviantclipdecrypted\\.com/watch/[a-z0-9\\-]+(\\?fileid=[A-Za-z0-9]+)?", "http://(www\\.)?dachixdecrypted\\.com/watch/[A-Za-z0-9\\-]+(\\?fileid=[A-Za-z0-9]+)?", "http://(www\\.)?dagaydecrypted\\.com/watch/[A-Za-z0-9\\-]+(\\?fileid=[A-Za-z0-9]+)?" }, flags = { 0, 0, 0 })
 public class DeviantClipCom extends PluginForHost {
 
     public DeviantClipCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("deviantclipdecrypted.com", "deviantclip.com"));
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("decrypted.com/", ".com/"));
     }
 
     @Override
@@ -54,8 +55,8 @@ public class DeviantClipCom extends PluginForHost {
 
     // This hoster also got a decrypter called "DeviantClipComGallery" so if the
     // host goes down please also delete the decrypter!
-    public String               dllink      = null;
-    private static final String PICTURELINK = "http://(www\\.)?deviantclip\\.com/watch/[a-z0-9\\-]+\\?fileid=[A-Za-z0-9]+?";
+    /* Tags: crakpass network, dagfs.com, bestgonzo.com, kinkyfrenchies.com */
+    public String dllink = null;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
@@ -67,7 +68,7 @@ public class DeviantClipCom extends PluginForHost {
         } catch (final BrowserException e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (downloadLink.getDownloadURL().matches(PICTURELINK)) {
+        if (downloadLink.getDownloadURL().contains("?fileid=")) {
             dllink = br.getRegex("<img  \\d+ src=\"(http://[^<>\"]*?)\"").getMatch(0);
         } else {
             String filename = br.getRegex("<li class=\"text\"><h1>(.*?)</h1></li>").getMatch(0);
@@ -84,18 +85,28 @@ public class DeviantClipCom extends PluginForHost {
                 }
             }
             dllink = br.getRegex("\"file\":\"(.*?)\"").getMatch(0);
-            if (dllink == null) dllink = new Regex(Encoding.htmlDecode(br.toString()), "\"(http://medias\\.deviantclip\\.com/media/[0-9]+/.*?\\.flv\\?.*?)\"").getMatch(0);
-            if (filename == null || filename.matches("Free Porn Tube Videos, Extreme Hardcore Porn Galleries")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (dllink == null) {
+                dllink = new Regex(Encoding.htmlDecode(br.toString()), "\"(http://medias\\.deviantclip\\.com/media/[0-9]+/.*?\\.flv\\?.*?)\"").getMatch(0);
+            }
+            if (filename == null || filename.matches("Free Porn Tube Videos, Extreme Hardcore Porn Galleries")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             filename = Encoding.htmlDecode(filename.trim());
-            if (filename.contains("\\x")) filename = Encoding.urlDecode(filename.replaceAll("\\\\x", "%"), false);
+            if (filename.contains("\\x")) {
+                filename = Encoding.urlDecode(filename.replaceAll("\\\\x", "%"), false);
+            }
             downloadLink.setFinalFileName(filename + ".flv");
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = Encoding.htmlDecode(dllink);
         URLConnectionAdapter con = br.openGetConnection(dllink);
-        if (downloadLink.getDownloadURL().matches(PICTURELINK)) {
+        if (downloadLink.getDownloadURL().contains("?fileid=")) {
             String ending = LoadImage.getFileType(dllink, con.getContentType());
-            if (ending != null && !downloadLink.getName().endsWith(ending)) downloadLink.setFinalFileName(downloadLink.getName() + ending);
+            if (ending != null && !downloadLink.getName().endsWith(ending)) {
+                downloadLink.setFinalFileName(downloadLink.getName() + ending);
+            }
         }
         if (!con.getContentType().contains("html")) {
             long size = con.getLongContentLength();
