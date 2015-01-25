@@ -30,6 +30,7 @@ import javax.xml.xpath.XPathFactory;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -64,7 +65,7 @@ public class RuTubeRu extends PluginForHost {
      * Corrects downloadLink.urlDownload().<br/>
      * <br/>
      * The following code respect the hoster supported protocols via plugin boolean settings and users config preference
-     * 
+     *
      * @author raztoki
      * */
     @Override
@@ -133,7 +134,9 @@ public class RuTubeRu extends PluginForHost {
         }
         br.getPage("http://rutube.ru/play/embed/" + br.getRegex("/embed/(\\d+)").getMatch(0) + "?wmode=opaque&autoStart=true");
 
-        String videoBalancer = br.getRegex("(http\\:\\/\\/bl\\.rutube\\.ru[^\"]+)").getMatch(0);
+        final String b = HTMLEntities.unhtmlentities(HTMLEntities.unhtmlDoubleQuotes(br.toString()));
+        String videoBalancer = new Regex(b, "(http\\:\\/\\/bl\\.rutube\\.ru[^\"]+)").getMatch(0);
+
         if (videoBalancer != null) {
             final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 
@@ -220,7 +223,7 @@ public class RuTubeRu extends PluginForHost {
 
     /**
      * lets try and prevent possible NPE from killing progress.
-     * 
+     *
      * @author raztoki
      * @param n
      * @param item
