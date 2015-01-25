@@ -80,6 +80,7 @@ public class FlickrCom extends PluginForDecrypt {
         br.setCookiesExclusive(true);
         br.setCookie(MAINPAGE, "localization", "en-us%3Bus%3Bde");
         br.setCookie(MAINPAGE, "fldetectedlang", "en-us");
+        br.setLoadLimit(br.getLoadLimit() * 2);
         parameter = correctParameter(param.toString());
         username = new Regex(parameter, "(?:photos|groups)/([^<>\"/]+)").getMatch(0);
         /* Make sure that the host plugin is loaded. */
