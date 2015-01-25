@@ -61,15 +61,6 @@ public class DrssTv extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    //
-    // /* don't touch the following! */
-    // private static AtomicInteger maxPrem = new AtomicInteger(1);
 
     private String               DLLINK            = null;
 
@@ -174,7 +165,7 @@ public class DrssTv extends PluginForHost {
 
     @Override
     public String getDescription() {
-        return "JDownloader's drss Plugin helps downloading videoclips and photo galleries from drss.tv.";
+        return "JDownloader's drss.de Plugin helps downloading videoclips and photo galleries from drss.tv.";
     }
 
     private void setConfigElements() {
@@ -182,7 +173,7 @@ public class DrssTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_TRAILER, JDL.L("plugins.hoster.drsstv.grabtrailer", "Trailer auch laden, wenn eine komplette Folge verfügbar ist?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_TEASER_PIC, JDL.L("plugins.hoster.drsstv.grabteaserpicture", "Titelbild laden?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_GALLERY, JDL.L("plugins.hoster.drsstv.grabgallery", "Photogallerie laden?")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_OTHERS, JDL.L("plugins.hoster.drsstv.hrabothers", "Andere Inhalte (z.B. 'Vor der Sendung'-Videos) laden'?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_OTHERS, JDL.L("plugins.hoster.drsstv.grabothers", "Andere Inhalte (z.B. 'Vor der Sendung'-Videos) laden'?")).setDefaultValue(false));
     }
 
     @Override

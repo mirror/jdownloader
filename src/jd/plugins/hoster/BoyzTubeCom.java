@@ -54,7 +54,7 @@ public class BoyzTubeCom extends PluginForHost {
         return "http://www.boyztube.com/page/view/toc.html";
     }
 
-    private static final String  app                          = "1936/vod/";
+    private static final String  app                          = "vod/";
 
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = false;
@@ -92,41 +92,32 @@ public class BoyzTubeCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        try {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
-            }
+        final String appStreamUrl = br.getRegex("var appStreamUrl = \\'(rtmp[^<>\"]*?)\\'").getMatch(0);
+        final String appPlayerUrl = br.getRegex("var appPlayerUrl = \\'(http[^<>\"]*?/)\\'").getMatch(0);
+        String playpath = br.getRegex("\"(mp4:[^<>\"]*?)\"").getMatch(0);
+        if (playpath == null || appStreamUrl == null || appPlayerUrl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded via registered (free) account");
-        /** TODO: Fix RTMP handling so that downloads without account are also possible. */
-        // final String appStreamUrl = br.getRegex("var appStreamUrl = \\'(rtmp[^<>\"]*?)\\'").getMatch(0);
-        // final String appPlayerUrl = br.getRegex("var appPlayerUrl = \\'(http[^<>\"]*?/)\\'").getMatch(0);
-        // final String playpath = br.getRegex("\"(mp4:[^<>\"]*?)\"").getMatch(0);
-        // if (playpath == null || appStreamUrl == null || appPlayerUrl == null) {
-        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // }
-        // final String rtmpurl = appStreamUrl;
-        // final String pageurl = br.getURL();
-        // // http://download2.boyztube.com/flash/flowplayer.swf?nocache=123
-        // final String swfurl = appPlayerUrl + "player-streaming.swf?nocache=123";
-        // // final String swfurl = appPlayerUrl + "player-viral.swf?nocache=";
-        // try {
-        // dl = new RTMPDownload(this, downloadLink, rtmpurl);
-        // } catch (final NoClassDefFoundError e) {
-        // throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDownload class missing");
-        // }
-        // /* Setup rtmp connection */
-        // jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-        // rtmp.setPageUrl(pageurl);
-        // rtmp.setUrl(rtmpurl);
-        // rtmp.setPlayPath(playpath);
-        // rtmp.setApp(app);
-        // // // rtmp.setFlashVer("WIN 16,0,0,235");
-        // rtmp.setSwfUrl(swfurl);
-        // // //rtmp.setResume(FREE_RESUME);
-        // ((RTMPDownload) dl).startDownload();
+        final String rtmpurl = appStreamUrl + ":1936/" + app;
+        final String swfurl = appPlayerUrl + "flowplayer.swf?nocache=123";
+        try {
+            dl = new RTMPDownload(this, downloadLink, rtmpurl);
+        } catch (final NoClassDefFoundError e) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDownload class missing");
+        }
+        /* Setup rtmp connection */
+        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+        rtmp.setPageUrl(br.getURL());
+        rtmp.setUrl(rtmpurl);
+        rtmp.setTcUrl(rtmpurl);
+        rtmp.setPlayPath(playpath);
+        rtmp.setApp(app);
+        rtmp.setFlashVer("WIN 16,0,0,296");
+        rtmp.setSwfUrl(swfurl);
+        rtmp.setLive(true);
+        /* Resume not possible anyways because of live stream. */
+        rtmp.setResume(FREE_RESUME);
+        ((RTMPDownload) dl).startDownload();
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
