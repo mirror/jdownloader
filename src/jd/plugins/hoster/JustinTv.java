@@ -72,6 +72,7 @@ public class JustinTv extends PluginForHost {
     private final String        NOCHUNKS                  = "NOCHUNKS";
     private final static String CUSTOM_DATE_2             = "CUSTOM_DATE_2";
     private final static String CUSTOM_FILENAME_3         = "CUSTOM_FILENAME_3";
+    private final static String CUSTOM_FILENAME_4         = "CUSTOM_FILENAME_4";
     private final static String PARTNUMBERFORMAT          = "PARTNUMBERFORMAT";
 
     private static final int    ACCOUNT_FREE_MAXDOWNLOADS = 20;
@@ -208,12 +209,12 @@ public class JustinTv extends PluginForHost {
         String videoName = downloadLink.getStringProperty("plainfilename", null);
 
         final SubConfiguration cfg = SubConfiguration.getConfig("twitch.tv");
-        String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME_3, defaultCustomFilename);
+        String formattedFilename = downloadLink.getStringProperty("m3u", null) != null ? downloadLink.getStringProperty(CUSTOM_FILENAME_4, defaultCustomFilenameHls) : cfg.getStringProperty(CUSTOM_FILENAME_3, defaultCustomFilenameWeb);
         if (formattedFilename == null || formattedFilename.equals("")) {
-            formattedFilename = defaultCustomFilename;
+            formattedFilename = downloadLink.getStringProperty("m3u", null) != null ? defaultCustomFilenameHls : defaultCustomFilenameWeb;
         }
         if (!formattedFilename.contains("*videoname") || !formattedFilename.contains("*ext*")) {
-            formattedFilename = defaultCustomFilename;
+            formattedFilename = downloadLink.getStringProperty("m3u", null) != null ? defaultCustomFilenameHls : defaultCustomFilenameWeb;
         }
         String partnumberformat = cfg.getStringProperty(PARTNUMBERFORMAT);
         if (partnumberformat == null || partnumberformat.equals("")) {
@@ -370,7 +371,8 @@ public class JustinTv extends PluginForHost {
         return "JDownloader's twitch.tv plugin helps downloading videoclips. JDownloader provides settings for the filenames.";
     }
 
-    private final static String defaultCustomFilename = "*partnumber**videoname*_*quality**ext*";
+    private final static String defaultCustomFilenameWeb = "*partnumber**videoname*_*quality**ext*";
+    private final static String defaultCustomFilenameHls = "*partnumber* - *videoname* -*videoQuality*_*videoCodec*-*audioBitrate*_*audioCodec**ext*";
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.justintv.fastlinkcheck", "Activate fast linkcheck (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
@@ -380,16 +382,17 @@ public class JustinTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), PARTNUMBERFORMAT, JDL.L("plugins.hoster.justintv.custompartnumber", "Define how the partnumbers should look:")).setDefaultValue("00"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename! Example: '*channelname*_*date*_*videoname*_*partnumber**ext*'"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_3, JDL.L("plugins.hoster.justintv.customfilename", "Define how the filenames should look:")).setDefaultValue(defaultCustomFilename));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_3, JDL.L("plugins.hoster.justintv.customfilename1", "Define how standard filenames should look:")).setDefaultValue(defaultCustomFilenameWeb));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_4, JDL.L("plugins.hoster.justintv.customfilename2", "Define how vod /v/ filenames should look:")).setDefaultValue(defaultCustomFilenameHls));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final StringBuilder sb = new StringBuilder();
-        sb.append("Explanation of the available tags:\r\n");
+        sb.append("Explanation of the available tags: (shared)\r\n");
         sb.append("*channelname* = name of the channel/uploader\r\n");
         sb.append("*date* = date when the video was posted - appears in the user-defined format above\r\n");
         sb.append("*videoname* = name of the video without extension\r\n");
         sb.append("*partnumber* = number of the part of the video - if there is only 1 part, it's 1\r\n");
         sb.append("*ext* = the extension of the file, in this case usually '.flv'\r\n");
+        sb.append("\r\nThis tag is only used for standard downloads\r\n");
         sb.append("*quality* = the quality of the file, e.g. '720p'. (used for older formats, not present new /v/ videos)\r\n");
         sb.append("\r\nThese following tags are only used for HLS /v/ urls\r\n");
         sb.append("*videoQuality* = the frame size/quality, e.g. '720p'\r\n");
