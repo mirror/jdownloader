@@ -121,7 +121,7 @@ public class HitBoxTv extends PluginForHost {
         // Request Method:OPTIONS
         // Status Code:200 OK
         ajax = br.cloneBrowser();
-        ajax.getHeaders().put("", "application/json, text/plain, */*");
+        ajax.getHeaders().put("Accept", "application/json, text/plain, */*");
         ajax.getHeaders().put("Content-Type", "application/json;charset=UTF-8");
         final String crap = "{\"media_name\":\"" + auth + "\",\"media_type\":\"video\",\"authToken\":null}";
         ajax.postPage("https://www.hitbox.tv/api/auth/media/video/" + auth, Encoding.urlEncode(crap));
@@ -129,7 +129,7 @@ public class HitBoxTv extends PluginForHost {
         // Request URL:http://www.hitbox.tv/api/player/config/video/286169?redis=true&embed=false&qos=false&redis=true&showHidden=true
         // Request Method:GET
         ajax = br.cloneBrowser();
-        ajax.getHeaders().put("", "application/json, text/plain, */*");
+        ajax.getHeaders().put("Accept", "application/json, text/plain, */*");
         ajax.getHeaders().put("Content-Type", "application/json;charset=UTF-8");
         ajax.getPage("http://www.hitbox.tv/api/player/config/video/" + vid + "?redis=true&embed=false&qos=false&redis=true&showHidden=true");
         // {"key":"#$54d46eaa112f0508979","play":null,"clip":{"autoPlay":true,"autoBuffering":true,"bufferLength":"2","eventCategory":"KingofPol\/video\/819952","baseUrl":null,"url":"http:\/\/edge.hls.vods.hitbox.tv\/static\/videos\/vods\/kingofpol\/88e235d7ffc3f79cf1de079646326890f8bcee4f-543bd5693d819\/kingofpol\/index.m3u8","stopLiveOnPause":true,"live":false,"smoothing":true,"provider":"pseudo","scaling":"fit","bitrates":[{"url":"\/kingofpol\/88e235d7ffc3f79cf1de079646326890f8bcee4f-543bd5693d819\/kingofpol\/index.m3u8","bitrate":0,"label":"HD
