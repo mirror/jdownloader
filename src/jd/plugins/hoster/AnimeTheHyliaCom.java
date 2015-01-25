@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime.thehylia.com" }, urls = { "http://(www\\.)?anime\\.thehylia\\.com/download_file/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime.thehylia.com" }, urls = { "http://anime\\.thehyliadecrypted\\.com/\\d+" }, flags = { 0 })
 public class AnimeTheHyliaCom extends PluginForHost {
 
     public AnimeTheHyliaCom(PluginWrapper wrapper) {
@@ -43,62 +43,65 @@ public class AnimeTheHyliaCom extends PluginForHost {
         return "http://anime.thehylia.com/";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         // if taken from the decrypter then property "referer" is set to the main page of the "series"
         // this is redirected url from the link, so we should set it the same way as the decrypter would
         // if it is link not from decrypter
+        final String decryptedlink = downloadLink.getStringProperty("directlink", null);
         if (downloadLink.getStringProperty("referer") == null) {
-            br.getPage(downloadLink.getDownloadURL());
-            downloadLink.setProperty("referer", br.getRedirectLocation());
+            br.getPage(decryptedlink);
+            if (br.getRedirectLocation() != null) {
+                downloadLink.setProperty("referer", br.getRedirectLocation());
+            }
         }
+        final String filename = downloadLink.getStringProperty("decryptedfilename", null);
+        downloadLink.setFinalFileName(filename);
         br.getHeaders().put("Referer", downloadLink.getStringProperty("referer", null));
         br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL());
-        String oldName = downloadLink.getFinalFileName();
-        if (oldName == null) oldName = downloadLink.getName();
-        String newname = null;
+        br.getPage(downloadLink.getStringProperty("directlink", null));
         if (br.containsHTML(">Unfortunately, due to large server expenses we are not able to accomodate lots of consecutive")) {
             downloadLink.getLinkStatus().setStatusText("Can't check filesize when servers are overloaded");
-            if (!oldName.contains(".avi"))
-                newname = newname + ".avi";
-            else
-                newname = oldName;
-            downloadLink.setName(newname);
             return AvailableStatus.TRUE;
         }
-        if (br.getURL().contains("anime.thehylia.com/downloads/series/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML(">No such episode")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        DLLINK = br.getRedirectLocation();
+        if (decryptedlink.contains("/soundtracks/")) {
+            DLLINK = br.getRegex("\"(http://[^<>\"]*?\\.mp3)\">Download").getMatch(0);
+        } else {
+            if (br.getURL().contains("anime.thehylia.com/downloads/series/")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (br.containsHTML(">No such episode")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            DLLINK = br.getRedirectLocation();
+        }
         if (DLLINK == null) {
-            if (br.containsHTML("issues|network capacity|problems"))
+            if (br.containsHTML("issues|network capacity|problems")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Server reports errors with this file");
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".avi";
-        if (oldName.contains(".avi")) {
-            newname = oldName.replace(".avi", ext);
-        } else {
-            if (!oldName.contains(ext))
-                newname = oldName + ext;
-            else
-                newname = oldName;
-        }
-        downloadLink.setFinalFileName(newname);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            try {
+                /* @since JD2 */
+                con = br.openHeadConnection(DLLINK);
+            } catch (final Throwable t) {
+                /* Not supported in old 0.9.581 Stable */
+                con = br.openGetConnection(DLLINK);
+            }
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -111,7 +114,9 @@ public class AnimeTheHyliaCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(">Unfortunately, due to large server expenses we are not able to accomodate lots of consecutive")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded", 10 * 60 * 1000l);
+        if (br.containsHTML(">Unfortunately, due to large server expenses we are not able to accomodate lots of consecutive")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded", 10 * 60 * 1000l);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

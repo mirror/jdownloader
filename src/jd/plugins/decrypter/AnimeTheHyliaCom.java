@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -29,13 +30,17 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime.thehylia.com" }, urls = { "http://(www\\.)?anime\\.thehylia\\.com/downloads/series/[a-z0-9\\-_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime.thehylia.com" }, urls = { "http://(www\\.)?anime\\.thehylia\\.com/(downloads/series/|soundtracks/album/)[a-z0-9\\-_]+" }, flags = { 0 })
 public class AnimeTheHyliaCom extends PluginForDecrypt {
 
     public AnimeTheHyliaCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String type_series = "http://(www\\.)?anime\\.thehylia\\.com/downloads/series/[a-z0-9\\-_]+";
+    private static final String type_music  = "http://(www\\.)?anime\\.thehylia\\.com/soundtracks/album/[a-z0-9\\-_]+";
+
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
@@ -44,22 +49,69 @@ public class AnimeTheHyliaCom extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        String fpName = br.getRegex("<\\!\\-\\-Series name: <b>([^<>\"]*?)</b><br>\\-\\->").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("<div><h2>([^<>\"]*?)</h2>").getMatch(0);
-        final String[][] links = br.getRegex("\"(http://anime\\.thehylia\\.com/download_file/\\d+)\">([^<>\"]*?)</a></td>[\t\n\r ]+<td align=\"center\" width=\"55px\">([^<>\"]*?)</td>").getMatches();
-        if (links == null || links.length == 0 || fpName == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        fpName = Encoding.htmlDecode(fpName);
+        String fpName = null;
+        String[][] links;
+        if (parameter.matches(type_series)) {
+            fpName = br.getRegex("<\\!\\-\\-Series name: <b>([^<>\"]*?)</b><br>\\-\\->").getMatch(0);
+            if (fpName == null) {
+                fpName = br.getRegex("<div><h2>([^<>\"]*?)</h2>").getMatch(0);
+            }
+            links = br.getRegex("\"(http://anime\\.thehylia\\.com/download_file/\\d+)\">([^<>\"]*?)</a></td>[\t\n\r ]+<td align=\"center\" width=\"55px\">([^<>\"]*?)</td>").getMatches();
+            if (links == null || links.length == 0 || fpName == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            fpName = Encoding.htmlDecode(fpName);
 
-        for (final String singleLinkInfo[] : links) {
-            final DownloadLink dl = createDownloadlink(singleLinkInfo[0]);
-            dl.setFinalFileName(fpName + Encoding.htmlDecode(singleLinkInfo[1]).replace(":", " - ") + ".avi");
-            dl.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(singleLinkInfo[2])));
-            dl.setProperty("referer", br.getURL());
-            dl.setAvailable(true);
-            decryptedLinks.add(dl);
+            for (final String singleLinkInfo[] : links) {
+                final String filename = fpName + Encoding.htmlDecode(singleLinkInfo[1]).replace(":", " - ") + ".avi";
+                final String directlink = singleLinkInfo[0];
+                final DownloadLink dl = createDownloadlink("http://anime.thehyliadecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
+                try {
+                    dl.setLinkID(filename);
+                    dl.setContentUrl(parameter);
+                } catch (final Throwable e) {
+                    /* Not available in old 0.9.581 Stable */
+                    dl.setBrowserUrl(parameter);
+                    dl.setProperty("LINKDUPEID", filename);
+                }
+                dl.setFinalFileName(filename);
+                dl.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(singleLinkInfo[2])));
+                dl.setProperty("referer", br.getURL());
+                dl.setProperty("decryptedfilename", filename);
+                dl.setProperty("directlink", directlink);
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+            }
+        } else {
+            fpName = br.getRegex("Album name: <b>([^<>\"]*?)</b><").getMatch(0);
+            links = br.getRegex("\"(http://anime\\.thehylia\\.com/soundtracks/album/[a-z0-9\\-]+/[^<>\"/]+)\">([^<>\"]*?)</a></td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatches();
+            if (links == null || links.length == 0 || fpName == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            fpName = Encoding.htmlDecode(fpName);
+
+            for (final String singleLinkInfo[] : links) {
+                final String filename = fpName + " - " + Encoding.htmlDecode(singleLinkInfo[1]) + ".mp3";
+                final String directlink = singleLinkInfo[0];
+                final DownloadLink dl = createDownloadlink("http://anime.thehyliadecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
+                try {
+                    dl.setLinkID(filename);
+                    dl.setContentUrl(parameter);
+                } catch (final Throwable e) {
+                    /* Not available in old 0.9.581 Stable */
+                    dl.setBrowserUrl(parameter);
+                    dl.setProperty("LINKDUPEID", filename);
+                }
+                dl.setFinalFileName(fpName + " - " + Encoding.htmlDecode(singleLinkInfo[1]) + ".mp3");
+                dl.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(singleLinkInfo[2])));
+                dl.setProperty("referer", br.getURL());
+                dl.setProperty("decryptedfilename", filename);
+                dl.setProperty("directlink", directlink);
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+            }
         }
 
         final FilePackage fp = FilePackage.getInstance();

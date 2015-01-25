@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -29,12 +31,14 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "drss.tv" }, urls = { "http://(www\\.)?drssdecrypted\\.tv/sendung/\\d{2}\\-\\d{2}\\-\\d{4}/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "drss.tv" }, urls = { "http://(www\\.)?drssdecrypted\\.tv/sendung/\\d{2}\\-\\d{2}\\-\\d{4}/" }, flags = { 2 })
 public class DrssTv extends PluginForHost {
 
     public DrssTv(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
     @Override
@@ -46,6 +50,12 @@ public class DrssTv extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("drssdecrypted.tv/", "drss.tv/"));
     }
+
+    /* Settings stuff */
+    private static final String  ALLOW_TRAILER     = "ALLOW_TRAILER";
+    private static final String  ALLOW_TEASER_PIC  = "ALLOW_TEASER_PIC";
+    private static final String  ALLOW_GALLERY     = "ALLOW_GALLERY";
+    private static final String  ALLOW_OTHERS      = "ALLOW_OTHERS";
 
     /* Connection stuff */
     private static final boolean free_resume       = true;
@@ -160,6 +170,19 @@ public class DrssTv extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
+    }
+
+    @Override
+    public String getDescription() {
+        return "JDownloader's drss Plugin helps downloading videoclips and photo galleries from drss.tv.";
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Einstellungen zum Video Download:"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_TRAILER, JDL.L("plugins.hoster.drsstv.grabtrailer", "Trailer auch laden, wenn eine komplette Folge verfügbar ist?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_TEASER_PIC, JDL.L("plugins.hoster.drsstv.grabteaserpicture", "Titelbild laden?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_GALLERY, JDL.L("plugins.hoster.drsstv.grabgallery", "Photogallerie laden?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_OTHERS, JDL.L("plugins.hoster.drsstv.hrabothers", "Andere Inhalte (z.B. 'Vor der Sendung'-Videos) laden'?")).setDefaultValue(false));
     }
 
     @Override

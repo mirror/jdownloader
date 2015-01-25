@@ -42,15 +42,19 @@ public class HulkShareComFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replaceFirst("hu\\.lk/", "hulkshare\\.com/");
+        String parameter = param.toString().replaceFirst("hu\\.lk/", "hulkshare\\.com/");
         final String fuid = getUID(parameter);
-        if (parameter.matches("https?://(www\\.)?(hulkshare\\.com|hu\\/lk)/(dl/|static|browse|images|terms|contact|audible|search|people|upload|featured|mobile|group|explore|sitemaps).*?")) {
+        if (parameter.matches("https?://(www\\.)?(hulkshare\\.com|hu\\/lk)/(static|browse|images|terms|contact|audible|search|people|upload|featured|mobile|group|explore|sitemaps).*?")) {
             logger.info("Invalid link: " + parameter);
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         } else if (parameter.matches(HULKSHAREDOWNLOADLINK)) {
             decryptedLinks.add(createDownloadlink(parameter.replace("hulkshare.com/", "hulksharedecrypted.com/")));
             return decryptedLinks;
+        }
+        final String fid = new Regex(parameter, "hulkshare\\.com/dl/([a-z0-9]{12})").getMatch(0);
+        if (fid != null) {
+            parameter = "http://www.hulkshare.com/" + fid;
         }
         br.setFollowRedirects(false);
         br.setCookie("http://hulkshare.com/", "lang", "english");
@@ -115,7 +119,7 @@ public class HulkShareComFolder extends PluginForDecrypt {
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
             return decryptedLinks;
-        } else if (parameter.matches(TYPE_SECONDSINGLELINK)) {
+        } else if (br.getURL().matches(TYPE_SECONDSINGLELINK)) {
             final String longLink = br.getRegex("longLink = \\'(http://(www\\.)?hulkshare\\.com/[a-z0-9]{12})\\'").getMatch(0);
             if (longLink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
