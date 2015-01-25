@@ -27,6 +27,7 @@ import javax.xml.xpath.XPathFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -61,7 +62,9 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
             if (vid != null) {
                 // embed link, grab info since we are already on this page
                 br.getPage("http://rutube.ru/play/embed/" + vid + "?wmode=opaque&autoStart=true");
-                uid = br.getRegex("\"id\"\\s*:\\s*\"([a-f0-9]{32})\"").getMatch(0);
+
+                final String b = HTMLEntities.unhtmlentities(HTMLEntities.unhtmlDoubleQuotes(br.toString()));
+                uid = new Regex(b, "\"id\"\\s*:\\s*\"([a-f0-9]{32})\"").getMatch(0);
                 if (uid == null) {
                     String msg = getErrorMessage();
                     if (msg != null) {
@@ -98,7 +101,7 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
 
     /**
      * error message types on the embeded link url
-     * 
+     *
      */
     private String getErrorMessage() {
         String msg = null;
@@ -133,7 +136,8 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
                     return createOfflinelink(parameter, vid + " - " + msg, msg);
                 }
             }
-            String videoBalancer = br.getRegex("(http\\:\\/\\/bl\\.rutube\\.ru[^\"]+)").getMatch(0);
+            final String b = HTMLEntities.unhtmlentities(HTMLEntities.unhtmlDoubleQuotes(br.toString()));
+            String videoBalancer = new Regex(b, "(http\\:\\/\\/bl\\.rutube\\.ru[^\"]+)").getMatch(0);
 
             if (videoBalancer != null) {
                 final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
@@ -194,7 +198,7 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
 
     /**
      * lets try and prevent possible NPE from killing the progress.
-     * 
+     *
      * @author raztoki
      * @param n
      * @param item
