@@ -50,7 +50,10 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }
-        final String numberof_pins = br.getRegex("class=\"value\">(\\d+)</span> <span class=\"label\">Pins</span>").getMatch(0);
+        String numberof_pins = br.getRegex("class=\"value\">(\\d+)</span> <span class=\"label\">Pins</span>").getMatch(0);
+        if (numberof_pins == null) {
+            numberof_pins = br.getRegex("class=\'value\'>(\\d+)</span> <span class=\'label\'>Pins</span>").getMatch(0);
+        }
         if (numberof_pins == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
