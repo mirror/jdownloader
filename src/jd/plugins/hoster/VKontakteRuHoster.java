@@ -638,6 +638,14 @@ public class VKontakteRuHoster extends PluginForHost {
         int links_count = 0;
         final String[] qs = { "w_", "z_", "y_", "x_", "m_" };
         for (final String q : qs) {
+            try {
+                if (this.isAbort()) {
+                    logger.info("User stopped downloads --> Stepping out of getHighestQualityPic to avoid 'freeze' of the current DownloadLink");
+                    break;
+                }
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+            }
             final String srcstring = q + "src";
             final Object picobject = sourcemap.get(srcstring);
             /* Check if the link we eventually found is downloadable. */
