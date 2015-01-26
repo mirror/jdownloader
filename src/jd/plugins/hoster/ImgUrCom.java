@@ -51,6 +51,7 @@ public class ImgUrCom extends PluginForHost {
         return "http://imgur.com/tos";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
         link.setUrlDownload(link.getDownloadURL().replace("imgurdecrypted.com/", "imgur.com/"));
@@ -69,6 +70,7 @@ public class ImgUrCom extends PluginForHost {
     private String              imgUID                         = null;
     private boolean             start_DL                       = false;
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         imgUID = link.getStringProperty("imgUID", null);
@@ -240,6 +242,7 @@ public class ImgUrCom extends PluginForHost {
 
     public static final String OAUTH_CLIENTID = "Mzc1YmE4Y2FmNjA0ZDQy";
 
+    @SuppressWarnings("deprecation")
     public static final String getAuthorization() {
         String authorization;
         final String clientid = SubConfiguration.getConfig("imgur.com").getStringProperty(SETTING_CLIENTID, defaultClientID);
@@ -282,7 +285,7 @@ public class ImgUrCom extends PluginForHost {
     private void setConfigElements() {
         final ConfigEntry cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_USE_API, JDL.L("plugins.hoster.ImgUrCom.useAPI", "Use API (recommended!)")).setDefaultValue(true);
         getConfig().addEntry(cfg);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENTID, JDL.L("plugins.hoster.ImgUrCom.oauthClientID", "Oauth Client-ID:")).setDefaultValue(defaultClientID).setEnabledCondidtion(cfg, true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENTID, JDL.L("plugins.hoster.ImgUrCom.oauthClientID", "Enter your own imgur Oauth Client-ID:")).setDefaultValue(defaultClientID).setEnabledCondidtion(cfg, true));
     }
 
     @Override
