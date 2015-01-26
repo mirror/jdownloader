@@ -91,4 +91,6 @@ public interface DownloadsAPIV2 extends RemoteAPIInterface {
 
     void setDownloadDirectory(String directory, long[] packageIds);
 
+    DownloadLinkAPIStorableV2 getStopMarkedLink();
+
 }
