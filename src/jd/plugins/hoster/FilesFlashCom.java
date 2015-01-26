@@ -239,7 +239,7 @@ public class FilesFlashCom extends PluginForHost {
         requestFileInformation(link);
         login(account);
         br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getStringProperty("userEndURL", link.getDownloadURL()));
         final String dllink = br.getRedirectLocation();
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
