@@ -46,7 +46,7 @@ public class PinterestCom extends PluginForHost {
 
     public PinterestCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("");
+        this.enablePremium("https://www.pinterest.com/");
     }
 
     @Override
@@ -90,7 +90,6 @@ public class PinterestCom extends PluginForHost {
         br.setFollowRedirects(true);
         String filename = null;
         dllink = checkDirectLink(link, "free_directlink");
-        dllink = null;
         if (dllink != null) {
             /* Avoid unnecessary site requests. */
             filename = link.getFinalFileName();
@@ -105,8 +104,8 @@ public class PinterestCom extends PluginForHost {
             if (aa != null && source_url != null && boardid != null && username != null) {
                 login(this.br, aa, false);
                 String pin_ressource_url = "http://www.pinterest.com/resource/PinResource/get/?source_url=";
-                String options = "/pin/%s/&data={\"options\":{\"field_set_key\":\"detailed\",\"link_selection\":true,\"fetch_visual_search_objects\":true,\"id\":\"%s\"},\"context\":{},\"module\":{\"name\":\"CloseupContent\",\"options\":{\"unauth_pin_closeup\":false}},\"render_type\":1}&module_path=App()>BoardPage(resource=BoardResource(username=amazvicki,+slug=homme))>Grid(resource=BoardFeedResource(board_id=%s,+board_url=%s,+page_size=null,+prepend=true,+access=,+board_layout=default))>GridItems(resource=BoardFeedResource(board_id=%s,+board_url=%s,+page_size=null,+prepend=true,+access=,+board_layout=default))>Pin(show_pinner=false,+show_pinned_from=true,+show_board=false,+squish_giraffe_pins=false,+component_type=0,+resource=PinResource(id=%s))";
-                options = String.format(options, pin_id, pin_id, username, boardid, source_url, boardid, source_url, pin_id);
+                String options = "/pin/%s/&data={\"options\":{\"field_set_key\":\"detailed\",\"link_selection\":true,\"fetch_visual_search_objects\":true,\"id\":\"%s\"},\"context\":{},\"module\":{\"name\":\"CloseupContent\",\"options\":{\"unauth_pin_closeup\":false}},\"render_type\":1}&module_path=App()>BoardPage(resource=BoardResource(username=amazvicki,+slug=))>Grid(resource=BoardFeedResource(board_id=%s,+board_url=%s,+page_size=null,+prepend=true,+access=,+board_layout=default))>GridItems(resource=BoardFeedResource(board_id=%s,+board_url=%s,+page_size=null,+prepend=true,+access=,+board_layout=default))>Pin(show_pinner=false,+show_pinned_from=true,+show_board=false,+squish_giraffe_pins=false,+component_type=0,+resource=PinResource(id=%s))";
+                options = String.format(options, pin_id, pin_id, username, username, boardid, source_url, boardid, source_url, pin_id);
                 options = options.replace("/", "%2F");
                 // options = Encoding.urlEncode(options);
                 pin_ressource_url += options;
