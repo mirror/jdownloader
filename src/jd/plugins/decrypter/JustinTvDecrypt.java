@@ -70,7 +70,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
 
     private final String FASTLINKCHECK  = "FASTLINKCHECK";
     private final String videoSingleWeb = "https?://(?:(?:www\\.|[a-z]{2}\\.)?(?:twitchtv\\.com|twitch\\.tv)/[^<>/\"]+/((b|c)/\\d+)|(?:www\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+)";
-    private final String videoSingleHDS = "https?://(?:(?:www\\.|[a-z]{2}\\.)?(?:twitchtv\\.com|twitch\\.tv)/[^<>/\"]+/v/\\d+)";
+    private final String videoSingleHLS = "https?://(?:(?:www\\.|[a-z]{2}\\.)?(?:twitchtv\\.com|twitch\\.tv)/[^<>/\"]+/v/\\d+)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -268,12 +268,11 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(fpName);
                 fp.addLinks(decryptedLinks);
-            } else if (br.getURL().matches(videoSingleHDS)) {
+            } else if (br.getURL().matches(videoSingleHLS)) {
                 if (System.getProperty("jd.revision.jdownloaderrevision") == null) {
                     logger.warning("HLS is only supported in JDownloader 2.");
                     return decryptedLinks;
                 }
-                // TODO: HDS
                 // they have multiple qualities, this would be defendant on uploaders original quality.
                 // we need sig for next request
                 // https://api.twitch.tv/api/vods/3707868/access_token?as3=t
@@ -331,7 +330,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                     if (channelName != null) {
                         dlink.setProperty("channel", Encoding.htmlDecode(channelName.trim()));
                     }
-                    dlink.setProperty("LINKDUPEID", "twitch:" + vid + ":HDS:" + bw);
+                    dlink.setProperty("LINKDUPEID", "twitch:" + vid + ":HLS:" + bw);
                     final String formattedFilename = jd.plugins.hoster.JustinTv.getFormattedFilename(dlink);
                     dlink.setName(formattedFilename);
                     // quality/audio probing needs to be done so fast linkcheck shouldn't happen.
