@@ -537,6 +537,23 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         return -1l;
     }
 
+    @Override
+    public DownloadLinkAPIStorableV2 getStopMarkedLink() {
+        Object mark = DownloadWatchDog.getInstance().getSession().getStopMark();
+        if (mark != null && mark != STOPMARK.NONE) {
+            if (mark instanceof DownloadLink) {
+                DownloadLinkAPIStorableV2 dls = new DownloadLinkAPIStorableV2((DownloadLink) mark);
+                dls.setPackageUUID(((DownloadLink) mark).getParentNode().getUniqueID().getID());
+                return dls;
+            }
+        }
+        return null;
+    }
+
+    private Object DownloadLinkAPIStorableV2(DownloadLink mark) {
+        return null;
+    }
+
     /**
      * the SelectionInfo Class is actually used for the GUI downloadtable. it generates a logic selection out of selected links and
      * packages.
