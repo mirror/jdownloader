@@ -117,6 +117,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                     final String pin_directlink = (String) single_pinterest_images_original.get("url");
                     final String pin_id = (String) single_pinterest_data.get("id");
                     String pin_name = (String) single_pinterest_data.get("description");
+                    final String username = (String) single_pinterest_pinner.get("username");
                     final String pinner_name = (String) single_pinterest_pinner.get("full_name");
                     if (pin_name == null || pin_id == null || pin_directlink == null || pinner_name == null) {
                         logger.warning("Decrypter broken for link: " + parameter);
@@ -133,6 +134,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                     dl.setProperty("free_directlink", pin_directlink);
                     dl.setProperty("boardid", board_id);
                     dl.setProperty("source_url", source_url);
+                    dl.setProperty("username", username);
                     dl.setProperty("decryptedfilename", pin_name);
                     dl.setFinalFileName(pin_name);
                     dl.setAvailable(true);
@@ -156,6 +158,10 @@ public class PinterestComDecrypter extends PluginForDecrypt {
     }
 
     private void decryptSite() {
+        /*
+         * Also possible using json of P.start.start( to get the first 25 entries: resourceDataCache --> Last[] --> data --> Here we go --->
+         * But I consider this as an unsafe method.
+         */
         final String[] linkinfo = br.getRegex("<div class=\"bulkEditPinWrapper\">(.*?)class=\"creditTitle\"").getColumn(0);
         if (linkinfo == null || linkinfo.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
