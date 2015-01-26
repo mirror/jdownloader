@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadmagnet.com" }, urls = { "https?://(www\\.)?(uploadmagnet\\.com|pdownload\\.net|zlinx\\.me|filesuploader\\.com|onmirror\\.com|multiupload\\.biz|lastbox\\.net|mirrorhive\\.com)/([a-z0-9]{1,2}_)?[a-z0-9]{12}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadmagnet.com" }, urls = { "https?://(www\\.)?(uploadmagnet\\.com|pdownload\\.net|zlinx\\.me|filesuploader\\.com|onmirror\\.com|multiupload\\.biz|mirrorhive\\.com)/([a-z0-9]{1,2}_)?[a-z0-9]{12}" }, flags = { 0 })
 public class MirStkCm extends PluginForDecrypt {
 
     /*
@@ -42,7 +42,7 @@ public class MirStkCm extends PluginForDecrypt {
      * I've noticed this with mediafire links for example http://mirrorstack.com/mf_dbfzhyf2hnxm will at times return
      * http://www.mediafire.com/?HASH(0x15053b48), you can then reload a couple times and it will work in jd.. provider problem not plugin.
      * Other example links I've used seem to work fine. - Please keep code generic as possible.
-     * 
+     *
      * Don't use package name as these type of link protection services export a list of hoster urls of a single file. When one imports many
      * links (parts), JD loads many instances of the decrypter and each url/parameter/instance gets a separate packagename and that sucks.
      * It's best to use linkgrabbers default auto packagename sorting.
@@ -54,7 +54,6 @@ public class MirStkCm extends PluginForDecrypt {
     // copyload.com = down/sudoparked = 208.43.167.115-static.reverse.softlayer.com
     // onmirror.com = up, finallink are redirects on first singleLink page
     // multiupload.biz = up, multiple pages deep, with waits on last page
-    // lastbox.net = up, finallink are redirects on first singleLink page
     // mirrorhive.com = up, finallink are redirects on first singleLink page
 
     // 05/07/2013
@@ -161,7 +160,7 @@ public class MirStkCm extends PluginForDecrypt {
 
     /**
      * just some code for mirrorstack.com which might be useful if mirrorstack or other sites remove singleLinks from source!
-     * 
+     *
      * @param parameter
      * @param singleLinks
      * @throws IOException
