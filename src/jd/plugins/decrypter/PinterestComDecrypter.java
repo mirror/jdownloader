@@ -46,8 +46,9 @@ public class PinterestComDecrypter extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> decryptedLinks   = new ArrayList<DownloadLink>();
     private String                  parameter        = null;
+    private FilePackage             fp               = null;
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         parameter = param.toString().replace("http://", "https://");
         br.setFollowRedirects(true);
@@ -67,20 +68,25 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }
-        String numberof_pins = br.getRegex("class=\"value\">(\\d+)</span> <span class=\"label\">Pins</span>").getMatch(0);
+        String numberof_pins = br.getRegex("class=\"value\">(\\d+(?:\\.\\d+)?)</span> <span class=\"label\">Pins</span>").getMatch(0);
         if (numberof_pins == null) {
-            numberof_pins = br.getRegex("class=\'value\'>(\\d+)</span> <span class=\'label\'>Pins</span>").getMatch(0);
+            numberof_pins = br.getRegex("class=\'value\'>(\\d+(?:\\.\\d+)?)</span> <span class=\'label\'>Pins</span>").getMatch(0);
+        }
+        if (numberof_pins == null) {
+            numberof_pins = br.getRegex("name=\"pinterestapp:pins\" content=\"(\\d+)\"").getMatch(0);
         }
         fpName = br.getRegex("class=\"boardName\">([^<>]*?)<").getMatch(0);
         if (numberof_pins == null || fpName == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        final long lnumberof_pins = Long.parseLong(numberof_pins);
+        final long lnumberof_pins = Long.parseLong(numberof_pins.replace(".", ""));
         if (lnumberof_pins == 0) {
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }
+        fp = FilePackage.getInstance();
+        fp.setName(Encoding.htmlDecode(fpName.trim()));
         if (loggedIN) {
             /* First, get the first 25 pictures from their site. */
             decryptSite();
@@ -130,7 +136,17 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                         pin_name = pinner_name + "_" + pin_id + "_" + ".jpg";
                     }
                     pin_name = encodeUnicode(pin_name);
-                    final DownloadLink dl = createDownloadlink("http://www.pinterest.com/pin/" + pin_id + "/");
+                    final String content_url = "http://www.pinterest.com/pin/" + pin_id + "/";
+                    final DownloadLink dl = createDownloadlink(content_url);
+                    try {
+                        dl.setContentUrl(content_url);
+                        dl.setLinkID(pin_id);
+                    } catch (final Throwable e) {
+                        /* Not supported in old 0.9.581 Stable */
+                        dl.setBrowserUrl(content_url);
+                        dl.setProperty("LINKDUPEID", pin_id);
+                    }
+                    dl._setFilePackage(fp);
                     dl.setProperty("free_directlink", pin_directlink);
                     dl.setProperty("boardid", board_id);
                     dl.setProperty("source_url", source_url);
@@ -139,6 +155,11 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                     dl.setFinalFileName(pin_name);
                     dl.setAvailable(true);
                     decryptedLinks.add(dl);
+                    try {
+                        distribute(dl);
+                    } catch (final Throwable e) {
+                        /* Not supported in old 0.9.581 Stable */
+                    }
                 }
                 final LinkedHashMap<String, Object> resource_list = (LinkedHashMap<String, Object>) entries.get("resource");
                 final LinkedHashMap<String, Object> options = (LinkedHashMap<String, Object>) resource_list.get("options");
@@ -150,19 +171,18 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             decryptSite();
         }
 
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
         fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
     }
 
+    @SuppressWarnings("deprecation")
     private void decryptSite() {
         /*
          * Also possible using json of P.start.start( to get the first 25 entries: resourceDataCache --> Last[] --> data --> Here we go --->
          * But I consider this as an unsafe method.
          */
-        final String[] linkinfo = br.getRegex("<div class=\"bulkEditPinWrapper\">(.*?)class=\"creditTitle\"").getColumn(0);
+        final String[] linkinfo = br.getRegex("<div class=\"bulkEditPinWrapper\">(.*?)id=\"Pin\\-\\d+\"").getColumn(0);
         if (linkinfo == null || linkinfo.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             decryptedLinks = null;
@@ -175,21 +195,41 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             }
             final String directlink = new Regex(sinfo, "\"(https?://[a-z0-9\\.\\-]+/originals/[^<>\"]*?)\"").getMatch(0);
             final String pin_id = new Regex(sinfo, "/pin/(\\d+)/").getMatch(0);
-            if (title == null || pin_id == null) {
+            if (pin_id == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 decryptedLinks = null;
                 return;
             }
-            title = pin_id + "_" + Encoding.htmlDecode(title).trim() + ".jpg";
-            title = encodeUnicode(title);
-            final DownloadLink dl = createDownloadlink("http://www.pinterest.com/pin/" + pin_id + "/");
+            String pin_filename;
+            if (title != null) {
+                pin_filename = pin_id + "_" + Encoding.htmlDecode(title).trim() + ".jpg";
+            } else {
+                pin_filename = pin_id + ".jpg";
+            }
+            pin_filename = encodeUnicode(pin_filename);
+            final String content_url = "http://www.pinterest.com/pin/" + pin_id + "/";
+            final DownloadLink dl = createDownloadlink(content_url);
+            try {
+                dl.setContentUrl(content_url);
+                dl.setLinkID(pin_id);
+            } catch (final Throwable e) {
+                /* Not supported in old 0.9.581 Stable */
+                dl.setBrowserUrl(content_url);
+                dl.setProperty("LINKDUPEID", pin_id);
+            }
+            dl._setFilePackage(fp);
             if (directlink != null) {
                 dl.setProperty("free_directlink", directlink);
             }
-            dl.setProperty("decryptedfilename", title);
-            dl.setFinalFileName(title);
+            dl.setProperty("decryptedfilename", pin_filename);
+            dl.setFinalFileName(pin_filename);
             dl.setAvailable(true);
             decryptedLinks.add(dl);
+            try {
+                distribute(dl);
+            } catch (final Throwable e) {
+                /* Not supported in old 0.9.581 Stable */
+            }
         }
     }
 

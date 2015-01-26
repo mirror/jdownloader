@@ -32,12 +32,12 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2,
 
-names = { "mirrorcop.com", "multiupfile.com", "multfile.com", "filetobox.com", "maxmirror.com", "exzip.net", "bikupload.com", "uploadseeds.com", "indirbindir.biz", "createmirror.com", "exoshare.com", "3ll3.in", "go4up.com", "uploadonall.com", "up4vn.com", "directmirror.com", "nextdown.net", "mirrorafile.com", "lougyl.com", "neo-share.com", "qooy.com", "uploader.ro", "uploadmirrors.com", "indirdur.net", "megaupper.com", "shrta.com", "1filesharing.com", "mirrorfusion.com", "needmirror.com" },
+names = { "mirrorcop.com", "multiupfile.com", "multfile.com", "filetobox.com", "maxmirror.com", "exzip.net", "bikupload.com", "uploadseeds.com", "indirbindir.biz", "createmirror.com", "exoshare.com", "3ll3.in", "go4up.com", "uploadonall.com", "directmirror.com", "nextdown.net", "mirrorafile.com", "neo-share.com", "qooy.com", "uploader.ro", "uploadmirrors.com", "indirdur.net", "megaupper.com", "shrta.com", "1filesharing.com", "mirrorfusion.com", "needmirror.com" },
 
 urls = { "http://(www\\.)?mirrorcop\\.com/downloads/[A-Z0-9]+", "http://(www\\.)?multiupfile\\.com/f/[a-f0-9]+", "http://(www\\.)?multfile\\.com/files/[0-9A-Za-z]{1,15}", "http://(www\\.)?filetobox\\.com/download\\.php\\?uid=[0-9A-Z]{8}", "http://(www\\.)?maxmirror\\.com/download/[0-9A-Z]{8}", "http://(www\\.)?exzip\\.net/download/[0-9A-Z]{8}", "http://(www\\.)?bikupload\\.com/download\\.php\\?uid=[0-9A-Z]{8}", "http://(www\\.)?uploadseeds\\.com/(download\\.php\\?uid=|download/)[0-9A-Z]{8}", "http://(www\\.)?indirbindir\\.biz/files/[0-9A-Z]{8}", "http://(www\\.)?createmirror\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?(exoshare\\.com|multi\\.la)/(download\\.php\\?uid=|s/)[A-Z0-9]{8}", "http://(www\\.)?3ll3\\.in/(files|dl)/\\w{14,18}", "http://(www\\.)?go4up\\.com/(dl/|link\\.php\\?id=)\\w{1,15}", "https?://(www\\.)?uploadonall\\.com/(download|files)/[A-Z0-9]{8}",
-        "https?://(www\\.)?up4vn\\.com/\\?go=[A-Z0-9]{8}", "http://(www\\.)?nextdown\\.net/files/[0-9A-Z]{8}", "http://(www\\.)?directmirror\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorafile\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?lougyl\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?neo\\-share\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?qooy\\.com/files/[0-9A-Z]{8,10}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.(com|org)/download/[0-9A-Z]{8}", "http://[\\w\\.]*?indirdur\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?shrta\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?1filesharing\\.com/(mirror|download)/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorfusion\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?needmirror\\.com/files/[0-9A-Z]{8}" },
+        "http://(www\\.)?nextdown\\.net/files/[0-9A-Z]{8}", "http://(www\\.)?directmirror\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorafile\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?neo\\-share\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?qooy\\.com/files/[0-9A-Z]{8,10}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.(com|org)/download/[0-9A-Z]{8}", "http://[\\w\\.]*?indirdur\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?shrta\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?1filesharing\\.com/(mirror|download)/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorfusion\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?needmirror\\.com/files/[0-9A-Z]{8}" },
 
-flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+        flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
 
     public GeneralMultiuploadDecrypter(PluginWrapper wrapper) {
@@ -77,7 +77,7 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             parameter = parameter.replaceAll("(/dl/|/mirror/|/download/)", "/files/").replace("flameupload.co/", "flameupload.com/");
         }
         // Links need a "/" at the end to be valid
-        if (!param.getCryptedUrl().matches(".+(up4vn\\.com/|exoshare\\.com/).+") && !param.getCryptedUrl().endsWith("/")) {
+        if (!param.getCryptedUrl().matches(".+exoshare\\.com/.+") && !param.getCryptedUrl().endsWith("/")) {
             param.setCryptedUrl(param.getCryptedUrl().toString() + "/");
         }
         String protocol = new Regex(parameter, "(https?://)").getMatch(0);
@@ -128,9 +128,6 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
                 pssd = id;
             }
             br.postPage(br.getURL(), "YII_CSRF_TOKEN=" + token + "&pssd=" + pssd);
-        } else if (parameter.matches("(?i).+up4vn\\.com/.+")) {
-            // use standard page, status.php doesn't exist
-            getPage(br, parameter);
         } else {
             getPage(br, protocol + host + "/status.php?uid=" + id);
         }
