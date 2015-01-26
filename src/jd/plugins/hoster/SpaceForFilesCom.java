@@ -74,7 +74,7 @@ public class SpaceForFilesCom extends PluginForHost {
     private static final String            PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private final boolean                  VIDEOHOSTER                  = false;
     private final boolean                  TRY_SPECIAL_WAY              = false;
-    private final boolean                  TRY_SPECIAL_WAY_2            = false;
+    private final boolean                  TRY_SPECIAL_WAY_2            = true;
     private final boolean                  SUPPORTSHTTPS                = false;
     private final boolean                  ENABLE_RANDOM_UA             = true;
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
@@ -519,6 +519,9 @@ public class SpaceForFilesCom extends PluginForHost {
             }
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
+            if (br.getURL().contains("com/503.html")) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
+            }
             correctBR();
             checkServerErrors();
             if (special_success) {
