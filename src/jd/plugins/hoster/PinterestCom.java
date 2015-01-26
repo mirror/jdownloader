@@ -118,6 +118,8 @@ public class PinterestCom extends PluginForHost {
                 final ArrayList<Object> ressourcelist = (ArrayList) entries.get("resource_data_cache");
                 dllink = getDirectlinkFromJson(ressourcelist, pin_id);
                 filename = (String) page_info.get("title");
+                /* We don't have to be logged in to perform downloads so better log out to avoid account bans. */
+                br.clearCookies(MAINPAGE);
             } else {
                 br.getPage(link.getDownloadURL());
                 if (br.getHttpConnection().getResponseCode() == 404) {
@@ -160,6 +162,7 @@ public class PinterestCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("unchecked")
     private String getDirectlinkFromJson(final ArrayList<Object> ressourcelist, final String pin_id) {
         String directlink = null;
         for (final Object resource_object : ressourcelist) {
