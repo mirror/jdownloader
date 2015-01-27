@@ -59,7 +59,7 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
         try {
             /* we force content type to image/png and allow caching of the image */
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CACHE_CONTROL, "public,max-age=60", false));
-            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, "image/png", false));
+            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "image/png", false));
             out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), false);
             ImageIO.write(IconIO.toBufferedImage(favIcon), "png", out);
         } catch (IOException e) {
@@ -80,7 +80,7 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
         try {
             /* we force content type to image/png and allow caching of the image */
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CACHE_CONTROL, "public,max-age=60", false));
-            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, "image/png", false));
+            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "image/png", false));
             out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), false);
             ImageIO.write(IconIO.toBufferedImage(CrossSystem.getMime().getFileIcon(extension, 16, 16)), "png", out);
         } catch (IOException e) {
@@ -138,7 +138,7 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
         try {
             /* we force content type to image/png and allow caching of the image */
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CACHE_CONTROL, "public,max-age=60", false));
-            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, "image/png", false));
+            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "image/png", false));
             if (key.startsWith("{")) {
                 IconDescriptor desc = JSonStorage.restoreFromString(key, new TypeRef<IconDescriptor>() {
                 });

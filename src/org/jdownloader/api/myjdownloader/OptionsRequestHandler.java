@@ -26,7 +26,7 @@ public class OptionsRequestHandler implements HttpRequestHandler {
             if (headers != null) {
                 response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_HEADERS, headers));
             }
-            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, "0"));
+            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, "0"));
             response.setResponseCode(ResponseCode.SUCCESS_OK);
             return true;
         } else {

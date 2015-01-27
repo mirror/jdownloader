@@ -17,7 +17,7 @@ public class XbmcProfile extends AbstractDeviceHandler {
     // Soapaction: "urn:schemas-upnp-org:service:ContentDirectory:1#Browse"
 
     public boolean matchesUpnpHeader(UpnpHeaders headers) {
-        return headers.size() == 5 && "text/xml; charset=\"utf-8\"".equals(headers.get(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE).get(0));
+        return headers.size() == 5 && "text/xml; charset=\"utf-8\"".equals(headers.get(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE).get(0));
     }
 
     @Override

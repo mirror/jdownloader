@@ -80,7 +80,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
     private void writeString(RemoteAPIResponse response, RemoteAPIRequest request, String string, boolean wrapCallback) throws InternalApiException {
         OutputStream out = null;
         try {
-            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, "text/html", false));
+            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/html", false));
             out = RemoteAPI.getOutputStream(response, request, false, true);
             if (wrapCallback && request.getJqueryCallback() != null) {
                 if (string == null) {
@@ -361,7 +361,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
     public void favicon(RemoteAPIResponse response) throws InternalApiException {
         OutputStream out = null;
         try {
-            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, "image/x-icon", false));
+            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "image/x-icon", false));
             out = RemoteAPI.getOutputStream(response, null, false, false);
             Icon logo = NewTheme.I().getIcon("logo/jd_logo_128_128", 32);
             ICOEncoder.write(IconIO.toBufferedImage(logo), out);

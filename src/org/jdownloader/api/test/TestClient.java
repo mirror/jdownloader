@@ -313,7 +313,7 @@ public class TestClient {
                         br.putRequestHeader("Accept-Encoding", "gazeisp");
                         final byte[] sendBytes = (object == null ? "" : object).getBytes("UTF-8");
                         final HashMap<String, String> header = new HashMap<String, String>();
-                        header.put(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, "" + sendBytes.length);
+                        header.put(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, "" + sendBytes.length);
                         final String url;
                         if (query == null) {
                             url = getServerRoot();
@@ -324,7 +324,7 @@ public class TestClient {
                         }
                         con = br.openPostConnection(new URL(url), null, new ByteArrayInputStream(sendBytes), header);
                         final String content_Encoding = con.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_ENCODING);
-                        final String content_Type = con.getHeaderField(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE);
+                        final String content_Type = con.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE);
                         if (con.getResponseCode() == 200) {
                             if ("gazeisp".equals(content_Encoding)) {
                                 final byte[] aes = IO.readStream(-1, con.getInputStream());

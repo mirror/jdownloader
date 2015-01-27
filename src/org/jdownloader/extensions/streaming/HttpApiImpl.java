@@ -225,7 +225,7 @@ public class HttpApiImpl implements HttpRequestHandler {
                 System.out.println("HEAD " + request.getRequestHeaders());
                 response.setResponseCode(ResponseCode.SUCCESS_OK);
                 length = streamfactory.getContentLength();
-                if (length > 0) response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, length + ""));
+                if (length > 0) response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, length + ""));
                 if (ct != null) response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, ct));
                 if (dlnaFeatures != null) response.getResponseHeaders().add(new HTTPHeader(DLNATransportConstants.HEADER_FEATURES, dlnaFeatures));
                 if (transferMode != null) response.getResponseHeaders().add(new HTTPHeader(DLNATransportConstants.HEADER_TRANSFERMODE, transferMode));
@@ -301,8 +301,8 @@ public class HttpApiImpl implements HttpRequestHandler {
         // "jpeg", baos);
         // baos.close();
         byte[] data = createIcon(path, profile.getWidth().getMax(), profile.getHeight().getMax(), profile instanceof JPEGImage ? "jpeg" : "png");
-        response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, data.length + ""));
-        response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, ct));
+        response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, data.length + ""));
+        response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, ct));
         response.getResponseHeaders().add(new HTTPHeader("Accept-Ranges", "bytes"));
         response.setResponseCode(ResponseCode.SUCCESS_OK);
 
