@@ -698,31 +698,39 @@ public class VKontakteRuHoster extends PluginForHost {
     private void photo_correctLink() {
         if (this.getPluginConfig().getBooleanProperty(VKPHOTO_CORRECT_FINAL_LINKS, false)) {
             logger.info("VKPHOTO_CORRECT_FINAL_LINKS enabled --> Correcting finallink");
-            /*
-             * Correct server to get files that are otherwise inaccessible - note that this can also make the finallinks unusable (e.g.
-             * server returns errorcode 500 instead of the file) but this is a very rare problem.
-             */
-            final String oldserver = new Regex(this.finalUrl, "(https?://cs\\d+\\.vk\\.me/)").getMatch(0);
-            final String serv_id = new Regex(this.finalUrl, "cs(\\d+)\\.vk\\.me/").getMatch(0);
-            if (oldserver != null && serv_id != null) {
-                final String newserver = "https://pp.vk.me/c" + serv_id + "/";
-                this.finalUrl = this.finalUrl.replace(oldserver, newserver);
-                logger.info("VKPHOTO_CORRECT_FINAL_LINKS enabled --> SUCCEEDED to correct finallink");
+            if (this.finalUrl.matches("https://pp\\.vk\\.me/c\\d+/.+")) {
+                logger.info("final link is already in desired format --> Doing nothing");
             } else {
-                logger.warning("VKPHOTO_CORRECT_FINAL_LINKS enabled --> FAILED to correct finallink");
+                /*
+                 * Correct server to get files that are otherwise inaccessible - note that this can also make the finallinks unusable (e.g.
+                 * server returns errorcode 500 instead of the file) but this is a very rare problem.
+                 */
+                final String oldserver = new Regex(this.finalUrl, "(https?://cs\\d+\\.vk\\.me/)").getMatch(0);
+                final String serv_id = new Regex(this.finalUrl, "cs(\\d+)\\.vk\\.me/").getMatch(0);
+                if (oldserver != null && serv_id != null) {
+                    final String newserver = "https://pp.vk.me/c" + serv_id + "/";
+                    this.finalUrl = this.finalUrl.replace(oldserver, newserver);
+                    logger.info("VKPHOTO_CORRECT_FINAL_LINKS enabled --> SUCCEEDED to correct finallink");
+                } else {
+                    logger.warning("VKPHOTO_CORRECT_FINAL_LINKS enabled --> FAILED to correct finallink");
+                }
             }
         } else {
-            logger.info("VKPHOTO_CORRECT_FINAL_LINKS DISABLED --> changing link back to standard");
-            /* Correct links to standard format */
-            final Regex dataregex = new Regex(this.finalUrl, "(https?://pp\\.vk\\.me/c)(\\d+)/v(\\d+)/");
-            final String serv_id = dataregex.getMatch(1);
-            final String oldserver = dataregex.getMatch(0) + serv_id + "/";
-            if (oldserver != null && serv_id != null) {
-                final String newserver = "http://cs" + serv_id + ".vk.me/";
-                this.finalUrl = this.finalUrl.replace(oldserver, newserver);
-                logger.info("VKPHOTO_CORRECT_FINAL_LINKS DISABLE --> SUCCEEDED to revert corrected finallink");
+            logger.info("VKPHOTO_CORRECT_FINAL_LINKS DISABLED --> changing final link back to standard");
+            if (this.finalUrl.matches("http://cs\\d+\\.vk\\.me/v\\d+/.+")) {
+                logger.info("final link is already in desired format --> Doing nothing");
             } else {
-                logger.warning("VKPHOTO_CORRECT_FINAL_LINKS enabled --> FAILED to revert corrected finallink");
+                /* Correct links to standard format */
+                final Regex dataregex = new Regex(this.finalUrl, "(https?://pp\\.vk\\.me/c)(\\d+)/v(\\d+)/");
+                final String serv_id = dataregex.getMatch(1);
+                final String oldserver = dataregex.getMatch(0) + serv_id + "/";
+                if (oldserver != null && serv_id != null) {
+                    final String newserver = "http://cs" + serv_id + ".vk.me/";
+                    this.finalUrl = this.finalUrl.replace(oldserver, newserver);
+                    logger.info("VKPHOTO_CORRECT_FINAL_LINKS DISABLE --> SUCCEEDED to revert corrected finallink");
+                } else {
+                    logger.warning("VKPHOTO_CORRECT_FINAL_LINKS enabled --> FAILED to revert corrected finallink");
+                }
             }
         }
     }

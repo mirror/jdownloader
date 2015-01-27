@@ -21,6 +21,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -377,6 +378,7 @@ public class VimeoCom extends PluginForHost {
     }
 
     // IMPOORTANT: Sync with HOSTER AND DECRYPTER plugin
+    @SuppressWarnings("unchecked")
     public String[][] getQualities(final Browser ibr, final String ID) throws Exception {
         /*
          * little pause needed so the next call does not return trash
@@ -413,30 +415,46 @@ public class VimeoCom extends PluginForHost {
         /* player.vimeo.com links = Special case as the needed information is already in our current browser. */
         if (configURL != null && (qualities == null || (qualities != null && qualities.length == 0)) || ibr.getURL().contains("player.vimeo.com/")) {
             // iconify_down_b could fail, revert to the following if statements.
-            Browser gq = ibr.cloneBrowser();
+            final Browser gq = ibr.cloneBrowser();
+            String json;
             if (configURL != null) {
                 configURL = configURL.replaceAll("&amp;", "&");
                 gq.getPage(configURL);
+                json = gq.toString();
+            } else {
+                json = ibr.getRegex("a=(\\{\"cdn_url\".*?);if\\(a\\.request\\)").getMatch(0);
             }
-            final String fmts = gq.getRegex("\"files\":\\{\"(h264|vp6)\":\\{(.*?)\\}\\}").getMatch(1);
-            if (fmts != null) {
-                String quality[][] = new Regex(fmts, "\"(.*?)\":\\{(.*?)(\\}|$)").getMatches();
-                qualities = new String[quality.length][6];
-                for (int i = 0; i < quality.length; i++) {
-                    final String url = new Regex(quality[i][1], "\"url\":\"(http.*?)\"").getMatch(0);
-                    final String height = new Regex(quality[i][1], "\"height\":(\\d+)").getMatch(0);
-                    final String width = new Regex(quality[i][1], "\"width\":(\\d+)").getMatch(0);
-                    final String bitrate = new Regex(quality[i][1], "\"bitrate\":(\\d+)").getMatch(0);
-                    String ext = new Regex(url, "(\\.[a-z0-9]{3,4})\\?token2=").getMatch(0);
-                    if (ext == null) {
-                        ext = new Regex(url, ".+(\\.[a-z0-9]{3,4})$").getMatch(0);
+            /* Old handling without DummyScriptEnginePlugin removed AFTER revision 28754 */
+            if (json != null) {
+                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+                final LinkedHashMap<String, Object> request = (LinkedHashMap<String, Object>) entries.get("request");
+                final LinkedHashMap<String, Object> files = (LinkedHashMap<String, Object>) request.get("files");
+                final LinkedHashMap<String, Object> h264 = (LinkedHashMap<String, Object>) files.get("h264");
+                if (h264 != null) {
+                    final String[] possibleQualities = { "mobile", "hd", "sd" };
+                    qualities = new String[3][6];
+                    int counter = 0;
+                    for (final String currentQuality : possibleQualities) {
+                        final LinkedHashMap<String, Object> qualitymap = (LinkedHashMap<String, Object>) h264.get(currentQuality);
+                        if (qualitymap != null) {
+                            final String url = (String) qualitymap.get("url");
+                            Integer.toString(((Number) qualitymap.get("height")).intValue());
+                            final String height = Integer.toString(((Number) qualitymap.get("height")).intValue());
+                            final String width = Integer.toString(((Number) qualitymap.get("width")).intValue());
+                            final String bitrate = Integer.toString(((Number) qualitymap.get("bitrate")).intValue());
+                            String ext = new Regex(url, "(\\.[a-z0-9]{3,4})\\?token2=").getMatch(0);
+                            if (ext == null) {
+                                ext = new Regex(url, ".+(\\.[a-z0-9]{3,4})$").getMatch(0);
+                            }
+                            qualities[counter][0] = url;
+                            qualities[counter][1] = ext;
+                            qualities[counter][2] = currentQuality;
+                            qualities[counter][3] = (height == null || width == null ? null : width + "x" + height);
+                            qualities[counter][4] = bitrate;
+                            qualities[counter][5] = null;
+                        }
+                        counter++;
                     }
-                    qualities[i][0] = url;
-                    qualities[i][1] = ext;
-                    qualities[i][2] = quality[i][0];
-                    qualities[i][3] = (height == null || width == null ? null : width + "x" + height);
-                    qualities[i][4] = bitrate;
-                    qualities[i][5] = null;
                 }
             }
         } else if (configURL == null || (qualities == null || (qualities != null && qualities.length == 0))) {
