@@ -349,7 +349,7 @@ public class Main {
         checkLanguageSwitch(args);
         try {
             /* set D3D Property if not already set by user */
-            if (CrossSystem.isWindows()) {
+            if (CrossSystem.isWindows() && System.getProperty("sun.java2d.d3d") == null) {
                 if (JsonConfig.create(org.jdownloader.settings.GraphicalUserInterfaceSettings.class).isUseD3D()) {
                     System.setProperty("sun.java2d.d3d", "true");
                 } else {
