@@ -31,6 +31,7 @@ import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.gui.swing.jdgui.DirectFeedback;
 import jd.gui.swing.jdgui.DownloadFeedBack;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
@@ -1088,8 +1089,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         cvar.put("thread", Thread.currentThread().getName());
         Exception e = new Exception();
         StackTraceElement[] st = e.getStackTrace();
-        if (st.length > 0) {
-            cvar.put("source", st[0].getClassName() + "." + st[0].getMethodName());
+        if (st.length > 1) {
+            cvar.put("source", st[1].getClassName() + "." + st[1].getMethodName());
 
         }
 
@@ -1098,8 +1099,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             @Override
             public void send(Browser br) {
                 try {
-
-                    new Browser().openGetConnection("http://stats.appwork.org/jcgi/event/track?" + Encoding.urlEncode(path) + "&" + Encoding.urlEncode(JSonStorage.serializeToJson(cvar))).disconnect();
+                    URLConnectionAdapter con = new Browser().openGetConnection("http://stats.appwork.org/jcgi/event/track?" + Encoding.urlEncode(path) + "&" + Encoding.urlEncode(JSonStorage.serializeToJson(cvar)));
+                    con.disconnect();
                 } catch (Throwable e) {
                     e.printStackTrace();
                 }
