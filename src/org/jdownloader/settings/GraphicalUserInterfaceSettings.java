@@ -873,9 +873,9 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    boolean isSponsorUploadedEnabled();
+    boolean isULBannerEnabled();
 
-    void setSponsorUploadedEnabled(boolean b);
+    void setULBannerEnabled(boolean b);
 
     //
     @AboutConfig

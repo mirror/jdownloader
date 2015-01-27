@@ -29,16 +29,16 @@ public class StreamLinker {
             long guaranteedContentLength = streamfactory.getGuaranteedContentLength();
             if (sis == null) {
                 response.setResponseCode(ResponseCode.ERROR_NOT_FOUND);
-                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, "0"));
+                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, "0"));
 
             } else {
                 // TODO: 416 Error Handling
                 boolean chunked = false;
-                if (response.getResponseHeaders().get(HTTPConstants.HEADER_REQUEST_ACCEPT_RANGES) == null) response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ACCEPT_RANGES, "bytes"));
+                if (response.getResponseHeaders().get(HTTPConstants.HEADER_RESPONSE_ACCEPT_RANGES) == null) response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCEPT_RANGES, "bytes"));
                 if (!range.isValid()) {
                     response.setResponseCode(ResponseCode.SUCCESS_OK);
                     if (completeSize != -1) {
-                        response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, completeSize + ""));
+                        response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, completeSize + ""));
                     } else {
 
                         chunked = true;
@@ -49,7 +49,7 @@ public class StreamLinker {
                     if (range.isOpenEnd()) {
                         if (completeSize > 0) {
                             response.getResponseHeaders().add(new HTTPHeader("Content-Range", "bytes " + range.getStart() + "-" + (completeSize - 1) + "/" + completeSize));
-                            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, (completeSize - range.getStart()) + ""));
+                            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, (completeSize - range.getStart()) + ""));
                         } else {
                             response.getResponseHeaders().add(new HTTPHeader("Content-Range", "bytes " + range.getStart() + "-" + (guaranteedContentLength - 1) + "/*"));
                             // response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH,
@@ -59,7 +59,7 @@ public class StreamLinker {
                     } else {
                         if (completeSize > 0) {
                             response.getResponseHeaders().add(new HTTPHeader("Content-Range", "bytes " + range.getStart() + "-" + (range.getEnd()) + "/" + completeSize));
-                            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, (range.getEnd() - range.getStart() + 1) + ""));
+                            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, (range.getEnd() - range.getStart() + 1) + ""));
                         } else {
                             response.getResponseHeaders().add(new HTTPHeader("Content-Range", "bytes " + range.getStart() + "-" + (range.getEnd()) + "/" + completeSize));
                             // response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, (range.getEnd()

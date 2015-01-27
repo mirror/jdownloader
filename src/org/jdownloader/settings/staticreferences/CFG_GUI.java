@@ -2,19 +2,37 @@ package org.jdownloader.settings.staticreferences;
 
 import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.EnumKeyHandler;
 import org.appwork.storage.config.handler.IntegerKeyHandler;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.ListHandler;
 import org.appwork.storage.config.handler.LongKeyHandler;
 import org.appwork.storage.config.handler.ObjectKeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.statistics.StatsManager;
 
 public class CFG_GUI {
     public static void main(String[] args) {
         ConfigUtils.printStaticMappings(GraphicalUserInterfaceSettings.class);
+
+        ULBANNER_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+            @Override
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                if (Boolean.FALSE == newValue) {
+                    StatsManager.I().track("various/UlBANNER_DISABLED");
+                }
+            }
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+        });
     }
 
     // Static Mappings for interface org.jdownloader.settings.GraphicalUserInterfaceSettings
@@ -101,8 +119,6 @@ public class CFG_GUI {
      * Hide the package in case it only contains one child
      **/
     public static final BooleanKeyHandler                              HIDE_SINGLE_CHILD_PACKAGES                              = SH.getKeyHandler("HideSingleChildPackages", BooleanKeyHandler.class);
-
-    public static final BooleanKeyHandler                              SPONSOR_UPLOADED_ENABLED                                = SH.getKeyHandler("SponsorUploadedEnabled", BooleanKeyHandler.class);
 
     public static final BooleanKeyHandler                              LINK_PROPERTIES_PANEL_ARCHIVEPASSWORD_VISIBLE           = SH.getKeyHandler("LinkPropertiesPanelArchivepasswordVisible", BooleanKeyHandler.class);
 
@@ -205,14 +221,14 @@ public class CFG_GUI {
     public static final BooleanKeyHandler                              OVERVIEW_PANEL_DOWNLOAD_TOTAL_BYTES_VISIBLE             = SH.getKeyHandler("OverviewPanelDownloadTotalBytesVisible", BooleanKeyHandler.class);
 
     /**
-     * If disabled, The Hostercolumn will show gray disabled icons if the link is disabled
-     **/
-    public static final BooleanKeyHandler                              COLORED_ICONS_FOR_DISABLED_HOSTER_COLUMN_ENABLED        = SH.getKeyHandler("ColoredIconsForDisabledHosterColumnEnabled", BooleanKeyHandler.class);
-
-    /**
      * Refreshrate in ms for the DownloadView
      **/
     public static final LongKeyHandler                                 DOWNLOAD_VIEW_REFRESH                                   = SH.getKeyHandler("DownloadViewRefresh", LongKeyHandler.class);
+
+    /**
+     * If disabled, The Hostercolumn will show gray disabled icons if the link is disabled
+     **/
+    public static final BooleanKeyHandler                              COLORED_ICONS_FOR_DISABLED_HOSTER_COLUMN_ENABLED        = SH.getKeyHandler("ColoredIconsForDisabledHosterColumnEnabled", BooleanKeyHandler.class);
 
     public static final EnumKeyHandler                                 NEW_LINKS_ACTION                                        = SH.getKeyHandler("NewLinksAction", EnumKeyHandler.class);
 
@@ -380,6 +396,8 @@ public class CFG_GUI {
 
     public static final EnumKeyHandler                                 LOOK_AND_FEEL_THEME                                     = SH.getKeyHandler("LookAndFeelTheme", EnumKeyHandler.class);
 
+    public static final EnumKeyHandler                                 DOWNLOAD_FOLDER_CHOOSER_DEFAULT_PATH                    = SH.getKeyHandler("DownloadFolderChooserDefaultPath", EnumKeyHandler.class);
+
     public static final StringKeyHandler                               PASSWORD                                                = SH.getKeyHandler("Password", StringKeyHandler.class);
 
     /**
@@ -416,6 +434,8 @@ public class CFG_GUI {
     public static final BooleanKeyHandler                              DOWNLOAD_CONTROL_COLUMN_AUTO_SHOW_ENABLED               = SH.getKeyHandler("DownloadControlColumnAutoShowEnabled", BooleanKeyHandler.class);
 
     public static final BooleanKeyHandler                              PROPERTIES_PANEL_HEIGHT_NORMALIZED                      = SH.getKeyHandler("PropertiesPanelHeightNormalized", BooleanKeyHandler.class);
+
+    public static final BooleanKeyHandler                              ULBANNER_ENABLED                                        = SH.getKeyHandler("ULBannerEnabled", BooleanKeyHandler.class);
 
     /**
      * Every odd row get's a light shadow if enabled

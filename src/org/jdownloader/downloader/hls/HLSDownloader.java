@@ -354,7 +354,7 @@ public class HLSDownloader extends DownloadInterface {
                                     sb.append(s);
                                 }
                             }
-                            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, br.getRequest().getHttpConnection().getContentType()));
+                            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, br.getRequest().getHttpConnection().getContentType()));
                             OutputStream out = response.getOutputStream(true);
                             out.write(sb.toString().getBytes("UTF-8"));
                             out.flush();
@@ -374,9 +374,9 @@ public class HLSDownloader extends DownloadInterface {
                             response.setResponseCode(HTTPConstants.ResponseCode.get(br.getRequest().getHttpConnection().getResponseCode()));
                             long length = connection.getCompleteContentLength();
                             if (length > 0) {
-                                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, length + ""));
+                                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, length + ""));
                             }
-                            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, connection.getContentType()));
+                            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, connection.getContentType()));
 
                             OutputStream out = response.getOutputStream(true);
 

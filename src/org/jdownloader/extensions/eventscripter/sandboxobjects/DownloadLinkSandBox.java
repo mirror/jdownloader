@@ -21,12 +21,14 @@ public class DownloadLinkSandBox {
 
     public DownloadLinkSandBox() {
         storable = new DownloadLinkAPIStorableV2();
+
     }
 
     public String getDownloadPath() {
         if (downloadLink == null) {
             return null;
         }
+
         return downloadLink.getFileOutput();
     }
 

@@ -1083,12 +1083,23 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     }
 
     public void track(final String path) {
+        final HashMap<String, String> cvar = new HashMap<String, String>();
+
+        cvar.put("thread", Thread.currentThread().getName());
+        Exception e = new Exception();
+        StackTraceElement[] st = e.getStackTrace();
+        if (st.length > 0) {
+            cvar.put("source", st[0].getClassName() + "." + st[0].getMethodName());
+
+        }
+
         log(new AbstractTrackEntry() {
 
             @Override
             public void send(Browser br) {
                 try {
-                    new Browser().openGetConnection("http://stats.appwork.org/piwik/piwik.php?idsite=3&rec=1&action_name=" + Encoding.urlEncode(path)).disconnect();
+
+                    new Browser().openGetConnection("hhttp://stats.appwork.org/jcgi/event/track?" + Encoding.urlEncode(path) + "&" + Encoding.urlEncode(JSonStorage.serializeToJson(cvar))).disconnect();
                 } catch (Throwable e) {
                     e.printStackTrace();
                 }

@@ -25,7 +25,7 @@ public class WindowsMediaPlayerProfile extends AbstractDeviceHandler {
 
     public boolean matchesUpnpHeader(UpnpHeaders headers) {
         if (!"no-cache".equals(headers.get(HTTPConstants.HEADER_REQUEST_CACHE_CONTROL).get(0))) return false;
-        if (!"text/xml; charset=\"utf-8\"".equals(headers.get(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE).get(0))) return false;
+        if (!"text/xml; charset=\"utf-8\"".equals(headers.get(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE).get(0))) return false;
         if (!"Close".equals(headers.get(HTTPConstants.HEADER_REQUEST_CONNECTION).get(0))) return false;
         if (!"no-cache".equals(headers.get(HTTPConstants.HEADER_REQUEST_PRAGMA).get(0))) return false;
         return headers.size() == 8;

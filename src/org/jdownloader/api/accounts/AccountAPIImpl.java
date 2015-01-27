@@ -143,7 +143,7 @@ public class AccountAPIImpl implements AccountAPI {
         try {
             /* we force content type to image/png and allow caching of the image */
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CACHE_CONTROL, "public,max-age=60", false));
-            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, "image/png", false));
+            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "image/png", false));
             out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), false);
 
             LazyHostPlugin plugin = HostPluginController.getInstance().get(premiumHoster);

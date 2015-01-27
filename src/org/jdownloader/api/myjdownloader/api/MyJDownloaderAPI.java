@@ -66,10 +66,10 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
                 br.putRequestHeader("Accept-Encoding", "gazeisp");
                 final byte[] sendBytes = (object == null ? "" : object).getBytes("UTF-8");
                 final HashMap<String, String> header = new HashMap<String, String>();
-                header.put(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, "" + sendBytes.length);
+                header.put(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, "" + sendBytes.length);
                 con = br.openPostConnection(new URL(this.getServerRoot() + query), null, new ByteArrayInputStream(sendBytes), header);
                 final String content_Encoding = con.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_ENCODING);
-                final String content_Type = con.getHeaderField(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE);
+                final String content_Type = con.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE);
                 if (con.getResponseCode() == 200) {
                     if (StringUtils.contains(content_Encoding, "gazeisp") || StringUtils.contains(content_Encoding, "gzip_aes")) {
                         final byte[] aes = IO.readStream(-1, con.getInputStream());

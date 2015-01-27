@@ -191,7 +191,7 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         if (this.os != null) {
             return this.os;
         }
-        HTTPHeader contentType = response.getResponseHeaders().get(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE);
+        HTTPHeader contentType = response.getResponseHeaders().get(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE);
         if (contentType != null && "application/json".equalsIgnoreCase(contentType.getValue())) {
             /* check for json response */
             try {
@@ -210,7 +210,7 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
                 final SecretKeySpec skeySpec = new SecretKeySpec(Arrays.copyOfRange(payloadEncryptionToken, 16, 32), "AES");
                 cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
                 /* remove content-length because we use chunked+base64+aes */
-                response.getResponseHeaders().remove(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH);
+                response.getResponseHeaders().remove(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH);
                 // response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE,
                 // "application/aesjson-jd; charset=utf-8"));
                 /* set chunked transfer header */
