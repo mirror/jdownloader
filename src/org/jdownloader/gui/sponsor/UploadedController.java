@@ -78,7 +78,7 @@ public class UploadedController implements AccountControllerListener, Sponsor {
         });
     }
     // private static final String HTTP_BASE = "http://nas:81/thomas/fcgi";
-    private static final String             HTTP_BASE               = "http://update3.jdownloader.org/jdserv/";
+    private static final String             HTTP_BASE               = "http://update3.jdownloader.org/jdserv";
     // private final AtomicBoolean enabledByAPI = new AtomicBoolean(false);
     private final AtomicBoolean             enabledInAdvancedConfig = new AtomicBoolean(false);
     private boolean                         mouseover;
@@ -218,12 +218,13 @@ public class UploadedController implements AccountControllerListener, Sponsor {
             boolean hasUploaded = false;
             boolean hasOther = false;
             for (Account acc : AccountController.getInstance().list()) {
-
-                if (acc.getType() == AccountType.PREMIUM) {
-                    if ("uploaded.to".equals(acc.getHoster())) {
-                        hasUploaded = true;
-                    } else {
-                        hasOther = true;
+                if (acc.isValid() && (System.currentTimeMillis() - acc.getLastValidTimestamp() < 24 * 60 * 60 * 1000l)) {
+                    if (acc.getType() == AccountType.PREMIUM) {
+                        if ("uploaded.to".equals(acc.getHoster())) {
+                            hasUploaded = true;
+                        } else {
+                            hasOther = true;
+                        }
                     }
                 }
             }
@@ -343,11 +344,13 @@ public class UploadedController implements AccountControllerListener, Sponsor {
                     boolean hasOther = false;
                     for (Account acc : AccountController.getInstance().list()) {
 
-                        if (acc.getType() == AccountType.PREMIUM) {
-                            if ("uploaded.to".equals(acc.getHoster())) {
-                                hasUploaded = true;
-                            } else {
-                                hasOther = true;
+                        if (acc.isValid() && (System.currentTimeMillis() - acc.getLastValidTimestamp() < 24 * 60 * 60 * 1000l)) {
+                            if (acc.getType() == AccountType.PREMIUM) {
+                                if ("uploaded.to".equals(acc.getHoster())) {
+                                    hasUploaded = true;
+                                } else {
+                                    hasOther = true;
+                                }
                             }
                         }
                     }
