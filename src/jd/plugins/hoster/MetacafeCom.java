@@ -46,30 +46,44 @@ public class MetacafeCom extends PluginForHost {
         try {
             br.getPage(link.getDownloadURL());
         } catch (final BrowserException e) {
-            if (br.getRequest().getHttpConnection().getResponseCode() == 400) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.getRequest().getHttpConnection().getResponseCode() == 400) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (br.getURL().contains("/?pageNotFound") || br.containsHTML("<title>Metacafe \\- Best Videos \\&amp; Funny Movies</title>") || br.getURL().contains("metacafe.com/?m=removed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("/?pageNotFound") || br.containsHTML("<title>Metacafe \\- Best Videos \\&amp; Funny Movies</title>") || br.getURL().contains("metacafe.com/video-removed")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.getURL().contains("metacafe.com/family_filter/")) {
             br.postPage("http://www.metacafe.com/f/index.php?inputType=filter&controllerGroup=user", "filters=0");
         }
         String fileName = br.getRegex("name=\"title\" content=\"(.*?) \\- Video\"").getMatch(0);
-        if (fileName == null) fileName = br.getRegex("<h1 id=\"ItemTitle\" >(.*?)</h1>").getMatch(0);
-        if (fileName != null) link.setFinalFileName(fileName.trim() + ".mp4");
+        if (fileName == null) {
+            fileName = br.getRegex("<h1 id=\"ItemTitle\" >(.*?)</h1>").getMatch(0);
+        }
+        if (fileName != null) {
+            link.setFinalFileName(fileName.trim() + ".mp4");
+        }
         if (!link.getDownloadURL().contains("metacafe.com/watch/sy-")) {
             dlink = br.getRegex("mediaURL(.*?)&").getMatch(0);
-            if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dlink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             dlink = URLDecoder.decode(dlink, "utf-8");
             dlink = dlink.replace("\\", "");
             dlink = new Regex(dlink, ":\"(.*?)\"").getMatch(0) + "?__gda__=" + new Regex(dlink, "key\":\"(.*?)\"").getMatch(0);
-            if (dlink == null || dlink.contains("null")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dlink == null || dlink.contains("null")) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             try {
                 if (!br.openGetConnection(dlink).getContentType().contains("html")) {
                     link.setDownloadSize(br.getHttpConnection().getLongContentLength());
                     br.getHttpConnection().disconnect();
                 }
             } finally {
-                if (br.getHttpConnection() != null) br.getHttpConnection().disconnect();
+                if (br.getHttpConnection() != null) {
+                    br.getHttpConnection().disconnect();
+                }
             }
         }
         return AvailableStatus.TRUE;
@@ -78,7 +92,9 @@ public class MetacafeCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dlink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             dl.getConnection().disconnect();
