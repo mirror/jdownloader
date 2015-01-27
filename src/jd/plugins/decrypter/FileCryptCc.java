@@ -96,10 +96,10 @@ public class FileCryptCc extends PluginForDecrypt {
                 }
                 // captchaform.remove("button.x");
                 // captchaform.remove("button.y");
-                // captchaform.put("button.x", String.valueOf(p.x));
-                // captchaform.put("button.y", String.valueOf(p.y));
-                // submitForm(captchaform);
-                br.postPage(br.getURL(), "button.x=" + p.x + "&button.y=" + p.y);
+                captchaform.put("button.x", String.valueOf(p.x));
+                captchaform.put("button.y", String.valueOf(p.y));
+                submitForm(captchaform);
+                // br.postPage(br.getURL(), "button.x=" + p.x + "&button.y=" + p.y);
 
             } else if (captchaform != null && captchaform.containsHTML("=\"g-recaptcha\"")) {
                 // recaptcha v2
