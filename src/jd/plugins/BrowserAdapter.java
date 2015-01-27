@@ -114,26 +114,35 @@ public class BrowserAdapter {
             } catch (Throwable ignore) {
             }
             if (dl.getConnection() != null) {
-                if (dl.getConnection().getResponseCode() == 403 && "Blocked by Bitdefender".equalsIgnoreCase(dl.getConnection().getResponseMessage())) {
-                    // Bitdefender handling
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by Bitdefender");
-                } else if (dl.getConnection().getResponseCode() == 403 && "Blocked by ESET Security".equalsIgnoreCase(dl.getConnection().getResponseMessage())) {
-                    // Eset
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by ESET");
-                }
+                handleBlockedConnection(dl, br);
             }
             throw forward;
         }
         if (dl.getConnection() != null) {
+            handleBlockedConnection(dl, br);
+        }
+        return dl;
+    }
+
+    private static void handleBlockedConnection(final DownloadInterface dl, final Browser br) throws PluginException {
+        if (dl != null && br != null) {
             if (dl.getConnection().getResponseCode() == 403 && "Blocked by Bitdefender".equalsIgnoreCase(dl.getConnection().getResponseMessage())) {
                 // Bitdefender handling
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by Bitdefender");
             } else if (dl.getConnection().getResponseCode() == 403 && "Blocked by ESET Security".equalsIgnoreCase(dl.getConnection().getResponseMessage())) {
                 // Eset
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by ESET");
+            } else if (dl.getConnection().getResponseCode() == 403 && dl.getConnection().getHeaderField("Server") != null && "WebGuard".equalsIgnoreCase(dl.getConnection().getHeaderField("Server"))) {
+                // WebGuard jdlog://7294408642041
+                // ----------------Response------------------------
+                // HTTP/1.1 403 Forbidden
+                // Server: WebGuard
+                // Content-Type: text/html; charset=UTF-8
+                // Content-Length: 3218
+                // ------------------------------------------------
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by WebGuard");
             }
         }
-        return dl;
     }
 
     public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, String url, String postdata, boolean resume, int chunks) throws Exception {

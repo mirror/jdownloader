@@ -570,7 +570,7 @@ public class UpToBoxCom extends PluginForHost {
         if (new Regex(correctedBR, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
         }
-        if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) {
+        if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches() || br.getURL().endsWith("/404.html")) {
             logger.warning("Server says link offline, please recheck that!");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
