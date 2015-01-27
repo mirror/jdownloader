@@ -331,12 +331,10 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                         dlink.setProperty("channel", Encoding.htmlDecode(channelName.trim()));
                     }
                     dlink.setProperty("LINKDUPEID", "twitch:" + vid + ":HLS:" + bw);
-                    final String formattedFilename = jd.plugins.hoster.JustinTv.getFormattedFilename(dlink);
-                    dlink.setName(formattedFilename);
-                    // quality/audio probing needs to be done so fast linkcheck shouldn't happen.
-                    // if (cfg.getBooleanProperty(FASTLINKCHECK, false)) {
-                    // dlink.setAvailable(true);
-                    // }
+                    // let linkchecking routine do all this!
+                    // final String formattedFilename = jd.plugins.hoster.JustinTv.getFormattedFilename(dlink);
+                    // dlink.setName(formattedFilename);
+                    dlink.setName("linkcheck-failed-recheck-online-status-manually.mp4");
                     try {
                         dlink.setContentUrl(parameter);
                     } catch (final Throwable e) {

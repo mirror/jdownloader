@@ -86,7 +86,6 @@ public class JustinTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (dllink.endsWith("m3u8")) {
-
             checkFFProbe(downloadLink, "File Checking a HLS Stream");
             if (downloadLink.getBooleanProperty("encrypted")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Encrypted HLS is not supported");
