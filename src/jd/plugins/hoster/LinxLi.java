@@ -46,7 +46,7 @@ public class LinxLi extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
     }
 
-    private static final String INVALIDLINKS = "https?://(www\\.)?linx\\.li/(paste|meta)[^<>\"/]+";
+    private static final String INVALIDLINKS = "https?://(www\\.)?linx\\.li/(paste|meta)[^<>\"/]*?";
 
     /* Uses API: https://linx.li/meta/API */
     @Override
