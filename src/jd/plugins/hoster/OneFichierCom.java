@@ -619,11 +619,11 @@ public class OneFichierCom extends PluginForHost {
                 return;
             }
         }
-        login(account, false);
         if ("FREE".equals(account.getStringProperty("type")) && account.getBooleanProperty("freeAPIdisabled")) {
             /**
              * Only used if the API fails and is wrong but that usually doesn't happen!
              */
+            login(account, false);
             doFree(link);
         } else {
             br.setFollowRedirects(false);
