@@ -59,7 +59,24 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.statistics.StatsManager;
 
 public class UploadedController implements AccountControllerListener, Sponsor {
+    static {
 
+        CFG_GUI.ULBANNER_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+            @Override
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                if (Boolean.FALSE == newValue) {
+                    StatsManager.I().track("various/UlBANNER/disabled");
+                } else {
+                    StatsManager.I().track("various/UlBANNER/enabled");
+                }
+            }
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+        });
+    }
     // private static final String HTTP_BASE = "http://nas:81/thomas/fcgi";
     private static final String             HTTP_BASE               = "http://update3.jdownloader.org/jdserv/";
     // private final AtomicBoolean enabledByAPI = new AtomicBoolean(false);
