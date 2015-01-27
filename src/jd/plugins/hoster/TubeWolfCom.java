@@ -76,7 +76,7 @@ public class TubeWolfCom extends PluginForHost {
         if (br.containsHTML(">Sorry, this video has been deleted")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
+        String filename = br.getRegex("itemprop=\"name\">([^<>]+)<").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         }

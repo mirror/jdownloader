@@ -619,11 +619,11 @@ public class OneFichierCom extends PluginForHost {
                 return;
             }
         }
+        login(account, false);
         if ("FREE".equals(account.getStringProperty("type")) && account.getBooleanProperty("freeAPIdisabled")) {
             /**
              * Only used if the API fails and is wrong but that usually doesn't happen!
              */
-            login(account, false);
             doFree(link);
         } else {
             br.setFollowRedirects(false);
@@ -690,7 +690,19 @@ public class OneFichierCom extends PluginForHost {
             }
             for (int i = 0; i != 2; i++) {
                 br.setFollowRedirects(true);
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+                // dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+
+                try {
+                    logger.info("Connecting to " + dllink);
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+                } catch (final ConnectException e) {
+                    logger.info("Download failed because connection timed out, NOT a JD issue!");
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Connection timed out", 60 * 60 * 1000l);
+                } catch (final Exception e) {
+                    logger.info("Download failed because: " + e.getMessage());
+                    throw e;
+                }
+
                 if (dl.getConnection().getContentType().contains("html")) {
                     if ("http://www.1fichier.com/?c=DB".equalsIgnoreCase(br.getURL())) {
                         dl.getConnection().disconnect();
