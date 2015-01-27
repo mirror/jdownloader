@@ -977,14 +977,16 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
         boolean hass = br.containsHTML("\"dashmpd\": \"https");
 
+        boolean latestWorkaround = this.br.getRegex("\"url_encoded_fmt_stream_map\": (\".*?\")").getMatch(0) == null;
+        ;
         // this work around before private video, as it also shares the same regex as content warning/age-gate
         boolean getVideoInfoWorkaroundUsed = false;
-        if (this.br.containsHTML("age-gate|verify_controversy\\?next_url=")) {
+        if (this.br.containsHTML("age-gate|verify_controversy\\?next_url=") || latestWorkaround) {
             vid.ageCheck = true;
             Browser cw = this.br.cloneBrowser();
             this.handleContentWarning(cw);
 
-            if (cw.containsHTML("age-gate")) {
+            if (cw.containsHTML("age-gate") || latestWorkaround) {
                 // try to bypass
                 getVideoInfoWorkaroundUsed = true;
 
