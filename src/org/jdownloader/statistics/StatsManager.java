@@ -1099,7 +1099,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             public void send(Browser br) {
                 try {
 
-                    new Browser().openGetConnection("hhttp://stats.appwork.org/jcgi/event/track?" + Encoding.urlEncode(path) + "&" + Encoding.urlEncode(JSonStorage.serializeToJson(cvar))).disconnect();
+                    new Browser().openGetConnection("http://stats.appwork.org/jcgi/event/track?" + Encoding.urlEncode(path) + "&" + Encoding.urlEncode(JSonStorage.serializeToJson(cvar))).disconnect();
                 } catch (Throwable e) {
                     e.printStackTrace();
                 }
