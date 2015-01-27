@@ -73,6 +73,11 @@ public class FileSharkPl extends PluginForHost {
         if (br.containsHTML("<li>Trwa pobieranie pliku. Możesz pobierać tylko jeden plik w tym samym czasie.</li>")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Other file is downloading!", 5 * 50 * 1000l);
         }
+        String dailyLimitWarning = br.getRegex("<p class=\"lead text-center alert alert-warning\">(Dzienny limi[t]*? nie pozwala na pobranie pliku. )").getMatch(0);
+        if (dailyLimitWarning != null) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Hoster reports: " + dailyLimitWarning, 60 * 60 * 1000l);
+        }
+
         if (br.containsHTML("Kolejne pobranie możliwe za") || br.containsHTML("Proszę czekać. Pobieranie będzie możliwe za")) {
 
             String waitTime = br.getRegex("Kolejne pobranie możliwe za <span id=\"timeToDownload\">(\\d+)</span>").getMatch(0);
@@ -337,6 +342,7 @@ public class FileSharkPl extends PluginForHost {
         }
         br.setFollowRedirects(false);
         br.getPage("http://fileshark.pl/pobierz/start/" + fileId);
+        long waitTime = checkForErrors();
         String dllink = br.getRedirectLocation();
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
