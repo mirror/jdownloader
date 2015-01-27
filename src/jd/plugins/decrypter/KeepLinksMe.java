@@ -107,8 +107,8 @@ public class KeepLinksMe extends SaveLinksNet {
         captchaRegex.put("qaptcha", "class=\"protected\\-captcha\"><div id=\"QapTcha\"");
         captchaRegex.put("simplecaptcha", "\"http://(www\\.)?keeplinks\\.me/simplecaptcha/captcha\\.php\"");
 
-        final String id = br.getRegex("name=\"id\" id=\"id\" value=\"(\\d+)\"").getMatch(0);
-        if (id == null) {
+        final String hiddenaction = br.getRegex("frmprotect.*?id=\"hiddenaction\" value=\"([^<>\"]*?)\"").getMatch(0);
+        if (hiddenaction == null) {
             return;
         }
 
@@ -122,7 +122,7 @@ public class KeepLinksMe extends SaveLinksNet {
             }
 
             for (int i = 0; i <= 5; i++) {
-                String data = "myhiddenpwd=&hiddenaction=CheckData&hiddencaptcha=1&hiddenpwd=&id=" + id;
+                String data = "myhiddenpwd=&hiddenaction=" + hiddenaction + "&hiddencaptcha=1&hiddenpwd=";
                 if (password) {
                     data += "&link-password=" + getUserInput(null, param);
                 }
@@ -155,7 +155,7 @@ public class KeepLinksMe extends SaveLinksNet {
                     final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                     jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br);
                     String rcID = "6LeuAc4SAAAAAOSry8eo2xW64K1sjHEKsQ5CaS10";
-                    if (id == null) {
+                    if (hiddenaction == null) {
                         return;
                     }
                     rc.setId(rcID);
