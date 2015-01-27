@@ -30,6 +30,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -42,7 +43,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wankoz.com" }, urls = { "http://(www\\.)?wankoz\\.com/videos/\\d+/[a-z0-9\\-_]+/" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wankoz.com" }, urls = { "http://(www\\.|m\\.)?wankoz\\.com/videos/\\d+/[a-z0-9\\-_]+/" }, flags = { 2 })
 public class WankozCom extends PluginForHost {
 
     public WankozCom(PluginWrapper wrapper) {
@@ -53,6 +54,11 @@ public class WankozCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.wankoz.com/1250.php";
+    }
+
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload("http://www.wankoz.com/videos/" + new Regex(link.getDownloadURL(), "wankoz\\.com/videos/(.+)").getMatch(0));
     }
 
     /* Connection stuff */
@@ -68,46 +74,58 @@ public class WankozCom extends PluginForHost {
 
     /* don't touch the following! */
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
+    private String               DLLINK                       = null;
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa != null) {
-            this.login(aa, false);
-            br.getPage(link.getDownloadURL());
-            final String dllink = getDllinkFreeAcc();
-            if (dllink != null) {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                URLConnectionAdapter con = null;
-                try {
-                    try {
-                        con = br2.openGetConnection(dllink);
-                    } catch (final BrowserException e) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    if (!con.getContentType().contains("html")) {
-                        link.setDownloadSize(con.getLongContentLength());
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    link.setProperty("account_free_directlink", dllink);
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (final Throwable e) {
-                    }
-                }
-            }
-        } else {
-            br.getPage(link.getDownloadURL());
-        }
+        String filename;
+        br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<>\"]*?)\\- Wankoz\\.com</title>").getMatch(0);
+        final String video_url_part = new Regex(link.getDownloadURL(), "videos/(\\d+/[a-z0-9\\-_]+)/").getMatch(0);
+        filename = br.getRegex("<title>([^<>\"]*?)\\- Wankoz\\.com</title>").getMatch(0);
+        final Account aa = AccountController.getInstance().getValidAccount(this);
+        if (aa != null) {
+            this.br = new Browser();
+            this.login(aa, false);
+            br.getPage(link.getDownloadURL());
+            DLLINK = getDllinkFreeAcc();
+        } else {
+            /*
+             * We can't easily get the normal downloadlink via normal site but we can get the (eventually sometimes lower quality) mobile
+             * stream-directlink.
+             */
+            br.getHeaders().put("User-Agent", "Mozilla/5.0 (Linux; U; Android 2.2.1; en-us; Nexus One Build/FRG83) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile");
+            br.clearCookies(MAINPAGE);
+            br.getPage("http://m.wankoz.com/videos/" + video_url_part + "/play");
+            DLLINK = br.getRegex("\"(https?://(www\\.)?wankoz\\.com/get_file/[^<>\"]*?)\"></video>").getMatch(0);
+        }
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final Browser br2 = br.cloneBrowser();
+        br2.setFollowRedirects(true);
+        URLConnectionAdapter con = null;
+        try {
+            try {
+                con = br2.openGetConnection(DLLINK);
+            } catch (final BrowserException e) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (!con.getContentType().contains("html")) {
+                link.setDownloadSize(con.getLongContentLength());
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -118,35 +136,30 @@ public class WankozCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        /*
-         * TODO: Find a way to generate correct downloadlinks to be able to download without free account - until then, users simply need to
-         * register a free account and add it to JD to download from this site.
-         */
-        try {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
-            }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, FREE_RESUME, FREE_MAXCHUNKS);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered (free) users");
+        dl.startDownload();
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        dllink = null;
-        if (dllink == null) {
-            dllink = getDllinkFreeAcc();
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+        if (DLLINK == null) {
+            DLLINK = checkDirectLink(downloadLink, directlinkproperty);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        if (DLLINK == null) {
+            DLLINK = getDllinkFreeAcc();
+        }
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
+        downloadLink.setProperty(directlinkproperty, DLLINK == null);
         dl.startDownload();
     }
 

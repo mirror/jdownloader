@@ -29,14 +29,12 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.nativeintegration.LocalBrowser;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -44,42 +42,67 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornsharing.com" }, urls = { "http://(www\\.)?pornsharing\\.com/[A-Za-z0-9\\-_]+v\\d+" }, flags = { 0 })
-public class PornSharingCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "definebabe.com", "definefetish.com" }, urls = { "http://(www\\.)?definebabes?\\.com/video/[a-z0-9]+/[a-z0-9\\-]+/", "http://(www\\.)?definefetish\\.com/video/[a-z0-9]+/[a-z0-9\\-]+/" }, flags = { 0, 0 })
+public class DefineBabeCom extends PluginForHost {
 
-    public PornSharingCom(PluginWrapper wrapper) {
+    public DefineBabeCom(PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    private String DLLINK = null;
-
-    @Override
-    public String getAGBLink() {
-        return "http://pornsharing.com/pages/p11_terms-of-use.html";
+        /* Don't overload the server. */
+        this.setStartIntervall(3 * 1000l);
     }
 
     /* Tags: TubeContext@Player */
     /* Sites using the same player: pornsharing.com, [definebabes.com, definebabe.com, definefetish.com] */
 
-    @SuppressWarnings({ "unchecked", "deprecation" })
+    /* Extension which will be used if no correct extension is found */
+    private static final String  default_Extension = ".mp4";
+    /* Connection stuff */
+    private static final boolean free_resume       = true;
+    private static final int     free_maxchunks    = 0;
+    private static final int     free_maxdownloads = -1;
+
+    private String               DLLINK            = null;
+
+    @Override
+    public String getAGBLink() {
+        return "http://www.definebabe.com/about/privacy/";
+    }
+
+    public void correctDownloadLink(final DownloadLink link) {
+        /* Definebabes.com simply redirecty to definebabe.com */
+        link.setUrlDownload(link.getDownloadURL().replace("definebabes.com/", "definebabe.com/"));
+    }
+
+    @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        final String lid = new Regex(downloadLink.getDownloadURL(), "v(\\d+)").getMatch(0);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Movie has been deleted<") || lid == null) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("Please, call later\\.")) {
+            downloadLink.getLinkStatus().setStatusText("Server is busy");
+            return AvailableStatus.UNCHECKABLE;
         }
-        String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        DLLINK = checkDirectLink(downloadLink, "directlink");
+        String filename = br.getRegex("<strong style=\"font:bold 18px Verdana;\">([^<>]*?)</strong>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
+        }
         if (DLLINK == null) {
-            br.getPage("http://pornsharing.com/videoplayer/nvplaylist_ps_beta.php?hq=1&autoplay=0&id=" + lid);
+            String video_id = br.getRegex("video_id=(\\d+)").getMatch(0);
+            if (video_id == null) {
+                video_id = br.getRegex("id=\\'comment_object_id\\' value=\"(\\d+)\"").getMatch(0);
+            }
+            if (video_id == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage("http://www." + downloadLink.getHost() + "/playlist/playlist.php?type=regular&video_id=" + video_id);
             final String decrypted = decryptRC4HexString("TubeContext@Player", br.toString().trim());
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(decrypted);
             final LinkedHashMap<String, Object> videos = (LinkedHashMap<String, Object>) entries.get("videos");
-            /* Usually only 480 + 320 is available */
-            final String[] qualities = { "1080p", "720p", "480p", "360", "320p", "240p", "180p" };
+            /* Usually only 360 is available */
+            final String[] qualities = { "1080p", "720p", "480p", "360p", "320p", "240p", "180p" };
             for (final String currentqual : qualities) {
                 final LinkedHashMap<String, Object> quality_info = (LinkedHashMap<String, Object>) videos.get("_" + currentqual);
                 if (quality_info != null) {
@@ -92,7 +115,7 @@ public class PornSharingCom extends PluginForHost {
             }
             DLLINK = Encoding.htmlDecode(DLLINK);
         }
-        if (filename == null) {
+        if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
@@ -100,8 +123,9 @@ public class PornSharingCom extends PluginForHost {
         filename = filename.trim();
         filename = encodeUnicode(filename);
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".mp4";
+        /* Make sure that we get a correct extension */
+        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}") || DLLINK.contains(default_Extension)) {
+            ext = default_Extension;
         }
         if (!filename.endsWith(ext)) {
             filename += ext;
@@ -113,13 +137,7 @@ public class PornSharingCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                try {
-                    /* @since JD2 */
-                    con = br.openHeadConnection(DLLINK);
-                } catch (final Throwable t) {
-                    /* Not supported in old 0.9.581 Stable */
-                    con = br.openGetConnection(DLLINK);
-                }
+                con = br2.openGetConnection(DLLINK);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -141,31 +159,21 @@ public class PornSharingCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (br.containsHTML("Please, call later\\.")) {
+            downloadLink.getLinkStatus().setStatusText("Server is busy");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is busy", 5 * 60 * 1000l);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            try {
-                final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-                con.disconnect();
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            }
-        }
-        return dllink;
     }
 
     /* Avoid chars which are not allowed in filenames under certain OS' */
@@ -175,13 +183,18 @@ public class PornSharingCom extends PluginForHost {
         output = output.replace("|", "¦");
         output = output.replace("<", "[");
         output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
+        output = output.replace("/", "/");
+        output = output.replace("\\", "");
         output = output.replace("*", "#");
         output = output.replace("?", "¿");
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return free_maxdownloads;
     }
 
     /**
@@ -228,11 +241,6 @@ public class PornSharingCom extends PluginForHost {
                 return;
             }
         }
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

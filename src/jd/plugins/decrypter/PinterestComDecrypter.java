@@ -182,7 +182,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
          * Also possible using json of P.start.start( to get the first 25 entries: resourceDataCache --> Last[] --> data --> Here we go --->
          * But I consider this as an unsafe method.
          */
-        final String[] linkinfo = br.getRegex("<div class=\"bulkEditPinWrapper\">(.*?)id=\"Pin\\-\\d+\"").getColumn(0);
+        final String[] linkinfo = br.getRegex("<div class=\"bulkEditPinWrapper\">(.*?)class=\"creditTitle\"").getColumn(0);
         if (linkinfo == null || linkinfo.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             decryptedLinks = null;
