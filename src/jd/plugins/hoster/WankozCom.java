@@ -89,6 +89,7 @@ public class WankozCom extends PluginForHost {
         filename = br.getRegex("<title>([^<>\"]*?)\\- Wankoz\\.com</title>").getMatch(0);
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
+            /* Don't mess up previous cookies + login cookies! */
             this.br = new Browser();
             this.login(aa, false);
             br.getPage(link.getDownloadURL());
