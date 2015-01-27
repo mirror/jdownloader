@@ -58,7 +58,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptobox.com" }, urls = { "https?://(www\\.)?(uptobox|uptostream)\\.com/(?:iframe/)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptobox.com" }, urls = { "https?://(?:www\\.)?(uptobox|uptostream)\\.com/(?:iframe/)?[a-z0-9]{12}" }, flags = { 2 })
 public class UpToBoxCom extends PluginForHost {
 
     private final static String  SSL_CONNECTION               = "SSL_CONNECTION";
@@ -93,7 +93,9 @@ public class UpToBoxCom extends PluginForHost {
     @Override
     public void correctDownloadLink(DownloadLink link) {
         // link.setUrlDownload(COOKIE_HOST + "/" + new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0));
-        link.setUrlDownload(link.getDownloadURL().replace("uptostream", "uptobox").replace("/iframe/", "/")); // Ensure https support
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("://www\\.", "://").replace("uptostream", "uptobox").replace("/iframe/", "/")); // Ensure
+        // https
+        // support
     }
 
     @Override
@@ -141,6 +143,7 @@ public class UpToBoxCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        correctDownloadLink(link);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBrowser();
@@ -412,8 +415,12 @@ public class UpToBoxCom extends PluginForHost {
         }
     }
 
-    public String getDllink() {
+    public String getDllink() throws Exception {
         String dllink = br.getRedirectLocation();
+        if (dllink != null && dllink.endsWith("/" + new Regex(this.getDownloadLink().getDownloadURL(), "uptobox.com/([A-Za-z0-9]{12})$").getMatch(0))) {
+            br.getPage(dllink);
+            return getDllink();
+        }
         if (dllink == null) {
             dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
             if (dllink == null) {
