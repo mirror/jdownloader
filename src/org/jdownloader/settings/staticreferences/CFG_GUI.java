@@ -2,37 +2,20 @@ package org.jdownloader.settings.staticreferences;
 
 import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.ValidationException;
-import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.EnumKeyHandler;
 import org.appwork.storage.config.handler.IntegerKeyHandler;
-import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.ListHandler;
 import org.appwork.storage.config.handler.LongKeyHandler;
 import org.appwork.storage.config.handler.ObjectKeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
-import org.jdownloader.statistics.StatsManager;
 
 public class CFG_GUI {
     public static void main(String[] args) {
         ConfigUtils.printStaticMappings(GraphicalUserInterfaceSettings.class);
 
-        ULBANNER_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
-            @Override
-            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                if (Boolean.FALSE == newValue) {
-                    StatsManager.I().track("various/UlBANNER_DISABLED");
-                }
-            }
-
-            @Override
-            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
-            }
-        });
     }
 
     // Static Mappings for interface org.jdownloader.settings.GraphicalUserInterfaceSettings
