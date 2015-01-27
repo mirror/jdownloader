@@ -70,9 +70,9 @@ public class Main {
          * previous implementation silently ignored such a situation. If the previous behavior is desired, you can use the new system
          * property, java.util.Arrays.useLegacyMergeSort, to restore previous mergesort behavior. Nature of Incompatibility: behavioral RFE:
          * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6804124
-         * 
+         *
          * Sorting live data (values changing during sorting) violates the general contract
-         * 
+         *
          * java.lang.IllegalArgumentException: Comparison method violates its general contract!
          */
         System.setProperty("java.util.Arrays.useLegacyMergeSort", "true");
@@ -354,6 +354,9 @@ public class Main {
                     System.setProperty("sun.java2d.d3d", "true");
                 } else {
                     System.setProperty("sun.java2d.d3d", "false");
+                    // 4455041 - Even when ddraw is disabled, ddraw.dll is loaded when
+                    // pixel format calls are made.
+                    System.setProperty("sun.awt.nopixfmt", "true");
                 }
             }
         } catch (final Throwable e) {
