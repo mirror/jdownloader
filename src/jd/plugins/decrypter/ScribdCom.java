@@ -38,11 +38,16 @@ public class ScribdCom extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final String type_invalid     = "https?://(www\\.)?((de|ru|es)\\.)?scribd\\.com/(search|get\\-app|password|login|publishers|options|contact|mobile|kindlefire)*?";
     private static final String type_collections = "https?://(www\\.)?((de|ru|es)\\.)?scribd\\.com/collections/\\d+/[A-Za-z0-9\\-_%]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("http://", "https://");
+        if (parameter.matches(type_invalid)) {
+            decryptedLinks.add(getOfflineLink(parameter));
+            return decryptedLinks;
+        }
         br.setFollowRedirects(true);
         String fpname;
         final FilePackage fp = FilePackage.getInstance();
@@ -134,6 +139,10 @@ public class ScribdCom extends PluginForDecrypt {
             final String doccount = br.getRegex("class=\"document_count\">\\((\\d+)\\)</span>").getMatch(0);
             if (doccount != null) {
                 documentsNum = Integer.parseInt(doccount);
+                if (documentsNum == 0) {
+                    decryptedLinks.add(getOfflineLink(parameter));
+                    return decryptedLinks;
+                }
             } else {
                 documentsNum = 36;
             }

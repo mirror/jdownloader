@@ -66,6 +66,7 @@ public class Tube8Com extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("/embed", ""));
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         if (setEx) {
@@ -208,6 +209,10 @@ public class Tube8Com extends PluginForHost {
         if ("1".equals(isEncrypted) || Boolean.parseBoolean(isEncrypted)) {
             String decrypted = values.get("video_url");
             String key = values.get("video_title");
+            /* Dirty workaround, needed for links with cyrillic titles/filenames. */
+            if (key == null) {
+                key = "";
+            }
             try {
                 dllink = new BouncyCastleAESCounterModeDecrypt().decrypt(decrypted, key, 256);
             } catch (Throwable e) {
