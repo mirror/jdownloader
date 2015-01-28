@@ -73,7 +73,7 @@ public class DownloadLinkStorable implements Storable {
         if (crypt()) {
             return null;
         }
-        Map<String, Object> ret = link.getProperties();
+        final Map<String, Object> ret = link.getProperties();
         if (ret == null || ret.isEmpty()) {
             return null;
         }
@@ -89,7 +89,7 @@ public class DownloadLinkStorable implements Storable {
 
     /**
      * keep for compatibility
-     * 
+     *
      * @return
      */
     @Deprecated
@@ -108,7 +108,7 @@ public class DownloadLinkStorable implements Storable {
     }
 
     public String getFinalLinkState() {
-        FinalLinkState state = link.getFinalLinkState();
+        final FinalLinkState state = link.getFinalLinkState();
         if (state != null) {
             return state.name();
         }
@@ -118,7 +118,7 @@ public class DownloadLinkStorable implements Storable {
     public void setLinkStatus(HashMap<String, String> status) {
         if (status != null) {
             try {
-                int linkStatus = Integer.parseInt(status.get("status"));
+                final int linkStatus = Integer.parseInt(status.get("status"));
                 if (linkStatus == LinkStatus.FINISHED || hasStatus(linkStatus, LinkStatus.FINISHED)) {
                     link.setFinalLinkState(FinalLinkState.FINISHED);
                 } else if (linkStatus == LinkStatus.ERROR_FILE_NOT_FOUND || hasStatus(linkStatus, LinkStatus.ERROR_FILE_NOT_FOUND)) {
@@ -153,18 +153,21 @@ public class DownloadLinkStorable implements Storable {
     }
 
     public String getURL() {
-        if (crypt()) {
-            byte[] crypted = JDCrypt.encrypt(link.getPluginPatternMatcher(), KEY);
+        final String url = link.getPluginPatternMatcher();
+        if (StringUtils.isNotEmpty(url) && crypt()) {
+            final byte[] crypted = JDCrypt.encrypt(url, KEY);
             return CRYPTED + Base64.encodeToString(crypted, false);
         } else {
-            return link.getPluginPatternMatcher();
+            return url;
         }
     }
 
     public void setURL(String url) {
-        if (url.startsWith(CRYPTED)) {
-            byte[] bytes = Base64.decodeFast(url.substring(CRYPTED.length()));
-            String url2 = JDCrypt.decrypt(bytes, KEY);
+        if (StringUtils.isEmpty(url)) {
+            link.setPluginPatternMatcher(null);
+        } else if (url.startsWith(CRYPTED)) {
+            final byte[] bytes = Base64.decodeFast(url.substring(CRYPTED.length()));
+            final String url2 = JDCrypt.decrypt(bytes, KEY);
             link.setPluginPatternMatcher(url2);
         } else {
             link.setPluginPatternMatcher(url);
@@ -259,11 +262,11 @@ public class DownloadLinkStorable implements Storable {
      */
     public String getPropertiesString() {
         if (crypt()) {
-            Map<String, Object> properties = link.getProperties();
+            final Map<String, Object> properties = link.getProperties();
             if (properties == null || properties.isEmpty()) {
                 return null;
             }
-            byte[] crypted = JDCrypt.encrypt(JSonStorage.serializeToJson(properties), KEY);
+            final byte[] crypted = JDCrypt.encrypt(JSonStorage.serializeToJson(properties), KEY);
             return CRYPTED + Base64.encodeToString(crypted, false);
         }
         return null;
@@ -275,8 +278,8 @@ public class DownloadLinkStorable implements Storable {
      */
     public void setPropertiesString(String propertiesString) {
         if (propertiesString != null && propertiesString.startsWith(CRYPTED)) {
-            byte[] bytes = Base64.decodeFast(propertiesString.substring(CRYPTED.length()));
-            Map<String, Object> properties = JSonStorage.restoreFromString(JDCrypt.decrypt(bytes, KEY), new TypeRef<org.jdownloader.myjdownloader.client.json.JsonMap>() {
+            final byte[] bytes = Base64.decodeFast(propertiesString.substring(CRYPTED.length()));
+            final Map<String, Object> properties = JSonStorage.restoreFromString(JDCrypt.decrypt(bytes, KEY), new TypeRef<org.jdownloader.myjdownloader.client.json.JsonMap>() {
             });
             link.setProperties(properties);
         }
