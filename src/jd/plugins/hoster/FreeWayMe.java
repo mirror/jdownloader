@@ -118,24 +118,26 @@ public class FreeWayMe extends PluginForHost {
     public static final String                             ACC_PROPERTY_UNKOWN_FAILS             = "timesfailedfreewayme_unknown";
     public static final String                             ACC_PROPERTY_CURL_FAIL_RESOLVE_HOST   = "timesfailedfreewayme_curl_resolve_host";
 
+    private static final String                            API_ENDPOINT                          = "https://download.free-way.me/";
+
     public static AtomicBoolean                            DIAGNOSTIC                            = new AtomicBoolean(false);
 
     // list of hosts who don't support resuming downloads
     private static final List<String>                      unresumableHosts                      = new ArrayList<String>() {
-                                                                                                     {
-                                                                                                         add("netload.in");
-                                                                                                     }
-                                                                                                 };
+        {
+            add("netload.in");
+        }
+    };
     // list of hosts which currently support chunks
     private static final List<String>                      multipleChunksAllowed                 = new ArrayList<String>() {
-                                                                                                     {
-                                                                                                         add("ul.to");
-                                                                                                         add("uploaded.to");
-                                                                                                         add("uploaded.net");
-                                                                                                         add("oboom.com");
-                                                                                                         add("uploadable.ch");
-                                                                                                     }
-                                                                                                 };
+        {
+            add("ul.to");
+            add("uploaded.to");
+            add("uploaded.net");
+            add("oboom.com");
+            add("uploadable.ch");
+        }
+    };
 
     /**
      * @author flubshi
@@ -425,7 +427,7 @@ public class FreeWayMe extends PluginForHost {
         String hosts[] = null;
         ac.setProperty("multiHostSupport", Property.NULL);
         // check if account is valid
-        getPage2FA("https://www.free-way.me/ajax/jd.php?id=1&user=" + username + "&pass=" + pass + "&encoded");
+        getPage2FA(API_ENDPOINT + "ajax/jd.php?id=1&user=" + username + "&pass=" + pass + "&encoded");
         // "Invalid login" / "Banned" / "Valid login"
         if (br.toString().equalsIgnoreCase("Valid login")) {
             logger.info("{fetchAccInfo} Account " + username + " is valid");
@@ -450,7 +452,7 @@ public class FreeWayMe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("ERROR_UNKNOWN_FULL"), PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         // account should be valid now, let's get account information:
-        String accInfoAPIResp = getPage2FA("https://www.free-way.me/ajax/jd.php?id=4&user=" + username + "&pass=" + pass + "&encoded");
+        String accInfoAPIResp = getPage2FA(API_ENDPOINT + "ajax/jd.php?id=4&user=" + username + "&pass=" + pass + "&encoded");
 
         int maxPremi = 1;
         final String maxPremApi = getJson(accInfoAPIResp, "parallel");
@@ -496,7 +498,7 @@ public class FreeWayMe extends PluginForHost {
                              * we get the msg twice (see below), because we need it final. A conditional get in this case is not possible.
                              * But it shouldn't matter, because no one should enable dialog- and bubblenotify...
                              */
-                            final String msg = br.getPage("https://www.free-way.me/ajax/jd.php?id=8");
+                            final String msg = br.getPage(API_ENDPOINT + "ajax/jd.php?id=8");
                             BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
 
                                 @Override
@@ -507,7 +509,7 @@ public class FreeWayMe extends PluginForHost {
                         }
 
                         if (dialogNotify) {
-                            final String msg = br.getPage("https://www.free-way.me/ajax/jd.php?id=8");
+                            final String msg = br.getPage(API_ENDPOINT + "ajax/jd.php?id=8");
                             Thread t = new Thread(new Runnable() {
                                 public void run() {
                                     MessageDialogImpl dialog = new MessageDialogImpl(UIOManager.LOGIC_COUNTDOWN, msg);
@@ -598,7 +600,7 @@ public class FreeWayMe extends PluginForHost {
         account.setProperty("acctype", accountType);
         account.setProperty("acctype_text", accountType_text);
         // check if beta-account is enabled
-        String hostsUrl = "https://www.free-way.me/ajax/jd.php?id=3";
+        String hostsUrl = API_ENDPOINT + "ajax/jd.php?id=3";
         if (this.getPluginConfig().getBooleanProperty(BETAUSER, false)) {
             hostsUrl += "&user=" + username + "&pass=" + pass + "&encoded&beta=1";
             logger.info("{fetchAccInfo} free-way beta account enabled");
@@ -683,7 +685,7 @@ public class FreeWayMe extends PluginForHost {
 
         logger.info("{handleMultiHost} Try download with account " + acc.getUser() + " file: " + link.getDownloadURL());
 
-        String dllink = "https://download.free-way.me/load2.php?multiget=2&user=" + user + "&pw=" + pw + "&dl_pw=" + dlPw + "&url=" + url + "&encodedJD";
+        String dllink = API_ENDPOINT + "load2.php?multiget=2&user=" + user + "&pw=" + pw + "&dl_pw=" + dlPw + "&url=" + url + "&encodedJD";
 
         if (this.getPluginConfig().getBooleanProperty(BETAUSER, false)) {
             dllink += "&beta=1";
