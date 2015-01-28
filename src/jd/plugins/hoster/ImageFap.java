@@ -186,13 +186,14 @@ public class ImageFap extends PluginForHost {
                 }
                 downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
             } else {
-                if (br.getRedirectLocation() != null) {
-                    if (!br.getRedirectLocation().contains("/photo/")) {
-                        br.getPage(br.getRedirectLocation());
+                final String location = br.getRedirectLocation();
+                if (location != null) {
+                    if (!location.contains("/photo/")) {
+                        br.getPage(location);
                     }
-                    logger.info("Setting new downloadUrl: " + br.getRedirectLocation());
-                    downloadLink.setUrlDownload(br.getRedirectLocation());
-                    br.getPage(downloadLink.getDownloadURL());
+                    logger.info("Setting new downloadUrl: " + location);
+                    downloadLink.setUrlDownload(location);
+                    br.getPage(location);
                 }
                 if (br.containsHTML("(>The image you are trying to access does not exist|<title> \\(Picture 1\\) uploaded by  on ImageFap\\.com</title>)")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
