@@ -25,7 +25,7 @@ public class Recaptcha2Helper {
 
     private String  siteKey;
     private Browser br;
-    private String  version  = "r20150105184127";
+    private String  version  = "r20150122184957";
     private String  language = "en";
 
     // private HashMap<String, String> apiProperties;
@@ -214,18 +214,18 @@ public class Recaptcha2Helper {
         // botGuard not supported
         botGuardString = "!A";
 
-        final String rcFrameUrl = "https://www.google.com/recaptcha/api2/frame?c=" + tokenForFrameLoading + "&hl=" + language + "&v=" + version + "&bg=" + botGuardString + "&usegapi=1&jsh=" + Encoding.urlEncode(jshString);
+        final String rcFrameUrl = "https://www.google.com/recaptcha/api2/frame?c=" + tokenForFrameLoading + "&hl=" + language + "&k=" + siteKey + "&v=" + version + "&bg=" + botGuardString + "&usegapi=1&jsh=" + Encoding.urlEncode(jshString);
 
         br.getPage(rcFrameUrl);
 
         tokenToReload = unjsonify(br.getRegex("\\[\\\\x22finput\\\\x22\\,\\s*\\\\x22([^\\\\]+)").getMatch(0));
-        tokenToReloadFbg = unjsonify(br.getRegex("\\[\\\\x22asconf\\\\x22\\]\\\\n\\]\\\\n\\,\\\\x22([^\\\\]+)").getMatch(0));
+        tokenToReloadFbg = unjsonify(br.getRegex(".*\\\\x22(.*?)\\\\x22\\]\\\\n\"\\);").getMatch(0));
 
-        br.postPage("https://www.google.com/recaptcha/api2/reload", "c=" + tokenToReload + "&reason=fi&fbg=" + tokenToReloadFbg);
+        br.postPage("https://www.google.com/recaptcha/api2/reload?k=" + siteKey, "c=" + tokenToReload + "&reason=fi&fbg=" + tokenToReloadFbg);
         tokenForCaptchaChallengePayload = unjsonify(br.getRegex("\\[\"rresp\",\\s*\"([^\"]+)").getMatch(0));
 
         timeImageLoading = System.currentTimeMillis();
-        return "https://www.google.com/recaptcha/api2/payload?c=" + tokenForCaptchaChallengePayload;
+        return "https://www.google.com/recaptcha/api2/payload?c=" + tokenForCaptchaChallengePayload + "&k=" + siteKey;
     }
 
     public String getResponseToken() {
@@ -242,7 +242,7 @@ public class Recaptcha2Helper {
 
         final long timeToSolve = System.currentTimeMillis() - timeImageLoading;
         final long timeToSolveMore = timeToSolve + (long) (Math.random() * 500);
-        br.postPage("https://www.google.com/recaptcha/api2/userverify", "c=" + tokenForCaptchaChallengePayload + "&response=" + Encoding.Base64Encode(responseJson) + "&t=" + timeToSolve + "&ct=" + timeToSolveMore + "&bg=" + botGuardString);
+        br.postPage("https://www.google.com/recaptcha/api2/userverify?k=" + siteKey, "c=" + tokenForCaptchaChallengePayload + "&response=" + Encoding.Base64Encode(responseJson) + "&t=" + timeToSolve + "&ct=" + timeToSolveMore + "&bg=" + botGuardString);
         String[] responseData = br.getRegex("\\[\"uvresp\"\\s*,\\s*\"([^\"]+)\"\\s*\\,\\s*(\\d*)\\s*\\,\\s*(\\d*)").getRow(0);
         responseToken = responseData[0];
         successIdentifier = responseData[1].length() > 0 ? Integer.parseInt(responseData[1]) : 0;
