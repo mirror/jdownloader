@@ -47,6 +47,8 @@ public class MultihostersCom extends PluginForHost {
         this.enablePremium("http://www.multihosters.com/Members/SelectProduct.aspx");
     }
 
+    /* Important - all of these belong together: zevera.com, multihosters.com, putdrive.com(?!) */
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         logger.info("Multihosters: Accountinfo called");

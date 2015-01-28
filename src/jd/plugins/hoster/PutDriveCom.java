@@ -42,7 +42,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision: 26673$", interfaceVersion = 3, names = { "putdrive.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class PutDriveCom extends PluginForHost {
 
-    // Based on API: http://easyfiles.pl/api_dokumentacja.php?api_en=1
+    /* Important - all of these belong together: zevera.com, multihosters.com, putdrive.com(?!) */
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            NOCHUNKS           = "NOCHUNKS";
 

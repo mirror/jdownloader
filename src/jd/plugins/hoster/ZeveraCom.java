@@ -50,6 +50,7 @@ public class ZeveraCom extends PluginForHost {
 
     // DEV NOTES
     // supports last09 based on pre-generated links and jd2
+    /* Important - all of these belong together: zevera.com, multihosters.com, putdrive.com(?!) */
 
     private static final String                            mName              = "zevera.com";
     private static final String                            NICE_HOSTproperty  = mName.replaceAll("(\\.|\\-)", "");

@@ -38,12 +38,22 @@ public class MgfpCm extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final String type_invalid = "https?://(www\\.)?imagefap\\.com/gallery/search=.+";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> allPages = new ArrayList<String>();
         allPages.add("0");
         br.setFollowRedirects(false);
         String parameter = param.toString();
+        if (parameter.matches(type_invalid)) {
+            final DownloadLink link = createDownloadlink("http://imagefap.com/imagedecrypted/" + new Random().nextInt(1000000));
+            link.setFinalFileName(new Regex(parameter, "imagefap\\.com/(.+)").getMatch(0));
+            link.setAvailable(false);
+            link.setProperty("offline", true);
+            decryptedLinks.add(link);
+            return decryptedLinks;
+        }
         if (parameter.matches("http://(www\\.)?imagefap\\.com/photo/\\d+")) {
             final DownloadLink link = createDownloadlink("http://imagefap.com/imagedecrypted/" + new Regex(parameter, "(\\d+)$").getMatch(0));
             try {

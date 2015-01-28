@@ -239,6 +239,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             // qx[3] = frameSize (\d+x\d+)
             // qx[4] = bitrate (\d+)
             // qx[5] = fileSize (\d [a-zA-Z]{2})
+            // qx[6] = Codec
             ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
             HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
             int format = 0;
@@ -300,6 +301,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 link.setProperty("videoID", ID);
                 link.setProperty("videoFrameSize", quality[3]);
                 link.setProperty("videoBitrate", quality[4]);
+                link.setProperty("videoCodec", quality[6]);
                 try {
                     link.setLinkID(linkdupeid);
                     link.setContentUrl(cleanVimeoURL);

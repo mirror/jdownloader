@@ -91,7 +91,7 @@ public class PutStreamCom extends PluginForHost {
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.6
-    // mods: getDllink[Added 1 additional RegEx]
+    // mods: getDllink[Added 1 additional RegEx], requestFileInformation
     // limit-info:
     // protocol: no https
     // captchatype: null
@@ -130,7 +130,7 @@ public class PutStreamCom extends PluginForHost {
         prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired|name=\"fname\" value=\"\")").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
