@@ -20,10 +20,12 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "efukt.com" }, urls = { "http://(www\\.)?efukt\\.com/(\\d+[A-Za-z0-9_\\-]+\\.html|out\\.php\\?id=\\d+)" }, flags = { 0 })
@@ -45,15 +47,41 @@ public class EfuktComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(redirect));
             return decryptedLinks;
         }
-        final DownloadLink main = createDownloadlink(parameter.replace("efukt.com/", "efuktdecrypted.com/"));
-        if (br.getURL().equals("http://efukt.com/")) {
-            main.setFinalFileName(new Regex(parameter, "https?://efukt\\.com/(.+)").getMatch(0));
-            main.setAvailable(false);
-            main.setProperty("offline", true);
+        if (br.containsHTML("flashplayer")) {
+            final DownloadLink main = createDownloadlink(parameter.replace("efukt.com/", "efuktdecrypted.com/"));
+            if (br.getURL().equals("http://efukt.com/")) {
+                main.setFinalFileName(new Regex(parameter, "https?://efukt\\.com/(.+)").getMatch(0));
+                main.setAvailable(false);
+                main.setProperty("offline", true);
+                decryptedLinks.add(main);
+                return decryptedLinks;
+            }
             decryptedLinks.add(main);
-            return decryptedLinks;
+        } else {
+            /* We should have a picture gallery */
+            String title = br.getRegex("id=\"movie_title\" style=\"[^<>\"]+\">([^<>]*?)</div>").getMatch(0);
+            if (title == null) {
+                title = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)").getMatch(0);
+            }
+            if (title == null) {
+                title = new Regex(parameter, "efukt\\.com/(\\d+[A-Za-z0-9_\\-]+)\\.html").getMatch(0);
+            }
+            title = Encoding.htmlDecode(title);
+            title = title.trim();
+            final String[] pics = br.getRegex("<a target=\"_blank\" href=\"(/content/[^<>\"]*?)\"").getColumn(0);
+            if (pics == null || pics.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (final String pic : pics) {
+                final DownloadLink dl = createDownloadlink("directhttp://http://efukt.com" + pic);
+                decryptedLinks.add(dl);
+            }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(title);
+            fp.addLinks(decryptedLinks);
+
         }
-        decryptedLinks.add(main);
 
         return decryptedLinks;
     }

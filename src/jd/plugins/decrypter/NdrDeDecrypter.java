@@ -56,7 +56,8 @@ public class NdrDeDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(true);
         /* API - well, basically returns same html code as if we simply access the normal link... */
         br.getPage("http://www.ndr.de/epg/" + url_id + ".json");
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        /* Offline | livestream | no stream */
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("cid:[\t\n\r ]*?\"livestream") || !br.containsHTML("\"player info\"")) {
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
             offline.setAvailable(false);
