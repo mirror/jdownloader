@@ -39,7 +39,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rutube.ru" }, urls = { "http://((www\\.)?rutube\\.ru/(tracks/\\d+\\.html|(play/|video/)?embed/\\d+|video/[a-f0-9]{32})|video\\.rutube.ru/[a-f0-9]{32})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rutube.ru" }, urls = { "http://((www\\.)?rutube\\.ru/(tracks/\\d+\\.html|(play/|video/)?embed/\\d+|video/[a-f0-9]{32})|video\\.rutube.ru/([a-f0-9]{32}|\\d+))" }, flags = { 0 })
 public class RuTubeRuDecrypter extends PluginForDecrypt {
 
     public RuTubeRuDecrypter(PluginWrapper wrapper) {
@@ -57,6 +57,9 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
 
         uid = new Regex(parameter, "/([a-f0-9]{32})").getMatch(0);
         vid = new Regex(parameter, "rutube\\.ru/(?:play/|video/)?embed/(\\d+)").getMatch(0);
+        if (vid == null) {
+            vid = new Regex(parameter, "video\\.rutube\\.ru/(\\d+)").getMatch(0);
+        }
         if (uid == null) {
             br.setFollowRedirects(true);
             if (vid != null) {
