@@ -63,7 +63,10 @@ public class YourPornTubeCom extends PluginForHost {
         if (!br.getURL().contains("yourporntube.com/video/") || br.containsHTML("<title>404: Page Not Found</title>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>(.*?)\\s*?\\|\\s*?Your Porn Tube<").getMatch(0);
+        String filename = br.getRegex("class=\"title-video-player\"><h2>([^<>\"]*?)<").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?) \\| Free Porn</title>").getMatch(0);
+        }
         dllink = br.getRegex("clip: \\{\\s*url: '(.*?)',").getMatch(0);
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -36,7 +36,9 @@ public class VidsMySpaceCom extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         // correction of old embded link format.
         String[] movuid = new Regex(link.getDownloadURL(), "(https?).+embed\\.aspx/m=(\\d+)").getRow(0);
-        if (movuid != null && movuid.length == 2) link.setUrlDownload(movuid[0] + "://myspace.com/video/" + movuid[1]);
+        if (movuid != null && movuid.length == 2) {
+            link.setUrlDownload(movuid[0] + "://myspace.com/video/" + movuid[1]);
+        }
     }
 
     public VidsMySpaceCom(PluginWrapper wrapper) {
@@ -61,7 +63,9 @@ public class VidsMySpaceCom extends PluginForHost {
         try {
             con = br.openGetConnection(link.getDownloadURL());
             // This usually only happens for embed links
-            if (con.getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (con.getResponseCode() == 404 || con.getResponseCode() == 500) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             br.followConnection();
         } finally {
             try {
@@ -69,12 +73,18 @@ public class VidsMySpaceCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
-        if (br.getURL().contains("myspace.com/error")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (!br.getURL().matches("https?://(www\\.)?(myspace\\.com/(([a-z0-9\\-_\\.]+/)?video/[a-z0-9\\-_]+/\\d+|[a-z0-9\\-_]+/music/song/[a-z0-9\\-_\\.]+)|mediaservices\\.myspace\\.com/services/media/embed\\.aspx/m=\\d+)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("myspace.com/error")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (!br.getURL().matches("https?://(www\\.)?(myspace\\.com/(([a-z0-9\\-_\\.]+/)?video/[a-z0-9\\-_]+/\\d+|[a-z0-9\\-_]+/music/song/[a-z0-9\\-_\\.]+)|mediaservices\\.myspace\\.com/services/media/embed\\.aspx/m=\\d+)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = null;
         if (link.getDownloadURL().matches(SONGURL)) {
             filename = br.getRegex("<meta property=\"og:title\" content=\"([^\"]+)\"").getMatch(0);
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".m4a");
         } else {
             if (br.containsHTML("class=\"lock_16\"")) {
@@ -83,7 +93,9 @@ public class VidsMySpaceCom extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
             filename = br.getRegex("<meta property=\"og:title\" content=\"([^\"]+) Video by[^\"]+\"").getMatch(0);
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
         }
         return AvailableStatus.TRUE;
@@ -100,7 +112,9 @@ public class VidsMySpaceCom extends PluginForHost {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
-                    if (e instanceof PluginException) throw (PluginException) e;
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "+18 Videos are only downloadable for registered users");
             }
@@ -109,7 +123,9 @@ public class VidsMySpaceCom extends PluginForHost {
             br.postPage("https://myspace.com/ajax/streamurl", "mediaType=video&mediaId=" + new Regex(link.getDownloadURL(), "(\\d+)").getMatch(0));
             dlurl = br.getRegex("\"(rtmp[^<>\"]*?)\"").getMatch(0);
         }
-        if (dlurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dlurl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlurl, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             dl.getConnection().disconnect();

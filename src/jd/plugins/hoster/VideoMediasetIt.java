@@ -50,6 +50,7 @@ public class VideoMediasetIt extends PluginForHost {
 
     // Important info: Can only handle normal videos, NO
     // "Microsoft Silverlight forced" videos!
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         final String streamID = new Regex(downloadLink.getDownloadURL(), "video\\.mediaset\\.it/video/[^<>/\"]*?/[^<>/\"]*?/(\\d+)/").getMatch(0);
@@ -71,7 +72,7 @@ public class VideoMediasetIt extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText("JDownloader can't download MS Silverlight videos!");
             return AvailableStatus.TRUE;
         }
-        String filename = br.getRegex("<title>([^<>]*?)\\- Video Mediaset</title>").getMatch(0);
+        String filename = br.getRegex("content=\"([^<>\"]*?) \\| Video Mediaset\" name=\"title\"").getMatch(0);
         filename = Encoding.htmlDecode(filename.trim()).replace("\"", "'");
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

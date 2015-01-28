@@ -60,6 +60,11 @@ public class VideoOnlineUaDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http:" + externID));
             return decryptedLinks;
         }
+        externID = br.getRegex("<embed src=\\'(https?://tsn\\.ua/bin/player/embed\\.php/[^<>\"]*?)\\'").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
         final DownloadLink main = createDownloadlink("http://video.online.uadecrypted/" + new Regex(parameter, "(\\d+)$").getMatch(0));
         decryptedLinks.add(main);
         return decryptedLinks;

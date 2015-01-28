@@ -748,6 +748,7 @@ public class VKontakteRuHoster extends PluginForHost {
         return "JDownloader's Vk Plugin helps downloading all sorts of media from vk.com.";
     }
 
+    /* Default values... */
     private static final boolean default_USECOOKIELOGIN                     = false;
     private static final boolean default_fastlinkcheck_FASTLINKCHECK        = true;
     private static final boolean default_fastlinkcheck_FASTPICTURELINKCHECK = true;

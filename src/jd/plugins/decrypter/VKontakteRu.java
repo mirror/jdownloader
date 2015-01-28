@@ -148,12 +148,7 @@ public class VKontakteRu extends PluginForDecrypt {
     @Override
     protected DownloadLink createDownloadlink(String link) {
         DownloadLink ret = super.createDownloadlink(link);
-
         return ret;
-    }
-
-    private boolean isSingeVideo(final String input) {
-        return (input.matches(PATTERN_VIDEO_SINGLE_MODULE) || input.matches(PATTERN_VIDEO_SINGLE_SEARCH) || input.matches(PATTERN_VIDEO_SINGLE_ORIGINAL) || input.matches(PATTERN_VIDEO_SINGLE_ORIGINAL_LIST) || input.matches(PATTERN_VIDEO_SINGLE_EMBED) || input.matches(PATTERN_VIDEO_SINGLE_EMBED_HASH));
     }
 
     /* General errorhandling language implementation: English | Rus | Polish */
@@ -1938,6 +1933,10 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             return hasPassed;
         }
+    }
+
+    private boolean isSingeVideo(final String input) {
+        return (input.matches(PATTERN_VIDEO_SINGLE_MODULE) || input.matches(PATTERN_VIDEO_SINGLE_SEARCH) || input.matches(PATTERN_VIDEO_SINGLE_ORIGINAL) || input.matches(PATTERN_VIDEO_SINGLE_ORIGINAL_LIST) || input.matches(PATTERN_VIDEO_SINGLE_EMBED) || input.matches(PATTERN_VIDEO_SINGLE_EMBED_HASH));
     }
 
     /** Handles basic offline errors. */

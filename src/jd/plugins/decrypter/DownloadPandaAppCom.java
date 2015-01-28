@@ -42,8 +42,12 @@ public class DownloadPandaAppCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         br.setFollowRedirects(false);
-        if (br.getURL().equals("http://www.pandaapp.com/error/") || br.containsHTML("Sorry,this software does not exist or has been deleted")) {
+        if (br.getURL().equals("http://www.pandaapp.com/error/") || br.containsHTML("Sorry,this software does not exist or has been deleted") || br.toString().length() < 500) {
             logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         // Check if there was a redirect to another site
@@ -54,8 +58,9 @@ public class DownloadPandaAppCom extends PluginForDecrypt {
         final String fpName = br.getRegex("<div class=\"title\">[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
         String[] links = br.getRegex("\\&target=(http[^<>\"]*?)\"").getColumn(0);
         if (links != null && links.length != 0) {
-            for (String singleLink : links)
+            for (String singleLink : links) {
                 decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(singleLink)));
+            }
         }
         final String controller = br.getRegex("\\&controller=([^<>\"/]*?)\\&").getMatch(0);
         if (controller != null) {
@@ -67,7 +72,9 @@ public class DownloadPandaAppCom extends PluginForDecrypt {
                 finallink = Encoding.htmlDecode(finallink.trim().replace("\\", ""));
                 br2.getPage(finallink);
                 finallink = br2.getRedirectLocation();
-                if (finallink != null) decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+                if (finallink != null) {
+                    decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+                }
             }
         }
         if (decryptedLinks.size() == 0) {
