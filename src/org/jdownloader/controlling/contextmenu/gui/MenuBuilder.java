@@ -80,6 +80,7 @@ public class MenuBuilder {
         }
         long t = System.currentTimeMillis();
         try {
+            int counter = 0;
             for (MenuItemData i : md.getItems()) {
                 try {
                     final MenuItemData inst = i;
@@ -98,11 +99,11 @@ public class MenuBuilder {
                     switch (inst.getType()) {
                     case ACTION:
 
-                        addAction(root, inst);
+                        addAction(root, inst, counter, md.getItems().size());
 
                         break;
                     case CONTAINER:
-                        addContainer(root, inst);
+                        addContainer(root, inst, counter, md.getItems().size());
 
                     }
                     ;
@@ -110,6 +111,8 @@ public class MenuBuilder {
                 } catch (Throwable e) {
                     logger.warning("Could Not Build MenuItem: " + i);
                     logger.log(e);
+                } finally {
+                    counter++;
                 }
 
             }
@@ -123,7 +126,7 @@ public class MenuBuilder {
 
     }
 
-    protected void addContainer(final JComponent root, final MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
+    protected void addContainer(final JComponent root, final MenuItemData inst, int index, int size) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
         final JMenu submenu = (JMenu) inst.addTo(root);
         if (submenu == null) {
             return;
@@ -135,7 +138,7 @@ public class MenuBuilder {
         }
     }
 
-    protected void addAction(final JComponent root, final MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
+    protected void addAction(final JComponent root, final MenuItemData inst, int index, int size) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
         long t = System.currentTimeMillis();
         try {
             inst.addTo(root);

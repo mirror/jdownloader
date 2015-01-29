@@ -307,9 +307,9 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
                 };
 
                 new MenuBuilder(manager, popup, (MenuContainer) menudata) {
-                    protected void addAction(final JComponent root, final MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
+                    protected void addAction(final JComponent root, final MenuItemData inst, int index, int size) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
 
-                        super.addAction(root, inst);
+                        super.addAction(root, inst, index, size);
                     }
                 }.run();
 

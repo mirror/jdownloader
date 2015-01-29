@@ -150,6 +150,7 @@ public class ManagerTreeModel extends DefaultTreeModel implements TreeModel {
                 tree.setSelectionPaths(paths);
                 // tree.expandAll();
             }
+            tree.expandAll();
         }
     }
 
