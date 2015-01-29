@@ -69,7 +69,7 @@ public class DrTuberCom extends PluginForHost {
     }
 
     /* IMPORTANT: This can be used as a workaround if the normal handling fails and there is no time to fix it or it's not easily fixable... */
-    private boolean              use_mobile                   = true;
+    private boolean              use_mobile                   = false;
     private String               DLLINK                       = null;
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
@@ -177,7 +177,7 @@ public class DrTuberCom extends PluginForHost {
                 if (new_handling) {
                     /*
                      * Very very very very bad js workaround
-                     *
+                     * 
                      * IMPORTANT: If we find no other way to fix this in the future, switch to /embed/ links, old handling still works fine
                      * for them
                      */
