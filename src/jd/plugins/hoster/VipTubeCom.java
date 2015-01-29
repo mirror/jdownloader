@@ -53,6 +53,11 @@ public class VipTubeCom extends PluginForHost {
     private static final String SKEY = "RXdxT0JRbUpETUpScmdYWg==";
 
     /* Similar sites: drtuber.com, proporn.com, viptube.com */
+    /*
+     * IMPORTANT: If the crypto stuff fails, use the mobile version of the sites to get uncrypted finallinks! Also, registered users can see
+     * uncrypted normal streamlinks!
+     */
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -69,7 +74,14 @@ public class VipTubeCom extends PluginForHost {
         }
         cfgurl = Encoding.htmlDecode(cfgurl);
         br.getPage(cfgurl + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode(SKEY)));
-        DLLINK = br.getRegex("<video_file><\\!\\[CDATA\\[(http://[^<>\"]*?)\\]\\]></video_file>").getMatch(0);
+        final String[] qualities = { "hq_video_file", "video_file" };
+        for (final String quality : qualities) {
+            DLLINK = br.getRegex("<" + quality + "><\\!\\[CDATA\\[(http://[^<>\"]*?)\\]\\]></" + quality + ">").getMatch(0);
+            if (DLLINK != null) {
+                break;
+            }
+        }
+
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
