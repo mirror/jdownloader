@@ -23,7 +23,6 @@ import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.SeparatorData;
 import org.jdownloader.gui.mainmenu.action.AddLinksMenuAction;
 import org.jdownloader.gui.mainmenu.action.LogSendAction;
-import org.jdownloader.gui.mainmenu.action.ReportADownloadErrorAction;
 import org.jdownloader.gui.mainmenu.container.AboutMenuContainer;
 import org.jdownloader.gui.mainmenu.container.BackupMenuContainer;
 import org.jdownloader.gui.mainmenu.container.CaptchaQuickSettingsContainer;
@@ -31,7 +30,6 @@ import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuWindowContainer;
 import org.jdownloader.gui.mainmenu.container.FileMenuContainer;
 import org.jdownloader.gui.mainmenu.container.OptionalContainer;
-import org.jdownloader.gui.mainmenu.container.ReportErrorContainer;
 import org.jdownloader.gui.mainmenu.container.SettingsMenuContainer;
 import org.jdownloader.gui.toolbar.action.CaptchaModeChangeAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogle9KWAction;
@@ -117,19 +115,8 @@ public class MenuManagerMainmenu extends ContextMenuManager<FilePackage, Downloa
         HorizontalBoxItem h = new HorizontalBoxItem();
         h.setVisible(true);
         mr.add(h);
-        mr.add(createReportMenu());
-
+        mr.add(DonateAction.class);
         return mr;
-    }
-
-    public ReportErrorContainer createReportMenu() {
-        ReportErrorContainer ret = new ReportErrorContainer();
-
-        ret.add(ReportADownloadErrorAction.class);
-
-        ret.add(new SeparatorData());
-        ret.add(LogSendAction.class);
-        return ret;
     }
 
     public AboutMenuContainer createAboutMenu() {

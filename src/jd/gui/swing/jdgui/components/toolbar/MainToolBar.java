@@ -445,7 +445,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                                 ((JComponent) e.getSource()).addMouseListener(ml);
                                 new MenuBuilder(MenuManagerMainToolbar.getInstance(), lroot, (MenuContainer) menudata) {
                                     @Override
-                                    protected void addContainer(JComponent root, MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
+                                    protected void addContainer(JComponent root, MenuItemData inst, int index, int size) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
                                         final JMenu submenu = (JMenu) inst.addTo(root);
                                         if (submenu == null) {
                                             return;
@@ -459,7 +459,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                                     }
 
                                     @Override
-                                    protected void addAction(JComponent root, MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
+                                    protected void addAction(JComponent root, MenuItemData inst, int index, int size) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
                                         JComponent ret = inst.addTo(root);
                                         if (ret != null) {
                                             ret.addMouseListener(ml);

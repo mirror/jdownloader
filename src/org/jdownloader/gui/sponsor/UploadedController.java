@@ -145,6 +145,9 @@ public class UploadedController implements AccountControllerListener, Sponsor {
             }
         });
         enabledInAdvancedConfig.set(CFG_GUI.ULBANNER_ENABLED.isEnabled());
+        if (Application.getResource("cfg/donation_0.json").exists()) {
+            enabledInAdvancedConfig.set(false);
+        }
         SecondLevelLaunch.ACCOUNTLIST_LOADED.executeWhenReached(new Runnable() {
 
             @Override

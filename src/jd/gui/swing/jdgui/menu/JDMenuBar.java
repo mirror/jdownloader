@@ -20,6 +20,7 @@ import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
+import org.jdownloader.gui.mainmenu.DonateAction;
 import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
 import org.jdownloader.gui.views.downloads.bottombar.HorizontalBoxItem;
 import org.jdownloader.images.NewTheme;
@@ -65,21 +66,27 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
         new MenuBuilder(MenuManagerMainmenu.getInstance(), this, MenuManagerMainmenu.getInstance().getMenuData()) {
 
             @Override
-            protected void addContainer(JComponent root, MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
-                if (!inst.isVisible()) return;
+            protected void addContainer(JComponent root, MenuItemData inst, int index, int size) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
+                if (!inst.isVisible()) {
+                    return;
+                }
                 final JMenu submenu = (JMenu) inst.addTo(root);
 
                 if (submenu != null) {
                     applyMnemonic(root, submenu);
-                    if (root == JDMenuBar.this) submenu.setIcon(null);
+                    if (root == JDMenuBar.this) {
+                        submenu.setIcon(null);
+                    }
                     createLayer(submenu, (MenuContainer) inst);
                 }
             }
 
             @Override
-            protected void addAction(JComponent root, MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
+            protected void addAction(JComponent root, MenuItemData inst, int index, int size) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
 
-                if (!inst.isVisible()) return;
+                if (!inst.isVisible()) {
+                    return;
+                }
                 try {
                     if (root instanceof JDMenuBar && inst instanceof HorizontalBoxItem) {
                         ((JDMenuBar) root).add(Box.createHorizontalGlue());
@@ -90,7 +97,9 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
                 }
                 if (root instanceof JMenu) {
                     JComponent comp = inst.addTo(root);
-                    if (comp == null) return;
+                    if (comp == null) {
+                        return;
+                    }
                     if (comp instanceof AbstractButton) {
                         applyMnemonic(root, (AbstractButton) comp);
                     }
@@ -120,8 +129,13 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
 
                     } else {
                         action.requestUpdate(JDMenuBar.this);
-                        ret = new ExtMenuButton(action);
 
+                        if (action instanceof DonateAction && index == size - 1) {// only if the donation button is the very right in the
+                                                                                  // menu bar
+                            ret = new ExtDonateMenuButton(action);
+                        } else {
+                            ret = new ExtMenuButton(action);
+                        }
                         ret.setIcon(NewTheme.I().getIcon(action.getIconKey(), 18));
 
                     }
@@ -161,7 +175,7 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
                     ret.setIcon(MenuItemData.getIcon(inst.getIconKey(), 20));
 
                     if (ret instanceof AbstractButton) {
-                        applyMnemonic(root, (AbstractButton) ret);
+                        applyMnemonic(root, ret);
                     }
 
                     root.add(ret);
@@ -175,14 +189,16 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
             new MenuBuilder(MenuManagerMainmenu.getInstance(), this, MenuManagerMainmenu.getInstance().createDefaultStructure()) {
 
                 @Override
-                protected void addContainer(JComponent root, MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
+                protected void addContainer(JComponent root, MenuItemData inst, int index, int size) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
                     final JMenu submenu = (JMenu) inst.addTo(root);
-                    if (root == JDMenuBar.this) submenu.setIcon(null);
+                    if (root == JDMenuBar.this) {
+                        submenu.setIcon(null);
+                    }
                     createLayer(submenu, (MenuContainer) inst);
                 }
 
                 @Override
-                protected void addAction(JComponent root, MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
+                protected void addAction(JComponent root, MenuItemData inst, int index, int size) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
                     inst.addTo(root);
                 }
 

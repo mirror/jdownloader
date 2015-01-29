@@ -16,6 +16,7 @@ import javax.swing.Icon;
 import javax.swing.SwingConstants;
 
 import org.appwork.sunwrapper.sun.swing.SwingUtilities2Wrapper;
+import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.JScrollPopupMenu;
 import org.jdownloader.actions.AppAction;
@@ -106,6 +107,27 @@ public class PseudoMultiCombo<Type> extends ExtButton {
 
     private String  orgText;
 
+    public ExtRealCheckBoxMenuItem createMenuItem(final Type sc, BasicAction appAction) {
+
+        return new ExtRealCheckBoxMenuItem(appAction) {
+            @Override
+            protected void updateIcon() {
+
+                Icon icon = PseudoMultiCombo.this.getIcon(sc);
+                if (icon == null) {
+                    super.updateIcon();
+                } else {
+                    if (isSelected()) {
+
+                        setIcon(new MergedIcon(selIcon, icon));
+                    } else {
+                        setIcon(new MergedIcon(unselIcon, icon));
+                    }
+                }
+            }
+        };
+    }
+
     protected void onPopup() {
         long timeSinceLastHide = System.currentTimeMillis() - lastHide;
         if (timeSinceLastHide < 250) {
@@ -130,7 +152,8 @@ public class PseudoMultiCombo<Type> extends ExtButton {
         final AtomicInteger integer = new AtomicInteger(0);
         for (final Type sc : values) {
             ExtRealCheckBoxMenuItem mi;
-            popup.add(mi = new ExtRealCheckBoxMenuItem(new AppAction() {
+
+            popup.add(mi = createMenuItem(sc, new AppAction() {
                 private Type value;
                 {
 
@@ -153,24 +176,7 @@ public class PseudoMultiCombo<Type> extends ExtButton {
                     setItemSelected(value, isSelected());
 
                 }
-            }) {
-                @Override
-                protected void updateIcon() {
-
-                    Icon icon = PseudoMultiCombo.this.getIcon(sc);
-                    if (icon == null) {
-                        super.updateIcon();
-                    } else {
-                        if (isSelected()) {
-
-                            setIcon(new MergedIcon(selIcon, icon));
-                        } else {
-                            setIcon(new MergedIcon(unselIcon, icon));
-                        }
-                    }
-                }
-            });
-
+            }));
             mi.setHideOnClick(false);
 
         }

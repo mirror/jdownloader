@@ -5680,4 +5680,64 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Black/White Listing enabled" })
     String captcha_settings_blacklist_enabled();
 
+    @Default(lngs = { "en" }, values = { "Contribute" })
+    String DonateAction();
+
+    @Default(lngs = { "en" }, values = { "Contribute (Donate) to the JDownloader development" })
+    String DonateAction_tt();
+
+    @Default(lngs = { "en" }, values = { "The JDownloader project needs your help!" })
+    String DonationDialog_DonationDialog_title_();
+
+    @Default(lngs = { "en" }, values = { "Donate now" })
+    String DonationDialog_ok();
+
+    @Default(lngs = { "en" }, values = { "Donate now, support the development of JDownloader and make Botty happy :)" })
+    String DonationDialog_layoutDialogContent_donate_now();
+
+    @Default(lngs = { "en" }, values = { "Amount" })
+    String DonationDialog_layoutDialogContent_donate_amount();
+
+    @Default(lngs = { "en" }, values = { "Make this recurring (monthly)" })
+    String DonationDialog_layoutDialogContent_donate_recurring();
+
+    @Default(lngs = { "en" }, values = { "Donate for" })
+    String DonationDialog_layoutDialogContent_donate_category();
+
+    @Default(lngs = { "en" }, values = { "Please Choose" })
+    String DonationDialog_layoutDialogContent_donate_for_generel();
+
+    @Default(lngs = { "en" }, values = { "How do you want us to use your donation?\nPlease choose a category above and give us some details here..." })
+    String DonationDialog_layoutDialogContent_donate_help_note();
+
+    @Default(lngs = { "en" }, values = { "Please wait" })
+    String DonationDialog_layoutDialogContent_please_wait();
+
+    @Default(lngs = { "en" }, values = { "Please wait" })
+    String DonationDialog_layoutDialogContent_please_wait_title();
+
+    @Default(lngs = { "en" }, values = { "Please wait. Loading the donation details..." })
+    String DonationDialog_layoutDialogContent_please_wait_msg();
+
+    @Default(lngs = { "en" }, values = { "Donating is disabled right now. Please try again later..." })
+    String DonationDialog_layoutDialogContent_donation_disabled();
+
+    @Default(lngs = { "en" }, values = { "If you are a satisfied user of JDownloader, please think about contributing to this project. JDownloader is the result of daily hard work since more than 8 years. We need your help to keep it free of charge, free of advertising, free of installer bundles and to improve JDownloader even more. Moreover, donating is a good way to tell us what modules we should focus our work on." })
+    String DonationDialog_layoutDialogContent_top_text();
+
+    @Default(lngs = { "en" }, values = { "Please choose an amount between 1 and 1000!" })
+    String DonationDialog_setReturnmask_range();
+
+    @Default(lngs = { "en" }, values = { "Thank you for contributing!" })
+    String DonationDialog_run_thanks_();
+
+    @Default(lngs = { "en" }, values = { "The donation failed. Please try again later!" })
+    String DonationDialog_run_failed();
+
+    @Default(lngs = { "en" }, values = { "Something went wrong. Please try again." })
+    String DonationDialog_run_cancel();
+
+    @Default(lngs = { "en" }, values = { "Donation in progress. Please finish the donation in your browser." })
+    String DonationDialog_layoutDialogContent_please_wait_progress_msg();
+
 }

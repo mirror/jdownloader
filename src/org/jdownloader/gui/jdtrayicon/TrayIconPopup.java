@@ -184,7 +184,7 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
                             root = new ExtPopupMenu();
 
                             new MenuBuilder(MenuManagerMainToolbar.getInstance(), root, (MenuContainer) menudata) {
-                                protected void addAction(final JComponent root, final MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
+                                protected void addAction(final JComponent root, final MenuItemData inst, int index, int size) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
                                     final JComponent ret = inst.addTo(root);
                                     if (ret instanceof AbstractButton) {
                                         ((AbstractButton) ret).addActionListener(new ActionListener() {
