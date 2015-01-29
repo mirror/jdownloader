@@ -149,6 +149,7 @@ public class Recaptcha2Helper {
         }
     }
 
+    //
     @SuppressWarnings("unused")
     public static void main(String[] args) throws Exception {
         if (true) {
