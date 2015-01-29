@@ -911,7 +911,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 if (jsVideoArray != null) {
                     videos = new Regex(jsVideoArray, "\\[((\\-)?\\d+,\\d+),\"").getColumn(0);
                 } else {
-                    videos = br.getRegex("class=\"video_row_info_name\">[\t\n\r ]+<a href=\"/video(\\d+_\\d+)\"").getColumn(0);
+                    videos = br.getRegex("class=\"video_row_info_name\">[\t\n\r ]+<a href=\"/video((\\-)?\\d+_\\d+)\"").getColumn(0);
                     if (videos == null || videos.length == 0) {
                         logger.warning("Decrypter broken for link: " + this.CRYPTEDLINK_FUNCTIONAL);
                         decryptedLinks = null;

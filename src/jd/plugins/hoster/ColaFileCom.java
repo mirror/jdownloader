@@ -49,6 +49,7 @@ public class ColaFileCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">当前文件不存在，请尝试其它链接。</div>|>当前文件所有者由于违反可乐云使用条例，帐号暂时被锁定，请联系可乐云客户服务中心。<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -114,6 +115,10 @@ public class ColaFileCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            /* It says "file has been deleted" */
+            if (br.containsHTML("当前文件已被删除，请您更换资源下载。")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("directlink", dllink);

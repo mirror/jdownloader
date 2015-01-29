@@ -34,24 +34,24 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divxstage.to", "divxstage.net" }, urls = { "http://(www\\.)?(divxstage\\.(net|eu|to)/video/|embed\\.divxstage\\.(net|eu|to)/embed\\.php\\?v=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divxstage.to", "divxstage.net" }, urls = { "http://(www\\.)?((divxstage\\.(net|eu|to)|cloudtime\\.to)/video/|embed\\.(divxstage\\.(net|eu|to)|cloudtime\\.to)/embed\\.php\\?v=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 0, 0 })
 public class DivxStageNet extends PluginForHost {
 
     /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet, DivxStageNet */
-    private static final String DOMAIN = "divxstage.to";
+    private static final String DOMAIN = "cloudtime.to";
 
     public DivxStageNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://divxstage.to/video/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload("http://www.cloudtime.to/video/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.divxstage.net/terms.php";
+        return "http://www.cloudtime.to/terms.php";
     }
 
     @Override
@@ -61,9 +61,9 @@ public class DivxStageNet extends PluginForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if ("divxstage.net".equals(getHost()) || "divxstage.eu".equals(getHost())) {
-            if (host == null || "divxstage.net".equals(host) || "divxstage.eu".equals(host)) {
-                return "divxstage.to";
+        if ("divxstage.net".equals(getHost()) || "divxstage.eu".equals(getHost()) || "divxstage.to".equals(getHost())) {
+            if (host == null || "divxstage.net".equals(host) || "divxstage.eu".equals(host) || "divxstage.to".equals(host)) {
+                return "cloudtime.to";
             }
         }
         return super.rewriteHost(host);
@@ -71,6 +71,8 @@ public class DivxStageNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        /* Important to handle domainchanges... */
+        correctDownloadLink(downloadLink);
         br.setFollowRedirects(true);
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());

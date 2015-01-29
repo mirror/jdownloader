@@ -52,6 +52,7 @@ public class ProPornCom extends PluginForHost {
     }
 
     /* Similar sites: drtuber.com, proporn.com, viptube.com */
+    /* IMPORTANT: If the crypto stuff fails, use the mobile version of the sites to get uncrypted finallinks! */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();

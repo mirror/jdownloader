@@ -54,6 +54,15 @@ public class KeezMoviesCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("keezmoviesdecrypted.com/", "keezmovies.com/"));
     }
 
+    private static final String default_extension = ".mp4";
+
+    /*
+     * IMPORTANT: If this plugin fails and we have problems with the encryption there are 2 ways around: 1. Add account support --> Download
+     * button is available then AND 2. Use a mobile User-Agent so we can get uncrypted finallinks. Keep in mind that we might get lower
+     * quality then - last tested 29.01.15, quality was the same as via normal stream (480p) though not sure if 720p or higher is also
+     * available for mobile. Also, it might happen that not all videos are also available for mobile devices!
+     */
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         // DEV NOTE: you can get the DLLINK from the embed page without need for
@@ -110,13 +119,16 @@ public class KeezMoviesCom extends PluginForHost {
             if ("1".equals(isEncrypted) || Boolean.parseBoolean(isEncrypted)) {
                 String decrypted = getValue("video_url");
                 if (decrypted == null) {
-                    decrypted = getValue("quality_240p");
-                }
-                if (decrypted == null) {
-                    decrypted = getValue("quality_180p");
+                    final String[] qualities = { "1080p", "720p", "480p", "360p", "320p", "240p", "180p" };
+                    for (final String quality : qualities) {
+                        decrypted = getValue("quality_" + quality);
+                        if (decrypted != null) {
+                            break;
+                        }
+                    }
                 }
                 /* Workaround for bad encoding */
-                String key = new Regex(FLASHVARS, "video_title=([^<>\"]*?)\\&dislikeJs=").getMatch(0);
+                String key = new Regex(FLASHVARS, "video_title=([^<>]*?)\\&dislikeJs=").getMatch(0);
                 if (key == null) {
                     key = getValue("video_title");
                 }
@@ -137,7 +149,14 @@ public class KeezMoviesCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        downloadLink.setFinalFileName(filename.trim() + ".flv");
+        String ext;
+        if (DLLINK.contains(".flv")) {
+            ext = ".flv";
+        } else {
+            ext = default_extension;
+        }
+        filename = Encoding.htmlDecode(filename).trim();
+        downloadLink.setFinalFileName(filename + ext);
         DLLINK = Encoding.htmlDecode(DLLINK);
         URLConnectionAdapter con = br.openGetConnection(DLLINK);
         try {
