@@ -122,11 +122,8 @@ public class ScribdCom extends PluginForDecrypt {
             try {
                 br.getPage(parameter);
             } catch (final BrowserException e) {
-                if (br.getHttpConnection().getResponseCode() == 410) {
-                    decryptedLinks.add(getOfflineLink(parameter));
-                    return decryptedLinks;
-                }
-                throw e;
+                decryptedLinks.add(getOfflineLink(parameter));
+                return decryptedLinks;
             }
             final String id = br.getRegex("\"id\":(\\d+)").getMatch(0);
             if (id == null) {

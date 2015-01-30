@@ -93,7 +93,7 @@ public class FileNukeCom extends PluginForHost {
     // premium account: untested, set FREE ACCOUNT limits
     // protocol: no https
     // captchatype: null
-    // other: no redirects, Plugins which belong together (same owner?): FileNukeCom, ShareSixCom
+    // other: no redirects, Plugins which belong together (same owner?): FileNukeCom, ShareSixCom, SYNC THEM!
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -140,6 +140,7 @@ public class FileNukeCom extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
+        final Regex fnameregex = new Regex(correctedBR, "class=\"file(?:\\-|_)name\">Download File ([^<>\"]*?) \\((\\d+(\\.\\d{1,2})? (MB|GB))\\)</p>");
         String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
         if (filename == null) {
             filename = new Regex(correctedBR, "class=\"f_l_name\">Download File ([^<>\"]*?) \\(").getMatch(0);
@@ -153,11 +154,14 @@ public class FileNukeCom extends PluginForHost {
             }
         }
         if (filename == null) {
-            filename = new Regex(correctedBR, "class=\"file_name\">Download File ([^<>\"]*?) \\(\\d+(\\.\\d+)? (?:KB|MB|GB)\\)</p>").getMatch(0);
+            filename = fnameregex.getMatch(0);
         }
         String filesize = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
         if (filesize == null) {
             filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+            if (filesize == null) {
+                filesize = fnameregex.getMatch(1);
+            }
             if (filesize == null) {
                 // generic regex picks up false positives (premium ads above
                 // filesize)
