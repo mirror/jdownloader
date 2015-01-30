@@ -591,7 +591,7 @@ public class FilePostCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            if (br.containsHTML(">403 Forbidden<")) {
+            if (br.containsHTML(">403 Forbidden<|ClientLocation")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
