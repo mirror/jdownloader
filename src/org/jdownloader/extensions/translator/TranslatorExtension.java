@@ -19,6 +19,7 @@ import jd.controlling.reconnect.pluginsinc.liveheader.translate.LiveheaderTransl
 import jd.controlling.reconnect.pluginsinc.upnp.translate.UpnpTranslation;
 import jd.gui.swing.jdgui.JDGui;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
@@ -807,13 +808,16 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                 logger.finer("Create CommitPacket");
                 final SVNCommitPacket packet = s.getCommitClient().doCollectCommitItems(new File[] { Application.getResource("translations/custom") }, false, false, SVNDepth.INFINITY, null);
                 for (SVNCommitItem ci : packet.getCommitItems()) {
-
-                    if (ci.getFile().isFile() && !ci.getPath().endsWith("." + getLoadedLocale().getId() + ".lng") && !ci.getPath().endsWith(getLoadedLocale().getId() + ".json")) {
-                        logger.info("Skip: " + ci.getPath());
+                    File file = ci.getFile();
+                    if (file.getName().matches(".*\\.r\\d$")) {
+                        throw new WTFException("Unresolved Conflicts!");
+                    }
+                    if (file.isFile() && !file.getName().endsWith("." + getLoadedLocale().getId() + ".lng") && !file.getName().endsWith(getLoadedLocale().getId() + ".json")) {
+                        logger.info("Skip: " + file);
                         packet.setCommitItemSkipped(ci, true);
                         continue;
                     }
-                    logger.info("Commit: " + ci.getPath());
+                    logger.info("Commit: " + file);
 
                 }
                 logger.finer("Transfer Package");
