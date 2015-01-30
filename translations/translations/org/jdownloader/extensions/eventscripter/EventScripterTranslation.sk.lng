@@ -1,4 +1,8 @@
+ON_DOWNLOAD_CONTROLLER_START=Sťahovanie bolo spustené
 edit_script=Upraviť skript
+editor_showhelp=Zobrazit/skryť pomocníka
 event_trigger=Spúšťač
 example_script_name=Vzor
+script_editor_title=Editor skriptu: %s1
+securityLoading_title=Bezpečnostné upozornenie!
 title=Skriptovač udalostí
