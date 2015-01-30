@@ -32,14 +32,14 @@ import jd.captcha.pixelobject.PixelObject;
 
 /**
  * das ist krank bitte nicht anschauen
- * 
+ *
  * @author dwd
- * 
+ *
  */
 public class ThreeDlTv {
     /**
      * prüft ob das objekt an der stelle x y höher ist als 14px
-     * 
+     *
      * @param captcha
      * @param x
      * @param y
@@ -49,14 +49,16 @@ public class ThreeDlTv {
         final int yMax = Math.min(captcha.getHeight(), y + 7);
         final int yMin = Math.max(0, y - 7);
         for (int i = yMin; i < yMax; i++) {
-            if (captcha.getPixelValue(x, i) == 0xffffff) { return true; }
+            if (captcha.getPixelValue(x, i) == 0xffffff) {
+                return true;
+            }
         }
         return false;
     }
 
     /**
      * löscht alle objekte die höher sind als 14px
-     * 
+     *
      * @param captcha
      */
     private static void clear(final Captcha captcha) {
@@ -72,7 +74,7 @@ public class ThreeDlTv {
 
     /**
      * löscht ein objekt an der position x y
-     * 
+     *
      * @param captcha
      * @param x
      * @param y
@@ -93,7 +95,7 @@ public class ThreeDlTv {
 
     /**
      * schneidet ein 30px breites und 25px hohes objekt an der position int[] {x,y} aus
-     * 
+     *
      * @param captcha
      * @param header1
      * @return
@@ -110,7 +112,7 @@ public class ThreeDlTv {
 
     /**
      * gibt die position aus wo im oberen Teil des Bildes ein objekt anfängt
-     * 
+     *
      * @param captcha
      * @param xMin
      * @param xMax
@@ -119,7 +121,9 @@ public class ThreeDlTv {
     private static int[] getHeader(final Captcha captcha, final int xMin, final int xMax) {
         for (int y = 0; y < captcha.getHeight() / 8; y++) {
             for (int x = xMin; x < xMax; x++) {
-                if (captcha.getPixelValue(x, y) != 0xffffff) { return new int[] { x, y }; }
+                if (captcha.getPixelValue(x, y) != 0xffffff) {
+                    return new int[] { x, y };
+                }
             }
         }
         return null;
@@ -171,7 +175,7 @@ public class ThreeDlTv {
                 if (head3.getDecodedValue().equals(let.getDecodedValue())) {
                     pos = 2;
                 } else {// wenn keines der 3 letters zutrifft ist es bestimmt
-                        // das
+                    // das
                     // welches am schlechtesten erkannt wurde
                     if (head1.detected.getValityPercent() > head2.detected.getValityPercent()) {
                         if (head1.detected.getValityPercent() > head3.detected.getValityPercent()) {
@@ -235,7 +239,7 @@ public class ThreeDlTv {
 
     /**
      * hiermit lassen sich große objekte schnell heraus suchen
-     * 
+     *
      * @param grid
      * @param neighbourradius
      * @return
@@ -278,7 +282,7 @@ public class ThreeDlTv {
 
     /**
      * teilt recht zuverlässig ist aber auch ressourcen lastig sollte nur bei kleinen Letters bentzt werden
-     * 
+     *
      * @author bismarck
      * @param pixelObject
      * @param captcha
@@ -286,9 +290,11 @@ public class ThreeDlTv {
      * @return
      * @throws InterruptedException
      */
-    private static java.util.List<Letter> getSplitted(PixelObject pixelObject, final Captcha captcha, int index) throws InterruptedException {
+    private static java.util.List<Letter> getSplitted(PixelObject pixelObject, final Captcha captcha, final int index) throws InterruptedException {
         final java.util.List<Letter> ret = new ArrayList<Letter>();
-        if (pixelObject.getArea() < 4) { return ret; }
+        if (pixelObject.getArea() < 4) {
+            return ret;
+        }
         // durchschnittliche breite vom char
         final int lWith = 5;
         // wenn pixelobject aus nur einem Character besteht
@@ -391,11 +397,15 @@ public class ThreeDlTv {
         Letter splittedLetter;
         // wenn kein weissraum vorhanden, splitte bei 1,2 oder 3 Pixeln
         if (splitMap == null || splitMap.size() == 0) {
-            if (eins == 0 && zwei == 0 && drei == 0) { return ret; }
-            index = eins == 0 && zwei >= drei ? 3 : 2;
-            index = eins > 0 ? 1 : index;
-            if (index == 0) { return ret; }
-            return getSplitted(pixelObject, captcha, index);
+            if (eins == 0 && zwei == 0 && drei == 0) {
+                return ret;
+            }
+            int newIndex = eins == 0 && zwei >= drei ? 3 : 2;
+            newIndex = eins > 0 ? 1 : index;
+            if (newIndex == index) {
+                return ret;
+            }
+            return getSplitted(pixelObject, captcha, newIndex);
         }
         for (final int let : splitMap) {
             bArray = pixelObject.splitAt(let - xm);
@@ -421,7 +431,7 @@ public class ThreeDlTv {
 
     /**
      * es wird z.B. letter 1 mit letter r erstetzt und ein letter i hinzugefügt
-     * 
+     *
      * @param lets
      */
     private static void replaceLetters(final java.util.List<Letter> lets) {
