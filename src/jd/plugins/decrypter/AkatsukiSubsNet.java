@@ -35,31 +35,32 @@ public class AkatsukiSubsNet extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String   INVALIDLINKS     = "http://(www\\.)?akatsuki\\-subs\\.net/projekte/(laufend|abgeschlossen)/diverses/";
+    private final String     invalidLink      = "http://(www\\.)?akatsuki\\-subs\\.net/projekte/(laufend|abgeschlossen)/diverses/";
 
-    private static final String   PROJECTLINK      = "http://(www\\.)?akatsuki\\-subs\\.net/projekte/(laufend|abgeschlossen)/[a-z0-9\\-]+/";
-    private static final String   RELEASELINK      = "http://(www\\.)?akatsuki\\-subs\\.net/\\d+/releases/op/[a-z0-9\\-]+\\-\\d+/";
-    private static final String[] QUALITIES        = { "hd", "ru boxvideo", "sd", "rs", "bt" };
-    private static final String   SERVEROVERLOADED = ">Server \\&uuml;berlastet\\!<";
+    private final String     projectLink      = "http://(www\\.)?akatsuki\\-subs\\.net/projekte/(laufend|abgeschlossen)/[a-z0-9\\-]+/";
+    private final String     releaseLink      = "http://(www\\.)?akatsuki\\-subs\\.net/\\d+/releases/op/[a-z0-9\\-]+\\-\\d+/";
+    private final String[][] qualities        = { { "fhd", "fhd" }, { "hd", "hd" }, { "ru", "ru( boxvideo)?" }, { "sd", "sd" }, { "rs", "rs" }, { "bt", "bt" } };
+    private final String     serverOverLoaded = ">Server \\&uuml;berlastet\\!<";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        if (parameter.matches(INVALIDLINKS)) {
+        if (parameter.matches(invalidLink)) {
             logger.info("Link invalid: " + parameter);
             return decryptedLinks;
         }
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.93 Safari/537.36");
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML(">Seite nicht gefunden")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        if (br.containsHTML(SERVEROVERLOADED)) {
+        if (br.containsHTML(serverOverLoaded)) {
             logger.info("Cannot decrypt link because servers are overloaded: " + parameter);
             return decryptedLinks;
         }
-        if (parameter.matches(PROJECTLINK)) {
+        if (parameter.matches(projectLink)) {
             String fpName = br.getRegex("<title>([^<>\"]*?)\\| Akatsuki\\-Subs</title>").getMatch(0);
             if (fpName == null) {
                 fpName = new Regex(parameter, "/projekte/(laufend|abgeschlossen)/([a-z0-9\\-]+)/").getMatch(1);
@@ -68,30 +69,23 @@ public class AkatsukiSubsNet extends PluginForDecrypt {
             // Get all tables
             String[] tables = br.getRegex("<table(.*?)</table>").getColumn(0);
             for (final String table : tables) {
-                if (!table.contains("downloads.akatsuki") && !table.contains("archiv.akatsuki")) {
+                if (table == null || !new Regex(table, "\\.akatsuki-subs\\.net/file").matches()) {
                     continue;
                 }
                 // Get entries of each table
                 final String[] tableEntries = new Regex(table, "<tr(.*?)</tr>").getColumn(0);
                 for (final String tableEntry : tableEntries) {
 
-                    for (final String quality : QUALITIES) {
-                        final String[] currentLinks = new Regex(tableEntry, "class=\"" + quality + "\" href=\"(http[^<>\"]*?)\"").getColumn(0);
+                    for (final String[] quality : qualities) {
+                        final String[] currentLinks = new Regex(tableEntry, "class=\"" + quality[1] + "\" href=\"(http[^<>\"]*?)\"").getColumn(0);
                         if (currentLinks != null && currentLinks.length != 0) {
-                            int counter = 1;
                             for (final String currentLink : currentLinks) {
                                 final DownloadLink dl = createDownloadlink(currentLink);
                                 FilePackage fp = FilePackage.getInstance();
-                                if (counter == 1) {
-                                    fp.setName(fpName + " (mp4)");
-                                } else if (counter == 2) {
-                                    fp.setName(fpName + " (mkv)");
-                                } else {
-                                    fp.setName(fpName + " (other)");
-                                }
+                                fp.setProperty("ALLOW_MERGE", true);
+                                fp.setName(fpName + " (" + quality[0] + ")");
                                 fp.add(dl);
                                 decryptedLinks.add(dl);
-                                counter++;
                             }
                         }
                     }
@@ -105,8 +99,8 @@ public class AkatsukiSubsNet extends PluginForDecrypt {
                 // Get entries of each table
                 final String[] tableEntries = new Regex(table, "<tr(.*?)</tr>").getColumn(0);
                 for (final String tableEntry : tableEntries) {
-                    for (final String quality : QUALITIES) {
-                        final String[] currentLinks = new Regex(tableEntry, "class=\"" + quality + "\" href=\"(http[^<>\"]*?)\"").getColumn(0);
+                    for (final String[] quality : qualities) {
+                        final String[] currentLinks = new Regex(tableEntry, "class=\"" + quality[1] + "\" href=\"(http[^<>\"]*?)\"").getColumn(0);
                         if (currentLinks != null && currentLinks.length != 0) {
                             for (final String currentLink : currentLinks) {
                                 decryptedLinks.add(createDownloadlink(currentLink));
