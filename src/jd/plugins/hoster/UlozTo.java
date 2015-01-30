@@ -44,7 +44,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to" }, urls = { "http://(www\\.)?(uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/[a-zA-Z0-9]+/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to" }, urls = { "http://(www\\.)?(uloz\\.to|ulozto\\.sk|ulozto\\.cz|(pornfile\\.)?ulozto\\.net)/[a-zA-Z0-9]+/.+" }, flags = { 2 })
 public class UlozTo extends PluginForHost {
 
     private static final String  REPEAT_CAPTCHA               = "REPEAT_CAPTCHA";
@@ -86,6 +86,7 @@ public class UlozTo extends PluginForHost {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
@@ -109,7 +110,7 @@ public class UlozTo extends PluginForHost {
         /* For age restricted links */
         final String ageFormToken = br.getRegex("id=\"frm-askAgeForm-_token_\" value=\"([^<>\"]*?)\"").getMatch(0);
         if (ageFormToken != null) {
-            br.postPage(br.getURL() + "?do=askAgeForm-submit", "agree=Souhlas%C3%ADm&_token_=" + ageFormToken);
+            br.postPage(br.getURL(), "agree=Confirm&do=askAgeForm-submit&_token_=" + Encoding.urlEncode(ageFormToken));
             handleRedirect(downloadLink);
         }
         // Wrong links show the mainpage so here we check if we got the mainpage
@@ -154,14 +155,20 @@ public class UlozTo extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void handleRedirect(final DownloadLink downloadLink) throws IOException {
-        String continuePage = br.getRegex("<p><a href=\"(http://.*?)\">Please click here to continue</a>").getMatch(0);
-        if (continuePage != null) {
-            downloadLink.setUrlDownload(continuePage);
-            br.getPage(downloadLink.getDownloadURL());
+        for (int i = 0; i <= i; i++) {
+            String continuePage = br.getRegex("<p><a href=\"(http://.*?)\">Please click here to continue</a>").getMatch(0);
+            if (continuePage != null) {
+                downloadLink.setUrlDownload(continuePage);
+                br.getPage(downloadLink.getDownloadURL());
+            } else {
+                break;
+            }
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         this.getPluginConfig().setProperty(REPEAT_CAPTCHA, false);
@@ -187,7 +194,7 @@ public class UlozTo extends PluginForHost {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         final Browser cbr = br.cloneBrowser();
         for (int i = 0; i <= 5; i++) {
-            cbr.getPage("http://ulozto.net/reloadXapca.php?rnd=" + System.currentTimeMillis());
+            cbr.getPage("/reloadXapca.php?rnd=" + System.currentTimeMillis());
             if (cbr.getRequest().getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             }
@@ -247,7 +254,7 @@ public class UlozTo extends PluginForHost {
 
             // If captcha fails, throrotws exception
             // If in automatic mode, clears saved data
-            if (br.containsHTML("\"errors\":\\[\"Error rewriting the text|Rewrite the text from the picture")) {
+            if (br.containsHTML("\"errors\":\\[\"(Error rewriting the text|Rewrite the text from the picture|Text je opsán špatně)")) {
                 if (getPluginConfig().getBooleanProperty(REPEAT_CAPTCHA)) {
                     getPluginConfig().setProperty(CAPTCHA_ID, Property.NULL);
                     getPluginConfig().setProperty(CAPTCHA_TEXT, Property.NULL);

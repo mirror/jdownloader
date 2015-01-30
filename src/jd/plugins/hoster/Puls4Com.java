@@ -82,6 +82,10 @@ public class Puls4Com extends PluginForHost {
 
             /* Get highest quality downloadlink */
             final LinkedHashMap<String, Object> files = (LinkedHashMap<String, Object>) entries.get("files");
+            if (files == null) {
+                /* Video should be offline! */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             LinkedHashMap<String, Object> currentQualityMap = null;
             final String[] qualities = { "h3", "h1", "h2", "h4" };
             for (final String quality : qualities) {

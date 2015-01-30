@@ -95,6 +95,10 @@ public class IfolderRu extends PluginForHost {
             if (br.containsHTML("На данный момент иностранный трафик у этого файла превышает российский") && !withad) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "At the moment foreign traffic of this file is larger than Russia's");
             }
+            final String raidlink = br.getRegex("src: \\'(http://[a-z0-9]+\\.rusfolder\\.com/download_raid/\\d+\\?check=[^<>\"]*?)\\'").getMatch(0);
+            if (raidlink != null) {
+                br.cloneBrowser().getPage(raidlink);
+            }
             br.setFollowRedirects(true);
             br.setDebug(true);
             String passCode = null;
@@ -110,7 +114,7 @@ public class IfolderRu extends PluginForHost {
                 }
             }
             String domain = br.getRegex("(https?://ints\\..*?\\.[a-z]{2,3})/ints/").getMatch(0);
-            String watchAd = br.getRegex("http://ints\\..*?\\.[a-z]{2,3}/ints/\\?(.*?)\"").getMatch(0);
+            String watchAd = br.getRegex("http://ints\\..*?\\.[a-z]{2,3}/ints/\\?([^<>\"\\']+)(\"|\\')").getMatch(0);
             if (watchAd != null) {
                 downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ifolderru.errors.ticketwait", "Waiting for ticket"));
                 watchAd = domain + "/ints/?".concat(watchAd).replace("';", "");
@@ -183,18 +187,15 @@ public class IfolderRu extends PluginForHost {
                 captchaForm.put("confirmed_number", captchaCode);
                 /* this hoster checks content encoding */
                 captchaForm.setEncoding("application/x-www-form-urlencoded");
-                Regex specialStuff = br.getRegex("\"name=\\'(.*?)\\' value=\\'(.*?)\\'");
-                if (specialStuff.getMatch(0) != null && specialStuff.getMatch(1) != null) {
-                    captchaForm.put(specialStuff.getMatch(0), specialStuff.getMatch(1));
+                final String specialParam = br.getRegex("var s=[\t\n\r ]*?\\'([^<>\"]*?)\\';").getMatch(0);
+                String specialValue = br.getRegex("s\\.substring\\(\\d+\\)\\+\"\\' value=\\'([a-z0-9]+)\\\'>").getMatch(0);
+                if (specialValue == null) {
+                    specialValue = "1";
+                }
+                if (specialParam != null) {
+                    captchaForm.put(specialParam, specialValue);
                 } else {
                     logger.info("Specialstuff is null, this could cause trouble...");
-                }
-                /* hidden code */
-                Regex hiddenCode = br.getRegex("var c = \\[\\'(.*?)\\'\\, \\'hh([a-z0-9]+?)\\'\\];");
-                if (hiddenCode.getMatch(0) != null && hiddenCode.getMatch(1) != null) {
-                    captchaForm.put(hiddenCode.getMatch(0), hiddenCode.getMatch(1));
-                } else {
-                    logger.info("hidden_code is null, this could cause trouble...");
                 }
                 try {
                     br.submitForm(captchaForm);

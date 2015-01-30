@@ -70,7 +70,7 @@ public class MgfpCm extends PluginForDecrypt {
                  */
                 br.getPage("http://www.imagefap.com/gallery.php?view=2");
             } else if (!parameter.contains("view=2")) {
-                parameter += "?view=2";
+                parameter = addParameter(parameter, "view=2");
             }
             try {
                 br.getPage(parameter);
@@ -94,7 +94,7 @@ public class MgfpCm extends PluginForDecrypt {
             if (br.getRedirectLocation() != null) {
                 if (br.getRedirectLocation().contains("/pictures/")) {
                     parameter = br.getRedirectLocation();
-                    parameter += "?view=2";
+                    parameter = addParameter(parameter, "view=2");
                     logger.info("New parameter is set: " + parameter);
                     br.getPage(parameter);
                 } else {
@@ -182,6 +182,17 @@ public class MgfpCm extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    private String addParameter(String input, final String data) {
+        if (!input.contains(data)) {
+            if (input.contains("?")) {
+                input += "&" + data;
+            } else {
+                input += "?" + data;
+            }
+        }
+        return input;
     }
 
     /* NO OVERRIDE!! */
