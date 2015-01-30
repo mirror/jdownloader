@@ -52,11 +52,16 @@ public class VidZurCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         // Offline links should also have nice filenames
-        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "vidzur\\.com/embed\\.php\\?(.+)").getMatch(0));
+        final String offlineFilename = new Regex(downloadLink.getDownloadURL(), "(?:vid|file)=(?:\\w+/){1,}([^&]+)").getMatch(0);
+        if (offlineFilename != null) {
+            downloadLink.setName(offlineFilename);
+        }
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         dllink = br.getRegex("playlist:.*?url: \\'(http[^']+(vidzur\\.com|play44\\.net)[^']+)\\'").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = Encoding.urlDecode(dllink, false);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -64,12 +69,15 @@ public class VidZurCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(dllink);
-            if (con.getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setFinalFileName(getFileNameFromHeader(con));
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            } else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
