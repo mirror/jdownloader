@@ -287,11 +287,15 @@ public class DataFileCom extends PluginForHost {
                 if (!SKIPWAITTIME || i > 1) {
                     waitTime(timeBefore, downloadLink, wait);
                 }
-                postPage("http://www.datafile.com/files/ajax.html", "doaction=getFileDownloadLink&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&fileid=" + fid);
-                if (br.containsHTML("\"The two words is not valid")) {
+                // Validation phase, return token that need to be added to getFileDownloadLink call
+                postPage("http://www.datafile.com/files/ajax.html", "doaction=validateCaptcha&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&fileid=" + fid);
+
+                String token = br.getRegex("\\{\"success\":1,\"token\":\"(.*)\"\\}").getMatch(0);
+                if (token == null || br.containsHTML("\"The two words is not valid")) {
                     rc.reload();
                     continue;
                 }
+                postPage("http://www.datafile.com/files/ajax.html", "doaction=getFileDownloadLink&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&fileid=" + fid + "&token=" + token);
                 break;
             }
             if (br.containsHTML("\"The two words is not valid")) {
