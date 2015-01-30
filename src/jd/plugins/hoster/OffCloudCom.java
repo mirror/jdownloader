@@ -168,13 +168,13 @@ public class OffCloudCom extends PluginForHost {
             final String requestId = getJson("requestId");
             if (requestId == null) {
                 /* Should never happen */
-                handleErrorRetries("requestIdnull", 5);
+                handleErrorRetries("requestIdnull", 50, 2 * 60 * 1000l);
             }
             link.setProperty("offcloudrequestId", requestId);
             dllink = getJson("url");
             if (dllink == null) {
                 /* Should never happen */
-                handleErrorRetries("dllinknull", 5);
+                handleErrorRetries("dllinknull", 50, 2 * 60 * 1000l);
             }
             dllink = dllink.replaceAll("\\\\/", "/");
         }
@@ -214,7 +214,7 @@ public class OffCloudCom extends PluginForHost {
                 br.followConnection();
                 updatestatuscode();
                 handleAPIErrors(this.br);
-                handleErrorRetries("unknowndlerror", 5);
+                handleErrorRetries("unknowndlerror", 50, 2 * 60 * 1000l);
             }
             try {
                 if (!this.dl.startDownload()) {
@@ -677,7 +677,7 @@ public class OffCloudCom extends PluginForHost {
                 } else {
                     statusMessage = "\r\nServerside networking problems - please contact the Offcloud support.";
                 }
-                handleErrorRetries("networkingissue", 50);
+                handleErrorRetries("networkingissue", 50, 2 * 60 * 1000l);
             case 11:
                 /*
                  * Daily quota of host reached --> Temporarily disable it (usually hosts are then listed as "Limited" and will not be added
@@ -719,7 +719,7 @@ public class OffCloudCom extends PluginForHost {
                 } else {
                     statusMessage = "\r\nDownload ticket broken --> Retry link";
                 }
-                handleErrorRetries("downloadticketBroken", 10);
+                handleErrorRetries("downloadticketBroken", 30, 30 * 60 * 1000l);
             case 201:
                 /* Host account of multihost is expired --> Disable host for a long period of time! */
                 statusMessage = "Host account of multihost is expired";
@@ -745,7 +745,7 @@ public class OffCloudCom extends PluginForHost {
                 /* Unknown error */
                 statusMessage = "Unknown error";
                 logger.info(NICE_HOST + ": Unknown API error");
-                handleErrorRetries("unknownAPIerror", 10);
+                handleErrorRetries("unknownAPIerror", 10, 2 * 60 * 1000l);
             }
         } catch (final PluginException e) {
             logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
@@ -775,7 +775,7 @@ public class OffCloudCom extends PluginForHost {
      * @param maxRetries
      *            : Max retries before out of date error is thrown
      */
-    private void handleErrorRetries(final String error, final int maxRetries) throws PluginException {
+    private void handleErrorRetries(final String error, final int maxRetries, final long disableTime) throws PluginException {
         int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
         this.currDownloadLink.getLinkStatus().setRetryCount(0);
         if (timesFailed <= maxRetries) {
@@ -786,13 +786,7 @@ public class OffCloudCom extends PluginForHost {
         } else {
             this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
             logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
-            // tempUnavailableHoster(30 * 60 * 1000l);
-            /* Small workaround #1 */
-            if (error.equals("networkingissue")) {
-                tempUnavailableHoster(30 * 60 * 1000l);
-            }
-            /* TODO: Remove plugin defect once all known errors are correctly handled & remove small workarounds */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, error);
+            tempUnavailableHoster(disableTime);
         }
     }
 
@@ -811,40 +805,40 @@ public class OffCloudCom extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Delete downloaded links from the offcloud download history after successful download?");
-            put("SETTING_CLEAR_ALLOWED_IP_ADDRESSES", "Activate 'Confirm IP' workaround?\r\nIn case you often get E-Mails from offcloud to confirm your current IP address, this setting may help.\r\nThis will always delete all of your allowed IPs except your current IP from your offcloud account.\r\n<html><p style=\"color:#F62817\">WARNING: Do NOT use this function in case you\r\n-Use multiple internet connections (IPs) at the same time\r\n-Share your offcloud account with friends\r\n-Use one or more proxies (or VPNs)</p></html>");
-            put("ACCOUNT_USERNAME", "Username:");
-            put("ACCOUNT_LINKSLEFT", "Instant download inputs left:");
-            put("ACCOUNT_TYPE", "Account type:");
-            put("ACCOUNT_SIMULTANDLS", "Max. simultaneous downloads:");
-            put("ACCOUNT_CHUNKS", "Max number of chunks per file:");
-            put("ACCOUNT_RESUME", "Resume of stopped downloads:");
-            put("ACCOUNT_YES", "Yes");
-            put("ACCOUNT_NO", "No");
-            put("DETAILS_TITEL", "Account information");
-            put("LANG_GENERAL_UNLIMITED", "Unlimited");
-            put("LANG_GENERAL_CLOSE", "Close");
-        }
-    };
+                                                  {
+                                                      put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Delete downloaded links from the offcloud download history after successful download?");
+                                                      put("SETTING_CLEAR_ALLOWED_IP_ADDRESSES", "Activate 'Confirm IP' workaround?\r\nIn case you often get E-Mails from offcloud to confirm your current IP address, this setting may help.\r\nThis will always delete all of your allowed IPs except your current IP from your offcloud account.\r\n<html><p style=\"color:#F62817\">WARNING: Do NOT use this function in case you\r\n-Use multiple internet connections (IPs) at the same time\r\n-Share your offcloud account with friends\r\n-Use one or more proxies (or VPNs)</p></html>");
+                                                      put("ACCOUNT_USERNAME", "Username:");
+                                                      put("ACCOUNT_LINKSLEFT", "Instant download inputs left:");
+                                                      put("ACCOUNT_TYPE", "Account type:");
+                                                      put("ACCOUNT_SIMULTANDLS", "Max. simultaneous downloads:");
+                                                      put("ACCOUNT_CHUNKS", "Max number of chunks per file:");
+                                                      put("ACCOUNT_RESUME", "Resume of stopped downloads:");
+                                                      put("ACCOUNT_YES", "Yes");
+                                                      put("ACCOUNT_NO", "No");
+                                                      put("DETAILS_TITEL", "Account information");
+                                                      put("LANG_GENERAL_UNLIMITED", "Unlimited");
+                                                      put("LANG_GENERAL_CLOSE", "Close");
+                                                  }
+                                              };
 
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-        {
-            put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Lösche heruntergeladene links nach jedem erfolgreichen Download aus der offcloud Download-Historie?");
-            put("SETTING_CLEAR_ALLOWED_IP_ADDRESSES", "Aktiviere 'IP-bestätigen' Workaround?\r\nFalls du oft E-Mails von offcloud bekommst mit der Aufforderung, deine aktuelle IP-Adresse zu bestätigen, könnte diese Einstellung helfen.\r\nSie wird immer alle erlaubten IPs außer deine aktuelle in deinem offcloud Konto löschen.\r\n<html><p style=\"color:#F62817\">WARNUNG: Benutze diese Einstellungsmöglichkeit NICHT, falls du\r\n-Mehrere Internetverbindungen (IPs) gleichzeitig nutzt\r\n-Deinen offcloud Account mit Freunden teilst\r\n-Einen oder mehrere Proxys (oder VPNs) nutzt</p></html>");
-            put("ACCOUNT_USERNAME", "Account Name:");
-            put("ACCOUNT_LINKSLEFT", "Verbleibende Anzahl von Instant-Download Links:");
-            put("ACCOUNT_TYPE", "Account Typ:");
-            put("ACCOUNT_SIMULTANDLS", "Max. Anzahl gleichzeitiger Downloads:");
-            put("ACCOUNT_CHUNKS", "Max. Anzahl Verbindungen pro Datei (Chunks):");
-            put("ACCOUNT_RESUME", "Abgebrochene Downloads fortsetzbar:");
-            put("ACCOUNT_YES", "Ja");
-            put("ACCOUNT_NO", "Nein");
-            put("DETAILS_TITEL", "Additional account information");
-            put("LANG_GENERAL_UNLIMITED", "Unlimitiert");
-            put("LANG_GENERAL_CLOSE", "Schließen");
-        }
-    };
+                                                  {
+                                                      put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Lösche heruntergeladene links nach jedem erfolgreichen Download aus der offcloud Download-Historie?");
+                                                      put("SETTING_CLEAR_ALLOWED_IP_ADDRESSES", "Aktiviere 'IP-bestätigen' Workaround?\r\nFalls du oft E-Mails von offcloud bekommst mit der Aufforderung, deine aktuelle IP-Adresse zu bestätigen, könnte diese Einstellung helfen.\r\nSie wird immer alle erlaubten IPs außer deine aktuelle in deinem offcloud Konto löschen.\r\n<html><p style=\"color:#F62817\">WARNUNG: Benutze diese Einstellungsmöglichkeit NICHT, falls du\r\n-Mehrere Internetverbindungen (IPs) gleichzeitig nutzt\r\n-Deinen offcloud Account mit Freunden teilst\r\n-Einen oder mehrere Proxys (oder VPNs) nutzt</p></html>");
+                                                      put("ACCOUNT_USERNAME", "Account Name:");
+                                                      put("ACCOUNT_LINKSLEFT", "Verbleibende Anzahl von Instant-Download Links:");
+                                                      put("ACCOUNT_TYPE", "Account Typ:");
+                                                      put("ACCOUNT_SIMULTANDLS", "Max. Anzahl gleichzeitiger Downloads:");
+                                                      put("ACCOUNT_CHUNKS", "Max. Anzahl Verbindungen pro Datei (Chunks):");
+                                                      put("ACCOUNT_RESUME", "Abgebrochene Downloads fortsetzbar:");
+                                                      put("ACCOUNT_YES", "Ja");
+                                                      put("ACCOUNT_NO", "Nein");
+                                                      put("DETAILS_TITEL", "Additional account information");
+                                                      put("LANG_GENERAL_UNLIMITED", "Unlimitiert");
+                                                      put("LANG_GENERAL_CLOSE", "Schließen");
+                                                  }
+                                              };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
