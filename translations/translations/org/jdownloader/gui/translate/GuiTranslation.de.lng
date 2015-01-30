@@ -626,7 +626,6 @@ MoveDownAction_MoveDownAction=Verschiebe nach unten
 MoveToBottomAction_MoveToBottomAction=Verschiebe nach ganz unten
 MoveToTopAction_MoveToTopAction=Verschiebe nach ganz oben
 MoveUpAction_MoveUpAction=Nach oben verschieben
-MyJDownloaderService_createPanel_description_=Der My.JDownloader.org - Dienst sendet alle Captcha-Anfragen auf dein Handy oder jedes andere internetfähige Gerät. Benutze diesen Dienst, falls Du die Captchas ferngesteuert lösen möchtest.
 MyJDownloaderService_getDescription_tt_=Captcha durch My.JDownloader-Anwendungen gelöst (Webinterface, Mobile Apps,...)
 MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_blackwhitelist_=Black-/Whitelist
 MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_connect_=Verbinden
