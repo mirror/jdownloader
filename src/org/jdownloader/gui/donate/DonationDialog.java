@@ -1,6 +1,7 @@
 package org.jdownloader.gui.donate;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
@@ -30,6 +31,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.action.BasicAction;
+import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtTextArea;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -44,6 +46,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.mainmenu.DonateAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.ExtRealCheckBoxMenuItem;
@@ -65,12 +68,14 @@ public class DonationDialog extends AbstractDialog<Object> {
     private ExtTextArea                        note;
     protected long                             prioritySum;
     protected DonationDetails                  details;
+    private Browser                            br;
+    protected String                           transactionID;
 
     public DonationDialog(DonationDetails details2) {
         super(0, _GUI._.DonationDialog_DonationDialog_title_(), null, _GUI._.DonationDialog_ok(), null);
         logger = LogController.getInstance().getLogger("DonationDialog");
         this.details = details2;
-
+        br = new Browser();
     }
 
     @Override
@@ -143,66 +148,71 @@ public class DonationDialog extends AbstractDialog<Object> {
                 public void run() throws Exception {
 
                     try {
-                        Browser br = new Browser();
 
                         String json = br.getPage(DonateAction.SERVER + "payment/createDonation?" + URLEncode.encodeRFC2396(amountValue + "") + "&" + URLEncode.encodeRFC2396(currencyCode) + "&" + URLEncode.encodeRFC2396(recurringValue + "") + "&" + URLEncode.encodeRFC2396(JSonStorage.serializeToJson(custom)) + "&" + URLEncode.encodeRFC2396(JSonStorage.serializeToJson(sel)) + "&" + URLEncode.encodeRFC2396(noteText));
-                        String transactionID = JSonStorage.restoreFromString(json, TypeRef.STRING);
+                        transactionID = JSonStorage.restoreFromString(json, TypeRef.STRING);
 
                         StatsManager.I().track("/donation/button/redirect");
                         CrossSystem.openURL(DonateAction.SERVER + "payment/donationRedirect?" + URLEncode.encodeRFC2396(JSonStorage.serializeToJson(transactionID)));
 
                         while (true) {
-                            String url = DonateAction.SERVER + "payment/getStatus?" + URLEncode.encodeRFC2396(JSonStorage.serializeToJson(transactionID));
+                            try {
+                                String url = DonateAction.SERVER + "payment/getStatus?" + URLEncode.encodeRFC2396(JSonStorage.serializeToJson(transactionID));
 
-                            final String jsonStatus = br.getPage(url);
+                                final String jsonStatus = br.getPage(url);
 
-                            TransactionStatus enu = JSonStorage.restoreFromString(jsonStatus, new TypeRef<TransactionStatus>() {
-                            });
+                                TransactionStatus enu = JSonStorage.restoreFromString(jsonStatus, new TypeRef<TransactionStatus>() {
+                                });
 
-                            switch (enu) {
-                            case DONE:
-                                StatsManager.I().track("/donation/button/success");
-                                File cfg = Application.getResource("cfg");
-                                cfg.mkdirs();
+                                switch (enu) {
+                                case DONE:
+                                    StatsManager.I().track("/donation/button/success");
+                                    File cfg = Application.getResource("cfg");
+                                    cfg.mkdirs();
 
-                                File donation = null;
-                                int i = 0;
-                                do {
-                                    donation = new File(cfg, "donation_" + (i++) + ".json");
-                                } while (donation.exists());
-                                Transaction transaction = new Transaction();
-                                transaction.setAmount(amountValue);
-                                transaction.setCategories(list);
-                                transaction.setCurrency(currencyCode);
-                                transaction.setNote(noteText);
-                                transaction.setTid(transactionID);
-                                transaction.setTime(System.currentTimeMillis());
-                                IO.writeStringToFile(donation, JSonStorage.serializeToJson(transaction));
-                                Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_thanks_());
-                                close.set(true);
-                                return;
-                            case FAILED:
-                                StatsManager.I().track("/donation/button/failed");
-                                Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_failed());
-                                close.set(false);
-                                return;
-                            case CANCELED:
-                                StatsManager.I().track("/donation/button/canceled");
-                                Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_cancel());
-                                close.set(false);
-                                return;
+                                    File donation = null;
+                                    int i = 0;
+                                    do {
+                                        donation = new File(cfg, "donation_" + (i++) + ".json");
+                                    } while (donation.exists());
+                                    Transaction transaction = new Transaction();
+                                    transaction.setAmount(amountValue);
+                                    transaction.setCategories(list);
+                                    transaction.setCurrency(currencyCode);
+                                    transaction.setNote(noteText);
+                                    transaction.setTid(transactionID);
+                                    transaction.setTime(System.currentTimeMillis());
+                                    IO.writeStringToFile(donation, JSonStorage.serializeToJson(transaction));
+                                    Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_thanks_());
+                                    close.set(true);
+                                    return;
+                                case FAILED:
+                                    StatsManager.I().track("/donation/button/failed");
+                                    Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_failed());
+                                    close.set(false);
+                                    return;
+                                case CANCELED:
+                                    StatsManager.I().track("/donation/button/canceled");
+                                    Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_cancel());
+                                    close.set(false);
+                                    return;
 
-                            case PENDING:
-                            case UNKNOWN:
+                                case PENDING:
+                                case UNKNOWN:
 
+                                }
+
+                            } catch (Throwable e) {
+                                logger.log(e);
                             }
-
                             Thread.sleep(1000);
                         }
                     } catch (InterruptedException e) {
 
                         StatsManager.I().track("/donation/button/exception/InterruptedException");
 
+                        startFallbackWaiter(list, noteText, amountValue);
+                        close.set(true);
                     } catch (Throwable e) {
                         try {
                             StatsManager.I().track("/donation/button/exception/" + URLEncode.encodeRFC2396(e.getMessage()));
@@ -210,6 +220,7 @@ public class DonationDialog extends AbstractDialog<Object> {
                             e2.printStackTrace();
 
                         }
+
                         logger.log(e);
                         custom.put("source", "buttonFallback");
 
@@ -238,7 +249,9 @@ public class DonationDialog extends AbstractDialog<Object> {
             try {
                 Dialog.getInstance().showDialog(d);
             } catch (DialogCanceledException e1) {
+
                 close.set(false);
+
             } catch (final Throwable e1) {
 
             }
@@ -260,7 +273,7 @@ public class DonationDialog extends AbstractDialog<Object> {
         MigPanel p = new MigPanel("ins 5", "[grow,fill]15[]0", "[]");
 
         JLabel top = new JLabel("<html><b>" + _GUI._.DonationDialog_layoutDialogContent_top_text() + "</b></html>");
-        p.add(top, "spanx,pushx,growx");
+        p.add(top, "spanx,pushx,growx,gapbottom 20");
         MigPanel left = new MigPanel("ins 0,wrap 3", "[][][grow,fill]", "[]");
         p.add(left, "pushy,growy");
 
@@ -269,6 +282,7 @@ public class DonationDialog extends AbstractDialog<Object> {
         p.add(icon, "aligny bottom");
 
         left.add(new JLabel(_GUI._.DonationDialog_layoutDialogContent_donate_amount()));
+
         String lng = System.getProperty("user.language");
         String country = System.getProperty("user.country");
         if (lng == null) {
@@ -282,6 +296,7 @@ public class DonationDialog extends AbstractDialog<Object> {
         Currency currency = Currency.getInstance(loc);
         symbol = "€";
         currencyCode = "EUR";
+
         NumberFormat format = null;
         if ("EUR".equals(currency.getCurrencyCode())) {
 
@@ -290,6 +305,18 @@ public class DonationDialog extends AbstractDialog<Object> {
             currencyCode = "USD";
 
         }
+
+        MigPanel pre = new MigPanel("ins 0", "[grow,fill][grow,fill][grow,fill][grow,fill][grow,fill][grow,fill][grow,fill]", "[]");
+        pre.add(createPreButton(1));
+        pre.add(createPreButton(2));
+        pre.add(createPreButton(5));
+        pre.add(createPreButton(10));
+        pre.add(createPreButton(20));
+        pre.add(createPreButton(50));
+        pre.add(createPreButton(100));
+
+        left.add(pre, "skip 1,spanx");
+
         MaskFormatter formatter;
 
         NumberFormat f = NumberFormat.getInstance();
@@ -306,8 +333,9 @@ public class DonationDialog extends AbstractDialog<Object> {
         input.setValue(5.00);
         defaultBorder = input.getBorder();
         // input.setColumns(20);
-        left.add(new JLabel(symbol), "gaptop 20");
-        left.add(input, "gaptop 20,pushx,growx");
+
+        left.add(new JLabel(symbol), "skip 1");
+        left.add(input, "pushx,growx");
         input.addFocusListener(new FocusListener() {
 
             @Override
@@ -319,9 +347,10 @@ public class DonationDialog extends AbstractDialog<Object> {
                 input.setBorder(defaultBorder);
             }
         });
-        left.add(recurringLabel = new JLabel(_GUI._.DonationDialog_layoutDialogContent_donate_recurring()), "hidemode 2");
+        recurringLabel = new JLabel(_GUI._.DonationDialog_layoutDialogContent_donate_recurring());
+        // left.add(recurringLabel, "hidemode 2");
         recurring = new JCheckBox();
-        left.add(recurring, "skip 1,hidemode 2");
+        // left.add(recurring, "skip 1,hidemode 2");
         recurring.setVisible(false);
         recurringLabel.setVisible(false);
         left.add(new JLabel(_GUI._.DonationDialog_layoutDialogContent_donate_category()));
@@ -384,6 +413,90 @@ public class DonationDialog extends AbstractDialog<Object> {
         prioritySum = sum;
 
         return p;
+    }
+
+    private Component createPreButton(final int i) {
+        ExtButton ret = new ExtButton(new AppAction() {
+            {
+                setName(i + "" + symbol);
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                StatsManager.I().track("/donation/button/preselect/" + i);
+                input.setText(i + "");
+            }
+        });
+        // ret.setRolloverEffectEnabled(true);
+        return ret;
+    }
+
+    public void startFallbackWaiter(final String[] list, final String noteText, final int amountValue) {
+        StatsManager.I().track("/donation/button/startfallbackwait");
+        new Thread("Wait for Donation") {
+            public void run() {
+                long start = System.currentTimeMillis();
+
+                while (System.currentTimeMillis() - start < 30 * 60 * 60 * 1000l) {
+                    try {
+                        String url;
+
+                        url = DonateAction.SERVER + "payment/getStatus?" + URLEncode.encodeRFC2396(JSonStorage.serializeToJson(transactionID));
+
+                        final String jsonStatus = br.getPage(url);
+
+                        TransactionStatus enu = JSonStorage.restoreFromString(jsonStatus, new TypeRef<TransactionStatus>() {
+                        });
+
+                        switch (enu) {
+                        case DONE:
+                            StatsManager.I().track("/donation/button/success/fallbackwait");
+                            File cfg = Application.getResource("cfg");
+                            cfg.mkdirs();
+
+                            File donation = null;
+                            int i = 0;
+                            do {
+                                donation = new File(cfg, "donation_" + (i++) + ".json");
+                            } while (donation.exists());
+                            Transaction transaction = new Transaction();
+                            transaction.setAmount(amountValue);
+                            transaction.setCategories(list);
+                            transaction.setCurrency(currencyCode);
+                            transaction.setNote(noteText);
+                            transaction.setTid(transactionID);
+                            transaction.setTime(System.currentTimeMillis());
+                            IO.writeStringToFile(donation, JSonStorage.serializeToJson(transaction));
+                            Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_thanks_());
+
+                            return;
+                        case FAILED:
+                            StatsManager.I().track("/donation/button/failed/fallbackwait");
+                            Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_failed());
+
+                            return;
+                        case CANCELED:
+                            StatsManager.I().track("/donation/button/canceled/fallbackwait");
+                            Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_cancel());
+
+                            return;
+
+                        case PENDING:
+                        case UNKNOWN:
+
+                        }
+                    } catch (Throwable e) {
+                        logger.log(e);
+                    }
+
+                    try {
+                        Thread.sleep(5000);
+                    } catch (InterruptedException e) {
+                        return;
+                    }
+                }
+            };
+        }.start();
     }
 
 }
