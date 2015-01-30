@@ -165,7 +165,6 @@ public class DrTuberCom extends PluginForHost {
             filename = br.getRegex("<title>Download Free Mobile Porn \\-([^<>\"]*?)\\- Download Preview \\- DrTuber\\.com</title>").getMatch(0);
             DLLINK = br.getRegex("\"(https?://[a-z0-9\\.\\-]+/(mp4|3gp)/[^<>\"]*?)\"").getMatch(0);
         } else {
-
             String vkey = null;
             /* normal links */
             if (new Regex(downloadLink.getDownloadURL(), Pattern.compile("http://(www\\.)?drtuber\\.com/video/\\d+", Pattern.CASE_INSENSITIVE)).matches()) {
@@ -249,11 +248,11 @@ public class DrTuberCom extends PluginForHost {
         downloadLink.setProperty("ftitle", filename);
         downloadLink.setProperty("fext", ext);
         downloadLink.setName(filename + ext);
-        Browser br2 = br.cloneBrowser();
+        final Browser br2 = br.cloneBrowser();
         URLConnectionAdapter con = null;
         try {
             br2.setFollowRedirects(true);
-            br2.getHeaders().put("Referer", "http://www.drtuber.com/player/videoplayer.swf?v=18.38&ps=CCCCCC");
+            br2.getHeaders().put("Referer", "http://www.drtuber.com/player/videoplayer.swf?v=18.41&ps=CCCCCC");
             br2.getHeaders().put("Accept-Language", "de,en-US;q=0.7,en;q=0.3");
             con = br2.openGetConnection(DLLINK);
             if (!con.getContentType().contains("html")) {
@@ -428,7 +427,7 @@ public class DrTuberCom extends PluginForHost {
             /* Try not to waste new link generation as we can only download 3 videos a day... */
             DLLINK = this.checkDirectLink(link, "account_free_directlink");
             if (DLLINK == null) {
-                DLLINK = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=\"video/mp4\"").getMatch(0);
+                DLLINK = getUncryptedFinallink();
             }
             if (DLLINK == null) {
                 /* Only 'use the download button' if we cannot find any stream URL as filesizes/video quality should be the same. */
@@ -471,6 +470,10 @@ public class DrTuberCom extends PluginForHost {
             link.setProperty("premium_directlink", dl.getConnection().getURL().toString());
             dl.startDownload();
         }
+    }
+
+    private String getUncryptedFinallink() {
+        return br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=\"video/mp4\"").getMatch(0);
     }
 
     private void handleServerErrors() throws PluginException {
