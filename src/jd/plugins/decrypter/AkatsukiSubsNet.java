@@ -68,7 +68,7 @@ public class AkatsukiSubsNet extends PluginForDecrypt {
             // Get all tables
             String[] tables = br.getRegex("<table(.*?)</table>").getColumn(0);
             for (final String table : tables) {
-                if (!table.contains("downloads.akatsuki")) {
+                if (!table.contains("downloads.akatsuki") && !table.contains("archiv.akatsuki")) {
                     continue;
                 }
                 // Get entries of each table

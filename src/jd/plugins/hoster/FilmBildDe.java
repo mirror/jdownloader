@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -26,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "film.bild.de" }, urls = { "http://(www\\.)?bild\\.de/video/[^<>\"]+\\d+\\.bild\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "film.bild.de" }, urls = { "http://(www\\.)?bild\\.de/video/[^<>\"]+\\.bild\\.html" }, flags = { 0 })
 public class FilmBildDe extends PluginForHost {
 
     public FilmBildDe(final PluginWrapper wrapper) {
@@ -48,7 +49,11 @@ public class FilmBildDe extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String linkpart = Encoding.htmlDecode(new Regex(downloadLink.getDownloadURL(), "video/([^<>\"]+\\d+)\\.bild").getMatch(0));
+        final String linkpart = Encoding.htmlDecode(new Regex(downloadLink.getDownloadURL(), "video/([^<>\"]+\\d{5,8})").getMatch(0));
+        if (linkpart == null) {
+            /* Fail safe as the input RegEx is more open than this. */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getPage("http://www.bild.de/video/" + linkpart + ",view=xml.bild.xml");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -68,14 +73,31 @@ public class FilmBildDe extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        final String continuelink = br.getRegex("<video src=\"(http[^<>\"]*?)\"").getMatch(0);
-        if (continuelink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.getPage(continuelink);
-        final String dllink = br.getRegex("http\\-equiv=\"refresh\" content=\"\\d+;URL=(http[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("<video src=\"(http[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        URLConnectionAdapter con = null;
+        try {
+            try {
+                /* @since JD2 */
+                con = br.openHeadConnection(dllink);
+            } catch (final Throwable t) {
+                /* Not supported in old 0.9.581 Stable */
+                con = br.openGetConnection(dllink);
+            }
+            if (con.getContentType().contains("html")) {
+                br.followConnection();
+                dllink = br.getRegex("http\\-equiv=\"refresh\" content=\"\\d+;URL=(http[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
