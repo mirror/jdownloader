@@ -36,7 +36,7 @@ import jd.plugins.FilePackage;
 @SuppressWarnings("deprecation")
 public class AniLinkzCom extends antiDDoSForDecrypt {
 
-    private final String            supported_hoster = "(4shared\\.com|4vid\\.me|animeuploads\\.com|auengine\\.com|chia\\-anime\\.com|cizgifilmlerizle\\.com|dailymotion\\.com|gogoanime\\.com|gorillavid\\.in|mp4upload\\.com|movreel\\.com|myspace\\.com|nowvideo\\.eu|novamov\\.com|play44\\.net|(putlocker|firedrive)\\.com|rutube\\.ru|sockshare\\.com|stagevu\\.com|upload2\\.com|uploadc\\.com|veevr\\.com|veoh\\.com|vidbox\\.yt|video44\\.net|videobb\\.com|videobam\\.com|videofun\\.me|videonest\\.net|videoweed\\.com|vidzur\\.com|vimeo\\.com|vk\\.com|yourupload\\.com|youtube\\.com|zshare\\.net|220\\.ro|videos\\.sapo\\.pt)";
+    private final String            supported_hoster = "(4shared\\.com|4vid\\.me|aniupload\\.com|animeuploads\\.com|animeultima\\.tv|arkvid\\.tv|auengine\\.(?:com|io)|bakavideo\\.tv|byzoo\\.org|chia\\-anime\\.com|cheesestream\\.com|cizgifilmlerizle\\.com|dailymotion\\.com|easyvideo\\.me|facebook\\.com/video|gogoanime\\.com|gorillavid\\.in|mp4star\\.com|mp4upload\\.com|movreel\\.com|myspace\\.com|nowvideo\\.eu|novamov\\.com|play44\\.net|(putlocker|firedrive)\\.com|playbb\\.me|playpanda\\.net|rutube\\.ru|sockshare\\.com|stagevu\\.com|upload2\\.com|uploadc\\.com|uploadcrazy\\.net|veevr\\.com|veoh\\.com|vidbox\\.yt|vidbull\\.com|vidcrazy\\.net|video44\\.net|videobb\\.com|videobam\\.com|videobull\\.com|videodrive\\.tv|videofun\\.me|videonest\\.net|videous\\.tv|videoweed\\.com|videowing\\.me|vidzur\\.com|videozoo\\.me|vimeo\\.com|vk\\.com|yourupload\\.com|youtube\\.com|zshare\\.net|220\\.ro|videos\\.sapo\\.pt)";
     private final String            invalid_links    = "http://(www\\.)?anilinkz\\.com/(search|affiliates|get|img|dsa|forums|files|category|\\?page=|faqs|.*?-list|.*?-info|\\?random).*?";
     private String                  parameter        = null;
     private String                  fpName           = null;
@@ -104,8 +104,22 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
                 }
                 for (int i = 0; i != p; i++) {
                     String host = new Regex(br.getURL(), "(https?://[^/]+)").getMatch(0);
-                    String nextPage = br.getRegex("class=\"page\" href=\"(/series/[^\\?]+\\?page=" + (p + 1) + ")\">\\d+</a>").getMatch(0);
-                    String[] links = br.getRegex("href=\"(/[^\"]+)\">[^<]+</a>[\r\n\t ]+Series:").getColumn(0);
+                    // new
+                    // <script type="text/javascript">
+                    // $(function() {
+                    // $('#pagenavi').pagination({
+                    // pages: 2,
+                    // displayedPages: 7,
+                    // currentPage: 1, selectOnClick: false,
+                    // hrefTextPrefix: '/series/gigant-shooter-tsukasa?page=',
+                    // cssStyle: 'light-theme'
+                    // });
+                    // });
+                    // </script>
+                    String pages = br.getRegex("pages: (\\d+),").getMatch(0);
+                    String txtPrefix = br.getRegex("hrefTextPrefix: '(/series/[^\\?]+\\?page=)").getMatch(0);
+                    String nextPage = (pages != null && Integer.parseInt(pages) >= (p + 1) ? txtPrefix + (p + 1) : null);
+                    String[] links = br.getRegex("href=\"(/[^\"]+)\">[^<]+</a>\\s*</span>\\s*Series:").getColumn(0);
                     if (links == null || links.length == 0) {
                         logger.warning("Could not find series 'links' : " + parameter);
                         return null;
@@ -123,7 +137,7 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
                 }
             } else {
                 // set filepackage
-                fpName = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
+                fpName = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
                 if (fpName == null) {
                     logger.warning("filepackage == null: " + parameter);
                     logger.warning("Please report issue to JDownloader Development team!");
@@ -142,6 +156,8 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
                     String[] links = br.getRegex("<a rel=\"nofollow\" title=\"[^\"]+(?!dead) Source\" href=\"(/[^\"]+\\?src=\\d+)\">").getColumn(0);
                     if (links != null && links.length != 0) {
                         for (String link : links) {
+                            // we should reset any values that carry over!
+                            spart = 1;
                             br2 = br.cloneBrowser();
                             getPage(br2, link);
                             parsePage();
@@ -171,14 +187,14 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
                 escapeAll = escapeAll.replaceAll("[A-Z~!@#\\$\\*\\{\\}\\[\\]\\-\\+\\.]?", "");
                 escapeAll = Encoding.htmlDecode(escapeAll);
                 escapeAll = Encoding.urlDecode(escapeAll, false);
-                // cleanup crap
-                if (new Regex(escapeAll, "https?://[^\"]+(cizgifilmlerizle\\.com|animeuploads\\.com)/[^\"]+<div[^>]+").matches()) {
-                    escapeAll = escapeAll.replaceAll("<div[^>]+>", "");
-                }
+                // cleanup crap.. wondering why we do this now?? there are hoster plugins exist of these two
+                // if (new Regex(escapeAll, "(?:https?:)?//[^\"]+(cizgifilmlerizle\\.com|animeuploads\\.com)/[^\"]+<div[^>]+").matches()) {
+                // escapeAll = escapeAll.replaceAll("<div[^>]+>", "");
+                // }
             }
             if (inValidate(escapeAll) || new Regex(escapeAll, "(/img/\\w+dead\\.jpg|http://www\\./media)").matches()) {
                 // escapeAll == null / not online yet... || offline results within escapeAll
-                if (br.containsHTML("This page will be updated as soon as")) {
+                if (br.containsHTML("This page will be updated as soon as|becomes available\\. Stay tuned for ")) {
                     logger.info("Not been release yet... : " + br2.getURL());
                 } else if (inValidate(escapeAll)) {
                     logger.info("DeadLink!... : " + br2.getURL());
@@ -194,7 +210,7 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
         }
 
         // embed links that are not found by generic's
-        String link = new Regex(escapeAll, "(https?://(\\w+\\.)?vureel\\.com/playwire\\.php\\?vid=\\d+)").getMatch(0);
+        String link = new Regex(escapeAll, "((?:https?:)?//(\\w+\\.)?vureel\\.com/playwire\\.php\\?vid=\\d+)").getMatch(0);
         // with stagevu they are directly imported finallink and not embed player. We want the image for the uid, return to hoster.
         if (inValidate(link) && escapeAll.contains("stagevu.com/")) {
             String stagevu = new Regex(escapeAll, "previewImage=\"https?://stagevu\\.com/img/thumbnail/([a-z]{12})").getMatch(0);
@@ -214,25 +230,28 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
 
         // generic fail overs
         if (inValidate(link)) {
-            link = new Regex(escapeAll, "<iframe src=\"(https?://([^<>\"]+)?" + supported_hoster + "/[^<>\"]+)\"").getMatch(0);
+            link = new Regex(escapeAll, "<iframe src=\"((?:https?:)?//([^<>\"]+)?" + supported_hoster + "/[^<>\"]+)\"").getMatch(0);
         }
         if (inValidate(link)) {
-            link = new Regex(escapeAll, "(href|url|file)=\"?(https?://([^<>\"]+)?" + supported_hoster + "/[^<>\"]+)\"").getMatch(1);
+            link = new Regex(escapeAll, "(href|url|file)=\"?((?:https?:)?//([^<>\"]+)?" + supported_hoster + "/[^<>\"]+)\"").getMatch(1);
         }
         if (inValidate(link)) {
-            link = new Regex(escapeAll, "src=\"(https?://([^<>\"]+)?" + supported_hoster + "/[^<>\"]+)\"").getMatch(0);
+            link = new Regex(escapeAll, "src=\"((?:https?:)?//([^<>\"]+)?" + supported_hoster + "/[^<>\"]+)\"").getMatch(0);
         }
         if (!inValidate(link)) {
+            if (!link.startsWith("http") && link.startsWith("//")) {
+                link = "http:" + link;
+            }
             decryptedLinks.add(createDownloadlink(link));
         } else if (inValidate(link) && new Regex(escapeAll, "(anilinkz\\.com/get/|chia\\-anime\\.com/|myvideo\\.de/)").matches()) {
-            String[] aLinks = new Regex(escapeAll, "(http[^\"]+/get/[^\"]+)").getColumn(0);
+            String[] aLinks = new Regex(escapeAll, "((?:https?:)?[^\"]+/get/[^\"]+)").getColumn(0);
             // chia-anime can't be redirected back into dedicated plugin
             if ((aLinks == null || aLinks.length == 0) && escapeAll.contains("chia-anime.com")) {
-                aLinks = new Regex(escapeAll, "url\":\"(https?[^\"]+chia-anime\\.com[^\"]+)").getColumn(0);
+                aLinks = new Regex(escapeAll, "url\":\"((?:https?:)?[^\"]+chia-anime\\.com[^\"]+)").getColumn(0);
             }
             // myvideo links are also direct links to flvs, using anilinks own swf player.
             if ((aLinks == null || aLinks.length == 0) && escapeAll.contains("myvideo.de")) {
-                aLinks = new Regex(escapeAll, "=(https?[^\"]+myvideo\\.de/[^\"]+)").getColumn(0);
+                aLinks = new Regex(escapeAll, "=((?:https?:)?[^\"]+myvideo\\.de/[^\"]+)").getColumn(0);
             }
             if (aLinks != null && aLinks.length != 0) {
                 for (String aLink : aLinks) {
@@ -273,6 +292,10 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
                 escapeAll = escapeAll.replace(link, "");
                 parsePage();
             }
+        }
+        if (link == null) {
+            logger.warning("link == null");
+            logger.warning(escapeAll);
         }
         return true;
     }

@@ -63,7 +63,6 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
         final String link = downloadLink.getDownloadURL();
         URLConnectionAdapter con = null;
         if (link.matches(".+://gateway\\d*\\.play44\\.net/.+")) {
-            prepBrowser(br);
             // In case the link are directlinks! current cloudflare implementation will actually open them!
             br.setFollowRedirects(true);
             try {

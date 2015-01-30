@@ -29,14 +29,18 @@ import jd.plugins.FilePackage;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2,
 
-names = { "gogoanime.com", "goodanime.net", "gooddrama.net", "playbb.me", "videowing.me", "easyvideo.me", "videozoo.me", "video66.org", "animewow.tv", "dramago.com", "playpanda.net" },
+names = { "gogoanime.com", "goodanime.net", "gooddrama.net", "playbb.me", "videowing.me", "easyvideo.me", "videozoo.me", "video66.org", "animewow.tv", "dramago.com", "playpanda.net", "byzoo.org", "vidzur.com" },
 
 urls = { "http://(www\\.)?gogoanime\\.com/(?!flowplayer)(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)", "http://(www\\.)?goodanime\\.net/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)", "http://(www\\.)?gooddrama\\.net/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)", "http://(www\\.)?playbb\\.me/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)", "http://(www\\.)?videowing\\.me/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)",
         "http://(www\\.)?easyvideo\\.me/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)", "http://(www\\.)?videozoo\\.me/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)", "http://(www\\.)?video66\\.org/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)", "http://(www\\.)?animewow\\.tv/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)", "http://(www\\.)?dramago\\.com/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)",
-        "http://(www\\.)?playpanda\\.net/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)" },
+        "http://(www\\.)?playpanda\\.net/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)", "http://(www\\.)?byzoo\\.org/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)", "http://(www\\.)?vidzur\\.com/(?!embed)(gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)" },
 
-        flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class GogoanimeCom extends antiDDoSForDecrypt {
+
+    // NOTE:
+    // play44.net = gogoanime.com url (doesn't seem to have mirror in its own domain happening)
+    // videobug.net = gogoanime.com url (doesn't seem to have mirror in its own domain happening)
 
     public GogoanimeCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -71,6 +75,8 @@ public class GogoanimeCom extends antiDDoSForDecrypt {
         }
 
         if (parameter.matches(embed)) {
+            // majority, if not all are located on play44.net (or ip address). There for there is no need for many hoster plugins, best to
+            // use single hoster plugin so connection settings are aok.
             final String url = br.getRegex(".+url: (\"|')(.+\\.(mp4|flv|avi|mpeg|mkv).*?)\\1").getMatch(1);
             if (url != null) {
                 decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(url)));

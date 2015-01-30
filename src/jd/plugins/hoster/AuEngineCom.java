@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "auengine.com" }, urls = { "http://(www\\.)?auengine\\.com/embed\\.php\\?file=.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "auengine.com" }, urls = { "http://(www\\.)?auengine\\.(?:com|io)/(embed\\.php\\?file=.+|embed/[a-zA-Z0-9]+)" }, flags = { 0 })
 public class AuEngineCom extends PluginForHost {
 
     // raztoki embed video player template.
@@ -53,12 +53,31 @@ public class AuEngineCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         // Offline links should also have nice filenames
-        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "auengine\\.com/embed\\.php\\?file=(.+)").getMatch(0));
+        final String offlineFilename = new Regex(downloadLink.getDownloadURL(), "auengine\\.(?:com|io)/embed\\.php\\?file=(.+)").getMatch(0);
+        if (offlineFilename != null) {
+            downloadLink.setName(offlineFilename);
+        }
         br.getPage(downloadLink.getDownloadURL());
         String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        dllink = br.getRegex("url: '(http[^']+auengine\\.com(%2F|/)videos[^']+)").getMatch(0);
+        dllink = br.getRegex("url: '(http[^']+auengine\\.(?:com|io)(%2F|/)videos[^']+)").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("video_link = \\'(http[^']+auengine\\.com[^']+)").getMatch(0);
+            dllink = br.getRegex("video_link = '(http[^']+auengine\\.(?:com|io)[^']+)").getMatch(0);
+            // this will preserve hd over sd.
+            if (dllink == null) {
+                dllink = br.getRegex("file\\s*:\\s*'(http[^']+auengine\\.(?:com|io)[^']+)',\\s*label\\s*:\\s*'1080p'").getMatch(0);
+            }
+            if (dllink == null) {
+                dllink = br.getRegex("file\\s*:\\s*'(http[^']+auengine\\.(?:com|io)[^']+)',\\s*label\\s*:\\s*'720p'").getMatch(0);
+            }
+            if (dllink == null) {
+                dllink = br.getRegex("file\\s*:\\s*'(http[^']+auengine\\.(?:com|io)[^']+)',\\s*label\\s*:\\s*'480p'").getMatch(0);
+            }
+            if (dllink == null) {
+                dllink = br.getRegex("file\\s*:\\s*'(http[^']+auengine\\.(?:com|io)[^']+)',\\s*label\\s*:\\s*'360p'").getMatch(0);
+            }
+            if (dllink == null) {
+                dllink = br.getRegex("file\\s*:\\s*'(http[^']+auengine\\.(?:com|io)[^']+)',\\s*label\\s*:\\s*'240p'").getMatch(0);
+            }
         }
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
