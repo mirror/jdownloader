@@ -35,11 +35,6 @@ public class SpglD extends PluginForDecrypt {
     private static final Pattern PATTERN_SUPPORED_FOTOSTRECKE         = Pattern.compile("http://(www\\.)?spiegel\\.de/fotostrecke/[a-z0-9\\-]+\\.html", Pattern.CASE_INSENSITIVE);
     private static final String  PATTERN_SUPPORTED_FOTOSTRECKE_SINGLE = "http://(www\\.)?spiegel\\.de/fotostrecke/[a-z0-9\\-]+\\d+\\-\\d+\\.html";
 
-    /*
-     * Old video types/formats: Type 1: h263 flv Type 2: flv mid (VP6) Type 3: h263 low Type 4: flv low (VP6) Type 5: flv high (VP6)
-     * (680544) Type 6: h263 3gp Type 7: h263 3gp low Type 8: iphone mp4 Type 9: podcast mp4 640480 Type 15 : H264
-     */
-
     // Patterns für Fotostrecken
     private static final Pattern PATTERN_IMG_URL                      = Pattern.compile("<a id=\"spFotostreckeControlImg\" href=\"(/fotostrecke/fotostrecke-\\d+-\\d+.html)\"><img src=\"(http://www.spiegel.de/img/.+?(\\.\\w+?))\"");
     private static final Pattern PATTERN_IMG_TITLE                    = Pattern.compile("<meta name=\"description\" content=\"(.+?)\" />");

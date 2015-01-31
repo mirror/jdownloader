@@ -75,7 +75,6 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
     private ArrayList<DownloadLink> handleNewType(ArrayList<DownloadLink> decryptedLinks, CryptedLink parameter, String plain_folder_id, String plain_domain, ProgressController progress) throws Exception {
 
         final DownloadLink main = createDownloadlink("https://amazondecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
-        String requestedMd5 = new Regex(parameter.getCryptedUrl(), "md5=([a-zA-z0-9]{32})").getMatch(0);
         String requestedFilename = new Regex(parameter.getCryptedUrl(), "name=(.+)").getMatch(0);
         if (requestedFilename != null) {
             requestedFilename = Encoding.urlDecode(requestedFilename, false);
@@ -84,8 +83,8 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
         main.setProperty("mainlink", parameter);
         try {
             main.setContentUrl(" https://www." + plain_domain + "/clouddrive/share/" + plain_folder_id);
-        } catch (Throwable e) {
-
+        } catch (final Throwable e) {
+            /* Not available in old 0.9.581 Stable */
         }
 
         prepBR();

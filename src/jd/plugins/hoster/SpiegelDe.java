@@ -46,8 +46,15 @@ public class SpiegelDe extends PluginForHost {
     /*
      * Important for pattern_supported_video: Way to get mobile versions of videos: Use a mobile UA - Video site:
      * http://m.spiegel.de/video/video-1234567.html AND link that leads to the final mobile video URL:
-     * http://m.spiegel.de/video/media/video-1234567.html SECOND, NON-mobile way to get the finallinks:
-     * http://spiegel.de/video/media/video-1234567.html
+     * http://m.spiegel.de/video/media/video-1234567.html
+     */
+    /*
+     * SECOND, NON-mobile way to get the finallinks: http://spiegel.de/video/media/video-1234567.html
+     */
+    /*
+     * THIRD, NON-mobile way to get finallinks: http://video.spiegel.de/flash/1234567.xml Old video types/formats: Type 1: h263 flv Type 2:
+     * flv mid (VP6) Type 3: h263 low Type 4: flv low (VP6) Type 5: flv high (VP6) (680544) Type 6: h263 3gp Type 7: h263 3gp low Type 8:
+     * iphone mp4 Type 9: podcast mp4 640480 Type 15 : H264
      */
 
     public SpiegelDe(final PluginWrapper wrapper) {
@@ -75,8 +82,20 @@ public class SpiegelDe extends PluginForHost {
     @SuppressWarnings("deprecation")
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws PluginException, IOException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
+        br.setFollowRedirects(false);
         String filename = null;
+        if (new Regex(downloadLink.getDownloadURL(), pattern_supported_video).matches()) {
+            /* pattern_supported_video links can redirect to pattern_supported_spiegeltvfilme */
+            br.getPage(downloadLink.getDownloadURL());
+            final String redirect = br.getRedirectLocation();
+            if (redirect != null) {
+                if (new Regex(redirect, pattern_supported_spiegeltvfilme).matches()) {
+                    downloadLink.setUrlDownload(redirect);
+                } else {
+                    br.getPage(redirect);
+                }
+            }
+        }
         if (new Regex(downloadLink.getDownloadURL(), pattern_supported_spiegeltvfilme).matches()) {
             /* More info e.g. here: http://spiegeltv-prod-static.s3.amazonaws.com/projectConfigs/projectConfig.json?cache=648123456s5 */
             br.getPage(downloadLink.getDownloadURL());
@@ -97,18 +116,24 @@ public class SpiegelDe extends PluginForHost {
                     filename = new Regex(DLLINK, "/images/(.+)").getMatch(0);
                 }
             } else {
-                br.getPage(downloadLink.getDownloadURL());
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 final String videoserver = br.getRegex("var server[\t\n\r ]*?=[\t\n\r ]*?\"(https?://[^<>\"]*?)\"").getMatch(0);
-                final String file = br.getRegex("spStartVideo\\d+\\(\\d+, \\'([^<>\"]*?\\.(mp4|flv))\\'").getMatch(0);
+                final String file = br.getRegex("spStartVideo\\d+\\(\\d+, \\'([^<>\"]*?)\\'").getMatch(0);
                 filename = br.getRegex("class=\"module\\-title\">([^<>]*?)</div>").getMatch(0);
                 if (filename == null) {
                     filename = br.getRegex("property=\"og:title\"[\t\n\r ]*?content=\"([^<>\"]*?) \\- SPIEGEL ONLINE \\- Video\"").getMatch(0);
                 }
                 if (filename == null || videoserver == null || file == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (file.equals("")) {
+                    /*
+                     * We could now access this but it should return a 404 and the video is offline:
+                     * http://video.spiegel.de/flash/1234567.xml
+                     */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 br.getHeaders().put("Accept", "video/webm,video/ogg,video/*;q=0.9,application/ogg;q=0.7,audio/*;q=0.6,*/*;q=0.5");
                 DLLINK = videoserver + file;
