@@ -63,23 +63,31 @@ public class AuEngineCom extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("video_link = '(http[^']+auengine\\.(?:com|io)[^']+)").getMatch(0);
             // this will preserve hd over sd.
+            // NOTE: not all videos comply with 1080|720|etc they can be 710|381 https://svn.jdownloader.org/issues/62623
             if (dllink == null) {
-                dllink = br.getRegex("file\\s*:\\s*'(http[^']+auengine\\.(?:com|io)[^']+)',\\s*label\\s*:\\s*'1080p'").getMatch(0);
+                dllink = br.getRegex("file\\s*:\\s*'(http[^']+auengine\\.(?:com|io)[^']+)',\\s*label\\s*:\\s*'1\\d{3}p'").getMatch(0);
             }
             if (dllink == null) {
-                dllink = br.getRegex("file\\s*:\\s*'(http[^']+auengine\\.(?:com|io)[^']+)',\\s*label\\s*:\\s*'720p'").getMatch(0);
+                dllink = br.getRegex("file\\s*:\\s*'(http[^']+auengine\\.(?:com|io)[^']+)',\\s*label\\s*:\\s*'7\\d{2}p'").getMatch(0);
             }
             if (dllink == null) {
-                dllink = br.getRegex("file\\s*:\\s*'(http[^']+auengine\\.(?:com|io)[^']+)',\\s*label\\s*:\\s*'480p'").getMatch(0);
+                dllink = br.getRegex("file\\s*:\\s*'(http[^']+auengine\\.(?:com|io)[^']+)',\\s*label\\s*:\\s*'4\\d{2}p'").getMatch(0);
             }
             if (dllink == null) {
-                dllink = br.getRegex("file\\s*:\\s*'(http[^']+auengine\\.(?:com|io)[^']+)',\\s*label\\s*:\\s*'360p'").getMatch(0);
+                dllink = br.getRegex("file\\s*:\\s*'(http[^']+auengine\\.(?:com|io)[^']+)',\\s*label\\s*:\\s*'3\\d{2}p'").getMatch(0);
             }
             if (dllink == null) {
-                dllink = br.getRegex("file\\s*:\\s*'(http[^']+auengine\\.(?:com|io)[^']+)',\\s*label\\s*:\\s*'240p'").getMatch(0);
+                dllink = br.getRegex("file\\s*:\\s*'(http[^']+auengine\\.(?:com|io)[^']+)',\\s*label\\s*:\\s*'2\\d{2}p'").getMatch(0);
+            }
+            // non matching to \d{3}p
+            if (dllink == null) {
+                dllink = br.getRegex("file\\s*:\\s*'(http[^']+auengine\\.(?:com|io)[^']+)',\\s*label\\s*:\\s*'Video'").getMatch(0);
             }
         }
         if (filename == null || dllink == null) {
+            if (br.containsHTML("<h1>Page not found</h1>|The page you are looking for does not exist\\.")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.urlDecode(dllink, false);
