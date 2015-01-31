@@ -70,6 +70,14 @@ public class DrTuberCom extends PluginForHost {
 
     /* IMPORTANT: This can be used as a workaround if the normal handling fails and there is no time to fix it or it's not easily fixable... */
     private boolean              use_mobile                   = false;
+    /*
+     * Allow usage of uncrypted finallinks - quality might be lower than when using the complicated way but overall it should improve
+     * stability..
+     */
+    private boolean              allow_uncrypted_downloadlink = true;
+    private static final String  normalUA                     = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:35.0) Gecko/20100101 Firefox/35.0";
+    private static final String  mobileUA                     = "Mozilla/5.0 (Linux; U; Android 2.2.1; en-us; Nexus One Build/FRG83) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile";
+
     private String               DLLINK                       = null;
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
@@ -104,7 +112,7 @@ public class DrTuberCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return FREE_MAXDOWNLOADS;
     }
 
     @SuppressWarnings("deprecation")
@@ -146,7 +154,7 @@ public class DrTuberCom extends PluginForHost {
             final String fid = getFID(downloadLink);
             br.clearCookies("http://drtuber.com");
             br.clearCookies("http://www.drtuber.com");
-            br.getHeaders().put("User-Agent", "Mozilla/5.0 (Linux; U; Android 2.2.1; en-us; Nexus One Build/FRG83) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile");
+            br.getHeaders().put("User-Agent", mobileUA);
             br.setCookie("http://drtuber.com", "lang", "en");
             br.setCookie("http://drtuber.com", "no_popups", "1");
             br.setCookie("http://drtuber.com", "no_ads", "1");
@@ -172,40 +180,45 @@ public class DrTuberCom extends PluginForHost {
                 if (filename == null) {
                     filename = br.getRegex("<h1 class=\"name\">(.*?)</h1>").getMatch(0);
                 }
-                final boolean new_handling = true;
-                if (new_handling) {
-                    /*
-                     * Very very very very bad js workaround
-                     * 
-                     * IMPORTANT: If we find no other way to fix this in the future, switch to /embed/ links, old handling still works fine
-                     * for them
-                     */
-                    continueLink = "http://www.drtuber.com/player_config/?";
-                    final String[] params = br.getRegex("params \\+= ([^<>\"]*?);").getColumn(0);
-                    for (String param : params) {
-                        param = param.replace("'", "");
-                        param = param.replace("+", "");
-                        param = param.replace(" ", "");
-                        param = Encoding.htmlDecode(param);
-                        if (vkey == null) {
-                            vkey = new Regex(param, "vkey=([a-z0-9]+)").getMatch(0);
+                if (allow_uncrypted_downloadlink) {
+                    DLLINK = getUncryptedFinallink();
+                }
+                if (DLLINK == null) {
+                    final boolean new_handling = true;
+                    if (new_handling) {
+                        /*
+                         * Very very very very bad js workaround
+                         *
+                         * IMPORTANT: If we find no other way to fix this in the future, switch to /embed/ links, old handling still works
+                         * fine for them
+                         */
+                        continueLink = "http://www.drtuber.com/player_config/?";
+                        final String[] params = br.getRegex("params \\+= ([^<>\"]*?);").getColumn(0);
+                        for (String param : params) {
+                            param = param.replace("'", "");
+                            param = param.replace("+", "");
+                            param = param.replace(" ", "");
+                            param = Encoding.htmlDecode(param);
+                            if (vkey == null) {
+                                vkey = new Regex(param, "vkey=([a-z0-9]+)").getMatch(0);
+                            }
+                            continueLink += Encoding.htmlDecode(param);
                         }
-                        continueLink += Encoding.htmlDecode(param);
-                    }
-                    if (vkey != null) {
-                        continueLink += "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode("UFQ2bDEzdW1xVjhLODI3"));
-                    }
-                    continueLink += "&aid=&domain_id=";
-                } else {
-                    continueLink = getContinueLink(br.getRegex("(var configPath.*?addVariable\\(\\'config\\',.*?;)").getMatch(0));
-                    vkey = new Regex(continueLink, "vkey=(\\w+)").getMatch(0);
-                    if (continueLink == null || vkey == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    if (!continueLink.startsWith("http://")) {
-                        continueLink = "http://drtuber.com" + Encoding.htmlDecode(continueLink) + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode("UFQ2bDEzdW1xVjhLODI3"));
+                        if (vkey != null) {
+                            continueLink += "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode("UFQ2bDEzdW1xVjhLODI3"));
+                        }
+                        continueLink += "&aid=&domain_id=";
                     } else {
-                        continueLink = Encoding.htmlDecode(continueLink) + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode("UFQ2bDEzdW1xVjhLODI3"));
+                        continueLink = getContinueLink(br.getRegex("(var configPath.*?addVariable\\(\\'config\\',.*?;)").getMatch(0));
+                        vkey = new Regex(continueLink, "vkey=(\\w+)").getMatch(0);
+                        if (continueLink == null || vkey == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        if (!continueLink.startsWith("http://")) {
+                            continueLink = "http://drtuber.com" + Encoding.htmlDecode(continueLink) + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode("UFQ2bDEzdW1xVjhLODI3"));
+                        } else {
+                            continueLink = Encoding.htmlDecode(continueLink) + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode("UFQ2bDEzdW1xVjhLODI3"));
+                        }
                     }
                 }
             } else if (downloadLink.getDownloadURL().matches("http://(www\\.)?drtuber\\.com/embed/\\d+")) {
@@ -224,11 +237,13 @@ public class DrTuberCom extends PluginForHost {
                 }
                 filename = br.getRegex("<title>(.*?)\\s+\\-\\s+Free Porn Videos").getMatch(0);
             }
-            if (continueLink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (DLLINK == null) {
+                if (continueLink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br.getPage(continueLink);
+                DLLINK = br.getRegex("<video_file>(<\\!\\[CDATA\\[)?(http://.*?)(\\]\\]>)?</video_file>").getMatch(1);
             }
-            br.getPage(continueLink);
-            DLLINK = br.getRegex("<video_file>(<\\!\\[CDATA\\[)?(http://.*?)(\\]\\]>)?</video_file>").getMatch(1);
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -252,9 +267,22 @@ public class DrTuberCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             br2.setFollowRedirects(true);
-            br2.getHeaders().put("Referer", "http://www.drtuber.com/player/videoplayer.swf?v=18.41&ps=CCCCCC");
-            br2.getHeaders().put("Accept-Language", "de,en-US;q=0.7,en;q=0.3");
-            con = br2.openGetConnection(DLLINK);
+            if (use_mobile) {
+                br2.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+                br2.getHeaders().put("Accept-Encoding", "identity");
+                br2.getHeaders().put("Accept-Language", "de,en-gb;q=0.7, en;q=0.3");
+            } else {
+                br2.getHeaders().put("Referer", "http://www.drtuber.com/player/videoplayer.swf?v=18.41&ps=CCCCCC");
+                br2.getHeaders().put("Accept-Language", "de,en-US;q=0.7,en;q=0.3");
+                br2.getHeaders().put("Accept-Encoding", "gzip,deflate");
+            }
+            try {
+                /* @since JD2 */
+                con = br.openHeadConnection(DLLINK);
+            } catch (final Throwable t) {
+                /* Not supported in old 0.9.581 Stable */
+                con = br.openGetConnection(DLLINK);
+            }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -490,7 +518,7 @@ public class DrTuberCom extends PluginForHost {
     }
 
     private void prepBR(final Browser br) {
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:35.0) Gecko/20100101 Firefox/35.0");
+        br.getHeaders().put("User-Agent", normalUA);
         br.getHeaders().put("Accept-Language", "de,en-US;q=0.7,en;q=0.3");
     }
 

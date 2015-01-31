@@ -191,6 +191,7 @@ public class SimplyPremiumCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         this.br = newBrowser();
@@ -251,7 +252,7 @@ public class SimplyPremiumCom extends PluginForHost {
         if (dllink != null) {
             try {
                 final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                URLConnectionAdapter con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -590,7 +591,7 @@ public class SimplyPremiumCom extends PluginForHost {
     /**
      * Returns a germen/english translation of a phrase - we don't use the JDownloader translation framework since we need only germen and
      * english (provider is german)
-     * 
+     *
      * @param key
      * @return
      */

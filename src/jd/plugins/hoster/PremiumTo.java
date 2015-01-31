@@ -138,6 +138,7 @@ public class PremiumTo extends PluginForHost {
         link.getLinkStatus().setStatusText(message);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         login(account, false);
@@ -147,6 +148,7 @@ public class PremiumTo extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
         final boolean redirect = br.isFollowingRedirects();
         synchronized (LOCK) {
@@ -200,6 +202,7 @@ public class PremiumTo extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
+    @SuppressWarnings("deprecation")
     public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
         try {
             dl = null;
@@ -324,7 +327,7 @@ public class PremiumTo extends PluginForHost {
 
         ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
         if (accs.size() == 0) {
-            // try without login (only possible for links with token)
+            /* try without login (only possible for links with token) */
             try {
                 con = br.openGetConnection(dlink);
                 if (!con.getContentType().contains("html")) {
@@ -335,7 +338,7 @@ public class PremiumTo extends PluginForHost {
                     }
                     String name = con.getHeaderField("Content-Disposition");
                     if (name != null) {
-                        // filter the filename from content disposition and decode it...
+                        /* filter the filename from content disposition and decode it... */
                         name = new Regex(name, "filename.=UTF-8\'\'([^\"]+)").getMatch(0);
                         name = Encoding.UTF8Decode(name).replaceAll("%20", " ");
                         if (name != null) {

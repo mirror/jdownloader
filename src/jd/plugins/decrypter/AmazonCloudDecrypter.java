@@ -16,8 +16,8 @@
 
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.Random;
 
 import jd.PluginWrapper;
@@ -27,7 +27,6 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amazon.com" }, urls = { "https?://(www\\.)?amazon\\.(de|es|com|com\\.au|co\\.uk|fr)/(clouddrive/share/[A-Za-z0-9\\-_]+\\?md5=[A-Fa-f0-9]+\\&name=.+|clouddrive/share/[A-Za-z0-9\\-_]+|clouddrive/share[\\?\\&]s=[A-Za-z0-9\\-_]+|gp/drive/share.*?[\\?\\&]s=[A-Za-z0-9\\-_]+)" }, flags = { 0 })
@@ -72,7 +71,8 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
 
     }
 
-    private ArrayList<DownloadLink> handleNewType(ArrayList<DownloadLink> decryptedLinks, CryptedLink parameter, String plain_folder_id, String plain_domain, ProgressController progress) throws IOException {
+    @SuppressWarnings({ "deprecation", "unchecked" })
+    private ArrayList<DownloadLink> handleNewType(ArrayList<DownloadLink> decryptedLinks, CryptedLink parameter, String plain_folder_id, String plain_domain, ProgressController progress) throws Exception {
 
         final DownloadLink main = createDownloadlink("https://amazondecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
         String requestedMd5 = new Regex(parameter.getCryptedUrl(), "md5=([a-zA-z0-9]{32})").getMatch(0);
@@ -97,77 +97,54 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
             decryptedLinks.add(main);
             return decryptedLinks;
         }
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        final LinkedHashMap<String, Object> nodeInfo = (LinkedHashMap<String, Object>) entries.get("nodeInfo");
+        final LinkedHashMap<String, Object> contentProperties = (LinkedHashMap<String, Object>) nodeInfo.get("contentProperties");
 
-        String linktext = br.getRegex("\"nodeInfo\":(\\{.*?)\\}\\}\\}$").getMatch(0);
-        if (linktext == null) {
+        final DownloadLink dl = createDownloadlink("https://amazondecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
+        final String kind = (String) nodeInfo.get("kind");
+        String filename = (String) nodeInfo.get("name");
+        final String finallink = (String) nodeInfo.get("tempLink");
+        final long filesize = ((Number) contentProperties.get("size")).longValue();
+        final String md5 = (String) contentProperties.get("md5");
+
+        if (!kind.equals("FILE")) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        filename = Encoding.htmlDecode(filename).trim();
+        final String content_url = "https://www." + plain_domain + "/clouddrive/share/" + plain_folder_id + "?md5=" + md5 + "&name=" + Encoding.urlEncode(filename);
+        final String fid = filename + "_" + md5;
 
-        /* It's hard to separate the entries correctly without using json nodes - we might have to drop Stable compatibility in the future. */
-        final String[] links = linktext.split("\\}\\d+\\},([\t\n\r ]+)?\\{");
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        dl.setDownloadSize(filesize);
+        dl.setFinalFileName(filename);
+        dl.setProperty("plain_name", filename);
+        dl.setProperty("plain_size", filesize);
+        dl.setProperty("mainlink", parameter);
+        dl.setProperty("plain_directlink", finallink);
+        dl.setProperty("plain_folder_id", plain_folder_id);
+        dl.setProperty("plain_domain", plain_domain);
+        dl.setAvailable(true);
+        try {
+            /*
+             * the contenturl should be a valid browser url, and if we add it to jd, we should get the copied link, and not the full folder
+             */
+            dl.setContentUrl(content_url);
+            dl.setContainerUrl("https://www." + plain_domain + "/clouddrive/share/" + plain_folder_id);
+            dl.setLinkID(fid);
+        } catch (final Throwable e) {
+            /* Not available in old 0.9.581 Stable */
+            dl.setBrowserUrl(content_url);
+            dl.setProperty("LINKDUPEID", fid);
         }
-        for (String singleinfo : links) {
-            /* If there are multiple versions/qualities/thumbnails of a file, remove them here - we only want to get the original file! */
-            final String assets = new Regex(singleinfo, "\"assets\":\\[(.+)\\]").getMatch(0);
-            if (assets != null) {
-                singleinfo = singleinfo.replace(assets, "");
-            }
-            final DownloadLink dl = createDownloadlink("https://amazondecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
-            final String filesize = getJson(singleinfo, "size");
-            String filename = getJson(singleinfo, "name");
-            final String finallink = getJson(singleinfo, "tempLink");
-            final String md5 = getJson(singleinfo, "md5");
-            if (filesize == null || filename == null || finallink == null || md5 == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            filename = Encoding.htmlDecode(filename.trim());
-            if (requestedMd5 != null && !requestedMd5.equals(md5)) {
-                continue;
-            }
-            if (requestedFilename != null && !requestedFilename.equals(filename)) {
-                continue;
-            }
+        decryptedLinks.add(dl);
 
-            final long cursize = Long.parseLong(filesize);
-            try {
-                // the contenturl should be a valid browser url, and if we add it to jd, we should get the copied link, and not the full
-                // folder
-                dl.setContentUrl("https://www." + plain_domain + "/clouddrive/share/" + plain_folder_id + "?md5=" + md5 + "&name=" + Encoding.urlEncode(filename));
-                dl.setContainerUrl("https://www." + plain_domain + "/clouddrive/share/" + plain_folder_id);
-            } catch (Throwable e) {
-
-            }
-
-            dl.setDownloadSize(cursize);
-            dl.setFinalFileName(filename);
-            dl.setProperty("plain_name", filename);
-            dl.setProperty("plain_size", filesize);
-            dl.setProperty("mainlink", parameter);
-            dl.setProperty("plain_directlink", finallink);
-            dl.setProperty("plain_folder_id", plain_folder_id);
-            dl.setProperty("plain_domain", plain_domain);
-            dl.setAvailable(true);
-            decryptedLinks.add(dl);
-        }
-
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(plain_folder_id);
-        fp.addLinks(decryptedLinks);
+        /* Do not set any packagename as long as we only handle single links. */
+        // final FilePackage fp = FilePackage.getInstance();
+        // fp.setName(plain_folder_id);
+        // fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
-    }
-
-    private String getJson(final String source, final String parameter) {
-        String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.]+)").getMatch(1);
-        if (result == null) {
-            result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
-        }
-        return result;
     }
 
     private void prepBR() {
