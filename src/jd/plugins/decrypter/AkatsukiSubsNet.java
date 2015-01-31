@@ -123,8 +123,8 @@ public class AkatsukiSubsNet extends PluginForDecrypt {
             }
         }
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            logger.warning("Decrypter could be broken for link: " + parameter + " . Please confirm in browser");
+            // return null;
         }
 
         return decryptedLinks;
