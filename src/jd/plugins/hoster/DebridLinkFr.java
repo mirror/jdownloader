@@ -48,9 +48,6 @@ public class DebridLinkFr extends PluginForHost {
     private static final String                            apiHost            = "https://api.debrid-link.fr/1.1/";
     private static final String                            publicApiKey       = "kMREtSnp61OgLvG8";
     private long                                           ts                 = 0;
-    private static final String                            NOCHUNKS           = "NOCHUNKS";
-    private static final String                            NICE_HOST          = "debrid-link.fr";
-    private static final String                            NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
 
     /**
      * @author raztoki
@@ -96,7 +93,6 @@ public class DebridLinkFr extends PluginForHost {
             ac.setStatus("Free Account");
             account.setType(AccountType.FREE);
             ac.setValidUntil(-1);
-            account.setProperty("free", true);
             isFree = true;
         } else if ("1".equals(accountType)) {
             // premium account
@@ -105,13 +101,11 @@ public class DebridLinkFr extends PluginForHost {
             if (premiumLeft != null) {
                 ac.setValidUntil(System.currentTimeMillis() + (Long.parseLong(premiumLeft) * 1000));
             }
-            account.setProperty("free", false);
         } else if ("2".equals(accountType)) {
             // life account
             ac.setStatus("Life Account");
             account.setType(AccountType.PREMIUM);
             ac.setValidUntil(-1);
-            account.setProperty("free", false);
         }
         // end of account stats
 
@@ -478,7 +472,7 @@ public class DebridLinkFr extends PluginForHost {
      * @author raztoki
      * */
     private String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     /**
@@ -517,9 +511,6 @@ public class DebridLinkFr extends PluginForHost {
         if (chunk != null && !"0".equals(chunk)) {
             maxChunks = -Integer.parseInt(chunk);
         }
-        if (downloadLink.getBooleanProperty(NICE_HOSTproperty + DebridLinkFr.NOCHUNKS, false)) {
-            maxChunks = 1;
-        }
         if (resume != null) {
             resumes = Boolean.parseBoolean(resume);
         }
@@ -542,29 +533,7 @@ public class DebridLinkFr extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         }
-        try {
-            if (!this.dl.startDownload()) {
-                try {
-                    if (dl.externalDownloadStop()) {
-                        return;
-                    }
-                } catch (final Throwable e) {
-                }
-                /* unknown error, we disable multiple chunks */
-                if (downloadLink.getBooleanProperty(NICE_HOSTproperty + DebridLinkFr.NOCHUNKS, false) == false) {
-                    downloadLink.setProperty(NICE_HOSTproperty + DebridLinkFr.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-            }
-        } catch (final PluginException e) {
-            // New V2 chunk errorhandling
-            /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(NICE_HOSTproperty + DebridLinkFr.NOCHUNKS, false) == false) {
-                downloadLink.setProperty(NICE_HOSTproperty + DebridLinkFr.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            throw e;
-        }
+        dl.startDownload();
     }
 
     @Override
@@ -642,18 +611,6 @@ public class DebridLinkFr extends PluginForHost {
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
         if (acc.getStringProperty("session_type") != null && !"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
             return true;
         }
