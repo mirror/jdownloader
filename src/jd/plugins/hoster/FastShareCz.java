@@ -25,7 +25,6 @@ import jd.config.Property;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -215,8 +214,14 @@ public class FastShareCz extends PluginForHost {
             logger.info("Trafficlimit reached!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
-        final Regex dlinkregex = new Regex(link.getDownloadURL(), "fastshare.cz/(\\d+)/(.+)");
-        final String dllink = "http://data.fastshare.cz/download.php?id=" + dlinkregex.getMatch(0) + "&" + dlinkregex.getMatch(1);
+        String dllink = br.getRegex("\"(https?://[a-z0-9]+\\.fastshare\\.cz/download\\.php[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("class=\"speed\"><a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            logger.warning("Failed to find final downloadlink");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
