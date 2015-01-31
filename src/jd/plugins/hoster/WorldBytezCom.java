@@ -829,15 +829,14 @@ public class WorldBytezCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
+        br = new Browser();
         try {
             login(account, true);
         } catch (final PluginException e) {
             account.setValid(false);
             throw e;
         }
-        final String space[] = new Regex(correctedBR, ">\\s*Used space:\\s*([0-9\\.]+)\\s*(KB|MB|GB|TB)?\\s*<").getRow(0);
+        final String space[] = new Regex(correctedBR, ">\\s*Used space:\\s*(?:<[^>]+>)*([0-9\\.]+)\\s*of \\d+ (KB|MB|GB|TB)?\\s*<").getRow(0);
         if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
             // free users it's provided by default
             ai.setUsedSpace(space[0] + " " + space[1]);
@@ -846,7 +845,10 @@ public class WorldBytezCom extends PluginForHost {
             ai.setUsedSpace(space[0] + "Mb");
         }
         account.setValid(true);
-        final String availabletraffic = new Regex(correctedBR, "glyphicon-signal\"></span>([^<>\"\\']+)</div>").getMatch(0);
+        String availabletraffic = new Regex(correctedBR, "glyphicon-signal\"></span>([^<>\"\\']+)</div>").getMatch(0);
+        if (availabletraffic == null) {
+            availabletraffic = new Regex(correctedBR, ">\\s*Traffic available today:\\s*(?:<[^>]+>)*([0-9\\.]+\\s*(KB|MB|GB|TB)?)\\s*<").getMatch(0);
+        }
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
             // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
@@ -864,8 +866,8 @@ public class WorldBytezCom extends PluginForHost {
         if (expire != null) {
             expiretime = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
         }
-        if (account.getBooleanProperty("nopremium") && (expiretime - System.currentTimeMillis()) <= 0) {
-            ai.setStatus("Registered (free) user");
+        if (account.getBooleanProperty("nopremium") && (expiretime - System.currentTimeMillis()) <= 0 || expire == null) {
+            ai.setStatus("Free Account");
             try {
                 maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
                 // free accounts can still have captcha.
@@ -884,7 +886,7 @@ public class WorldBytezCom extends PluginForHost {
             } catch (final Throwable e) {
                 // not available in old Stable 0.9.581
             }
-            ai.setStatus("Premium user");
+            ai.setStatus("Premium Account");
         }
         return ai;
     }
