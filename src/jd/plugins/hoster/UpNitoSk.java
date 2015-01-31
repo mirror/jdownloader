@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
@@ -29,6 +30,7 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -53,7 +55,9 @@ public class UpNitoSk extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         final String fileId = new Regex(link.getDownloadURL(), "upnito\\.sk/subor/([a-z0-9]+)\\.html").getMatch(0);
-        if (fileId != null) link.setUrlDownload("http://www.upnito.sk/download.php?dwToken=" + fileId);
+        if (fileId != null) {
+            link.setUrlDownload("http://www.upnito.sk/download.php?dwToken=" + fileId);
+        }
     }
 
     @Override
@@ -68,7 +72,9 @@ public class UpNitoSk extends PluginForHost {
         br.getPage("http://upnito.sk/account.php");
         account.setValid(true);
         final String files = br.getRegex("<strong>Počet súborov:</strong> (\\d+)<br>").getMatch(0);
-        if (files != null) ai.setFilesNum(Integer.parseInt(files.trim()));
+        if (files != null) {
+            ai.setFilesNum(Integer.parseInt(files.trim()));
+        }
         String trafficLeft = br.getRegex(">Aktuálny kredit:</strong>(.*?)\\(").getMatch(0);
         if (trafficLeft != null) {
             trafficLeft = trafficLeft.trim().replace(",", "");
@@ -99,10 +105,13 @@ public class UpNitoSk extends PluginForHost {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("Nemozete tolkokrat za sebou stahovat ten isty subor!")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        if (br.containsHTML("Nemozete tolkokrat za sebou stahovat ten isty subor!")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        }
         // dlpage
         final String DLPAGE = br.getBaseURL();
         final StringBuilder sb = new StringBuilder();
@@ -113,7 +122,9 @@ public class UpNitoSk extends PluginForHost {
         if (br.containsHTML("function|var")) {
             // js-Funktionen parsen
             final String fn[] = br2.getRegex("((;f|f)unction|(;v|var{1}))(.*?)\n").getColumn(-1);
-            if (dl2 == null || fn == null || fn.length < 662) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dl2 == null || fn == null || fn.length < 662) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             for (int i = 647; i < fn.length - 1; i++) {
                 sb.append(fn[i].replace("hz();", ""));
             }
@@ -136,7 +147,9 @@ public class UpNitoSk extends PluginForHost {
         // Wartezeit und Schlüssel besorgen
         br2.getPage(DLPAGE + "getwait.php?dwToken=" + damnToken);
         String gwtValidate = br2.toString().trim();
-        if (gwtValidate == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (gwtValidate == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (UpNitoSk.wthack.get() == false) {
             int sleepTime = 600;
             final String ttt = br2.getRegex("(\\d+);").getMatch(0);
@@ -154,9 +167,24 @@ public class UpNitoSk extends PluginForHost {
         br.submitForm(dlform);
         // Downloadbutton
         dlform = br.getForm(0);
-        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dlform.put("tahaj", "Stiahnut");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, false, 1);
+        final String verifytext = br.getCookie("http://upnito.sk/", "verifytext");
+        if (verifytext != null) {
+            dlform.put("verifytext", verifytext);
+        }
+        if (dlform == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dlform.put("tahaj", "Stiahnu%9D");
+        /* Convert form to post String because some values might be in there twice (by purpose)! */
+        final List<InputField> fields = dlform.getInputFields();
+        String postdata = "";
+        for (final InputField field : fields) {
+            if (!postdata.equals("")) {
+                postdata += "&";
+            }
+            postdata += field.getKey() + "=" + field.getValue();
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform.getAction(), postdata, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("Neplatne GWT overenie!")) {
@@ -174,9 +202,13 @@ public class UpNitoSk extends PluginForHost {
         login(account);
         br.getPage(link.getDownloadURL());
         final String whySoComplicated = br.getRegex("'(http://dl[0-9]+\\.upnito\\.sk/download\\.php\\?dwToken=[a-z0-9]+)'").getMatch(0);
-        if (whySoComplicated != null) br.getPage(whySoComplicated);
+        if (whySoComplicated != null) {
+            br.getPage(whySoComplicated);
+        }
         final String dllink = br.getRegex("'(http://dl[0-9]+\\.upnito\\.sk/ddl\\.php\\?dwToken=[a-z0-9]+)'").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         dl.startDownload();
     }
@@ -194,13 +226,17 @@ public class UpNitoSk extends PluginForHost {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (result == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (result == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         return result.toString();
     }
 
     private String generateGWT(StringBuilder sb, String... s) throws Exception {
         final String gwt[] = s[0].split(";");
-        if (UpNitoSk.wthack.get() == true) gwt[1] = String.valueOf(Integer.parseInt(gwt[1]) - Integer.parseInt(gwt[0]));
+        if (UpNitoSk.wthack.get() == true) {
+            gwt[1] = String.valueOf(Integer.parseInt(gwt[1]) - Integer.parseInt(gwt[0]));
+        }
         s[0] = gwt[0] + ";" + gwt[1] + ";" + gwt[2];
         final String key = jsAlgo("decrypt", sb.toString(), s[0], s[1]);
         s[0] = gwt[0] + ";" + gwt[1] + ";" + key;
@@ -212,7 +248,9 @@ public class UpNitoSk extends PluginForHost {
         setBrowserExclusive();
         br.getPage("http://www.upnito.sk/badlogin.php");
         br.postPage("http://www.upnito.sk/?action=doLogin", "meno=" + Encoding.urlEncode(account.getUser()) + "&heslo=" + Encoding.urlEncode(account.getPass()));
-        if ((br.getCookie("http://www.upnito.sk", "uid") == null) || (br.getCookie("http://www.upnito.sk", "pass") == null)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if ((br.getCookie("http://www.upnito.sk", "uid") == null) || (br.getCookie("http://www.upnito.sk", "pass") == null)) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
     }
 
     @Override
@@ -221,9 +259,15 @@ public class UpNitoSk extends PluginForHost {
         br.setCustomCharset("windows-1250");
         br.getPage(link.getDownloadURL());
         final String whySoComplicated = br.getRegex("'(http://dl[0-9]+\\.upnito\\.sk/download\\.php\\?dwToken=[a-z0-9]+)'").getMatch(0);
-        if (whySoComplicated != null) br.getPage(whySoComplicated);
-        if (br.containsHTML("location\\.href=\\'/notfound\\.php\\'")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("Nemozete tolkokrat za sebou stahovat ten isty subor!")) return AvailableStatus.UNCHECKABLE;
+        if (whySoComplicated != null) {
+            br.getPage(whySoComplicated);
+        }
+        if (br.containsHTML("location\\.href=\\'/notfound\\.php\\'")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML("Nemozete tolkokrat za sebou stahovat ten isty subor!")) {
+            return AvailableStatus.UNCHECKABLE;
+        }
         String filename = br.getRegex("Ahoj, chystáš sa stiahnuť súbor.*?>(.*?)</em>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<strong style=\"color: #663333;\">(.*?)</strong>").getMatch(0);
@@ -232,7 +276,9 @@ public class UpNitoSk extends PluginForHost {
             }
         }
         final String filesize = br.getRegex("Veľkosť:</strong>(.*?)<br>").getMatch(0);
-        if ((filename == null) || (filesize == null)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if ((filename == null) || (filesize == null)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // Set final filename here because server sometimes sends wrong names
         link.setFinalFileName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
