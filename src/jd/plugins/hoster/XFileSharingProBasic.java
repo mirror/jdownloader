@@ -99,7 +99,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private String                         fuid                         = null;
 
     /* DEV NOTES */
-    // XfileSharingProBasic Version 2.6.6.7
+    // XfileSharingProBasic Version 2.6.6.8
     // Tags: Script, template
     // mods:
     // limit-info:
@@ -510,7 +510,13 @@ public class XFileSharingProBasic extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                con = br2.openGetConnection(dllink);
+                try {
+                    /* @since JD2 */
+                    con = br2.openHeadConnection(dllink);
+                } catch (final Throwable t) {
+                    /* Not supported in old 0.9.581 Stable */
+                    con = br2.openGetConnection(dllink);
+                }
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
