@@ -10,6 +10,7 @@ ValidateArchiveAction_ValidateArchiveAction_multi=圧縮ファイルの検証
 ValidateArchiveAction_ValidateArchiveAction_object_=圧縮ファイルの検証
 ValidateArchiveAction_actionPerformed_=圧縮ファイルは%s1個に分割され、全て完了済みです
 ValidateArchiveAction_actionPerformed_bad=圧縮ファイルは%s1個に分割され、未完了です。
+ValidateArchiveAction_actionPerformed_information=圧縮ファイル情報: %s1
 and=又は次の場合
 archive=圧縮ファイル:
 archive_file=ファイル:

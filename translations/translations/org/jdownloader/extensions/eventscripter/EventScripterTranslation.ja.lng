@@ -7,7 +7,7 @@ ON_NEW_FILE=新規ファイル作成時
 ON_OUTGOING_REMOTE_API_EVENT=遠隔APIイベント実行時
 ON_PACKAGIZER=パッケージャのフック時
 allow=許可
-classes=/* ===== ｸﾗｽ ===== */
+classes=/* ===== classes ===== */
 deny=拒否
 description=JDownloaderの内部イベントを監視し、独自スクリプト(JavaScript)の実行を許可します
 downloadLink=// ダウンロードリンク
