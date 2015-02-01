@@ -214,9 +214,14 @@ public class FastShareCz extends PluginForHost {
             logger.info("Trafficlimit reached!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
-        String dllink = br.getRegex("\"(https?://[a-z0-9]+\\.fastshare\\.cz/download\\.php[^<>\"]*?)\"").getMatch(0);
+        /* Maybe user has direct downloads active */
+        String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = br.getRegex("class=\"speed\"><a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+            /* Direct downloads inactive --> We have to find the final downloadlink */
+            dllink = br.getRegex("\"(https?://[a-z0-9]+\\.fastshare\\.cz/download\\.php[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("class=\"speed\"><a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+            }
         }
         if (dllink == null) {
             logger.warning("Failed to find final downloadlink");

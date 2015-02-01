@@ -42,6 +42,7 @@ public class ImdbCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);

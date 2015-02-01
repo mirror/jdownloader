@@ -55,6 +55,7 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         // Offline links should also have nice filenames
@@ -104,6 +105,8 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
         // only way to check for made up links... or offline is here
         final int rc = (br.getHttpConnection() != null ? br.getHttpConnection().getResponseCode() : -1);
         if (rc == 403 || rc == 404 || rc == -1) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("Content has been removed due to copyright or from users")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dllink = br.getRedirectLocation();

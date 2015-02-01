@@ -41,35 +41,48 @@ public class PcWeltDe extends PluginForHost {
         return "http://www.pcwelt.de/news/Impressum-975146.html";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (!br.getURL().contains("/downloads/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!br.getURL().contains("/downloads/") || br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<h1 class=\"headline\">(.*?)</h1>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<div class=\"boxed\">[\t\n\r ]+<div class=\"left\">(.*?)</div>").getMatch(0);
-            if (filename == null) filename = br.getRegex("<title>([^<>\"]+) Download \\-").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>([^<>\"]+) \\- Download \\-").getMatch(0);
+            }
         }
         String filesize = br.getRegex(">Dateigr&ouml;\\&szlig;e:</th>[\t\n\r ]+<td class=\"col\\-\\d+\">(.*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filesize == null) {
+            filesize = br.getRegex("<strong>Dateigröße:</strong>([^<>\"]*?)</li>").getMatch(0);
+        }
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        filesize = filesize.replace(",", ".");
         link.setName(Encoding.htmlDecode(filename.trim()));
-        if (!filesize.equals("-")) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (!filesize.equals("-")) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String continueLink = br.getRegex("<div class=\"unavailable\">[\t\n\r ]+<div class=\"text\">[\t\n\r ]+<a href=\"(/[^<>\"]+)\"").getMatch(0);
-        if (continueLink == null) continueLink = br.getRegex("\"(/downloads/[^<>\"]+\\-starten\\-\\d+\\.html)\"").getMatch(0);
-        if (continueLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage("http://www.pcwelt.de" + continueLink + "?rate=0&page=2&bid=0");
-        String dllink = br.getRegex("<a id=\"dl_link_third\" href=\"(http://[^<>\"]+)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://download\\.pcwelt\\.de/area_release/files/[^<>\"]+)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (!dllink.contains("pcwelt")) throw new PluginException(LinkStatus.ERROR_FATAL, "Nicht downloadbar: externe Downloadquelle");
+        final String undefined_downloadlink = br.getRegex("itemprop=\"url\" href=\"(http[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("\"(https?://(www\\.)?download\\.pcwelt\\.de/[^<>\"]+)\"").getMatch(0);
+        if (dllink == null && undefined_downloadlink != null) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Nicht downloadbar: externe Downloadquelle");
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
