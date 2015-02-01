@@ -650,7 +650,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * returns how many downloads are currently watched by this DownloadWatchDog
-     * 
+     *
      * @return
      */
     public int getActiveDownloads() {
@@ -659,7 +659,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * returns the ThrottledConnectionManager of this DownloadWatchDog
-     * 
+     *
      * @return
      */
     public DownloadSpeedManager getDownloadSpeedManager() {
@@ -1629,7 +1629,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * returns current pause state
-     * 
+     *
      * @return
      */
     public boolean isPaused() {
@@ -1642,7 +1642,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * may the DownloadWatchDog start new Downloads?
-     * 
+     *
      * @return
      */
     private boolean newDLStartAllowed(DownloadSession session) {
@@ -1677,7 +1677,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * pauses the DownloadWatchDog
-     * 
+     *
      * @param value
      */
 
@@ -2093,7 +2093,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * activates new Downloads as long as possible and returns how many got activated
-     * 
+     *
      * @return
      **/
     private List<SingleDownloadController> activateDownloads() throws Exception {
@@ -2274,7 +2274,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * activates a new SingleDownloadController for the given SingleDownloadControllerActivator
-     * 
+     *
      * @param activator
      */
     private SingleDownloadController attach(final DownloadLinkCandidate candidate) {
@@ -2373,9 +2373,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         }
                         try {
                             logger.info("Rename after Download?");
-                            final File desiredPath = new File(link.getFileOutput(false, false));
+                            // prevent mega type of temp file extensions from nuking post download filename rename to .encrypted.
+                            final File desiredPath = new File(link.getFileOutput(false, (candidate.getCachedAccount().getAccount().isMulti() ? true : false)));
                             logger.info("Desired Path: " + desiredPath);
-                            final File usedPath = singleDownloadController.getFileOutput(false, false);
+                            final File usedPath = singleDownloadController.getFileOutput(false, (candidate.getCachedAccount().getAccount().isMulti() ? true : false));
                             logger.info("Actually Used path: " + usedPath);
                             if (!desiredPath.equals(usedPath)) {
                                 logger.info("Move");
@@ -3051,34 +3052,34 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                         final DelayedRunnable delayer = new DelayedRunnable(1000, 5000) {
 
-                                                          @Override
-                                                          public void delayedrun() {
-                                                              enqueueJob(new DownloadWatchDogJob() {
+                            @Override
+                            public void delayedrun() {
+                                enqueueJob(new DownloadWatchDogJob() {
 
-                                                                  @Override
-                                                                  public void interrupt() {
-                                                                  }
+                                    @Override
+                                    public void interrupt() {
+                                    }
 
-                                                                  @Override
-                                                                  public void execute(DownloadSession currentSession) {
-                                                                      /* reset CONNECTION_UNAVAILABLE */
-                                                                      final List<DownloadLink> unSkip = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+                                    @Override
+                                    public void execute(DownloadSession currentSession) {
+                                        /* reset CONNECTION_UNAVAILABLE */
+                                        final List<DownloadLink> unSkip = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
-                                                                          @Override
-                                                                          public int returnMaxResults() {
-                                                                              return 0;
-                                                                          }
+                                            @Override
+                                            public int returnMaxResults() {
+                                                return 0;
+                                            }
 
-                                                                          @Override
-                                                                          public boolean acceptNode(DownloadLink node) {
-                                                                              return SkipReason.CONNECTION_UNAVAILABLE.equals(node.getSkipReason());
-                                                                          }
-                                                                      });
-                                                                      unSkip(unSkip);
-                                                                  }
-                                                              });
-                                                          }
-                                                      };
+                                            @Override
+                                            public boolean acceptNode(DownloadLink node) {
+                                                return SkipReason.CONNECTION_UNAVAILABLE.equals(node.getSkipReason());
+                                            }
+                                        });
+                                        unSkip(unSkip);
+                                    }
+                                });
+                            }
+                        };
 
                         @Override
                         public void onEvent(ProxyEvent<AbstractProxySelectorImpl> event) {
