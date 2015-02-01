@@ -44,7 +44,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -283,7 +282,6 @@ public class OneFichierCom extends PluginForHost {
         }
         // use the English page, less support required
         boolean retried = false;
-        String passCode = null;
         while (true) {
             i++;
             br.setFollowRedirects(true);
@@ -296,21 +294,7 @@ public class OneFichierCom extends PluginForHost {
 
             errorHandling(downloadLink, br, true);
             if (br.containsHTML(PASSWORDTEXT) || pwProtected) {
-                if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", downloadLink);
-                } else {
-                    /* gespeicherten PassCode holen */
-                    passCode = downloadLink.getStringProperty("pass", null);
-                }
-                br.postPage(br.getURL(), "pass=" + passCode);
-                if (br.containsHTML(PASSWORDTEXT)) {
-                    downloadLink.setProperty("pass", Property.NULL);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.onefichiercom.wrongpassword", "Password wrong!"));
-                } else {
-                    if (passCode != null) {
-                        downloadLink.setProperty("pass", passCode);
-                    }
-                }
+                handlePassword(downloadLink);
             } else {
                 // base > submit:Free Download > submit:Show the download link + t:35140198 == link
                 final Browser br2 = br.cloneBrowser();
@@ -364,9 +348,6 @@ public class OneFichierCom extends PluginForHost {
             br.followConnection();
             errorHandling(downloadLink, this.br, true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (passCode != null) {
-            downloadLink.setProperty("pass", passCode);
         }
         downloadLink.setProperty(FREELINK, dllink);
         dl.startDownload();
@@ -583,19 +564,19 @@ public class OneFichierCom extends PluginForHost {
         return maxPrem.get();
     }
 
-    private String handlePassword(final DownloadLink downloadLink, String passCode) throws IOException, PluginException {
+    private String handlePassword(final DownloadLink downloadLink) throws IOException, PluginException {
         logger.info("This link seems to be password protected, continuing...");
-        if (downloadLink.getStringProperty("pass", null) == null) {
+        String passCode = downloadLink.getStringProperty("pass", null);
+        if (passCode == null) {
             passCode = Plugin.getUserInput("Password?", downloadLink);
-        } else {
-            /* gespeicherten PassCode holen */
-            passCode = downloadLink.getStringProperty("pass", null);
         }
         br.postPage(br.getURL(), "pass=" + passCode);
         if (br.containsHTML(PASSWORDTEXT)) {
             downloadLink.setProperty("pass", Property.NULL);
             throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.onefichiercom.wrongpassword", "Password wrong!"));
         }
+        // set after regex checks
+        downloadLink.setProperty("pass", passCode);
         return passCode;
     }
 
@@ -603,7 +584,6 @@ public class OneFichierCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         br = new Browser();
-        String passCode = null;
         String dllink = link.getStringProperty(PREMLINK, null);
         if (dllink != null) {
             /* try to resume existing file */
@@ -641,11 +621,15 @@ public class OneFichierCom extends PluginForHost {
             }
             if (con.isContentDisposition()) {
                 con.disconnect();
-                dllink = url;
+                dllink = br.getURL();
             } else {
-                br.followConnection();
+                // for some silly reason we have reverted from api to webmethod, so we need cookies!. 20150201
+                br = new Browser();
+                login(account, false);
+                br.setFollowRedirects(false);
+                br.getPage("https://" + getFID(link) + ".1fichier.com/");
                 if (pwProtected || br.containsHTML("password")) {
-                    passCode = handlePassword(link, passCode);
+                    handlePassword(link);
                     dllink = br.getRedirectLocation();
                 }
                 try {
@@ -672,6 +656,7 @@ public class OneFichierCom extends PluginForHost {
                     dl.remove("save");
                     //
                     dl.put("did", "0");
+                    br.setFollowRedirects(false);
                     br.submitForm(dl);
                     // value is found from redirect
                     dllink = br.getRedirectLocation();
@@ -688,11 +673,9 @@ public class OneFichierCom extends PluginForHost {
             }
             for (int i = 0; i != 2; i++) {
                 br.setFollowRedirects(true);
-                // dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-
                 try {
                     logger.info("Connecting to " + dllink);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxchunks_account_premium);
                 } catch (final ConnectException e) {
                     logger.info("Download failed because connection timed out, NOT a JD issue!");
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Connection timed out", 60 * 60 * 1000l);
@@ -711,32 +694,11 @@ public class OneFichierCom extends PluginForHost {
                     errorHandling(link, this.br, false);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (passCode != null) {
-                    link.setProperty("pass", passCode);
-                }
                 link.setProperty(PREMLINK, dllink);
                 dl.startDownload();
                 return;
             }
         }
-    }
-
-    private boolean oldStyle() {
-        String style = System.getProperty("ftpStyle", null);
-        if ("new".equalsIgnoreCase(style)) {
-            return false;
-        }
-        String prev = JDUtilities.getRevision();
-        if (prev == null || prev.length() < 3) {
-            prev = "0";
-        } else {
-            prev = prev.replaceAll(",|\\.", "");
-        }
-        int rev = Integer.parseInt(prev);
-        if (rev < 10000) {
-            return true;
-        }
-        return false;
     }
 
     private String getFID(final DownloadLink dl) {
