@@ -43,40 +43,47 @@ public class IndianPornVideosCom extends PluginForHost {
         return "http://www.indianpornvideos.com/terms/";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("This video does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<meta property=\"og:title\" content=\"([^\"]+)\" />").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]+) \\- Indian Porn Videos</title>").getMatch(0);
-        DLLINK = br.getRegex("\\{ url: \\'(https?://stream\\.indianpornvideos\\.com//[^\\']+)' }").getMatch(0);
-        if (DLLINK == null) {
-            // existing fail over.
-            DLLINK = br.getRegex("\\'(http://stream\\.indianpornvideos\\.com(:\\d+)?/[^<>\"]*?)\\'").getMatch(0);
-            if (DLLINK == null) {
-                // hd apparently is less in size than default... try it yourself.
-                DLLINK = br.getRegex("play\\(\\'(https?://stream\\.indianpornvideos\\.com/[^\\']+)\\'\\); return false;\">HD<").getMatch(0);
-                if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+        if (br.containsHTML("This video does not exist")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String filename = br.getRegex("<meta property=\"og:title\" content=\"([^\"]+)\" />").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]+) \\- Indian Porn Videos</title>").getMatch(0);
+        }
+        DLLINK = br.getRegex("\"(https?://stream\\.indianpornvideos\\.com/[^<>\"]*?)\"").getMatch(0);
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".mp4";
+        if (ext == null || ext.length() > 5) {
+            ext = ".mp4";
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            try {
+                /* @since JD2 */
+                con = br2.openHeadConnection(DLLINK);
+            } catch (final Throwable t) {
+                /* Not supported in old 0.9.581 Stable */
+                con = br2.openGetConnection(DLLINK);
+            }
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
