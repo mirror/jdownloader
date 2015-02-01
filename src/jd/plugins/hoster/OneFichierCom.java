@@ -602,6 +602,7 @@ public class OneFichierCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
+        br = new Browser();
         String passCode = null;
         String dllink = link.getStringProperty(PREMLINK, null);
         if (dllink != null) {
@@ -626,7 +627,7 @@ public class OneFichierCom extends PluginForHost {
             login(account, false);
             doFree(link);
         } else {
-            br.setFollowRedirects(false);
+            br.setFollowRedirects(true);
             sleep(2 * 1000l, link);
             /* TODO: Update linkstructure here whenever admin tells us new structure. */
             final String url = "https://" + getFID(link) + ".1fichier.com/" + "?u=" + Encoding.urlEncode(account.getUser()) + "&p=" + JDHash.getMD5(account.getPass());
@@ -645,15 +646,12 @@ public class OneFichierCom extends PluginForHost {
                 br.followConnection();
                 if (pwProtected || br.containsHTML("password")) {
                     passCode = handlePassword(link, passCode);
+                    dllink = br.getRedirectLocation();
                 }
-                dllink = br.getRedirectLocation();
-                if (dllink != null) {
-
-                    try {
-                        errorIpBlockedHandling(br);
-                    } catch (PluginException e) {
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
-                    }
+                try {
+                    errorIpBlockedHandling(br);
+                } catch (PluginException e) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
                 }
             }
             if (dllink == null) {
