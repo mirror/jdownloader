@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -186,7 +185,12 @@ public class PremiumRapeitNet extends PluginForHost {
         final String[] hosts = br.getRegex("ON / Domain: ([^<>\"]*?)\"").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>();
         if (hosts != null && hosts.length != 0) {
-            Collections.addAll(supportedHosts, hosts);
+            for (final String hostSet : hosts) {
+                final String[] domains = hostSet.split(", ");
+                for (final String domain : domains) {
+                    supportedHosts.add(domain);
+                }
+            }
             ac.setMultiHostSupport(this, supportedHosts);
         }
         final String traffic_left = br.getRegex(">Available premium bandwidth: <strong>([^<>\"]*?)</strong>").getMatch(0);

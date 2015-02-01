@@ -61,9 +61,13 @@ public class XunleiComDecrypter extends PluginForDecrypt {
                 }
                 final String code = getCaptchaCode(captchaLink, param);
                 br.getPage("http://kuai.xunlei.com/webfilemail_interface?v_code=" + code + "&shortkey=" + fid + "&ref=&action=check_verify");
-                if (!br.containsHTML("http://verify")) break;
+                if (!br.containsHTML("http://verify")) {
+                    break;
+                }
             }
-            if (br.containsHTML("http://verify")) throw new DecrypterException(DecrypterException.CAPTCHA);
+            if (br.containsHTML("http://verify")) {
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
             logger.info("Captcha passed!");
         }
         checks(parameter, br.getURL());
@@ -77,12 +81,13 @@ public class XunleiComDecrypter extends PluginForDecrypt {
             String[] Pages = br.getRegex("<div id=\\'page_bar(\\d+)\\' class=\"page_co\"").getColumn(0);
             parsePage(decryptedLinks, parameter);
             if (Pages != null && Pages.length != 0) {
-                for (String page : Pages)
+                for (String page : Pages) {
                     if (!page.equals("1")) {
                         br.getPage("http://kuai.xunlei.com/s/" + uid + "?p_index=" + page);
                         checks(parameter, br.getURL());
                         parsePage(decryptedLinks, parameter);
                     }
+                }
             }
         }
         return decryptedLinks;
@@ -90,10 +95,14 @@ public class XunleiComDecrypter extends PluginForDecrypt {
 
     private void parsePage(ArrayList<DownloadLink> ret, String parameter) throws IOException, Exception {
         String[] links = br.getRegex("href=\"(https?://kuai.xunlei.com/download\\?[^\"\\'<>]+)").getColumn(0);
-        if (links == null || links.length == 0) return;
+        if (links == null || links.length == 0) {
+            return;
+        }
         HashSet<String> filter = new HashSet<String>();
         for (String dl : links) {
-            if (filter.add(dl) == false) continue;
+            if (filter.add(dl) == false) {
+                continue;
+            }
             parseDownload(ret, parameter, dl);
         }
     }
@@ -120,7 +129,7 @@ public class XunleiComDecrypter extends PluginForDecrypt {
             // not supported yet..
             return;
         } else {
-            final String[] links = br.getRegex("\"(http://(dl\\d+\\.[a-z]+\\d+\\.sendfile\\.vip\\.xunlei\\.com|([1-2]?[0-9]{1,2}\\.){3}[1-2]?[0-9]{1,2}):\\d+/[^<>\"]+)").getColumn(0);
+            final String[] links = br.getRegex("file_url=\"(http[^<>\"]*?)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return;
@@ -131,7 +140,9 @@ public class XunleiComDecrypter extends PluginForDecrypt {
                     logger.info("Invalid URLs found (LAN or localhost subnets).");
                     continue;
                 }
-                if (fLinks.add(aLink) == false) continue;
+                if (fLinks.add(aLink) == false) {
+                    continue;
+                }
                 final DownloadLink dl = createDownloadlink(aLink);
                 dl.setProperty("origin", parameter);
                 dl.setAvailable(true);
@@ -177,9 +188,9 @@ public class XunleiComDecrypter extends PluginForDecrypt {
                 String captchaCode = getCaptchaCode(captchaIMG, null);
                 br.getPage("http://kuai.xunlei.com/webfilemail_interface?v_code=" + Encoding.urlEncode(captchaCode) + "&shortkey=" + Encoding.urlEncode(shortkey) + "&ref=&action=" + Encoding.urlEncode(action) + "&Submit=" + Encoding.urlEncode(submit));
                 br.getPage(CurrentURL);
-                if (br.containsHTML("http://verify\\d+.xunlei.com/image\\?t=MMA&s=\\d+"))
+                if (br.containsHTML("http://verify\\d+.xunlei.com/image\\?t=MMA&s=\\d+")) {
                     continue;
-                else {
+                } else {
                     break;
                 }
             }

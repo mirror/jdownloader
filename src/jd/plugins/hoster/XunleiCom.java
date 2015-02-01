@@ -33,7 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xunlei.com" }, urls = { "http://dl\\d+\\.[a-z]+\\d+\\.sendfile\\.vip\\.xunlei\\.com:\\d+/[^<>\"]+\\&get_uid=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xunlei.com" }, urls = { "http://[a-z0-9\\.\\-]+\\.xunlei\\.com/download\\?fid=.+" }, flags = { 0 })
 public class XunleiCom extends PluginForHost {
 
     private boolean download = false;
@@ -47,8 +47,9 @@ public class XunleiCom extends PluginForHost {
         return "http://kuai.xunlei.com/service-agreement";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         Browser br2 = br.cloneBrowser();
