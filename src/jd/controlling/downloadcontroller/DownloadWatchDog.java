@@ -1338,7 +1338,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         if (downloadLink == null) {
             downloadLink = downloadLinkCandidates.get(0).getLink();
         }
-        final File partFile = new File(downloadLink.getFileOutput() + ".part");
+        final boolean isAccountAndIsMulti = downloadLinkCandidates.get(0).getCachedAccount() != null && downloadLinkCandidates.get(0).getCachedAccount().getAccount() != null ? downloadLinkCandidates.get(0).getCachedAccount().getAccount().isMulti() : false;
+        final File partFile = new File(downloadLink.getFileOutput(false, isAccountAndIsMulti) + ".part");
         long doneSize = Math.max((partFile.exists() ? partFile.length() : 0l), downloadLink.getView().getBytesLoaded());
         final long remainingSize = downloadLink.getView().getBytesTotal() - Math.max(0, doneSize);
         return getSession().getDiskSpaceManager().check(new DiskSpaceReservation() {
@@ -2290,7 +2291,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             @Override
             protected Void run() throws RuntimeException {
                 boolean ignoreUnsafe = true;
-                String downloadTo = candidate.getLink().getFileOutput(ignoreUnsafe, false);
+                final boolean isAccountAndIsMulti = candidate.getCachedAccount() != null && candidate.getCachedAccount().getAccount() != null ? candidate.getCachedAccount().getAccount().isMulti() : false;
+                String downloadTo = candidate.getLink().getFileOutput(ignoreUnsafe, isAccountAndIsMulti);
                 if (StringUtils.isEmpty(downloadTo)) {
                     ignoreUnsafe = false;
                     downloadTo = candidate.getLink().getFileOutput(ignoreUnsafe, false);
@@ -2372,11 +2374,12 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             }
                         }
                         try {
+                            final boolean isAccountAndIsMulti = candidate.getCachedAccount() != null && candidate.getCachedAccount().getAccount() != null ? candidate.getCachedAccount().getAccount().isMulti() : false;
                             logger.info("Rename after Download?");
                             // prevent mega type of temp file extensions from nuking post download filename rename to .encrypted.
-                            final File desiredPath = new File(link.getFileOutput(false, (candidate.getCachedAccount().getAccount().isMulti() ? true : false)));
+                            final File desiredPath = new File(link.getFileOutput(false, isAccountAndIsMulti));
                             logger.info("Desired Path: " + desiredPath);
-                            final File usedPath = singleDownloadController.getFileOutput(false, (candidate.getCachedAccount().getAccount().isMulti() ? true : false));
+                            final File usedPath = singleDownloadController.getFileOutput(false, false);
                             logger.info("Actually Used path: " + usedPath);
                             if (!desiredPath.equals(usedPath)) {
                                 logger.info("Move");
