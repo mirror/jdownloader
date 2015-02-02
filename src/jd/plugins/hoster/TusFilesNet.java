@@ -316,7 +316,7 @@ public class TusFilesNet extends PluginForHost {
                     if (inValidate(fileInfo[0])) {
                         fileInfo[0] = cbr.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
                         if (inValidate(fileInfo[0])) {
-                            fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+><[^>]+" + fuid + "\">(.*?) - [\\d\\.]+ (KB|MB|GB)</").getMatch(0);
+                            fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+><[^>]+" + fuid + "\">(.*?) - [\\d\\.]+ (B|KB|MB|GB)</").getMatch(0);
                             if (inValidate(fileInfo[0])) {
                                 fileInfo[0] = cbr.getRegex("b>Password:</b></div>[\t\n\t ]+<h3>([^<>\"]*?)</h3>").getMatch(0);
                             }
@@ -327,7 +327,7 @@ public class TusFilesNet extends PluginForHost {
         }
         /* For password protected links */
         if (inValidate(fileInfo[1])) {
-            fileInfo[1] = cbr.getRegex("<textarea[^\r\n]+><[^>]+" + fuid + "\">(?:.*?) - ([\\d\\.]+ (KB|MB|GB))</").getMatch(0);
+            fileInfo[1] = cbr.getRegex("<textarea[^\r\n]+><[^>]+" + fuid + "\">(?:.*?) - ([\\d\\.]+ (B|KB|MB|GB))</").getMatch(0);
             if (inValidate(fileInfo[1])) {
                 fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
                 if (inValidate(fileInfo[1])) {
