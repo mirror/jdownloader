@@ -289,10 +289,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
      * NOTE: only access these fields inside the IOEQ
      */
     private final HashMap<String, WeakReference<CrawledLink>>                   dupeCheckMap       = new HashMap<String, WeakReference<CrawledLink>>();
-    private HashMap<CrawledPackageMappingID, CrawledPackage>                    packageMap         = new HashMap<CrawledPackageMappingID, CrawledPackage>();
+    private final HashMap<CrawledPackageMappingID, CrawledPackage>              packageMap         = new HashMap<CrawledPackageMappingID, CrawledPackage>();
 
-    /* sync on filteredStuff itself when accessing it */
-    private java.util.List<CrawledLink>                                         filteredStuff      = new ArrayList<CrawledLink>();
+    private final List<CrawledLink>                                             filteredStuff      = new CopyOnWriteArrayList<CrawledLink>();
 
     private LinkCrawlerFilter                                                   crawlerFilter      = null;
 
@@ -1098,9 +1097,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     * 
+     *
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     * 
+     *
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -1169,7 +1168,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
             @Override
             protected java.util.List<CrawledLink> run() throws RuntimeException {
-                java.util.List<CrawledLink> ret2 = new ArrayList<CrawledLink>(filteredStuff);
+                final List<CrawledLink> ret2 = new ArrayList<CrawledLink>(filteredStuff);
                 if (clearAfterGet) {
                     filteredStuff.clear();
                     cleanupMaps(ret2);
@@ -1815,7 +1814,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /**
      * saves List of CrawledPackages to given File as ZippedJSon
-     * 
+     *
      * @param packages
      * @param file
      */
@@ -2137,7 +2136,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         /* add the converted FilePackages to DownloadController */
         /**
          * addTop = 0, to insert the packages at the top
-         * 
+         *
          * addBottom = negative number -> add at the end
          */
         DownloadController.getInstance().addAllAt(filePackagesToAdd, addTop ? 0 : -(filePackagesToAdd.size() + 10));
