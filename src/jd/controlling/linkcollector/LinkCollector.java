@@ -293,18 +293,18 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     private final List<CrawledLink>                                             filteredStuff      = new CopyOnWriteArrayList<CrawledLink>();
 
-    private LinkCrawlerFilter                                                   crawlerFilter      = null;
+    private volatile LinkCrawlerFilter                                          crawlerFilter      = null;
 
-    private ExtractionExtension                                                 archiver;
-    private DelayedRunnable                                                     asyncSaving        = null;
+    private volatile ExtractionExtension                                        archiver;
+    private final DelayedRunnable                                               asyncSaving;
 
-    private PackagizerInterface                                                 packagizer         = null;
+    private volatile PackagizerInterface                                        packagizer         = null;
 
-    protected CrawledPackage                                                    offlinePackage;
+    protected volatile CrawledPackage                                           offlinePackage;
 
-    protected CrawledPackage                                                    variousPackage;
+    protected volatile CrawledPackage                                           variousPackage;
 
-    protected CrawledPackage                                                    permanentofflinePackage;
+    protected volatile CrawledPackage                                           permanentofflinePackage;
 
     private final CopyOnWriteArrayList<File>                                    linkcollectorLists = new CopyOnWriteArrayList<File>();
 
@@ -313,7 +313,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     private final HashMap<CrawledPackageMappingID, java.util.List<CrawledLink>> badMappingMap      = new HashMap<CrawledPackageMappingID, java.util.List<CrawledLink>>();
     private final WeakHashMap<CrawledPackage, HashMap<Object, Object>>          autoRenameCache    = new WeakHashMap<CrawledPackage, HashMap<Object, Object>>();
 
-    private DelayedRunnable                                                     asyncCacheCleanup;
+    private final DelayedRunnable                                               asyncCacheCleanup;
     private final AtomicLong                                                    collectingID       = new AtomicLong(0);
 
     public long getCollectingID() {
@@ -1097,9 +1097,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     *
+     * 
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     *
+     * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
