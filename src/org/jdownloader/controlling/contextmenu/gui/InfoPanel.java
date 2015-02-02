@@ -306,19 +306,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
 
                         @Override
                         protected void runInEDT() {
-                            // String newShortcut = null;
-                            // String oldShortcut = item.getShortcut();
-                            // if (StringUtils.isNotEmpty(oldShortcut)) {
-                            // if (MenuItemData.isEmptyValue(oldShortcut)) {
-                            // newShortcut = null;
-                            // } else {
-                            // newShortcut = MenuItemData.EMPTY;
-                            // }
-                            // } else {
-                            // newShortcut = MenuItemData.EMPTY;
-                            // }
                             item.setShortcut(resetShortcut);
-
                             updateInfo(item);
                             managerFrame.fireUpdate();
                         }
@@ -387,7 +375,9 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                 ret.loadContextSetups();
                 iconKeyReset.setEnabled(true);
                 nameReset.setEnabled(true);
-                shortCutReset.setEnabled(true);
+                if (shortCutReset != null) {
+                    shortCutReset.setEnabled(true);
+                }
 
                 if (StringUtils.equals(name.getText(), ret.getName())) {
                     resetName = MenuItemData.EMPTY;
@@ -395,22 +385,22 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                     resetName = ret.getName();
                 }
 
-                if (StringUtils.equals(value.getShortcut(), ret.getValue(Action.ACCELERATOR_KEY) + "")) {
-                    resetShortcut = MenuItemData.EMPTY;
-                } else {
-                    resetShortcut = ret.getValue(Action.ACCELERATOR_KEY) + "";
-                }
-
                 if (StringUtils.equals(value.getIconKey(), ret.getIconKey())) {
                     resetIconKey = MenuItemData.EMPTY;
                 } else {
                     resetIconKey = ret.getIconKey();
                 }
-
                 iconKeyReset.setToolTipText(_GUI._.ManagerFrame_layoutPanel_resettodefault_parametered(resetIconKey));
-
                 nameReset.setToolTipText(_GUI._.ManagerFrame_layoutPanel_resettodefault_parametered(resetName));
-                shortCutReset.setToolTipText(_GUI._.ManagerFrame_layoutPanel_resettodefault_parametered(resetShortcut));
+
+                if (shortCutReset != null) {
+                    if (StringUtils.equals(value.getShortcut(), ret.getValue(Action.ACCELERATOR_KEY) + "")) {
+                        resetShortcut = MenuItemData.EMPTY;
+                    } else {
+                        resetShortcut = ret.getValue(Action.ACCELERATOR_KEY) + "";
+                    }
+                    shortCutReset.setToolTipText(_GUI._.ManagerFrame_layoutPanel_resettodefault_parametered(resetShortcut));
+                }
 
             } catch (Throwable e) {
                 LogController.CL().log(e);
@@ -450,7 +440,9 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
             if (mid.getActionData() != null && !(mid instanceof MenuLink)) {
                 shortcutLabel.setVisible(true);
                 shortcut.setVisible(true);
-                shortCutReset.setVisible(true);
+                if (shortCutReset != null) {
+                    shortCutReset.setVisible(true);
+                }
                 action = mid.createAction();
                 name.setText(action.getName());
                 if (StringUtils.isEmpty(action.getName())) {
@@ -516,18 +508,17 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                 }
             } else {
                 shortcut.setText("");
-
                 shortcutLabel.setVisible(false);
                 shortcut.setVisible(false);
-                shortCutReset.setVisible(false);
+                if (shortCutReset != null) {
+                    shortCutReset.setVisible(false);
+                }
             }
             if (mid instanceof MenuLink) {
-
                 JComponent panel = ((MenuLink) mid).createSettingsPanel();
                 if (panel != null) {
                     customPanel.add(panel, "pushx,growx");
                 }
-
             }
         } catch (Exception e) {
             e.printStackTrace();
