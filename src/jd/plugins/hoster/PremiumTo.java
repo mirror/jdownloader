@@ -108,7 +108,7 @@ public class PremiumTo extends PluginForHost {
         {
             Browser hbr = br.cloneBrowser();
             hbr.getPage("http://premium.to/hosts.php");
-            String hosters[] = hbr.toString().split(";");
+            String hosters[] = hbr.toString().split(";|\\s+");
             if (hosters != null && hosters.length != 0) {
                 ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosters));
                 ac.setMultiHostSupport(this, supportedHosts);
@@ -434,8 +434,11 @@ public class PremiumTo extends PluginForHost {
             shareOnlineLocked.set(true);
         }
         // some routine to check traffic allocations: normalTraffic specialTraffic
-        if (downloadLink.getHost().matches("uploaded\\.net|uploaded\\.to|ul\\.to|netload\\.in|filemonkey\\.in|oboom\\.com")) {
-            // special traffic
+        // if (downloadLink.getHost().matches("uploaded\\.net|uploaded\\.to|ul\\.to|netload\\.in|filemonkey\\.in|oboom\\.com")) {
+        // We no longer sell Special traffic! Special traffic works only with our Usenet servers and for these 5 filehosts: uploaded.net**,
+        // netload.in, share-online.biz**, rapidgator.net, filer.net
+        // special traffic
+        if (downloadLink.getHost().matches("uploaded\\.net|uploaded\\.to|ul\\.to|netload\\.in|share-online\\.biz|rapidgator\\.net|filer\\.net")) {
             if (account != null && account.getLongProperty(specialTraffic, 0) > 0) {
                 return true;
             }
