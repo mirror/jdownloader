@@ -7,6 +7,7 @@ import java.util.List;
 
 import jd.controlling.reconnect.pluginsinc.upnp.translate.T;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.utils.logging2.LogSource;
 import org.fourthline.cling.UpnpServiceImpl;
 import org.fourthline.cling.model.meta.Action;
@@ -29,21 +30,21 @@ public class UPNPDeviceScanner {
     }
 
     public List<UpnpRouterDevice> scan() throws InterruptedException {
-        System.out.println("Starting Cling...");
+        logger.info("Starting Cling...");
         // final HashSet<RemoteDevice> devices = new HashSet<UpnpRouterDevice>();
         final UpnpServiceImpl upnpService = new UpnpServiceImpl(new RegistryListener() {
 
             public void remoteDeviceDiscoveryStarted(Registry registry, RemoteDevice device) {
-                System.out.println("Discovery started: " + device.getDisplayString() + " - " + device.getType());
+                logger.info("Discovery started: " + device.getDisplayString() + " - " + device.getType());
 
             }
 
             public void remoteDeviceDiscoveryFailed(Registry registry, RemoteDevice device, Exception ex) {
-                System.out.println("Discovery failed: " + device.getDisplayString() + " => " + ((org.fourthline.cling.model.ValidationException) ex).getErrors());
+                logger.info("Discovery failed: " + device.getDisplayString() + " => " + ((org.fourthline.cling.model.ValidationException) ex).getErrors());
             }
 
             public void remoteDeviceAdded(Registry registry, RemoteDevice device) {
-                System.out.println("Remote device available: " + device.getDisplayString() + " - " + device.getType());
+                logger.info("Remote device available: " + device.getDisplayString() + " - " + device.getType());
                 // UpnpRouterDevice d = new UpnpRouterDevice();
                 // DeviceDetails detail = device.getDetails();
                 // // d.setControlURL(device.getDetails().g);
@@ -60,27 +61,27 @@ public class UPNPDeviceScanner {
             }
 
             public void remoteDeviceUpdated(Registry registry, RemoteDevice device) {
-                System.out.println("Remote device updated: " + device.getDisplayString() + " - " + device.getType());
+                logger.info("Remote device updated: " + device.getDisplayString() + " - " + device.getType());
             }
 
             public void remoteDeviceRemoved(Registry registry, RemoteDevice device) {
-                System.out.println("Remote device removed: " + device.getDisplayString());
+                logger.info("Remote device removed: " + device.getDisplayString());
             }
 
             public void localDeviceAdded(Registry registry, LocalDevice device) {
-                System.out.println("Local device added: " + device.getDisplayString());
+                logger.info("Local device added: " + device.getDisplayString());
             }
 
             public void localDeviceRemoved(Registry registry, LocalDevice device) {
-                System.out.println("Local device removed: " + device.getDisplayString());
+                logger.info("Local device removed: " + device.getDisplayString());
             }
 
             public void beforeShutdown(Registry registry) {
-                System.out.println("Before shutdown, the registry has devices: " + registry.getDevices().size());
+                logger.info("Before shutdown, the registry has devices: " + registry.getDevices().size());
             }
 
             public void afterShutdown() {
-                System.out.println("Shutdown of registry complete!");
+                logger.info("Shutdown of registry complete!");
             }
 
         });
@@ -88,7 +89,7 @@ public class UPNPDeviceScanner {
         upnpService.getControlPoint().search();
         try {
             // Let's wait 10 seconds for them to respond
-            System.out.println("Waiting 10 seconds before shutting down...");
+            logger.info("Waiting 10 seconds before shutting down...");
             Thread.sleep(15000);
             HashSet<UpnpRouterDevice> ret = new HashSet<UpnpRouterDevice>();
             UDAServiceType serviceType = new UDAServiceType("WANIPConnection", 1);
@@ -107,6 +108,7 @@ public class UPNPDeviceScanner {
                             d.setServiceType(((RemoteService) service).getServiceType() + "");
                             d.setFriendlyname(device.getDetails().getFriendlyName());
                             d.setManufactor(device.getDetails().getManufacturerDetails().getManufacturer());
+                            logger.info("Found " + JSonStorage.serializeToJson(d));
                             ret.add(d);
 
                         }
@@ -131,6 +133,7 @@ public class UPNPDeviceScanner {
                             d.setControlURL(url + "");
                             d.setFriendlyname(device.getDetails().getFriendlyName());
                             d.setManufactor(device.getDetails().getManufacturerDetails().getManufacturer());
+                            logger.info("Found " + JSonStorage.serializeToJson(d));
                             ret.add(d);
 
                         }
@@ -145,8 +148,12 @@ public class UPNPDeviceScanner {
 
             return new ArrayList<UpnpRouterDevice>(ret);
         } finally {
-            System.out.println("Stopping Cling...");
-            upnpService.shutdown();
+            try {
+                logger.info("Stopping Cling...");
+                upnpService.shutdown();
+            } catch (Throwable e) {
+                logger.log(e);
+            }
 
         }
     }
