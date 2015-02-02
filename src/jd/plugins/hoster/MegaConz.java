@@ -236,6 +236,7 @@ public class MegaConz extends PluginForHost {
         if (downloadLink != null && pluginForHost != null && !StringUtils.equalsIgnoreCase(getHost(), pluginForHost.getHost())) {
             downloadLink.setInternalTmpFilenameAppend(null);
             downloadLink.setInternalTmpFilename(null);
+            downloadLink.setProperty("ALLOW_HASHCHECK", Property.NULL);
         }
         super.preHandle(downloadLink, account, pluginForHost);
     }
