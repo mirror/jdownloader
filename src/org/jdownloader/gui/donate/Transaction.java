@@ -6,6 +6,16 @@ public class Transaction implements Storable {
     public Transaction(/* Storable */) {
     }
 
+    private String provider;
+
+    public String getProvider() {
+        return provider;
+    }
+
+    public void setProvider(String provider) {
+        this.provider = provider;
+    }
+
     private long time;
 
     public long getTime() {
@@ -24,11 +34,11 @@ public class Transaction implements Storable {
         this.tid = tid;
     }
 
-    public int getAmount() {
+    public double getAmount() {
         return amount;
     }
 
-    public void setAmount(int amount) {
+    public void setAmount(double amount) {
         this.amount = amount;
     }
 
@@ -57,7 +67,7 @@ public class Transaction implements Storable {
     }
 
     private String   tid;
-    private int      amount;
+    private double   amount;
     private String   currency;
     private String[] categories;
     private String   note;
