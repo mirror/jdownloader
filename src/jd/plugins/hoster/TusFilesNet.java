@@ -312,40 +312,43 @@ public class TusFilesNet extends PluginForHost {
             if (inValidate(fileInfo[0])) {
                 fileInfo[0] = cbr.getRegex("fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                 if (inValidate(fileInfo[0])) {
-                    fileInfo[0] = cbr.getRegex("<li>([^\r\n]+)</li>[\r\n\t ]+<li><b>Size").getMatch(0);
+                    fileInfo[0] = cbr.getRegex("<font color=\"#ffffff\">(.*?)</font>").getMatch(0);
                     if (inValidate(fileInfo[0])) {
                         fileInfo[0] = cbr.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
                         if (inValidate(fileInfo[0])) {
-                            fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>[^\r\n]+\\]([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                            fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+><[^>]+" + fuid + "\">(.*?) - [\\d\\.]+ (KB|MB|GB)</").getMatch(0);
+                            if (inValidate(fileInfo[0])) {
+                                fileInfo[0] = cbr.getRegex("b>Password:</b></div>[\t\n\t ]+<h3>([^<>\"]*?)</h3>").getMatch(0);
+                            }
                         }
                     }
                 }
             }
         }
         /* For password protected links */
-        if (inValidate(fileInfo[0])) {
-            fileInfo[0] = cbr.getRegex("b>Password:</b></div>[\t\n\t ]+<h3>([^<>\"]*?)</h3>").getMatch(0);
-        }
         if (inValidate(fileInfo[1])) {
-            fileInfo[1] = cbr.getRegex(">Size:</th>[\t\n\r ]+<th width=\"\\d+\" align=\"left\" valign=\"middle\">([^<>\"]*?)</th>").getMatch(0);
-        }
-        if (inValidate(fileInfo[1])) {
-            fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
+            fileInfo[1] = cbr.getRegex("<textarea[^\r\n]+><[^>]+" + fuid + "\">(?:.*?) - ([\\d\\.]+ (KB|MB|GB))</").getMatch(0);
             if (inValidate(fileInfo[1])) {
-                fileInfo[1] = cbr.getRegex("</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
+                fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
                 if (inValidate(fileInfo[1])) {
-                    fileInfo[1] = cbr.getRegex("<li>[^\r\n]+</li>[\r\n\t ]+<li><b>Size:</b> <small>(.*?)</small>").getMatch(0);
+                    fileInfo[1] = cbr.getRegex("</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
+                    if (inValidate(fileInfo[1])) {
+                        fileInfo[1] = cbr.getRegex("<li>[^\r\n]+</li>[\r\n\t ]+<li><b>Size:</b> <small>(.*?)</small>").getMatch(0);
+                        if (inValidate(fileInfo[1])) {
+                            fileInfo[1] = cbr.getRegex("class=\"tsSize\">([^<>\"]*?)</span>").getMatch(0);
+                            if (inValidate(fileInfo[1])) {
+                                fileInfo[1] = cbr.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                                if (inValidate(fileInfo[1])) {
+                                    fileInfo[1] = cbr.getRegex("Size:</th>\\s+?<[^<>]+>(\\d+(\\.\\d+)? ?(B|KB|MB|GB))").getMatch(0);
+                                    if (inValidate(fileInfo[0])) {
+                                        fileInfo[0] = cbr.getRegex("b>Password:</b></div>[\t\n\t ]+<h3>([^<>\"]*?)</h3>").getMatch(0);
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
-        }
-        if (inValidate(fileInfo[1])) {
-            fileInfo[1] = cbr.getRegex("class=\"tsSize\">([^<>\"]*?)</span>").getMatch(0);
-        }
-        if (inValidate(fileInfo[1])) {
-            fileInfo[1] = cbr.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
-        }
-        if (inValidate(fileInfo[1])) {
-            fileInfo[1] = cbr.getRegex("Size:</th>\\s+?<[^<>]+>(\\d+(\\.\\d+)? ?(B|KB|MB|GB))").getMatch(0);
         }
         if (inValidate(fileInfo[1])) {
             try {
