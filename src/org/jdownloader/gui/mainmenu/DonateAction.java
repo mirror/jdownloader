@@ -7,6 +7,7 @@ import jd.http.Browser;
 import org.appwork.storage.JSonStorage;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
@@ -17,7 +18,12 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.statistics.StatsManager;
 
 public class DonateAction extends CustomizableAppAction {
-    public static final String SERVER = "https://payments.appwork.org/test/";
+    public static String SERVER = "https://payments.appwork.org/";
+    static {
+        if (!Application.isJared(null)) {
+            SERVER = "https://payments.appwork.org/test/";
+        }
+    }
 
     public DonateAction() {
         setIconKey("heart");
@@ -52,12 +58,12 @@ public class DonateAction extends CustomizableAppAction {
                 try {
                     Browser br = new Browser();
 
-                    String json = br.getPage(SERVER + "payment/getDonationScreenDetails?" + TranslationFactory.getDesiredLanguage() + "&jdbutton");
+                    String json = br.getPage(SERVER + "payment/getDonationScreenDetails?" + TranslationFactory.getDesiredLanguage() + "&button");
                     details = JSonStorage.restoreFromString(json, DonationDetails.TYPEREF);
                 } catch (Throwable e) {
-
+                    StatsManager.I().track("/donation/button/exception/" + e.getMessage());
                 } finally {
-                    StatsManager.I().track("/donation/jdbutton/details/" + (details != null && details.isEnabled()));
+                    StatsManager.I().track("/donation/button/details/" + (details != null && details.isEnabled()));
                 }
                 if (details == null || !details.isEnabled() || details.getCategories() == null) {
                     Dialog.getInstance().showErrorDialog(_GUI._.DonationDialog_layoutDialogContent_donation_disabled());

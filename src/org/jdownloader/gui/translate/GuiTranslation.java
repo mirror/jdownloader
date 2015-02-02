@@ -5525,13 +5525,13 @@ public interface GuiTranslation extends TranslateInterface {
     String YoutubeVariant_name_generic_video(String res, String codec);
 
     @Default(lngs = { "en" }, values = { "%s1" })
-    String YoutubeVariant_nametag_generic_video(String res, String codec);
+    String YoutubeVariant_nametag_generic_video(String res);
 
     @Default(lngs = { "en" }, values = { "%s1/s %s2-Audio" })
     String YoutubeVariant_name_generic_audio(String string, String string2);
 
     @Default(lngs = { "en" }, values = { "%s1" })
-    String YoutubeVariant_nametag_generic_audio(String string, String string2);
+    String YoutubeVariant_nametag_generic_audio(String string);
 
     @Default(lngs = { "en" }, values = { "Enabled" })
     String lit_enabled();
