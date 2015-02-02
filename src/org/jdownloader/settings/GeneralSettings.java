@@ -21,7 +21,6 @@ import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.storage.config.defaults.AbstractDefaultFactory;
-import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.domainrules.DomainRule;
@@ -42,20 +41,14 @@ public interface GeneralSettings extends ConfigInterface {
         @Override
         public String getDefaultValue() {
             /* convert old value */
-            String old = JDUtilities.getConfiguration().getStringProperty("DOWNLOAD_DIRECTORY", null);
-            if (!StringUtils.isEmpty(old)) {
-                File file = new File(old);
+            final String oldDownloadDirectory = JDUtilities.getConfiguration().getStringProperty("DOWNLOAD_DIRECTORY", null);
+            if (!StringUtils.isEmpty(oldDownloadDirectory)) {
+                final File file = new File(oldDownloadDirectory);
                 if (file.exists() && file.isDirectory()) {
-                    return old;
+                    return oldDownloadDirectory;
                 }
             }
-            String home = System.getProperty("user.home");
-            if (home != null && new File(home).exists() && new File(home).isDirectory()) {
-                // new File(home, FileCreationManager.getInstance().mkdir("downloads"));
-                return new File(home, "downloads").getAbsolutePath();
-            } else {
-                return Application.getResource("downloads").getAbsolutePath();
-            }
+            return CrossSystem.getDefaultDownloadDirectory();
         }
     }
 
@@ -542,7 +535,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     /**
      * remove on 1.december 2014. We just keep it now to convert to {@link #setUrlOrder(UrlDisplayEntry[])}
-     * 
+     *
      * @return
      */
     @Deprecated
@@ -550,7 +543,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     /**
      * remove on 1.december 2014. We just keep it now to convert to {@link #setUrlOrder(UrlDisplayEntry[])}
-     * 
+     *
      * @return
      */
     @Deprecated
