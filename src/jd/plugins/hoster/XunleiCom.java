@@ -17,15 +17,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.URL;
-import java.util.logging.Level;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -33,10 +26,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xunlei.com" }, urls = { "http://[a-z0-9\\.\\-]+\\.xunlei\\.com/download\\?fid=.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xunlei.com" }, urls = { "http://xunleidecrypted\\.com/\\d+" }, flags = { 0 })
 public class XunleiCom extends PluginForHost {
-
-    private boolean download = false;
 
     public XunleiCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,64 +38,40 @@ public class XunleiCom extends PluginForHost {
         return "http://kuai.xunlei.com/service-agreement";
     }
 
-    @SuppressWarnings("deprecation")
+    private String DLLINK = null;
+
+    /* TODO: Add measures to prevent captchas (e.g. re-use cookies from decrypter). */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(downloadLink.getDownloadURL());
-            if (con.getResponseCode() == 403) {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
-                if (download == false) {
-                    return AvailableStatus.UNCHECKABLE;
-                }
-                /* we are trying to download the file, fetch new link and retry */
-                String url = updateDownloadLink(downloadLink);
-                if (url == null) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                downloadLink.setUrlDownload(url);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            if (!con.getContentType().contains("html")) {
-                String name = getFileNameFromURL(new URL(downloadLink.getDownloadURL()));
-                if (downloadLink.getFinalFileName() == null) {
-                    downloadLink.setFinalFileName(Encoding.htmlDecode(name));
-                }
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
+        br.getPage(downloadLink.getStringProperty("mainlink", null));
+        if (br.getURL().contains("kuai.xunlei.com/invalid")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String filename = downloadLink.getStringProperty("decryptedfilename", null);
+        final String filesize = downloadLink.getStringProperty("decryptedfilesize", null);
+        downloadLink.setFinalFileName(filename);
+        downloadLink.setDownloadSize(Long.parseLong(filesize));
+        DLLINK = downloadLink.getStringProperty("directlink", null);
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        download = true;
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String url = downloadLink.getDownloadURL();
-        try {
-            String host = new Regex(url, "http://(.*?)(:|/)").getMatch(0);
-            InetAddress ip = InetAddress.getByName(host);
-            url = url.replace("http://" + host, "http://" + ip.getHostAddress());
-        } catch (final Throwable e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+        DLLINK = updateDownloadLink(downloadLink);
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, -3);
+        // try {
+        // String host = new Regex(DLLINK, "http://(.*?)(:|/)").getMatch(0);
+        // InetAddress ip = InetsAddress.getByName(host);
+        // DLLINK = DLLINK.replace("http://" + host, "http://" + ip.getHostAddress());
+        // } catch (final Throwable e) {
+        // logger.log(Level.SEVERE, e.getMessage(), e);
+        // }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -113,25 +80,24 @@ public class XunleiCom extends PluginForHost {
     }
 
     private String updateDownloadLink(final DownloadLink downloadLink) throws IOException, Exception {
-        final Browser br = new Browser();
+        final String fid = downloadLink.getStringProperty("decrypted_fid", null);
         try {
-            final String origin = downloadLink.getStringProperty("origin", null);
+            final String origin = downloadLink.getStringProperty("mainlink", null);
             if (origin == null) {
                 return null;
             }
             br.setCustomCharset("utf-8");
-            br.getPage(origin);
             if (br.containsHTML("http://verify")) {
                 logger.info("xunlei.com decrypter: found captcha...");
-                final String fid = new Regex(origin, "([A-Z]+)$").getMatch(0);
                 for (int i = 0; i <= 3; i++) {
+                    final String shortkey = br.getRegex("value=\\'([^<>\"]*?)\\' name=\"shortkey\"").getMatch(0);
                     final String captchaLink = br.getRegex("\"(http://verify\\d+\\.xunlei\\.com/image\\?t=[^<>\"]*?)\"").getMatch(0);
-                    if (captchaLink == null) {
-                        logger.warning("Decrypter broken for link: " + downloadLink.getDownloadURL());
+                    if (captchaLink == null || shortkey == null) {
+                        logger.warning("Host plugin broken for link: " + origin);
                         return null;
                     }
                     final String code = getCaptchaCode(captchaLink, downloadLink);
-                    br.getPage("http://kuai.xunlei.com/webfilemail_interface?v_code=" + code + "&shortkey=" + fid + "&ref=&action=check_verify");
+                    br.getPage("http://kuai.xunlei.com/webfilemail_interface?v_code=" + code + "&shortkey=" + shortkey + "&ref=&action=check_verify");
                     if (!br.containsHTML("http://verify")) {
                         break;
                     }
@@ -141,13 +107,12 @@ public class XunleiCom extends PluginForHost {
                 }
                 logger.info("Captcha passed!");
             }
-            final String originLink = new Regex(downloadLink.getDownloadURL(), "https?://.*?/(.*?)\\?").getMatch(0);
-            final String[] links = br.getRegex("\"(http://dl\\d+\\.[a-z]\\d+\\.sendfile\\.vip\\.xunlei\\.com:\\d+/[^/<>\"]+\\?key=[a-z0-9]+\\&file_url=[^/<>\"]+\\&file_type=\\d+\\&authkey=[A-Z0-9]+\\&exp_time=\\d+&from_uid=\\d+\\&task_id=\\d+\\&get_uid=\\d+)").getColumn(0);
+            final String[] links = br.getRegex("file_url=\"(https?://[a-z0-9\\.\\-]+\\.xunlei\\.com/download\\?fid=[^\"\\'<>]+)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 return null;
             }
-            for (String aLink : links) {
-                if (aLink.contains(originLink)) {
+            for (final String aLink : links) {
+                if (aLink.contains(fid)) {
                     return aLink;
                 }
             }

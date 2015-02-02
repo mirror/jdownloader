@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -38,6 +39,8 @@ public class XunleiComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /* TODO: Fix all the outdated stuff */
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -48,6 +51,10 @@ public class XunleiComDecrypter extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.getURL().contains("kuai.xunlei.com/invalid")) {
             logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         if (br.containsHTML("http://verify")) {
@@ -73,10 +80,41 @@ public class XunleiComDecrypter extends PluginForDecrypt {
         checks(parameter, br.getURL());
         // hoster download links
         if (parameter.matches("http://(www\\.)?(kuai\\.xunlei\\.com/(d/([a-zA-Z]{1,2}\\-)?[a-zA-Z0-9\\.]+|download\\?[^\"\\'<>]+)|f\\.xunlei\\.com/\\d+/file/[a-z0-9\\-]+)")) {
+            final String[] files = br.getRegex("<div class=\"file_tr\">(.*?)</li>").getColumn(0);
+            for (final String finfo : files) {
+                final String fname = new Regex(finfo, "file_name=\"([^<>\"]*?)\"").getMatch(0);
+                final String fsize = new Regex(finfo, "file_size=\"([^<>\"]*?)\"").getMatch(0);
+                String directlink = new Regex(finfo, "file_url=\"(https?://[a-z0-9\\.\\-]+\\.xunlei\\.com/download\\?fid=[^\"\\'<>]+)\"").getMatch(0);
+                if (fname == null || fsize == null || directlink == null) {
+                    continue;
+                }
+                directlink = directlink.trim();
+                if (directlink.matches("https?://(192\\.168\\.[^/]+|127\\.0\\.0\\.1|10\\.[^/]+):\\d+/.+")) {
+                    logger.info("Invalid URLs found (LAN or localhost subnets).");
+                    continue;
+                }
+                final String fid = new Regex(directlink, "fid=([^<>\"]*?)\\&").getMatch(0);
+                final DownloadLink dl = createDownloadlink("http://xunleidecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
+                dl.setProperty("directlink", directlink);
+                dl.setProperty("decryptedfilename", fname);
+                dl.setProperty("decryptedfilesize", fsize);
+                dl.setProperty("decrypted_fid", fid);
+                dl.setProperty("mainlink", parameter);
+                try {
+                    dl.setContentUrl(parameter);
+                } catch (final Throwable e) {
+                    /* Not available in old 0.9.581 Stable */
+                    dl.setBrowserUrl(parameter);
+                }
+                dl.setFinalFileName(fname);
+                dl.setDownloadSize(Long.parseLong(fsize));
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+
+            }
             parseDownload(decryptedLinks, parameter, parameter);
-        }
-        // folders with spanning page, + subpage support
-        if (parameter.matches("http://(www\\.)?kuai\\.xunlei\\.com/s/[\\w\\-]+")) {
+        } else if (parameter.matches("http://(www\\.)?kuai\\.xunlei\\.com/s/[\\w\\-]+")) {
+            // folders with spanning page, + subpage support
             String uid = new Regex(parameter, "/s/(.+)").getMatch(0);
             String[] Pages = br.getRegex("<div id=\\'page_bar(\\d+)\\' class=\"page_co\"").getColumn(0);
             parsePage(decryptedLinks, parameter);

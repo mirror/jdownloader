@@ -84,6 +84,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     VKWALL_GRAB_LINK                   = "VKWALL_GRAB_LINK";
     private static final String     VKWALL_GRAB_DOCS                   = "VKWALL_GRAB_DOCS";
     private static final String     VKVIDEO_USEIDASPACKAGENAME         = "VKVIDEO_USEIDASPACKAGENAME";
+    private static final String     VKAUDIOS_USEIDASPACKAGENAME        = "VKAUDIOS_USEIDASPACKAGENAME";
 
     /* Settings 'in action' */
     private boolean                 wall_grabalbums;
@@ -420,10 +421,16 @@ public class VKontakteRu extends PluginForDecrypt {
      */
     @SuppressWarnings("deprecation")
     private void decryptAudioAlbum() throws Exception {
+        final String owner_ID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "((\\-)?\\d+)$").getMatch(0);
         this.getPageSafe(this.CRYPTEDLINK_FUNCTIONAL);
-        String fpName = br.getRegex("\"htitle\":\"([^<>\"]*?)\"").getMatch(0);
-        if (fpName == null) {
-            fpName = "vk.com audio - " + new Regex(this.CRYPTEDLINK_FUNCTIONAL, "(\\d+)$").getMatch(0);
+        String fpName = null;
+        if (cfg.getBooleanProperty(VKAUDIOS_USEIDASPACKAGENAME, false)) {
+            fpName = "audios" + owner_ID;
+        } else {
+            fpName = br.getRegex("\"htitle\":\"([^<>\"]*?)\"").getMatch(0);
+            if (fpName == null) {
+                fpName = "vk.com audio - " + owner_ID;
+            }
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
@@ -432,7 +439,7 @@ public class VKontakteRu extends PluginForDecrypt {
         if (new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/audio\\?id=\\-\\d+").matches()) {
             postData = "act=load_audios_silent&al=1&edit=0&id=0&gid=" + new Regex(this.CRYPTEDLINK_FUNCTIONAL, "(\\d+)$").getMatch(0);
         } else {
-            postData = "act=load_audios_silent&al=1&edit=0&gid=0&id=" + new Regex(this.CRYPTEDLINK_FUNCTIONAL, "((\\-)?\\d+)$").getMatch(0) + "&please_dont_ddos=2";
+            postData = "act=load_audios_silent&al=1&edit=0&gid=0&id=" + owner_ID + "&please_dont_ddos=2";
         }
         br.postPage("http://vk.com/audio", postData);
         final String completeData = br.getRegex("\\{\"all\":\\[(\\[.*?\\])\\]\\}").getMatch(0);

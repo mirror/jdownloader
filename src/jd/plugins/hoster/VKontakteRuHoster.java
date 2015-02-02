@@ -79,6 +79,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String VKWALL_GRAB_LINK            = "VKWALL_GRAB_LINK";
     public static final String  VKWALL_GRAB_DOCS            = "VKWALL_GRAB_DOCS";
     private static final String VKVIDEO_USEIDASPACKAGENAME  = "VKVIDEO_USEIDASPACKAGENAME";
+    private static final String VKAUDIOS_USEIDASPACKAGENAME = "VKAUDIOS_USEIDASPACKAGENAME";
     private static final String VKPHOTO_CORRECT_FINAL_LINKS = "VKPHOTO_CORRECT_FINAL_LINKS";
     public static final String  VKADVANCED_USER_AGENT       = "VKADVANCED_USER_AGENT";
 
@@ -641,7 +642,8 @@ public class VKontakteRuHoster extends PluginForHost {
             try {
                 if (this.isAbort()) {
                     logger.info("User stopped downloads --> Stepping out of getHighestQualityPic to avoid 'freeze' of the current DownloadLink");
-                    break;
+                    /* Avoid unnecessary 'plugin defect's in the logs. */
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "User aborted download");
                 }
             } catch (final Throwable e) {
                 /* Not available in old 0.9.581 Stable */
@@ -764,6 +766,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final boolean default_WALL_ALLOW_video                   = true;
     private static final boolean default_WALL_ALLOW_links                   = false;
     private static final boolean default_VKVIDEO_USEIDASPACKAGENAME         = false;
+    private static final boolean default_VKAUDIO_USEIDASPACKAGENAME         = false;
     private static final boolean default_VKPHOTO_CORRECT_FINAL_LINKS        = false;
     public static final String   default_user_agent                         = "Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0";
 
@@ -798,6 +801,9 @@ public class VKontakteRuHoster extends PluginForHost {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Settings for 'vk.com/video' links:"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKVIDEO_USEIDASPACKAGENAME, JDL.L("plugins.hoster.vkontakteruhoster.videoUseIdAsPackagename", "Use video-ID as packagename ('videoXXXX_XXXX' or 'video-XXXX_XXXX')?")).setDefaultValue(default_VKVIDEO_USEIDASPACKAGENAME));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Settings for 'vk.com/audios' links:"));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKAUDIOS_USEIDASPACKAGENAME, JDL.L("plugins.hoster.vkontakteruhoster.audiosUseIdAsPackagename", "Use audio-Owner-ID as packagename ('audiosXXXX' or 'audios-XXXX')?")).setDefaultValue(default_VKVIDEO_USEIDASPACKAGENAME));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Advanced settings:\r\n<html><p style=\"color:#F62817\">WARNING: Only change these settings if you really know what you're doing!</p></html>"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKPHOTO_CORRECT_FINAL_LINKS, JDL.L("plugins.hoster.vkontakteruhoster.correctFinallinks", "For 'vk.com/photo' links: Change final downloadlinks from 'https?://csXXX.vk.me/vXXX/...' to 'https://pp.vk.me/cXXX/vXXX/...' (forces HTTPS)?")).setDefaultValue(default_VKPHOTO_CORRECT_FINAL_LINKS));
