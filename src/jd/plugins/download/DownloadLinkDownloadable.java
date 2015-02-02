@@ -452,9 +452,7 @@ public class DownloadLinkDownloadable implements Downloadable {
 
     @Override
     public String getFileOutput() {
-        final boolean isAccountAndIsMulti = this.downloadLink.getDownloadLinkController() != null && this.downloadLink.getDownloadLinkController().getDownloadLinkCandidate() != null && this.downloadLink.getDownloadLinkController().getDownloadLinkCandidate().getCachedAccount() != null && this.downloadLink.getDownloadLinkController().getDownloadLinkCandidate().getCachedAccount().getAccount() != null ? this.downloadLink.getDownloadLinkController().getDownloadLinkCandidate().getCachedAccount().getAccount().isMulti() : false;
-        return getFileOutput(downloadLink, isAccountAndIsMulti).getAbsolutePath();
-
+        return getFileOutput(downloadLink, false).getAbsolutePath();
     }
 
     @Override
