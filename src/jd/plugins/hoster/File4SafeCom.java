@@ -80,8 +80,8 @@ public class File4SafeCom extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.2.5
     // mods:
-    // non account: 2 * 1
-    // free account: 2 * 1
+    // non account: 1 * 1
+    // free account: 1 * 1
     // premium account: 1 * 4
     // protocol: no https
     // captchatype: recaptcha
@@ -216,7 +216,7 @@ public class File4SafeCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -2, "freelink");
+        doFree(downloadLink, true, 1, "freelink");
     }
 
     @SuppressWarnings("unused")
@@ -417,13 +417,13 @@ public class File4SafeCom extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlFree
      *            (+1|-1)
      */
@@ -561,7 +561,7 @@ public class File4SafeCom extends PluginForHost {
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
-     * 
+     *
      * @param key
      * @param value
      * @return
@@ -885,7 +885,7 @@ public class File4SafeCom extends PluginForHost {
         login(account, false);
         if (account.getBooleanProperty("nopremium")) {
             requestFileInformation(downloadLink);
-            doFree(downloadLink, true, -2, "freelink2");
+            doFree(downloadLink, true, 1, "freelink2");
         } else {
             String dllink = checkDirectLink(downloadLink, "premlink");
             if (dllink == null) {
