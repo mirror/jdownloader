@@ -274,12 +274,13 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         PluginForHost handlePlugin = null;
         try {
             downloadLogger.info("DownloadCandidate: " + candidate);
+            PluginForHost defaultPlugin = null;
             try {
                 if (AccountCache.ACCOUNTTYPE.MULTI.equals(candidate.getCachedAccount().getType())) {
                     final PluginClassLoaderChild defaultCL = session.getPluginClassLoaderChild(downloadLink.getDefaultPlugin());
                     PluginClassLoader.setThreadPluginClassLoaderChild(defaultCL, defaultCL);
                     // this.setContextClassLoader(defaultCL);
-                    final PluginForHost defaultPlugin = downloadLink.getDefaultPlugin().getLazyP().newInstance(defaultCL);
+                    defaultPlugin = downloadLink.getDefaultPlugin().getLazyP().newInstance(defaultCL);
                     defaultPlugin.setBrowser(getPluginBrowser());
                     defaultPlugin.setLogger(downloadLogger);
                     defaultPlugin.setDownloadLink(downloadLink);
@@ -347,11 +348,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                             } catch (final Throwable ignore) {
                                 downloadLogger.log(ignore);
                             }
-                            try {
-                                defaultPlugin.clean();
-                            } catch (final Throwable ignore) {
-                                downloadLogger.log(ignore);
-                            }
                         }
                     }
                 }
@@ -367,6 +363,9 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                     processingPlugin.set(handlePlugin);
                     downloadLink.setLivePlugin(handlePlugin);
                     try {
+                        if (defaultPlugin != null) {
+                            defaultPlugin.preHandle(downloadLink, account, handlePlugin);
+                        }
                         watchDog.localFileCheck(this, new ExceptionRunnable() {
 
                             @Override
@@ -384,9 +383,20 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                         }, null);
                         startTimestamp = System.currentTimeMillis();
                         handlePlugin.handle(downloadLink, account);
+                        if (defaultPlugin != null) {
+                            defaultPlugin.postHandle(downloadLink, account, handlePlugin);
+                        }
                     } catch (final Throwable e) {
                         downloadLogger.log(e);
                         throw e;
+                    } finally {
+                        try {
+                            if (defaultPlugin != null) {
+                                defaultPlugin.clean();
+                            }
+                        } catch (final Throwable ignore) {
+                            downloadLogger.log(ignore);
+                        }
                     }
                 } catch (DeferredRunnableException e) {
                     if (e.getExceptionRunnable() != null) {
