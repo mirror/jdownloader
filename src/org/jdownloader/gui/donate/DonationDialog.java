@@ -35,6 +35,7 @@ import javax.swing.text.MaskFormatter;
 import jd.http.Browser;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.StorageException;
 import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.action.BasicAction;
@@ -196,7 +197,7 @@ public class DonationDialog extends AbstractDialog<Object> {
                         close.set(true);
                     } catch (Throwable e) {
                         try {
-                            StatsManager.I().track("/donation/button/exception/" + URLEncode.encodeRFC2396(e.getMessage()));
+                            StatsManager.I().track("/donation/button/exception/" + URLEncode.encodeRFC2396(e.getClass() + "/" + e.getMessage()));
                         } catch (UnsupportedEncodingException e2) {
                             e2.printStackTrace();
 
@@ -248,13 +249,13 @@ public class DonationDialog extends AbstractDialog<Object> {
         this.dispose();
     }
 
-    protected String toQuery(Object... objects) {
+    protected String toQuery(Object... objects) throws UnsupportedEncodingException, StorageException {
         StringBuilder sb = new StringBuilder();
         for (Object o : objects) {
             if (sb.length() > 0) {
                 sb.append("&");
             }
-            sb.append(JSonStorage.serializeToJson(o));
+            sb.append(URLEncode.encodeRFC2396(JSonStorage.serializeToJson(o)));
 
         }
         return sb.toString();
