@@ -231,6 +231,15 @@ public class MegaConz extends PluginForHost {
         }
     }
 
+    @Override
+    public void preHandle(DownloadLink downloadLink, Account account, PluginForHost pluginForHost) throws Exception {
+        if (downloadLink != null && pluginForHost != null && !StringUtils.equalsIgnoreCase(getHost(), pluginForHost.getHost())) {
+            downloadLink.setInternalTmpFilenameAppend(null);
+            downloadLink.setInternalTmpFilename(null);
+        }
+        super.preHandle(downloadLink, account, pluginForHost);
+    }
+
     /**
      * @throws PluginException
      */
