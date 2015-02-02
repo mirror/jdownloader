@@ -430,7 +430,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
 
         this.addColumn(new ExtDateColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_expiredate()) {
             private static final long serialVersionUID = 5067606909520874358L;
-            private String            pattern;
 
             {
 
@@ -443,14 +442,17 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
 
                     @Override
                     public int compare(final AccountEntry o1, final AccountEntry o2) {
-                        int ret = compare(o1.getAccount().isEnabled(), o2.getAccount().isEnabled());
-                        if (ret == 0) {
-                            return oldSorter.compare(o1, o2);
-                        } else if (getSortOrderIdentifier() != ExtColumn.SORT_ASC) {
-                            return -ret;
-                        } else {
-                            return ret;
+                        final boolean b1 = o1.getAccount().isEnabled();
+                        final boolean b2 = o2.getAccount().isEnabled();
+                        final int ret = compare(b1, b2);
+                        if (b1 && b2) {
+                            if (getSortOrderIdentifier() != ExtColumn.SORT_ASC) {
+                                return oldSorter.compare(o1, o2);
+                            } else {
+                                return -oldSorter.compare(o1, o2);
+                            }
                         }
+                        return ret;
                     }
 
                 });

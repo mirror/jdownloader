@@ -464,19 +464,22 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
                 setRowSorter(new ExtDefaultRowSorter<AccountEntry>() {
 
                     public int compare(boolean x, boolean y) {
-                        return (x == y) ? 0 : (x ? 1 : -1);
+                        return (x == y) ? 0 : (x ? -1 : 1);
                     }
 
                     @Override
                     public int compare(final AccountEntry o1, final AccountEntry o2) {
-                        int ret = compare(o1.getAccount().isEnabled(), o2.getAccount().isEnabled());
-                        if (ret == 0) {
-                            return oldSorter.compare(o1, o2);
-                        } else if (getSortOrderIdentifier() != ExtColumn.SORT_ASC) {
-                            return -ret;
-                        } else {
-                            return ret;
+                        final boolean b1 = o1.getAccount().isEnabled();
+                        final boolean b2 = o2.getAccount().isEnabled();
+                        final int ret = compare(b1, b2);
+                        if (b1 && b2) {
+                            if (getSortOrderIdentifier() != ExtColumn.SORT_ASC) {
+                                return oldSorter.compare(o1, o2);
+                            } else {
+                                return -oldSorter.compare(o1, o2);
+                            }
                         }
+                        return ret;
                     }
 
                 });
