@@ -52,7 +52,7 @@ public class DncHllWldNt extends antiDDoSForDecrypt {
         }
 
         // packagename
-        final String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        final String fpName = br.getRegex("<title>(.*?)(?:\\s*(?:\\||-)\\s*Dance\\s*hall\\s*World)?</title>").getMatch(0);
 
         // all external links pass via there own tracking url
         String[] links = br.getRegex("xurl=(http[^\"]+)").getColumn(0);
@@ -81,6 +81,7 @@ public class DncHllWldNt extends antiDDoSForDecrypt {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());
             fp.addLinks(decryptedLinks);
+            fp.setProperty("ALLOW_MERGE", true);
         }
         return decryptedLinks;
     }
