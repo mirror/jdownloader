@@ -17,7 +17,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.statistics.StatsManager;
 
 public class DonateAction extends CustomizableAppAction {
-    public static final String SERVER = "https://payments.appwork.org/";
+    public static final String SERVER = "https://payments.appwork.org/test/";
 
     public DonateAction() {
         setIconKey("heart");

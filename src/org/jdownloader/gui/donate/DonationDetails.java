@@ -18,6 +18,26 @@ public class DonationDetails implements Storable {
         return recurringEnabled;
     }
 
+    public PaymentProvider[] paymentProvider;
+
+    public PaymentProvider[] getPaymentProvider() {
+        return paymentProvider;
+    }
+
+    private int defaultProvider = -1;
+
+    public int getDefaultProvider() {
+        return defaultProvider;
+    }
+
+    public void setDefaultProvider(int defaultProvider) {
+        this.defaultProvider = defaultProvider;
+    }
+
+    public void setPaymentProvider(PaymentProvider[] paymentProvider) {
+        this.paymentProvider = paymentProvider;
+    }
+
     public void setRecurringEnabled(boolean recurringEnabled) {
         this.recurringEnabled = recurringEnabled;
     }
