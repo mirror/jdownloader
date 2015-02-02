@@ -490,14 +490,14 @@ public class VKontakteRuHoster extends PluginForHost {
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
                 if (finalfilename == null) {
-                    downloadLink.setFinalFileName(Encoding.htmlDecode(Plugin.getFileNameFromHeader(con)));
+                    downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
                 } else {
                     downloadLink.setFinalFileName(finalfilename);
                 }
+                return true;
             } else {
                 return false;
             }
-            return true;
         } finally {
             try {
                 con.disconnect();
