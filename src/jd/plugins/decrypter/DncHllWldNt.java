@@ -27,6 +27,12 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+/**
+ * NOTE: cloudflare in use.
+ *
+ * @author raztoki
+ *
+ */
 @DecrypterPlugin(revision = "$Revision: 28714 $", interfaceVersion = 2, names = { "dancehallworld.net" }, urls = { "https?://(\\w*\\.)?dancehallworld\\.net/\\d{4}/\\d{1,2}/[\\w\\-]+/" }, flags = { 0 })
 public class DncHllWldNt extends antiDDoSForDecrypt {
 
@@ -80,7 +86,7 @@ public class DncHllWldNt extends antiDDoSForDecrypt {
     }
 
     /**
-     * create download link
+     * Validates input URL and corrects protocol if missing prefixs, and also ignores some patterns to prevent false positives
      *
      * @param link
      * @return
