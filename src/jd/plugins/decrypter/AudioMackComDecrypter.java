@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiomack.com" }, urls = { "http://(www\\.)?audiomack\\.com/album/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiomack.com" }, urls = { "http://(www\\.)?audiomack\\.com/(?:embed\\d-)?album/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" }, flags = { 0 })
 public class AudioMackComDecrypter extends PluginForDecrypt {
 
     public AudioMackComDecrypter(PluginWrapper wrapper) {
@@ -37,7 +37,7 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.toString().replaceFirst("/embed\\d-album/", "/album/");
         br.getPage(parameter);
         /* Offline or not yet released */
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"countdown\\-clock\"|This song has been removed due to a DMCA Complaint")) {
