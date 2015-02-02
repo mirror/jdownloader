@@ -62,6 +62,11 @@ public class QuickFilterMenuItem extends MenuItemData implements MenuLink {
         }
 
         @Override
+        protected boolean isHideSelf() {
+            return false;
+        }
+
+        @Override
         protected Icon getIcon(View v, boolean closed) {
             return v.getIcon();
         }

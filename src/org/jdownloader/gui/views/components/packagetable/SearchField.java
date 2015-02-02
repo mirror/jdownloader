@@ -42,7 +42,7 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class SearchField<SearchCat extends SearchCatInterface, PackageType extends AbstractPackageNode<ChildType, PackageType>, ChildType extends AbstractPackageChildrenNode<PackageType>> extends ExtTextField implements MouseMotionListener, MouseListener {
     /**
-     * 
+     *
      */
     private static final long                                                                  serialVersionUID = -8079363840549073686L;
     private static final int                                                                   SIZE             = 20;
@@ -255,22 +255,21 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
     private void onCategoryPopup() {
 
         JPopupMenu popup = new JPopupMenu();
-
+        final SearchCat selectedCat = getSelectedCategory();
         for (final SearchCat sc : searchCategories) {
-            if (sc == selectedCategory) {
-                continue;
-            }
+
             popup.add(new AppAction() {
-                private SearchCat category;
+                private final SearchCat category = sc;
                 {
-                    category = sc;
                     setName(sc.getLabel());
                     setSmallIcon(sc.getIcon());
                 }
 
                 public void actionPerformed(ActionEvent e) {
-                    setSelectedCategory(category);
-                    focusLost(null);
+                    if (category != selectedCat) {
+                        setSelectedCategory(category);
+                        focusLost(null);
+                    }
                 }
             });
         }
