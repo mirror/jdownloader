@@ -96,10 +96,6 @@ public class HosterPriorityTableModel extends ExtTreeTableModel<AccountInterface
         this.addColumn(new ExtDateColumn<AccountInterface>(_GUI._.premiumaccounttablemodel_column_expiredate()) {
             private static final long serialVersionUID = 5067606909520874358L;
 
-            {
-
-            }
-
             @Override
             public boolean isEnabled(AccountInterface obj) {
                 return obj.isEnabled();
