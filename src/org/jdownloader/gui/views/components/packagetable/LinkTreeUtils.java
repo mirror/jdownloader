@@ -92,27 +92,22 @@ public class LinkTreeUtils {
     public static File getDownloadDirectory(AbstractNode node) {
         String directory = null;
         if (node instanceof DownloadLink) {
-            FilePackage parent = ((DownloadLink) node).getFilePackage();
-
+            final FilePackage parent = ((DownloadLink) node).getFilePackage();
             if (parent != null) {
                 directory = parent.getView().getDownloadDirectory();
             }
-
             return getDownloadDirectory(directory, parent == null ? null : parent.getName());
         } else if (node instanceof FilePackage) {
             directory = ((FilePackage) node).getView().getDownloadDirectory();
-
             return getDownloadDirectory(directory, ((FilePackage) node).getName());
         } else if (node instanceof CrawledLink) {
-            CrawledPackage parent = ((CrawledLink) node).getParentNode();
+            final CrawledPackage parent = ((CrawledLink) node).getParentNode();
             if (parent != null) {
                 directory = parent.getDownloadFolder();
             }
-
             return getDownloadDirectory(directory, parent == null ? null : parent.getName());
         } else if (node instanceof CrawledPackage) {
             directory = ((CrawledPackage) node).getDownloadFolder();
-
             return getDownloadDirectory(directory, ((CrawledPackage) node).getName());
         } else {
             throw new WTFException("Unknown Type: " + node.getClass());
@@ -123,16 +118,14 @@ public class LinkTreeUtils {
     public static File getRawDownloadDirectory(AbstractNode node) {
         String directory = null;
         if (node instanceof DownloadLink) {
-            FilePackage parent = ((DownloadLink) node).getFilePackage();
-
+            final FilePackage parent = ((DownloadLink) node).getFilePackage();
             if (parent != null) {
                 directory = parent.getView().getDownloadDirectory();
             }
-
         } else if (node instanceof FilePackage) {
             directory = ((FilePackage) node).getView().getDownloadDirectory();
         } else if (node instanceof CrawledLink) {
-            CrawledPackage parent = ((CrawledLink) node).getParentNode();
+            final CrawledPackage parent = ((CrawledLink) node).getParentNode();
             if (parent != null) {
                 directory = parent.getRawDownloadFolder();
             }
@@ -148,11 +141,9 @@ public class LinkTreeUtils {
         if (path == null) {
             return null;
         }
-
         if (CrossSystem.isAbsolutePath(path)) {
             return new File(path);
         } else {
-
             return new File(org.jdownloader.settings.staticreferences.CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue(), path);
         }
     }
@@ -165,7 +156,6 @@ public class LinkTreeUtils {
         if (CrossSystem.isAbsolutePath(path)) {
             return new File(path);
         } else {
-
             return new File(PackagizerController.replaceDynamicTags(org.jdownloader.settings.staticreferences.CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue(), packagename), path);
         }
     }

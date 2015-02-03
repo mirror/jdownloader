@@ -38,6 +38,7 @@ import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.myjdownloader.client.bindings.PriorityStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.LinkgrabberInterface;
@@ -137,7 +138,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 view.setItems(pkg.getChildren());
 
                 if (queryParams.isSaveTo()) {
-                    cps.setSaveTo(pkg.getRawDownloadFolder());
+                    cps.setSaveTo(LinkTreeUtils.getDownloadDirectory(pkg).getAbsolutePath());
 
                 }
                 if (queryParams.isBytesTotal()) {
@@ -416,11 +417,11 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     /**
      * the SelectionInfo Class is actually used for the GUI downloadtable. it generates a logic selection out of selected links and
      * packages.
-     * 
+     *
      * example: if a package is selected, and non if it's links - all its links will be in the selection info<br>
      * example2: if a package is selected AND SOME of it's children. The packge will not be considered as fully selected. only the actual
      * selected links.
-     * 
+     *
      * @param linkIds
      * @param packageIds
      * @return
