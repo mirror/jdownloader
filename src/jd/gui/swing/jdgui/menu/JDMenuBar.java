@@ -15,6 +15,7 @@ import javax.swing.KeyStroke;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
@@ -130,8 +131,9 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
                     } else {
                         action.requestUpdate(JDMenuBar.this);
 
-                        if (action instanceof DonateAction && index == size - 1) {// only if the donation button is the very right in the
-                                                                                  // menu bar
+                        if (action instanceof DonateAction && index == size - 1 && !CrossSystem.isMac()) {// only if the donation button is
+                                                                                                          // the very right in the
+                            // menu bar
                             ret = new ExtDonateMenuButton(action);
                         } else {
                             ret = new ExtMenuButton(action);

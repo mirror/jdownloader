@@ -1,6 +1,7 @@
 package org.jdownloader.gui.mainmenu;
 
 import java.awt.event.ActionEvent;
+import java.io.UnsupportedEncodingException;
 
 import jd.http.Browser;
 
@@ -8,6 +9,9 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.Regex;
+import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
@@ -61,7 +65,24 @@ public class DonateAction extends CustomizableAppAction {
                     String json = br.getPage(SERVER + "payment/getDonationScreenDetails?" + TranslationFactory.getDesiredLanguage() + "&button");
                     details = JSonStorage.restoreFromString(json, DonationDetails.TYPEREF);
                 } catch (Throwable e) {
-                    StatsManager.I().track("/donation/button/exception/" + e.getMessage());
+                    try {
+
+                        //
+                        StringBuilder sb = new StringBuilder();
+                        String[] lines = Regex.getLines(Exceptions.getStackTrace(e));
+                        for (String line : lines) {
+
+                            if (sb.length() > 0) {
+                                sb.insert(0, "/");
+                            }
+                            sb.insert(0, URLEncode.encodeRFC2396(line));
+                        }
+                        StatsManager.I().track("/donation/button/exception/" + sb.toString());
+                        StatsManager.I().track("/donation/button/exception/" + URLEncode.encodeRFC2396(e.getClass() + "/" + e.getMessage()));
+                    } catch (UnsupportedEncodingException e2) {
+                        e2.printStackTrace();
+
+                    }
                 } finally {
                     StatsManager.I().track("/donation/button/details/" + (details != null && details.isEnabled()));
                 }
