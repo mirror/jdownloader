@@ -72,7 +72,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     public boolean onDoubleClick(MouseEvent e, AbstractNode value) {
         if (CrossSystem.isOpenFileSupported() && value != null) {
 
-            File ret = LinkTreeUtils.getDownloadDirectory(value);
+            final File ret = LinkTreeUtils.getDownloadDirectory(value);
             if (ret != null && ret.exists() && ret.isDirectory()) {
                 CrossSystem.openFile(ret);
             }

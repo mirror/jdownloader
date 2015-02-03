@@ -635,9 +635,9 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     }
                     if (dcs != null && JsonConfig.create(GeneralSettings.class).isConvertRelativePathsJDRoot()) {
                         try {
-                            String oldRootPath = dcs.getRootPath();
+                            final String oldRootPath = dcs.getRootPath();
                             if (!StringUtils.isEmpty(oldRootPath)) {
-                                String newRoot = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath();
+                                final String newRoot = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath();
                                 /*
                                  * convert paths relative to JDownloader root,only in jared version
                                  */
@@ -646,13 +646,13 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                                         /* no need to convert relative paths */
                                         continue;
                                     }
-                                    String pkgPath = LinkTreeUtils.getDownloadDirectory(pkg).getAbsolutePath();
+                                    final String pkgPath = LinkTreeUtils.getDownloadDirectory(pkg).getAbsolutePath();
                                     if (pkgPath.startsWith(oldRootPath + "/")) {
                                         /*
                                          * folder is inside JDRoot, lets update it
                                          */
-                                        String restPath = pkgPath.substring(oldRootPath.length());
-                                        String newPath = new File(newRoot, restPath).getAbsolutePath();
+                                        final String restPath = pkgPath.substring(oldRootPath.length());
+                                        final String newPath = new File(newRoot, restPath).getAbsolutePath();
                                         pkg.setDownloadDirectory(newPath);
                                     }
                                 }
