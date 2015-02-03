@@ -25,18 +25,19 @@ import javax.swing.JPanel;
 
 import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
-import jd.gui.swing.jdgui.views.ClosableView;
+import jd.gui.swing.jdgui.interfaces.View;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.SwingUtils;
 
-public class ClosableTabHeader extends JPanel implements CustomTabHeader {
+public class TabHeader extends JPanel implements CustomTabHeader {
 
     private static final long serialVersionUID = 4463352125800695922L;
     private boolean           selected;
     private JLabel            label;
     private Font              fontUnselected;
     private Font              fontSelected;
+    private int               maxWidth;
     private JLabel            labelIcon;
 
     public void setBounds(int x, int y, int width, int height) {
@@ -50,10 +51,34 @@ public class ClosableTabHeader extends JPanel implements CustomTabHeader {
 
     }
 
-    public ClosableTabHeader(final ClosableView view) {
-        setLayout(new MigLayout("ins 0", "[][grow]push[]", "[]"));
+    public TabHeader(final View view) {
+        setLayout(new MigLayout("ins 0 0 0 0", "[][grow]", "0[22!]0"));
         setOpaque(false);
         setToolTipText(view.getTooltip());
+        initMouseForwarder();
+
+        putClientProperty("paintActive", Boolean.TRUE);
+        labelIcon = new JLabel();
+        labelIcon.setIcon(view.getIcon());
+        SwingUtils.setOpaque(labelIcon, false);
+
+        label = new JLabel(view.getTitle());
+
+        SwingUtils.setOpaque(label, false);
+        fontUnselected = label.getFont();
+
+        fontSelected = fontUnselected.deriveFont(fontUnselected.getStyle() ^ Font.BOLD);
+        add(labelIcon);
+        add(label, "alignx center");
+        label.setFont(fontSelected);
+        Dimension pref = getPreferredSize();
+        maxWidth = pref.width;
+        setPreferredSize(new Dimension(maxWidth, pref.height));
+        label.setFont(fontUnselected);
+
+    }
+
+    protected void initMouseForwarder() {
         addMouseListener(new JDMouseAdapter() {
             @Override
             public void mouseDragged(MouseEvent e) {
@@ -87,48 +112,22 @@ public class ClosableTabHeader extends JPanel implements CustomTabHeader {
 
             @Override
             public void mouseReleased(MouseEvent e) {
-                if (e.getButton() == MouseEvent.BUTTON2 || (e.getButton() == MouseEvent.BUTTON1 && e.getClickCount() == 2)) {
-                    view.close();
-                } else {
-                    JDMouseAdapter.forwardEvent(e, MainTabbedPane.getInstance());
-                }
+                // if (e.getButton() == MouseEvent.BUTTON2 || (e.getButton() == MouseEvent.BUTTON1 && e.getClickCount() == 2)) {
+                // view.close();
+                // } else {
+                JDMouseAdapter.forwardEvent(e, MainTabbedPane.getInstance());
+                // }
             }
 
         });
-
-        putClientProperty("paintActive", Boolean.TRUE);
-
-        labelIcon = new JLabel();
-        labelIcon.setIcon(view.getIcon());
-        SwingUtils.setOpaque(labelIcon, false);
-
-        label = new JLabel(view.getTitle());
-
-        SwingUtils.setOpaque(label, false);
-        fontUnselected = label.getFont();
-
-        fontSelected = fontUnselected.deriveFont(fontUnselected.getStyle() ^ Font.BOLD);
-        add(labelIcon);
-        add(label, "alignx center");
-        add(view.getCloseButton(), "aligny center,gapleft 5,width 16!,height 16!,gaptop 3");
-        view.getCloseButton().setOpaque(false);
-
-        label.setFont(fontSelected);
-        Dimension pref = getPreferredSize();
-        int maxWidth = pref.width;
-        setPreferredSize(new Dimension(maxWidth, pref.height));
-        label.setFont(fontUnselected);
-
     }
 
-    @Override
     public void setHidden() {
         selected = false;
         label.setFont(fontUnselected);
         repaint();
     }
 
-    @Override
     public void setShown() {
         selected = true;
         label.setFont(fontSelected);

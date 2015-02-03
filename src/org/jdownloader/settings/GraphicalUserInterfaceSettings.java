@@ -51,7 +51,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     /**
      * How many ms the speedmeter shall show/record. Please note that big Timeframes and high fps values may cause high CPU usage
-     * 
+     *
      * @return
      */
     @AboutConfig
@@ -62,7 +62,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     /**
      * How many refreshes and datasamples the speedmeter uses. Please note that big Timeframes and high fps values may cause high CPU usage
-     * 
+     *
      * @return
      */
     @AboutConfig
@@ -1209,4 +1209,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     DownloadFolderChooserDialogDefaultPath getDownloadFolderChooserDefaultPath();
 
     void setDownloadFolderChooserDefaultPath(DownloadFolderChooserDialogDefaultPath path);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @RequiresRestart("A JDownloader Restart is Required")
+    boolean isMacDonateTabVisible();
+
+    void setMacDonateTabVisible(boolean b);
 }
