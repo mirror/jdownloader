@@ -43,7 +43,9 @@ import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtTextArea;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
@@ -195,8 +197,21 @@ public class DonationDialog extends AbstractDialog<Object> {
 
                         startFallbackWaiter(list, noteText, amt, provider, cCode);
                         close.set(true);
+
                     } catch (Throwable e) {
                         try {
+
+                            //
+                            StringBuilder sb = new StringBuilder();
+                            String[] lines = Regex.getLines(Exceptions.getStackTrace(e));
+                            for (String line : lines) {
+
+                                if (sb.length() > 0) {
+                                    sb.insert(0, "/");
+                                }
+                                sb.insert(0, URLEncode.encodeRFC2396(line));
+                            }
+                            StatsManager.I().track("/donation/button/exception/" + sb.toString());
                             StatsManager.I().track("/donation/button/exception/" + URLEncode.encodeRFC2396(e.getClass() + "/" + e.getMessage()));
                         } catch (UnsupportedEncodingException e2) {
                             e2.printStackTrace();
