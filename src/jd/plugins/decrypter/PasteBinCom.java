@@ -27,21 +27,34 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pastebin.com" }, urls = { "http://(www\\.)?pastebin\\.com/(?!trends|signup|login|pro|tools|archive|login\\.php|faq|settings|alerts|domains|contact|stats|etc|favicon|users|api|download|privacy)(raw.*?=)?[0-9A-Za-z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pastebin.com" }, urls = { "http://(www\\.)?pastebin\\.com/(raw.*?=)?[0-9A-Za-z]+" }, flags = { 0 })
 public class PasteBinCom extends PluginForDecrypt {
 
     public PasteBinCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String type_invalid = "http://(www\\.)?pastebin\\.com/(languages|trends|signup|login|pro|tools|archive|login\\.php|faq|settings|alerts|domains|contact|stats|etc|favicon|users|api|download|privacy)";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final String parameter = param.toString();
+        if (parameter.matches(type_invalid)) {
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
+        }
         br.setFollowRedirects(true);
         br.getPage(parameter);
         /* Error handling for invalid links */
         if (br.containsHTML("(Unknown paste ID|Unknown paste ID, it may have expired or been deleted)") || br.getURL().equals("http://pastebin.com/")) {
             logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         String plaintxt = br.getRegex("<textarea(.*?)</textarea>").getMatch(0);
