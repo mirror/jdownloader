@@ -289,9 +289,9 @@ public class SimplyPremiumCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
+        final String trafficleft = getXML("remain_traffic");
         String accdesc = null;
         if ("1".equals(acctype)) {
-            ai.setUnlimitedTraffic();
             String expire = getXML("timeend");
             expire = expire.trim();
             if (expire.equals("")) {
@@ -302,9 +302,9 @@ public class SimplyPremiumCom extends PluginForHost {
             ai.setValidUntil(expirelng * 1000);
             accdesc = getPhrase("ACCOUNT_TYPE_TIME");
         } else {
-            ai.setTrafficLeft(getXML("remain_traffic"));
             accdesc = getPhrase("ACCOUNT_TYPE_VOLUME");
         }
+        ai.setTrafficLeft(trafficleft);
 
         int maxSimultanDls = Integer.parseInt(getXML("max_downloads"));
         if (maxSimultanDls < 1) {
@@ -313,7 +313,9 @@ public class SimplyPremiumCom extends PluginForHost {
             maxSimultanDls = -1;
         }
         long maxChunks = Integer.parseInt(getXML("chunks"));
-        if (maxChunks > 1) {
+        if (maxChunks > 20) {
+            maxChunks = 0;
+        } else if (maxChunks > 1) {
             maxChunks = -maxChunks;
         }
         final boolean resumeAllowed = "1".equals(getXML("resume"));
