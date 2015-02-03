@@ -37,7 +37,7 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 
 public abstract class SearchField<SearchCat extends SearchCatInterface> extends ExtTextField implements MouseMotionListener, MouseListener {
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = -8079363840549073686L;
     private static final int  SIZE             = 20;

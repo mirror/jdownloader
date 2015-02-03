@@ -27,6 +27,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.Base64InputStream;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 import org.jdownloader.settings.GeneralSettings;
 
@@ -76,13 +77,13 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
                 view.setItems(pkg.getChildren());
                 org.jdownloader.myjdownloader.client.json.JsonMap infomap = new org.jdownloader.myjdownloader.client.json.JsonMap();
                 if (queryParams._getQueryParam("saveTo", Boolean.class, false)) {
-                    infomap.put("saveTo", pkg.getRawDownloadFolder());
+                    infomap.put("saveTo", LinkTreeUtils.getDownloadDirectory(pkg).getAbsolutePath());
                 }
                 if (queryParams._getQueryParam("size", Boolean.class, false)) {
                     infomap.put("size", view.getFileSize());
                 }
                 if (queryParams._getQueryParam("childCount", Boolean.class, false)) {
-                    infomap.put("childCount", pkg.getChildren().size());
+                    infomap.put("childCount", pkg.getChildren());
                 }
                 if (queryParams._getQueryParam("hosts", Boolean.class, false)) {
                     Set<String> hosts = new HashSet<String>();

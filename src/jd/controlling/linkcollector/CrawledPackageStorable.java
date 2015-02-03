@@ -187,9 +187,6 @@ public class CrawledPackageStorable implements Storable {
     }
 
     public String getDownloadFolder() {
-        if (!pkg.isDownloadFolderSet()) {
-            return null;
-        }
         return pkg.getRawDownloadFolder();
     }
 

@@ -25,56 +25,56 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
 
     public static final PackageControllerComparator<CrawledLink> SORTER_ASC  = new PackageControllerComparator<CrawledLink>() {
 
-                                                                                 public int compare(CrawledLink o1, CrawledLink o2) {
-                                                                                     String o1s = o1.getName().toLowerCase(Locale.ENGLISH);
-                                                                                     String o2s = o2.getName().toLowerCase(Locale.ENGLISH);
-                                                                                     if (o1s == null) {
-                                                                                         o1s = "";
-                                                                                     }
-                                                                                     if (o2s == null) {
-                                                                                         o2s = "";
-                                                                                     }
-                                                                                     return o1s.compareTo(o2s);
+        public int compare(CrawledLink o1, CrawledLink o2) {
+            String o1s = o1.getName().toLowerCase(Locale.ENGLISH);
+            String o2s = o2.getName().toLowerCase(Locale.ENGLISH);
+            if (o1s == null) {
+                o1s = "";
+            }
+            if (o2s == null) {
+                o2s = "";
+            }
+            return o1s.compareTo(o2s);
 
-                                                                                 }
+        }
 
-                                                                                 @Override
-                                                                                 public String getID() {
-                                                                                     return "jd.controlling.linkcrawler.CrawledPackage";
-                                                                                 }
+        @Override
+        public String getID() {
+            return "jd.controlling.linkcrawler.CrawledPackage";
+        }
 
-                                                                                 @Override
-                                                                                 public boolean isAsc() {
-                                                                                     return true;
-                                                                                 }
-                                                                             };
+        @Override
+        public boolean isAsc() {
+            return true;
+        }
+    };
     public static final PackageControllerComparator<CrawledLink> SORTER_DESC = new PackageControllerComparator<CrawledLink>() {
 
-                                                                                 public int compare(CrawledLink o1, CrawledLink o2) {
-                                                                                     String o1s = o1.getName().toLowerCase(Locale.ENGLISH);
-                                                                                     ;
-                                                                                     String o2s = o2.getName().toLowerCase(Locale.ENGLISH);
-                                                                                     ;
-                                                                                     if (o1s == null) {
-                                                                                         o1s = "";
-                                                                                     }
-                                                                                     if (o2s == null) {
-                                                                                         o2s = "";
-                                                                                     }
-                                                                                     return o2s.compareTo(o1s);
+        public int compare(CrawledLink o1, CrawledLink o2) {
+            String o1s = o1.getName().toLowerCase(Locale.ENGLISH);
+            ;
+            String o2s = o2.getName().toLowerCase(Locale.ENGLISH);
+            ;
+            if (o1s == null) {
+                o1s = "";
+            }
+            if (o2s == null) {
+                o2s = "";
+            }
+            return o2s.compareTo(o1s);
 
-                                                                                 }
+        }
 
-                                                                                 @Override
-                                                                                 public String getID() {
-                                                                                     return "jd.controlling.linkcrawler.CrawledPackage";
-                                                                                 }
+        @Override
+        public String getID() {
+            return "jd.controlling.linkcrawler.CrawledPackage";
+        }
 
-                                                                                 @Override
-                                                                                 public boolean isAsc() {
-                                                                                     return false;
-                                                                                 }
-                                                                             };
+        @Override
+        public boolean isAsc() {
+            return false;
+        }
+    };
 
     public static enum TYPE {
         NORMAL,
@@ -93,29 +93,28 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         return type;
     }
 
-    private static final GeneralSettings                   GENERALSETTINGS        = JsonConfig.create(GeneralSettings.class);
+    private static final GeneralSettings                   GENERALSETTINGS            = JsonConfig.create(GeneralSettings.class);
 
     private List<CrawledLink>                              children;
-    private String                                         comment                = null;
-    private PackageController<CrawledPackage, CrawledLink> controller             = null;
+    private String                                         comment                    = null;
+    private PackageController<CrawledPackage, CrawledLink> controller                 = null;
 
-    private long                                           created                = System.currentTimeMillis();
+    private long                                           created                    = System.currentTimeMillis();
 
-    private String                                         name                   = null;
+    private String                                         name                       = null;
 
-    private String                                         downloadFolder         = null;
+    private String                                         downloadFolder             = null;
+    private boolean                                        downloadFolderContainsTags = false;
 
-    private boolean                                        downloadFolderSet      = false;
-
-    private boolean                                        expanded               = CFG_LINKCOLLECTOR.CFG.isPackageAutoExpanded();
-    private transient volatile UniqueAlltimeID             uniqueID               = null;
+    private boolean                                        expanded                   = CFG_LINKCOLLECTOR.CFG.isPackageAutoExpanded();
+    private transient volatile UniqueAlltimeID             uniqueID                   = null;
     protected CrawledPackageView                           view;
-    private String                                         compiledDownloadFolder = null;
-    private transient volatile ModifyLock                  lock                   = null;
+    private String                                         compiledDownloadFolder     = null;
+    private transient volatile ModifyLock                  lock                       = null;
 
     private PackageControllerComparator<CrawledLink>       sorter;
 
-    private Priority                                       priority               = Priority.DEFAULT;
+    private Priority                                       priority                   = Priority.DEFAULT;
 
     public UniqueAlltimeID getUniqueID() {
         if (uniqueID != null) {
@@ -144,9 +143,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         }
         dest.name = name;
         dest.comment = comment;
-        if (this.isDownloadFolderSet()) {
-            dest.setDownloadFolder(getRawDownloadFolder());
-        }
+        dest.setDownloadFolder(getRawDownloadFolder());
     }
 
     public List<CrawledLink> getChildren() {
@@ -171,16 +168,17 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     public String getDownloadFolder() {
         // replace variables in downloadfolder
         String ret = compiledDownloadFolder;
-        if (ret != null) {
-            return ret;
+        if (ret == null) {
+            ret = getRawDownloadFolder();
+            if (ret != null && downloadFolderContainsTags) {
+                if (GENERALSETTINGS.getSubfolderThreshold() > getChildren().size()) {
+                    ret = PackagizerController.replaceDynamicTags(ret, null);
+                } else {
+                    ret = PackagizerController.replaceDynamicTags(ret, getName());
+                }
+            }
+            compiledDownloadFolder = ret;
         }
-        ret = downloadFolder;
-        String packageName = getName();
-        if (GENERALSETTINGS.getSubfolderThreshold() > getChildren().size()) {
-            packageName = null;
-        }
-        ret = PackagizerController.replaceDynamicTags(ret, packageName);
-        compiledDownloadFolder = ret;
         return ret;
     }
 
@@ -195,15 +193,11 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     /**
      * Returns the raw Downloadfolder String. This link may contain wildcards like <jd:packagename>. Use {@link #getDownloadFolder()} to
      * return the actuall downloadloadfolder
-     * 
+     *
      * @return
      */
     public String getRawDownloadFolder() {
         return downloadFolder;
-    }
-
-    public boolean isDownloadFolderSet() {
-        return downloadFolderSet;
     }
 
     public boolean isExpanded() {
@@ -234,40 +228,41 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     public void setName(String name) {
-        if (StringUtils.equals(name, this.name)) {
-            return;
-        }
-        if (name != null) {
-            name = CrossSystem.alleviatePathParts(name);
-            if (StringUtils.equals(name, this.name)) {
-                return;
+        if (!StringUtils.equals(name, this.name)) {
+            if (name != null) {
+                name = CrossSystem.alleviatePathParts(name);
+                if (StringUtils.equals(name, this.name)) {
+                    return;
+                }
             }
-        }
-        setType(TYPE.NORMAL);
-        this.name = name;
-        compiledDownloadFolder = null;
-        if (hasNotificationListener()) {
-            nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledPackageProperty(this, CrawledPackageProperty.Property.NAME, getName()));
+            setType(TYPE.NORMAL);
+            this.name = name;
+            compiledDownloadFolder = null;
+            if (hasNotificationListener()) {
+                nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledPackageProperty(this, CrawledPackageProperty.Property.NAME, getName()));
+            }
         }
     }
 
-    public void setDownloadFolder(String downloadFolder) {
-        if (!StringUtils.isEmpty(downloadFolder)) {
-            downloadFolderSet = true;
-            this.downloadFolder = downloadFolder.trim();
-        } else {
-            this.downloadFolder = GENERALSETTINGS.getDefaultDownloadFolder();
-            this.downloadFolderSet = false;
-        }
-        compiledDownloadFolder = null;
-        if (hasNotificationListener()) {
-            nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledPackageProperty(this, CrawledPackageProperty.Property.FOLDER, getDownloadFolder()));
+    public void setDownloadFolder(final String downloadFolder) {
+        if (!StringUtils.equals(downloadFolder, getDownloadFolder())) {
+            if (!StringUtils.isEmpty(downloadFolder)) {
+                downloadFolderContainsTags = downloadFolder.contains("<jd:");
+                this.downloadFolder = downloadFolder.trim();
+            } else {
+                downloadFolderContainsTags = false;
+                this.downloadFolder = null;
+            }
+            compiledDownloadFolder = null;
+            if (hasNotificationListener()) {
+                nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledPackageProperty(this, CrawledPackageProperty.Property.FOLDER, getDownloadFolder()));
+            }
         }
     }
 
     public void setEnabled(boolean b) {
-        ArrayList<CrawledLink> links = null;
-        boolean readL = getModifyLock().readLock();
+        final ArrayList<CrawledLink> links;
+        final boolean readL = getModifyLock().readLock();
         try {
             links = new ArrayList<CrawledLink>(getChildren());
         } finally {
@@ -275,7 +270,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
                 getModifyLock().readUnlock(readL);
             }
         }
-        for (CrawledLink link : links) {
+        for (final CrawledLink link : links) {
             link.setEnabled(b);
         }
     }
@@ -290,7 +285,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         }
         synchronized (this) {
             if (view == null) {
-                CrawledPackageView lfpInfo = new CrawledPackageView();
+                final CrawledPackageView lfpInfo = new CrawledPackageView();
                 view = lfpInfo;
             }
         }
@@ -302,7 +297,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     public int indexOf(CrawledLink child) {
-        boolean readL = getModifyLock().readLock();
+        final boolean readL = getModifyLock().readLock();
         try {
             return children.indexOf(child);
         } finally {
@@ -340,7 +335,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
 
     @Override
     public void nodeUpdated(AbstractNode source, NOTIFY notify, Object param) {
-        PackageController<CrawledPackage, CrawledLink> n = getControlledBy();
+        final PackageController<CrawledPackage, CrawledLink> n = getControlledBy();
         if (n == null) {
             return;
         }
@@ -349,7 +344,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
             lsource = this;
         }
         if (lsource instanceof AbstractPackageChildrenNode) {
-            CrawledPackageView lView = view;
+            final CrawledPackageView lView = view;
             if (lView != null) {
                 lView.requestUpdate();
             }
@@ -373,7 +368,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
 
     @Override
     public boolean hasNotificationListener() {
-        PackageController<CrawledPackage, CrawledLink> n = getControlledBy();
+        final PackageController<CrawledPackage, CrawledLink> n = getControlledBy();
         if (n != null && n.hasNotificationListener()) {
             return true;
         }
