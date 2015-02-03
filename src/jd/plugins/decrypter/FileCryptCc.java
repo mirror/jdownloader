@@ -73,72 +73,92 @@ public class FileCryptCc extends PluginForDecrypt {
             }
             return decryptedLinks;
         }
+        // Separate password and captcha. this is easier for count reasons!
         int counter = 0;
         final int retry = 3;
-        while (counter++ < retry && (containsCaptcha() || true)) {
-            Form captchaform = null;
+        while (counter++ < retry && containsPassword()) {
+            Form passwordForm = null;
             final Form[] allForms = br.getForms();
             if (allForms != null && allForms.length != 0) {
                 for (final Form aForm : allForms) {
-                    if (aForm.containsHTML("captcha") || aForm.containsHTML("password")) {
-                        captchaform = aForm;
+                    if (aForm.containsHTML("password")) {
+                        passwordForm = aForm;
                         break;
                     }
                 }
             }
             /* If there is captcha + password, password comes first, then captcha! */
-            if (containsPassword()) {
-                final String passCode = getUserInput("Password?", param);
-                captchaform.put("password", Encoding.urlEncode(passCode));
-                submitForm(captchaform);
-            } else {
-                final String captcha = captchaform != null ? captchaform.getRegex("(/captcha/[^<>\"]*?)\"").getMatch(0) : null;
-                if (captcha != null && captcha.contains("circle.php")) {
-                    final File file = this.getLocalCaptchaFile();
-                    br.cloneBrowser().getDownload(file, captcha);
-                    final Point p = UserIO.getInstance().requestClickPositionDialog(file, "Click on the open circle", null);
-                    if (p == null) {
-                        throw new DecrypterException(DecrypterException.CAPTCHA);
-                    }
-                    // captchaform.remove("button.x");
-                    // captchaform.remove("button.y");
-                    captchaform.put("button.x", String.valueOf(p.x));
-                    captchaform.put("button.y", String.valueOf(p.y));
-                    submitForm(captchaform);
-
-                } else if (captchaform != null && captchaform.containsHTML("=\"g-recaptcha\"")) {
-                    // recaptcha v2
-                    boolean success = false;
-                    String responseToken = null;
-                    do {
-                        Recaptcha2Helper rchelp = new Recaptcha2Helper();
-                        rchelp.init(this.br);
-                        final File outputFile = rchelp.loadImageFile();
-                        String code = getCaptchaCode("recaptcha", outputFile, param);
-                        success = rchelp.sendResponse(code);
-                        responseToken = rchelp.getResponseToken();
-                        counter++;
-                    } while (!success && counter <= retry);
-                    if (!success) {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
-                    captchaform.put("g-recaptcha-response", Encoding.urlEncode(responseToken));
-                    submitForm(captchaform);
-                } else if (captcha != null) {
-                    // they use recaptcha response field key for non recaptcha.. math sum and text =
-                    // http://filecrypt.cc/captcha/captcha.php?namespace=container
-                    // using bismarck original observation, this type is skipable.
-                    if (counter > 1) {
-                        final String code = getCaptchaCode(captcha, param);
-                        captchaform.put("recaptcha_response_field", Encoding.urlEncode(code));
-                    } else {
-                        captchaform.put("recaptcha_response_field", "");
-                    }
-                    submitForm(captchaform);
-                } else {
-                    logger.warning("Unknown captcha case");
-                    break;
+            if (passwordForm != null) {
+                // users can provide password with add links dialog
+                String passCode = param.getDecrypterPassword();
+                // when previous provided password has failed, or not provided we should ask
+                if (passCode == null || counter > 1) {
+                    passCode = getUserInput("Password?", param);
                 }
+                passwordForm.put("password", Encoding.urlEncode(passCode));
+                submitForm(passwordForm);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Could not find pasword form");
+            }
+        }
+        if (counter == retry && containsPassword()) {
+            throw new DecrypterException(DecrypterException.PASSWORD);
+        }
+        // captcha time!
+        counter = 0;
+        while (counter++ < retry && containsCaptcha()) {
+            Form captchaForm = null;
+            final Form[] allForms = br.getForms();
+            if (allForms != null && allForms.length != 0) {
+                for (final Form aForm : allForms) {
+                    if (aForm.containsHTML("captcha")) {
+                        captchaForm = aForm;
+                        break;
+                    }
+                }
+            }
+            final String captcha = captchaForm != null ? captchaForm.getRegex("(/captcha/[^<>\"]*?)\"").getMatch(0) : null;
+            if (captcha != null && captcha.contains("circle.php")) {
+                final File file = this.getLocalCaptchaFile();
+                br.cloneBrowser().getDownload(file, captcha);
+                final Point p = UserIO.getInstance().requestClickPositionDialog(file, "Click on the open circle", null);
+                if (p == null) {
+                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                }
+                captchaForm.put("button.x", String.valueOf(p.x));
+                captchaForm.put("button.y", String.valueOf(p.y));
+                submitForm(captchaForm);
+            } else if (captchaForm != null && captchaForm.containsHTML("=\"g-recaptcha\"")) {
+                // recaptcha v2
+                boolean success = false;
+                String responseToken = null;
+                do {
+                    Recaptcha2Helper rchelp = new Recaptcha2Helper();
+                    rchelp.init(this.br);
+                    final File outputFile = rchelp.loadImageFile();
+                    String code = getCaptchaCode("recaptcha", outputFile, param);
+                    success = rchelp.sendResponse(code);
+                    responseToken = rchelp.getResponseToken();
+                    counter++;
+                } while (!success && counter <= retry);
+                if (!success) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                captchaForm.put("g-recaptcha-response", Encoding.urlEncode(responseToken));
+                submitForm(captchaForm);
+            } else if (captcha != null) {
+                // they use recaptcha response field key for non recaptcha.. math sum and text =
+                // http://filecrypt.cc/captcha/captcha.php?namespace=container
+                // using bismarck original observation, this type is skipable.
+                if (counter > 1) {
+                    final String code = getCaptchaCode(captcha, param);
+                    captchaForm.put("recaptcha_response_field", Encoding.urlEncode(code));
+                } else {
+                    captchaForm.put("recaptcha_response_field", "");
+                }
+                submitForm(captchaForm);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Could not find captcha form");
             }
         }
         if (counter == retry && containsCaptcha()) {
