@@ -12,6 +12,7 @@ ConfirmLinksContextAction_HandleDupesLinksOptions_ASK=zakaždým sa ma spýtať
 ConfirmLinksContextAction_HandleOfflineLinksOptions_ASK=zakaždým sa ma spýtať
 ConnectExceptionInPluginBan=Pripojenie k %s1 zlyhalo
 ConnectExceptionInPluginBan_plugin=%s2: Pripojenie k %s1 zlyhalo
+CountryIPBlockException_createCandidateResult=Toto stahování není ve vaší zemi dostupné
 DeleteOption_final_delete=Odstrániť súbory z disku
 DeleteOption_no_delete=Neodstraňovať žiadne súbory
 DeleteOption_recycle=Ak je to možné, presunúť súbory do koša
