@@ -84,7 +84,6 @@ public class FernsehkritikTv extends PluginForHost {
     private static final String TYPE_POSTECKE_OLD                     = "http://fernsehkritik\\.tv/inline\\-video/postecke\\.php\\?(iframe=true\\&width=\\d+\\&height=\\d+\\&ep=|ep=)\\d+";
     private static final String TYPE_POSTECKE_NEW                     = "http://(www\\.)?massengeschmack\\.tv/play/1/postecke\\d+";
     private static final String TYPE_FOLGE_NEW                        = "http://fernsehkritik\\.tv/jdownloaderfolgeneu\\d+";
-    private static final String TYPE_FOLGE_OLD                        = "http://fernsehkritik\\.tv/jdownloaderfolgealt\\d+";
     private static final String TYPE_COUCH                            = "http://couch\\.fernsehkritik\\.tv.*";
     private static final String TYPE_COUCHSTREAM                      = "http://couch\\.fernsehkritik\\.tv/userbereich/archive#stream:.*";
     private static final String TYPE_MASSENGESCHMACK_GENERAL          = "http://(www\\.)?massengeschmack\\.tv/play/\\d+/[a-z0-9\\-]+";
@@ -116,6 +115,7 @@ public class FernsehkritikTv extends PluginForHost {
         return false;
     }
 
+    @SuppressWarnings("deprecation")
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink, Account account) throws Exception {
         DLLINK = null;
         String final_filename = null;
@@ -212,13 +212,6 @@ public class FernsehkritikTv extends PluginForHost {
             }
             final_filename = "Fernsehkritik-TV Folge " + episodenumber + " vom " + date + "." + extension;
         } else if (downloadLink.getDownloadURL().matches(TYPE_FOLGE_NEW)) {
-            br.getPage(downloadLink.getStringProperty("originallink", null));
-            DLLINK = br.getRedirectLocation();
-            if (DLLINK == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final_filename = getFKTVFormattedFilename(downloadLink);
-        } else if (downloadLink.getDownloadURL().matches(TYPE_FOLGE_OLD)) {
             br.getPage(downloadLink.getStringProperty("originallink", null));
             DLLINK = br.getRedirectLocation();
             if (DLLINK == null) {

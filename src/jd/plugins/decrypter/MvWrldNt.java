@@ -44,7 +44,7 @@ public class MvWrldNt extends PluginForDecrypt {
     private static final String redirectLinks            = "http://(www\\.)?mov\\-world\\.net/[a-z]{2}-[a-zA-Z0-9]+/";
     private static final String UNSUPPORTEDLINKS         = "http://(www\\.)?(xxx-4\\-free\\.net|mov\\-world\\.net|chili\\-warez\\.net)//?(news/|topliste/|premium_zugang|suche/|faq|pics/index|clips/index|movies/index|movies/seite|streams/index|stories/index|partner/anmelden|kontakt|tv-serien/[^/]+/(seite-\\d+|index))\\.html";
     private static final String SPECIALUNSUPPORTEDLINKS  = "http://(www\\.)?chili\\-warez\\.net//[a-z0-9\\-_]+/[a-z0-9\\-_]+/seite\\-\\d+\\.html";
-    private static final String SPECIALUNSUPPORTEDLINKS2 = "http://(www\\.)?(xxx-4\\-free\\.net|chili\\-warez\\.net)/(stories/[a-z0-9\\-]+|news/[a-z0-9\\-]+)\\.html";
+    private static final String SPECIALUNSUPPORTEDLINKS2 = "http://(www\\.)?(xxx-4\\-free\\.net|chili\\-warez\\.net|mov\\-world\\.net)/(stories/[a-z0-9\\-]+|news/[a-z0-9\\-]+)\\.html";
     private static final String XXX4FREESTREAMLINK       = "http://(www\\.)?xxx-4\\-free\\.net/streams/[a-z0-9\\-]+\\.html";
 
     @Override
