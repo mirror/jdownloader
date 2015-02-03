@@ -309,15 +309,17 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
     @Override
     public void setSelectedComponent(Component e) {
         View c = getComponentEquals((View) e);
-        if (c == null) {
+        int index = indexOfComponent(c);
+        if (index < 0) {
             setSelectedIndex(0);
+            return;
         }
-        super.setSelectedComponent(c);
+        super.setSelectedIndex(index);
     }
 
     /**
      * returns the component in this tab that equals view
-     *
+     * 
      * @param view
      * @return
      */
@@ -333,7 +335,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
 
     /**
      * CHecks if there is already a tabbepanel of this type in this pane.
-     *
+     * 
      * @param view
      * @return
      */
