@@ -57,26 +57,7 @@ public class XunleiComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        if (br.containsHTML("http://verify")) {
-            logger.info("xunlei.com decrypter: found captcha...");
-            final String fid = new Regex(parameter, "([A-Z]+)$").getMatch(0);
-            for (int i = 0; i <= 3; i++) {
-                final String captchaLink = br.getRegex("\"(http://verify\\d+\\.xunlei\\.com/image\\?t=[^<>\"]*?)\"").getMatch(0);
-                if (captchaLink == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                final String code = getCaptchaCode(captchaLink, param);
-                br.getPage("http://kuai.xunlei.com/webfilemail_interface?v_code=" + code + "&shortkey=" + fid + "&ref=&action=check_verify");
-                if (!br.containsHTML("http://verify")) {
-                    break;
-                }
-            }
-            if (br.containsHTML("http://verify")) {
-                throw new DecrypterException(DecrypterException.CAPTCHA);
-            }
-            logger.info("Captcha passed!");
-        }
+        handleCaptcha(param);
         checks(parameter, br.getURL());
         // hoster download links
         if (parameter.matches("http://(www\\.)?(kuai\\.xunlei\\.com/(d/([a-zA-Z]{1,2}\\-)?[a-zA-Z0-9\\.]+|download\\?[^\"\\'<>]+)|f\\.xunlei\\.com/\\d+/file/[a-z0-9\\-]+)")) {
@@ -129,6 +110,30 @@ public class XunleiComDecrypter extends PluginForDecrypt {
             }
         }
         return decryptedLinks;
+    }
+
+    private boolean handleCaptcha(final CryptedLink dl) throws Exception {
+        if (br.containsHTML("http://verify")) {
+            logger.info("xunlei.com decrypter: found captcha...");
+            for (int i = 0; i <= 3; i++) {
+                final String shortkey = br.getRegex("value=\\'([^<>\"]*?)\\' name=\"shortkey\"").getMatch(0);
+                final String captchaLink = br.getRegex("\"(http://verify\\d+\\.xunlei\\.com/image\\?t=[^<>\"]*?)\"").getMatch(0);
+                if (captchaLink == null || shortkey == null) {
+                    logger.warning("Host plugin broken for link: " + br.getURL());
+                    throw new DecrypterException("Decrypter broken");
+                }
+                final String code = getCaptchaCode(captchaLink, dl);
+                br.getPage("http://kuai.xunlei.com/webfilemail_interface?v_code=" + code + "&shortkey=" + shortkey + "&ref=&action=check_verify");
+                if (!br.containsHTML("http://verify")) {
+                    break;
+                }
+            }
+            if (br.containsHTML("http://verify")) {
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
+            logger.info("Captcha passed!");
+        }
+        return true;
     }
 
     private void parsePage(ArrayList<DownloadLink> ret, String parameter) throws IOException, Exception {
