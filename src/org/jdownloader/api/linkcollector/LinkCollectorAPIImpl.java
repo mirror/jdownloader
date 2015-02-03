@@ -77,7 +77,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
                 view.setItems(pkg.getChildren());
                 org.jdownloader.myjdownloader.client.json.JsonMap infomap = new org.jdownloader.myjdownloader.client.json.JsonMap();
                 if (queryParams._getQueryParam("saveTo", Boolean.class, false)) {
-                    infomap.put("saveTo", LinkTreeUtils.getDownloadDirectory(pkg).getAbsolutePath());
+                    infomap.put("saveTo", LinkTreeUtils.getDownloadDirectory(pkg).toString());
                 }
                 if (queryParams._getQueryParam("size", Boolean.class, false)) {
                     infomap.put("size", view.getFileSize());

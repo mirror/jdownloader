@@ -64,7 +64,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     @Override
     public boolean onDoubleClick(MouseEvent e, AbstractNode value) {
 
-        File ret = LinkTreeUtils.getDownloadDirectory(value);
+        final File ret = LinkTreeUtils.getDownloadDirectory(value);
         if (ret != null && ret.exists() && ret.isDirectory()) {
 
             CrossSystem.openFile(ret);
@@ -87,7 +87,9 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public boolean isEnabled(final AbstractNode obj) {
-        if (obj instanceof AbstractPackageNode) { return ((AbstractPackageNode) obj).getView().isEnabled(); }
+        if (obj instanceof AbstractPackageNode) {
+            return ((AbstractPackageNode) obj).getView().isEnabled();
+        }
         return obj.isEnabled();
     }
 
@@ -99,7 +101,9 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     @Override
     public String getStringValue(AbstractNode value) {
         File ret = LinkTreeUtils.getDownloadDirectory(value);
-        if (ret != null) return ret.toString();
+        if (ret != null) {
+            return ret.toString();
+        }
         return null;
     }
 

@@ -14,6 +14,7 @@ import jd.plugins.FilePackage;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.gui.views.ArraySet;
@@ -138,25 +139,27 @@ public class LinkTreeUtils {
     }
 
     private static File getRawDownloadDirectory(String path) {
-        if (path == null) {
-            return null;
-        }
-        if (CrossSystem.isAbsolutePath(path)) {
-            return new File(path);
+        if (StringUtils.isEmpty(path)) {
+            return new File(org.jdownloader.settings.staticreferences.CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue());
         } else {
-            return new File(org.jdownloader.settings.staticreferences.CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue(), path);
+            if (CrossSystem.isAbsolutePath(path)) {
+                return new File(path);
+            } else {
+                return new File(org.jdownloader.settings.staticreferences.CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue(), path);
+            }
         }
     }
 
     public static File getDownloadDirectory(String path, String packagename) {
-        if (path == null) {
-            return null;
-        }
-        path = PackagizerController.replaceDynamicTags(path, packagename);
-        if (CrossSystem.isAbsolutePath(path)) {
-            return new File(path);
+        if (StringUtils.isEmpty(path)) {
+            return new File(PackagizerController.replaceDynamicTags(org.jdownloader.settings.staticreferences.CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue(), packagename));
         } else {
-            return new File(PackagizerController.replaceDynamicTags(org.jdownloader.settings.staticreferences.CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue(), packagename), path);
+            path = PackagizerController.replaceDynamicTags(path, packagename);
+            if (CrossSystem.isAbsolutePath(path)) {
+                return new File(path);
+            } else {
+                return new File(PackagizerController.replaceDynamicTags(org.jdownloader.settings.staticreferences.CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue(), packagename), path);
+            }
         }
     }
 
