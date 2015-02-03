@@ -11,4 +11,5 @@ example_script_name=Vzor
 none_trigger=// Táto udalosť nebude nikdy spustená.
 script_editor_title=Editor skriptu: %s1
 securityLoading_title=Bezpečnostné upozornenie!
+sure_delete_entries=Naozaj chcete odstrániť %s1 skript(y/ov)?
 title=Skriptovač udalostí
