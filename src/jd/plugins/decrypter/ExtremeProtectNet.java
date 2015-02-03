@@ -16,15 +16,20 @@
 
 package jd.plugins.decrypter;
 
+import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DirectHTTP;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extreme-protect.net" }, urls = { "http://(www\\.)?extreme\\-protect\\.net/[a-z0-9\\-_]+" }, flags = { 0 })
 public class ExtremeProtectNet extends PluginForDecrypt {
@@ -32,6 +37,9 @@ public class ExtremeProtectNet extends PluginForDecrypt {
     public ExtremeProtectNet(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    private static final String RECAPTCHATEXT  = "api\\.recaptcha\\.net";
+    private static final String RECAPTCHATEXT2 = "google\\.com/recaptcha/api/challenge";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -52,16 +60,38 @@ public class ExtremeProtectNet extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        final String pass = generatePass();
+        if (br.containsHTML(RECAPTCHATEXT) || br.containsHTML(RECAPTCHATEXT2)) {
+            boolean failed = true;
+            for (int i = 0; i <= 5; i++) {
+                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                rc.parse();
+                rc.load();
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                final String c = getCaptchaCode("recaptcha", cf, param);
+                br.postPage(br.getURL(), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c + "&submit_captcha=VALIDER");
+                if (br.containsHTML(RECAPTCHATEXT) || br.containsHTML(RECAPTCHATEXT2)) {
+                    br.getPage(parameter);
+                    continue;
+                }
+                failed = false;
+                break;
+            }
+            if (failed) {
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
+        } else {
+            final String pass = generatePass();
 
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-        br.getHeaders().put("Cache-Control", null);
-        br.postPage("/requis/captcha_formulaire.php", "action=qaptcha&qaptcha_key=" + pass);
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+            br.getHeaders().put("Cache-Control", null);
+            br.postPage("/requis/captcha_formulaire.php", "action=qaptcha&qaptcha_key=" + pass);
 
-        br.getHeaders().put("Accept", "text/html, application/xhtml+xml, */*");
-        br.getHeaders().put("X-Requested-With", null);
-        br.postPage(parameter, pass + "=&submit_captcha=VALIDER");
+            br.getHeaders().put("Accept", "text/html, application/xhtml+xml, */*");
+            br.getHeaders().put("X-Requested-With", null);
+            br.postPage(parameter, pass + "=&submit_captcha=VALIDER");
+        }
 
         String[] links = br.getRegex("class=\"lien\" ><a target=\"_blank\" href=\"(http[^<>\"]*?)\"").getColumn(0);
         String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
