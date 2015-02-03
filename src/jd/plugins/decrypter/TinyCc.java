@@ -32,19 +32,27 @@ public class TinyCc extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS = "http://(www\\.)?tiny\\.cc/(url|example|help|tools|qrcodes|api|contact|terms|domains)";
+    private static final String INVALIDLINKS = "http://(www\\.)?tiny\\.cc/(url|example|help|tools|qrcodes|api|contact|terms|domains|app)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         if (parameter.matches(INVALIDLINKS)) {
             logger.info("Link invalid: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.containsHTML("Sorry, we weren't able to locate that URL")) {
             logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         final String finallink = br.getRedirectLocation();

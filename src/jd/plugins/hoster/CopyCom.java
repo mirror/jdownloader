@@ -92,6 +92,7 @@ public class CopyCom extends PluginForHost {
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
     /** They got an API: https://www.copy.com/developer/documentation */
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         if (link.getBooleanProperty("offline", false)) {
@@ -102,7 +103,13 @@ public class CopyCom extends PluginForHost {
             ddlink = link.getDownloadURL();
             URLConnectionAdapter con = null;
             try {
-                con = br.openGetConnection(ddlink);
+                try {
+                    /* @since JD2 */
+                    con = br.openHeadConnection(ddlink);
+                } catch (final Throwable t) {
+                    /* Not supported in old 0.9.581 Stable */
+                    con = br.openGetConnection(ddlink);
+                }
                 if (con.isContentDisposition() && con.isOK()) {
                     if (link.getFinalFileName() == null) {
                         link.setFinalFileName(getFileNameFromHeader(con));
@@ -252,6 +259,7 @@ public class CopyCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -299,6 +307,7 @@ public class CopyCom extends PluginForHost {
         return ai;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
@@ -315,7 +324,7 @@ public class CopyCom extends PluginForHost {
             final boolean deleteafterdownload = this.getPluginConfig().getBooleanProperty(DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD, false);
             if (movefiletoaccount) {
                 final String finalfilename = link.getFinalFileName();
-                final String escaped_filename = Encoding.urlEncode(finalfilename);
+                final String escaped_filename = Encoding.urlEncode(finalfilename).replace("+", "%20");
                 final String oauth_Data = Encoding.htmlDecode(this.br.getCookie(MAINPAGE, "COPY_AUTH"));
                 final String api_auth = getJson(oauth_Data, "apiweb.copy.com");
                 if (api_auth == null) {
@@ -355,9 +364,12 @@ public class CopyCom extends PluginForHost {
                     plain_path_real += new Regex(plain_path_saved, "^/[^<>\"/]+(/.+)").getMatch(0);
                 }
                 ddlink = "https://copy.com/web/users/user-" + share_owner + "/copy";
+                plain_path_real = plain_path_real.replace(" ", "%20");
+                plain_path_real = plain_path_real.replace("(", "%28");
+                plain_path_real = plain_path_real.replace(")", "%29");
                 ddlink += plain_path_real + "/";
                 ddlink += "?download=1";
-                ddlink = ddlink.replace(finalfilename, escaped_filename);
+                // ddlink = ddlink.replace(finalfilename, escaped_filename);
             }
             try {
                 this.sleep(8 * 1000l, link);

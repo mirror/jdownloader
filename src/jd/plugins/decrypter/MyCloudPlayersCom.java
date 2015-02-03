@@ -61,7 +61,11 @@ public class MyCloudPlayersCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://api.soundcloud.com/tracks/" + new Regex(parameter, "(\\d+)$").getMatch(0)));
         } else {
             logger.warning("Unknown linktype: " + parameter);
-            return null;
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
         }
         if (decryptedLinks.size() == 0) {
             logger.warning("Decrypter broken for link: " + parameter);

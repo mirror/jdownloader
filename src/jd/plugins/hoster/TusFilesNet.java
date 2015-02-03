@@ -312,7 +312,7 @@ public class TusFilesNet extends PluginForHost {
             if (inValidate(fileInfo[0])) {
                 fileInfo[0] = cbr.getRegex("fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                 if (inValidate(fileInfo[0])) {
-                    fileInfo[0] = cbr.getRegex("<font color=\"#ffffff\">(.*?)</font>").getMatch(0);
+                    fileInfo[0] = cbr.getRegex("property=\"og:audio:title\" content=\"([^<>\"]*?)\"").getMatch(0);
                     if (inValidate(fileInfo[0])) {
                         fileInfo[0] = cbr.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
                         if (inValidate(fileInfo[0])) {

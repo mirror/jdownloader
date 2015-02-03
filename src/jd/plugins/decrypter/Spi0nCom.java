@@ -59,12 +59,12 @@ public class Spi0nCom extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        final String[] regexes = new String[] { "\"((http:)?//(www\\.)?dailymotion\\.com/(embed/)?video/[^<>\"]*?)\"", "\"((http:)?//(www\\.)?youtube\\.com/embed/[^<>\"/]+)\"", "\"(//player\\.vimeo\\.com/video/\\d+)" };
+        final String[] regexes = new String[] { "\"((http:)?//(www\\.)?dailymotion\\.com/(embed/)?video/[^<>\"]*?)\"", "\"((https?:)?//(www\\.)?youtube\\.com/embed/[^<>\"/]+)\"", "\"(//player\\.vimeo\\.com/video/\\d+)" };
         for (final String regex : regexes) {
             final String[] results = br.getRegex(regex).getColumn(0);
             if (results != null && results.length != 0) {
                 for (String result : results) {
-                    if (!result.startsWith("http:")) {
+                    if (!result.startsWith("http")) {
                         result = "http:" + result;
                     }
                     decryptedLinks.add(createDownloadlink(result));

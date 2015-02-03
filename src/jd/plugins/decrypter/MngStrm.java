@@ -45,30 +45,31 @@ public class MngStrm extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        final String lastP = br.getRegex(">Last Page \\((\\d+)\\)<").getMatch(0);
+        String lastP = br.getRegex(">Last Page \\((\\d+)\\)<").getMatch(0);
         if (lastP == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            lastP = "1";
         }
         final int lastPage = Integer.parseInt(lastP);
-        NumberFormat formatter = new DecimalFormat("00");
-        String urlPart = new Regex(url, "mangastream\\.com(/read/.+)").getMatch(0);
+        final NumberFormat formatter = new DecimalFormat("00");
+        final String urlPart = new Regex(url, "mangastream\\.com(/read/.+)").getMatch(0);
         for (int i = 1; i <= lastPage; i++) {
             if (requestedPage > 0 && i != requestedPage) {
                 continue;
             }
-            DownloadLink link = createDownloadlink("mangastream://" + urlPart + "/" + i);
+            final DownloadLink link = createDownloadlink("mangastream://" + urlPart + "/" + i);
+            final String contenturl = url + "?page=" + i;
             try {
-                link.setContentUrl(url + "?page=" + i);
+                link.setContentUrl(contenturl);
                 link.setContainerUrl(url);
-            } catch (Throwable e) {
-
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
             }
-            link.setAvailableStatus(AvailableStatus.TRUE);
             link.setFinalFileName(title.trim() + " – page " + formatter.format(i) + ".png");
+            link.setProperty("page_url", contenturl);
+            link.setAvailableStatus(AvailableStatus.TRUE);
             decryptedLinks.add(link);
         }
-        FilePackage fp = FilePackage.getInstance();
+        final FilePackage fp = FilePackage.getInstance();
         fp.setName(title.trim());
         fp.addLinks(decryptedLinks);
 

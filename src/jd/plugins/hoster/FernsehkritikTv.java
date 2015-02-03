@@ -273,7 +273,13 @@ public class FernsehkritikTv extends PluginForHost {
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(DLLINK);
+            try {
+                /* @since JD2 */
+                con = br.openHeadConnection(DLLINK);
+            } catch (final Throwable t) {
+                /* Not supported in old 0.9.581 Stable */
+                con = br.openGetConnection(DLLINK);
+            }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
                 downloadLink.setFinalFileName(final_filename);
