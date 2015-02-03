@@ -45,7 +45,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fernsehkritik.tv", "massengeschmack.tv" }, urls = { "http://(couch\\.)?fernsehkritik\\.tv/(jdownloaderfolge(neu|alt)?\\d+|inline\\-video/postecke\\.php\\?(iframe=true\\&width=\\d+\\&height=\\d+\\&ep=|ep=)\\d+|dl/fernsehkritik\\d+\\.[a-z0-9]{1,4}|folge-\\d+.*|userbereich/archive#stream:\\d+)", "https?://(www\\.)?massengeschmack\\.tv/play/\\d+/[a-z0-9\\-]+" }, flags = { 2, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fernsehkritik.tv", "massengeschmack.tv" }, urls = { "http://(couch\\.)?fernsehkritik\\.tv/(jdownloaderfolgeneu?\\d+|inline\\-video/postecke\\.php\\?(iframe=true\\&width=\\d+\\&height=\\d+\\&ep=|ep=)\\d+|dl/fernsehkritik\\d+\\.[a-z0-9]{1,4}|folge-\\d+.*|userbereich/archive#stream:\\d+)", "https?://(www\\.)?massengeschmack\\.tv/play/\\d+/[a-z0-9\\-]+" }, flags = { 2, 2 })
 public class FernsehkritikTv extends PluginForHost {
 
     // Refactored on the 02.07.2011, Rev. 14521,
