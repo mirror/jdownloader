@@ -471,15 +471,14 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
                     public int compare(final AccountEntry o1, final AccountEntry o2) {
                         final boolean b1 = o1.getAccount().isEnabled();
                         final boolean b2 = o2.getAccount().isEnabled();
-                        final int ret = compare(b1, b2);
-                        if (b1 && b2) {
+                        if (b1 == b2) {
                             if (getSortOrderIdentifier() != ExtColumn.SORT_ASC) {
                                 return oldSorter.compare(o1, o2);
                             } else {
                                 return -oldSorter.compare(o1, o2);
                             }
                         }
-                        return ret;
+                        return compare(b1, b2);
                     }
 
                 });
