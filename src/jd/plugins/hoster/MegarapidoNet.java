@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -40,15 +39,14 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.utils.recaptcha.api2.Recaptcha2Helper;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidox.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
-public class RapidoxPl extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megarapido.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
+public class MegarapidoNet extends PluginForHost {
 
-    private static final String                            DOMAIN                       = "http://rapidox.pl/";
-    private static final String                            NICE_HOST                    = "rapidox.pl";
+    private static final String                            DOMAIN                       = "http://megarapido.net/";
+    private static final String                            NICE_HOST                    = "megarapido.net";
     private static final String                            NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                            NOCHUNKS                     = NICE_HOSTproperty + "NOCHUNKS";
     private static final String                            NORESUME                     = NICE_HOSTproperty + "NORESUME";
@@ -57,26 +55,22 @@ public class RapidoxPl extends PluginForHost {
     private static final boolean                           ACCOUNT_PREMIUM_RESUME       = true;
     private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int                               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    /* How long do we want to wait until the file is on their servers so we can download it? */
-    private int                                            maxreloads                   = 200;
-    private int                                            wait_between_reload          = 3;
     private static final String                            default_UA                   = "JDownloader";
 
-    private static AtomicReference<String>                 agent                        = new AtomicReference<String>(null);
     private static Object                                  LOCK                         = new Object();
     private int                                            statuscode                   = 0;
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap           = new HashMap<Account, HashMap<String, Long>>();
     private Account                                        currAcc                      = null;
     private DownloadLink                                   currDownloadLink             = null;
 
-    public RapidoxPl(PluginWrapper wrapper) {
+    public MegarapidoNet(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://rapidox.pl/promocje");
+        this.enablePremium("http://megarapido.net/planos");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://rapidox.pl/regulamin";
+        return "http://megarapido.net/termos-e-condicoes";
     }
 
     private Browser newBrowser() {
@@ -141,50 +135,19 @@ public class RapidoxPl extends PluginForHost {
         login(account, false);
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
-            this.postAPISafe("http://rapidox.pl/panel/pobierz-plik", "check_links=" + Encoding.urlEncode(link.getDownloadURL()));
-            final String requestId = br.getRegex("rapidox.pl/panel/pobierz\\-plik/(\\d+)").getMatch(0);
-            if (requestId == null) {
-                handleErrorRetries("requestIdnull", 5);
+            this.getAPISafe("http://megarapido.net/gerador");
+            final String userID = br.getRegex("name=\"user\" value=\"(\\d+)\"").getMatch(0);
+            if (userID == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            String hash = null;
-            String dlid = null;
-            int counter = 0;
-            int getreadymaxreloads = 5;
-            do {
-                this.sleep(wait_between_reload * 1000l, link);
-                br.getPage("/panel/pobierz-plik/" + requestId);
-                hash = br.getRegex("name=\"form_hash\" value=\"([a-z0-9]+)\"").getMatch(0);
-                dlid = br.getRegex("name=\"download\\[\\]\" value=\"(\\d+)\"").getMatch(0);
-            } while (hash == null && dlid == null && counter <= getreadymaxreloads);
-            if (hash == null || dlid == null) {
-                handleErrorRetries("hash_requestid_null", 5);
-            }
-            /* Modify name so we can actually find our final downloadlink. */
-            String fname = link.getName();
-            fname = fname.replace(" ", "_");
-            fname = fname.replaceAll("(;|\\&)", "");
-            /* File is on their servers --> Chose download method */
-            this.postAPISafe("/panel/lista-plikow", "download%5B%5D=" + dlid + "&form_hash=" + hash + "&download_files=Pobierz%21&pobieranie=posrednie");
-            /* Access list of downloadable files/links & find correct final downloadlink */
-            do {
-                this.sleep(wait_between_reload * 1000l, link);
-                this.getAPISafe("/panel/lista-plikow");
-                /* TODO: Maybe find a more reliable way to get the final downloadlink... */
-                final String[] alldirectlinks = br.getRegex("\"(http://[a-z0-9]+\\.rapidox\\.pl/[A-Za-z0-9]+/[^<>\"]*?)\"").getColumn(0);
-                if (alldirectlinks != null && alldirectlinks.length > 1) {
-                    for (final String directlink : alldirectlinks) {
-                        if (directlink.contains(fname)) {
-                            dllink = directlink;
-                            break;
-                        }
-                    }
-                }
-            } while (counter <= maxreloads && dllink == null);
+            final String dlurl = Encoding.urlEncode(link.getDownloadURL());
+            String postData = "urllist=" + dlurl + "&links=" + dlurl + "&exibir=normal&usar=premium&user=" + userID + "&autoreset=";
+            this.postAPISafe("/gerar.php?rand=0." + System.currentTimeMillis(), postData);
+            dllink = br.getRegex("(?:\\'|\")(https?://[a-z0-9\\-\\.]+\\.megarapido\\.net/[^<>\"\\']*?)(?:\\'|\")").getMatch(0);
             if (dllink == null) {
                 /* Should never happen */
                 handleErrorRetries("dllinknull", 5);
             }
-            dllink = dllink.replaceAll("\\\\/", "/");
         }
         handleDL(account, link, dllink);
     }
@@ -198,9 +161,9 @@ public class RapidoxPl extends PluginForHost {
             maxChunks = 1;
         }
         boolean resume = ACCOUNT_PREMIUM_RESUME;
-        if (link.getBooleanProperty(RapidoxPl.NORESUME, false)) {
+        if (link.getBooleanProperty(MegarapidoNet.NORESUME, false)) {
             resume = false;
-            link.setProperty(RapidoxPl.NORESUME, Boolean.valueOf(false));
+            link.setProperty(MegarapidoNet.NORESUME, Boolean.valueOf(false));
         }
         link.setProperty(NICE_HOSTproperty + "directlink", dllink);
         try {
@@ -208,7 +171,7 @@ public class RapidoxPl extends PluginForHost {
             if (dl.getConnection().getResponseCode() == 416) {
                 logger.info("Resume impossible, disabling it for the next try");
                 link.setChunksProgress(null);
-                link.setProperty(RapidoxPl.NORESUME, Boolean.valueOf(true));
+                link.setProperty(MegarapidoNet.NORESUME, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             final String contenttype = dl.getConnection().getContentType();
@@ -227,8 +190,8 @@ public class RapidoxPl extends PluginForHost {
                     } catch (final Throwable e) {
                     }
                     /* unknown error, we disable multiple chunks */
-                    if (link.getBooleanProperty(NICE_HOSTproperty + RapidoxPl.NOCHUNKS, false) == false) {
-                        link.setProperty(NICE_HOSTproperty + RapidoxPl.NOCHUNKS, Boolean.valueOf(true));
+                    if (link.getBooleanProperty(NICE_HOSTproperty + MegarapidoNet.NOCHUNKS, false) == false) {
+                        link.setProperty(NICE_HOSTproperty + MegarapidoNet.NOCHUNKS, Boolean.valueOf(true));
                         throw new PluginException(LinkStatus.ERROR_RETRY);
                     }
                 }
@@ -236,8 +199,8 @@ public class RapidoxPl extends PluginForHost {
                 e.printStackTrace();
                 // New V2 chunk errorhandling
                 /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(NICE_HOSTproperty + RapidoxPl.NOCHUNKS, false) == false) {
-                    link.setProperty(NICE_HOSTproperty + RapidoxPl.NOCHUNKS, Boolean.valueOf(true));
+                if (link.getBooleanProperty(NICE_HOSTproperty + MegarapidoNet.NOCHUNKS, false) == false) {
+                    link.setProperty(NICE_HOSTproperty + MegarapidoNet.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
                 throw e;
@@ -278,10 +241,10 @@ public class RapidoxPl extends PluginForHost {
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        br.getPage("/panel/twoje-informacje");
-        String traffic_max = br.getRegex("Dopuszczalny transfer:</b>[\t\n\r ]+([0-9 ]+ MB)").getMatch(0);
-        String traffic_available = br.getRegex("Do wykorzystania:[\t\n\r ]+(-?[0-9 ]+ MB)").getMatch(0);
-        if (traffic_max == null || traffic_available == null) {
+        br.getPage("/gerador");
+        final Regex premium_time = br.getRegex("(\\d{1,2}) DIAS, (\\d{1,2}) HORAS, (\\d{1,2}) MINUTOS E (\\d{1,2}) SEGUNDOS");
+        final String[][] time_matches = premium_time.getMatches();
+        if (time_matches.length == 0) {
             final String userLanguage = System.getProperty("user.language");
             if ("de".equalsIgnoreCase(userLanguage)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -291,51 +254,26 @@ public class RapidoxPl extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        /* Fix e.g. 500 000 MB (500 GB) --> 500000MB */
-        traffic_max = traffic_max.replace(" ", "");
-        traffic_available = traffic_available.replace(" ", "");
-        /*
-         * Free users = They have no package --> Accept them but set zero traffic left. Of couse traffic left <= 0 --> Also free account.
-         */
-        if (traffic_max.equals("0MB") || traffic_available.indexOf("-") == 0) {
-            account.setType(AccountType.FREE);
-            ai.setStatus("Registered (free) account");
-            /* Free accounts have no traffic - set this so they will not be used (accidently) but still accept them. */
-            ai.setTrafficLeft(0);
-        } else {
-            account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            ai.setStatus("Premium account");
-            ai.setUnlimitedTraffic();
-            ai.setTrafficLeft(SizeFormatter.getSize(traffic_available));
-            ai.setTrafficMax(SizeFormatter.getSize(traffic_max));
-        }
+        ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(time_matches[0][0]) * 24 * 60 * 60 * 1000 + Long.parseLong(time_matches[0][1]) * 60 * 60 * 1000l + Long.parseLong(time_matches[0][2]) * 60 * 1000l + Long.parseLong(time_matches[0][2]) * 1000l);
+        ai.setUnlimitedTraffic();
+        ai.setStatus("Premium account");
+        account.setType(AccountType.PREMIUM);
         account.setValid(true);
-        /* Only add hosts which are listed as 'on' (working) */
-        this.getAPISafe("http://rapidox.pl/panel/status_hostingow");
-        final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl" };
+        final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us" };
         final ArrayList<String> supportedHosts = new ArrayList<String>();
-        final String hosttable = br.getRegex("</tr></thead><tr>(.*?)</tr></table>").getMatch(0);
-        final String[] hostDomainsInfo = hosttable.split("<td width=\"50px\"");
-        for (final String domaininfo : hostDomainsInfo) {
-            String crippledhost = new Regex(domaininfo, "title=\"([^<>\"]+)\"").getMatch(0);
-            final String status = new Regex(domaininfo, "<td>(on|off)").getMatch(0);
-            if (crippledhost == null || status == null) {
-                continue;
-            } else if (status.equals("off") || !status.equals("on")) {
-                logger.info("This host is currently not active, NOT adding it to the supported host array: " + crippledhost);
-                continue;
-            }
-            crippledhost = crippledhost.toLowerCase();
+        final String[] hostDomainsInfo = br.getRegex("class=\"has\\-tip\" title=\"([^<>\"]*?)\"").getColumn(0);
+        for (final String domain : hostDomainsInfo) {
+            final String crippledhost = domain.toLowerCase();
             /* First cover special cases */
-            if (crippledhost.equals("share_online")) {
-                supportedHosts.add("share-online.biz");
-            } else if (crippledhost.equals("ul.to") || crippledhost.equals("uploaded")) {
+            if (crippledhost.equals("mediafire")) {
+                /* There is also mediafire.bz and so on but .com is the right one in this case! */
+                supportedHosts.add("mediafire.com");
+            } else if (crippledhost.equals("uploaded")) {
                 supportedHosts.add("uploaded.net");
-            } else if (crippledhost.equals("vipfile")) {
-                supportedHosts.add("vip-file.com");
-            } else if (crippledhost.equals("_4shared")) {
-                supportedHosts.add("4shared.com");
+            } else if (crippledhost.equals("minhateca.com.br")) {
+                supportedHosts.add("minhateca.com.br");
+            } else if (crippledhost.equals("nowvideo.sx")) {
+                supportedHosts.add("nowvideo.sx");
             } else {
                 /* Finally, go insane... */
                 for (final String possibledomain : possible_domains) {
@@ -371,8 +309,8 @@ public class RapidoxPl extends PluginForHost {
                         }
                         if (force) {
                             /* Even though login is forced first check if our cookies are still valid --> If not, force login! */
-                            br.getPage("http://rapidox.pl/panel/index");
-                            if (br.containsHTML(">Wyloguj się<")) {
+                            br.getPage("http://megarapido.net/");
+                            if (br.containsHTML("/sair\\.php\">SAIR</a>")) {
                                 return;
                             }
                             /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
@@ -385,70 +323,40 @@ public class RapidoxPl extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                String postData = "login83=" + Encoding.urlEncode(currAcc.getUser()) + "&password83=" + Encoding.urlEncode(currAcc.getPass());
-                this.getAPISafe("http://rapidox.pl/zaloguj_sie");
+                String postData = "login=" + Encoding.urlEncode(currAcc.getUser()) + "&senha=" + Encoding.urlEncode(currAcc.getPass());
+                this.getAPISafe("http://megarapido.net/login");
 
-                /*
-                 * Captcha is shown on too many failed login attempts. Shoud usually not happen inside JD - especially as it is bound to the
-                 * current session (cookies) + User-Agent.This small function should try to prevent login captchas in case one appears.
-                 */
-                int captcha_prevention_counter_max = 3;
-                int captcha_prevention_counter = 0;
-                while (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)") && captcha_prevention_counter <= captcha_prevention_counter_max) {
-                    Thread.sleep(3000l);
-                    logger.info("Trying to prevent captcha by changing User-Agent " + captcha_prevention_counter + " / " + captcha_prevention_counter_max);
-                    /* we first have to load the plugin, before we can reference it */
-                    JDUtilities.getPluginForHost("mediafire.com");
-                    agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
-                    if (br.getCookies(DOMAIN) != null) {
-                        br.clearCookies(DOMAIN);
-                    }
-                    this.getAPISafe("/zaloguj_sie");
-                    captcha_prevention_counter++;
-                }
-
-                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                    logger.info("Failed to prevent captcha - asking user!");
-                    /* Handle stupid login captcha */
-                    final String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
-                    if (rcID == null) {
-                        logger.warning("Expected login captcha is not there!");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                    rc.setId(rcID);
-                    rc.load();
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "rapidox.pl", DOMAIN, true);
-                    final String c = getCaptchaCode("recaptcha", cf, dummyLink);
-                    postData += "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&redirect=";
-                }
-
-                this.postAPISafe("/panel/login", postData);
-                final String userLanguage = System.getProperty("user.language");
-                if (br.containsHTML(">Wystąpił błąd\\! Nieprawidłowy login lub hasło\\.")) {
-                    if ("de".equalsIgnoreCase(userLanguage)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else if ("pl".equalsIgnoreCase(userLanguage)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                this.getAPISafe("/panel/index");
-                /* Double check */
-                if (!br.containsHTML(">Wyloguj się<")) {
+                final DownloadLink dummyLink = new DownloadLink(this, "Account", "megarapido.net", DOMAIN, true);
+                boolean success = false;
+                int counter = 1;
+                String responseToken = null;
+                do {
+                    Recaptcha2Helper rchelp = new Recaptcha2Helper();
+                    rchelp.init(this.br);
+                    final File outputFile = rchelp.loadImageFile();
+                    String code = getCaptchaCode("recaptcha", outputFile, dummyLink);
+                    success = rchelp.sendResponse(code);
+                    responseToken = rchelp.getResponseToken();
+                    counter++;
+                } while (!success && counter <= 3);
+                if (!success) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else if ("pl".equalsIgnoreCase(userLanguage)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDu hast zu viele ungültige login Captchas eingegeben!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou entered too many wrong login captchas!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                /* User-Agent might have been changed through the login process --> Make sure we're using the standard UA now. */
-                agent.set(default_UA);
+                postData += "&g-recaptcha-response=" + Encoding.urlEncode(responseToken);
+
+                this.postAPISafe("/painel_user/ajax/ajax.php", postData);
+                final String userLanguage = System.getProperty("user.language");
+                if (br.containsHTML(">Login ou Senha inválidos") || br.getCookie(DOMAIN, "MegaCookie") == null) {
+                    if ("de".equalsIgnoreCase(userLanguage)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 /* Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(DOMAIN);
@@ -481,7 +389,6 @@ public class RapidoxPl extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
-    @SuppressWarnings("unused")
     private void getAPISafe(final String accesslink) throws IOException, PluginException {
         br.getPage(accesslink);
         updatestatuscode();
@@ -498,10 +405,13 @@ public class RapidoxPl extends PluginForHost {
      * 0 = everything ok, 1-99 = "error"-errors
      */
     private void updatestatuscode() {
-        if (br.containsHTML("Wybierz linki z innego hostingu\\.")) {
-            statuscode = 1;
-        } else if (br.containsHTML("Jeśli widzisz ten komunikat prosimy niezwłocznie skontaktować się z nami pod")) {
-            statuscode = 2;
+        final String error = br.getRegex("class=alert\\-message error > ([^<>]*?)</div>").getMatch(0);
+        if (error != null) {
+            if (error.contains("Desculpe-nos, no momento o servidor")) {
+                statuscode = 1;
+            } else {
+                statuscode = 666;
+            }
         } else {
             statuscode = 0;
         }
@@ -519,17 +429,6 @@ public class RapidoxPl extends PluginForHost {
                 statusMessage = "Host is currently not supported";
                 tempUnavailableHoster(3 * 60 * 60 * 1000l);
                 break;
-            case 2:
-                /* Host currently not supported --> deactivate it for some hours. */
-                statusMessage = "Your IP is banned";
-                final String userLanguage = System.getProperty("user.language");
-                if ("de".equalsIgnoreCase(userLanguage)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDeine IP wurde gebannt!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                } else if ("pl".equalsIgnoreCase(userLanguage)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nTwój adres IP został zablokowany!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour IP has been banned!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                }
             default:
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
             }
@@ -563,6 +462,11 @@ public class RapidoxPl extends PluginForHost {
             /* TODO: Remove plugin defect once all known errors are correctly handled */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, error);
         }
+    }
+
+    @Override
+    public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
+        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
     }
 
     @Override

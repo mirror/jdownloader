@@ -19,6 +19,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.Property;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -45,7 +49,12 @@ public class XunleiCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getStringProperty("mainlink", null));
+        br.setCustomCharset("utf-8");
+        final String origin = downloadLink.getStringProperty("mainlink", null);
+        if (origin == null) {
+            return null;
+        }
+        br.getPage(origin);
         if (br.getURL().contains("kuai.xunlei.com/invalid")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -60,53 +69,32 @@ public class XunleiCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        DLLINK = updateDownloadLink(downloadLink);
+        DLLINK = checkDirectLink(downloadLink, "directlink");
+        if (DLLINK == null) {
+            DLLINK = updateDownloadLink(downloadLink);
+        }
         if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // try {
-        // String host = new Regex(DLLINK, "http://(.*?)(:|/)").getMatch(0);
-        // InetAddress ip = InetsAddress.getByName(host);
-        // DLLINK = DLLINK.replace("http://" + host, "http://" + ip.getHostAddress());
-        // } catch (final Throwable e) {
-        // logger.log(Level.SEVERE, e.getMessage(), e);
-        // }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setProperty("directlink", DLLINK);
         dl.startDownload();
     }
 
     private String updateDownloadLink(final DownloadLink downloadLink) throws IOException, Exception {
+        this.br = new Browser();
         final String fid = downloadLink.getStringProperty("decrypted_fid", null);
         try {
             final String origin = downloadLink.getStringProperty("mainlink", null);
             if (origin == null) {
                 return null;
             }
-            br.setCustomCharset("utf-8");
-            if (br.containsHTML("http://verify")) {
-                logger.info("xunlei.com decrypter: found captcha...");
-                for (int i = 0; i <= 3; i++) {
-                    final String shortkey = br.getRegex("value=\\'([^<>\"]*?)\\' name=\"shortkey\"").getMatch(0);
-                    final String captchaLink = br.getRegex("\"(http://verify\\d+\\.xunlei\\.com/image\\?t=[^<>\"]*?)\"").getMatch(0);
-                    if (captchaLink == null || shortkey == null) {
-                        logger.warning("Host plugin broken for link: " + origin);
-                        return null;
-                    }
-                    final String code = getCaptchaCode(captchaLink, downloadLink);
-                    br.getPage("http://kuai.xunlei.com/webfilemail_interface?v_code=" + code + "&shortkey=" + shortkey + "&ref=&action=check_verify");
-                    if (!br.containsHTML("http://verify")) {
-                        break;
-                    }
-                }
-                if (br.containsHTML("http://verify")) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
-                logger.info("Captcha passed!");
-            }
+            br.getPage(origin);
+            handleCaptcha(downloadLink);
             final String[] links = br.getRegex("file_url=\"(https?://[a-z0-9\\.\\-]+\\.xunlei\\.com/download\\?fid=[^\"\\'<>]+)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 return null;
@@ -121,6 +109,63 @@ public class XunleiCom extends PluginForHost {
             throw e;
         }
         return null;
+    }
+
+    private boolean handleCaptcha(final DownloadLink dl) throws Exception {
+        if (br.containsHTML("http://verify")) {
+            logger.info("xunlei.com decrypter: found captcha...");
+            for (int i = 0; i <= 3; i++) {
+                final String shortkey = br.getRegex("value=\\'([^<>\"]*?)\\' name=\"shortkey\"").getMatch(0);
+                final String captchaLink = br.getRegex("\"(http://verify\\d+\\.xunlei\\.com/image\\?t=[^<>\"]*?)\"").getMatch(0);
+                if (captchaLink == null || shortkey == null) {
+                    logger.warning("Host plugin broken for link: " + br.getURL());
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String code = getCaptchaCode(captchaLink, dl);
+                br.getPage("http://kuai.xunlei.com/webfilemail_interface?v_code=" + code + "&shortkey=" + shortkey + "&ref=&action=check_verify");
+                if (!br.containsHTML("http://verify")) {
+                    break;
+                }
+            }
+            if (br.containsHTML("http://verify")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            logger.info("Captcha passed!");
+        }
+        return true;
+    }
+
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            String cookieid = new Regex(dllink, "\\&ck=([^<>\"]*?)\\&").getMatch(0);
+            if (cookieid == null) {
+                return null;
+            }
+            URLConnectionAdapter con = null;
+            try {
+                /* It's important to use a fresh browser here! */
+                this.br = new Browser();
+                br.setFollowRedirects(true);
+                /* Important cookie, needed to re-use directlinks! */
+                br.setCookie("http://xunlei.com/", "kuaichuanid", cookieid);
+                /* Do NOT use Head connection here! */
+                con = br.openGetConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+            } catch (final Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
+        return dllink;
     }
 
     @Override
