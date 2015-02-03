@@ -192,20 +192,15 @@ public class DonationDialog extends AbstractDialog<Object> {
                             Thread.sleep(1000);
                         }
                     } catch (InterruptedException e) {
-
                         StatsManager.I().track("/donation/button/exception/InterruptedException");
-
                         startFallbackWaiter(list, noteText, amt, provider, cCode);
                         close.set(true);
-
                     } catch (Throwable e) {
                         try {
-
                             //
-                            StringBuilder sb = new StringBuilder();
-                            String[] lines = Regex.getLines(Exceptions.getStackTrace(e));
+                            final StringBuilder sb = new StringBuilder();
+                            final String[] lines = Regex.getLines(Exceptions.getStackTrace(e));
                             for (String line : lines) {
-
                                 if (sb.length() > 0) {
                                     sb.insert(0, "/");
                                 }
@@ -213,9 +208,8 @@ public class DonationDialog extends AbstractDialog<Object> {
                             }
                             StatsManager.I().track("/donation/button/exception/" + sb.toString());
                             StatsManager.I().track("/donation/button/exception/" + URLEncode.encodeRFC2396(e.getClass() + "/" + e.getMessage()));
-                        } catch (UnsupportedEncodingException e2) {
-                            e2.printStackTrace();
-
+                        } catch (Throwable e2) {
+                            StatsManager.I().track("/donation/button/exception/" + URLEncode.encodeRFC2396(e2.getClass() + "/" + e2.getMessage()));
                         }
 
                         logger.log(e);

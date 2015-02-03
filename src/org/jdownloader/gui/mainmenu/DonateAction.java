@@ -1,7 +1,6 @@
 package org.jdownloader.gui.mainmenu;
 
 import java.awt.event.ActionEvent;
-import java.io.UnsupportedEncodingException;
 
 import jd.http.Browser;
 
@@ -66,12 +65,10 @@ public class DonateAction extends CustomizableAppAction {
                     details = JSonStorage.restoreFromString(json, DonationDetails.TYPEREF);
                 } catch (Throwable e) {
                     try {
-
                         //
-                        StringBuilder sb = new StringBuilder();
-                        String[] lines = Regex.getLines(Exceptions.getStackTrace(e));
+                        final StringBuilder sb = new StringBuilder();
+                        final String[] lines = Regex.getLines(Exceptions.getStackTrace(e));
                         for (String line : lines) {
-
                             if (sb.length() > 0) {
                                 sb.insert(0, "/");
                             }
@@ -79,9 +76,8 @@ public class DonateAction extends CustomizableAppAction {
                         }
                         StatsManager.I().track("/donation/button/exception/" + sb.toString());
                         StatsManager.I().track("/donation/button/exception/" + URLEncode.encodeRFC2396(e.getClass() + "/" + e.getMessage()));
-                    } catch (UnsupportedEncodingException e2) {
-                        e2.printStackTrace();
-
+                    } catch (Throwable e2) {
+                        StatsManager.I().track("/donation/button/exception/" + URLEncode.encodeRFC2396(e2.getClass() + "/" + e2.getMessage()));
                     }
                 } finally {
                     StatsManager.I().track("/donation/button/details/" + (details != null && details.isEnabled()));

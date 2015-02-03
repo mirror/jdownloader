@@ -87,7 +87,6 @@ public class DailyMotionComV2 extends DailyMotionCom {
 
                     File finalFile = downloadLink.getDownloadLinkController().getFileOutput(false, true);
                     if ("aac".equals(var.getConvertTo())) {
-
                         if (!ffmpeg.demuxAAC(set, finalFile.getAbsolutePath(), file.getAbsolutePath())) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
                         }
@@ -96,12 +95,10 @@ public class DailyMotionComV2 extends DailyMotionCom {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
                         }
                     }
-
                     file.delete();
                     downloadLink.setDownloadSize(finalFile.length());
                     downloadLink.setDownloadCurrent(finalFile.length());
                     try {
-
                         downloadLink.setInternalTmpFilenameAppend(null);
                         // downloadLink.setInternalTmpFilename(null);
                     } catch (final Throwable e) {
