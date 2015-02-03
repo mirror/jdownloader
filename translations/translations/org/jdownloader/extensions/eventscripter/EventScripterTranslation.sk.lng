@@ -1,11 +1,14 @@
+NONE=Žiadny
 ON_DOWNLOAD_CONTROLLER_START=Sťahovanie bolo spustené
 ON_DOWNLOAD_CONTROLLER_STOPPED=Sťahovanie bolo zastavené
+ON_JDOWNLOADER_STARTED=JDownloader bol spustený
 ON_NEW_FILE=Bol vytvorený nový súbor
 allow=povoliť
 edit_script=Upraviť skript
 editor_showhelp=Zobrazit/skryť pomocníka
 event_trigger=Spúšťač
 example_script_name=Vzor
+none_trigger=// Táto udalosť nebude nikdy spustená.
 script_editor_title=Editor skriptu: %s1
 securityLoading_title=Bezpečnostné upozornenie!
 title=Skriptovač udalostí
