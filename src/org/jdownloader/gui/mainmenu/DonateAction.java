@@ -60,19 +60,29 @@ public class DonateAction extends CustomizableAppAction {
                 DonationDetails details = null;
                 try {
                     Browser br = new Browser();
-
                     String json = br.getPage(SERVER + "payment/getDonationScreenDetails?" + TranslationFactory.getDesiredLanguage() + "&button");
                     details = JSonStorage.restoreFromString(json, DonationDetails.TYPEREF);
                 } catch (Throwable e) {
                     try {
                         //
+                        if (e.getCause() != null) {
+                            e = e.getCause();
+                        }
                         final StringBuilder sb = new StringBuilder();
                         final String[] lines = Regex.getLines(Exceptions.getStackTrace(e));
+
                         for (String line : lines) {
+                            if (line.contains("org.jdownloader.gui")) {
+                                break;
+                            }
                             if (sb.length() > 0) {
                                 sb.insert(0, "/");
                             }
-                            sb.insert(0, URLEncode.encodeRFC2396(line));
+                            if (line.startsWith("at")) {
+                                sb.insert(0, URLEncode.encodeRFC2396(line.replaceAll("(^.*)(\\.[a-zA-Z0-9]+\\()", "$2").replaceAll("(at | |\\(|\\)|\\$|\\.|:)", "")));
+                            } else {
+                                sb.insert(0, URLEncode.encodeRFC2396(line.replaceAll("(at | |\\(|\\)|\\$|\\.|:)", "")));
+                            }
                         }
                         StatsManager.I().track("/donation/button/exception/" + sb.toString());
                         StatsManager.I().track("/donation/button/exception/" + URLEncode.encodeRFC2396(e.getClass() + "/" + e.getMessage()));
@@ -101,5 +111,4 @@ public class DonateAction extends CustomizableAppAction {
         }
 
     }
-
 }
