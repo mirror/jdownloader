@@ -38,7 +38,7 @@ public class Mangastream extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
 
-        // We create the final picture based on the informations of the page
+        // We create the final picture based on the information of the page
         Regex sizes = br.getRegex("<div style=\"position:relative;width:(\\d+)px;height:(\\d+)px\">");
         if (sizes.getMatch(0) != null && sizes.getMatch(1) != null) {
             /* create final picture based on several images */
@@ -109,10 +109,10 @@ public class Mangastream extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage("http://mangastream.com" + downloadLink.getDownloadURL().substring(14));
-        if (br.containsHTML("We couldn't find the page you were looking for")) {
+        br.getPage(downloadLink.getStringProperty("page_url", null));
+        if (br.containsHTML("We couldn't find the page you were looking for") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 

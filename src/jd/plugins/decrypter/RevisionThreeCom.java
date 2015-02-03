@@ -77,6 +77,11 @@ public class RevisionThreeCom extends PluginForDecrypt {
             decryptedLinks.add(fina);
             return decryptedLinks;
         }
+        String externID = br.getRegex("\"(//(www\\.)?youtube\\.com/embed/[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http:" + externID));
+            return decryptedLinks;
+        }
         final String videoID = br.getRegex("\\'video_id\\', (\\d+)\\);").getMatch(0);
         if (videoID == null) {
             logger.warning("Decrypter broken for link: " + parameter);

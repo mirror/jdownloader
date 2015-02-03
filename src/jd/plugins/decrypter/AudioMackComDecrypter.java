@@ -80,10 +80,10 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
                     }
                 }
                 try {
-                    fina.setContentUrl(url);
+                    fina.setContentUrl(parameter);
                 } catch (final Throwable e) {
                     /* Not available in old 0.9.581 Stable */
-                    fina.setBrowserUrl(url);
+                    fina.setBrowserUrl(parameter);
                 }
                 decryptedLinks.add(fina);
             }

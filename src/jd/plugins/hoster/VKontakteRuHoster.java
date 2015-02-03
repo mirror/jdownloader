@@ -635,6 +635,7 @@ public class VKontakteRuHoster extends PluginForHost {
             logger.warning("Failed to find specified source json of picturelink");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        boolean success = false;
         /* Count how many possible downloadlinks we have */
         int links_count = 0;
         final String[] qs = { "w_", "z_", "y_", "x_", "m_" };
@@ -655,6 +656,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 this.finalUrl = (String) picobject;
                 links_count++;
                 if (this.photolinkOk(dl, null)) {
+                    success = true;
                     break;
                 }
             }
@@ -662,7 +664,7 @@ public class VKontakteRuHoster extends PluginForHost {
         if (links_count == 0) {
             logger.warning("Found no possible downloadlink for current picturelink --> Plugin broken");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else if (links_count > 0 && this.finalUrl == null) {
+        } else if (links_count > 0 && !success) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Photo is temporarily unavailable or offline (server issues)", 30 * 60 * 1000l);
         }
     }
@@ -674,22 +676,34 @@ public class VKontakteRuHoster extends PluginForHost {
      *
      * @throws IOException
      */
-    @SuppressWarnings("unused")
+    @SuppressWarnings({ "unused", "unchecked" })
     private void getHighestQualityPicFromSavedJson(final DownloadLink dl, final Object o) throws Exception {
         if (o == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        boolean success = false;
+        /* Count how many possible downloadlinks we have */
+        int links_count = 0;
         Map<String, Object> attachments = (Map<String, Object>) o;
         final String qualities[] = { "src_big", "src", "src_small" };
         for (final String quality : qualities) {
             final Object finurl = attachments.get(quality);
             if (finurl != null) {
+                links_count++;
                 this.finalUrl = finurl.toString();
+                if (this.photolinkOk(dl, null)) {
+                    success = true;
+                    break;
+                }
+            } else {
+                continue;
             }
-            if (quality != null && this.photolinkOk(dl, null)) {
-                break;
-            }
-            continue;
+        }
+        if (links_count == 0) {
+            logger.warning("Found no possible downloadlink for current picturelink --> Plugin broken");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (links_count > 0 && !success) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Photo is temporarily unavailable or offline (server issues)", 30 * 60 * 1000l);
         }
     }
 
@@ -803,7 +817,7 @@ public class VKontakteRuHoster extends PluginForHost {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKVIDEO_USEIDASPACKAGENAME, JDL.L("plugins.hoster.vkontakteruhoster.videoUseIdAsPackagename", "Use video-ID as packagename ('videoXXXX_XXXX' or 'video-XXXX_XXXX')?")).setDefaultValue(default_VKVIDEO_USEIDASPACKAGENAME));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Settings for 'vk.com/audios' links:"));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKAUDIOS_USEIDASPACKAGENAME, JDL.L("plugins.hoster.vkontakteruhoster.audiosUseIdAsPackagename", "Use audio-Owner-ID as packagename ('audiosXXXX' or 'audios-XXXX')?")).setDefaultValue(default_VKVIDEO_USEIDASPACKAGENAME));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKAUDIOS_USEIDASPACKAGENAME, JDL.L("plugins.hoster.vkontakteruhoster.audiosUseIdAsPackagename", "Use audio-Owner-ID as packagename ('audiosXXXX' or 'audios-XXXX')?")).setDefaultValue(default_VKAUDIO_USEIDASPACKAGENAME));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Advanced settings:\r\n<html><p style=\"color:#F62817\">WARNING: Only change these settings if you really know what you're doing!</p></html>"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKPHOTO_CORRECT_FINAL_LINKS, JDL.L("plugins.hoster.vkontakteruhoster.correctFinallinks", "For 'vk.com/photo' links: Change final downloadlinks from 'https?://csXXX.vk.me/vXXX/...' to 'https://pp.vk.me/cXXX/vXXX/...' (forces HTTPS)?")).setDefaultValue(default_VKPHOTO_CORRECT_FINAL_LINKS));
