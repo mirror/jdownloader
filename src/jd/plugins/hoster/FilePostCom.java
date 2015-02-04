@@ -73,6 +73,8 @@ public class FilePostCom extends PluginForHost {
         super(wrapper);
         this.enablePremium("http://filepost.com/premium/");
         setConfigElements();
+        /* Prevent premium --> Free mode if user uses too many connections - also try not to overload their servers. */
+        this.setStartIntervall(8 * 1000l);
     }
 
     private void setConfigElements() {
@@ -269,7 +271,7 @@ public class FilePostCom extends PluginForHost {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMMM dd, yyyy", Locale.ENGLISH) + 24 * 60 * 60 * 1000l);
             account.setValid(true);
         }
-        ai.setStatus("Premium User");
+        ai.setStatus("Premium account");
         return ai;
     }
 
