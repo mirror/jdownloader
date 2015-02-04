@@ -44,7 +44,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.context.RenameAction;
 import org.jdownloader.gui.views.downloads.action.MenuManagerAction;
-import org.jdownloader.gui.views.downloads.bottombar.HorizontalBoxItem;
 import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
 
 public class MenuManagerMainmenu extends ContextMenuManager<FilePackage, DownloadLink> {
@@ -112,10 +111,10 @@ public class MenuManagerMainmenu extends ContextMenuManager<FilePackage, Downloa
         ocr.add(CaptchaToogleJACAction.class);
         ocr.add(CaptchaToogleMyJDAutoAction.class);
         ocr.add(CaptchaToogleMyJDRemoteAction.class);
-        HorizontalBoxItem h = new HorizontalBoxItem();
-        h.setVisible(true);
-        mr.add(h);
-        mr.add(DonateAction.class);
+        // HorizontalBoxItem h = new HorizontalBoxItem();
+        // h.setVisible(true);
+        // mr.add(h);
+
         return mr;
     }
 
@@ -127,6 +126,7 @@ public class MenuManagerMainmenu extends ContextMenuManager<FilePackage, Downloa
         ret.add(new SeparatorData());
         ret.add(CheckForUpdatesAction.class);
         ret.add(AboutAction.class);
+        ret.add(DonateAction.class);
         return ret;
     }
 

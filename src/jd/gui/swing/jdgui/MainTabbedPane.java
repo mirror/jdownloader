@@ -42,7 +42,6 @@ import jd.gui.swing.jdgui.maintab.CustomTabHeader;
 import jd.gui.swing.jdgui.maintab.TabHeader;
 import jd.gui.swing.jdgui.views.ClosableView;
 
-import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.event.GUIEvent;
 import org.jdownloader.gui.event.GUIEventSender;
@@ -174,7 +173,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
         addMouseMotionListener(this);
         addMouseListener(this);
         // specialDealColor = dummyLbl.getForeground();
-        if (CrossSystem.isMac() && CFG_GUI.CFG.isMacDonateTabVisible()) {
+        if (CFG_GUI.CFG.isMacDonateTabVisible()) {
             donatePanel = new View() {
 
                 @Override
