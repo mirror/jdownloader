@@ -97,7 +97,7 @@ public class MyJDownloaderAction extends AbstractToolBarAction {
                                     }
                                     break;
                                 case CONNECTED:
-                                    setIcon(new NoAPIIconWarnIcon(new AbstractIcon(getIconKey(), 22), new AbstractIcon(IconKey.ICON_TRUE, 22), 0, 0).crop(24, 24));
+                                    setIcon(new NoAPIIconWarnIcon(new AbstractIcon(getIconKey(), 22), new AbstractIcon(IconKey.ICON_TRUE, 24), 6, 6).crop(24, 24));
                                     break;
                                 case UNCONNECTED:
                                     setIcon(new AbstractIcon(getIconKey(), 22));
