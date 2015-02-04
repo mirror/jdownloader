@@ -1,16 +1,9 @@
 package jd.gui.swing.jdgui.components.toolbar.actions;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.Transparency;
 import java.awt.event.ActionEvent;
-import java.awt.geom.RoundRectangle2D;
-import java.awt.image.BufferedImage;
 
 import javax.swing.AbstractButton;
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
@@ -87,7 +80,6 @@ public class MyJDownloaderAction extends AbstractToolBarAction {
                         @Override
                         protected void runInEDT() {
                             final MyJDownloaderConnectionStatus connectionStatus = MyJDownloaderController.getInstance().getConnectionStatus();
-                            final int connections = MyJDownloaderController.getInstance().getEstablishedConnections();
                             final boolean connected = connectionStatus != MyJDownloaderConnectionStatus.UNCONNECTED;
                             if (connected) {
                                 switch (connectionStatus) {
@@ -152,24 +144,6 @@ public class MyJDownloaderAction extends AbstractToolBarAction {
             }
             return _GUI._.MyJDownloaderSettingsPanel_runInEDT_disconnected_();
 
-        }
-
-        private Icon createNumberColorIcon(int connections, Color backgroundColor) {
-            final int w = 14;
-            final int h = 14;
-            final Color foregroundColor = Color.BLACK;
-
-            final BufferedImage image = new BufferedImage(w, h, Transparency.TRANSLUCENT);
-            final Graphics2D g = image.createGraphics();
-            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            final RoundRectangle2D roundedRectangle = new RoundRectangle2D.Float(0, 0, w - 1, h - 1, 5, 5);
-            g.setColor(backgroundColor);
-            g.fill(roundedRectangle);
-            g.setColor(backgroundColor.darker());
-            g.draw(roundedRectangle);
-            g.setColor(foregroundColor);
-            g.dispose();
-            return new ImageIcon(image);
         }
 
         @Override
