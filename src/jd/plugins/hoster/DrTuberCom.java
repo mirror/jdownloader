@@ -188,7 +188,7 @@ public class DrTuberCom extends PluginForHost {
                     if (new_handling) {
                         /*
                          * Very very very very bad js workaround
-                         * 
+                         *
                          * IMPORTANT: If we find no other way to fix this in the future, switch to /embed/ links, old handling still works
                          * fine for them
                          */
@@ -309,7 +309,6 @@ public class DrTuberCom extends PluginForHost {
         final String ftitle_saved = downloadLink.getStringProperty("ftitle", null);
         final String fext_saved = downloadLink.getStringProperty("fext", null);
         downloadLink.setFinalFileName(ftitle_saved + fext_saved);
-
         dl.startDownload();
     }
 
