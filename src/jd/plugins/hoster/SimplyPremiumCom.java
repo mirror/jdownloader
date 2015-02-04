@@ -290,6 +290,7 @@ public class SimplyPremiumCom extends PluginForHost {
             }
         }
         final String trafficleft = getXML("remain_traffic");
+        ai.setTrafficLeft(trafficleft);
         String accdesc = null;
         if ("1".equals(acctype)) {
             String expire = getXML("timeend");
@@ -300,11 +301,11 @@ public class SimplyPremiumCom extends PluginForHost {
             }
             final Long expirelng = Long.parseLong(expire);
             ai.setValidUntil(expirelng * 1000);
+            ai.setTrafficMax(Long.parseLong(getXML("max_traffic")));
             accdesc = getPhrase("ACCOUNT_TYPE_TIME");
         } else {
             accdesc = getPhrase("ACCOUNT_TYPE_VOLUME");
         }
-        ai.setTrafficLeft(trafficleft);
 
         int maxSimultanDls = Integer.parseInt(getXML("max_downloads"));
         if (maxSimultanDls < 1) {

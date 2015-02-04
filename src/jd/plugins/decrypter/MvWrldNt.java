@@ -50,7 +50,7 @@ public class MvWrldNt extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.toString().toLowerCase();
         if (parameter.matches(UNSUPPORTEDLINKS) || parameter.matches(SPECIALUNSUPPORTEDLINKS) || parameter.matches(SPECIALUNSUPPORTEDLINKS2)) {
             logger.info("Invalid link: " + parameter);
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
@@ -103,11 +103,11 @@ public class MvWrldNt extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        if (parameter.matches(XXX4FREESTREAMLINK)) {
+        if (parameter.contains("/streams/")) {
             String externID = br.getRegex("name=\"FlashVars\" value=\"options=(http://(www\\.)?pornhub\\.com/embed_player(_v\\d+)?\\.php\\?id=\\d+)\"").getMatch(0);
             if (externID != null) {
                 br.getPage(externID);
-                if (br.containsHTML("<link_url>N/A</link_url>") || br.containsHTML("No htmlCode read") || br.containsHTML(">404 Not Found<")) {
+                if (br.containsHTML("<link_url>N/A</link_url>") || br.containsHTML("No htmlCode read") || br.containsHTML(">404 Not Found<") || br.getHttpConnection().getResponseCode() == 404) {
                     final DownloadLink offline = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=7684385859" + new Random().nextInt(10000000));
                     offline.setName(externID);
                     offline.setAvailable(false);
@@ -174,6 +174,10 @@ public class MvWrldNt extends PluginForDecrypt {
         if (links == null || links.length == 0) {
             logger.warning("mov-world.net: The content of this link is completly offline");
             logger.warning("mov-world.net: Please confirm via browser, and report any bugs to developement team. :" + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         boolean toManyLinks = false;

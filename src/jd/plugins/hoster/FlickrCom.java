@@ -19,8 +19,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -449,14 +451,32 @@ public class FlickrCom extends PluginForHost {
         return a;
     }
 
-    private String getFinalLink() throws IOException {
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private String getFinalLink() throws Exception {
         String finallink = null;
         final String[] sizes = { "o", "k", "h", "l", "c", "z", "m", "n", "s", "t", "q", "sq" };
         String picSource;
-        boolean json_active = true;
-        picSource = br.getRegex("(\"id\":\"" + id + "\".*?\"safetyLevel\")").getMatch(0);
-        if (picSource == null) {
-            json_active = false;
+        picSource = br.getRegex("modelExport: (\\{\"photo\\-models\".*?),[\t\n\r ]+auth: auth,").getMatch(0);
+        if (picSource != null) {
+            /* json handling */
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(picSource);
+            final ArrayList<Object> photo_models = (ArrayList) entries.get("photo-models");
+            final LinkedHashMap<String, Object> photo_data = (LinkedHashMap<String, Object>) photo_models.get(0);
+            final LinkedHashMap<String, Object> photo_sizes = (LinkedHashMap<String, Object>) photo_data.get("sizes");
+            for (final String size : sizes) {
+                final LinkedHashMap<String, Object> single_size_map = (LinkedHashMap<String, Object>) photo_sizes.get(size);
+                if (single_size_map != null) {
+                    finallink = (String) single_size_map.get("url");
+                    if (finallink != null) {
+                        if (!finallink.startsWith("http")) {
+                            finallink = "https:" + finallink;
+                        }
+                        break;
+                    }
+                }
+            }
+        } else {
+            /* Site handling */
             br.getPage("https://www.flickr.com/photos/" + user + "/" + id + "/sizes/o");
             picSource = br.getRegex("<ol class=\"sizes\\-list\">(.*?)<div id=\"allsizes\\-photo\">").getMatch(0);
             /*
@@ -467,34 +487,19 @@ public class FlickrCom extends PluginForHost {
             if (maxQuality != null) {
                 finallink = br.getRegex("<div id=\"allsizes\\-photo\">[\t\n\r ]+<div class=\"spaceball\" style=\"height:\\d+px; width: \\d+px;\"></div>[\t\n\r ]+<img src=\"(http[^<>\"]*?)\">").getMatch(0);
             }
-        }
-
-        if (finallink == null) {
-            // Make sure we get the correct downloadlinks
-            if (picSource == null) {
-                return null;
-            }
-            for (final String size : sizes) {
-                if (json_active) {
-                    finallink = new Regex(picSource, "\"" + size + "\":\\{\"displayUrl\":\"([^<>\"]+)\",\"width\":\\d+,\"height\":\\d+,\"url\":\"([^<>\"]*?)\"").getMatch(0);
-                } else {
+            if (finallink == null) {
+                for (final String size : sizes) {
                     finallink = new Regex(picSource, "\"(/photos/[A-Za-z0-9\\-_]+/\\d+/sizes/" + size + "/)\"").getMatch(0);
                     if (finallink != null) {
                         br.getPage("https://www.flickr.com" + finallink);
                         finallink = br.getRegex("id=\"allsizes\\-photo\">[\t\n\r ]+<img src=\"(http[^<>\"]*?)\"").getMatch(0);
                     }
-                }
-                if (finallink != null) {
-                    break;
+                    if (finallink != null) {
+                        break;
+                    }
                 }
             }
-        }
 
-        if (finallink != null) {
-            finallink = finallink.replace("\\", "");
-            if (!finallink.startsWith("http")) {
-                finallink = "https:" + finallink;
-            }
         }
         return finallink;
     }

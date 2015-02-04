@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -279,6 +281,10 @@ public class FernsehkritikTv extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+        } catch (UnknownHostException e) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } catch (final SocketTimeoutException ex) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } finally {
             try {
                 con.disconnect();

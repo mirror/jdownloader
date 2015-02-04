@@ -325,6 +325,9 @@ public class TusFilesNet extends PluginForHost {
                 }
             }
         }
+        if (inValidate(fileInfo[0])) {
+            fileInfo[0] = cbr.getRegex("COLOR=\"#ffffff\">([^<>\"]*?)</FONT>").getMatch(0);
+        }
         /* For password protected links */
         if (inValidate(fileInfo[1])) {
             fileInfo[1] = cbr.getRegex("<textarea[^\r\n]+><[^>]+" + fuid + "\">(?:.*?) - ([\\d\\.]+ (B|KB|MB|GB))</").getMatch(0);
