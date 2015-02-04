@@ -52,7 +52,7 @@ public class TabHeader extends JPanel implements CustomTabHeader {
     }
 
     public TabHeader(final View view) {
-        setLayout(new MigLayout("ins 0 0 0 0", "[][grow]", "0[22!]0"));
+        setLayout(new MigLayout("ins 0 0 0 0", "[][grow]", "0[16!]0"));
         setOpaque(false);
         setToolTipText(view.getTooltip());
         initMouseForwarder();
