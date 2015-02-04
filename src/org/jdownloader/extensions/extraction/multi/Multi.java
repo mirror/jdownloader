@@ -71,9 +71,9 @@ import org.jdownloader.settings.IfFileExistsAction;
 
 /**
  * Extracts rar, zip, 7z. tar.gz, tar.bz2.
- * 
+ *
  * @author botzi
- * 
+ *
  */
 public class Multi extends IExtraction {
 
@@ -85,9 +85,9 @@ public class Multi extends IExtraction {
 
     /**
      * Helper for the passwordfinding method.
-     * 
+     *
      * @author botzi
-     * 
+     *
      */
 
     private static final String      _7Z_D                                                       = "(\\.7z)?\\.\\D?(\\d{1,4})$";
@@ -116,7 +116,7 @@ public class Multi extends IExtraction {
 
     private static final String      TAR_GZ$                                                     = "(\\.tar\\.gz|\\.tgz)$";
 
-                                                                                                                                          ;
+    ;
     private static final String      TAR$                                                        = "\\.tar$";
 
     private static final String      REGEX_ZIP$                                                  = "(?i).*\\.zip$";
@@ -362,45 +362,48 @@ public class Multi extends IExtraction {
     @Override
     public boolean checkCommand() {
         File tmp = null;
-        String libID = null;
+        String libID = System.getProperty("sevenzipLibID");
         try {
-            switch (CrossSystem.OS.getFamily()) {
-            case LINUX:
-                switch (CrossSystem.getARCHFamily()) {
-                case ARM:
-                    if (CrossSystem.isRaspberryPi()) {
-                        libID = "Linux-armpi";
-                    } else {
-                        libID = "Linux-arm";
+            if (StringUtils.isEmpty(libID)) {
+                libID = null;
+                switch (CrossSystem.OS.getFamily()) {
+                case LINUX:
+                    switch (CrossSystem.getARCHFamily()) {
+                    case ARM:
+                        if (CrossSystem.isRaspberryPi()) {
+                            libID = "Linux-armpi";
+                        } else {
+                            libID = "Linux-arm";
+                        }
+                        break;
+                    case X86:
+                        if (CrossSystem.is64BitOperatingSystem()) {
+                            libID = "Linux-amd64";
+                        } else {
+                            libID = "Linux-i386";
+                        }
+                        break;
+                    default:
+                        return false;
                     }
                     break;
-                case X86:
+                case MAC:
                     if (CrossSystem.is64BitOperatingSystem()) {
-                        libID = "Linux-amd64";
+                        libID = "Mac-x86_64";
                     } else {
-                        libID = "Linux-i386";
+                        libID = "Mac-i386";
+                    }
+                    break;
+                case WINDOWS:
+                    if (CrossSystem.is64BitOperatingSystem()) {
+                        libID = "Windows-amd64";
+                    } else {
+                        libID = "Windows-x86";
                     }
                     break;
                 default:
                     return false;
                 }
-                break;
-            case MAC:
-                if (CrossSystem.is64BitOperatingSystem()) {
-                    libID = "Mac-x86_64";
-                } else {
-                    libID = "Mac-i386";
-                }
-                break;
-            case WINDOWS:
-                if (CrossSystem.is64BitOperatingSystem()) {
-                    libID = "Windows-amd64";
-                } else {
-                    libID = "Windows-x86";
-                }
-                break;
-            default:
-                return false;
             }
             logger.finer("Lib ID: " + libID);
             tmp = Application.getTempResource("7zip");
@@ -885,7 +888,7 @@ public class Multi extends IExtraction {
 
     /**
      * Checks if the file should be upacked.
-     * 
+     *
      * @param file
      * @return
      */
@@ -905,10 +908,10 @@ public class Multi extends IExtraction {
 
     /**
      * Builds an DummyArchiveFile from an file.
-     * 
+     *
      * @param file
      *            The file from the harddisk.
-     * 
+     *
      * @return The ArchiveFile.
      */
     // private ArchiveFile buildArchiveFileFromFile(String file) {
