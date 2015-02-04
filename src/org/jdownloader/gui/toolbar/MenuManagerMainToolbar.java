@@ -7,6 +7,7 @@ import jd.gui.swing.jdgui.components.toolbar.actions.AutoReconnectToggleAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.ClipBoardToggleAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.ExitToolbarAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.GlobalPremiumSwitchToggleAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.MyJDownloaderAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.OpenDefaultDownloadFolderAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.PauseDownloadsAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.ReconnectAction;
@@ -69,7 +70,7 @@ public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, Down
 
     /**
      * get the only existing instance of DownloadListContextMenuManager. This is a singleton
-     * 
+     *
      * @return
      */
     public static MenuManagerMainToolbar getInstance() {
@@ -136,6 +137,7 @@ public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, Down
 
         mr.add(ReconnectAction.class);
         mr.add(UpdateAction.class);
+        mr.add(MyJDownloaderAction.class);
         // if (!Application.isJared(MainToolbarManager.class)) {
         // MenuContainer opt;
         // mr.add(opt = new MenuContainer("Dialog Debug", "menu"));
