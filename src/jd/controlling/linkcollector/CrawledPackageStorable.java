@@ -255,7 +255,9 @@ public class CrawledPackageStorable implements Storable {
 
     public void setPriority(String priority) {
         try {
-            pkg.setPriorityEnum(Priority.valueOf(priority));
+            if (priority != null) {
+                pkg.setPriorityEnum(Priority.valueOf(priority));
+            }
         } catch (final Throwable e) {
         }
     }

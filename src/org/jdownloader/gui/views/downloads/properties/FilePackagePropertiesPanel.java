@@ -42,14 +42,8 @@ public class FilePackagePropertiesPanel extends DownloadLinkPropertiesPanel {
 
     @Override
     protected void savePriority(Priority priop) {
-        if (priop == null) return;
-        boolean readL = currentPackage.getModifyLock().readLock();
-        try {
-            for (DownloadLink dl : currentPackage.getChildren()) {
-                dl.setPriorityEnum(priop);
-            }
-        } finally {
-            currentPackage.getModifyLock().readUnlock(readL);
+        if (priop != null) {
+            currentPackage.setPriorityEnum(priop);
         }
     }
 

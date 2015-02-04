@@ -4,7 +4,6 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.List;
 
-import javax.swing.Icon;
 import javax.swing.JPopupMenu;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
@@ -73,11 +72,6 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
         pu.add(new CheckboxMenuItem(_GUI._.LinkgrabberPropertiesHeader_checksum(), CFG_GUI.LINK_PROPERTIES_PANEL_CHECKSUM_VISIBLE));
         pu.add(new CheckboxMenuItem(_GUI._.LinkgrabberPropertiesHeader_comment_and_priority(), CFG_GUI.LINK_PROPERTIES_PANEL_COMMENT_VISIBLE));
         pu.add(new CheckboxMenuItem(_GUI._.LinkgrabberPropertiesHeader_archiveline(), CFG_GUI.LINK_PROPERTIES_PANEL_ARCHIVEPASSWORD_VISIBLE));
-    }
-
-    @Override
-    protected Icon getHighestPackagePriorityIcon() {
-        return org.jdownloader.images.NewTheme.I().getDisabledIcon(currentPackage.getView().getHighestPriority().loadIcon(18));
     }
 
     @Override
