@@ -197,7 +197,9 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
             }
         });
         this.addColumn(new ExtTextColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_hoster()) {
-
+            {
+                replaceSorter(this);
+            }
             private static final long serialVersionUID = -3693931358975303164L;
 
             @Override
@@ -261,26 +263,7 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
             private static final long serialVersionUID = -3693931358975303164L;
 
             {
-                final ExtDefaultRowSorter<AccountEntry> oldSorter = getRowSorter();
-                setRowSorter(new ExtDefaultRowSorter<AccountEntry>() {
-
-                    public int compare(boolean x, boolean y) {
-                        return (x == y) ? 0 : (x ? 1 : -1);
-                    }
-
-                    @Override
-                    public int compare(final AccountEntry o1, final AccountEntry o2) {
-                        int ret = compare(o1.getAccount().isEnabled(), o2.getAccount().isEnabled());
-                        if (ret == 0) {
-                            return oldSorter.compare(o1, o2);
-                        } else if (getSortOrderIdentifier() != ExtColumn.SORT_ASC) {
-                            return -ret;
-                        } else {
-                            return ret;
-                        }
-                    }
-
-                });
+                replaceSorter(this);
             }
 
             @Override
@@ -384,7 +367,9 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
         });
         this.addColumn(new ExtTextColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_user()) {
-
+            {
+                replaceSorter(this);
+            }
             private static final long serialVersionUID = -8070328156326837828L;
 
             @Override
@@ -459,29 +444,7 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
             private static final long serialVersionUID = 5067606909520874358L;
 
             {
-
-                final ExtDefaultRowSorter<AccountEntry> oldSorter = getRowSorter();
-                setRowSorter(new ExtDefaultRowSorter<AccountEntry>() {
-
-                    public int compare(boolean x, boolean y) {
-                        return (x == y) ? 0 : (x ? -1 : 1);
-                    }
-
-                    @Override
-                    public int compare(final AccountEntry o1, final AccountEntry o2) {
-                        final boolean b1 = o1.getAccount().isEnabled();
-                        final boolean b2 = o2.getAccount().isEnabled();
-                        if (b1 == b2) {
-                            if (getSortOrderIdentifier() != ExtColumn.SORT_ASC) {
-                                return oldSorter.compare(o1, o2);
-                            } else {
-                                return -oldSorter.compare(o1, o2);
-                            }
-                        }
-                        return compare(b1, b2);
-                    }
-
-                });
+                replaceSorter(this);
             }
 
             @Override
@@ -530,34 +493,7 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
         this.addColumn(new ExtProgressColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_trafficleft()) {
             private static final long serialVersionUID = -8376056840172682617L;
             {
-                setRowSorter(new ExtDefaultRowSorter<AccountEntry>() {
-
-                    public int compare(boolean x, boolean y) {
-                        return (x == y) ? 0 : (x ? 1 : -1);
-                    }
-
-                    @Override
-                    public int compare(final AccountEntry o1, final AccountEntry o2) {
-                        int ret = compare(o1.getAccount().isEnabled(), o2.getAccount().isEnabled());
-                        if (ret == 0) {
-                            final long v1 = getValue(o1);
-                            final long v2 = getValue(o2);
-                            if (v1 == v2) {
-                                return 0;
-                            }
-                            if (getSortOrderIdentifier() != ExtColumn.SORT_ASC) {
-                                return v1 > v2 ? -1 : 1;
-                            } else {
-                                return v2 > v1 ? -1 : 1;
-                            }
-                        } else if (getSortOrderIdentifier() != ExtColumn.SORT_ASC) {
-                            return -ret;
-                        } else {
-                            return ret;
-                        }
-                    }
-
-                });
+                replaceSorter(this);
             }
 
             @Override
@@ -733,6 +669,33 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
         });
 
+    }
+
+    private void replaceSorter(ExtColumn<AccountEntry> column) {
+        if (column != null) {
+            final ExtDefaultRowSorter<AccountEntry> oldSorter = column.getRowSorter();
+            column.setRowSorter(new ExtDefaultRowSorter<AccountEntry>() {
+
+                public int compare(boolean x, boolean y) {
+                    return (x == y) ? 0 : (x ? -1 : 1);
+                }
+
+                @Override
+                public int compare(final AccountEntry o1, final AccountEntry o2) {
+                    final boolean b1 = o1.getAccount().isEnabled();
+                    final boolean b2 = o2.getAccount().isEnabled();
+                    if (b1 == b2) {
+                        if (getSortOrderIdentifier() != ExtColumn.SORT_ASC) {
+                            return oldSorter.compare(o1, o2);
+                        } else {
+                            return -oldSorter.compare(o1, o2);
+                        }
+                    }
+                    return compare(b1, b2);
+                }
+
+            });
+        }
     }
 
     public void onCheckStarted() {

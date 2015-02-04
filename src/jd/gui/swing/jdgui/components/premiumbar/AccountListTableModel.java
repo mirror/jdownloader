@@ -183,26 +183,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             private static final long serialVersionUID = -3693931358975303164L;
 
             {
-                final ExtDefaultRowSorter<AccountEntry> oldSorter = getRowSorter();
-                setRowSorter(new ExtDefaultRowSorter<AccountEntry>() {
-
-                    public int compare(boolean x, boolean y) {
-                        return (x == y) ? 0 : (x ? 1 : -1);
-                    }
-
-                    @Override
-                    public int compare(final AccountEntry o1, final AccountEntry o2) {
-                        int ret = compare(o1.getAccount().isEnabled(), o2.getAccount().isEnabled());
-                        if (ret == 0) {
-                            return oldSorter.compare(o1, o2);
-                        } else if (getSortOrderIdentifier() != ExtColumn.SORT_ASC) {
-                            return -ret;
-                        } else {
-                            return ret;
-                        }
-                    }
-
-                });
+                replaceSorter(this);
             }
 
             @Override
@@ -272,26 +253,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
 
             private static final long serialVersionUID = -3693931358975303164L;
             {
-                final ExtDefaultRowSorter<AccountEntry> oldSorter = getRowSorter();
-                setRowSorter(new ExtDefaultRowSorter<AccountEntry>() {
-
-                    public int compare(boolean x, boolean y) {
-                        return (x == y) ? 0 : (x ? 1 : -1);
-                    }
-
-                    @Override
-                    public int compare(final AccountEntry o1, final AccountEntry o2) {
-                        int ret = compare(o1.getAccount().isEnabled(), o2.getAccount().isEnabled());
-                        if (ret == 0) {
-                            return oldSorter.compare(o1, o2);
-                        } else if (getSortOrderIdentifier() != ExtColumn.SORT_ASC) {
-                            return -ret;
-                        } else {
-                            return ret;
-                        }
-                    }
-
-                });
+                replaceSorter(this);
             }
 
             @Override
@@ -386,6 +348,9 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
         this.addColumn(new ExtTextColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_user()) {
 
             private static final long serialVersionUID = -8070328156326837828L;
+            {
+                replaceSorter(this);
+            }
 
             @Override
             public boolean isHidable() {
@@ -432,29 +397,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             private static final long serialVersionUID = 5067606909520874358L;
 
             {
-
-                final ExtDefaultRowSorter<AccountEntry> oldSorter = getRowSorter();
-                setRowSorter(new ExtDefaultRowSorter<AccountEntry>() {
-
-                    public int compare(boolean x, boolean y) {
-                        return (x == y) ? 0 : (x ? 1 : -1);
-                    }
-
-                    @Override
-                    public int compare(final AccountEntry o1, final AccountEntry o2) {
-                        final boolean b1 = o1.getAccount().isEnabled();
-                        final boolean b2 = o2.getAccount().isEnabled();
-                        if (b1 == b2) {
-                            if (getSortOrderIdentifier() != ExtColumn.SORT_ASC) {
-                                return oldSorter.compare(o1, o2);
-                            } else {
-                                return -oldSorter.compare(o1, o2);
-                            }
-                        }
-                        return compare(b1, b2);
-                    }
-
-                });
+                replaceSorter(this);
             }
 
             @Override
@@ -516,26 +459,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             private static final long serialVersionUID = -8376056840172682617L;
 
             {
-                final ExtDefaultRowSorter<AccountEntry> oldSorter = getRowSorter();
-                setRowSorter(new ExtDefaultRowSorter<AccountEntry>() {
-
-                    public int compare(boolean x, boolean y) {
-                        return (x == y) ? 0 : (x ? 1 : -1);
-                    }
-
-                    @Override
-                    public int compare(final AccountEntry o1, final AccountEntry o2) {
-                        int ret = compare(o1.getAccount().isEnabled(), o2.getAccount().isEnabled());
-                        if (ret == 0) {
-                            return oldSorter.compare(o1, o2);
-                        } else if (getSortOrderIdentifier() != ExtColumn.SORT_ASC) {
-                            return -ret;
-                        } else {
-                            return ret;
-                        }
-                    }
-
-                });
+                replaceSorter(this);
             }
 
             @Override
@@ -712,6 +636,33 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                 public void resetRenderer() {
                     panel.setBackground(null);
                     panel.setOpaque(false);
+                }
+
+            });
+        }
+    }
+
+    private void replaceSorter(ExtColumn<AccountEntry> column) {
+        if (column != null) {
+            final ExtDefaultRowSorter<AccountEntry> oldSorter = column.getRowSorter();
+            column.setRowSorter(new ExtDefaultRowSorter<AccountEntry>() {
+
+                public int compare(boolean x, boolean y) {
+                    return (x == y) ? 0 : (x ? -1 : 1);
+                }
+
+                @Override
+                public int compare(final AccountEntry o1, final AccountEntry o2) {
+                    final boolean b1 = o1.getAccount().isEnabled();
+                    final boolean b2 = o2.getAccount().isEnabled();
+                    if (b1 == b2) {
+                        if (getSortOrderIdentifier() != ExtColumn.SORT_ASC) {
+                            return oldSorter.compare(o1, o2);
+                        } else {
+                            return -oldSorter.compare(o1, o2);
+                        }
+                    }
+                    return compare(b1, b2);
                 }
 
             });
