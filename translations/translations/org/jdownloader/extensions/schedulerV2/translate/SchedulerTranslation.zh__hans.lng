@@ -1,8 +1,11 @@
 action_captcha_none=无
 action_captcha_service=服务
+action_disableAccount=禁用账户
+action_disableSpeedLimit=禁用速度限制
 action_setCaptchaService=设置激活验证码服务
 addScheduleEntryDialog_account=账户
 addScheduleEntryDialog_actionParameters=动作 & 参数
+addScheduleEntryDialog_downloads=下载
 addScheduleEntryDialog_repeat=重复
 scheduleTable_column_action=动作
 scheduleTable_column_repeats=重复
