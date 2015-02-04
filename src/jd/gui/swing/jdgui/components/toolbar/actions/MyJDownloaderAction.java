@@ -1,12 +1,10 @@
 package jd.gui.swing.jdgui.components.toolbar.actions;
 
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.Transparency;
 import java.awt.event.ActionEvent;
-import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 
@@ -26,10 +24,11 @@ import org.jdownloader.api.myjdownloader.MyJDownloaderConnectionStatus;
 import org.jdownloader.api.myjdownloader.MyJDownloaderController;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings.MyJDownloaderError;
 import org.jdownloader.api.myjdownloader.event.MyJDownloaderListener;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.BadgeIcon;
-import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
 
@@ -56,19 +55,28 @@ public class MyJDownloaderAction extends AbstractToolBarAction {
         return _GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_title_();
     }
 
+    public static final class NoAPIIconWarnIcon extends BadgeIcon {
+        public NoAPIIconWarnIcon(Icon main, Icon badgeIcon, int xOffset, int yOffset) {
+            super(main, badgeIcon, xOffset, yOffset);
+        }
+
+        protected void idIconCheck(final Entry entry) {
+
+        }
+    }
+
     public class Button extends ExtButton implements MyJDownloaderListener {
+
         /**
          *
          */
-        private static final long     serialVersionUID  = 1L;
-        private final Icon            myJDownloaderIcon = NewTheme.I().getIcon(getIconKey(), 24);
-        private final Font            numberFont        = new Font("Arial", 0, 6);
-        private final Color           darkerGREEN       = Color.GREEN.darker();
+        private static final long     serialVersionUID = 1L;
+
         private final DelayedRunnable iconDelayer;
 
         public Button() {
             super(MyJDownloaderAction.this);
-            setIcon(myJDownloaderIcon);
+            setIcon(new AbstractIcon(getIconKey(), 22));
             setHideActionText(true);
             iconDelayer = new DelayedRunnable(500, 2000) {
 
@@ -89,22 +97,22 @@ public class MyJDownloaderAction extends AbstractToolBarAction {
                                     case IO:
                                     case SERVER_DOWN:
                                     case NO_INTERNET_CONNECTION:
-                                        setIcon(new BadgeIcon(myJDownloaderIcon, createNumberColorIcon(connections, Color.YELLOW), 4, 2));
+                                        setIcon(new NoAPIIconWarnIcon(new AbstractIcon(getIconKey(), 22), new AbstractIcon(IconKey.ICON_WARNING_RED, 16), 2, 2).crop(24, 24));
                                         break;
                                     default:
-                                        setIcon(new BadgeIcon(myJDownloaderIcon, createNumberColorIcon(connections, darkerGREEN), 4, 2));
+                                        setIcon(new NoAPIIconWarnIcon(new AbstractIcon(getIconKey(), 22), new AbstractIcon(IconKey.ICON_WARNING_BLUE, 16), 2, 2).crop(24, 24));
                                         break;
                                     }
                                     break;
                                 case CONNECTED:
-                                    setIcon(new BadgeIcon(myJDownloaderIcon, createNumberColorIcon(connections, Color.GREEN), 4, 2));
+                                    setIcon(new NoAPIIconWarnIcon(new AbstractIcon(getIconKey(), 22), new AbstractIcon(IconKey.ICON_TRUE, 22), 0, 0).crop(24, 24));
                                     break;
                                 case UNCONNECTED:
-                                    setIcon(myJDownloaderIcon);
+                                    setIcon(new AbstractIcon(getIconKey(), 22));
                                     break;
                                 }
                             } else {
-                                setIcon(myJDownloaderIcon);
+                                setIcon(new AbstractIcon(getIconKey(), 22));
                             }
                         }
                     };
@@ -147,10 +155,10 @@ public class MyJDownloaderAction extends AbstractToolBarAction {
         }
 
         private Icon createNumberColorIcon(int connections, Color backgroundColor) {
-            final int w = 16;
-            final int h = 8;
+            final int w = 14;
+            final int h = 14;
             final Color foregroundColor = Color.BLACK;
-            final String string = Integer.toString(connections);
+
             final BufferedImage image = new BufferedImage(w, h, Transparency.TRANSLUCENT);
             final Graphics2D g = image.createGraphics();
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -160,9 +168,6 @@ public class MyJDownloaderAction extends AbstractToolBarAction {
             g.setColor(backgroundColor.darker());
             g.draw(roundedRectangle);
             g.setColor(foregroundColor);
-            final Rectangle2D bounds = g.getFontMetrics().getStringBounds(string, g);
-            g.setFont(numberFont);
-            g.drawString(string, (int) (w - bounds.getWidth()) - 2, (h) - 2);
             g.dispose();
             return new ImageIcon(image);
         }
