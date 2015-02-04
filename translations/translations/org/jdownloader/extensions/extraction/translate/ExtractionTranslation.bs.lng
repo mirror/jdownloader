@@ -10,6 +10,7 @@ ValidateArchiveAction_ValidateArchiveAction_multi=Validiraj Arhive
 ValidateArchiveAction_ValidateArchiveAction_object_=Potvrdi Arhive
 ValidateArchiveAction_actionPerformed_=Arhiva ima %s1 dijelova i završena je
 ValidateArchiveAction_actionPerformed_bad=Arhiva ima %s1 dijelova i nije završena.
+ValidateArchiveAction_actionPerformed_information=Informacije o arhivi: %s1
 and=barem
 archive=Arhiva
 archive_file=Dokument:
