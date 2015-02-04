@@ -10,6 +10,7 @@ ValidateArchiveAction_ValidateArchiveAction_multi=Arhívum érvényesítése
 ValidateArchiveAction_ValidateArchiveAction_object_=Tömörített állomány (ok) érvényesítése
 ValidateArchiveAction_actionPerformed_=A kicsomagolásnak %s1 része kész
 ValidateArchiveAction_actionPerformed_bad=A kicsomagolásnak %s1 része nincs kész.
+ValidateArchiveAction_actionPerformed_information=Archívum információ: %s1
 and=és legalább
 archive=Archívum:
 archive_file=Fájl:
