@@ -62,11 +62,7 @@ public class DonateAction extends CustomizableAppAction {
                     Browser br = new Browser();
                     String json = br.getPage(SERVER + "payment/getDonationScreenDetails?" + TranslationFactory.getDesiredLanguage() + "&button");
                     details = JSonStorage.restoreFromString(json, DonationDetails.TYPEREF);
-
                 } catch (Throwable e) {
-                    if (Thread.currentThread().isInterrupted()) {
-                        return;
-                    }
                     try {
                         //
                         if (e.getCause() != null) {
@@ -88,25 +84,12 @@ public class DonateAction extends CustomizableAppAction {
                                 sb.insert(0, URLEncode.encodeRFC2396(line.replaceAll("(at | |\\(|\\)|\\$|\\.|:)", "")));
                             }
                         }
-                        if (Thread.currentThread().isInterrupted()) {
-                            return;
-                        }
                         StatsManager.I().track("/donation/button/exception/" + sb.toString());
-                        if (Thread.currentThread().isInterrupted()) {
-                            return;
-                        }
                         StatsManager.I().track("/donation/button/exception/" + URLEncode.encodeRFC2396(e.getClass() + "/" + e.getMessage()));
                     } catch (Throwable e2) {
-                        if (Thread.currentThread().isInterrupted()) {
-                            return;
-                        }
                         StatsManager.I().track("/donation/button/exception/" + URLEncode.encodeRFC2396(e2.getClass() + "/" + e2.getMessage()));
                     }
                 } finally {
-                    System.out.println("Kill");
-                    if (Thread.currentThread().isInterrupted()) {
-                        return;
-                    }
                     StatsManager.I().track("/donation/button/details/" + (details != null && details.isEnabled()));
                 }
                 if (details == null || !details.isEnabled() || details.getCategories() == null) {
@@ -114,10 +97,11 @@ public class DonateAction extends CustomizableAppAction {
                         return;
                     }
                     Dialog.getInstance().showErrorDialog(_GUI._.DonationDialog_layoutDialogContent_donation_disabled());
-
                     return;
                 }
-
+                if (Thread.currentThread().isInterrupted()) {
+                    return;
+                }
                 DonationDialog d = new DonationDialog(details);
                 UIOManager.I().show(null, d);
 
