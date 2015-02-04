@@ -384,19 +384,11 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
 
             @Override
             protected Icon getIcon(Priority v, boolean closed) {
-                if (v == null) {
-                    return getHighestPackagePriorityIcon();
-
-                }
                 return v.loadIcon(18);
             }
 
             @Override
             protected String getLabel(Priority v, boolean closed) {
-                if (v == null) {
-
-                    return _GUI._.PackagePropertiesPanel_getLabel_mixed_priority();
-                }
                 return v._();
             }
 
@@ -624,8 +616,6 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
             saveDelayer.resetAndStart();
         }
     }
-
-    abstract protected Icon getHighestPackagePriorityIcon();
 
     abstract protected boolean isArchiveLineEnabled();
 

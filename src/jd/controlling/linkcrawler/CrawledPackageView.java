@@ -13,7 +13,6 @@ import jd.plugins.DownloadLink;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.DomainInfo;
-import org.jdownloader.controlling.Priority;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.columns.AvailabilityColumn;
 import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
@@ -28,8 +27,7 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     private volatile java.util.List<CrawledLink> items                    = new ArrayList<CrawledLink>();
     private final AtomicLong                     updatesRequired          = new AtomicLong(0);
     private volatile long                        updatesDone              = -1;
-    private volatile Priority                    lowestPriority;
-    private volatile Priority                    highestPriority;
+
     private volatile String                      commonSourceUrl;
     private volatile String                      availabilityColumnString = null;
     private volatile ChildrenAvailablility       availability             = ChildrenAvailablility.UNKNOWN;
@@ -57,14 +55,6 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         }
     }
 
-    public Priority getLowestPriority() {
-        return lowestPriority;
-    }
-
-    public Priority getHighestPriority() {
-        return highestPriority;
-    }
-
     private class Temp {
         final HashMap<String, Long> names             = new HashMap<String, Long>();
         final TreeSet<DomainInfo>   domains           = new TreeSet<DomainInfo>();
@@ -72,8 +62,6 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         long                        newFileSize       = 0;
         boolean                     newEnabled        = false;
         int                         newOffline        = 0;
-        Priority                    priorityLowset    = Priority.HIGHEST;
-        Priority                    priorityHighest   = Priority.LOWER;
 
         String                      sameSource        = null;
         boolean                     sameSourceFullUrl = true;
@@ -120,9 +108,6 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         offline = tmp.newOffline;
         online = tmp.newOnline;
 
-        this.lowestPriority = tmp.priorityLowset;
-        this.highestPriority = tmp.priorityHighest;
-
         updatesDone = tmp.lupdatesRequired;
 
     }
@@ -134,13 +119,6 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         if (sourceUrl != null) {
             tmp.sameSource = StringUtils.getCommonalities(tmp.sameSource, sourceUrl);
             tmp.sameSourceFullUrl = tmp.sameSourceFullUrl && tmp.sameSource.equals(sourceUrl);
-        }
-
-        if (link.getPriority().getId() < tmp.priorityLowset.getId()) {
-            tmp.priorityLowset = link.getPriority();
-        }
-        if (link.getPriority().getId() > tmp.priorityHighest.getId()) {
-            tmp.priorityHighest = link.getPriority();
         }
 
         // enabled

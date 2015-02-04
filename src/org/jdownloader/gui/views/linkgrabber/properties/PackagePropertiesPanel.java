@@ -47,12 +47,7 @@ public class PackagePropertiesPanel extends LinkPropertiesPanel {
 
     @Override
     protected Priority loadPriority() {
-        Priority p = currentPackage.getView().getHighestPriority();
-        if (p != currentPackage.getView().getLowestPriority()) {
-            return null;
-        } else {
-            return p;
-        }
+        return currentPackage.getPriorityEnum();
     }
 
     @Override
@@ -69,14 +64,7 @@ public class PackagePropertiesPanel extends LinkPropertiesPanel {
     @Override
     protected void savePriority(Priority priop) {
         if (priop != null) {
-            boolean readL = currentPackage.getModifyLock().readLock();
-            try {
-                for (CrawledLink dl : currentPackage.getChildren()) {
-                    dl.setPriority(priop);
-                }
-            } finally {
-                currentPackage.getModifyLock().readUnlock(readL);
-            }
+            currentPackage.setPriorityEnum(priop);
         }
     }
 
