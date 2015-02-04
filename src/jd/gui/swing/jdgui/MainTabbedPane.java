@@ -42,7 +42,11 @@ import jd.gui.swing.jdgui.maintab.CustomTabHeader;
 import jd.gui.swing.jdgui.maintab.TabHeader;
 import jd.gui.swing.jdgui.views.ClosableView;
 
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.donate.DonationManager;
 import org.jdownloader.gui.event.GUIEvent;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.translate._GUI;
@@ -130,7 +134,10 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
         if (view instanceof ClosableView) {
             addClosableTab((ClosableView) view);
         } else {
-            int index = donateHeader == null ? getTabCount() : getTabCount() - 1;
+            int index = getTabCount();
+            while (index > 0 && getTabComponentAt(index - 1) instanceof PromotionTabHeader) {
+                index--;
+            }
             super.insertTab(view.getTitle(), view.getIcon(), view, view.getTooltip(), index);
             this.setFocusable(false);
             TabHeader header;
@@ -147,7 +154,10 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
     private void addClosableTab(ClosableView view) {
 
         // super.addTab(view.getTitle(), view.getIcon(), view, view.getTooltip());
-        int index = donateHeader == null ? getTabCount() : getTabCount() - 1;
+        int index = getTabCount();
+        while (index > 0 && getTabComponentAt(index - 1) instanceof PromotionTabHeader) {
+            index--;
+        }
         super.insertTab(view.getTitle(), view.getIcon(), view, view.getTooltip(), index);
         ClosableTabHeader header;
         this.setTabComponentAt(index, header = new ClosableTabHeader(view));
@@ -157,23 +167,9 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
 
     }
 
-    private MainTabbedPane() {
-        this.setMinimumSize(new Dimension(300, 100));
-        this.setTabLayoutPolicy(JTabbedPane.WRAP_TAB_LAYOUT);
-        this.setOpaque(false);
+    private void updateDonateButton() {
 
-        JLabel dummyLbl = new JLabel();
-
-        // specialDealFont = dummyLbl.getFont();
-
-        // Map<TextAttribute, Integer> fontAttributes = new HashMap<TextAttribute, Integer>();
-        // fontAttributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-        // specialDealFont = (specialDealFont.deriveFont(specialDealFont.getStyle() ^
-        // Font.BOLD).deriveFont(fontAttributes)).deriveFont(16f);
-        addMouseMotionListener(this);
-        addMouseListener(this);
-        // specialDealColor = dummyLbl.getForeground();
-        if (CFG_GUI.CFG.isMacDonateTabVisible()) {
+        if (donatePanel == null && DonationManager.getInstance().isButtonVisible()) {
             donatePanel = new View() {
 
                 @Override
@@ -206,7 +202,51 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
             };
             super.addTab("DONATE", null, donatePanel, null);
             setTabComponentAt(this.getTabCount() - 1, donateHeader = new DonateTabHeader(donatePanel));
+        } else if (DonationManager.getInstance().isButtonVisible()) {
+            super.addTab("DONATE", null, donatePanel, null);
+            setTabComponentAt(this.getTabCount() - 1, donateHeader = new DonateTabHeader(donatePanel));
+        } else if (!DonationManager.getInstance().isButtonVisible()) {
+            remove(donatePanel);
         }
+    }
+
+    private MainTabbedPane() {
+        this.setMinimumSize(new Dimension(300, 100));
+        this.setTabLayoutPolicy(JTabbedPane.WRAP_TAB_LAYOUT);
+        this.setOpaque(false);
+
+        JLabel dummyLbl = new JLabel();
+
+        // specialDealFont = dummyLbl.getFont();
+
+        // Map<TextAttribute, Integer> fontAttributes = new HashMap<TextAttribute, Integer>();
+        // fontAttributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
+        // specialDealFont = (specialDealFont.deriveFont(specialDealFont.getStyle() ^
+        // Font.BOLD).deriveFont(fontAttributes)).deriveFont(16f);
+        addMouseMotionListener(this);
+        addMouseListener(this);
+        // we need this init BEFORE the event listener below.Else we would get a init-loop problem resulting in a nullpointer
+        DonationManager.getInstance();
+        CFG_GUI.DONATE_BUTTON_STATE.getEventSender().addListener(new GenericConfigEventListener<Enum>() {
+
+            @Override
+            public void onConfigValueModified(KeyHandler<Enum> keyHandler, Enum newValue) {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        updateDonateButton();
+                    }
+
+                };
+
+            }
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<Enum> keyHandler, Enum invalidValue, ValidationException validateException) {
+            }
+        });
+        updateDonateButton();
         this.setFocusable(false);
         TabHeader header;
 

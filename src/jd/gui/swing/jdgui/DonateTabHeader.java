@@ -8,7 +8,7 @@ import jd.gui.swing.jdgui.maintab.TabHeader;
 
 import org.jdownloader.gui.mainmenu.DonateAction;
 
-public class DonateTabHeader extends TabHeader {
+public class DonateTabHeader extends TabHeader implements PromotionTabHeader {
 
     public DonateTabHeader(View view) {
         super(view);
