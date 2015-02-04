@@ -16,6 +16,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.FilePackageView;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
@@ -30,6 +31,7 @@ import org.jdownloader.translate._JDT;
 
 public class CopyGenericContextAction extends CustomizableTableContextAppAction implements ActionContext {
     private static final String PATTERN_NAME     = "{name}";
+    private static final String PATTERN_NEWLINE  = "{newline}";
     private static final String PATTERN_COMMENT  = "{comment}";
     private static final String PATTERN_SHA256   = "{sha256}";
     private static final String PATTERN_MD5      = "{md5}";
@@ -47,11 +49,11 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
     }
 
     public static String getTranslationForPatternPackages() {
-        return _JDT._.CopyGenericContextAction_getTranslationForPatternPackages();
+        return _JDT._.CopyGenericContextAction_getTranslationForPatternPackages_v2();
     }
 
     public static String getTranslationForPatternLinks() {
-        return _JDT._.CopyGenericContextAction_getTranslationForPatternLinks();
+        return _JDT._.CopyGenericContextAction_getTranslationForPatternLinks_v2();
     }
 
     public static String getTranslationForSmartSelection() {
@@ -149,6 +151,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_COMMENT, nulltoString(pkg.getComment()));
             line = line.replace(PATTERN_FILESIZE, nulltoString(fpv.getSize()));
             line = line.replace(PATTERN_MD5, nulltoString(null));
+            line = line.replace(PATTERN_NEWLINE, CrossSystem.getNewLine());
             line = line.replace(PATTERN_NAME, nulltoString(pkg.getName()));
             line = line.replace(PATTERN_SHA256, nulltoString(null));
             line = line.replace(PATTERN_URL, nulltoString(null));
@@ -161,6 +164,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_COMMENT, nulltoString(link.getComment()));
             line = line.replace(PATTERN_FILESIZE, nulltoString(link.getView().getBytesTotalEstimated()));
             line = line.replace(PATTERN_MD5, nulltoString(link.getMD5Hash()));
+            line = line.replace(PATTERN_NEWLINE, CrossSystem.getNewLine());
             line = line.replace(PATTERN_NAME, nulltoString(link.getView().getDisplayName()));
             line = line.replace(PATTERN_SHA256, nulltoString(link.getSha1Hash()));
             line = line.replace(PATTERN_URL, nulltoString(link.getView().getDisplayUrl()));
@@ -172,6 +176,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_COMMENT, nulltoString(link.getDownloadLink().getComment()));
             line = line.replace(PATTERN_PATH, nulltoString(LinkTreeUtils.getDownloadDirectory(link)));
             line = line.replace(PATTERN_FILESIZE, nulltoString(link.getSize()));
+            line = line.replace(PATTERN_NEWLINE, CrossSystem.getNewLine());
             line = line.replace(PATTERN_MD5, nulltoString(link.getDownloadLink().getMD5Hash()));
             line = line.replace(PATTERN_NAME, nulltoString(link.getDownloadLink().getView().getDisplayName()));
             line = line.replace(PATTERN_SHA256, nulltoString(link.getDownloadLink().getSha1Hash()));
@@ -188,6 +193,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
                 line = line.replace(PATTERN_COMMENT, nulltoString(pkg.getComment()));
                 line = line.replace(PATTERN_PATH, nulltoString(LinkTreeUtils.getDownloadDirectory(pkg)));
                 line = line.replace(PATTERN_FILESIZE, nulltoString(fpv.getFileSize()));
+                line = line.replace(PATTERN_NEWLINE, CrossSystem.getNewLine());
                 line = line.replace(PATTERN_MD5, nulltoString(null));
                 line = line.replace(PATTERN_NAME, nulltoString(pkg.getName()));
                 line = line.replace(PATTERN_SHA256, nulltoString(null));
@@ -198,7 +204,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
         }
         if (StringUtils.isNotEmpty(line)) {
             if (sb.length() > 0) {
-                sb.append("\r\n");
+                sb.append(CrossSystem.getNewLine());
             }
             sb.append(line);
         }
