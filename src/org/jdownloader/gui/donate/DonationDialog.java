@@ -35,6 +35,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
+import org.jdownloader.donate.DonationManager;
 import org.jdownloader.gui.mainmenu.DonateAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
@@ -141,7 +142,7 @@ public class DonationDialog extends AbstractDialog<Object> {
                                 switch (enu) {
                                 case DONE:
                                     StatsManager.I().track("/donation/button/success");
-
+                                    DonationManager.getInstance().autoHide();
                                     writeTransactionFile(amt, list, noteText, cCode, provider);
                                     Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_thanks_());
                                     close.set(true);
@@ -328,7 +329,7 @@ public class DonationDialog extends AbstractDialog<Object> {
                         case DONE:
                             StatsManager.I().track("/donation/button/success/fallbackwait");
                             writeTransactionFile(amt, list, noteText, cCode, provider);
-
+                            DonationManager.getInstance().autoHide();
                             Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_thanks_());
 
                             return;

@@ -35,12 +35,14 @@ public class CFG_GUI {
      **/
     public static final BooleanKeyHandler                              CLIPBOARD_MONITORED                                     = SH.getKeyHandler("ClipboardMonitored", BooleanKeyHandler.class);
 
+    public static final BooleanKeyHandler                              DOWNLOADS_PROPERTIES_PANEL_SAVE_TO_VISIBLE              = SH.getKeyHandler("DownloadsPropertiesPanelSaveToVisible", BooleanKeyHandler.class);
+
+    public static final EnumKeyHandler                                 DONATE_BUTTON_STATE                                     = SH.getKeyHandler("DonateButtonState", EnumKeyHandler.class);
+
     /**
      * Enable/Disable the Linkgrabber properties panel
      **/
     public static final BooleanKeyHandler                              LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE                = SH.getKeyHandler("LinkgrabberTabPropertiesPanelVisible", BooleanKeyHandler.class);
-
-    public static final BooleanKeyHandler                              DOWNLOADS_PROPERTIES_PANEL_SAVE_TO_VISIBLE              = SH.getKeyHandler("DownloadsPropertiesPanelSaveToVisible", BooleanKeyHandler.class);
 
     public static final BooleanKeyHandler                              OVERVIEW_PANEL_DOWNLOAD_PACKAGE_COUNT_VISIBLE           = SH.getKeyHandler("OverviewPanelDownloadPackageCountVisible", BooleanKeyHandler.class);
 
@@ -419,6 +421,8 @@ public class CFG_GUI {
     public static final BooleanKeyHandler                              PROPERTIES_PANEL_HEIGHT_NORMALIZED                      = SH.getKeyHandler("PropertiesPanelHeightNormalized", BooleanKeyHandler.class);
 
     public static final BooleanKeyHandler                              ULBANNER_ENABLED                                        = SH.getKeyHandler("ULBannerEnabled", BooleanKeyHandler.class);
+
+    public static final LongKeyHandler                                 DONATE_BUTTON_LATEST_AUTO_CHANGE                        = SH.getKeyHandler("DonateButtonLatestAutoChange", LongKeyHandler.class);
 
     /**
      * Every odd row get's a light shadow if enabled

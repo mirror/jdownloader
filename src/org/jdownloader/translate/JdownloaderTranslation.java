@@ -942,4 +942,16 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Latest used path" })
     String DownloadFolderChooserDialogDefaultPath_LAST_USED_PATH();
 
+    @Default(lngs = { "en" }, values = { "Hidden (Automode)" })
+    String DonateButtonState_AUTO_HIDDEN();
+
+    @Default(lngs = { "en" }, values = { "Visible (Automode)" })
+    String DonateButtonState_AUTO_VISIBLE();
+
+    @Default(lngs = { "en" }, values = { "Visible (Usermode)" })
+    String DonateButtonState_CUSTOM_VISIBLE();
+
+    @Default(lngs = { "en" }, values = { "Hidden (Usermode)" })
+    String DonateButtonState_CUSTOM_HIDDEN();
+
 }

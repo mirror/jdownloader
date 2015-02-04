@@ -51,7 +51,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     /**
      * How many ms the speedmeter shall show/record. Please note that big Timeframes and high fps values may cause high CPU usage
-     *
+     * 
      * @return
      */
     @AboutConfig
@@ -62,7 +62,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     /**
      * How many refreshes and datasamples the speedmeter uses. Please note that big Timeframes and high fps values may cause high CPU usage
-     *
+     * 
      * @return
      */
     @AboutConfig
@@ -1210,10 +1210,40 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setDownloadFolderChooserDefaultPath(DownloadFolderChooserDialogDefaultPath path);
 
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    @RequiresRestart("A JDownloader Restart is Required")
-    boolean isMacDonateTabVisible();
+    public static enum DonateButtonState implements LabelInterface {
+        AUTO_HIDDEN {
+            @Override
+            public String getLabel() {
+                return _JDT._.DonateButtonState_AUTO_HIDDEN();
+            }
+        },
+        AUTO_VISIBLE {
+            @Override
+            public String getLabel() {
+                return _JDT._.DonateButtonState_AUTO_VISIBLE();
+            }
+        },
+        CUSTOM_VISIBLE {
+            @Override
+            public String getLabel() {
+                return _JDT._.DonateButtonState_CUSTOM_VISIBLE();
+            }
+        },
+        CUSTOM_HIDDEN {
+            @Override
+            public String getLabel() {
+                return _JDT._.DonateButtonState_CUSTOM_HIDDEN();
+            }
+        };
+    }
 
-    void setMacDonateTabVisible(boolean b);
+    @AboutConfig
+    @DefaultEnumValue("AUTO_VISIBLE")
+    DonateButtonState getDonateButtonState();
+
+    void setDonateButtonState(DonateButtonState state);
+
+    void setDonateButtonLatestAutoChange(long currentTimeMillis);
+
+    long getDonateButtonLatestAutoChange();
 }
