@@ -69,12 +69,11 @@ public class DrTuberCom extends PluginForHost {
     }
 
     /* IMPORTANT: This can be used as a workaround if the normal handling fails and there is no time to fix it or it's not easily fixable... */
-    private boolean              use_mobile                   = false;
+    private boolean              use_mobile                   = true;
     /*
-     * Allow usage of uncrypted finallinks - quality might be lower than when using the complicated way but overall it should improve
-     * stability..
+     * Allow usage of uncrypted finallinks - quality might be lower than when using the complicated way but overall it might stability..
      */
-    private boolean              allow_uncrypted_downloadlink = true;
+    private boolean              allow_uncrypted_downloadlink = false;
     private static final String  normalUA                     = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:35.0) Gecko/20100101 Firefox/35.0";
     private static final String  mobileUA                     = "Mozilla/5.0 (Linux; U; Android 2.2.1; en-us; Nexus One Build/FRG83) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile";
 
@@ -161,13 +160,12 @@ public class DrTuberCom extends PluginForHost {
             br.setCookie("http://drtuber.com", "_gat", "1");
             br.setCookie("http://m.drtuber.com", "traffic_type", "3");
             br.setCookie("http://m.drtuber.com", "adv_show", "1");
+            br.setCookie("http://m.drtuber.com", "dwnld_speed", "7.436709219858156");
             /*
              * There are 2 mobile versions: 'light' and 'full'. 'light' seems to be a low quality .3gp and 'full' a higher quality .mp4
              * though not necessarily as high as via the non-mobile site.
              */
-            br.setCookie("http://m.drtuber.com", "light_version2", "0");
-            br.getPage("http://m.drtuber.com/?light=0");
-            br.getPage("http://m.drtuber.com/video/" + fid);
+            br.getPage("http://m.drtuber.com/video/" + fid + "/");
             filename = br.getRegex("<title>Download Free Mobile Porn \\- ([^<>\"]*?) \\- DrTuber\\.com</title>").getMatch(0);
             br.getPage("http://m.drtuber.com/play/" + fid + "?from=video_bottom");
             filename = br.getRegex("<title>Download Free Mobile Porn \\-([^<>\"]*?)\\- Download Preview \\- DrTuber\\.com</title>").getMatch(0);
@@ -188,7 +186,7 @@ public class DrTuberCom extends PluginForHost {
                     if (new_handling) {
                         /*
                          * Very very very very bad js workaround
-                         *
+                         * 
                          * IMPORTANT: If we find no other way to fix this in the future, switch to /embed/ links, old handling still works
                          * fine for them
                          */
@@ -266,11 +264,22 @@ public class DrTuberCom extends PluginForHost {
         final Browser br2 = br.cloneBrowser();
         URLConnectionAdapter con = null;
         try {
-            br2.setFollowRedirects(true);
             if (use_mobile) {
+                // br2.setFollowRedirects(false);
+                // br2.getPage(DLLINK);
+                // DLLINK = br2.getRedirectLocation();
+                // if (DLLINK == null) {
+                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                // }
+                br2.setFollowRedirects(true);
                 br2.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-                br2.getHeaders().put("Accept-Encoding", "identity");
-                br2.getHeaders().put("Accept-Language", "de,en-gb;q=0.7, en;q=0.3");
+                // br2.getHeaders().put("Accept-Encoding", "identity");
+                br2.getHeaders().put("Accept-Encoding", "gzip, deflate");
+                br2.getHeaders().put("Accept-Language", "de,en-US;q=0.7,en;q=0.3");
+                br2.getHeaders().put("Cache-Control", null);
+                br2.getHeaders().put("Pragma", null);
+                // br2.getHeaders().put("", "");
+                // br2.getHeaders().put("", "");
             } else {
                 br2.getHeaders().put("Referer", "http://www.drtuber.com/player/videoplayer.swf?v=18.41&ps=CCCCCC");
                 br2.getHeaders().put("Accept-Language", "de,en-US;q=0.7,en;q=0.3");
@@ -278,10 +287,10 @@ public class DrTuberCom extends PluginForHost {
             }
             try {
                 /* @since JD2 */
-                con = br.openHeadConnection(DLLINK);
+                con = br2.openGetConnection(DLLINK);
             } catch (final Throwable t) {
                 /* Not supported in old 0.9.581 Stable */
-                con = br.openGetConnection(DLLINK);
+                con = br2.openGetConnection(DLLINK);
             }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());

@@ -72,15 +72,21 @@ public class VideoMediasetIt extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText("JDownloader can't download MS Silverlight videos!");
             return AvailableStatus.TRUE;
         }
-        String filename = br.getRegex("content=\"([^<>\"]*?) \\| Video Mediaset\" name=\"title\"").getMatch(0);
-        filename = Encoding.htmlDecode(filename.trim()).replace("\"", "'");
+        String filename = br.getRegex("content=\"([^<>]*?) \\| Video Mediaset\" name=\"title\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<h2 class=\"titleWrap\">([^<>]*?)</h2>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>]*?)\\- Video Mediaset</title>").getMatch(0);
+        }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        /** Old way */
-        // http://cdnselector.xuniplay.fdnames.com/GetCDN.aspx?streamid= + streamID
+        filename = Encoding.htmlDecode(filename.trim()).replace("\"", "'");
+        filename = encodeUnicode(filename);
         /** New way, thx to: http://userscripts.org/scripts/review/151516 */
-        // br.getPage("http://lazza.host-ed.me/script/vd.php?id=" + streamID);
+        // E.g. original request:
+        // http://cdnselector.xuniplay.fdnames.com/GetCDN.aspx?streamid=123456&format=json&callback=jQuery5456457_45747847&_=36747457
         br.getPage("http://cdnselector.xuniplay.fdnames.com/GetCDN.aspx?streamid=" + streamID + "&format=json");
         final String videoList = br.getRegex("\"videoList\":\\[(.*?)\\]").getMatch(0);
         if (videoList == null) {
@@ -88,7 +94,14 @@ public class VideoMediasetIt extends PluginForHost {
         }
         final String[] dllinks = new Regex(videoList, "\"(http://[^<>\"]*?)\"").getColumn(0);
         if (dllinks != null && dllinks.length != 0) {
-            DLLINK = dllinks[dllinks.length - 1];
+            final int length = dllinks.length;
+            if (length >= 3) {
+                DLLINK = dllinks[2];
+            } else if (length >= 2) {
+                DLLINK = dllinks[1];
+            } else {
+                DLLINK = dllinks[0];
+            }
         }
         if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -146,6 +159,22 @@ public class VideoMediasetIt extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    /** Avoid chars which are not allowed in filenames under certain OS' */
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     @Override
