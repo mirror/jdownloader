@@ -157,11 +157,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                 }
 
                 @Override
-                public boolean isHidable() {
-                    return false;
-                }
-
-                @Override
                 protected boolean getBooleanValue(AccountEntry value) {
                     return value.getAccount().isEnabled();
                 }
@@ -189,11 +184,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             @Override
             public boolean isEnabled(AccountEntry obj) {
                 return obj.getAccount().isEnabled();
-            }
-
-            @Override
-            public boolean isHidable() {
-                return false;
             }
 
             @Override
@@ -259,11 +249,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             @Override
             public boolean isEnabled(AccountEntry obj) {
                 return obj.getAccount().isEnabled();
-            }
-
-            @Override
-            public boolean isHidable() {
-                return false;
             }
 
             @Override
@@ -354,7 +339,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
 
             @Override
             public boolean isHidable() {
-                return true;
+                return false;
             }
 
             @Override
