@@ -1,7 +1,7 @@
 package jd.controlling.reconnect.pluginsinc.liveheader;
 
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.Map;
 
 import jd.http.Request;
 
@@ -11,7 +11,7 @@ public interface LHProcessFeedback {
 
     public void onBasicRemoteAPIExceptionOccured(IOException e, Request request) throws ReconnectFailedException;
 
-    public void onVariablesUpdated(HashMap<String, String> variables) throws ReconnectFailedException;
+    public void onVariablesUpdated(Map<String, String> variables) throws ReconnectFailedException;
 
     public void onVariableParserFailed(String pattern, Request request) throws ReconnectFailedException;
 
