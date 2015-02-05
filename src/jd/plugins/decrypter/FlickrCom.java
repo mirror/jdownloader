@@ -217,8 +217,17 @@ public class FlickrCom extends PluginForDecrypt {
             api_getPage(apilink.replace("GETJDPAGE", "1"));
             fpName = "flickr.com images of group " + group_id;
         } else {
-            path_alias = this.username;
-            apilink = "https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&get_user_info=1&path_alias=" + this.username + "&method=flickr.people.getPhotos&hermes=1&hermesClient=1&nojsoncallback=1";
+            String nsid;
+            if (this.username.contains("@")) {
+                nsid = this.username;
+            } else {
+                nsid = apiLookupUser(null);
+            }
+            apilink = "https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&user_id=" + Encoding.urlEncode(nsid) + "&method=flickr.people.getPhotos&hermes=1&hermesClient=1&nojsoncallback=1";
+            /* Use this public request if the other one fails: */
+            // apilink = "https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey +
+            // "&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&user_id=" + Encoding.urlEncode(nsid) +
+            // "&method=flickr.people.getPublicPhotos&hermes=1&hermesClient=1&nojsoncallback=1";
             api_getPage(apilink.replace("GETJDPAGE", "1"));
             fpName = "flickr.com images of user " + this.username;
         }

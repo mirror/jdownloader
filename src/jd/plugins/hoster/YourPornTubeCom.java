@@ -55,6 +55,7 @@ public class YourPornTubeCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL());
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -66,6 +67,10 @@ public class YourPornTubeCom extends PluginForHost {
         String filename = br.getRegex("class=\"title-video-player\"><h2>([^<>\"]*?)<").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?) \\| Free Porn</title>").getMatch(0);
+        }
+        final String iframe = br.getRegex("\"(http://(www\\.)?pornworms\\.com/embed/\\d+)\"").getMatch(0);
+        if (iframe != null) {
+            br.getPage(iframe);
         }
         dllink = br.getRegex("clip: \\{\\s*url: '(.*?)',").getMatch(0);
         if (filename == null || dllink == null) {
