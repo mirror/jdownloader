@@ -177,11 +177,6 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
             }
 
             @Override
-            public boolean isHidable() {
-                return false;
-            }
-
-            @Override
             protected boolean getBooleanValue(AccountEntry value) {
                 return value.getAccount().isEnabled();
             }
@@ -205,11 +200,6 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
             @Override
             public boolean isEnabled(AccountEntry obj) {
                 return obj.getAccount().isEnabled();
-            }
-
-            @Override
-            public boolean isHidable() {
-                return false;
             }
 
             @Override
@@ -374,7 +364,7 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
             @Override
             public boolean isHidable() {
-                return true;
+                return false;
             }
 
             @Override
