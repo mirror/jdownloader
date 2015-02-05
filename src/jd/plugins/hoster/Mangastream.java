@@ -35,6 +35,11 @@ public class Mangastream extends PluginForHost {
     }
 
     @Override
+    public void correctDownloadLink(final DownloadLink link) throws PluginException {
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("mangastream://", "http://mangastream.com"));
+    }
+
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
 
@@ -111,11 +116,11 @@ public class Mangastream extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage(downloadLink.getStringProperty("page_url", null));
-        if (br.containsHTML("We couldn't find the page you were looking for") || br.getHttpConnection().getResponseCode() == 404) {
+        correctDownloadLink(downloadLink);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("We couldn't find the page you were looking for") || br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         return AvailableStatus.TRUE;
     }
 
