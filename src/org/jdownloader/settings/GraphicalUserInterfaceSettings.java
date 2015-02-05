@@ -8,6 +8,7 @@ import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.AbstractValidator;
+import org.appwork.storage.config.annotations.ConfigEntryKeywords;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntArrayValue;
@@ -51,7 +52,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     /**
      * How many ms the speedmeter shall show/record. Please note that big Timeframes and high fps values may cause high CPU usage
-     * 
+     *
      * @return
      */
     @AboutConfig
@@ -62,7 +63,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     /**
      * How many refreshes and datasamples the speedmeter uses. Please note that big Timeframes and high fps values may cause high CPU usage
-     * 
+     *
      * @return
      */
     @AboutConfig
@@ -538,7 +539,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
         WHITE_VISION("de.javasoft.plaf.synthetica.SyntheticaWhiteVisionLookAndFeel"),
 
         DEFAULT(JDDefaultLookAndFeel.class.getName());
-        private String clazz;
+        private final String clazz;
 
         public String getClazz() {
 
@@ -552,7 +553,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
         public boolean isAvailable() {
             try {
-                Class<?> c = Class.forName(clazz);
+                final Class<?> c = Class.forName(clazz);
                 return c != null;
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
@@ -1239,6 +1240,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultEnumValue("AUTO_VISIBLE")
+    @ConfigEntryKeywords({ "donat", "contribut" })
     DonateButtonState getDonateButtonState();
 
     void setDonateButtonState(DonateButtonState state);

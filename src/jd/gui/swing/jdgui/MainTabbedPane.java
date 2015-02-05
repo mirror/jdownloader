@@ -358,7 +358,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
 
     /**
      * returns the component in this tab that equals view
-     * 
+     *
      * @param view
      * @return
      */
@@ -374,7 +374,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
 
     /**
      * CHecks if there is already a tabbepanel of this type in this pane.
-     * 
+     *
      * @param view
      * @return
      */
@@ -431,17 +431,13 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
             if (specialDealBounds != null && specialDealBounds.contains(e.getPoint()) && !specialDealMouseOver) {
                 specialDealMouseOver = true;
                 topRightPainter.onMouseOver(e);
-
                 repaint(specialDealBounds.x - 4, specialDealBounds.y, specialDealBounds.width + 6, specialDealBounds.height);
-
             } else if (specialDealMouseOver && (specialDealBounds == null || !specialDealBounds.contains(e.getPoint()))) {
                 specialDealMouseOver = false;
                 topRightPainter.onMouseOut(e);
                 // setCursor(null);
                 repaint(specialDealBounds.x - 4, specialDealBounds.y, specialDealBounds.width + 6, specialDealBounds.height);
-
             }
-
         }
     }
 
@@ -449,7 +445,6 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
     public void mouseClicked(MouseEvent e) {
         if (specialDealMouseOver && topRightPainter != null && topRightPainter.isVisible()) {
             topRightPainter.onClicked(e);
-
         }
     }
 

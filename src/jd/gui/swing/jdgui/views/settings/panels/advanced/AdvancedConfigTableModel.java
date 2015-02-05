@@ -5,6 +5,7 @@ import java.util.Locale;
 
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
@@ -18,6 +19,20 @@ public class AdvancedConfigTableModel extends ExtTableModel<AdvancedConfigEntry>
 
     }
 
+    private boolean containsKeyword(final AdvancedConfigEntry configEntry, final String find) {
+        if (configEntry != null && StringUtils.isNotEmpty(find)) {
+            final String[] keywords = configEntry.getKeywords();
+            if (keywords != null && keywords.length > 0) {
+                for (String keyword : keywords) {
+                    if (StringUtils.containsIgnoreCase(find, keyword)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     @Override
     public void _fireTableStructureChanged(java.util.List<AdvancedConfigEntry> newtableData, boolean refreshSort) {
         final String ltext = text;
@@ -26,7 +41,7 @@ public class AdvancedConfigTableModel extends ExtTableModel<AdvancedConfigEntry>
             for (final Iterator<AdvancedConfigEntry> it = newtableData.iterator(); it.hasNext();) {
                 final AdvancedConfigEntry next = it.next();
                 for (String find : finds) {
-                    if (next.getKey().toLowerCase().contains(find) || (next.getDescription() != null && next.getDescription().toLowerCase(Locale.ENGLISH).contains(find)) || createKeyText(next).toLowerCase(Locale.ENGLISH).contains(ltext)) {
+                    if (StringUtils.containsIgnoreCase(next.getKey(), find) || StringUtils.containsIgnoreCase(next.getDescription(), find) || containsKeyword(next, find) || StringUtils.containsIgnoreCase(createKeyText(next), find)) {
                         continue;
                     } else {
                         it.remove();
