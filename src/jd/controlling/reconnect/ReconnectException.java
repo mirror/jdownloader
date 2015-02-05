@@ -12,4 +12,8 @@ public class ReconnectException extends Exception {
         super(e);
     }
 
+    public ReconnectException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
 }

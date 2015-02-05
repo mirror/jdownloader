@@ -405,7 +405,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
             settings.setRouterData(rd);
             settings.setPassword(i.getPass());
             settings.setUserName(i.getUser());
-            settings.setRouterIP(i.getIp());
+            settings.setRouterIP(i.getRouter());
             // changed script.reset router sender state
             if (i.getScript() != null && i.getScript().equals(JsonConfig.create(LiveHeaderReconnectSettings.class).getScript())) {
                 JsonConfig.create(LiveHeaderReconnectSettings.class).setAlreadySendToCollectServer2(false);
