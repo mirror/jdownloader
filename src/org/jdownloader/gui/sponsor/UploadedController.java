@@ -1,6 +1,5 @@
 package org.jdownloader.gui.sponsor;
 
-import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dialog.ModalityType;
 import java.awt.Graphics2D;
@@ -272,13 +271,15 @@ public class UploadedController implements AccountControllerListener, Sponsor {
                 icon.paintIcon(pane, g, pane.getWidth() - icon.getIconWidth() - 2, 25 - icon.getIconHeight() + 2);
                 final Rectangle specialDealBounds = new Rectangle(pane.getWidth() - icon.getIconWidth() - 2, 25 - icon.getIconHeight(), icon.getIconWidth(), icon.getIconHeight() + 2);
                 if (mouseover) {
-                    g.setColor(Color.GRAY);
-                    g.drawLine(specialDealBounds.x + 50, specialDealBounds.y + specialDealBounds.height - 1 - 3, specialDealBounds.x + specialDealBounds.width - 2, specialDealBounds.y + specialDealBounds.height - 1 - 3);
+                    // g.setColor(Color.GRAY);
+                    // g.drawLine(specialDealBounds.x + 50, specialDealBounds.y + specialDealBounds.height - 1 - 3, specialDealBounds.x +
+                    // specialDealBounds.width - 2, specialDealBounds.y + specialDealBounds.height - 1 - 3);
                     // g.setColor(Color.WHITE);
                     // g.fillRect(pane.getWidth() - close.getIconWidth() - 3, 25 - icon.getIconHeight() - 2, 9, 11);
                     // closeBounds = new Rectangle(pane.getWidth() - close.getIconWidth() - 3, 25 - icon.getIconHeight() - 2, 9, 11);
                     // close.paintIcon(pane, g, pane.getWidth() - close.getIconWidth() - 2, 25 - icon.getIconHeight());
                 }
+
                 return specialDealBounds;
             }
         }
