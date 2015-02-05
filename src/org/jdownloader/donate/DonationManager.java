@@ -38,6 +38,7 @@ public class DonationManager {
     public void autoHide() {
         CFG_GUI.CFG.setDonateButtonLatestAutoChange(System.currentTimeMillis());
         CFG_GUI.CFG.setDonateButtonState(DonateButtonState.AUTO_HIDDEN);
+        CFG_GUI.ULBANNER_ENABLED.setValue(false);
 
     }
 
