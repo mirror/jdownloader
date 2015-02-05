@@ -7,6 +7,7 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.WarnLevel;
 
 import org.appwork.storage.config.ConfigInterface;
+import org.appwork.storage.config.annotations.ConfigEntryKeywords;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
@@ -20,8 +21,8 @@ import org.jdownloader.images.NewTheme;
 
 public class AdvancedConfigEntry {
 
-    private ConfigInterface configInterface;
-    private KeyHandler<?>   keyHandler;
+    private final ConfigInterface configInterface;
+    private final KeyHandler<?>   keyHandler;
 
     public KeyHandler<?> getKeyHandler() {
         return keyHandler;
@@ -49,8 +50,15 @@ public class AdvancedConfigEntry {
     }
 
     public String getDescription() {
+        final DescriptionForConfigEntry an = keyHandler.getAnnotation(DescriptionForConfigEntry.class);
+        if (an != null) {
+            return an.value();
+        }
+        return null;
+    }
 
-        DescriptionForConfigEntry an = keyHandler.getAnnotation(DescriptionForConfigEntry.class);
+    public String[] getKeywords() {
+        final ConfigEntryKeywords an = keyHandler.getAnnotation(ConfigEntryKeywords.class);
         if (an != null) {
             return an.value();
         }
@@ -58,7 +66,7 @@ public class AdvancedConfigEntry {
     }
 
     public Validator getValidator() {
-        SpinnerValidator an = keyHandler.getAnnotation(SpinnerValidator.class);
+        final SpinnerValidator an = keyHandler.getAnnotation(SpinnerValidator.class);
         if (an != null) {
             return new org.jdownloader.settings.advanced.RangeValidator(an.min(), an.max());
         }
@@ -117,8 +125,8 @@ public class AdvancedConfigEntry {
     }
 
     public String getTypeString() {
-        Validator v = getValidator();
-        Type gen = keyHandler.getGetter().getMethod().getGenericReturnType();
+        final Validator v = getValidator();
+        final Type gen = keyHandler.getGetter().getMethod().getGenericReturnType();
         String ret;
         if (gen instanceof Class) {
             ret = ((Class<?>) gen).getSimpleName();
