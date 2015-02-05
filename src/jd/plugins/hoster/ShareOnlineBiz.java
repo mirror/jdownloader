@@ -455,22 +455,13 @@ public class ShareOnlineBiz extends PluginForHost {
             }
             if (userTrafficWorkaround()) {
                 final long maxDay = 100 * 1024 * 1024 * 1024l;// 100 GB per day
-                final long maxWeek = 450 * 1024 * 1024 * 1024l;// 450 GB per week
                 final String trafficDay = infos.get("traffic_1d");
-                final String trafficWeek = infos.get("traffic_7d");
                 final String trafficDayData[] = trafficDay.split(";");
-                final String trafficWeekData[] = trafficWeek.split(";");
                 final long usedDay = Long.parseLong(trafficDayData[0].trim());
-                final long usedWeek = Long.parseLong(trafficWeekData[0].trim());
-                final long freeWeek = maxWeek - usedWeek;
                 final long freeDay = maxDay - usedDay;
-                if (freeWeek < maxDay) {
-                    ai.setTrafficMax(maxWeek);
-                    ai.setTrafficLeft(freeWeek);
-                } else {
-                    ai.setTrafficMax(maxDay);
-                    ai.setTrafficLeft(freeDay);
-                }
+                ai.setTrafficMax(maxDay);
+                ai.setTrafficLeft(freeDay);
+                ai.setSpecialTraffic(true);
             }
         }
         if (infos.containsKey("points")) {
@@ -593,7 +584,19 @@ public class ShareOnlineBiz extends PluginForHost {
             if ("Penalty-Premium".equalsIgnoreCase(account.getStringProperty("group", null))) {
                 max = account_premium_penalty_maxdownloads;
             } else {
-                max = account_premium_maxdownloads;
+                final AccountInfo ai = account.getAccountInfo();
+                if (userTrafficWorkaround() && ai != null) {
+                    /**
+                     * special handling for throttled accounts
+                     */
+                    if (ai.getTrafficLeft() > 1024 * 1024) {
+                        max = account_premium_maxdownloads;
+                    } else {
+                        max = account_premium_penalty_maxdownloads;
+                    }
+                } else {
+                    max = account_premium_maxdownloads;
+                }
             }
             synchronized (LOCK) {
                 CopyOnWriteArrayList<Long> failureThreads = THREADFAILURES.get(account);
