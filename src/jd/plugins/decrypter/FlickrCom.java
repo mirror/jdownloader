@@ -198,7 +198,7 @@ public class FlickrCom extends PluginForDecrypt {
             apiGetSetsOfUser();
             return;
         } else if (parameter.matches(TYPE_FAVORITES)) {
-            final String nsid = apiLookupUser(null);
+            final String nsid = get_NSID(null);
             if (nsid == null) {
                 throw new DecrypterException("Decrypter broken for link: " + parameter);
             }
@@ -217,12 +217,7 @@ public class FlickrCom extends PluginForDecrypt {
             api_getPage(apilink.replace("GETJDPAGE", "1"));
             fpName = "flickr.com images of group " + group_id;
         } else {
-            String nsid;
-            if (this.username.contains("@")) {
-                nsid = this.username;
-            } else {
-                nsid = apiLookupUser(null);
-            }
+            final String nsid = get_NSID(null);
             apilink = "https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&user_id=" + Encoding.urlEncode(nsid) + "&method=flickr.people.getPhotos&hermes=1&hermesClient=1&nojsoncallback=1";
             /* Use this public request if the other one fails: */
             // apilink = "https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey +
@@ -318,7 +313,7 @@ public class FlickrCom extends PluginForDecrypt {
     }
 
     private void apiGetSetsOfUser() throws IOException, DecrypterException {
-        final String nsid = apiLookupUser(null);
+        final String nsid = get_NSID(null);
         if (nsid == null) {
             throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
@@ -351,6 +346,22 @@ public class FlickrCom extends PluginForDecrypt {
         }
     }
 
+    private String get_NSID(String username) throws IOException, DecrypterException {
+        String nsid;
+        if (username == null) {
+            username = this.username;
+        }
+        /* Check if we already have the id */
+        if (username.matches("\\d+@N\\d+")) {
+            nsid = username;
+        } else {
+            /* We don't have it --> Grab it */
+            nsid = apiLookupUser(username);
+        }
+        return nsid;
+    }
+
+    /** (API) Function to find the nsid of a user. */
     private String apiLookupUser(String username) throws IOException, DecrypterException {
         if (username == null) {
             username = this.username;
