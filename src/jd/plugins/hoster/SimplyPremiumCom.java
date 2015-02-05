@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -62,9 +61,6 @@ public class SimplyPremiumCom extends PluginForHost {
     private static final String                            NICE_HOSTproperty  = "simplypremiumcom";
     private static String                                  APIKEY             = null;
     private static Object                                  LOCK               = new Object();
-
-    /* Default value is 3 */
-    private static AtomicInteger                           maxPrem            = new AtomicInteger(3);
 
     public SimplyPremiumCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -438,11 +434,6 @@ public class SimplyPremiumCom extends PluginForHost {
         return br.getRegex("<" + parameter + "( type=\"[^<>\"/]*?\")?>([^<>]*?)</" + parameter + ">").getMatch(1);
     }
 
-    @Override
-    public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
-        return maxPrem.get();
-    }
-
     public void showAccountDetailsDialog(final Account account) {
         final AccountInfo ai = account.getAccountInfo();
         if (ai != null) {
@@ -566,30 +557,30 @@ public class SimplyPremiumCom extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("ACCOUNT_TYPE", "Account type:");
-                                                      put("ACCOUNT_TYPE_TIME", "Time account");
-                                                      put("ACCOUNT_TYPE_VOLUME", "Volume account");
-                                                      put("DOWNLOAD_MAXSIMULTAN", "Max. number of simultan downloads:");
-                                                      put("DOWNLOAD_MAXCHUNKS", "Max. chunks (connections per file):");
-                                                      put("DOWNLOAD_RESUMABLE", "Resuming of stopped downloads possible:");
-                                                      put("DOWNLOAD_RESUMABLE_TRUE", "Yes");
-                                                      put("DOWNLOAD_RESUMABLE_FALSE", "No");
-                                                  }
-                                              };
+        {
+            put("ACCOUNT_TYPE", "Account type:");
+            put("ACCOUNT_TYPE_TIME", "Time account");
+            put("ACCOUNT_TYPE_VOLUME", "Volume account");
+            put("DOWNLOAD_MAXSIMULTAN", "Max. number of simultan downloads:");
+            put("DOWNLOAD_MAXCHUNKS", "Max. chunks (connections per file):");
+            put("DOWNLOAD_RESUMABLE", "Resuming of stopped downloads possible:");
+            put("DOWNLOAD_RESUMABLE_TRUE", "Yes");
+            put("DOWNLOAD_RESUMABLE_FALSE", "No");
+        }
+    };
 
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-                                                  {
-                                                      put("ACCOUNT_TYPE", "Account Typ:");
-                                                      put("ACCOUNT_TYPE_TIME", "Zeitaccount");
-                                                      put("ACCOUNT_TYPE_VOLUME", "Volumenaccount");
-                                                      put("DOWNLOAD_MAXSIMULTAN", "Max. Anzahl gleichzeitiger Downloads:");
-                                                      put("DOWNLOAD_MAXCHUNKS", "Max. Anzahl Verbindungen pro Datei (Chunks):");
-                                                      put("DOWNLOAD_RESUMABLE", "Abgebrochene Downloads fortsetzbar:");
-                                                      put("DOWNLOAD_RESUMABLE_TRUE", "Ja");
-                                                      put("DOWNLOAD_RESUMABLE_FALSE", "Nein");
-                                                  }
-                                              };
+        {
+            put("ACCOUNT_TYPE", "Account Typ:");
+            put("ACCOUNT_TYPE_TIME", "Zeitaccount");
+            put("ACCOUNT_TYPE_VOLUME", "Volumenaccount");
+            put("DOWNLOAD_MAXSIMULTAN", "Max. Anzahl gleichzeitiger Downloads:");
+            put("DOWNLOAD_MAXCHUNKS", "Max. Anzahl Verbindungen pro Datei (Chunks):");
+            put("DOWNLOAD_RESUMABLE", "Abgebrochene Downloads fortsetzbar:");
+            put("DOWNLOAD_RESUMABLE_TRUE", "Ja");
+            put("DOWNLOAD_RESUMABLE_FALSE", "Nein");
+        }
+    };
 
     /**
      * Returns a germen/english translation of a phrase - we don't use the JDownloader translation framework since we need only germen and
