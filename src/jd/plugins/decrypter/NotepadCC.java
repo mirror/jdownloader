@@ -27,12 +27,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 /**
+ * they do have password protected links, I haven't bothered to support those
+ * 
  * @author raztoki
  * */
-@DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 2, names = { "justpaste.it" }, urls = { "https?://(?:www\\.)?(justpaste\\.it/[A-Za-z0-9\\-_]+|jpst\\.it/[A-Za-z0-9]+)" }, flags = { 0 })
-public class JustPasteIt extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 2, names = { "notepad.cc" }, urls = { "https?://(?:www\\.)?notepad.cc/[A-Za-z0-9\\-_]+" }, flags = { 0 })
+public class NotepadCC extends PluginForDecrypt {
 
-    public JustPasteIt(PluginWrapper wrapper) {
+    public NotepadCC(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -46,7 +48,7 @@ public class JustPasteIt extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        final String plaintxt = br.getRegex("<div[^>]+id=\"articleContent\"[^>]*>(.*?)</div>").getMatch(0);
+        final String plaintxt = br.getRegex("<textarea[^>]+id=\"contents\"[^>]*>(.*?)</textarea>").getMatch(0);
         if (plaintxt == null) {
             return decryptedLinks;
         }
