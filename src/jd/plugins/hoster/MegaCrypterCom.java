@@ -61,8 +61,8 @@ import org.jdownloader.plugins.PluginTaskID;
 public class MegaCrypterCom extends PluginForHost {
 
     // note: hosts removed due to be down.
-    // 20150206 megacrypter.linkcrypter.net/ throws internal server error 500
-    // 20150206 megacrypter.megabuscame.me/ account suspended on datacenter server
+    // 20150206 megacrypter.linkcrypter.net/ throws internal server error 500.
+    // 20150206 megacrypter.megabuscame.me/ account suspended on datacenter server.
 
     public MegaCrypterCom(PluginWrapper wrapper) {
         super(wrapper);
