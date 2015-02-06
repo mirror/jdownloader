@@ -57,13 +57,40 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.PluginTaskID;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megacrypter" }, urls = { "https?://(?:www\\.)?(megacrypter\\.linkcrypter\\.net|megacrypter\\.megabuscame\\.me|encrypterme\\.ga|megacrypter\\.noestasinvitado\\.com)/\\![A-Za-z0-9\\-_\\!]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megacrypter" }, urls = { "https?://(?:www\\.)?(encrypterme\\.ga|megacrypter\\.noestasinvitado\\.com|youpaste\\.co)/\\![A-Za-z0-9\\-_\\!]+" }, flags = { 2 })
 public class MegaCrypterCom extends PluginForHost {
+
+    // note: hosts removed due to be down.
+    // 20150206 megacrypter.linkcrypter.net/ throws internal server error 500
+    // 20150206 megacrypter.megabuscame.me/ account suspended on datacenter server
 
     public MegaCrypterCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setConfigElements();
     }
+
+    private void setUrl(final DownloadLink downloadLink) {
+        if (downloadLink.getDownloadURL().contains("encrypterme.ga/")) {
+            // https seems to some soccor sports page
+            supportsHTTPS = false;
+            enforcesHTTPS = false;
+        } else if (downloadLink.getDownloadURL().contains("megacrypter.noestasinvitado.com/")) {
+            // all others enable by default.
+            supportsHTTPS = true;
+            enforcesHTTPS = true;
+        } else {
+            // all others enable by default.
+            supportsHTTPS = true;
+            enforcesHTTPS = false;
+        }
+        boolean useHTTPS = enforcesHTTPS;
+        if (supportsHTTPS && !enforcesHTTPS) {
+            useHTTPS = true;
+        }
+        mcUrl = (useHTTPS && this.getPluginConfig().getBooleanProperty(preferHTTPS, preferHTTPS_default) ? "https" : "http") + "://" + new Regex(downloadLink.getDownloadURL(), "://([^/]+)").getMatch(0) + "/api";
+    }
+
+    private String mcUrl = null;
 
     public boolean hasAutoCaptcha() {
         return false;
@@ -196,33 +223,14 @@ public class MegaCrypterCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_TMP, JDL.L("plugins.hoster.megacryptercom.usetmp", "Use tmp decrypting file?")).setDefaultValue(false));
     }
 
-    private void setUrl(final DownloadLink downloadLink) {
-        if (downloadLink.getDownloadURL().contains("megacrypter.megabuscame.me/")) {
-            supportsHTTPS = false;
-            enforcesHTTPS = false;
-        } else if (downloadLink.getDownloadURL().contains("megacrypter.linkcrypter.net/")) {
-            supportsHTTPS = false;
-            enforcesHTTPS = false;
-        } else {
-            // the original megacrypter now RIP
-            // supportsHTTPS = true;
-            // enforcesHTTPS = true;
-        }
-        boolean useHTTPS = enforcesHTTPS;
-        if (supportsHTTPS && !enforcesHTTPS) {
-            useHTTPS = true;
-        }
-        mcUrl = (useHTTPS && this.getPluginConfig().getBooleanProperty(preferHTTPS, preferHTTPS_default) ? "https" : "http") + "://" + new Regex(downloadLink.getDownloadURL(), "://([^/]+)").getMatch(0) + "/api";
-    }
-
-    private String mcUrl = null;
-
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         setUrl(link);
         br.setFollowRedirects(true);
         linkPart = new Regex(link.getDownloadURL(), "/(\\!.+)").getMatch(0);
+        // youpaste.co actually verifies if content-type application/json has been set
+        br.getHeaders().put("Content-Type", "application/json");
         br.postPageRaw(mcUrl, "{\"m\": \"info\", \"link\":\"" + linkPart + "\"}");
         try {
             checkError(br);
