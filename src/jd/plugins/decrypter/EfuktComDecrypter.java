@@ -49,15 +49,15 @@ public class EfuktComDecrypter extends PluginForDecrypt {
         } else if (redirect != null) {
             br.getPage(redirect);
         }
+        final DownloadLink main = createDownloadlink(parameter.replace("efukt.com/", "efuktdecrypted.com/"));
+        if (br.getURL().equals("http://efukt.com/")) {
+            main.setFinalFileName(new Regex(parameter, "https?://efukt\\.com/(.+)").getMatch(0));
+            main.setAvailable(false);
+            main.setProperty("offline", true);
+            decryptedLinks.add(main);
+            return decryptedLinks;
+        }
         if (br.containsHTML("flashplayer")) {
-            final DownloadLink main = createDownloadlink(parameter.replace("efukt.com/", "efuktdecrypted.com/"));
-            if (br.getURL().equals("http://efukt.com/")) {
-                main.setFinalFileName(new Regex(parameter, "https?://efukt\\.com/(.+)").getMatch(0));
-                main.setAvailable(false);
-                main.setProperty("offline", true);
-                decryptedLinks.add(main);
-                return decryptedLinks;
-            }
             decryptedLinks.add(main);
         } else {
             /* We should have a picture gallery */

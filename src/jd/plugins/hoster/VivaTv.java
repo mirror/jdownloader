@@ -41,14 +41,16 @@ public class VivaTv extends PluginForHost {
         return "http://www.viva.tv/agb";
     }
 
-    private static final String type_viva_invalid  = "https?://(www\\.)?viva\\.tv/musik\\?page=.+";
-    private static final String type_viva          = "http://www\\.viva\\.tv/.+";
-    private static final String type_funnyclips    = "http://de\\.funnyclips\\.cc/.+";
-    private static final String type_comedycentral = "http://www\\.comedycentral\\.tv/.+";
-    private static final String type_nick          = "http://www\\.nick.de/.+";
-    private static final String type_mtv           = "http://mtv\\.de/.+";
+    private static final String type_invalid_viva          = "http://(www\\.)?viva\\.tv/musik\\?page=.+";
+    private static final String type_invalid_comedycentral = "http://www\\.comedycentral\\.tv/assets/.+";
 
-    private static final String player             = "http://player.mtvnn.com/g2/g2player_2.2.1.swf";
+    private static final String type_viva                  = "http://www\\.viva\\.tv/.+";
+    private static final String type_funnyclips            = "http://de\\.funnyclips\\.cc/.+";
+    private static final String type_comedycentral         = "http://www\\.comedycentral\\.tv/.+";
+    private static final String type_nick                  = "http://www\\.nick.de/.+";
+    private static final String type_mtv                   = "http://mtv\\.de/.+";
+
+    private static final String player                     = "http://player.mtvnn.com/g2/g2player_2.2.1.swf";
 
     /** TODO: Maybe add more domains which the same backend in case there are more... */
     /** Tags: Viacom International Media Networks Northern Europe, mrss, gameone.de */
@@ -61,7 +63,7 @@ public class VivaTv extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         if (link.getDownloadURL().matches(type_viva)) {
-            if (link.getDownloadURL().matches(type_viva_invalid)) {
+            if (link.getDownloadURL().matches(type_invalid_viva)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             br.getPage(link.getDownloadURL());
@@ -95,6 +97,9 @@ public class VivaTv extends PluginForHost {
             filename = show + " - " + title;
             ext = ".mp4";
         } else if (link.getDownloadURL().matches(type_comedycentral)) {
+            if (link.getDownloadURL().matches(type_invalid_comedycentral)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             br.getPage(link.getDownloadURL());
             if (!br.containsHTML("swfobject\\.createCSS") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

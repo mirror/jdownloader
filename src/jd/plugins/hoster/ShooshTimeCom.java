@@ -89,7 +89,13 @@ public class ShooshTimeCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openGetConnection(DLLINK);
+                try {
+                    /* @since JD2 */
+                    con = br2.openHeadConnection(DLLINK);
+                } catch (final Throwable t) {
+                    /* Not supported in old 0.9.581 Stable */
+                    con = br2.openGetConnection(DLLINK);
+                }
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
