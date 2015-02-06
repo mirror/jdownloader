@@ -1086,19 +1086,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     public void track(final String path) {
         final HashMap<String, String> cvar = new HashMap<String, String>();
 
-        cvar.put("thread", Thread.currentThread().getName());
-        Exception e = new Exception();
-        StackTraceElement[] st = e.getStackTrace();
-        for (StackTraceElement ste : st) {
-            String src = ste.getClassName() + "." + ste.getMethodName();
-            if (src.contains("track")) {
-                continue;
-            }
-            cvar.put("source", "jd2");
-            cvar.put("stack", src);
-            break;
-
-        }
+        cvar.put("source", "jd2");
+        cvar.put("os", CrossSystem.getOS().name());
 
         log(new AbstractTrackEntry() {
 
