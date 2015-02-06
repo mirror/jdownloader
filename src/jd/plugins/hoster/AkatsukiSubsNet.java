@@ -54,6 +54,7 @@ public class AkatsukiSubsNet extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.93 Safari/537.36");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Kein Download mit der angegebenen ID gefunden")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -161,4 +162,9 @@ public class AkatsukiSubsNet extends PluginForHost {
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         return true;
     }
+
+    public boolean hasAutoCaptcha() {
+        return false;
+    }
+
 }
