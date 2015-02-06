@@ -46,6 +46,8 @@ public class EfuktComDecrypter extends PluginForDecrypt {
         if (parameter.matches(type_redirect) && redirect != null && !redirect.contains("efukt.com/")) {
             decryptedLinks.add(createDownloadlink(redirect));
             return decryptedLinks;
+        } else if (redirect != null) {
+            br.getPage(redirect);
         }
         if (br.containsHTML("flashplayer")) {
             final DownloadLink main = createDownloadlink(parameter.replace("efukt.com/", "efuktdecrypted.com/"));

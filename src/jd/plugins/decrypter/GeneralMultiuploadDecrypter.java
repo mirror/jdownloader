@@ -32,12 +32,12 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2,
 
-names = { "mirrorcop.com", "multiupfile.com", "multfile.com", "filetobox.com", "maxmirror.com", "exzip.net", "bikupload.com", "uploadseeds.com", "indirbindir.biz", "createmirror.com", "exoshare.com", "3ll3.in", "go4up.com", "uploadonall.com", "directmirror.com", "nextdown.net", "mirrorafile.com", "neo-share.com", "qooy.com", "uploader.ro", "uploadmirrors.com", "indirdur.net", "megaupper.com", "shrta.com", "1filesharing.com", "mirrorfusion.com", "needmirror.com" },
+names = { "mirrorcop.com", "multiupfile.com", "multfile.com", "filetobox.com", "maxmirror.com", "exzip.net", "uploadseeds.com", "indirbindir.biz", "exoshare.com", "3ll3.in", "go4up.com", "uploadonall.com", "directmirror.com", "nextdown.net", "mirrorafile.com", "qooy.com", "uploader.ro", "uploadmirrors.com", "indirdur.net", "megaupper.com", "shrta.com", "1filesharing.com", "mirrorfusion.com", "needmirror.com" },
 
-urls = { "http://(www\\.)?mirrorcop\\.com/downloads/[A-Z0-9]+", "http://(www\\.)?multiupfile\\.com/f/[a-f0-9]+", "http://(www\\.)?multfile\\.com/files/[0-9A-Za-z]{1,15}", "http://(www\\.)?filetobox\\.com/download\\.php\\?uid=[0-9A-Z]{8}", "http://(www\\.)?maxmirror\\.com/download/[0-9A-Z]{8}", "http://(www\\.)?exzip\\.net/download/[0-9A-Z]{8}", "http://(www\\.)?bikupload\\.com/download\\.php\\?uid=[0-9A-Z]{8}", "http://(www\\.)?uploadseeds\\.com/(download\\.php\\?uid=|download/)[0-9A-Z]{8}", "http://(www\\.)?indirbindir\\.biz/files/[0-9A-Z]{8}", "http://(www\\.)?createmirror\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?(exoshare\\.com|multi\\.la)/(download\\.php\\?uid=|s/)[A-Z0-9]{8}", "http://(www\\.)?3ll3\\.in/(files|dl)/\\w{14,18}", "http://(www\\.)?go4up\\.com/(dl/|link\\.php\\?id=)\\w{1,15}", "https?://(www\\.)?uploadonall\\.com/(download|files)/[A-Z0-9]{8}",
-        "http://(www\\.)?nextdown\\.net/files/[0-9A-Z]{8}", "http://(www\\.)?directmirror\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorafile\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?neo\\-share\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?qooy\\.com/files/[0-9A-Z]{8,10}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.(com|org)/download/[0-9A-Z]{8}", "http://[\\w\\.]*?indirdur\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?shrta\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?1filesharing\\.com/(mirror|download)/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorfusion\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?needmirror\\.com/files/[0-9A-Z]{8}" },
+urls = { "http://(www\\.)?mirrorcop\\.com/downloads/[A-Z0-9]+", "http://(www\\.)?multiupfile\\.com/f/[a-f0-9]+", "http://(www\\.)?multfile\\.com/files/[0-9A-Za-z]{1,15}", "http://(www\\.)?filetobox\\.com/download\\.php\\?uid=[0-9A-Z]{8}", "http://(www\\.)?maxmirror\\.com/download/[0-9A-Z]{8}", "http://(www\\.)?exzip\\.net/download/[0-9A-Z]{8}", "http://(www\\.)?uploadseeds\\.com/(download\\.php\\?uid=|download/)[0-9A-Z]{8}", "http://(www\\.)?indirbindir\\.biz/files/[0-9A-Z]{8}", "http://(www\\.)?(exoshare\\.com|multi\\.la)/(download\\.php\\?uid=|s/)[A-Z0-9]{8}", "http://(www\\.)?3ll3\\.in/(files|dl)/\\w{14,18}", "http://(www\\.)?go4up\\.com/(dl/|link\\.php\\?id=)\\w{1,15}", "https?://(www\\.)?uploadonall\\.com/(download|files)/[A-Z0-9]{8}", "http://(www\\.)?nextdown\\.net/files/[0-9A-Z]{8}", "http://(www\\.)?directmirror\\.com/files/[0-9A-Z]{8}",
+        "http://[\\w\\.]*?mirrorafile\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?qooy\\.com/files/[0-9A-Z]{8,10}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.(com|org)/download/[0-9A-Z]{8}", "http://[\\w\\.]*?indirdur\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?shrta\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?1filesharing\\.com/(mirror|download)/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorfusion\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?needmirror\\.com/files/[0-9A-Z]{8}" },
 
-        flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+        flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
 
     public GeneralMultiuploadDecrypter(PluginWrapper wrapper) {
@@ -74,7 +74,7 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         } else if (parameter.matches("http://(www\\.)?(exoshare\\.com|multi\\.la)/(download\\.php\\?uid=|s/)[A-Z0-9]{8}")) {
             parameter = "http://exoshare.com/download.php?uid=" + new Regex(parameter, "([A-Z0-9]{8})$").getMatch(0);
         } else {
-            parameter = parameter.replaceAll("(/dl/|/mirror/|/download/)", "/files/").replace("flameupload.co/", "flameupload.com/");
+            parameter = parameter.replaceAll("(/dl/|/mirror/|/download/)", "/files/");
         }
         // Links need a "/" at the end to be valid
         if (!param.getCryptedUrl().matches(".+exoshare\\.com/.+") && !param.getCryptedUrl().endsWith("/")) {
@@ -186,9 +186,6 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
                 logger.warning("Continuing...");
                 continue;
             }
-            if (dllink.contains("flameupload")) {
-                logger.info("Recursion? " + param.toString() + "->" + dllink);
-            }
             final DownloadLink link = createDownloadlink(dllink);
             if (fileName != null) {
                 link.setName(fileName);
@@ -201,9 +198,7 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
 
     private String decryptLink(Browser brc, final String parameter) throws Exception {
         String dllink = null;
-        if (parameter.contains("flameupload.com/")) {
-            dllink = brc.getRegex(">Download Link:<br><a href=\"([^\"]+)").getMatch(0);
-        } else if (parameter.contains("1filesharing.com/")) {
+        if (parameter.contains("1filesharing.com/")) {
             dllink = brc.getRegex("<iframe id=\"download\" src=\"(.*?)\"").getMatch(0);
         } else if (parameter.contains("needmirror.com/")) {
             dllink = brc.getRegex(">Please <a href=\"([^\"\\']+)\"").getMatch(0);

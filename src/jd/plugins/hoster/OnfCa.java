@@ -58,7 +58,7 @@ public class OnfCa extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setName(Encoding.htmlDecode(filename.trim()) + ".mp4");
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
         return AvailableStatus.TRUE;
     }
 

@@ -49,10 +49,6 @@ import org.w3c.dom.NodeList;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gameone.de" }, urls = { "https?://((www|m)\\.)?gameone\\.de/(tv/\\d+(\\?part=\\d+)?|blog/\\d+/\\d+/.+|playtube/[\\d\\w\\-]+/\\d+(/(sd|hd))?)|http://feedproxy.google.com/~r/mtvgameone/.*\\.mp3" }, flags = { 0 })
 public class GameOneDeA extends PluginForDecrypt {
-    public static void main(String[] args) {
-        System.out.println(new Regex("http://www.gameone.de/playtube/final-stand-reveal-trailer-battlefield-4/645443/hd", "https?://((www|m)\\.)?gameone\\.de/(tv/\\d+(\\?part=\\d+)?|blog/\\d+/\\d+/.+|playtube/[\\d\\w\\-]+/\\d+(/(sd|hd))?)|http://feedproxy.google.com/~r/mtvgameone/.*\\.mp3").matches());
-        ;
-    }
 
     public class ReplacerInputStream extends InputStream {
 
@@ -67,6 +63,7 @@ public class GameOneDeA extends PluginForDecrypt {
          * @author mhaller
          * @see <a href="http://stackoverflow.com/a/4588005">http://stackoverflow.com/a/4588005</a>
          */
+        /** Tags: Viacom International Media Networks Northern Europe, mrss, gameone.de */
         public ReplacerInputStream(InputStream in) {
             this.in = in;
         }
