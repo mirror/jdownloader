@@ -10,6 +10,7 @@ ValidateArchiveAction_ValidateArchiveAction_multi=Validera arkiv
 ValidateArchiveAction_ValidateArchiveAction_object_=Validera arkiv
 ValidateArchiveAction_actionPerformed_=Arkivet har %s1 delar och är komplett
 ValidateArchiveAction_actionPerformed_bad=Arkivet har %s1 delar och är inte komplett.
+ValidateArchiveAction_actionPerformed_information=Arkivinformation: %s1
 and=och minst
 archive=Arkiv:
 archive_file=Fil:
