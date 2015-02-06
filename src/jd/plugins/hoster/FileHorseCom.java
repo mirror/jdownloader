@@ -121,6 +121,15 @@ public class FileHorseCom extends PluginForHost {
         dl.startDownload();
     }
 
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        return true;
+    }
+
+    public boolean hasAutoCaptcha() {
+        return false;
+    }
+
     @Override
     public void reset() {
     }
