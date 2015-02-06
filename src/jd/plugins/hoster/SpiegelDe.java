@@ -39,7 +39,8 @@ public class SpiegelDe extends PluginForHost {
     private final Pattern       pattern_supported_video_mobile   = Pattern.compile("http://m\\.spiegel\\.de/video/media/video\\-\\d+\\.html");
     private final Pattern       pattern_supported_spiegeltvfilme = Pattern.compile("http://(www\\.)?spiegel\\.tv/(#/)?filme/[a-z0-9\\-]+/");
 
-    private static final String rtmp_app                         = "schnee_vod/flashmedia/";
+    private static final String spiegeltvfilme_rtmp_app          = "schnee_vod/flashmedia/";
+    private static final String spiegeltvfilme_apihost           = "http://spiegeltv-ivms2-restapi.s3.amazonaws.com";
 
     private String              DLLINK                           = null;
 
@@ -106,6 +107,21 @@ public class SpiegelDe extends PluginForHost {
             if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            /*
+             * Use the code below if you want to use json-only or need additional information about the video such as its' 'created' and
+             * last 'updated' dates, description and so on.
+             */
+            // final String spiegel_url_name = new Regex(downloadLink.getDownloadURL(), "spiegel\\.tv/filme/([^<>\"]+)/").getMatch(0);
+            // final String id = br.getRegex("<li id=\\'id\\'>(\\d+)</li>").getMatch(0);
+            // if (id == null) {
+            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // }
+            // br.getPage(spiegeltvfilme_apihost + "/version.json");
+            // final String apiversion = getJson("version_name");
+            // br.getPage(spiegeltvfilme_apihost + "/" + apiversion + "/restapi/media/" + id + ".json");
+            // /* Get short information about the video */
+            // br.getPage(spiegeltvfilme_apihost + "/" + apiversion + "/restapi/slugs/" + spiegel_url_name + ".json");
+
             filename += ".flv";
         } else {
             if (new Regex(downloadLink.getDownloadURL(), pattern_supported_image).matches()) {
@@ -214,7 +230,7 @@ public class SpiegelDe extends PluginForHost {
             } else {
                 scalefactor = "4x3";
             }
-            final String rtmpurl = "rtmp://mf.schneevonmorgen.c.nmdn.net/" + rtmp_app;
+            final String rtmpurl = "rtmp://mf.schneevonmorgen.c.nmdn.net/" + spiegeltvfilme_rtmp_app;
             final String playpath = "mp4:" + uuid + "_spiegeltv_0500_" + scalefactor + ".m4v";
 
             try {
@@ -227,7 +243,7 @@ public class SpiegelDe extends PluginForHost {
             rtmp.setPageUrl(this.br.getURL());
             rtmp.setUrl(rtmpurl);
             rtmp.setPlayPath(playpath);
-            rtmp.setApp(rtmp_app);
+            rtmp.setApp(spiegeltvfilme_rtmp_app);
             /* Make sure we're using the correct protocol! */
             rtmp.setProtocol(0);
             rtmp.setFlashVer("WIN 16,0,0,296");
@@ -252,6 +268,26 @@ public class SpiegelDe extends PluginForHost {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     public void reset() {
