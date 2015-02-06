@@ -48,11 +48,11 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtlnow.rtl.de", "voxnow.de", "superrtlnow.de", "rtl2now.rtl2.de" }, urls = { "http://(www\\.)?rtl\\-now\\.rtl\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?voxnow\\.de//?([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?superrtlnow\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?rtl2now\\.rtl2\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+" }, flags = { 32, 32, 32, 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtlnow.rtl.de", "rtlnitronow.de", "voxnow.de", "superrtlnow.de", "rtl2now.rtl2.de" }, urls = { "http://(www\\.)?rtl\\-now\\.rtl\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?rtlnitronow\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?voxnow\\.de//?([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?superrtlnow\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?rtl2now\\.rtl2\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+" }, flags = { 32, 32, 32, 32, 32 })
 public class RTLnowDe extends PluginForHost {
 
+    /* Tags: rtl-interactive.de */
     private Document doc;
-
     private String   DLCONTENT;
 
     public RTLnowDe(final PluginWrapper wrapper) {
