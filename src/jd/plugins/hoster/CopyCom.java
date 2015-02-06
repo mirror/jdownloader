@@ -78,14 +78,18 @@ public class CopyCom extends PluginForHost {
     }
 
     /* Connection stuff */
+    /* Free connection limits */
     private static final boolean FREE_RESUME                  = true;
     private static final int     FREE_MAXCHUNKS               = 0;
     private static final int     FREE_MAXDOWNLOADS            = 20;
+    /* Free account connection limits */
     private static final boolean ACCOUNT_FREE_RESUME          = true;
     private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private static final boolean ACCOUNT_FREE_move_RESUME     = true;
+    /* Free account move-handling connection limits */
+    private static final boolean ACCOUNT_FREE_move_RESUME     = false;
     private static final int     ACCOUNT_FREE_move_MAXCHUNKS  = 1;
+    /* Premium account connection limits */
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
