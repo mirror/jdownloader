@@ -64,6 +64,7 @@ public class DonateAction extends CustomizableAppAction {
                     details = JSonStorage.restoreFromString(json, DonationDetails.TYPEREF);
                 } catch (Throwable e) {
                     try {
+
                         //
                         if (e.getCause() != null) {
                             e = e.getCause();

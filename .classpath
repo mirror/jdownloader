@@ -102,5 +102,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs/sqljet.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/sequence-library.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/svnkit.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/antlr-runtime.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
