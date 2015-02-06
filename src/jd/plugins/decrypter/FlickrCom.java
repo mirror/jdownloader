@@ -218,11 +218,11 @@ public class FlickrCom extends PluginForDecrypt {
             fpName = "flickr.com images of group " + group_id;
         } else {
             final String nsid = get_NSID(null);
-            apilink = "https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&user_id=" + Encoding.urlEncode(nsid) + "&method=flickr.people.getPhotos&hermes=1&hermesClient=1&nojsoncallback=1";
-            /* Use this public request if the other one fails: */
+            apilink = "https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&user_id=" + Encoding.urlEncode(nsid) + "&method=flickr.people.getPublicPhotos&hermes=1&hermesClient=1&nojsoncallback=1";
+            /* Use this public request if the other one fails though this might return all but the last picture...?!: */
             // apilink = "https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey +
             // "&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&user_id=" + Encoding.urlEncode(nsid) +
-            // "&method=flickr.people.getPublicPhotos&hermes=1&hermesClient=1&nojsoncallback=1";
+            // "&method=flickr.people.getPhotos&hermes=1&hermesClient=1&nojsoncallback=1";
             api_getPage(apilink.replace("GETJDPAGE", "1"));
             fpName = "flickr.com images of user " + this.username;
         }

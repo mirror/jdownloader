@@ -16,15 +16,16 @@
 
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -35,12 +36,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file4go.net", "file4go.com" }, urls = { "http://(?:www\\.)?file4go\\.(?:com|net)/(?:r/|d/|download\\.php\\?id=)([a-f0-9]{20})", "regex://nullfied/ranoasdahahdom" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sizedrive.com", "file4go.net", "file4go.com" }, urls = { "http://(?:www\\.)?(?:file4go|sizedrive)\\.(?:com|net)/(?:r/|d/|download\\.php\\?id=)([a-f0-9]{20})", "regex://nullfied/ranoasdahahdom", "regex://nullfied/ranoasdahahdom" }, flags = { 2, 0, 0 })
 public class File4GoCom extends PluginForHost {
 
     public File4GoCom(PluginWrapper wrapper) {
@@ -53,7 +53,7 @@ public class File4GoCom extends PluginForHost {
         return MAINPAGE;
     }
 
-    private static final String MAINPAGE = "http://file4go.net";
+    private static final String MAINPAGE = "http://sizedrive.com";
     private static Object       LOCK     = new Object();
 
     @Override
@@ -68,12 +68,13 @@ public class File4GoCom extends PluginForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if (host == null || "file4go.com".equals(host) || "file4go.net".equals(host)) {
-            return "file4go.net";
+        if (host == null || "file4go.com".equals(host) || "file4go.net".equals(host) || "file4go.net".equals(host) || "file4go.com".equals(host)) {
+            return "sizedrive.com";
         }
         return super.rewriteHost(host);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -98,32 +99,31 @@ public class File4GoCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String reconnectWait = br.getRegex("var time = (\\d+)").getMatch(0);
-        if (reconnectWait != null) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWait) * 1001l);
-        }
-        final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
-        final String rcID = br.getRegex("\\?k=([^<>\"]*?)\"").getMatch(0);
-        if (rcID == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-        rc.setId(rcID);
-        rc.load();
-        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-        final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-        br.postPage("/getdownload.php", "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&id=" + fid);
-        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
-        br.setFollowRedirects(false);
-        final String dllink = getDllink();
+        final String id = new Regex(downloadLink.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
+        String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            int wait = 0;
+            final String waittime = br.getRegex("var time = (\\d+)").getMatch(0);
+            if (waittime == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            wait = Integer.parseInt(waittime);
+            if (wait > 180) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
+            }
+            this.sleep(wait * 1001l, downloadLink);
+            br.postPage("/getdownload.php", "id=" + id);
+            dllink = br.getRegex("\"(https?://[a-z0-9]+\\.sizedrive\\.com:\\d+/betafree/[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = getDllink();
+            }
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         // Waittime can be skipped
         // int wait = 60;
@@ -137,7 +137,7 @@ public class File4GoCom extends PluginForHost {
          * br.getRegex("\"link\":\"([A-Za-z0-9]+)\"").getMatch(0); if (dllink == null) throw new
          * PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); dllink = dllUrl + dllink;
          */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         /* resume no longer supported */
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -146,7 +146,38 @@ public class File4GoCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setProperty("directlink", dllink);
         dl.startDownload();
+    }
+
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                try {
+                    /* @since JD2 */
+                    con = br2.openHeadConnection(dllink);
+                } catch (final Throwable t) {
+                    /* Not supported in old 0.9.581 Stable */
+                    con = br2.openGetConnection(dllink);
+                }
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+            } catch (final Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
+        return dllink;
     }
 
     @SuppressWarnings("unchecked")
@@ -175,7 +206,7 @@ public class File4GoCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage(MAINPAGE + "/login.html", "acao=logar&login=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("http://www.sizedrive.com/login.html", "acao=logar&login=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass()));
                 final String lang = System.getProperty("user.language");
                 if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
                     if ("de".equalsIgnoreCase(lang)) {
@@ -210,6 +241,7 @@ public class File4GoCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -236,11 +268,12 @@ public class File4GoCom extends PluginForHost {
         return ai;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         final String dllink = getDllink();
         if (dllink == null) {

@@ -318,7 +318,7 @@ public class CopyCom extends PluginForHost {
             /* Original (public) path to the file. */
             final String plain_path_saved = link.getStringProperty("plain_path", null);
             /* Path to the file based on users' account folderstructure. */
-            String plain_path_real = null;
+            String plain_path_encoded = null;
             final String fid = getFID(link);
             boolean movefiletoaccount = this.getPluginConfig().getBooleanProperty(MOVE_FILES_TO_ACCOUNT, false);
             final boolean deleteafterdownload = this.getPluginConfig().getBooleanProperty(DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD, false);
@@ -353,21 +353,26 @@ public class CopyCom extends PluginForHost {
                 // }
                 logger.info("Importing file/folder into account");
                 br.postPageRaw("https://apiweb.copy.com/jsonrpc", "{\"jsonrpc\":\"2.0\",\"method\":\"copy_link\",\"params\":{\"link_token\":\"" + fid + "\"},\"id\":1}");
+
+                /* Important for the final download request! TOO: Add correct emailHashShort value if needed... */
+                final String account_cookie = "[{\"atu\":\"" + api_auth + "\",\"emailHashShort\":\"\"}]";
+                br.setCookie("http://copy.com/", "activeAccounts", account_cookie);
+
                 final String share_owner = getJson("share_owner");
-                plain_path_real = getJson("path");
-                if (share_owner == null || plain_path_real == null) {
+                plain_path_encoded = getJson("path");
+                if (share_owner == null || plain_path_encoded == null) {
                     logger.warning("MoveFileToAcc handling failed");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 /* Add correct path to the file in case user added a folder with files- and or more subfolders/files. */
-                if (plain_path_saved.matches("/.+/.+") && !plain_path_real.matches("/.+/.+")) {
-                    plain_path_real += new Regex(plain_path_saved, "^/[^<>\"/]+(/.+)").getMatch(0);
+                if (plain_path_saved.matches("/.+/.+") && !plain_path_encoded.matches("/.+/.+")) {
+                    plain_path_encoded += new Regex(plain_path_saved, "^/[^<>\"/]+(/.+)").getMatch(0);
                 }
                 ddlink = "https://copy.com/web/users/user-" + share_owner + "/copy";
-                plain_path_real = plain_path_real.replace(" ", "%20");
-                plain_path_real = plain_path_real.replace("(", "%28");
-                plain_path_real = plain_path_real.replace(")", "%29");
-                ddlink += plain_path_real + "/";
+                plain_path_encoded = plain_path_encoded.replace(" ", "%20");
+                plain_path_encoded = plain_path_encoded.replace("(", "%28");
+                plain_path_encoded = plain_path_encoded.replace(")", "%29");
+                ddlink += plain_path_encoded + "/";
                 ddlink += "?download=1";
                 // ddlink = ddlink.replace(finalfilename, escaped_filename);
             }
@@ -379,10 +384,11 @@ public class CopyCom extends PluginForHost {
                     boolean success = false;
                     try {
                         /* Delete root folder for folders with files/more subfolders (see note above). */
-                        if (plain_path_real.matches("/.+/.+")) {
-                            plain_path_real = new Regex(plain_path_real, "^(/[^<>\"/]+)/").getMatch(0);
+                        if (plain_path_encoded.matches("/.+/.+")) {
+                            plain_path_encoded = new Regex(plain_path_encoded, "^(/[^<>\"/]+)/").getMatch(0);
                         }
-                        br.postPageRaw("https://apiweb.copy.com/jsonrpc", "{\"jsonrpc\":\"2.0\",\"method\":\"update_objects\",\"params\":{\"meta\":[{\"action\":\"remove\",\"path\":\"" + plain_path_real + "\"}]},\"id\":1}");
+                        final String plain_path_decoded = Encoding.htmlDecode(plain_path_encoded);
+                        br.postPageRaw("https://apiweb.copy.com/jsonrpc", "{\"jsonrpc\":\"2.0\",\"method\":\"update_objects\",\"params\":{\"meta\":[{\"action\":\"remove\",\"path\":\"" + plain_path_decoded + "\"}]},\"id\":1}");
                         if (getJson("code") != null) {
                             success = false;
                         } else {

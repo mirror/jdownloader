@@ -281,12 +281,31 @@ public class AsFileCom extends antiDDoSForHost {
                     }
                 }
                 getPage(MAINPAGE + "/en/");
-                postPage(MAINPAGE + "/en/login", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=on&referer=%2Fen%2F");
-                if (br.containsHTML(">Fail login<") || !br.containsHTML("logout\">Logout ")) {
+                getPage(MAINPAGE + "/en/login");
+                for (int i = 1; i <= 2; i++) {
+                    String postData = "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=on&referer=%2Fen%2F";
+                    final String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
+                    if (rcID != null) {
+                        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        rc.setId(rcID);
+                        rc.load();
+                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        final DownloadLink dummyLink = new DownloadLink(this, "Account", "asfile.com", MAINPAGE, true);
+                        final String c = getCaptchaCode("recaptcha", cf, dummyLink);
+                        postData += "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c);
+                    }
+                    postPage(MAINPAGE + "/en/login", postData);
+                    if (br.containsHTML(">Fail login<") || br.containsHTML(">You incorrectly entered the CAPTCHA<")) {
+                        continue;
+                    }
+                    break;
+                }
+                if (br.containsHTML(">Fail login<") || br.containsHTML(">You incorrectly entered the CAPTCHA<") || !br.containsHTML("logout\">Logout ")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 getPage("http://asfile.com/en/profile");
