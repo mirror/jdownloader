@@ -84,6 +84,8 @@ public class CopyCom extends PluginForHost {
     private static final boolean ACCOUNT_FREE_RESUME          = true;
     private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private static final boolean ACCOUNT_FREE_move_RESUME     = true;
+    private static final int     ACCOUNT_FREE_move_MAXCHUNKS  = 1;
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
@@ -374,34 +376,36 @@ public class CopyCom extends PluginForHost {
                 plain_path_encoded = plain_path_encoded.replace(")", "%29");
                 ddlink += plain_path_encoded + "/";
                 ddlink += "?download=1";
-                // ddlink = ddlink.replace(finalfilename, escaped_filename);
-            }
-            try {
-                this.sleep(8 * 1000l, link);
-                doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
-            } finally {
-                if (deleteafterdownload) {
-                    boolean success = false;
-                    try {
-                        /* Delete root folder for folders with files/more subfolders (see note above). */
-                        if (plain_path_encoded.matches("/.+/.+")) {
-                            plain_path_encoded = new Regex(plain_path_encoded, "^(/[^<>\"/]+)/").getMatch(0);
+
+                try {
+                    this.sleep(8 * 1000l, link);
+                    doFree(link, ACCOUNT_FREE_move_RESUME, ACCOUNT_FREE_move_MAXCHUNKS, "account_free_directlink");
+                } finally {
+                    if (deleteafterdownload) {
+                        boolean success = false;
+                        try {
+                            /* Delete root folder for folders with files/more subfolders (see note above). */
+                            if (plain_path_encoded.matches("/.+/.+")) {
+                                plain_path_encoded = new Regex(plain_path_encoded, "^(/[^<>\"/]+)/").getMatch(0);
+                            }
+                            final String plain_path_decoded = Encoding.htmlDecode(plain_path_encoded);
+                            br.postPageRaw("https://apiweb.copy.com/jsonrpc", "{\"jsonrpc\":\"2.0\",\"method\":\"update_objects\",\"params\":{\"meta\":[{\"action\":\"remove\",\"path\":\"" + plain_path_decoded + "\"}]},\"id\":1}");
+                            if (getJson("code") != null) {
+                                success = false;
+                            } else {
+                                success = true;
+                            }
+                        } catch (final Throwable e) {
                         }
-                        final String plain_path_decoded = Encoding.htmlDecode(plain_path_encoded);
-                        br.postPageRaw("https://apiweb.copy.com/jsonrpc", "{\"jsonrpc\":\"2.0\",\"method\":\"update_objects\",\"params\":{\"meta\":[{\"action\":\"remove\",\"path\":\"" + plain_path_decoded + "\"}]},\"id\":1}");
-                        if (getJson("code") != null) {
-                            success = false;
+                        if (success) {
+                            logger.info("Successfully deleted file from account");
                         } else {
-                            success = true;
+                            logger.warning("Failed to remove file from account");
                         }
-                    } catch (final Throwable e) {
-                    }
-                    if (success) {
-                        logger.info("Successfully deleted file from account");
-                    } else {
-                        logger.warning("Failed to remove file from account");
                     }
                 }
+            } else {
+                doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
             }
         } else {
             String dllink = br.getRegex("").getMatch(0);
