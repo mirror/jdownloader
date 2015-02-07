@@ -537,7 +537,7 @@ public class Uploadedto extends PluginForHost {
         }
         String isPremium = br.getMatch("status: (premium)");
         if (isPremium == null) {
-            ai.setStatus("Registered (free) User");
+            ai.setStatus("Free account");
             ai.setUnlimitedTraffic();
             try {
                 maxPrem.set(1);
