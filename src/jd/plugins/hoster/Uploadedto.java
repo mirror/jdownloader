@@ -871,6 +871,7 @@ public class Uploadedto extends PluginForHost {
         if (br.containsHTML("No connection to database")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
         }
+        /* "err" strings: */
         if (br.containsHTML("\"err\":\"This file exceeds the max")) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -885,6 +886,13 @@ public class Uploadedto extends PluginForHost {
             logger.info("File offline after captcha...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        if (br.containsHTML("sorry but all of our available download slots are busy currently")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free Free-User Slots! Get a premium account or wait!", 5 * 60 * 1000l);
+        }
+        if (br.containsHTML("\"err\":\"Internal error\"")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Internal error'", 5 * 60 * 1000l);
+        }
+        /* "err" strings end */
         if (br.containsHTML("You have reached the max\\. number of possible free downloads|err\":\"limit\\-dl\"")) {
             if (account == null) {
                 logger.info("Limit reached, throwing reconnect exception");
@@ -897,9 +905,6 @@ public class Uploadedto extends PluginForHost {
         }
         if (br.containsHTML("<title>uploaded\\.net \\- Maintenance")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance", 20 * 60 * 1000l);
-        }
-        if (br.containsHTML("\"err\":\"Internal error\"")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Internal error'", 5 * 60 * 1000l);
         }
 
     }
