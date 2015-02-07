@@ -136,8 +136,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         thread.setName("StatsSender");
         thread.start();
         sessionStart = System.currentTimeMillis();
-        if (Math.random() < 0.1) {
-            track("start");
+        if (Math.random() < 0.001d) {
+            track("start1000");
         }
 
     }
