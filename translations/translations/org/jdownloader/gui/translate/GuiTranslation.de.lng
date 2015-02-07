@@ -302,6 +302,7 @@ DonationDialog_run_cancel=Irgendetwas lief schief. Überprüfe deinen Zahlungsan
 DonationDialog_run_failed=Die Spende ist fehlgeschlagen. Überprüfe deinen Zahlungsanbieter und versuche es noch einmal.
 DonationDialog_run_thanks_=Danke für deine Spende!
 DonationDialog_setReturnmask_range=Bitte wähle einen Betrag zwischen 1 und 1000
+DonationDialog_setReturnmask_range2=Bitte wähle einen Betrag zwischen %s1 und %s2
 DownloadBugFinderWindow_default=<html>Bitte klicke auf den fehlgeschlagenen Download<br>, um das Problem zu melden.</html>
 DownloadBugFinderWindow_getTitle=Ein Downloadproblem melden
 DownloadController_deleteLinksRequest_nolinks=Es sind keine Downloadlinks vorhanden, die gelöscht werden könnten.
