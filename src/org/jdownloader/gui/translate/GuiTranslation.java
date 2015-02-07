@@ -5740,4 +5740,40 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Donation in progress. Please finish the donation in your browser." })
     String DonationDialog_layoutDialogContent_please_wait_progress_msg();
 
+    @Default(lngs = { "en" }, values = { "More..." })
+    String DonationDialog_layoutDialogContent_more();
+
+    @Default(lngs = { "en" }, values = { "Credit Card" })
+    String DonationDialog_popup_creditcard();
+
+    @Default(lngs = { "en" }, values = { "PaysafeCard" })
+    String DonationDialog_popup_paysafe();
+
+    @Default(lngs = { "en" }, values = { "Mobile Pay (e.g. SMS)" })
+    String DonationDialog_popup_mobile();
+
+    @Default(lngs = { "en" }, values = { "Call 2 Pay" })
+    String DonationDialog_popup_call2pay();
+
+    @Default(lngs = { "en" }, values = { "Direct Debit" })
+    String DonationDialog_popup_directdebit();
+
+    @Default(lngs = { "en" }, values = { "Wired Bank Transfer" })
+    String DonationDialog_popup_wired();
+
+    @Default(lngs = { "en" }, values = { "Amazon Pay" })
+    String DonationDialog_popup_amazon();
+
+    @Default(lngs = { "en" }, values = { "Other" })
+    String DonationDialog_popup_other();
+
+    @Default(lngs = { "en" }, values = { "This payment gateway is not available yet. We will probably add it soon. " })
+    String DonationDialog_NotImplementedProvider_actionPerformed_();
+
+    @Default(lngs = { "en" }, values = { "Sofort Überweisung" })
+    String DonationDialog_popup_sofort_ueberweisung();
+
+    @Default(lngs = { "en" }, values = { "Please choose an amount between %s1 and %s2" })
+    String DonationDialog_setReturnmask_range2(double amtMin, double amtMax);
+
 }
