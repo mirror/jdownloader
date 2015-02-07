@@ -887,6 +887,7 @@ public class Uploadedto extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML("sorry but all of our available download slots are busy currently")) {
+            /* Not yet clear if this happens for single links or if this means that globally free dls are not possible at the moment... */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free Free-User Slots! Get a premium account or wait!", 5 * 60 * 1000l);
         }
         if (br.containsHTML("\"err\":\"Internal error\"")) {
