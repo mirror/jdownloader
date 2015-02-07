@@ -6,6 +6,7 @@ import java.awt.Component;
 import java.awt.Composite;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.geom.Ellipse2D;
 
 import javax.swing.Icon;
 
@@ -69,7 +70,7 @@ public class FavitIcon implements Icon, FavIconRequestor, IDIcon {
 
         int xx = x + width - badge.getIconWidth();
         int yy = y + height - badge.getIconHeight();
-        g.fillOval(xx, yy, badge.getIconWidth(), badge.getIconHeight());
+        g2d.fill(new Ellipse2D.Float(xx, yy, badge.getIconWidth(), badge.getIconHeight()));
         // g.fillRect(xx, yy, size, size);
 
         badge.paintIcon(c, g, xx, yy);
