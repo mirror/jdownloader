@@ -39,6 +39,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.donate.DonationManager;
@@ -339,7 +340,19 @@ public class DonationDialog extends AbstractDialog<Object> {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            StatsManager.I().track("/donation/button/provider/" + provider.name());
+            if (provider == PayProvider.OTHER) {
+                String name = "noanswer";
+                try {
+                    name = Dialog.getInstance().showInputDialog("Which provider would you like to use?");
+                } catch (DialogClosedException e1) {
+                    e1.printStackTrace();
+                } catch (DialogCanceledException e1) {
+                    e1.printStackTrace();
+                }
+                StatsManager.I().track("/donation/button/provider/" + provider.name() + "/" + name);
+            } else {
+                StatsManager.I().track("/donation/button/provider/" + provider.name());
+            }
             Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_NotImplementedProvider_actionPerformed_());
         }
     }
