@@ -345,6 +345,7 @@ public class UploadableCh extends PluginForHost {
         return ai;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
@@ -359,6 +360,12 @@ public class UploadableCh extends PluginForHost {
                 postlink = postlink.replace("http://", "http://www.");
             }
             br.postPage(postlink, "download=premium");
+            /*
+             * Full message: You have exceeded your download limit. Please verify your email address to continue downloading.
+             */
+            if (br.containsHTML("You have exceeded your download limit")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Downloadlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
             final String dllink = br.getRedirectLocation();
             if (dllink == null) {
                 logger.warning("Final link is null");

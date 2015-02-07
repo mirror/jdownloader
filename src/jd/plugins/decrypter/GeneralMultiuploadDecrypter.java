@@ -37,7 +37,7 @@ names = { "mirrorcop.com", "multiupfile.com", "multfile.com", "filetobox.com", "
 urls = { "http://(www\\.)?mirrorcop\\.com/downloads/[A-Z0-9]+", "http://(www\\.)?multiupfile\\.com/f/[a-f0-9]+", "http://(www\\.)?multfile\\.com/files/[0-9A-Za-z]{1,15}", "http://(www\\.)?filetobox\\.com/download\\.php\\?uid=[0-9A-Z]{8}", "http://(www\\.)?maxmirror\\.com/download/[0-9A-Z]{8}", "http://(www\\.)?exzip\\.net/download/[0-9A-Z]{8}", "http://(www\\.)?uploadseeds\\.com/(download\\.php\\?uid=|download/)[0-9A-Z]{8}", "http://(www\\.)?indirbindir\\.biz/files/[0-9A-Z]{8}", "http://(www\\.)?(exoshare\\.com|multi\\.la)/(download\\.php\\?uid=|s/)[A-Z0-9]{8}", "http://(www\\.)?3ll3\\.in/(files|dl)/\\w{14,18}", "http://(www\\.)?go4up\\.com/(dl/|link\\.php\\?id=)\\w{1,15}", "https?://(www\\.)?uploadonall\\.com/(download|files)/[A-Z0-9]{8}", "http://(www\\.)?nextdown\\.net/files/[0-9A-Z]{8}", "http://(www\\.)?directmirror\\.com/files/[0-9A-Z]{8}",
         "http://[\\w\\.]*?mirrorafile\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?qooy\\.com/files/[0-9A-Z]{8,10}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.(com|org)/download/[0-9A-Z]{8}", "http://[\\w\\.]*?indirdur\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?shrta\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?1filesharing\\.com/(mirror|download)/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorfusion\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?needmirror\\.com/files/[0-9A-Z]{8}" },
 
-        flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
 
     public GeneralMultiuploadDecrypter(PluginWrapper wrapper) {
@@ -83,6 +83,9 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         String protocol = new Regex(parameter, "(https?://)").getMatch(0);
         String host = new Regex(parameter, "://([^/]+)/").getMatch(0);
         String id = new Regex(parameter, "https?://.+/(\\?go=|download\\.php\\?uid=)?([0-9A-Za-z]{8,18})").getMatch(1);
+        if (id == null && parameter.matches("(?i).+multiupfile\\.com/.+")) {
+            id = new Regex(parameter, "([A-Za-z0-9]+)/?$").getMatch(0);
+        }
         // This should never happen but in case a dev changes the plugin without
         // much testing he'll see the error later!
         if (host == null || id == null) {
@@ -110,6 +113,7 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             getPage(br, parameter);
             if (br.containsHTML(">File not Found<")) {
                 logger.info("Link offline: " + parameter);
+                decryptedLinks.add(getOffline(parameter));
                 return decryptedLinks;
             }
             // if (br.containsHTML("golink")) br.postPage(br.getURL(), "golink=Access+Links");
@@ -118,6 +122,10 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             // use standard page, status.php doesn't exist
             // br.getHeaders().put("Accept-Encoding", "identity");
             getPage(br, parameter);
+            if (br.containsHTML(">File not found<")) {
+                decryptedLinks.add(getOffline(parameter));
+                return decryptedLinks;
+            }
             final String token = br.getRegex("value=\"([a-z0-9]+)\" name=\"YII_CSRF_TOKEN\"").getMatch(0);
             if (token == null) {
                 logger.warning("Decrypter broken for link: " + param.toString());
@@ -134,6 +142,7 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         /* Error handling */
         if (!br.containsHTML("<img src=") && !br.containsHTML("<td class=\"host\">") || ((parameter.contains("3ll3.in/")) && br.containsHTML("<h1>FILE NOT FOUND</h1>"))) {
             logger.info("The following link should be offline: " + param.toString());
+            decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }
         br.setFollowRedirects(false);
@@ -149,6 +158,7 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             } else if (host.contains("1filesharing.com") && br.containsHTML("/images/removed\\.gif")) {
                 logger.info("All links are unavailable (abused): " + parameter);
+                decryptedLinks.add(getOffline(parameter));
                 return decryptedLinks;
             }
             logger.warning("Decrypter broken for link: " + parameter);
@@ -227,6 +237,13 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             }
         }
         return dllink;
+    }
+
+    private DownloadLink getOffline(final String parameter) {
+        final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+        offline.setAvailable(false);
+        offline.setProperty("offline", true);
+        return offline;
     }
 
     private Browser getPage(Browser ibr, String url) throws Exception {
