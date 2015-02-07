@@ -88,7 +88,7 @@ public class ProviderPanel extends MigPanel {
         ;
         if (amount < provider.getAmtMin() || amount > provider.getAmtMax()) {
             input.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.RED));
-            Dialog.getInstance().showErrorDialog(_GUI._.DonationDialog_setReturnmask_range());
+            Dialog.getInstance().showErrorDialog(_GUI._.DonationDialog_setReturnmask_range2(provider.getAmtMin(), provider.getAmtMax()));
 
             return -1;
         }

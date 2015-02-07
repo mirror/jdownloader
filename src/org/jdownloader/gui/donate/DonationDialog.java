@@ -1,5 +1,8 @@
 package org.jdownloader.gui.donate;
 
+import java.awt.Dimension;
+import java.awt.MouseInfo;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
@@ -10,7 +13,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JPopupMenu;
 import javax.swing.JTabbedPane;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -20,6 +25,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.StorageException;
 import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
+import org.appwork.swing.action.BasicAction;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
@@ -36,11 +42,13 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.donate.DonationManager;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.mainmenu.DonateAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.statistics.StatsManager;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class DonationDialog extends AbstractDialog<Object> {
 
@@ -59,6 +67,8 @@ public class DonationDialog extends AbstractDialog<Object> {
     protected String          transactionID;
     private JTabbedPane       tabbed;
     protected ProviderPanel   currentPanel;
+    private JLabel            more;
+    private MigPanel          p;
 
     public DonationDialog(DonationDetails details2) {
         super(0, _GUI._.DonationDialog_DonationDialog_title_(), null, _GUI._.DonationDialog_ok(), null);
@@ -261,7 +271,7 @@ public class DonationDialog extends AbstractDialog<Object> {
     @Override
     public JComponent layoutDialogContent() {
 
-        MigPanel p = new MigPanel("ins 5", "0[]0", "[][grow,fill]");
+        p = new MigPanel("ins 5", "0[]0", "[][grow,fill]");
 
         JLabel top = new JLabel("<html><b>" + _GUI._.DonationDialog_layoutDialogContent_top_text() + "</b></html>");
         p.add(top, "spanx,pushx,growx");
@@ -288,12 +298,22 @@ public class DonationDialog extends AbstractDialog<Object> {
             }
             tabbed.addTab(label.toString(), icon, new ProviderPanel(details, provider));
         }
-
+        tabbed.addTab(_GUI._.DonationDialog_layoutDialogContent_more(), new AbstractIcon(IconKey.ICON_ADD, 20), more = new JLabel());
         p.add(tabbed, "pushx,growx,spanx,pushy,growy,spany");
         tabbed.addChangeListener(new ChangeListener() {
 
             @Override
             public void stateChanged(ChangeEvent e) {
+                if (tabbed.getSelectedComponent() == more) {
+                    if (currentPanel != null) {
+                        tabbed.setSelectedComponent(currentPanel);
+                    } else {
+                        tabbed.setSelectedIndex(0);
+                    }
+
+                    popup();
+                    return;
+                }
                 ProviderPanel newPanel = getProviderPanel();
                 if (currentPanel != null && newPanel != currentPanel && newPanel != null) {
                     newPanel.setSelectedCategories(currentPanel.getSelectedCategories());
@@ -306,6 +326,39 @@ public class DonationDialog extends AbstractDialog<Object> {
         tabbed.setSelectedIndex(details.getDefaultProvider());
 
         return p;
+    }
+
+    public class NotImplementedProvider extends BasicAction {
+
+        private PayProvider provider;
+
+        public NotImplementedProvider(PayProvider p) {
+            this.provider = p;
+            setName(p.getLabel());
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            StatsManager.I().track("/donation/button/provider/" + provider.name());
+            Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_NotImplementedProvider_actionPerformed_());
+        }
+    }
+
+    protected void popup() {
+        JPopupMenu pu = new JPopupMenu();
+        for (PayProvider p : PayProvider.values()) {
+            pu.add(new NotImplementedProvider(p));
+
+        }
+        int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
+        Point point = MouseInfo.getPointerInfo().getLocation();
+        SwingUtilities.convertPointFromScreen(point, p);
+        Dimension pref = pu.getPreferredSize();
+        // pref.width = positionComp.getWidth() + ((Component)
+        // e.getSource()).getWidth() + insets[1] + insets[3];
+        // pu.setPreferredSize(new Dimension(optionsgetWidth() + insets[1] + insets[3], (int) pref.getHeight()));
+
+        pu.show(p, point.x, point.y);
     }
 
     public void startFallbackWaiter(final String[] list, final String noteText, final double amt, final String provider, final String cCode) {
