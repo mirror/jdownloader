@@ -67,8 +67,14 @@ public class FileniumCom extends PluginForHost {
     private final String                                   domains            = "domains";
     private String                                         SELECTEDDOMAIN     = domainsList[0];
 
+    private static final String                            NICE_HOST          = "offcloud.com";
+    private static final String                            NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
+
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            DLFAILED           = "<title>Error: Cannot get access at this time, check your link or advise us of this error to fix\\.</title>";
+
+    private Account                                        currAcc            = null;
+    private DownloadLink                                   currDownloadLink   = null;
 
     public Browser newBrowser() {
         br = new Browser();
@@ -82,6 +88,11 @@ public class FileniumCom extends PluginForHost {
         br.setReadTimeout(60 * 1000);
         br.setAllowedResponseCodes(401);
         return br;
+    }
+
+    private void setConstants(final Account acc, final DownloadLink dl) {
+        this.currAcc = acc;
+        this.currDownloadLink = dl;
     }
 
     public boolean checkLinks(DownloadLink[] urls) {
@@ -192,7 +203,8 @@ public class FileniumCom extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        setConstants(account, link);
         login(account, false);
         handleDL(link, link.getDownloadURL(), false, account);
     }
@@ -225,12 +237,7 @@ public class FileniumCom extends PluginForHost {
         } else {
             final int responseCode = dl.getConnection().getResponseCode();
             if (liveLink == false && responseCode == 404) {
-                /* link is a pre-generated one and 404 = file offline */
-                try {
-                    dl.getConnection().disconnect();
-                } catch (final Throwable e) {
-                }
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                handleErrorRetries("error_response_404", 10, 60 * 60 * 1000l);
             }
             if (responseCode == 503) {
                 try {
@@ -244,10 +251,10 @@ public class FileniumCom extends PluginForHost {
              */
             br.followConnection();
             if (br.containsHTML(">Error: Al recuperar enlace\\. No disponible temporalmente, disculpa las molestias<")) {
-                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+                tempUnavailableHoster(60 * 60 * 1000l);
             } else if (br.containsHTML(">TRAFICO CONSUMIDO PARA")) {
                 logger.info("Traffic for the current host is exhausted");
-                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+                tempUnavailableHoster(60 * 60 * 1000l);
             }
             generalErrorhandling(link, account);
             /* Seems like we're on the mainpage -> Maybe traffic exhausted */
@@ -262,6 +269,7 @@ public class FileniumCom extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
+        setConstants(acc, link);
         login(acc, false);
         showMessage(link, "Task 1: Generating ink");
         String dllink = br.getPage("http://" + SELECTEDDOMAIN + "/?filenium&filez=" + Encoding.urlEncode(link.getDownloadURL()));
@@ -278,21 +286,14 @@ public class FileniumCom extends PluginForHost {
         // This can either mean that it's a temporary error or that the hoster
         // should be deactivated
         if (br.containsHTML(DLFAILED)) {
-            int timesFailed = link.getIntegerProperty("timesfailedfilenium", 0);
-            if (timesFailed <= 2) {
-                timesFailed++;
-                link.setProperty("timesfailedfilenium", timesFailed);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
-            } else {
-                link.setProperty("timesfailedfilenium", Property.NULL);
-                tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
-            }
+            handleErrorRetries("error_no_access", 5, 60 * 60 * 1000l);
         }
     }
 
     @SuppressWarnings("deprecation")
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        setConstants(account, null);
         AccountInfo ai = new AccountInfo();
         login(account, true);
         account.setValid(true);
@@ -365,18 +366,42 @@ public class FileniumCom extends PluginForHost {
         }
     }
 
-    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
-        if (downloadLink == null) {
+    /**
+     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
+     * from the host list.
+     *
+     * @param error
+     *            : The name of the error
+     * @param maxRetries
+     *            : Max retries before out of date error is thrown
+     */
+    private void handleErrorRetries(final String error, final int maxRetries, final long disableTime) throws PluginException {
+        int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
+        this.currDownloadLink.getLinkStatus().setRetryCount(0);
+        if (timesFailed <= maxRetries) {
+            logger.info(NICE_HOST + ": " + error + " -> Retrying");
+            timesFailed++;
+            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
+            throw new PluginException(LinkStatus.ERROR_RETRY, error);
+        } else {
+            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
+            logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
+            tempUnavailableHoster(disableTime);
+        }
+    }
+
+    private void tempUnavailableHoster(final long timeout) throws PluginException {
+        if (this.currDownloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         }
         synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(this.currAcc);
             if (unavailableMap == null) {
                 unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(account, unavailableMap);
+                hostUnavailableMap.put(this.currAcc, unavailableMap);
             }
-            /* wait to retry this host */
-            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
+            /* wait 30 mins to retry this host */
+            unavailableMap.put(this.currDownloadLink.getHost(), (System.currentTimeMillis() + timeout));
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
