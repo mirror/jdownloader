@@ -1,2 +1,13 @@
 add_files_action=Medien hinzufügen
+gui_video_album=Album
+gui_video_artist=Künstler
+gui_video_duration=Dauer
+gui_video_format=Format
+gui_video_name=Titel
+gui_video_size=Größe
 gui_video_status=Status
+mediatable_rly_remove_msg=%s1 Einträge aus der Bibliothek entfernen?
+mediatable_rly_remove_title=Bist du sicher?
+nodename_audio=Audio
+nodename_image=Bild
+nodename_video=Video
