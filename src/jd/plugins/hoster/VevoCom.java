@@ -120,7 +120,7 @@ public class VevoCom extends PluginForHost {
             final LinkedHashMap<String, Object> video = (LinkedHashMap<String, Object>) entries.get("video");
             final ArrayList<Object> ressourcelist = (ArrayList) video.get("videoVersions");
             int count = ressourcelist.size();
-            /* Explanation of sourceType: 0=undefined, 1=?, 2=HTTP, 3=HLS iOS,4=HLS, 10=SmoothStreaming, */
+            /* Explanation of sourceType: 0=undefined, 1=?Probably HDS?, 2=HTTP, 3=HLS iOS,4=HLS, 10=SmoothStreaming */
             /*
              * Explanation of version: Seems to be different vevo data servers as it has no influence on the videoquality: 0==, 1=?,
              * 2=aka.vevo.com, 3=lvl3.vevo.com, 4=aws.vevo.com --> version 2 never worked for me
