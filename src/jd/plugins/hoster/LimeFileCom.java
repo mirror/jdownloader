@@ -89,7 +89,7 @@ public class LimeFileCom extends PluginForHost {
     private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 1;
     private static final boolean           ACCOUNT_PREMIUM_RESUME       = false;
     private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
-    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 1;
+    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
@@ -102,7 +102,7 @@ public class LimeFileCom extends PluginForHost {
     // XfileSharingProBasic Version 2.6.6.8
     // Tags: Script, template
     // mods: scanInfo, login
-    // limit-info: premium untested, set free account limits
+    // limit-info:
     // protocol: no https
     // captchatype: recaptcha
     // other:
