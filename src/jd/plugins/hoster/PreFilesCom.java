@@ -388,9 +388,9 @@ public class PreFilesCom extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "\"(http://srv\\d+\\.prefiles\\.com(:\\d+)?/files/\\d+/[a-z0-9]+/[^<>\"]*?)\"").getMatch(0);
+            dllink = new Regex(correctedBR, "\"(http://(?:srv\\d+\\.prefiles\\.com|[1-2]{0,1}[0-9]{0,1}[0-9]\\.[1-2]{0,1}[0-9]{0,1}[0-9]\\.[1-2]{0,1}[0-9]{0,1}[0-9]\\.[1-2]{0,1}[0-9]{0,1}[0-9])(:\\d+)?/files/\\d+/[a-z0-9]+/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = new Regex(correctedBR, "\"(http://[0-9\\.]+prefil\\.es/(cgi\\-bin/dl\\.cgi/|files/\\d+/[a-z0-9]+/)[^<>\"]*?)\"").getMatch(0);
+                dllink = new Regex(correctedBR, "\"(http://(?:[0-9\\.]+prefil\\.es|[1-2]{0,1}[0-9]{0,1}[0-9]\\.[1-2]{0,1}[0-9]{0,1}[0-9]\\.[1-2]{0,1}[0-9]{0,1}[0-9]\\.[1-2]{0,1}[0-9]{0,1}[0-9])/(cgi\\-bin/dl\\.cgi/|files/\\d+/[a-z0-9]+/)[^<>\"]*?)\"").getMatch(0);
             }
         }
         return dllink;
@@ -612,10 +612,8 @@ public class PreFilesCom extends PluginForHost {
         }
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Registered (free) User");
+            maxPrem.set(1);
             try {
-                maxPrem.set(1);
-                // free accounts can still have captcha.
-                totalMaxSimultanFreeDownload.set(maxPrem.get());
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
@@ -629,8 +627,8 @@ public class PreFilesCom extends PluginForHost {
             } else {
                 expire = expire.replaceAll("(<b>|</b>)", "");
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMMM dd, yyyy", Locale.ENGLISH));
+                maxPrem.set(20);
                 try {
-                    maxPrem.set(20);
                     account.setMaxSimultanDownloads(maxPrem.get());
                     account.setConcurrentUsePossible(true);
                 } catch (final Throwable e) {
