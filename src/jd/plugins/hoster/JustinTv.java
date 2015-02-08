@@ -357,7 +357,11 @@ public class JustinTv extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        doFree(link);
+        if (dllink != null && dllink.endsWith("m3u8")) {
+            doHLS(link);
+        } else {
+            doFree(link);
+        }
     }
 
     @Override
