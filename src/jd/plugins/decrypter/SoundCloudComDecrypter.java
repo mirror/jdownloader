@@ -53,36 +53,38 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String     EXCEPTION_LINKOFFLINE   = "EXCEPTION_LINKOFFLINE";
+    private static final String     EXCEPTION_LINKOFFLINE         = "EXCEPTION_LINKOFFLINE";
 
-    private static final String     TYPE_INVALID            = "https?://(www\\.)?soundcloud\\.com/(you/|tour|signup|logout|login|premium|messages|settings|imprint|community\\-guidelines|videos|terms\\-of\\-use|sounds|jobs|press|mobile|#?search|upload|people|dashboard|#/).*?";
-    private static final String     TYPE_API_PLAYLIST       = "https?://(www\\.|m\\.)?api\\.soundcloud\\.com/playlists/\\d+\\?secret_token=[A-Za-z0-9\\-_]+";
-    private static final String     TYPE_API_TRACK          = "https?://(www\\.|m\\.)?api\\.soundcloud\\.com/tracks/\\d+(\\?secret_token=[A-Za-z0-9\\-_]+)?";
-    private static final String     TYPE_SINGLE_SET         = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/sets/[A-Za-z0-9\\-_]+";
-    private static final String     TYPE_USER_SETS          = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/sets";
-    private static final String     TYPE_USER_IN_PLAYLIST   = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/sets";
-    private static final String     TYPE_USER_LIKES         = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/likes";
-    private static final String     TYPE_GROUPS             = "https?://(www\\.)?soundcloud\\.com/groups/[A-Za-z0-9\\-_]+";
+    private static final String     TYPE_INVALID                  = "https?://(www\\.)?soundcloud\\.com/(you/|tour|signup|logout|login|premium|messages|settings|imprint|community\\-guidelines|videos|terms\\-of\\-use|sounds|jobs|press|mobile|#?search|upload|people|dashboard|#/).*?";
+    private static final String     TYPE_API_PLAYLIST             = "https?://(www\\.|m\\.)?api\\.soundcloud\\.com/playlists/\\d+\\?secret_token=[A-Za-z0-9\\-_]+";
+    private static final String     TYPE_API_TRACK                = "https?://(www\\.|m\\.)?api\\.soundcloud\\.com/tracks/\\d+(\\?secret_token=[A-Za-z0-9\\-_]+)?";
+    private static final String     TYPE_SINGLE_SET               = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/sets/[A-Za-z0-9\\-_]+";
+    private static final String     TYPE_USER_SETS                = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/sets";
+    private static final String     TYPE_USER_IN_PLAYLIST         = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/sets";
+    private static final String     TYPE_USER_LIKES               = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/likes";
+    private static final String     TYPE_GROUPS                   = "https?://(www\\.)?soundcloud\\.com/groups/[A-Za-z0-9\\-_]+";
 
-    private static final String     TYPE_SHORT              = "https?://snd\\.sc/[A-Za-z0-9]+";
+    private static final String     subtype_mobile_facebook_share = "https?://(m\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+\\?fb_action_ids=.+";
 
-    private static int              max_entries_per_request = 100;
+    private static final String     TYPE_SHORT                    = "https?://snd\\.sc/[A-Za-z0-9]+";
 
-    private static final String     GRAB500THUMB            = "GRAB500THUMB";
-    private static final String     GRABORIGINALTHUMB       = "GRABORIGINALTHUMB";
-    private static final String     CUSTOM_PACKAGENAME      = "CUSTOM_PACKAGENAME";
-    private static final String     CUSTOM_DATE             = "CUSTOM_DATE";
+    private static int              max_entries_per_request       = 100;
 
-    private PluginForHost           HOSTPLUGIN              = null;
-    private SubConfiguration        CFG                     = null;
-    private String                  ORIGINAL_LINK           = null;
-    private String                  parameter               = null;
-    private ArrayList<DownloadLink> decryptedLinks          = null;
-    private boolean                 decrypt500Thumb         = false;
-    private boolean                 decryptOriginalThumb    = false;
-    private String                  username                = null;
-    private String                  playlistname            = null;
-    private String                  url_username            = null;
+    private static final String     GRAB500THUMB                  = "GRAB500THUMB";
+    private static final String     GRABORIGINALTHUMB             = "GRABORIGINALTHUMB";
+    private static final String     CUSTOM_PACKAGENAME            = "CUSTOM_PACKAGENAME";
+    private static final String     CUSTOM_DATE                   = "CUSTOM_DATE";
+
+    private PluginForHost           HOSTPLUGIN                    = null;
+    private SubConfiguration        CFG                           = null;
+    private String                  ORIGINAL_LINK                 = null;
+    private String                  parameter                     = null;
+    private ArrayList<DownloadLink> decryptedLinks                = null;
+    private boolean                 decrypt500Thumb               = false;
+    private boolean                 decryptOriginalThumb          = false;
+    private String                  username                      = null;
+    private String                  playlistname                  = null;
+    private String                  url_username                  = null;
 
     /**
      * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
@@ -272,6 +274,8 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             }
             newparameter = newparameter.replace("http://", "https://");
             parameter = newparameter;
+        } else if (parameter.matches(subtype_mobile_facebook_share)) {
+            parameter = "https://soundcloud.com/" + new Regex(parameter, "soundcloud\\.com/([A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+)").getMatch(0);
         }
     }
 

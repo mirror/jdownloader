@@ -358,7 +358,8 @@ public class OffCloudCom extends PluginForHost {
         /**
          * Explanation of their status-types: Healthy = working, Fragile = may work or not - if not will be fixed within the next 72 hours
          * (support also said it means that they currently have no accounts for this host), Limited = broken, will be fixed tomorrow, dead =
-         * site offline or their plugin is completely broken
+         * site offline or their plugin is completely broken, Limited = There are special daily limits for a host but it should work (even
+         * though it is marked RED on the site)
          */
         final String[] hostDomainsInfo = jsonlist.split("\\},([\t\n\r ]+)?\\{");
         for (final String domaininfo : hostDomainsInfo) {
@@ -367,7 +368,7 @@ public class OffCloudCom extends PluginForHost {
             if (realhost == null || status == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            boolean active = Arrays.asList("Healthy", "Fragile").contains(status);
+            boolean active = Arrays.asList("Healthy", "Fragile", "Limited").contains(status);
             logger.info("offcloud.com status of host " + realhost + ": " + status);
             if (active && "180upload.com".equals(realhost)) {
                 logger.info("NOT adding 180upload.com to the list of supported hosts as it will require captcha via multihost also");
