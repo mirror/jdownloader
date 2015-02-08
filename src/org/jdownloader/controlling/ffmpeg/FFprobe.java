@@ -35,8 +35,15 @@ public class FFprobe extends AbstractFFmpegBinary {
             logger.info("Validate Relative Correct Path: " + relativeCorrect);
             if (relativeCorrect != null) {
                 if (!StringUtils.equals(relative, relativeCorrect)) {
-                    logger.info("Mismatch. validation failed");
-                    return false;
+                    if (!Application.getResource(relativeCorrect).exists() && Application.getResource(relative).exists()) {
+                        // relative path doesn't have to match our expectation of where ffmpeg should be installed to.. Users will install
+                        // to a directory structure of there own liking
+                        logger.info("Validate Relative Path: User has installed to there own path!");
+                        return true;
+                    } else if (!StringUtils.equals(relative, relativeCorrect)) {
+                        logger.info("Mismatch. validation failed");
+                        return false;
+                    }
                 }
             }
         }
