@@ -77,6 +77,10 @@ public class DebridItaliaCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setConstants(account, null);
+        if (account.getUser().equals("") || account.getPass().equals("")) {
+            /* Server returns 401 if you send empty fields (logindata) */
+            accountInvalid();
+        }
         final AccountInfo ac = new AccountInfo();
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
@@ -98,8 +102,7 @@ public class DebridItaliaCom extends PluginForHost {
         final String expire = br.getRegex("<expiration>(\\d+)</expiration>").getMatch(0);
         if (expire == null) {
             ac.setStatus("Account is invalid. Invalid or unsupported accounttype!");
-            account.setValid(false);
-            return ac;
+            accountInvalid();
         }
         ac.setValidUntil(Long.parseLong(expire) * 1000l);
 
@@ -110,6 +113,14 @@ public class DebridItaliaCom extends PluginForHost {
         ac.setMultiHostSupport(this, supportedHosts);
         ac.setStatus("Premium account");
         return ac;
+    }
+
+    private void accountInvalid() throws PluginException {
+        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
     }
 
     @Override

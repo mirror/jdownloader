@@ -105,6 +105,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         return false;
     }
 
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         PARAMETER = param.toString().replace("www.", "").replace("embed/video/", "video/").replaceAll("\\.com/swf(/video)?/", ".com/video/").replace("https://", "http://");
         br.setFollowRedirects(true);
@@ -153,10 +154,10 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
-            if (PARAMETER.matches(TYPE_USER) || br.containsHTML("class=\"mrg-end-sm user-screenname-inner")) {
-                decryptUser();
-            } else if (PARAMETER.matches(TYPE_PLAYLIST)) {
+            if (PARAMETER.matches(TYPE_PLAYLIST)) {
                 decryptPlaylist();
+            } else if (PARAMETER.matches(TYPE_USER) || br.containsHTML("class=\"user\\-screenname font")) {
+                decryptUser();
             } else {
                 decryptSingleVideo(decryptedLinks);
             }

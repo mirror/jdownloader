@@ -174,7 +174,6 @@ public class SaveTv extends PluginForHost {
         return "http://free.save.tv/STV/S/misc/miscShowTermsConditionsInMainFrame.cfm";
     }
 
-    @SuppressWarnings("unused")
     private boolean isJDStable() {
         return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
