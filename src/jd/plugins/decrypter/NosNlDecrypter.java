@@ -64,6 +64,7 @@ public class NosNlDecrypter extends PluginForDecrypt {
     private static final String           TYPE_VIDEO_VIDEO = "http://(www\\.)?nos\\.nl/video/[A-Za-z0-9\\-_]+\\.html";
     private static final String           TYPE_VIDEO_UITZ  = "http://(www\\.)?nos\\.nl/uitzendingen/(lq/)?\\d+";
 
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         PARAMETER = param.toString().replace("/lq/", "/");
@@ -84,7 +85,7 @@ public class NosNlDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
-            DATE = br.getRegex("class=\"meta clearfix\">[\t\n\r ]+<li>[a-z]+ ([^<>\"]*?)</li>").getMatch(0);
+            DATE = br.getRegex(">([^<>\"]*?)</time>").getMatch(0);
             VIDEOID = br.getRegex("nos\\.nl/[a-z]+/(\\d+)").getMatch(0);
             /* Decrypt start */
             FILENAME = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\"").getMatch(0);
@@ -95,7 +96,7 @@ public class NosNlDecrypter extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + PARAMETER);
                 return null;
             }
-            DATE = Long.toString(TimeFormatter.getMilliSeconds(DATE, "dd MMMM yyyy, HH:mm", Locale.forLanguageTag("nl")));
+            DATE = Long.toString(TimeFormatter.getMilliSeconds(DATE, "dd-MM-yyyy, HH:mm", Locale.forLanguageTag("nl")));
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(FILENAME);
 
@@ -114,20 +115,18 @@ public class NosNlDecrypter extends PluginForDecrypt {
                 }
                 FOUNDQUALITIES.put("HQ", hqlink);
             } else {
-                br.getPage("http://nos.nl/playlist/" + type + "/mp4-web03/" + VIDEOID + ".json");
-                hqlink = br.getRegex("\"videofile\":\"(http:[^<>\"]*?)\"").getMatch(0);
-                if (hqlink == null) {
+                /* Previous handling removed AFTER revision 26337 */
+                String lqlink = br.getRegex("\"(http://download\\.[^<>\"]*?)\" type=\"360p\"").getMatch(0);
+                if (lqlink == null) {
                     logger.warning("Decrypter broken for link: " + PARAMETER);
                     return null;
                 }
-                hqlink = hqlink.replace("\\", "");
-                FOUNDQUALITIES.put("HQ", hqlink);
-
-                br.getPage("http://nos.nl/playlist/uitzending/mp4-web01/" + VIDEOID + ".json");
-                String lqlink = br.getRegex("\"videofile\":\"(http:[^<>\"]*?)\"").getMatch(0);
-                if (lqlink != null) {
-                    lqlink = lqlink.replace("\\", "");
-                    FOUNDQUALITIES.put("LQ", lqlink);
+                lqlink = lqlink.replace("\\", "");
+                FOUNDQUALITIES.put("LQ", lqlink);
+                hqlink = br.getRegex("\"(http://download\\.[^<>\"]*?)\" type=\"480p\"").getMatch(0);
+                if (hqlink != null) {
+                    hqlink = hqlink.replace("\\", "");
+                    FOUNDQUALITIES.put("HQ", hqlink);
                 }
             }
 
@@ -167,9 +166,11 @@ public class NosNlDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    @SuppressWarnings("deprecation")
     private DownloadLink getVideoDownloadlink(final String qualityValue) throws ParseException {
         final String directlink = FOUNDQUALITIES.get(qualityValue);
         if (directlink != null) {
+            final String linkdupeid = DOMAIN + "_" + VIDEOID + "_" + FILENAME + "_" + qualityValue;
             final DownloadLink dl = createDownloadlink("http://nosdecrypted.nl/" + System.currentTimeMillis() + new Random().nextInt(10000));
             dl.setProperty("directlink", directlink);
             dl.setProperty("plain_qualityname", qualityValue);
@@ -178,7 +179,14 @@ public class NosNlDecrypter extends PluginForDecrypt {
             dl.setProperty("plain_date", DATE);
             dl.setProperty("plain_linkid", VIDEOID);
             dl.setProperty("plain_ext", directlink.substring(directlink.lastIndexOf(".")));
-            dl.setProperty("LINKDUPEID", DOMAIN + "_" + FILENAME + "_" + qualityValue);
+            try {
+                dl.setContentUrl(PARAMETER);
+                dl.setLinkID(linkdupeid);
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+                dl.setBrowserUrl(PARAMETER);
+                dl.setProperty("LINKDUPEID", linkdupeid);
+            }
             dl.setName(jd.plugins.hoster.NosNl.getFormattedFilename(dl));
             if (SubConfiguration.getConfig(DOMAIN).getBooleanProperty(FASTLINKCHECK, false)) {
                 dl.setAvailable(true);

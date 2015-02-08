@@ -32,7 +32,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDHexUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "http://(www\\.)?mixcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_%]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "https?://(www\\.)?mixcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_%]+/" }, flags = { 0 })
 public class MxCloudCom extends PluginForDecrypt {
 
     public MxCloudCom(final PluginWrapper wrapper) {
@@ -46,7 +46,7 @@ public class MxCloudCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final ArrayList<String> tempLinks = new ArrayList<String>();
-        final String parameter = param.toString();
+        final String parameter = param.toString().replace("http://", "https://");
         br.setReadTimeout(3 * 60 * 1000);
         if (parameter.matches(INVALIDLINKS)) {
             logger.info("Link invalid: " + parameter);

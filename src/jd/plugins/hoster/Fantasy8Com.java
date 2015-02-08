@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vid2c.com", "xxxkinky.com", "pornper.com", "pornmobo.com", "kinkytube.me", "sexytube.me", "hottube.me", "fantasy8.com", "pornstep.com", "erotictube.me", "freepornsite.me", "bestporntube.me", "sweetkiss.me", "freepornvideo.me" }, urls = { "http://(www\\.)?vid2c\\.com/video/\\d+", "http://(www\\.)?xxxkinky\\.com/video/\\d+", "http://(www\\.)?pornper\\.com/video/\\d+", "http://(www\\.)?pornmobo\\.com/video/\\d+", "http://(www\\.)?kinkytube\\.me/video/\\d+", "http://(www\\.)?sexytube\\.me/video/\\d+", "http://(www\\.)?hottube\\.me/video/\\d+", "http://(www\\.)?fantasy8\\.com/video/\\d+", "http://(www\\.)?pornstep\\.com/video/\\d+", "http://(www\\.)?erotictube\\.me/video/\\d+", "http://(www\\.)?freepornsite\\.me/video/\\d+", "http://(www\\.)?bestporntube\\.me/video/\\d+",
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vid2c.com", "xxxkinky.com", "pornper.com", "pornmobo.com", "kinkytube.me", "sexytube.me", "hottube.me", "fantasy8.com", "pornstep.com", "erotictube.me", "freepornsite.me", "bestporntube.me", "sweetkiss.me", "freepornvideo.me" }, urls = { "http://(www\\.)?vid2c\\.com/video/\\d+", "http://(www\\.)?xxxkinky\\.com/video/\\d+", "http://(www\\.)?pornper\\.com/video/\\d+", "http://(www\\.)?pornmobo\\.com/video/\\d+", "http://(www\\.)?kinkytube\\.me/video/\\d+", "http://(www\\.)?sexytube\\.me/video/\\d+", "http://(www\\.)?hottube\\.me/video/\\d+", "http://(www\\.)?fantasy8\\.com/video/\\d+", "http://(www\\.)?pornstep\\.com/video/\\d+", "http://(www\\.)?erotictube\\.me/video/\\d+", "http://(www\\.)?freepornsite\\.me/video/\\d+/[a-z0-9\\-]+", "http://(www\\.)?bestporntube\\.me/video/\\d+",
         "http://(www\\.)?sweetkiss\\.me/video/\\d+", "http://(www\\.)?freepornvideo\\.me/video/\\d+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class Fantasy8Com extends PluginForHost {
 
@@ -62,11 +62,17 @@ public class Fantasy8Com extends PluginForHost {
         }
         String filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?)\\- Free Porn Videos and Sex Movies at fantasy8.com Kinky Porn Tube</title>").getMatch(0);
+            filename = br.getRegex("<title>([^<>\"]*?)\\- Free Porn Videos and Sex Movies at fantasy8\\.com Kinky Porn Tube</title>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("class=\"heading\">[\t\n\r ]+<h2>([^<>\"]*?)</h2>").getMatch(0);
         }
         DLLINK = checkDirectLink(downloadLink, "directlink");
         if (DLLINK == null) {
             DLLINK = br.getRegex("\\'file\\': \\'(http[^<>\"]*?)\\'").getMatch(0);
+        }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("var videoFile=\"(http[^<>\"]*?)\"").getMatch(0);
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -94,8 +100,12 @@ public class Fantasy8Com extends PluginForHost {
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            final long fsize = con.getLongContentLength();
+            if (fsize == 0) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+                downloadLink.setDownloadSize(fsize);
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

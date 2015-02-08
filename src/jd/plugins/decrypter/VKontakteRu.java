@@ -99,6 +99,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_GENERAL_AUDIO              = "https?://(www\\.)?vk\\.com/audio.*?";
     private static final String     PATTERN_AUDIO_ALBUM                = "https?://(www\\.)?vk\\.com/(audio(\\.php)?\\?id=(\\-)?\\d+|audios(\\-)?\\d+)";
     private static final String     PATTERN_AUDIO_PAGE                 = "https?://(www\\.)?vk\\.com/page\\-\\d+_\\d+";
+    private static final String     PATTERN_AUDIO_PAGE_oid             = "https?://(www\\.)?vk\\.com/pages\\?oid=\\-\\d+\\&p=(?!va_c)[^<>/\"]+";
     private static final String     PATTERN_AUDIO_AUDIOS_ALBUM         = "https?://(www\\.)?vk\\.com/audios\\-\\d+\\?album_id=\\d+";
     private static final String     PATTERN_VIDEO_SINGLE_MODULE        = "https?://(www\\.)?vk\\.com/[A-Za-z0-9\\-_\\.]+\\?z=video(\\-W)?\\d+_\\d+/.+";
     private static final String     PATTERN_VIDEO_SINGLE_SEARCH        = "https?://(www\\.)?vk\\.com/search\\?(c\\[q\\]|c%5Bq%5D)=[^<>\"/]*?\\&c(\\[section\\]|%5Bsection%5D)=video(\\&c(\\[sort\\]|%5Bsort%5D)=\\d+)?\\&z=video(\\-)?\\d+_\\d+";
@@ -271,14 +272,13 @@ public class VKontakteRu extends PluginForDecrypt {
                 } else if (this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUMS_USERNAME_Z)) {
                     /* Change PATTERN_PHOTO_ALBUMS_USERNAME_Z --> PATTERN_PHOTO_ALBUMS */
                     newLink = "https://vk.com/albums" + new Regex(CRYPTEDLINK_FUNCTIONAL, "albums(\\d+)").getMatch(0);
-                } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_MODULE) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUMS) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_PAGE) || isSingeVideo(CRYPTEDLINK_ORIGINAL) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_WALL_LINK) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_AUDIO) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_COMMUNITY_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_WALL_POST_LINK) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_MODULE)) {
+                } else if (isKnownType()) {
                     /* Don't change anything */
                 } else {
                     /* We either have a public community or profile --> Get the owner_id and change the link to a wall-link */
                     final String url_owner = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/(.+)").getMatch(0);
                     if (url_owner.contains("?") || url_owner.contains("&") || url_owner.contains("?")) {
-                        logger.warning("Decryption failed - unsupported link? --> " + CRYPTEDLINK_FUNCTIONAL);
-                        return null;
+                        throw new DecrypterException(EXCEPTION_LINKOFFLINE);
                     }
                     /* We either have a public community or profile --> Get the owner_id and change the link to a wall-link */
                     final String ownerName = resolveScreenNameAPI(url_owner);
@@ -321,7 +321,7 @@ public class VKontakteRu extends PluginForDecrypt {
                         /* Single playlists */
                         decryptAudioPlaylist();
                     }
-                } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_AUDIO_PAGE)) {
+                } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_AUDIO_PAGE) || CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_AUDIO_PAGE_oid)) {
                     /* Audio page */
                     decryptAudioPage();
                 } else if (isSingeVideo(CRYPTEDLINK_FUNCTIONAL)) {
@@ -412,6 +412,12 @@ public class VKontakteRu extends PluginForDecrypt {
             logger.info("vk.com: Done, decrypted: " + decryptedLinks.size() + " links!");
         }
         return decryptedLinks;
+    }
+
+    /** Checks if the type of a link is clear, meaning we're sure we have no vk.com/username link if this is returns true. */
+    private boolean isKnownType() {
+        final boolean isKnown = CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_MODULE) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUMS) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_PAGE) || isSingeVideo(CRYPTEDLINK_ORIGINAL) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_WALL_LINK) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_AUDIO) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_COMMUNITY_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_WALL_POST_LINK) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_MODULE) || this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_PAGE_oid);
+        return isKnown;
     }
 
     /**
@@ -590,17 +596,20 @@ public class VKontakteRu extends PluginForDecrypt {
         if (br.containsHTML("Page not found")) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
-
-        final String pageID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "page\\-(\\d+_\\d+)").getMatch(0);
         String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        if (fpName == null) {
+        if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_AUDIO_PAGE_oid) && fpName == null) {
+            fpName = Encoding.htmlDecode(new Regex(CRYPTEDLINK_FUNCTIONAL, "\\&p=(.+)").getMatch(0));
+        } else if (fpName == null) {
+            final String pageID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "page\\-(\\d+_\\d+)").getMatch(0);
             fpName = "vk.com page " + pageID;
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
         int overallCounter = 1;
         final DecimalFormat df = new DecimalFormat("00000");
-        final String[][] audioLinks = br.getRegex("\"(https?://cs[a-z0-9]+\\.(vk\\.com|userapi\\.com|vk\\.me)/u\\d+/audio[^<>\"]*?)\".*?onclick=\"return nav\\.go\\(this, event\\);\">([^<>\"]*?)</a></b> \\&ndash; <span class=\"title\" id=\"title\\d+_\\d+_\\d+\">([^<>\"]*?)</span>").getMatches();
+        // onclick="return nav.go(this, event);">KUNIO</a></b> &ndash; <span class="title" id="title-5010876_215480904_1">BUBBLEMAN -
+        // LOVE&SNOW MIX [From ROCKMAN 2] </span><span
+        final String[][] audioLinks = br.getRegex("\"(https?://[a-z0-9]+\\.(vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+/audio[^<>\"]*?)\".*?onclick=\"return nav\\.go\\(this, event\\);\">([^<>\"]*?)</a></b> \\&ndash; <span class=\"title\" id=\"title(?:\\-)?\\d+_\\d+_\\d+\">([^<>\"]*?)</span>").getMatches();
         if (audioLinks == null || audioLinks.length == 0) {
             decryptedLinks = null;
             return;
