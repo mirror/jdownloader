@@ -64,6 +64,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     private static final String     TYPE_USER_LIKES               = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/likes";
     private static final String     TYPE_GROUPS                   = "https?://(www\\.)?soundcloud\\.com/groups/[A-Za-z0-9\\-_]+";
 
+    /* Single soundcloud tracks, posted via smartphone/app. */
     private static final String     subtype_mobile_facebook_share = "https?://(m\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+\\?fb_action_ids=.+";
 
     private static final String     TYPE_SHORT                    = "https?://snd\\.sc/[A-Za-z0-9]+";

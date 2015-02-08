@@ -36,6 +36,8 @@ public class ClipfishDe extends PluginForHost {
         super(wrapper);
     }
 
+    /* Tags: rtl-interactive.de */
+
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         if (link.getDownloadURL().startsWith("clipfish2")) {
@@ -81,6 +83,7 @@ public class ClipfishDe extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
