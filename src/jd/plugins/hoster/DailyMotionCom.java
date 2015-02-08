@@ -245,12 +245,20 @@ public class DailyMotionCom extends PluginForHost {
             try {
                 URLConnectionAdapter con = null;
                 try {
-                    con = br.openGetConnection(dllink);
+                    if (isJDStable()) {
+                        con = br.openGetConnection(dllink);
+                    } else {
+                        con = br.openHeadConnection(dllink);
+                    }
                     if (con.getResponseCode() == 302) {
                         br.followConnection();
                         dllink = br.getRedirectLocation().replace("#cell=core&comment=", "");
                         br.getHeaders().put("Referer", dllink);
-                        con = br.openGetConnection(dllink);
+                        if (isJDStable()) {
+                            con = br.openGetConnection(dllink);
+                        } else {
+                            con = br.openHeadConnection(dllink);
+                        }
                     }
                     if (con.getResponseCode() == 410 || con.getContentType().contains("html")) {
                         return false;
@@ -414,6 +422,10 @@ public class DailyMotionCom extends PluginForHost {
             filename += ext;
         }
         return filename;
+    }
+
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     private void setConfigElements() {

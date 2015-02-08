@@ -99,7 +99,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private String                         fuid                         = null;
 
     /* DEV NOTES */
-    // XfileSharingProBasic Version 2.6.6.8
+    // XfileSharingProBasic Version 2.6.6.9
     // Tags: Script, template
     // mods:
     // limit-info:
@@ -510,12 +510,10 @@ public class XFileSharingProBasic extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                try {
-                    /* @since JD2 */
-                    con = br2.openHeadConnection(dllink);
-                } catch (final Throwable t) {
-                    /* Not supported in old 0.9.581 Stable */
+                if (isJDStable()) {
                     con = br2.openGetConnection(dllink);
+                } else {
+                    con = br2.openHeadConnection(dllink);
                 }
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
@@ -948,6 +946,10 @@ public class XFileSharingProBasic extends PluginForHost {
             logger.info(NICE_HOST + ": " + error + " -> Plugin is broken");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+    }
+
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @SuppressWarnings("deprecation")
