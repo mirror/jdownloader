@@ -51,12 +51,12 @@ public enum PayProvider implements LabelInterface {
         public String getLabel() {
             return _GUI._.DonationDialog_popup_creditcard();
         }
-    },
-    OTHER() {
-        @Override
-        public String getLabel() {
-            return _GUI._.DonationDialog_popup_other();
-        }
     };
+    // OTHER() {
+    // @Override
+    // public String getLabel() {
+    // return _GUI._.DonationDialog_popup_other();
+    // }
+    // };
 
 }
