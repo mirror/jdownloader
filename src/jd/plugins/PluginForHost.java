@@ -144,14 +144,14 @@ public abstract class PluginForHost extends Plugin {
 
     private static Pattern[]         PATTERNS       = new Pattern[] {
 
-        /**
-         * these patterns should split filename and fileextension (extension must include the
-         * point)
-         */
-        // multipart rar archives
-        Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
-        // normal files with extension
-        Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
+                                                    /**
+                                                     * these patterns should split filename and fileextension (extension must include the
+                                                     * point)
+                                                     */
+                                                    // multipart rar archives
+            Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
+            // normal files with extension
+            Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
 
     private LazyHostPlugin           lazyP          = null;
     /**
@@ -188,7 +188,7 @@ public abstract class PluginForHost extends Plugin {
             final LogSource errlogger = LogController.getInstance().getLogger("PluginErrors");
             try {
                 errlogger.severe("HosterPlugin out of date: " + this + " :" + getVersion());
-                errlogger.severe("URL:" + link.getPluginPatternMatcher() + "|ContentUrl:" + link.getContentUrl() + "|ContainerUrl:" + link.getContainerUrl() + "|OriginUrl:" + link.getOriginUrl() + "|ReferrerUrl:" + link.getReferrerUrl());
+                errlogger.severe("URL:" + link.getPluginPatternMatcher() + " | ContentUrl:" + link.getContentUrl() + " | ContainerUrl:" + link.getContainerUrl() + " | OriginUrl:" + link.getOriginUrl() + " | ReferrerUrl:" + link.getReferrerUrl());
                 if (e != null) {
                     errlogger.log(e);
                 }
@@ -736,8 +736,8 @@ public abstract class PluginForHost extends Plugin {
         return true;
     }
 
-    public void checkFFmpeg(DownloadLink downloadLink, String reason) throws SkipReasonException, InterruptedException {
-        FFmpeg ffmpeg = new FFmpeg();
+    public void checkFFmpeg(final DownloadLink downloadLink, final String reason) throws SkipReasonException, InterruptedException {
+        final FFmpeg ffmpeg = new FFmpeg();
         synchronized (DownloadWatchDog.getInstance()) {
 
             if (!ffmpeg.isAvailable()) {
@@ -755,37 +755,22 @@ public abstract class PluginForHost extends Plugin {
                 }
                 ffmpeg.setPath(JsonConfig.create(FFmpegSetup.class).getBinaryPath());
                 if (!ffmpeg.isAvailable()) {
-                    //
-
-                    List<String> requestedInstalls = UpdateController.getInstance().getHandler().getRequestedInstalls();
+                    final List<String> requestedInstalls = UpdateController.getInstance().getHandler().getRequestedInstalls();
                     if (requestedInstalls != null && requestedInstalls.contains(org.jdownloader.controlling.ffmpeg.FFMpegInstallThread.getFFmpegExtensionName())) {
                         throw new SkipReasonException(SkipReason.UPDATE_RESTART_REQUIRED);
-
                     } else {
                         throw new SkipReasonException(SkipReason.FFMPEG_MISSING);
                     }
-
-                    // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,
-                    // _GUI._.YoutubeDash_handleFree_ffmpegmissing());
                 }
             }
         }
     }
 
-    public void checkFFProbe(DownloadLink downloadLink, String reason) throws SkipReasonException, InterruptedException {
-        FFprobe ffprobe = new FFprobe();
+    public void checkFFProbe(final DownloadLink downloadLink, final String reason) throws SkipReasonException, InterruptedException {
+        final FFprobe ffprobe = new FFprobe();
         synchronized (DownloadWatchDog.getInstance()) {
 
             if (!ffprobe.isAvailable()) {
-                String filename = new File(JsonConfig.create(FFmpegSetup.class).getBinaryPath()).getName().replace("ffmpeg", "ffprobe");
-                File ffprobeFile = new File(new File(JsonConfig.create(FFmpegSetup.class).getBinaryPath()).getParentFile(), filename);
-                if (ffprobeFile.exists()) {
-                    JsonConfig.create(FFmpegSetup.class).setBinaryPathProbe(ffprobeFile.getPath());
-                    ffprobe = new FFprobe();
-                    if (ffprobe.isAvailable()) {
-                        return;
-                    }
-                }
                 if (UpdateController.getInstance().getHandler() == null) {
                     getLogger().warning("Please set FFProbe: BinaryPath in advanced options");
                     throw new SkipReasonException(SkipReason.FFPROBE_MISSING);
@@ -800,18 +785,13 @@ public abstract class PluginForHost extends Plugin {
                 }
                 ffprobe.setPath(JsonConfig.create(FFmpegSetup.class).getBinaryPathProbe());
                 if (!ffprobe.isAvailable()) {
-                    //
 
-                    List<String> requestedInstalls = UpdateController.getInstance().getHandler().getRequestedInstalls();
+                    final List<String> requestedInstalls = UpdateController.getInstance().getHandler().getRequestedInstalls();
                     if (requestedInstalls != null && requestedInstalls.contains(org.jdownloader.controlling.ffmpeg.FFMpegInstallThread.getFFmpegExtensionName())) {
                         throw new SkipReasonException(SkipReason.UPDATE_RESTART_REQUIRED);
-
                     } else {
                         throw new SkipReasonException(SkipReason.FFPROBE_MISSING);
                     }
-
-                    // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,
-                    // _GUI._.YoutubeDash_handleFree_ffmpegmissing());
                 }
             }
         }
@@ -884,16 +864,16 @@ public abstract class PluginForHost extends Plugin {
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
         /*
          * fetchAccountInfo must fill ai.setMultiHostSupport to signal all supported multiHosts
-         *
+         * 
          * please synchronized on accountinfo and the ArrayList<String> when you change something in the handleMultiHost function
-         *
+         * 
          * in fetchAccountInfo we don't have to synchronize because we create a new instance of AccountInfo and fill it
-         *
+         * 
          * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host
          * does not equal link host!
-         *
-         *
-         *
+         * 
+         * 
+         * 
          * will update this doc about error handling
          */
         logger.severe("invalid call to handleMultiHost: " + downloadLink.getName() + ":" + downloadLink.getHost() + " to " + getHost() + ":" + this.getVersion() + " with " + account);
