@@ -1,5 +1,6 @@
 package org.jdownloader.api.downloads;
 
+import java.util.HashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import jd.controlling.downloadcontroller.DownloadLinkCandidate;
@@ -8,6 +9,8 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 import org.appwork.remoteapi.events.EventPublisher;
 import org.appwork.remoteapi.events.RemoteAPIEventsSender;
@@ -19,15 +22,34 @@ public class DownloadWatchDogEventPublisher implements EventPublisher, DownloadW
         UPDATE,
         RUNNING,
         PAUSED,
+        STOPSIGN,
         STOPPED
     }
 
     @Override
     public void onDownloadWatchDogPropertyChange(DownloadWatchDogProperty propertyChange) {
+        switch (propertyChange.getProperty()) {
+        case STOPSIGN:
+            HashMap<String, Object> dls = new HashMap<String, Object>();
+            Object data = propertyChange.getValue();
+            if (data instanceof FilePackage) {
+                data = ((FilePackage) propertyChange.getValue()).getUniqueID().getID();
+            } else if (data instanceof DownloadLink) {
+                data = ((DownloadLink) propertyChange.getValue()).getUniqueID().getID();
+            } else {
+                data = String.valueOf(propertyChange.getValue());
+            }
+            dls.put("data", data);
+            SimpleEventObject eventObject = new SimpleEventObject(this, EVENTID.STOPSIGN.name(), dls);
+            for (RemoteAPIEventsSender eventSender : eventSenders) {
+                eventSender.publishEvent(eventObject, null);
+            }
+            break;
+        }
     }
 
     private CopyOnWriteArraySet<RemoteAPIEventsSender> eventSenders = new CopyOnWriteArraySet<RemoteAPIEventsSender>();
-    private final String[]                    eventIDs;
+    private final String[]                             eventIDs;
 
     public DownloadWatchDogEventPublisher() {
         eventIDs = new String[] { EVENTID.PAUSED.name(), EVENTID.RUNNING.name(), EVENTID.STOPPED.name(), EVENTID.UPDATE.name() };

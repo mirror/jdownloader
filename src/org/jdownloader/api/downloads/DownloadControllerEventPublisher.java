@@ -20,6 +20,7 @@ import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.PackageController;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLinkProperty;
 import jd.plugins.FilePackage;
@@ -56,7 +57,11 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
     private enum BASIC_EVENT {
         REFRESH_STRUCTURE,
         REMOVE_CONTENT,
+        REMOVE_PACKAGE,
+        REMOVE_LINK,
         ADD_CONTENT,
+        ADD_PACKAGE,
+        ADD_LINK,
         REFRESH_CONTENT,
         LINK_UPDATE,
         PACKAGE_UPDATE
@@ -152,7 +157,29 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
 
     @Override
     public void onDownloadControllerAddedPackage(FilePackage pkg) {
+        HashMap<String, Object> dls = new HashMap<String, Object>();
+        long afterUuid = -1l;
+        PackageController<FilePackage, DownloadLink> controller = pkg.getControlledBy();
+        if (controller != null) {
+            boolean locked = false;
+            try {
+                locked = controller.readLock();
+                int index = controller.indexOf(pkg);
+                if (index > 0) {
+                    FilePackage fp = controller.getPackages().get(index - 1);
+                    if (fp != null) {
+                        afterUuid = fp.getUniqueID().getID();
+                    }
+                }
+            } finally {
+                controller.readUnlock(locked);
+            }
+        }
+        dls.put("uuid", pkg.getUniqueID().getID());
+        dls.put("afterUuid", afterUuid);
+
         fire(BASIC_EVENT.ADD_CONTENT.name(), null, BASIC_EVENT.ADD_CONTENT.name());
+        fire(BASIC_EVENT.ADD_PACKAGE.name(), dls, BASIC_EVENT.ADD_PACKAGE.name());
         flushBuffer();
     }
 
@@ -195,13 +222,21 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
 
     @Override
     public void onDownloadControllerRemovedPackage(FilePackage pkg) {
+        HashMap<String, Object> dls = new HashMap<String, Object>();
+        dls.put("uuid", pkg.getUniqueID().getID());
         fire(BASIC_EVENT.REMOVE_CONTENT.name(), null, null);
+        fire(BASIC_EVENT.REMOVE_PACKAGE.name(), dls, null);
         flushBuffer();
     }
 
     @Override
     public void onDownloadControllerRemovedLinklist(List<DownloadLink> list) {
-        fire(BASIC_EVENT.REMOVE_CONTENT.name(), null, null);
+        for (DownloadLink link : list) {
+            HashMap<String, Object> dls = new HashMap<String, Object>();
+            dls.put("uuid", link.getUniqueID().getID());
+            fire(BASIC_EVENT.REMOVE_CONTENT.name(), null, null);
+            fire(BASIC_EVENT.REMOVE_LINK.name(), dls, null);
+        }
         flushBuffer();
     }
 
@@ -432,7 +467,6 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
                 dls.put("uuid", pkg.getUniqueID().getID());
                 dls.put("comment", pkg.getComment());
                 fire(BASIC_EVENT.PACKAGE_UPDATE.name() + ".comment", dls, BASIC_EVENT.PACKAGE_UPDATE.name() + ".comment." + pkg.getUniqueID().getID() + "");
-
                 break;
             case FOLDER:
                 break;
@@ -441,14 +475,12 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
                 dls.put("uuid", pkg.getUniqueID().getID());
                 dls.put("name", pkg.getName());
                 fire(BASIC_EVENT.PACKAGE_UPDATE.name() + ".name", dls, BASIC_EVENT.PACKAGE_UPDATE.name() + ".name." + pkg.getUniqueID().getID() + "");
-
                 break;
             case PRIORITY:
                 dls = new HashMap<String, Object>();
                 dls.put("uuid", pkg.getUniqueID().getID());
                 dls.put("priority", org.jdownloader.myjdownloader.client.bindings.PriorityStorable.valueOf(pkg.getPriorityEnum().name()));
                 fire(BASIC_EVENT.PACKAGE_UPDATE.name() + ".priority", dls, BASIC_EVENT.PACKAGE_UPDATE.name() + ".priority." + pkg.getUniqueID().getID() + "");
-
             }
         }
 
