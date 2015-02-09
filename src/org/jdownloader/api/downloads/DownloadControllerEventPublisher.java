@@ -231,10 +231,10 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
 
     @Override
     public void onDownloadControllerRemovedLinklist(List<DownloadLink> list) {
+        fire(BASIC_EVENT.REMOVE_CONTENT.name(), null, null);
         for (DownloadLink link : list) {
             HashMap<String, Object> dls = new HashMap<String, Object>();
             dls.put("uuid", link.getUniqueID().getID());
-            fire(BASIC_EVENT.REMOVE_CONTENT.name(), null, null);
             fire(BASIC_EVENT.REMOVE_LINK.name(), dls, null);
         }
         flushBuffer();
