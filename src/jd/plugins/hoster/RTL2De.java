@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -30,42 +29,20 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtl2.de" }, urls = { "http://(www\\.)?rtl2\\.de/[\\w\\-]+/video/[\\w\\-]+/([\\w\\-]+/)?" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtl2.de" }, urls = { "http://(www\\.)?rtl2\\.de/[\\w\\-/]+/video/[\\w\\-]+/([\\w\\-]+/)?" }, flags = { 32 })
 public class RTL2De extends PluginForHost {
 
+    /* Tags: rtl-interactive.de */
     String DLCONTENT = null;
 
     public RTL2De(final PluginWrapper wrapper) {
         super(wrapper);
-        this.setStartIntervall((Math.round(Math.random() * 3 + Math.random() * 3) + 3) * 1000l);
+        // this.setStartIntervall((Math.round(Math.random() * 3 + Math.random() * 3) + 3) * 1000l);
     }
 
-    private void download(final DownloadLink downloadLink) throws Exception {
-        if (DLCONTENT.startsWith("rtmp")) {
-            final String[] urlTmp = DLCONTENT.split("/", 5);
-            if (urlTmp != null && urlTmp.length < 5) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            dl = new RTMPDownload(this, downloadLink, DLCONTENT);
-
-            String protocol = urlTmp[0];
-            String host = urlTmp[2];
-            String app = urlTmp[3];
-            String path = urlTmp[4];
-
-            final String url = protocol + "//" + host + ":1935/" + app;
-            /* ondemand */
-            String playpath = "mp4:" + path;
-            if ("ondemand".equals(app)) app += "?_fcs_vhost=" + host;
-            /* vod */
-            if ("vod".equals(app) || path.startsWith("flv_free/") && !path.endsWith(".f4v")) playpath = path.substring(0, path.lastIndexOf("."));
-
-            DLCONTENT = url + "@" + playpath;
-            setupRTMPConnection(dl);
-            ((RTMPDownload) dl).startDownload();
-
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -73,38 +50,15 @@ public class RTL2De extends PluginForHost {
         return "http://www.rtl2.de/3733.html";
     }
 
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 2;
-    }
+    /* Save this information: OLD video info url: http://www.rtl2.de/video/php/get_video.php?vico_id=xxx&vivi_id=xxx */
+    /*
+     * NEW video info url: http://www.rtl2.de/sites/default/modules/rtl2/mediathek/php/get_video_jw.php?vico_id=xxx&vivi_id=xxx contains
+     * slightly more information than old request
+     */
+    /* OLD SwfVfy url:http://www.rtl2.de/flashplayer/vipo_player.swf */
+    /* NEW SwfVfy url:http://www.rtl2.de/sites/default/modules/rtl2/jwplayer/assets/jwplayer.flash.swf */
 
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        download(downloadLink);
-    }
-
-    private HashMap<String, String> jsonParser(final String param) throws Exception {
-        final Browser json = br.cloneBrowser();
-        json.getPage("http://www.rtl2.de/video/php/get_video.php?" + param);
-        String streamUrl = null, name = null, title = null;
-        try {
-            final org.codehaus.jackson.map.ObjectMapper mapper = new org.codehaus.jackson.map.ObjectMapper();
-            final org.codehaus.jackson.JsonNode rootNode = mapper.readTree(json.toString());
-            streamUrl = rootNode.path("video").path("streamurl").getTextValue();
-            name = rootNode.path("video").path("vifo_name").getTextValue();
-            title = rootNode.path("video").path("titel").getTextValue();
-        } catch (final Throwable e) {
-            return null;
-        }
-        if (streamUrl == null || name == null || title == null) { return null; }
-        final HashMap<String, String> ret = new HashMap<String, String>();
-        ret.put("streamurl", streamUrl);
-        ret.put("name", name);
-        ret.put("title", title);
-        return ret;
-    }
-
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         /* Offline links should also have nice filenames */
@@ -113,17 +67,108 @@ public class RTL2De extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         final String jsredirect = br.getRegex("window\\.location\\.href = \"(/[^<>\"]*?)\";</script>").getMatch(0);
-        if (jsredirect != null) br.getPage("http://rtl2now.rtl2.de" + jsredirect);
-        if (br.containsHTML("<title>RTL2 \\- Seite nicht gefunden \\(404\\)</title>") || br.getURL().equals("http://www.rtl2.de/video/") || br.getURL().equals("http://www.rtl2.de/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (jsredirect != null) {
+            br.getPage("http://rtl2now.rtl2.de" + jsredirect);
+        }
+        if (br.containsHTML("<title>RTL2 \\- Seite nicht gefunden \\(404\\)</title>") || br.getURL().equals("http://www.rtl2.de/video/") || br.getURL().equals("http://www.rtl2.de/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         /* No free download possible --> Show as offline */
-        if (br.getURL().contains("productdetail=1")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String param = br.getRegex("(vico_id=\\d+\\&vivi_id=\\d+)").getMatch(0);
-        if (param == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        final HashMap<String, String> ret = new HashMap<String, String>(jsonParser(param));
-        if (ret == null || ret.size() == 0) { return AvailableStatus.UNCHECKED; }
+        if (br.getURL().contains("productdetail=1")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String vico_id = br.getRegex("vico_id[\t\n\r ]*?:[\t\n\r ]*?(\\d+)").getMatch(0);
+        final String vivi_id = br.getRegex("vivi_id[\t\n\r ]*?:[\t\n\r ]*?(\\d+)").getMatch(0);
+        if (vico_id == null || vivi_id == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage("http://www.rtl2.de/video/php/get_video.php?vico_id=" + vico_id + "&vivi_id=" + vivi_id);
+        final HashMap<String, String> ret = jsonParser();
+        if (ret == null || ret.size() == 0) {
+            return AvailableStatus.UNCHECKED;
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(ret.get("name") + "__" + ret.get("title")).trim() + ".flv");
         DLCONTENT = ret.get("streamurl");
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        download(downloadLink);
+    }
+
+    private HashMap<String, String> jsonParser() throws Exception {
+        String streamUrl = null, name = null, title = null;
+        try {
+            final org.codehaus.jackson.map.ObjectMapper mapper = new org.codehaus.jackson.map.ObjectMapper();
+            final org.codehaus.jackson.JsonNode rootNode = mapper.readTree(br.toString());
+            streamUrl = rootNode.path("video").path("streamurl").getTextValue();
+            name = rootNode.path("video").path("vifo_name").getTextValue();
+            title = rootNode.path("video").path("titel").getTextValue();
+        } catch (final Throwable e) {
+            return null;
+        }
+        if (streamUrl == null || name == null || title == null) {
+            return null;
+        }
+        final HashMap<String, String> ret = new HashMap<String, String>();
+        ret.put("streamurl", streamUrl);
+        ret.put("name", name);
+        ret.put("title", title);
+        return ret;
+    }
+
+    private void download(final DownloadLink downloadLink) throws Exception {
+        if (DLCONTENT == null || !DLCONTENT.startsWith("rtmp")) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* Possible apps: vod/rtl2/flv/, ondemand/flv_dach/vipo/[seriesname]/ */
+        final Regex info = new Regex(DLCONTENT, "([a-z]+://[a-z0-9\\-\\.]+/)([^<>/]+/[^<>/]+/[^<>/]+/(?:[^<>/]+/)?)(.+)");
+        dl = new RTMPDownload(this, downloadLink, DLCONTENT);
+
+        final String protocol_host = info.getMatch(0);
+        final String app = info.getMatch(1);
+        String playpath = info.getMatch(2);
+        if (protocol_host == null || app == null || playpath == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+
+        final String url = protocol_host + app;
+        /* Correct playpath */
+        /* Notes: Usually we'll have the vod app in this case */
+        if (playpath.endsWith(".flv")) {
+            playpath = playpath.substring(0, playpath.lastIndexOf("."));
+        } else {
+            playpath = "mp4:" + playpath;
+        }
+        /* Setup rtmp connection */
+        final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+        rtmp.setPlayPath(playpath);
+        rtmp.setSwfVfy("http://www.rtl2.de/sites/default/modules/rtl2/jwplayer/assets/jwplayer.flash.swf");
+        rtmp.setFlashVer("WIN 16,0,0,305");
+        rtmp.setUrl(url);
+        rtmp.setApp(app);
+        rtmp.setPageUrl(downloadLink.getDownloadURL());
+        rtmp.setResume(true);
+        /* Make sure we use the right protocol... */
+        rtmp.setProtocol(0);
+        // rtmp.setRealTime();
+        rtmp.setTimeOut(-10);
+
+        ((RTMPDownload) dl).startDownload();
+
+    }
+
+    private void setupRTMPConnection(final DownloadInterface dl) {
+        final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+        rtmp.setPlayPath(DLCONTENT.split("@")[1]);
+        rtmp.setSwfVfy("http://www.rtl2.de/flashplayer/vipo_player.swf");
+        rtmp.setFlashVer("WIN 16,0,0,305");
+        rtmp.setUrl(DLCONTENT.split("@")[0]);
+        rtmp.setResume(true);
+        rtmp.setRealTime();
+        rtmp.setTimeOut(-10);
     }
 
     @Override
@@ -136,18 +181,6 @@ public class RTL2De extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
-    }
-
-    private void setupRTMPConnection(final DownloadInterface dl) {
-        final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-
-        rtmp.setPlayPath(DLCONTENT.split("@")[1]);
-        rtmp.setSwfVfy("http://www.rtl2.de/flashplayer/vipo_player.swf");
-        rtmp.setFlashVer("WIN 10,1,102,64");
-        rtmp.setUrl(DLCONTENT.split("@")[0]);
-        rtmp.setResume(true);
-        rtmp.setRealTime();
-        rtmp.setTimeOut(-10);
     }
 
 }

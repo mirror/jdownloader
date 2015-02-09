@@ -201,13 +201,14 @@ public class FernsehkritikTvA extends PluginForDecrypt {
             for (String jump : jumps) {
                 if (!parts.contains(jump)) {
                     if (jump.equals("1")) {
-                        parts.add(jump + ".flv");
+                        /* First part doesn't contain any "-PARTNUMBER.flv" */
+                        parts.add(episode + ".flv");
                     } else {
                         parts.add(episode + "-" + jump + ".flv");
                     }
                 }
             }
-            parts.add("1");
+            parts.add(episode + ".flv");
         }
         final String formattedpackagename = getFormattedPackagename(EPISODENUMBER, DATE);
         for (final String part : parts) {
@@ -220,12 +221,10 @@ public class FernsehkritikTvA extends PluginForDecrypt {
                 /* Not available in old 0.9.581 Stable */
                 dlLink.setBrowserUrl(parameter);
             }
-            String partnumber;
-            if (parts.size() == 1) {
-                /* Case if there is only one part... */
+            String partnumber = new Regex(part, "\\d+\\-(\\d+)\\.flv").getMatch(0);
+            if (partnumber == null || parts.size() == 1) {
+                /* Special handling for the first part and/or if the episode has only 1 part. */
                 partnumber = "1";
-            } else {
-                partnumber = new Regex(part, "(\\d+)").getMatch(0);
             }
             dlLink.setProperty("directpartnumber", partnumber);
             dlLink.setProperty("directdate", DATE);

@@ -165,11 +165,13 @@ public class ProSevenDe extends PluginForHost {
         }
 
         if (clipUrl.contains("/not_available_")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This video is not available in your country");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This video is not available in your country #1");
+        } else if (clipUrl.contains("wrong_cc_de_en_")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This video is not available in your country #2");
         }
         if (clipUrl.startsWith("rtmp")) {
             clipUrl = clipUrl.replace("mp4:", "");
-            String[] stream = new Regex(clipUrl, "(rtmp.?://[0-9a-z]+\\.fplive\\.net/)([0-9a-z]+/[\\w\\-]+/\\d+)/(.*?)$").getRow(0);
+            String[] stream = new Regex(clipUrl, "(rtmp.?://[0-9a-z]+\\.fplive\\.net/)[0-9a-z]+/[\\w\\-]+/\\d+/(.*?)$").getRow(0);
             if (stream != null && stream.length == 3) {
                 downloadRTMP(downloadLink, stream);
             } else {

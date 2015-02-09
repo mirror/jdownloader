@@ -272,6 +272,8 @@ public class VKontakteRu extends PluginForDecrypt {
                 } else if (this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUMS_USERNAME_Z)) {
                     /* Change PATTERN_PHOTO_ALBUMS_USERNAME_Z --> PATTERN_PHOTO_ALBUMS */
                     newLink = "https://vk.com/albums" + new Regex(CRYPTEDLINK_FUNCTIONAL, "albums(\\d+)").getMatch(0);
+                } else if (this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_ALBUM)) {
+                    newLink = "https://vk.com/audios" + new Regex(CRYPTEDLINK_FUNCTIONAL, "((?:\\-)?\\d+)").getMatch(0);
                 } else if (isKnownType()) {
                     /* Don't change anything */
                 } else {
@@ -443,7 +445,7 @@ public class VKontakteRu extends PluginForDecrypt {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         String postData = null;
         if (new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/audio\\?id=\\-\\d+").matches()) {
-            postData = "act=load_audios_silent&al=1&edit=0&id=0&gid=" + new Regex(this.CRYPTEDLINK_FUNCTIONAL, "(\\d+)$").getMatch(0);
+            postData = "act=load_audios_silent&al=1&edit=0&id=0&gid=" + new Regex(this.CRYPTEDLINK_FUNCTIONAL, "((?:\\-)?\\d+)$").getMatch(0);
         } else {
             postData = "act=load_audios_silent&al=1&edit=0&gid=0&id=" + owner_ID + "&please_dont_ddos=2";
         }
