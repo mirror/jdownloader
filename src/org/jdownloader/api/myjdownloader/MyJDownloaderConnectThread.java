@@ -59,6 +59,7 @@ import org.jdownloader.myjdownloader.client.json.MyCaptchaSolution.RESULT;
 import org.jdownloader.myjdownloader.client.json.NotificationRequestMessage;
 import org.jdownloader.myjdownloader.client.json.NotificationRequestMessage.TYPE;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
+import org.jdownloader.statistics.StatsManager;
 
 public class MyJDownloaderConnectThread extends Thread {
 
@@ -551,6 +552,7 @@ public class MyJDownloaderConnectThread extends Thread {
         if (connected.getAndSet(set) == set) {
             return;
         }
+        StatsManager.I().track("myjd/connection/" + set);
         myJDownloaderController.fireConnectionStatusChanged(set, getEstablishedConnections());
     }
 
