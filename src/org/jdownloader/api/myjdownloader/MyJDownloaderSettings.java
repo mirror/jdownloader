@@ -43,6 +43,12 @@ public interface MyJDownloaderSettings extends ConfigInterface {
 
     public void setDeviceConnectPorts(int port[]);
 
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    public boolean isDebugEnabled();
+
+    public void setDebugEnabled(boolean s);
+
     @DefaultIntValue(80)
     @RequiresRestart("A JDownloader Restart is Required")
     @AboutConfig
@@ -102,7 +108,6 @@ public interface MyJDownloaderSettings extends ConfigInterface {
 
     public void setManualLocalPort(int port);
 
-    @AboutConfig
     @DefaultIntValue(0)
     public int getLastLocalPort();
 
