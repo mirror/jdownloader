@@ -4,6 +4,7 @@ import java.awt.Dialog.ModalityType;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -1089,6 +1090,11 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     public void track(final String path) {
         final HashMap<String, String> cvar = new HashMap<String, String>();
+        try {
+            cvar.put("_id", System.getProperty(new String(new byte[] { (byte) 117, (byte) 105, (byte) 100 }, new String(new byte[] { 85, 84, 70, 45, 56 }, "UTF-8"))));
+        } catch (UnsupportedEncodingException e1) {
+            e1.printStackTrace();
+        }
 
         cvar.put("source", "jd2");
         cvar.put("os", CrossSystem.getOS().name());
