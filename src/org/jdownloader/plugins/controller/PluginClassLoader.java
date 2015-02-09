@@ -31,19 +31,19 @@ public class PluginClassLoader extends URLClassLoader {
 
     private static final HashMap<String, HashMap<String, Object>> sharedPluginObjectsPool = new HashMap<String, HashMap<String, Object>>();
     private static final HashSet<String>                          immutableClasses        = new HashSet<String>() {
-                                                                                              {
-                                                                                                  add("java.lang.Boolean");
-                                                                                                  add("java.lang.Byte");
-                                                                                                  add("java.lang.String");
-                                                                                                  add("java.lang.Double");
-                                                                                                  add("java.lang.Integer");
-                                                                                                  add("java.lang.Long");
-                                                                                                  add("java.lang.Float");
-                                                                                                  add("java.lang.Short");
-                                                                                                  add("java.math.BigInteger");
-                                                                                                  add("java.math.BigDecimal");
-                                                                                              }
-                                                                                          };
+        {
+            add("java.lang.Boolean");
+            add("java.lang.Byte");
+            add("java.lang.String");
+            add("java.lang.Double");
+            add("java.lang.Integer");
+            add("java.lang.Long");
+            add("java.lang.Float");
+            add("java.lang.Short");
+            add("java.math.BigInteger");
+            add("java.math.BigDecimal");
+        }
+    };
 
     public static class PluginClassLoaderChild extends URLClassLoader {
 
@@ -120,11 +120,14 @@ public class PluginClassLoader extends URLClassLoader {
                     data = IO.readURL(myUrl);
                     try {
                         if (_0XCA != data[0] || _0XFE != data[1] || _0XBA != data[2] || _0XBE != data[3]) {
-                            String id = "classloader_" + HexFormatter.byteArrayToHex(new byte[] { data[0], data[1], data[2], data[3] });
-                            String clExtension = System.getProperty("classloader_" + HexFormatter.byteArrayToHex(new byte[] { data[0], data[1], data[2], data[3] }));
+                            final String id = "classloader_" + HexFormatter.byteArrayToHex(new byte[] { data[0], data[1], data[2], data[3] });
+                            final String clExtension = System.getProperty("classloader_" + HexFormatter.byteArrayToHex(new byte[] { data[0], data[1], data[2], data[3] }));
                             data = ((ClassLoaderExtension) Class.forName(clExtension).newInstance()).run(data);
                         }
                     } catch (Throwable e) {
+                        throw new ClassFormatError("No Class File");
+                    }
+                    if (data == null || data.length == 0) {
                         throw new ClassFormatError("No Class File");
                     }
                     if (parent != null) {
@@ -301,14 +304,14 @@ public class PluginClassLoader extends URLClassLoader {
                     }
                     if (check) {
                         check = !name.equals("org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream");/*
-                                                                                                                       * available in 09581
-                                                                                                                       * Stable
-                                                                                                                       */
+                         * available in 09581
+                         * Stable
+                         */
                     }
                     if (check) {
                         check = !name.equals("org.appwork.utils.net.throttledconnection.ThrottledConnection");/*
-                                                                                                               * available in 09581 Stable
-                                                                                                               */
+                         * available in 09581 Stable
+                         */
                     }
                     if (check) {
                         if (name.startsWith("org.appwork") || name.startsWith("jd.plugins.hoster") || name.startsWith("jd.plugins.decrypter")) {
