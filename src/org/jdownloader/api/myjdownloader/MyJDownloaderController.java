@@ -26,6 +26,7 @@ import org.jdownloader.myjdownloader.client.json.MyCaptchaChallenge;
 import org.jdownloader.myjdownloader.client.json.MyCaptchaSolution;
 import org.jdownloader.myjdownloader.client.json.MyCaptchaSolution.RESULT;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
+import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
 
 public class MyJDownloaderController implements ShutdownVetoListener, GenericConfigEventListener<Boolean> {
@@ -207,6 +208,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
     }
 
     public void onError(MyJDownloaderError error) {
+        StatsManager.I().track("myjd/error/" + error.name());
         CFG_MYJD.CFG.setLatestError(error);
         switch (error) {
         case NONE:
@@ -384,6 +386,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         default:
             break;
         }
+
         eventSender.fireEvent(new MyJDownloaderEvent(this, MyJDownloaderEvent.Type.CONNECTION_STATUS_UPDATE, status, connections));
     }
 
