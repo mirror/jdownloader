@@ -93,11 +93,15 @@ public class BackupCreateAction extends CustomizableAppAction {
                         file.delete();
                     }
 
-                    final File ffile = file;
+                    final File backupFile = file;
                     ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
                         {
                             setHookPriority(Integer.MIN_VALUE);
+                        }
 
+                        @Override
+                        public long getMaxDuration() {
+                            return 60 * 1000l;
                         }
 
                         @Override
@@ -108,7 +112,7 @@ public class BackupCreateAction extends CustomizableAppAction {
                         @Override
                         public void onShutdown(ShutdownRequest shutdownRequest) {
                             try {
-                                create(ffile);
+                                create(backupFile);
                             } catch (Throwable e) {
                                 LogController.GL.log(e);
                                 Dialog.getInstance().showExceptionDialog(_GUI._.lit_error_occured(), e.getMessage(), e);
