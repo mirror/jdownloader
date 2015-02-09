@@ -94,12 +94,12 @@ public class FoxLeechCom extends PluginForHost {
                 dllink = site_get_dllink(link, acc);
             }
         }
-        int maxChunks = 1;
+        int maxChunks = 0;
         if (link.getBooleanProperty(FoxLeechCom.NOCHUNKS, false)) {
             maxChunks = 1;
         }
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, maxChunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             logger.info("Unhandled download error on " + NICE_HOST + ": " + br.toString());
@@ -307,6 +307,7 @@ public class FoxLeechCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private String site_get_dllink(final DownloadLink link, final Account acc) throws Exception {
         String dllink;
         final String api_url = acc.getStringProperty("api_url", null);
@@ -317,6 +318,14 @@ public class FoxLeechCom extends PluginForHost {
             br.postPage(api_url, "link=" + url);
         } else {
             br.getPage("http://www.foxleech.com/Generate.php?link=" + url);
+        }
+        final String error = br.getRegex("\"error\":\"([^<>\"]*?)\"").getMatch(0);
+        if (error != null) {
+            if (error.contains("You have reached the daily limit for")) {
+                /* Daily limit of a single host is reached */
+                tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
+            }
+            handlePluginBroken(acc, link, "error_unknown", 10);
         }
         dllink = br.getRegex("\"link\":\"(http[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
@@ -351,7 +360,7 @@ public class FoxLeechCom extends PluginForHost {
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                URLConnectionAdapter con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;

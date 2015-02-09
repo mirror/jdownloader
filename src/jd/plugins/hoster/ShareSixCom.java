@@ -140,7 +140,7 @@ public class ShareSixCom extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
-        final Regex fnameregex = new Regex(correctedBR, "class=\"file(?:\\-|_)name\">Download File ([^<>\"]*?) \\((\\d+(\\.\\d{1,2})? (MB|GB))\\)</p>");
+        final Regex fnameregex = new Regex(correctedBR, "class=\"(?:file(?:\\-|_)name|fln\\-head)\">Download File ([^<>\"]*?) \\((\\d+(\\.\\d{1,2})? (MB|GB))\\)</p>");
         String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
         if (filename == null) {
             filename = new Regex(correctedBR, "class=\"f_l_name\">Download File ([^<>\"]*?) \\(").getMatch(0);
