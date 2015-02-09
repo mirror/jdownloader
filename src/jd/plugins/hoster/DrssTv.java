@@ -82,7 +82,7 @@ public class DrssTv extends PluginForHost {
             date = new Regex(link.getDownloadURL(), "sendung/(\\d{2}\\-\\d{2}\\-\\d{4})/").getMatch(0).replace("-", ".");
         }
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        DLLINK = br.getRegex("<source type=\"video/mp4\"  src=\"(https?://[^<>\"]*?)\"").getMatch(0);
+        DLLINK = br.getRegex("\"(http://[^<>\"]*?\\.mp4)\"").getMatch(0);
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
