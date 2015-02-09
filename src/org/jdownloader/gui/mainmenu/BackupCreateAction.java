@@ -36,6 +36,7 @@ import org.appwork.utils.zip.ZipIOWriter;
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.ForcedRestartRequest;
 import org.jdownloader.updatev2.RestartController;
 
@@ -108,8 +109,8 @@ public class BackupCreateAction extends CustomizableAppAction {
                         public void onShutdown(ShutdownRequest shutdownRequest) {
                             try {
                                 create(ffile);
-                            } catch (Exception e) {
-                                e.printStackTrace();
+                            } catch (Throwable e) {
+                                LogController.GL.log(e);
                                 Dialog.getInstance().showExceptionDialog(_GUI._.lit_error_occured(), e.getMessage(), e);
                             }
                         }
