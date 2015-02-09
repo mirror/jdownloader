@@ -57,7 +57,7 @@ public class Fantasy8Com extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("?m=e")) {
+        if (br.getURL().contains("?m=e") || !br.getURL().contains("/video") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);

@@ -297,7 +297,11 @@ public class SimplyPremiumCom extends PluginForHost {
             }
             final Long expirelng = Long.parseLong(expire);
             ai.setValidUntil(expirelng * 1000);
-            ai.setTrafficMax(Long.parseLong(getXML("max_traffic")));
+            final String max_traffic = getXML("max_traffic");
+            /* max_traffic is not always given */
+            if (max_traffic != null) {
+                ai.setTrafficMax(Long.parseLong(max_traffic));
+            }
             accdesc = getPhrase("ACCOUNT_TYPE_TIME");
         } else {
             accdesc = getPhrase("ACCOUNT_TYPE_VOLUME");
@@ -443,6 +447,10 @@ public class SimplyPremiumCom extends PluginForHost {
                 maxChunks = maxChunks * -1;
             }
             int max_dls = (int) account.getLongProperty("max_downloads", 1);
+            /* User should see an understandable number. */
+            if (max_dls == -1) {
+                max_dls = 20;
+            }
             final String accType = account.getStringProperty("acc_type", "?");
             final boolean resume_allowed = account.getBooleanProperty("resume_allowed", false);
             String resume_string;

@@ -46,6 +46,8 @@ public class ClpfshD extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /* Tags: rtl-interactive.de */
+
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink cryptedLink, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -64,6 +66,10 @@ public class ClpfshD extends PluginForDecrypt {
         final Regex regexInfo = new Regex(br.followConnection(), PATTERN_TITEL);
         if (br.getURL().contains("clipfish.de/special/cfhome/home/")) {
             logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         if (!br.containsHTML("CFAdBrandedPlayer\\.js") && !br.containsHTML("CFPlayerBasic\\.js")) {
@@ -115,20 +121,30 @@ public class ClpfshD extends PluginForDecrypt {
         int specialID = spc != null ? Integer.parseInt(spc) : -1;
         // specialID
 
-        if (specialID >= 0) {
-            br.getPage(NEW_XMP_PATH + vidId + "/" + specialID + "/" + "?ts=" + System.currentTimeMillis());
-        } else {
-            br.getPage(NEW_XMP_PATH + vidId + "/" + "?ts=" + System.currentTimeMillis());
-        }
-        String page = br.toString();
-        String pathToflv = getDllink(page);
-        if (pathToflv.startsWith("rtmp")) {
-            String dataPath = new Regex(pathToflv, "(media/.+?\\.mp4)").getMatch(0);
-            if (dataPath != null) {
-                pathToflv = "http://video.clipfish.de/" + dataPath;
-            }
+        /*
+         * Example http url: http://video.clipfish.de/media/<vid_url_id>/<videohash>.mp4 Videohashes can also be found in pic urls:
+         * /autoimg/<videohash> /
+         */
+        /* Example HDS url (first req): http://hds.fra.clipfish.de/hds-vod-enc/media/<vid_url_id>/<videohash>.mp4.f4m */
 
+        String pathToflv = br.getRegex("videourl: \"(http[^<>\"]*?)\"").getMatch(0);
+        if (pathToflv == null) {
+            if (specialID >= 0) {
+                br.getPage(NEW_XMP_PATH + vidId + "/" + specialID + "/" + "?ts=" + System.currentTimeMillis());
+            } else {
+                br.getPage(NEW_XMP_PATH + vidId + "/" + "?ts=" + System.currentTimeMillis());
+            }
+            String page = br.toString();
+            pathToflv = getDllink(page);
+            if (pathToflv.startsWith("rtmp")) {
+                String dataPath = new Regex(pathToflv, "(media/.+?\\.mp4)").getMatch(0);
+                if (dataPath != null) {
+                    pathToflv = "http://video.clipfish.de/" + dataPath;
+                }
+
+            }
         }
+
         final DownloadLink downloadLink = createDownloadlink("clipfish2://" + parameter.replaceFirst("http://", ""));
         downloadLink.setProperty("dlURL", pathToflv);
         downloadLink.setProperty("MEDIA_TYPE", cType);
