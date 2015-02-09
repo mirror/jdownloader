@@ -171,7 +171,7 @@ public class ProSevenDe extends PluginForHost {
         }
         if (clipUrl.startsWith("rtmp")) {
             clipUrl = clipUrl.replace("mp4:", "");
-            String[] stream = new Regex(clipUrl, "(rtmp.?://[0-9a-z]+\\.fplive\\.net/)[0-9a-z]+/[\\w\\-]+/\\d+/(.*?)$").getRow(0);
+            String[] stream = new Regex(clipUrl, "(rtmp.?://[0-9a-z]+\\.fplive\\.net/)([0-9a-z]+/[\\w\\-]+/\\d+/)(.*?)$").getRow(0);
             if (stream != null && stream.length == 3) {
                 downloadRTMP(downloadLink, stream);
             } else {
