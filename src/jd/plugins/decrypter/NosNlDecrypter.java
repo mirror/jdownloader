@@ -79,7 +79,7 @@ public class NosNlDecrypter extends PluginForDecrypt {
                 PARAMETER = "http://nos.nl/video/" + new Regex(PARAMETER, "(\\d+)$").getMatch(0) + "/";
             }
             br.getPage(PARAMETER);
-            if (br.getHttpConnection().getResponseCode() == 404) {
+            if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().equals("http://nos.nl/uitzendingen/")) {
                 final DownloadLink dl = createDownloadlink("directhttp://" + PARAMETER);
                 dl.setProperty("offline", true);
                 decryptedLinks.add(dl);

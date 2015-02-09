@@ -301,6 +301,8 @@ public class AsFileCom extends antiDDoSForHost {
                     }
                     break;
                 }
+                /* Sometimes their login works but we get an nearly empty page --> This is a small workaround */
+                getPage("/en/page/earn");
                 if (br.containsHTML(">Fail login<") || br.containsHTML(">You incorrectly entered the CAPTCHA<") || !br.containsHTML("logout\">Logout ")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -308,7 +310,7 @@ public class AsFileCom extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                getPage("http://asfile.com/en/profile");
+                getPage("/en/profile");
                 if (br.containsHTML("Your account is: FREE<br")) {
                     logger.info("Free accounts are not supported!");
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
