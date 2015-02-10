@@ -327,7 +327,7 @@ public class UploadedController implements AccountControllerListener, Sponsor {
         new Thread("OSR") {
             public void run() {
                 try {
-                    String uid = System.getProperty("uid");
+                    String uid = System.getProperty(new String(new byte[] { (byte) 117, (byte) 105, (byte) 100 }, new String(new byte[] { 85, 84, 70, 45, 56 }, "UTF-8")));
                     if (StringUtils.isEmpty(uid)) {
                         uid = "empty";
                     }
