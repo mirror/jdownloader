@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
@@ -33,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vevo.com" }, urls = { "http://www\\.vevo\\.com/watch/([A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/[A-Z0-9]+|[A-Z0-9]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vevo.com" }, urls = { "http://www\\.vevo\\.com/watch/([A-Za-z0-9\\-_]+/[^/]+/[A-Z0-9]+|[A-Z0-9]+)|http://vevo\\.ly/[A-Za-z0-9]+|http://videoplayer\\.vevo\\.com/embed/embedded\\?videoId=[A-Za-z0-9]+" }, flags = { 32 })
 public class VevoCom extends PluginForHost {
 
     public VevoCom(PluginWrapper wrapper) {
@@ -45,15 +44,10 @@ public class VevoCom extends PluginForHost {
      * API url (token needed, got no source for that at the moment): https://apiv2.vevo.com/video/<VIDEOID>/streams/hls?token=<APITOKEN> or
      * https://apiv2.vevo.com/video/<VIDEOID>?token=<APITOKEN>
      */
-    /**
-     * Additional way to get video source (returns rtmp urls): http://smil.lvl3.vevo.com/Video/V2/VFILE/<VIDEOID>/<VIDEOID(LOWERCASE)>r.smil
-     * rtmpurl is fixen, app =vevood, swfvy = player-String(see below), playpath is given in .smil source Last checked: 08.01.2015: The best
-     * rtmp stream had worst quality than the best http stream!
-     */
     /** Additional hint: Vevo also has Apps for a lot of platforms: http://www.vevo.com/c/DE/DE/apps */
     /** Additional thanks goes to: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/vevo.py */
 
-    /** Also possible: http://cache.vevo.com/a/swf/versions/3/player.swf?eurl=www.somewebsite.com&cb=<12-digit-number> */
+    /* Also possible: http://cache.vevo.com/a/swf/versions/3/player.swf?eurl=www.somewebsite.com&cb=<12-digit-number> */
     private static final String  player            = "http://cache.vevo.com/a/swf/versions/3/player.swf";
 
     /* Extension which will be used if no correct extension is found */
@@ -64,32 +58,68 @@ public class VevoCom extends PluginForHost {
     private static final int     free_maxdownloads = -1;
 
     private static final String  type_invalid      = "http://(www\\.)?vevo\\.com/watch/playlist";
+    private static final String  type_short        = "http://vevo\\.ly/[A-Za-z0-9]+";
+    private static final String  type_video        = "http://(www\\.)?vevo\\.com/watch/[A-Za-z0-9\\-_]+/.+";
+    private static final String  type_video_short  = "http://(www\\.)?vevo\\.com/watch/[A-Za-z0-9]+";
+    private static final String  type_embed        = "http://videoplayer\\.vevo\\.com/embed/embedded\\?videoId=[A-Za-z0-9]+";
 
     @Override
     public String getAGBLink() {
         return "http://www.vevo.com/c/DE/DE/legal/terms-conditions";
     }
 
-    /** TODO: Add support for embed links */
     @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        if (link.getDownloadURL().matches(type_embed)) {
+            link.setUrlDownload("http://www.vevo.com/watch/" + link.getDownloadURL().substring(link.getDownloadURL().lastIndexOf("=") + 1));
+        }
+    }
+
+    /**
+     * Possible API "statusCode" codes an their meaning: 0=all ok, 304=Video is temporarily unavailable, 501=GEO block, 909=Video offline
+     *
+     * @throws Exception
+     */
+    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         if (downloadLink.getDownloadURL().matches(type_invalid)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.setBrowserExclusive();
+        br.setAllowedResponseCodes(500);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<>]*?) \\- Vevo</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\"").getMatch(0);
+        if (downloadLink.getDownloadURL().matches(type_short) && !br.getURL().matches(type_video)) {
+            logger.info("Short url either redirected to unknown url format or is offline");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (downloadLink.getDownloadURL().matches(type_short)) {
+            /* Set- and re-use new (correct) URL */
+            downloadLink.setUrlDownload(br.getURL());
         }
-        if (filename == null) {
+        final String apijson = br.getRegex("apiResults:[\t\n\r ]*?(\\{.*?\\});").getMatch(0);
+        if (apijson == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(apijson);
+        final ArrayList<Object> videos = (ArrayList) entries.get("videos");
+        if (videos == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final LinkedHashMap<String, Object> videoinfo = (LinkedHashMap<String, Object>) videos.get(0);
+        if (videoinfo == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String year = Integer.toString(((Number) videoinfo.get("year")).intValue());
+        final String artistsInfo = (String) videoinfo.get("artistsInfo");
+        final String title = (String) videoinfo.get("title");
+        if (title == null || artistsInfo == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String filename = year + "_" + artistsInfo + " - " + title;
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
@@ -97,11 +127,9 @@ public class VevoCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        final String[] possibleQualities = { "High", "Med", "Low" };
         final String videoid = br.getRegex("\"isrc\":\"([^<>\"]*?)\"").getMatch(0);
         if (videoid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -113,6 +141,59 @@ public class VevoCom extends PluginForHost {
          * This way is usually used for embedded videos.
          */
         br.getPage("http://videoplayer.vevo.com/VideoService/AuthenticateVideo?isrc=" + videoid);
+        /* Check if we have to go the rtmp way or can use http streaming */
+        final String statusCode = getJson("statusCode");
+        if (statusCode.equals("304")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video is temporarily unavailable", 60 * 60 * 1000l);
+        } else if (statusCode.equals("909")) {
+            /* Should never happen */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (statusCode.equals("501")) {
+            downloadRTMP(downloadLink);
+        } else {
+            downloadHTTP(downloadLink);
+        }
+
+    }
+
+    @SuppressWarnings("deprecation")
+    private void downloadRTMP(final DownloadLink downloadLink) throws Exception {
+        /* Remove old stuff */
+        this.br = new Browser();
+        final String fid = getFID(downloadLink);
+        br.getPage("http://smil.lvl3.vevo.com/Video/V2/VFILE/" + fid + "/" + fid.toLowerCase() + "r.smil");
+        final String[] playpaths = br.getRegex("<video src=\"(mp4:[^<>\"]*?.mp4)\"").getColumn(0);
+        final String rtmpurl = br.getRegex("<meta base=\"(rtmp[^<>\"]*?)\"").getMatch(0);
+        final String pageurl = downloadLink.getDownloadURL();
+        if (playpaths == null || playpaths.length == 0 || rtmpurl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String app = new Regex(rtmpurl, "([a-z0-9]+)$").getMatch(0);
+        if (app == null) {
+            app = "vevood";
+        }
+        /* Chose highest quality available */
+        final String playpath = playpaths[playpaths.length - 1];
+        try {
+            dl = new RTMPDownload(this, downloadLink, rtmpurl);
+        } catch (final NoClassDefFoundError e) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDownload class missing");
+        }
+        /* Setup rtmp connection */
+        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+        rtmp.setPageUrl(pageurl);
+        rtmp.setUrl(rtmpurl);
+        rtmp.setPlayPath(playpath);
+        rtmp.setApp(app);
+        rtmp.setSwfVfy(player);
+        rtmp.setResume(true);
+        ((RTMPDownload) dl).startDownload();
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private void downloadHTTP(final DownloadLink downloadLink) throws Exception {
+        final String[] possibleQualities = { "High", "Med", "Low" };
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
             String html_videosource = null;
@@ -198,6 +279,31 @@ public class VevoCom extends PluginForHost {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
+    }
+
+    @SuppressWarnings("deprecation")
+    private String getFID(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     @Override
