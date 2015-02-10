@@ -19,7 +19,6 @@ import jd.plugins.download.DownloadInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.DomainInfo;
-import org.jdownloader.controlling.Priority;
 import org.jdownloader.extensions.extraction.ExtractionProgress;
 import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.ExtractIconVariant;
@@ -62,7 +61,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
 
     /**
      * This constructor is protected. do not use this class outside the FilePackage
-     * 
+     *
      * @param fp
      */
     public FilePackageView(FilePackage fp) {
@@ -93,10 +92,6 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     private long                  done = 0;
 
     private int                   enabledCount;
-
-    private Priority              lowestPriority;
-
-    private Priority              highestPriority;
 
     private PluginStateCollection pluginStates;
 
@@ -169,14 +164,6 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         }
     }
 
-    public Priority getLowestPriority() {
-        return lowestPriority;
-    }
-
-    public Priority getHighestPriority() {
-        return highestPriority;
-    }
-
     private class Temp {
         private int                          newUnknownFileSizes = 0;
         private int                          newFinalCount       = 0;
@@ -189,8 +176,6 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         private int                          children            = 0;
         private long                         fpETA               = -1;
         private long                         fpTODO              = 0;
-        private Priority                     priorityLowset      = Priority.HIGHEST;
-        private Priority                     priorityHighest     = Priority.LOWER;
         private long                         fpSPEED             = 0;
         private boolean                      sizeKnown           = false;
         private boolean                      fpRunning           = false;
@@ -318,8 +303,6 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         offline = tmp.newOffline;
         online = tmp.newOnline;
         updateAvailability(tmp);
-        this.lowestPriority = tmp.priorityLowset;
-        this.highestPriority = tmp.priorityHighest;
 
         availabilityColumnString = _GUI._.AvailabilityColumn_getStringValue_object_(tmp.newOnline, tmp.children);
     }
@@ -341,12 +324,6 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     }
 
     protected void addLinkToTemp(Temp tmp, DownloadLink link) {
-        if (link.getPriorityEnum().getId() < tmp.priorityLowset.getId()) {
-            tmp.priorityLowset = link.getPriorityEnum();
-        }
-        if (link.getPriorityEnum().getId() > tmp.priorityHighest.getId()) {
-            tmp.priorityHighest = link.getPriorityEnum();
-        }
         String sourceUrl = link.getView().getDisplayUrl();
 
         if (sourceUrl != null) {
