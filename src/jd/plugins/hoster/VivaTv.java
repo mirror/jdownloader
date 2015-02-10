@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
@@ -31,8 +32,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viva.tv", "funnyclips.cc", "comedycentral.tv", "nick.de", "nicknight.de", "nickjr.de", "mtv.de", "mtviggy.com", "mtvdesi.com", "mtvk.com", "mtv.com", "movies.mtv.de" }, urls = { "http://www\\.viva\\.tv/(musikvideo|news|shows|musik/video)/\\d+([a-z0-9\\-]+)?", "http://de\\.funnyclips\\.cc/(listen/.+|[A-Za-z0-9\\-]+/\\d+[A-Za-z0-9\\-]+)", "http://www\\.comedycentral\\.tv/(shows|neuigkeiten)/\\d+([a-z0-9\\-]+)?", "http://www\\.nick\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nicknight\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nickjr\\.de/videos/\\d+([a-z0-9\\-]+)?", "http://www\\.mtv\\.de/(shows/\\d+[a-z0-9\\-]+/staffeln/\\d+/folgen/\\d+[a-z0-9\\-]+|artists/[a-z0-9\\-]+/videos/[a-z0-9\\-]+|news/\\d+[a-z0-9\\-]+)",
-        "http://www\\.mtviggy\\.com/videos/[a-z0-9\\-]+/|http://media\\.mtvnservices\\.com/embed/mgid:uma:video:mtviggy\\.com:\\d+", "http://www\\.mtvdesi\\.com/(videos/)?[a-z0-9\\-]+", "http://www\\.mtvk\\.com/videos/[a-z0-9\\-]+", "http://www\\.mtv\\.com/(shows/[a-z0-9\\-]+/[^<>\"]+|videos/[^<>\"]+\\.jhtml|videos/\\?vid=\\d+)|http://media\\.mtvnservices\\.com/embed/mgid:uma:video:mtv\\.com:\\d+", "http://movies\\.mtv\\.de/(?!playlists)videos/(trailer/)?[a-z0-9\\-]+/[a-z0-9]+" }, flags = { 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viva.tv", "funnyclips.cc", "comedycentral.tv", "nick.de", "nicknight.de", "nickjr.de", "mtv.de", "mtviggy.com", "mtv.com", "movies.mtv.de", "southpark.de", "southpark.cc.com" }, urls = { "http://www\\.viva\\.tv/(musikvideo|news|shows|musik/video)/\\d+([a-z0-9\\-]+)?", "http://de\\.funnyclips\\.cc/(listen/.+|[A-Za-z0-9\\-]+/\\d+[A-Za-z0-9\\-]+)", "http://www\\.comedycentral\\.tv/(shows|neuigkeiten)/\\d+([a-z0-9\\-]+)?", "http://www\\.nick\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nicknight\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nickjr\\.de/videos/\\d+([a-z0-9\\-]+)?", "http://www\\.mtv\\.de/(shows/\\d+[a-z0-9\\-]+/staffeln/\\d+/folgen/\\d+[a-z0-9\\-]+|artists/[a-z0-9\\-]+/videos/[a-z0-9\\-]+|news/\\d+[a-z0-9\\-]+)",
+        "http://www\\.mtviggy_jd_decrypted_jd_\\.com/videos/[a-z0-9\\-]+/|http://media\\.mtvnservices\\.com/embed/mgid:uma:video:mtviggy\\.com:\\d+", "http://www\\.mtv\\.com/(shows/[a-z0-9\\-]+/[^<>\"]+|videos/[^<>\"]+\\.jhtml|videos/\\?vid=\\d+)|http://media\\.mtvnservices\\.com/embed/mgid:uma:video:mtv\\.com:\\d+", "http://movies\\.mtv\\.de/(?!playlists)videos/(trailer/)?[a-z0-9\\-]+/[a-z0-9]+", "http://www\\.southpark\\.de/clips/[a-z0-9]+/[a-z0-9\\-]+|http://media\\.mtvnservices\\.com/mgid:arc:video:southparkstudios\\.com:[a-z0-9\\-]+", "http://media\\.mtvnservices\\.com/mgid:arc:video:southparkstudios_jd_decrypted_jd_\\.com:[a-z0-9\\-]+" }, flags = { 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32 })
 public class VivaTv extends PluginForHost {
 
     public VivaTv(PluginWrapper wrapper) {
@@ -44,6 +45,7 @@ public class VivaTv extends PluginForHost {
         return "http://www.viva.tv/agb";
     }
 
+    /* The different linktypes: */
     private static final String  type_viva                         = "http://www\\.viva\\.tv/.+";
     private static final String  subtype_viva_news                 = "http://www\\.viva\\.tv/news/\\d+([a-z0-9\\-]+)?";
     private static final String  subtype_viva_shows                = "http://www\\.viva\\.tv/shows/\\d+([a-z0-9\\-]+)?";
@@ -69,13 +71,21 @@ public class VivaTv extends PluginForHost {
 
     private static final String  type_mtviggy                      = "http://www\\.mtviggy\\.com/videos/[a-z0-9\\-]+/";
     private static final String  type_mtviggy_embedded             = "http://media\\.mtvnservices\\.com/embed/mgid:uma:video:mtviggy\\.com:\\d+";
-    private static final String  type_mtvdesi                      = "http://www\\.mtvdesi\\.com/(videos/)?[a-z0-9\\-]+";
-    private static final String  type_mtvk                         = "http://www\\.mtvk\\.com/videos/[a-z0-9\\-]+";
     private static final String  type_mtvmovies                    = "http://movies\\.mtv\\.de/.+";
 
-    private static final String  mtv_player                        = "http://player.mtvnn.com/g2/g2player_2.2.1.swf";
+    private static final String  type_southpark_de_clips           = "http://www\\.southpark\\.de/clips/[a-z0-9]+/[a-z0-9\\-]+";
+    /* Links come from the decrypter */
+    private static final String  type_southpark_de_embed           = "http://media\\.mtvnservices\\.com/mgid:arc:video:southparkstudios\\.com:[a-z0-9\\-]+";
+    private static final String  type_southpark_de_episode         = "http://www\\.southpark\\.de/alle\\-episoden/s\\d{2}e\\d{2}[a-z0-9\\-]+";
+    private static final String  type_southpark_cc_episode         = "http://southpark\\.cc\\.com/full\\-episodes/s\\d{2}e\\d{2}[a-z0-9\\-]+";
+
+    /** Other: So far unsupported domains: mtvla.com */
+
+    /* Plugin related things */
+    private static final String  player_url                        = "http://player.mtvnn.com/g2/g2player_2.2.1.swf";
     /* Obey german law - very important! */
     private static final boolean rtmpe_supported                   = false;
+    public static final String   default_ext                       = ".flv";
 
     /*
      * EVERY MTV project has mgid strings! Core of this is either a (6-7 digits?) long ID or a hash-like id e.g. xxx-yyy-ggg-hhh-ttt. Only
@@ -88,25 +98,21 @@ public class VivaTv extends PluginForHost {
      * .xml?uri=<MGID_GOES_HERE>&type=network&ref=movies.mtv.de&geo=DE&group=intl&network=None&device=Othe. Feed url will be in the <feed>
      * XML tag.
      */
-    /*
-     * Known issues: External embedded urls (vevo.com) support missing, some mtv.com full episodes are not downloaded - instead, a teaser is
-     * downloaded., Also see "TODO" things inside plugin code.
-     */
     /* Note: There might also be a way to get mobile (http) links, see YT-dl project. */
 
     /** Tags: Viacom International Media Networks Northern Europe, mrss, gameone.de */
     /** Additional thanks goes to: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/mtv.py */
 
     private String               mgid                              = null;
-    private boolean              feed_active                       = false;
+    private String               feed_url                          = null;
+    private String               mediagen_url                      = null;
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        final String user_added_url = link.getDownloadURL();
-        if (user_added_url.matches(type_mtvdesi) || user_added_url.matches(type_mtvk)) {
-            /* mtvdesi and mtvk only contains mtvniggy embedded links */
-            link.setUrlDownload("http://www.mtviggy.com/videos/" + new Regex(user_added_url, "([a-z0-9\\-]+)$").getMatch(0) + "/");
-        }
+        String user_added_url = link.getDownloadURL();
+        /* Correct decrypted links */
+        user_added_url = user_added_url.replace("_jd_decrypted_jd_", "");
+        link.setUrlDownload(user_added_url);
     }
 
     @SuppressWarnings("deprecation")
@@ -117,6 +123,7 @@ public class VivaTv extends PluginForHost {
         String description = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        final String decrypter_mainlink = link.getStringProperty("mainlink", null);
         if (link.getDownloadURL().matches(type_viva)) {
             br.getPage(link.getDownloadURL());
             if (!br.containsHTML("player\\.mtvnn\\.com/") || br.getHttpConnection().getResponseCode() == 404) {
@@ -244,11 +251,11 @@ public class VivaTv extends PluginForHost {
             if (!br.containsHTML("class=\"video\\-box\"") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            filename = getFilenameMTVIGGY(this.br);
             if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            ext = ".mp4";
+            ext = ".flv";
         } else if (link.getDownloadURL().matches(type_mtv_de)) {
             br.getPage(link.getDownloadURL());
             if (!br.containsHTML("property=\"og:video\"") || br.getHttpConnection().getResponseCode() == 404) {
@@ -271,9 +278,9 @@ public class VivaTv extends PluginForHost {
             filename = br.getRegex("<title>([^<>\"]*?) \\| MTV</title>").getMatch(0);
             ext = ".flv";
         } else if (link.getDownloadURL().matches(type_mtv_com) || link.getDownloadURL().matches(type_mtv_com_embedded)) {
-            feed_active = true;
             mgid = new Regex(link.getDownloadURL(), "(mgid.+)").getMatch(0);
-            br.getPage(getFEEDurl("mtv.com"));
+            feed_url = getFEEDurl("mtv.com");
+            br.getPage(feed_url);
             /* Check for invalid XML --> Video must be offline then */
             if (!br.containsHTML("</channel>") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -282,17 +289,17 @@ public class VivaTv extends PluginForHost {
             description = feedGetDescription();
             ext = ".flv";
         } else if (link.getDownloadURL().matches(type_mtviggy_embedded)) {
-            feed_active = true;
-            /* Handle embedded links just like they are - we do not even want to try to find the original video url. */
+            /* Handle embedded links just like they are - we do not even want to try to find/use the original video url. */
             mgid = new Regex(link.getDownloadURL(), "(mgid.+)").getMatch(0);
-            br.getPage(getFEEDurl("mtvworldwide"));
+            feed_url = getFEEDurl("mtvworldwide");
+            br.getPage(feed_url);
             /* Check for invalid XML --> Video must be offline then */
             if (!br.containsHTML("</channel>") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = feedGetTitle();
             description = feedGetDescription();
-            ext = ".flv";
+            ext = default_ext;
         } else if (link.getDownloadURL().matches(type_mtvmovies)) {
             br.getPage(link.getDownloadURL());
             if (!br.containsHTML("class=\"mtvn\\-player") || br.getHttpConnection().getResponseCode() == 404) {
@@ -300,6 +307,57 @@ public class VivaTv extends PluginForHost {
             }
             filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"/>").getMatch(0);
             ext = ".flv";
+        } else if (link.getDownloadURL().matches(type_southpark_de_clips)) {
+            br.getPage(link.getDownloadURL());
+            if (!br.containsHTML("\"name\":\"mtvnPlayer\"") || br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String season = br.getRegex("<h2 class=\"clips_thumb_season\">([^<>]*?)</h2>").getMatch(0);
+            final String episodename = br.getRegex("<h2>([^<>]*?)</h2>").getMatch(0);
+            String clipname = br.getRegex("<h1 itemprop=\"name\">([^<>]*?)</h1>").getMatch(0);
+            if (season == null || episodename == null || clipname == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            clipname = doFilenameEncoding(clipname);
+            filename = doFilenameEncoding(season) + " - " + doFilenameEncoding(episodename) + " - " + clipname;
+            /* 'Akt?' because sometimes they simply forgot the 't' */
+            if (clipname.matches(".+\\- (\\d\\. Akt?|Act \\d)$") && !rtmpe_supported) {
+                /* Special case: Define the mediagenURL here because we need to enforce usage of the http protocol. */
+                find_mgid("southparkstudios.com");
+                if (this.mgid == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                this.mediagen_url = String.format(mediagenURLs.get("southpark.de_episode"), this.mgid, possibleAcceptMethodsValues.get("http"));
+            }
+            ext = default_ext;
+        } else if (decrypter_mainlink != null && decrypter_mainlink.matches(type_southpark_de_episode)) {
+            /* Handle embedded links just like they are - we do not even want to try to find/use the original video url. */
+            mgid = new Regex(link.getDownloadURL(), "(mgid.+)").getMatch(0);
+            feed_url = getFEEDurl("southpark.de");
+            br.getPage(feed_url);
+            /* Check for invalid XML --> Video must be offline then */
+            if (!br.containsHTML("</channel>") || br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            filename = feedGetTitle();
+            description = feedGetDescription();
+            ext = default_ext;
+            if (!rtmpe_supported) {
+                /* Special case: Define the mediagenURL here because we need to enforce usage of the http protocol. */
+                this.mediagen_url = String.format(mediagenURLs.get("southpark.de_episode"), this.mgid, possibleAcceptMethodsValues.get("http"));
+            }
+        } else if (decrypter_mainlink != null && decrypter_mainlink.matches(type_southpark_cc_episode)) {
+            /* Handle embedded links just like they are - we do not even want to try to find/use the original video url. */
+            mgid = new Regex(link.getDownloadURL(), "(mgid.+)").getMatch(0);
+            feed_url = getFEEDurl("southpark.cc.com");
+            br.getPage(feed_url);
+            /* Check for invalid XML --> Video must be offline then */
+            if (!br.containsHTML("</channel>") || br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            filename = feedGetTitle();
+            description = feedGetDescription();
+            ext = default_ext;
         }
         if (filename == null) {
             logger.warning("Unsupported url format or plugin broken");
@@ -308,7 +366,7 @@ public class VivaTv extends PluginForHost {
         filename = doFilenameEncoding(filename);
         link.setFinalFileName(filename + ext);
 
-        if (description != null) {
+        if (description != null && description.length() > 20) {
             description = doEncoding(description);
             try {
                 link.setComment(description);
@@ -319,84 +377,39 @@ public class VivaTv extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String pageurl = br.getURL();
-        String feed_url = null;
+        downloadLink.setProperty("page_url", br.getURL());
         /*
-         * In case we got embedded links, we are already on the feed_url. Find- and access it if needed.
+         * In case we got embedded links, we are already on the feed_url. Find- and access it if still needed.
          */
-        if (!feed_active) {
-            if (downloadLink.getDownloadURL().matches(type_viva) || downloadLink.getDownloadURL().matches(type_funnyclips) || downloadLink.getDownloadURL().matches(type_comedycentral) || downloadLink.getDownloadURL().matches(type_nick) || downloadLink.getDownloadURL().matches(type_nicknight) || downloadLink.getDownloadURL().matches(type_nickjr) || downloadLink.getDownloadURL().matches(type_mtv_de)) {
-                find_mgid("mtvnn.com");
-                if (this.mgid != null) {
-                    feed_url = getFEEDurl("ALL_OTHERS");
-                } else {
-                    /* Should never be needed */
-                    feed_url = br.getRegex("mrss[\t\n\r ]+:[\t\n\r ]+(?:\\'|\")(https?://[^<>\"]*?)(?:\\'|\"),").getMatch(0);
-                }
-            } else if (downloadLink.getDownloadURL().matches(type_mtviggy)) {
-                /* TODO: Add a decrypter for mtviggy links to get the vevo links in there - then we can remove this part of the code. */
-                if (br.containsHTML("videoplayer\\.vevo\\.com/")) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Vevo.com is not yet supported");
-                }
-                /* Special: This domain has it's own feed-URL. */
-                find_mgid(downloadLink.getHost());
-                feed_url = getFEEDurl("mtvworldwide");
-            } else if (downloadLink.getDownloadURL().matches(type_mtv_com)) {
-                /* Special: This domain has it's own feed-URL. */
-                find_mgid(downloadLink.getHost());
-                String seriesID = null;
-                if (br.getURL().matches(subtype_mtv_com_shows)) {
-                    seriesID = br.getRegex("seriesId = (\\d+);").getMatch(0);
-                } else {
-                    seriesID = "None";
-                }
-                final String instance = br.getRegex("MTVN\\.VIDEO\\.PLAYER\\.instance = \\'([a-z0-9]+)\\';").getMatch(0);
-                if (seriesID == null || instance == null || this.mgid == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                feed_url = feedURLs.get("mtv.com");
-                feed_url = String.format(feed_url, this.mgid, instance, seriesID);
-            } else if (downloadLink.getDownloadURL().matches(type_mtvmovies)) {
-                /* Special: This domain has it's own feed-URL. */
-                find_mgid("mtvmovies.com");
-                feed_url = getFEEDurl("mtvmovies.com");
-            } else {
-                /* Unknown URL format - should never happen! */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            /* Usually we'll have the correct feedurl here */
-            if (feed_url == null) {
-                feed_url = br.getRegex("(https?://api\\.mtvnn\\.com/v2/mrss\\.xml\\?uri=[^<>\"\\'/]+)").getMatch(0);
-            }
-            if (feed_url == null) {
-                feed_url = br.getRegex("\\&mrss=(https?://api\\.mtvnn\\.com/[^<>\"]*?)\"").getMatch(0);
-            }
+        if (feed_url == null && mediagen_url == null) {
+            findFEEDurl(downloadLink);
             if (feed_url == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getHeaders().put("Referer", mtv_player);
+            br.getHeaders().put("Referer", player_url);
             br.getPage(feed_url);
         }
-
-        /* Find- and access mediagen. */
-        String mediagen = br.getRegex("(?:\\'|\")(https?://[^<>\"]*?mediaGen[^<>\"]*?)(?:\\'|\")").getMatch(0);
-        if (mediagen == null) {
-            mediagen = br.getRegex("(?:\\'|\")(https?://[^<>\"]*?/mediagen/[^<>\"/]*?)(?:\\'|\")").getMatch(0);
-        }
-        if (mediagen == null) {
-            /* Check if maybe we just got a nearly empty response --> Video won't load in the browser either! */
-            if (br.containsHTML("<rss xmlns:media=")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - video offline?");
+        if (mediagen_url == null) {
+            /* Find- and access mediagen. */
+            mediagen_url = br.getRegex("(?:\\'|\")(https?://[^<>\"]*?mediaGen[^<>\"]*?)(?:\\'|\")").getMatch(0);
+            if (mediagen_url == null) {
+                mediagen_url = br.getRegex("(?:\\'|\")(https?://[^<>\"]*?/mediagen/[^<>\"/]*?)(?:\\'|\")").getMatch(0);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (mediagen_url == null) {
+                /* Check if maybe we just got a nearly empty response --> Video won't load in the browser either! */
+                if (br.containsHTML("<rss xmlns:media=")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - video offline?");
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            mediagen_url = fixMediagenURL(mediagen_url);
         }
-        mediagen = fixFeedURL(mediagen);
-        br.getHeaders().put("Referer", mtv_player);
-        br.getPage(mediagen);
+
+        br.getHeaders().put("Referer", player_url);
+        br.getPage(mediagen_url);
 
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* Video temporarily or forever offline */
@@ -408,12 +421,12 @@ public class VivaTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video doesn't exist anymore (?)", 60 * 60 * 1000l);
         }
         /* Chose highest quality available */
-        final String[] srcs = br.getRegex("([a-z]+://[^<>\"]*?\\.(mp4|flv))</src>").getColumn(0);
+        final String[] srcs = br.getRegex("([a-z]+://[^<>\"]*?)</src>").getColumn(0);
         if (srcs == null || srcs.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* Now get the best quality (highest width) */
-        String final_rtmpurl = null;
+        String src_url = null;
         int best_width = 0;
         int tempwidth = 0;
         for (final String tmpsrc : srcs) {
@@ -422,107 +435,174 @@ public class VivaTv extends PluginForHost {
                 tempwidth = Integer.parseInt(width);
                 if (tempwidth > best_width) {
                     best_width = tempwidth;
-                    final_rtmpurl = tmpsrc;
+                    src_url = tmpsrc;
                 }
             }
         }
         /* No width given? Grab the last element of the array - if this is not the best resolution, improve the upper function. */
-        if (final_rtmpurl != null) {
+        if (src_url != null) {
             logger.info("Found BEST downloadlink");
         } else {
             logger.info("Failed to find BEST downloadlink");
-            final_rtmpurl = srcs[srcs.length - 1];
+            src_url = srcs[srcs.length - 1];
         }
-        final_rtmpurl = final_rtmpurl.replace(Encoding.Base64Decode("cnRtcGU6Ly8="), "rtmp://");
         String httpurl;
-        if (final_rtmpurl.startsWith("http")) {
+        if (src_url.startsWith("http")) {
             /* In very rare cases we already have http urls */
-            httpurl = final_rtmpurl;
+            httpurl = src_url;
         } else {
-            httpurl = convertRTMPtoHTTP(final_rtmpurl);
+            httpurl = convertRTMPtoHTTP(src_url);
         }
         if (httpurl != null) {
             /* Prefer http */
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, httpurl, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                }
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl.startDownload();
+            downloadHTTP(downloadLink, httpurl);
         } else {
-            final String ext = final_rtmpurl.substring(final_rtmpurl.lastIndexOf(".") + 1);
-            String app;
-            String rtmphost;
-            String playpath;
-            String swfurl;
-            if (downloadLink.getDownloadURL().matches(type_mtviggy)) {
-                /* Usually the convertRTMPtoHTTP will work and this code is never executed. */
-                /* Original swfurl contains a lof more info but it's not needed! */
-                swfurl = "http://media.mtvnservices.com/player/prime/mediaplayerprime.2.5.3.swf?uri=" + mgid;
-                app = "viacommtvstrm";
-                rtmphost = "rtmpe://viacommtvstrmfs.fplive.net:1935/viacommtvstrm";
-                playpath = new Regex(final_rtmpurl, "/(gsp\\..+)").getMatch(0);
-                if (playpath == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                if (!rtmpe_supported) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "rtmpe:// not supported!");
-                }
-                final_rtmpurl = final_rtmpurl.replace("rtmp://", "rtmpe://");
-            } else {
-                swfurl = "http://player.mtvnn.com/g2/g2player_2.2.1.swf";
-                app = new Regex(final_rtmpurl, "(ondemand/(?:(mtviestor|riptide)/)?)").getMatch(0);
-                final Regex host_app = new Regex(final_rtmpurl, "(rtmp://[^/]*?/)ondemand/(.+)");
-                rtmphost = host_app.getMatch(0);
-                playpath = new Regex(final_rtmpurl, app + "(.+)").getMatch(0);
-                if (rtmphost == null || playpath == null || app == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                rtmphost += app;
-            }
-            playpath = ext + ":" + playpath;
-            /* Small fix for serverside wrong rtmp urls */
-            playpath = playpath.replace("_od_flv.flv", "_od_flv");
-            try {
-                dl = new RTMPDownload(this, downloadLink, rtmphost);
-            } catch (final NoClassDefFoundError e) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDownload class missing");
-            }
-            /* Setup rtmp connection */
-            jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-            rtmp.setPageUrl(pageurl);
-            rtmp.setUrl(final_rtmpurl);
-            rtmp.setApp(app);
-            rtmp.setPlayPath(playpath);
-            /* Make sure we're using the correct protocol! */
-            if (!rtmpe_supported) {
-                rtmp.setProtocol(0);
-            }
-            rtmp.setFlashVer("WIN 16,0,0,305");
-            rtmp.setSwfVfy(swfurl);
-            /* Our rtmp resuming isn't the best plus we got a lot of different servers so better disable resume to prevent errors. */
-            rtmp.setResume(false);
-            ((RTMPDownload) dl).startDownload();
+            downloadRTMP(downloadLink, src_url);
         }
     }
 
+    @SuppressWarnings("deprecation")
+    private void findFEEDurl(final DownloadLink downloadLink) throws PluginException {
+        if (downloadLink.getDownloadURL().matches(type_viva) || downloadLink.getDownloadURL().matches(type_funnyclips) || downloadLink.getDownloadURL().matches(type_comedycentral) || downloadLink.getDownloadURL().matches(type_nick) || downloadLink.getDownloadURL().matches(type_nicknight) || downloadLink.getDownloadURL().matches(type_nickjr) || downloadLink.getDownloadURL().matches(type_mtv_de)) {
+            find_mgid("mtvnn.com");
+            if (this.mgid != null) {
+                feed_url = getFEEDurl("ALL_OTHERS");
+            } else {
+                /* Should never be needed */
+                feed_url = br.getRegex("mrss[\t\n\r ]+:[\t\n\r ]+(?:\\'|\")(https?://[^<>\"]*?)(?:\\'|\"),").getMatch(0);
+            }
+        } else if (downloadLink.getDownloadURL().matches(type_mtviggy)) {
+            /* Special: This domain has it's own feed-URL. */
+            find_mgid(downloadLink.getHost());
+            feed_url = getFEEDurl("mtvworldwide");
+        } else if (downloadLink.getDownloadURL().matches(type_mtv_com)) {
+            /* Special: This domain has it's own feed-URL. */
+            find_mgid(downloadLink.getHost());
+            String seriesID = null;
+            if (br.getURL().matches(subtype_mtv_com_shows)) {
+                seriesID = br.getRegex("seriesId = (\\d+);").getMatch(0);
+            } else {
+                seriesID = "None";
+            }
+            final String instance = br.getRegex("MTVN\\.VIDEO\\.PLAYER\\.instance = \\'([a-z0-9]+)\\';").getMatch(0);
+            if (seriesID == null || instance == null || this.mgid == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            feed_url = feedURLs.get("mtv.com");
+            feed_url = String.format(feed_url, this.mgid, instance, seriesID);
+        } else if (downloadLink.getDownloadURL().matches(type_mtvmovies)) {
+            /* Special: This domain has it's own feed-URL. */
+            find_mgid("mtvmovies.com");
+            feed_url = getFEEDurl("mtvmovies.com");
+        } else if (downloadLink.getDownloadURL().matches(type_southpark_de_clips)) {
+            /* Special: This domain has it's own feed-URL. */
+            find_mgid("southparkstudios.com");
+            feed_url = getFEEDurl("southpark.de");
+        } else {
+            /* Unknown URL format - should never happen! */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* Usually we'll have the correct feedurl here */
+        if (feed_url == null) {
+            feed_url = br.getRegex("(https?://api\\.mtvnn\\.com/v2/mrss\\.xml\\?uri=[^<>\"\\'/]+)").getMatch(0);
+        }
+        if (feed_url == null) {
+            feed_url = br.getRegex("\\&mrss=(https?://api\\.mtvnn\\.com/[^<>\"]*?)\"").getMatch(0);
+        }
+    }
+
+    private void downloadHTTP(final DownloadLink downloadLink, final String http_src) throws Exception {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, http_src, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @SuppressWarnings("deprecation")
+    private void downloadRTMP(final DownloadLink downloadLink, String rtmp_src) throws Exception {
+        rtmp_src = rtmp_src.replace(Encoding.Base64Decode("cnRtcGU6Ly8="), "rtmp://");
+        final String ext = rtmp_src.substring(rtmp_src.lastIndexOf(".") + 1);
+        String app;
+        String rtmphost;
+        String playpath;
+        String swfurl;
+        if (downloadLink.getDownloadURL().matches(type_mtviggy)) {
+            /* Usually the convertRTMPtoHTTP will work and this code is never executed. */
+            /* Original swfurl contains a lof more info but it's not needed! */
+            swfurl = "http://media.mtvnservices.com/player/prime/mediaplayerprime.2.5.3.swf?uri=" + mgid;
+            app = "viacommtvstrm";
+            rtmphost = "rtmpe://viacommtvstrmfs.fplive.net:1935/viacommtvstrm";
+            playpath = new Regex(rtmp_src, "/(gsp\\..+)").getMatch(0);
+            if (playpath == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (!rtmpe_supported) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "rtmpe:// not supported!");
+            }
+            rtmp_src = rtmp_src.replace("rtmp://", "rtmpe://");
+        } else {
+            swfurl = "http://player.mtvnn.com/g2/g2player_2.2.1.swf";
+            app = new Regex(rtmp_src, "(ondemand/(?:(mtviestor|riptide)/)?)").getMatch(0);
+            final Regex host_app = new Regex(rtmp_src, "(rtmp://[^/]*?/)ondemand/(.+)");
+            rtmphost = host_app.getMatch(0);
+            playpath = new Regex(rtmp_src, app + "(.+)").getMatch(0);
+            if (rtmphost == null || playpath == null || app == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            rtmphost += app;
+        }
+        playpath = ext + ":" + playpath;
+        /* Small fix for serverside wrong rtmp urls */
+        playpath = playpath.replace("_od_flv.flv", "_od_flv");
+        try {
+            dl = new RTMPDownload(this, downloadLink, rtmphost);
+        } catch (final NoClassDefFoundError e) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDownload class missing");
+        }
+        /* Setup rtmp connection */
+        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+        rtmp.setPageUrl(downloadLink.getStringProperty("page_url", null));
+        rtmp.setUrl(rtmp_src);
+        rtmp.setApp(app);
+        rtmp.setPlayPath(playpath);
+        /* Make sure we're using the correct protocol! */
+        if (!rtmpe_supported) {
+            rtmp.setProtocol(0);
+        }
+        rtmp.setFlashVer("WIN 16,0,0,305");
+        rtmp.setSwfVfy(swfurl);
+        /* Our rtmp resuming isn't the best plus we got a lot of different servers so better disable resume to prevent errors. */
+        rtmp.setResume(false);
+        ((RTMPDownload) dl).startDownload();
+    }
+
     private String feedGetTitle() {
-        String title = br.getRegex("<media:title><\\!\\[CDATA\\[([^<>]*?)\\]\\]></media:title>").getMatch(0);
+        return feedGetTitle(this.br.toString());
+    }
+
+    public static String feedGetTitle(final String source) {
+        String title = new Regex(source, "<media:title><\\!\\[CDATA\\[([^<>]*?)\\]\\]></media:title>").getMatch(0);
         if (title == null) {
-            title = br.getRegex("<media:title>([^<>]*?)</media:title>").getMatch(0);
+            title = new Regex(source, "<media:title>([^<>]*?)</media:title>").getMatch(0);
         }
         return title;
     }
 
     private String feedGetDescription() {
-        String description = br.getRegex("<media:description>[\t\n\r ]+<\\!\\[CDATA\\[(.*?)\\]\\]>[\t\n\r ]+</media:description>").getMatch(0);
+        return feedGetDescription(this.br.toString());
+    }
+
+    public static String feedGetDescription(final String source) {
+        String description = new Regex(source, "<media:description>[\t\n\r ]+<\\!\\[CDATA\\[(.*?)\\]\\]>[\t\n\r ]+</media:description>").getMatch(0);
         if (description == null) {
-            description = br.getRegex("<media:description>(.*?)</media:description>").getMatch(0);
+            description = new Regex(source, "<media:description>(.*?)</media:description>").getMatch(0);
         }
         return description;
     }
@@ -531,7 +611,7 @@ public class VivaTv extends PluginForHost {
      * Sometimes there are spaces at the end of the link, undefined parameters or it's simply url encoded though we need it plain --> This
      * can lead to 404 errors! --> This function takes care of these problems.
      */
-    private String fixFeedURL(String feedurl) {
+    private String fixMediagenURL(String feedurl) {
         feedurl = Encoding.htmlDecode(feedurl);
         feedurl = feedurl.trim();
         // feedurl = feedurl.replace("device={device}", "device=other");
@@ -548,6 +628,16 @@ public class VivaTv extends PluginForHost {
         return feedurl;
     }
 
+    /** Returns a mediagen-feed URL based on the domain. */
+    private String getMEDIAGENurl(final String domain) throws PluginException {
+        if (mgid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String feedurl = mediagenURLs.get(domain);
+        feedurl = String.format(feedurl, mgid);
+        return feedurl;
+    }
+
     private void find_mgid(final String host) {
         mgid = br.getRegex("(mgid[a-z:]+" + host + ":[A-Za-z0-9_\\-]+)").getMatch(0);
     }
@@ -557,6 +647,7 @@ public class VivaTv extends PluginForHost {
         String httpurl = null;
         final String important_part = new Regex(rtmpurl, "rt[a-z]+://[^<>\"]+/(gsp\\..+)").getMatch(0);
         if (important_part != null) {
+            /* Also possible: http://a[1-20].akadl.mtvnservices.com/ depending on server/link structure */
             httpurl = "http://viacommtvstrmfs.fplive.net/" + important_part;
         }
         return httpurl;
@@ -589,7 +680,7 @@ public class VivaTv extends PluginForHost {
         return data;
     }
 
-    private String doFilenameEncoding(String filename) {
+    public static String doFilenameEncoding(String filename) {
         filename = Encoding.htmlDecode(filename).trim();
         filename = encodeUnicode(filename);
         filename = HTMLEntities.unhtmlentities(filename);
@@ -601,60 +692,100 @@ public class VivaTv extends PluginForHost {
         return filename;
     }
 
-    /** Statis list of FEED-urls. If one is missing they can be found by accessing the correct player-URL (see list below). */
-    public static HashMap<String, String> feedURLs     = new HashMap<String, String>() {
-                                                           {
-                                                               put("ALL_OTHERS", "http://api.mtvnn.com/v2/mrss.xml?uri=%s");
-                                                               put("mtvworldwide", "http://all.mtvworldverticals.com/feed-xml/?uri=%s");
-                                                               put("mtv.de", "http://movies.mtv.de/mrss/%s");
-                                                               put("mtvmovies.com", "http://movies.mtv.de/mrss/%s");
-                                                               put("mtv.com", "http://www.mtv.com/player/embed/AS3/rss/?uri=%s&ref=None&instance=%s&seriesId=%s");
-                                                           }
-                                                       };
+    public static String getFilenameMTVIGGY(final Browser br) {
+        String title = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        if (title != null) {
+            title = doFilenameEncoding(title);
+        }
+        return title;
+    }
 
-    public static HashMap<String, String> mediagenURLs = new HashMap<String, String>() {
-                                                           {
-                                                               /*
-                                                                * For all of these, we have to access the feed- or player before to get the
-                                                                * mediagen-URL. This means that having the mhid is NOT enough to get the
-                                                                * final URLs.
-                                                                */
-                                                               put("ALL_OTHERS", "http://videos.mtvnn.com/mediagen/<some kinda hash (length = 32)>");
-                                                               put("nick.de", "http://intl.esperanto.mtvi.com/www/xml/media/mediaGen.jhtml?uri=%s");
-                                                               put("mtv.com", "http://www.mtv.com/meta/context/mediaGen?uri=%s");
-                                                           }
-                                                       };
+    /** Static list of FEED-urls. If one is missing they can be found by accessing the correct player-URL (see list below). */
+    public static HashMap<String, String> feedURLs                    = new HashMap<String, String>() {
+        {
+            put("ALL_OTHERS", "http://api.mtvnn.com/v2/mrss.xml?uri=%s");
+            put("mtvworldwide", "http://all.mtvworldverticals.com/feed-xml/?uri=%s");
+            put("mtv.de", "http://movies.mtv.de/mrss/%s");
+            put("mtvmovies.com", "http://movies.mtv.de/mrss/%s");
+            put("mtv.com", "http://www.mtv.com/player/embed/AS3/rss/?uri=%s&ref=None&instance=%s&seriesId=%s");
+            put("southpark.de", "http://www.southpark.de/feeds/video-player/mrss/%s");
+            put("southpark.cc.com", "http://southpark.cc.com/feeds/video-player/mrss/%s");
+        }
+    };
 
-    public static HashMap<String, String> embedURLs    = new HashMap<String, String>() {
-                                                           {
-                                                               /*
-                                                                * Only a small amount if embeddable - usually embedded links are never
-                                                                * needed but via them we gan get the players url which contains the feed-URL
-                                                                * so this list might be useful in the future. Strong format --> Put mgid in.
-                                                                */
-                                                               put("mtv.com", "http://media.mtvnservices.com/embed/%s/");
-                                                           }
-                                                       };
+    /** Static list of mediagen URLs. These are usually sub-URLs of feed-urls and they'll return the final downloadlinks. */
+    /**
+     * Possible parameters of mediagen URLs:
+     *
+     * uri=<mgid> --> The only parameter we really need. It contains the information which video we want to download.
+     *
+     * suppressRegisterBeacon=true|false --> Meaning unclear
+     *
+     * lang=de|en --> Preferred language
+     *
+     * acceptMethods= see 'possibleAcceptMethodsValues' HashMap below --> Defines the streaming method we prefer
+     *
+     */
+    public static HashMap<String, String> mediagenURLs                = new HashMap<String, String>() {
+        {
+            /*
+             * For some of these, we have to access the feed- or player
+             * before to get the mediagen-URL. This means that having the
+             * mgid is not always enough to get the final URLs.
+             */
+            put("videos.mtv.com", "http://videos.mtvnn.com/mediagen/<some kinda hash (length = 32)>");
+            put("nick.de", "http://intl.esperanto.mtvi.com/www/xml/media/mediaGen.jhtml?uri=%s");
+            put("mtv.com", "http://www.mtv.com/meta/context/mediaGen?uri=%s");
+            put("southpark.de_episode", "http://www.southpark.de/feeds/video-player/mediagen?uri=%s&suppressRegisterBeacon=true&lang=de&acceptMethods=%s");
+            put("southpark.de_clips", "http://www.southpark.de/feeds/video-player/mediagen?uri=%s");
+        }
+    };
 
-    public static HashMap<String, String> playerURLs   = new HashMap<String, String>() {
-                                                           {
-                                                               /*
-                                                                * These are only accessed for embedded videos. They contain the feed-URLs.
-                                                                * This list might be useful in the future. Strong format: 0=mgid without the
-                                                                * actual ID (so it ends with ':'), 1=FULL mgid Example:
-                                                                * http://media.mtvnservices
-                                                                * .com/pmt-arc/e1/players/mgid:uma:video:mtv.com:/context49
-                                                                * /config.xml?uri=mgid
-                                                                * :uma:video:mtv.com:1234567&type=normal&ref=None&geo=DE&
-                                                                * group=music&network=
-                                                                * None&device=Other&bParam=videoTypeId=31&ownerOrgId=2&keywords
-                                                                * =Some+keywords
-                                                                * +in+this+format&keywords=Some+more+keywords+in+this+format&keywords
-                                                                * =Even+more+keywords+in+this+format
-                                                                */
-                                                               put("mtv.com", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context49/config.xml?uri=%s");
-                                                           }
-                                                       };
+    public static HashMap<String, String> embedURLs                   = new HashMap<String, String>() {
+        {
+            /*
+             * Only a small amount if embeddable - usually embedded links
+             * are never needed but via them we gan get the players url
+             * which contains the feed-URL so this list might be useful in
+             * the future. Strong format --> Put mgid in.
+             */
+            put("ALL_OTHERS", "http://media.mtvnservices.com/%s");
+            put("mtv.com", "http://media.mtvnservices.com/embed/%s/");
+        }
+    };
+
+    /**
+     * These are only accessed for embedded videos. They contain the feed-URLs. This list might be useful in the future. Strong format:
+     * 0=mgid without the actual ID (so it ends with ':'), 1=FULL mgid Example: http://media.mtvnservices
+     * .com/pmt-arc/e1/players/mgid:uma:video:mtv.com:/context49 /config.xml?uri=mgid
+     * :uma:video:mtv.com:1234567&type=normal&ref=None&geo=DE& group=music&network= None&device=Other&bParam=videoTypeId=31
+     * &ownerOrgId=2&keywords =Some+keywords +in+this+format&keywords =Some+more+keywords+in+this+format&keywords
+     * =Even+more+keywords+in+this+format
+     */
+    public static HashMap<String, String> playerURLs                  = new HashMap<String, String>() {
+        {
+            put("mtv.com", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context49/config.xml?uri=%s");
+            put("southpark.de", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context5/config.xml?uri=%s");
+        }
+    };
+
+    public static HashMap<String, String> possibleAcceptMethodsValues = new HashMap<String, String>() {
+        {
+            /*
+             * "acceptMethods" is a parameter of mediagen URLs. It's
+             * optional but has an influence on the final URLs.
+             */
+            /* Default seting (if ever used) */
+            put("default", "fms,hdn1,hds");
+            /*
+             * Returns http links but less available qualities and usually
+             * not as good as their rtmp(e) streams
+             */
+            put("http", "http");
+            put("hls", "http");
+            put("hds", "http");
+        }
+    };
 
     @Override
     public void reset() {
