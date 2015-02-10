@@ -555,7 +555,7 @@ public class RAFChunk extends Thread {
                 /*
                  * we did not request a range but got a content-range response,WTF?!
                  */
-                logger.severe("No Range Request->Content-Range Response?!");
+                logger.severe("No Range Request -> Content-Range Response?!");
                 endByte = ContentRange[1];
             }
             if (endByte <= 0) {
@@ -565,9 +565,9 @@ public class RAFChunk extends Thread {
             long cRequestedEndByte = requestedEndByte + 1;
             if (cRequestedEndByte > 0 && endByte > cRequestedEndByte) {
                 if (this.getID() == 0) {
-                    logger.info("First Connection->Content-Range(" + endByte + ") is larger than requested (" + cRequestedEndByte + ")! Truncate it");
+                    logger.info("First Connection -> Content-Range(" + endByte + ") is larger than requested (" + cRequestedEndByte + ")! Truncate it");
                 } else {
-                    logger.info(this.getID() + ". Connection->Content-Range(" + endByte + ") is larger than requested (" + cRequestedEndByte + ")! Truncate it");
+                    logger.info(this.getID() + ". Connection -> Content-Range(" + endByte + ") is larger than requested (" + cRequestedEndByte + ")! Truncate it");
                 }
                 endByte = cRequestedEndByte;
             }

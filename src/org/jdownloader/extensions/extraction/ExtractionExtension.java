@@ -154,10 +154,10 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     }
 
     /**
-     * Adds an ectraction plugin to the framework.
+     * Adds an extraction plugin to the framework.
      * 
      * @param extractor
-     *            The exractor.
+     *            The extractor.
      */
     public void setExtractor(IExtraction extractor) {
         extractors.add(extractor);
@@ -228,8 +228,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
      * Adds an archive to the extraction queue.
      */
     public synchronized ExtractionController addToQueue(final Archive archive, boolean forceAskForUnknownPassword) {
-        // check if we have this archive already in
-        // queue.
+        // check if we have this archive already in queue.
         for (ExtractionController ec : extractionQueue.getJobs()) {
             if (ec.getArchiv() == archive) {
                 return ec;

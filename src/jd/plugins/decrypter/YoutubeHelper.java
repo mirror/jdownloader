@@ -663,12 +663,12 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     /**
      * *
-     * 
+     *
      * @param html5PlayerJs
      *            TODO
      * @param br
      * @param s
-     * 
+     *
      * @return
      * @throws IOException
      * @throws PluginException
@@ -1793,10 +1793,8 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         HashMap<String, YoutubeSubtitleInfo> urls = new HashMap<String, YoutubeSubtitleInfo>();
         String ttsUrl = br.getRegex("\"ttsurl\": (\"http.*?\")").getMatch(0);
         if (ttsUrl != null) {
-            if (ttsUrl != null) {
-                ttsUrl = JSonStorage.restoreFromString(ttsUrl, new TypeRef<String>() {
-                });
-            }
+            ttsUrl = JSonStorage.restoreFromString(ttsUrl, new TypeRef<String>() {
+            });
         } else {
             ttsUrl = br.getRegex("\\&ttsurl=([^\\&]+)").getMatch(0);
             if (ttsUrl != null) {
@@ -1804,7 +1802,6 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             }
         }
         if (ttsUrl == null) {
-
             return new ArrayList<YoutubeSubtitleInfo>();
         }
         getAbsolute(replaceHttps(ttsUrl + "&asrs=1&fmts=1&tlangs=1&ts=" + System.currentTimeMillis() + "&type=list"), "subtitle-" + vid.videoID, br);

@@ -141,7 +141,7 @@ public class LinkCrawler {
         final int keepAlive = Math.max(CONFIG.getThreadKeepAlive(), 100);
         /**
          * PriorityBlockingQueue leaks last Item for some java versions
-         * 
+         *
          * http://bugs.java.com/bugdatabase/view_bug.do?bug_id=7161229
          */
         threadPool = new ThreadPoolExecutor(0, maxThreads, keepAlive, TimeUnit.MILLISECONDS, new PriorityBlockingQueue<Runnable>(100, new Comparator<Runnable>() {
@@ -362,10 +362,10 @@ public class LinkCrawler {
 
     /**
      * returns the generation of this LinkCrawler if thisGeneration is true.
-     * 
+     *
      * if a parent LinkCrawler does exist and thisGeneration is false, we return the older generation of the parent LinkCrawler or this
      * child
-     * 
+     *
      * @param thisGeneration
      * @return
      */
@@ -1445,7 +1445,7 @@ public class LinkCrawler {
 
     /**
      * in case link contains rawURL/CryptedLink we return downloadLink from sourceLink
-     * 
+     *
      * @param link
      * @return
      */
@@ -2149,7 +2149,6 @@ public class LinkCrawler {
                     downloadLink.setContentUrl(contentURL);
                 }
             }
-
             if (downloadLink.getContainerUrl() != null) {
                 /**
                  * containerURLs are only set by crawl or crawlDeeper or manually
