@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videarn.com" }, urls = { "http://(www\\.)?pornxsdecrypted\\.com/video\\.php\\?id=\\d+" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornxs.com" }, urls = { "http://(www\\.)?pornxsdecrypted\\.com/.+" }, flags = { 32 })
 public class VidearnCom extends PluginForHost {
 
     public VidearnCom(final PluginWrapper wrapper) {
@@ -64,6 +64,10 @@ public class VidearnCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         setBrowserExclusive();
+        /* Check offline via decrypter */
+        if (downloadLink.getBooleanProperty("offline", false)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         br.getPage(downloadLink.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

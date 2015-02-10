@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -38,7 +37,8 @@ public class VidEarnDecrypter extends PluginForDecrypt {
     // This plugin takes videarn links and checks if there is also a filearn.com link available (partnersite)
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = "http://pornxs.com/video.php?id=" + new Regex(param.toString(), "(\\d+)$").getMatch(0);
+        br.setFollowRedirects(true);
+        final String parameter = param.toString();
         final DownloadLink mainlink = createDownloadlink(parameter.replace("pornxs.com/", "pornxsdecrypted.com/"));
         try {
             br.getPage(parameter);
@@ -47,25 +47,28 @@ public class VidEarnDecrypter extends PluginForDecrypt {
             decryptedLinks.add(mainlink);
             return decryptedLinks;
         }
-        String fpName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        fpName = Encoding.htmlDecode(fpName);
-        fpName = fpName.trim();
-        String additionalDownloadlink = br.getRegex("\"(http://(www\\.)?filearn\\.com/files/get/.*?)\"").getMatch(0);
-        if (additionalDownloadlink == null) {
-            additionalDownloadlink = br.getRegex("<div class=\"video\\-actions\">[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
-        }
-        if (additionalDownloadlink != null) {
-            final DownloadLink xdl = createDownloadlink(additionalDownloadlink);
-            xdl.setProperty("videarnname", fpName);
-            decryptedLinks.add(xdl);
-        }
-
+        String fpName = null;
         if (br.getHttpConnection().getResponseCode() == 404) {
             mainlink.setAvailable(false);
+            mainlink.setProperty("offline", true);
         } else {
+            fpName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            fpName = Encoding.htmlDecode(fpName);
+            fpName = fpName.trim();
+            String additionalDownloadlink = br.getRegex("\"(http://(www\\.)?filearn\\.com/files/get/.*?)\"").getMatch(0);
+            if (additionalDownloadlink == null) {
+                additionalDownloadlink = br.getRegex("<div class=\"video\\-actions\">[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
+            }
+            if (additionalDownloadlink != null) {
+                final DownloadLink xdl = createDownloadlink(additionalDownloadlink);
+                xdl.setProperty("videarnname", fpName);
+                decryptedLinks.add(xdl);
+            }
+
             mainlink.setName(fpName + ".mp4");
             mainlink.setAvailable(true);
         }
+
         decryptedLinks.add(mainlink);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
