@@ -340,12 +340,14 @@ public class HLSDownloader extends DownloadInterface {
                             {
                                 // work around for longggggg m3u pages
                                 final int was = br.getLoadLimit();
-                                final URLConnectionAdapter con = br.openGetConnection(m3uUrl);
                                 // lets set the connection limit to our required request
-                                br.setLoadLimit((int) con.getContentLength());
-                                br.followConnection();
-                                // set it back!
-                                br.setLoadLimit(was);
+                                br.setLoadLimit(Integer.MAX_VALUE);
+                                try {
+                                    br.followConnection();
+                                } finally {
+                                    // set it back!
+                                    br.setLoadLimit(was);
+                                }
                             }
                             response.setResponseCode(HTTPConstants.ResponseCode.get(br.getRequest().getHttpConnection().getResponseCode()));
                             String playlist = br.toString();
