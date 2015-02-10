@@ -39,6 +39,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogSource;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumax.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class PremiumaxNet extends PluginForHost {
@@ -49,8 +50,8 @@ public class PremiumaxNet extends PluginForHost {
     private static final String                            NICE_HOST          = "premiumax.net";
     private static final String                            NICE_HOSTproperty  = "premiumaxnet";
     private static final String[][]                        HOSTS              = { { "lafiles", "lafiles.com" }, { "sendspace", "sendspace.com" }, { "mightyupload", "mightyupload.com" }, { "uploadto.us", "uploadto.us" }, { "mega.co", "mega.co.nz" }, { "datafile", "datafile.com" }, { "1fichier", "1fichier.com" }, { "2shared", "2shared.com" }, { "fileboom", "fileboom.me" }, { "oboom", "oboom.com" }, { "share-online", "share-online.biz" }, { "fileparadox", "fileparadox.in" }, { "4shared", "4shared.com" }, { "asfile", "asfile.com" }, { "bitshare", "bitshare.com" }, { "datafile", "datafile.com," }, { "ddlstorage", "ddlstorage.com" }, { "depfile", "depfile.com" }, { "depositfiles", "depositfiles.com" }, { "easybytez", "easybytez.com" }, { "extmatrix", "extmatrix.com" }, { "fayloobmennik", "fayloobmennik.net" }, { "filecloud", "filecloud.io" }, { "filefactory", "filefactory.com" },
-            { "filemonkey", "filemonkey.in" }, { "fileom", "fileom.com" }, { "filepost", "filepost.com" }, { "filesflash", "filesflash.com" }, { "filesmonster", "filesmonster.com" }, { "firedrive", "firedrive.com" }, { "freakshare", "freakshare.com" }, { "hugefiles", "hugefiles.net" }, { "uptobox", "uptobox.com" }, { "k2share", "keep2share.cc" }, { "kingfiles", "kingfiles.net" }, { "letitbit", "letitbit.net" }, { "luckyshare", "luckyshare.net" }, { "lumfile", "lumfile.com" }, { "mediafire", "mediafire.com" }, { "megairon", "megairon.net" }, { "megashares", "megashares.com" }, { "mightyupload", "mightyupload.com" }, { "netload", "netload.in" }, { "novafile", "novafile.com" }, { "putlocker", "putlocker.com" }, { "rapidgator", "rapidgator.net" }, { "rapidshare", "rapidshare.com" }, { "ryushare", "ryushare.com" }, { "sendspace", "sendspace.com" }, { "shareflare", "shareflare.net" },
-            { "terafile", "terafile.co" }, { "turbobit", "turbobit.net" }, { "ultramegabit", "ultramegabit.com" }, { "uploadable", "uploadable.ch" }, { "uploaded", "uploaded.net" }, { "uppit", "uppit.com" }, { "videomega", "videomega.tv" }, { "zippyshare", "zippyshare.com" } };
+        { "filemonkey", "filemonkey.in" }, { "fileom", "fileom.com" }, { "filepost", "filepost.com" }, { "filesflash", "filesflash.com" }, { "filesmonster", "filesmonster.com" }, { "firedrive", "firedrive.com" }, { "freakshare", "freakshare.com" }, { "hugefiles", "hugefiles.net" }, { "uptobox", "uptobox.com" }, { "k2share", "keep2share.cc" }, { "kingfiles", "kingfiles.net" }, { "letitbit", "letitbit.net" }, { "luckyshare", "luckyshare.net" }, { "lumfile", "lumfile.com" }, { "mediafire", "mediafire.com" }, { "megairon", "megairon.net" }, { "megashares", "megashares.com" }, { "mightyupload", "mightyupload.com" }, { "netload", "netload.in" }, { "novafile", "novafile.com" }, { "putlocker", "putlocker.com" }, { "rapidgator", "rapidgator.net" }, { "rapidshare", "rapidshare.com" }, { "ryushare", "ryushare.com" }, { "sendspace", "sendspace.com" }, { "shareflare", "shareflare.net" },
+        { "terafile", "terafile.co" }, { "turbobit", "turbobit.net" }, { "ultramegabit", "ultramegabit.com" }, { "uploadable", "uploadable.ch" }, { "uploaded", "uploaded.net" }, { "uppit", "uppit.com" }, { "videomega", "videomega.tv" }, { "zippyshare", "zippyshare.com" } };
 
     public PremiumaxNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -304,6 +305,9 @@ public class PremiumaxNet extends PluginForHost {
                             } else {
                                 br.clearCookies(MAINPAGE);
                                 logger.info("Seems like the cookies are no longer valid -> Doing a full refresh");
+                                if (logger instanceof LogSource) {
+                                    ((LogSource) logger).flush();
+                                }
                             }
                         } else {
                             return true;
