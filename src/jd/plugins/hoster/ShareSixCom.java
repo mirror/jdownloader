@@ -140,11 +140,12 @@ public class ShareSixCom extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
-        final String flname_pt1 = "class=\"[A-Za-z0-9\\-_]+\">Download File";
-        final Regex fnameregex = new Regex(correctedBR, flname_pt1 + ">Download File ([^<>\"]*?) \\((\\d+(\\.\\d{1,2})? (MB|GB))\\)</p>");
+        final String flname_pt1 = "class=\"[A-Za-z0-9\\-_]+\">Download File ";
+        // this is presented in /f/uid and standard url
+        final Regex fnameregex = new Regex(correctedBR, flname_pt1 + "([^<>\"]*?) \\((\\d+(\\.\\d{1,2})? (MB|GB))\\)</p>");
         String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
         if (filename == null) {
-            filename = new Regex(correctedBR, "class=\"f_l_name\">Download File ([^<>\"]*?) \\(").getMatch(0);
+            filename = fnameregex.getMatch(0);
             if (filename == null) {
                 filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                 if (filename == null) {
@@ -154,9 +155,6 @@ public class ShareSixCom extends PluginForHost {
                 }
             }
         }
-        if (filename == null) {
-            filename = fnameregex.getMatch(0);
-        }
         String filesize = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
         if (filesize == null) {
             filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
@@ -164,16 +162,16 @@ public class ShareSixCom extends PluginForHost {
                 filesize = fnameregex.getMatch(1);
             }
             if (filesize == null) {
-                // generic regex picks up false positives (premium ads above
-                // filesize)
+                // generic regex picks up false positives (premium ads above filesize)
                 // adjust accordingly to make work with COOKIE_HOST
                 filesize = new Regex(correctedBR, "(?i)([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
             }
         }
-        /* Workaround for the stupid cloudflare e-mail protection which also kicks in if there is an @ inside the filename... */
-        if (filename == null && new Regex(correctedBR, flname_pt1).matches() && correctedBR.contains("class=\"__cf_email__\"")) {
+        /* this is actually advertising. -raztoki20150211 */
+        if (filename == null && new Regex(correctedBR, flname_pt1 + "<a class=\"").matches() && correctedBR.contains("class=\"__cf_email__\"")) {
             filename = this.fuid;
             link.setName(filename);
+            return AvailableStatus.FALSE;
         } else {
             if (filename == null || filename.equals("")) {
                 if (correctedBR.contains("You have reached the download\\-limit")) {
