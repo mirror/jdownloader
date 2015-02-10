@@ -79,12 +79,7 @@ public class FilePackagePropertiesPanel extends DownloadLinkPropertiesPanel {
 
     @Override
     protected Priority loadPriority() {
-        Priority p = currentPackage.getView().getHighestPriority();
-        if (p != currentPackage.getView().getLowestPriority()) {
-            return null;
-        } else {
-            return p;
-        }
+        return currentPackage.getPriorityEnum();
     }
 
 }
