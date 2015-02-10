@@ -97,7 +97,7 @@ public class SaveTv extends PluginForHost {
     private final static String  selected_video_format                     = "selected_video_format";
 
     /* The list of server values displayed to the user */
-    private final String[]       formats                                   = new String[] { "HD [Funktioniert (noch) nicht per API!]", "H.264 HQ", "H.264 MOBILE" };
+    private final String[]       formats                                   = new String[] { "HD", "H.264 HQ", "H.264 MOBILE" };
 
     private static final String  USEAPI                                    = "USEAPI";
     private static final String  CRAWLER_ACTIVATE                          = "CRAWLER_ACTIVATE";
@@ -147,7 +147,7 @@ public class SaveTv extends PluginForHost {
     public static final String   EXTENSION                                 = ".mp4";
 
     /* Save.tv internal quality/format constants */
-    private static final String  API_FORMAT_HD                             = "5";
+    private static final String  API_FORMAT_HD                             = "6";
     private static final String  API_FORMAT_HQ                             = "5";
     private static final String  API_FORMAT_LQ                             = "4";
 
