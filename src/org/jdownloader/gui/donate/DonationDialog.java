@@ -7,7 +7,10 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.Icon;
@@ -358,7 +361,15 @@ public class DonationDialog extends AbstractDialog<Object> {
 
     protected void popup() {
         JPopupMenu pu = new JPopupMenu();
-        for (PayProvider p : PayProvider.values()) {
+
+        ArrayList<PayProvider> lst = new ArrayList<PayProvider>();
+        for (PayProvider provider : PayProvider.values()) {
+            lst.add(provider);
+        }
+        long seed = System.nanoTime();
+        Collections.shuffle(lst, new Random(seed));
+
+        for (PayProvider p : lst) {
             pu.add(new NotImplementedProvider(p));
 
         }

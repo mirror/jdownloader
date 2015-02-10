@@ -5767,7 +5767,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Other" })
     String DonationDialog_popup_other();
 
-    @Default(lngs = { "en" }, values = { "This payment gateway is not available yet. We will probably add it soon. " })
+    @Default(lngs = { "en" }, values = { "This payment gateway is not available yet. We will probably add it soon." })
     String DonationDialog_NotImplementedProvider_actionPerformed_();
 
     @Default(lngs = { "en" }, values = { "Sofort Überweisung" })
@@ -5775,5 +5775,8 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Please choose an amount between %s1 and %s2" })
     String DonationDialog_setReturnmask_range2(double amtMin, double amtMax);
+
+    @Default(lngs = { "en" }, values = { "Giro Pay" })
+    String DonationDialog_popup_giropay();
 
 }

@@ -75,7 +75,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     @Override
     public boolean isHeadlessRunnable() {
-        return false;
+        return true;
     }
 
     public boolean hasConfigPanel() {
