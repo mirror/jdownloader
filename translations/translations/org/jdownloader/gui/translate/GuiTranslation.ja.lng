@@ -322,6 +322,7 @@ DonationDialog_popup_amazon=Amazon決済
 DonationDialog_popup_call2pay=Call 2 Pay
 DonationDialog_popup_creditcard=クレジットカード
 DonationDialog_popup_directdebit=ダイレクトデビット
+DonationDialog_popup_giropay=Giro Pay
 DonationDialog_popup_mobile=モバイル決済(例: SMS)
 DonationDialog_popup_other=その他
 DonationDialog_popup_paysafe=PaysafeCard
