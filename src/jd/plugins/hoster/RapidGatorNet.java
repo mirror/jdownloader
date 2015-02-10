@@ -1111,6 +1111,7 @@ public class RapidGatorNet extends PluginForHost {
                 url = this.getJSonValueByKey("url");
                 if (url != null) {
                     url = url.replace("\\", "");
+                    url = url.replace("//?", "/?");
                 }
             }
         } finally {
