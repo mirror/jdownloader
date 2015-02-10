@@ -394,6 +394,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
 
     /* 1 = German, 2 = French, 3 = Subtitled version, 4 = Subtitled version for disabled people, 5 = Audio description */
     private int getLanguageInt(final String info) throws DecrypterException {
+        /* What is UTH?? */
         final String lang = getJson(info, "versionShortLibelle");
         final String versionCode = new Regex(info, "\"versionCode\":\"([A-Z\\-]*?)\"").getMatch(0);
         if (lang == null || versionCode == null) {
@@ -403,15 +404,15 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         if (versionCode.equals("VO") && parameter.matches(TYPE_CONCERT)) {
             /* Special case - no different versions available --> We already got the version we want */
             lint = languageVersion;
-        } else if ("VF-STMF".equals(versionCode) || "VOF-STA".equalsIgnoreCase("versionCode") || "VOF-STMF".equals(versionCode) || "VOF-STF".equals(versionCode) || "VA-STMA".equals(versionCode) || lang.equals("OmU")) {
+        } else if ("VF-STMF".equals(versionCode) || "VOF-STA".equalsIgnoreCase("versionCode") || "VOF-STMF".equals(versionCode) || "VA-STMA".equals(versionCode) || lang.equals("OmU")) {
             lint = 3;
         } else if (versionCode.equals("VOA-STMA")) {
             lint = 4;
         } else if (versionCode.equals("VAAUD")) {
             lint = 5;
-        } else if (lang.equals("DE") || lang.equals("VA")) {
+        } else if (lang.equals("VA") || lang.equals("DE")) {
             lint = 1;
-        } else if (lang.equals("VF") || lang.equals("FR")) {
+        } else if (lang.equals("VF") || lang.equals("VOF") || lang.equals("FR")) {
             lint = 2;
         } else {
             /* Unknown - use language inside the link */

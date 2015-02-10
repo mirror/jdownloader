@@ -140,7 +140,8 @@ public class ShareSixCom extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
-        final Regex fnameregex = new Regex(correctedBR, "class=\"(?:file(?:\\-|_)name|fln\\-head)\">Download File ([^<>\"]*?) \\((\\d+(\\.\\d{1,2})? (MB|GB))\\)</p>");
+        final String flname_pt1 = "class=\"[A-Za-z0-9\\-_]+\">Download File";
+        final Regex fnameregex = new Regex(correctedBR, flname_pt1 + ">Download File ([^<>\"]*?) \\((\\d+(\\.\\d{1,2})? (MB|GB))\\)</p>");
         String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
         if (filename == null) {
             filename = new Regex(correctedBR, "class=\"f_l_name\">Download File ([^<>\"]*?) \\(").getMatch(0);
@@ -170,7 +171,7 @@ public class ShareSixCom extends PluginForHost {
             }
         }
         /* Workaround for the stupid cloudflare e-mail protection which also kicks in if there is an @ inside the filename... */
-        if (filename == null && correctedBR.contains("=\"file_name\"") && correctedBR.contains("class=\"__cf_email__\"")) {
+        if (filename == null && new Regex(correctedBR, flname_pt1).matches() && correctedBR.contains("class=\"__cf_email__\"")) {
             filename = this.fuid;
             link.setName(filename);
         } else {

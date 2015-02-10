@@ -42,7 +42,7 @@ public class RTL2De extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 2;
     }
 
     @Override
@@ -77,8 +77,14 @@ public class RTL2De extends PluginForHost {
         if (br.getURL().contains("productdetail=1")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String vico_id = br.getRegex("vico_id[\t\n\r ]*?:[\t\n\r ]*?(\\d+)").getMatch(0);
-        final String vivi_id = br.getRegex("vivi_id[\t\n\r ]*?:[\t\n\r ]*?(\\d+)").getMatch(0);
+        String vico_id = br.getRegex("vico_id[\t\n\r ]*?:[\t\n\r ]*?(\\d+)").getMatch(0);
+        if (vico_id == null) {
+            vico_id = br.getRegex("vico_id=(\\d+)").getMatch(0);
+        }
+        String vivi_id = br.getRegex("vivi_id[\t\n\r ]*?:[\t\n\r ]*?(\\d+)").getMatch(0);
+        if (vivi_id == null) {
+            vivi_id = br.getRegex("vivi_id=(\\d+)").getMatch(0);
+        }
         if (vico_id == null || vivi_id == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
