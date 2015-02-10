@@ -409,9 +409,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             lint = 4;
         } else if (versionCode.equals("VAAUD")) {
             lint = 5;
-        } else if (lang.equals("DE")) {
+        } else if (lang.equals("DE") || lang.equals("VA")) {
             lint = 1;
-        } else if (lang.equals("FR")) {
+        } else if (lang.equals("VF") || lang.equals("FR")) {
             lint = 2;
         } else {
             /* Unknown - use language inside the link */

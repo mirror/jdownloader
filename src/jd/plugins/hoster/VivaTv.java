@@ -338,7 +338,7 @@ public class VivaTv extends PluginForHost {
                     feed_url = br.getRegex("mrss[\t\n\r ]+:[\t\n\r ]+(?:\\'|\")(https?://[^<>\"]*?)(?:\\'|\"),").getMatch(0);
                 }
             } else if (downloadLink.getDownloadURL().matches(type_mtviggy)) {
-                /* TODO: AAdd a decrypter for mtviggy links to get the vevo links in there - then we can remove this part of the code. */
+                /* TODO: Add a decrypter for mtviggy links to get the vevo links in there - then we can remove this part of the code. */
                 if (br.containsHTML("videoplayer\\.vevo\\.com/")) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Vevo.com is not yet supported");
                 }
@@ -500,7 +500,9 @@ public class VivaTv extends PluginForHost {
             rtmp.setApp(app);
             rtmp.setPlayPath(playpath);
             /* Make sure we're using the correct protocol! */
-            rtmp.setProtocol(0);
+            if (!rtmpe_supported) {
+                rtmp.setProtocol(0);
+            }
             rtmp.setFlashVer("WIN 16,0,0,305");
             rtmp.setSwfVfy(swfurl);
             /* Our rtmp resuming isn't the best plus we got a lot of different servers so better disable resume to prevent errors. */

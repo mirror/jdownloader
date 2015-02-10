@@ -296,7 +296,7 @@ public class PremiumaxNet extends PluginForHost {
                             final String value = cookieEntry.getValue();
                             br.setCookie(MAINPAGE, key, value);
                         }
-                        /* Avoids enerving login captchas */
+                        /* Avoids unnerving login captchas */
                         if (force) {
                             br.getPage("http://www.premiumax.net/");
                             if (br.containsHTML(">Sign out</a>")) {
@@ -311,9 +311,6 @@ public class PremiumaxNet extends PluginForHost {
                     }
                 }
                 br.getPage("http://www.premiumax.net/");
-                if (br.containsHTML(">Sign out</a>")) {
-                    return true;
-                }
                 final String stayin = br.getRegex("type=\"hidden\" name=\"stayloggedin\" value=\"([^<>\"]*?)\"").getMatch(0);
                 if (stayin == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
