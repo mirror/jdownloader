@@ -343,7 +343,7 @@ public class HLSDownloader extends DownloadInterface {
                                 // lets set the connection limit to our required request
                                 br.setLoadLimit(Integer.MAX_VALUE);
                                 try {
-                                    br.followConnection();
+                                    br.getPage(m3uUrl);
                                 } finally {
                                     // set it back!
                                     br.setLoadLimit(was);
