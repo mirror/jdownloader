@@ -322,6 +322,7 @@ DonationDialog_popup_amazon=Amazon Pay
 DonationDialog_popup_call2pay=Call 2 Pay
 DonationDialog_popup_creditcard=Kreditna Kartica
 DonationDialog_popup_directdebit=Direktna Debitna kartica
+DonationDialog_popup_giropay=Giro Pay
 DonationDialog_popup_mobile=Mobilno Plaćanje (npr. SMS)
 DonationDialog_popup_other=Drugo
 DonationDialog_popup_paysafe=PaysafeCard
