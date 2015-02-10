@@ -141,7 +141,6 @@ public class VevoCom extends PluginForHost {
          * This way is usually used for embedded videos.
          */
         br.getPage("http://videoplayer.vevo.com/VideoService/AuthenticateVideo?isrc=" + videoid);
-        /* Check if we have to go the rtmp way or can use http streaming */
         final String statusCode = getJson("statusCode");
         if (statusCode.equals("304")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video is temporarily unavailable", 60 * 60 * 1000l);
@@ -149,6 +148,7 @@ public class VevoCom extends PluginForHost {
             /* Should never happen */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        /* Check whether we have to go the rtmp way or can use the http streaming */
         if (statusCode.equals("501")) {
             downloadRTMP(downloadLink);
         } else {
