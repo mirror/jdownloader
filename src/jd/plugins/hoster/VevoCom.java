@@ -57,7 +57,6 @@ public class VevoCom extends PluginForHost {
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
 
-    private static final String  type_invalid      = "http://(www\\.)?vevo\\.com/watch/playlist";
     private static final String  type_short        = "http://vevo\\.ly/[A-Za-z0-9]+";
     private static final String  type_video        = "http://(www\\.)?vevo\\.com/watch/[A-Za-z0-9\\-_]+/.+";
     private static final String  type_video_short  = "http://(www\\.)?vevo\\.com/watch/[A-Za-z0-9]+";
@@ -83,7 +82,7 @@ public class VevoCom extends PluginForHost {
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        if (downloadLink.getDownloadURL().matches(type_invalid)) {
+        if (downloadLink.getDownloadURL().contains("/playlist")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.setBrowserExclusive();
@@ -96,8 +95,12 @@ public class VevoCom extends PluginForHost {
         if (downloadLink.getDownloadURL().matches(type_short) && !br.getURL().matches(type_video)) {
             logger.info("Short url either redirected to unknown url format or is offline");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (downloadLink.getDownloadURL().matches(type_short)) {
-            /* Set- and re-use new (correct) URL */
+        } else if (!br.getURL().matches(type_video)) {
+            /* User probably added invalid url */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (downloadLink.getDownloadURL().matches(type_short)) {
+            /* Set- and re-use new (correct) URL in case we had a short URL before */
             downloadLink.setUrlDownload(br.getURL());
         }
         final String apijson = br.getRegex("apiResults:[\t\n\r ]*?(\\{.*?\\});").getMatch(0);

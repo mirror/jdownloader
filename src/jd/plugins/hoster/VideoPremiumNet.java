@@ -135,7 +135,7 @@ public class VideoPremiumNet extends PluginForHost {
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.setCookie(COOKIE_HOST, "lang", "english");
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:35.0) Gecko/20100101 Firefox/35.0");
     }
 
     @Override
@@ -148,8 +148,9 @@ public class VideoPremiumNet extends PluginForHost {
         correctDownloadLink(link);
         prepBrowser();
         final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
-        getPage(link.getDownloadURL());
-        getPage("http://" + CURRENT_DOMAIN + "/main?%2F" + fid);
+        /* Workaround not needed anymore */
+        // getPage(link.getDownloadURL());
+        // getPage("http://" + CURRENT_DOMAIN + "/main?%2F" + fid);
         getPage("http://" + CURRENT_DOMAIN + "/" + fid);
         final String continuelink = br.getRegex(">window\\.location = \\'(http[^<>\"]*?)\\'").getMatch(0);
         if (continuelink != null) {

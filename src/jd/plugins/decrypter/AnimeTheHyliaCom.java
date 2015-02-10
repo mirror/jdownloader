@@ -45,8 +45,12 @@ public class AnimeTheHyliaCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML(">No such series<")) {
+        if (br.containsHTML(">No such series<|>No such album<")) {
             logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         String fpName = null;
