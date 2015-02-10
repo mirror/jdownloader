@@ -330,7 +330,12 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                     if (channelName != null) {
                         dlink.setProperty("channel", Encoding.htmlDecode(channelName.trim()));
                     }
-                    dlink.setProperty("LINKDUPEID", "twitch:" + vid + ":HLS:" + bw);
+                    final String linkID = "twitch:" + vid + ":HLS:" + bw;
+                    try {
+                        dlink.setLinkID(linkID);
+                    } catch (final Throwable t) {
+                        dlink.setProperty("LINKDUPEID", linkID);
+                    }
                     // let linkchecking routine do all this!
                     // final String formattedFilename = jd.plugins.hoster.JustinTv.getFormattedFilename(dlink);
                     // dlink.setName(formattedFilename);

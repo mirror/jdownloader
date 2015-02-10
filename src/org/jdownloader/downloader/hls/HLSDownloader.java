@@ -142,7 +142,7 @@ public class HLSDownloader extends DownloadInterface {
             String name = link.getName();
             link.setCustomExtension(cust);
             String extension = Files.getExtension(name);
-            String format = map.get(extension.toLowerCase(Locale.ENGLISH));
+            String format = (extension != null ? map.get(extension.toLowerCase(Locale.ENGLISH)) : null);
 
             FFmpeg ffmpeg = new FFmpeg() {
                 protected void parseLine(boolean stdStream, StringBuilder ret, String line) {
@@ -337,8 +337,16 @@ public class HLSDownloader extends DownloadInterface {
                             return false;
                         }
                         if (StringUtils.equals(m3uUrl, url)) {
-                            br.getPage(m3uUrl);
-
+                            {
+                                // work around for longggggg m3u pages
+                                final int was = br.getLoadLimit();
+                                final URLConnectionAdapter con = br.openGetConnection(m3uUrl);
+                                // lets set the connection limit to our required request
+                                br.setLoadLimit((int) con.getContentLength());
+                                br.followConnection();
+                                // set it back!
+                                br.setLoadLimit(was);
+                            }
                             response.setResponseCode(HTTPConstants.ResponseCode.get(br.getRequest().getHttpConnection().getResponseCode()));
                             String playlist = br.toString();
                             StringBuilder sb = new StringBuilder();

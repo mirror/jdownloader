@@ -188,7 +188,7 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
      *
      * @param translationInterface
      * @param contentType
-     *            name of this plugin. Until JD 2.* we should use null here to use the old defaultname. we used to sue this localized name
+     *            name of this plugin. Until JD 2.* we should use null here to use the old defaultname. We used to use this localized name
      *            as config key.
      * @throws
      * @throws StartException

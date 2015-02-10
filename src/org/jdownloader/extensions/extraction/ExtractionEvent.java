@@ -9,8 +9,7 @@ public class ExtractionEvent extends SimpleEvent<ExtractionController, Object, E
         OPEN_ARCHIVE_SUCCESS, // Extraction possible
         START_CRACK_PASSWORD, // Start password finding algo
         PASSWORT_CRACKING, // Password finding is in progress
-        PASSWORD_NEEDED_TO_CONTINUE, // No Password was found. Get password from
-                                     // elsewhere, like from user
+        PASSWORD_NEEDED_TO_CONTINUE, // No Password was found. Get password from elsewhere, like from user
         PASSWORD_FOUND, // Password found
         START_EXTRACTION, // Start extraction
         EXTRACTING, // Extracting in progress
@@ -21,7 +20,7 @@ public class ExtractionEvent extends SimpleEvent<ExtractionController, Object, E
         EXTRACTION_FAILED_CRC, // CRC error occurred
         NOT_ENOUGH_SPACE, // Not enough space for the archive
         FILE_NOT_FOUND, // Archive was not found
-        ACTIVE_ITEM// new file is beeing extracted
+        ACTIVE_ITEM// new file is being extracted
     }
 
     public ExtractionEvent(ExtractionController caller, Type type, Object... parameters) {
