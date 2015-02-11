@@ -790,7 +790,7 @@ public class PreFilesCom extends PluginForHost {
                     seconds = Integer.parseInt(tmpsec);
                 }
                 final int waittime = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
-                if (waittime > 130000l) {
+                if (waittime > 180000l) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
                 }
                 logger.info("Detected waittime #3, waiting " + waittime + "milliseconds");
