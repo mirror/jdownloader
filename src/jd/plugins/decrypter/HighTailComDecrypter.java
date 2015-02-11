@@ -42,13 +42,13 @@ public class HighTailComDecrypter extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        final String[] linkInfo = br.getRegex("<div class=\"fileContainer grid\"(.*?)<div class=\"downloadFiletype grid\"").getColumn(0);
+        final String[] linkInfo = br.getRegex("<div class=\"fileContainer list\"(.*?)<div class=\"downloadFiletype list\"").getColumn(0);
         if (linkInfo != null && linkInfo.length != 0) {
             // Multiple links
             for (final String singleLink : linkInfo) {
                 final DownloadLink dl = createDownloadlink("http://yousenditdecrypted.com/download/" + System.currentTimeMillis() + new Random().nextInt(100000));
-                final String filename = new Regex(singleLink, "class=\"downloadFilename grid\"><span>([^<>\"]*?)</span>").getMatch(0);
-                final String filesize = new Regex(singleLink, "class=\"downloadFilesize grid\">([^<>\"]*?)</div>").getMatch(0);
+                final String filename = new Regex(singleLink, "class=\"downloadFilename list\"><span>([^<>\"]*?)</span>").getMatch(0);
+                final String filesize = new Regex(singleLink, "class=\"downloadFilesize list\">([^<>\"]*?)</div>").getMatch(0);
                 final String fileurl = new Regex(singleLink, "file_url=\"([A-Za-z0-9]+)\"").getMatch(0);
                 if (filename == null || filesize == null || fileurl == null) {
                     logger.warning("Decrypter broken for link: " + parameter);

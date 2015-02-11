@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser.BrowserException;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -60,18 +61,25 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         default_ext = jd.plugins.hoster.VivaTv.default_ext;
         parameter = param.toString();
         br.setFollowRedirects(true);
-        if (parameter.matches(type_mtviggy) || parameter.matches(type_mtvdesi) || parameter.matches(type_mtvk)) {
-            decryptMtviggy();
-        } else if (parameter.matches(type_southpark_de_episode)) {
-            decryptSouthparkDe();
-        } else if (parameter.matches(type_southpark_cc_episode)) {
-            decryptSouthparkCc();
-        } else {
-            /* Probably unsupported linktype */
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        try {
+            if (parameter.matches(type_mtviggy) || parameter.matches(type_mtvdesi) || parameter.matches(type_mtvk)) {
+                decryptMtviggy();
+            } else if (parameter.matches(type_southpark_de_episode)) {
+                decryptSouthparkDe();
+            } else if (parameter.matches(type_southpark_cc_episode)) {
+                decryptSouthparkCc();
+            } else {
+                /* Probably unsupported linktype */
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+        } catch (final BrowserException e) {
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
         }
-
         return decryptedLinks;
     }
 

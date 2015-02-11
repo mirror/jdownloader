@@ -160,6 +160,7 @@ public class ProSevenDe extends PluginForHost {
         // clipID);
         // getDllink();
         // }
+        // http://vas.sim-technik.de/video/video.json?clipid=clipID&app=megapp&method=4&drm=marlin2
         if (clipUrl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

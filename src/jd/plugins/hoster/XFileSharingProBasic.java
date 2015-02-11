@@ -99,7 +99,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private String                         fuid                         = null;
 
     /* DEV NOTES */
-    // XfileSharingProBasic Version 2.6.6.9
+    // XfileSharingProBasic Version 2.6.7.0
     // Tags: Script, template
     // mods:
     // limit-info:
@@ -993,18 +993,19 @@ public class XFileSharingProBasic extends PluginForHost {
         }
         if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
             maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setProperty("nopremium", true);
             try {
                 account.setType(AccountType.FREE);
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
                 /* not available in old Stable 0.9.581 */
-                account.setProperty("nopremium", true);
             }
             ai.setStatus("Registered (free) account");
         } else {
             ai.setValidUntil(expire_milliseconds);
             maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setProperty("nopremium", false);
             try {
                 account.setType(AccountType.PREMIUM);
                 account.setMaxSimultanDownloads(maxPrem.get());

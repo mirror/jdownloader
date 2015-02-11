@@ -137,7 +137,7 @@ public class VivaTv extends PluginForHost {
                 filename = br.getRegex("<h1 class=\\'title\\'>([^<>]*?)</h1>").getMatch(0);
             }
             if (link.getDownloadURL().matches(subtype_viva_shows) || link.getDownloadURL().matches(subtype_viva_musicvideo) || link.getDownloadURL().matches(subtype_viva_music_interviews)) {
-                String h2 = br.getRegex("class=\\'now_playing\\'.*?<h2>([^<>]*?)</h2>.+data\\foreign_type").getMatch(0);
+                String h2 = br.getRegex("class=\\'now_playing\\'.*?<h2>([^<>]*?)</h2>.*?class=\\'kobra-watch-count\\'").getMatch(0);
                 if (h2 == null) {
                     h2 = br.getRegex("\">([^<>]*?)</a></h2>").getMatch(0);
                 }
@@ -478,18 +478,7 @@ public class VivaTv extends PluginForHost {
         } else if (downloadLink.getDownloadURL().matches(type_mtv_com)) {
             /* Special: This domain has it's own feed-URL. */
             find_mgid(downloadLink.getHost());
-            String seriesID = null;
-            if (br.getURL().matches(subtype_mtv_com_shows)) {
-                seriesID = br.getRegex("seriesId = (\\d+);").getMatch(0);
-            } else {
-                seriesID = "None";
-            }
-            final String instance = br.getRegex("MTVN\\.VIDEO\\.PLAYER\\.instance = \\'([a-z0-9]+)\\';").getMatch(0);
-            if (seriesID == null || instance == null || this.mgid == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            feed_url = feedURLs.get("mtv.com");
-            feed_url = String.format(feed_url, this.mgid, instance, seriesID);
+            feed_url = this.getFEEDurl("mtv.com");
         } else if (downloadLink.getDownloadURL().matches(type_mtvmovies)) {
             /* Special: This domain has it's own feed-URL. */
             find_mgid("mtvmovies.com");
@@ -527,7 +516,10 @@ public class VivaTv extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     private void downloadRTMP(final DownloadLink downloadLink, String rtmp_src) throws Exception {
-        rtmp_src = rtmp_src.replace(Encoding.Base64Decode("cnRtcGU6Ly8="), "rtmp://");
+        if (!rtmpe_supported) {
+            /* Works in most cases. */
+            rtmp_src = rtmp_src.replace("rtmpe://", "rtmp://");
+        }
         final String ext = rtmp_src.substring(rtmp_src.lastIndexOf(".") + 1);
         String app;
         String rtmphost;
@@ -642,13 +634,18 @@ public class VivaTv extends PluginForHost {
         mgid = br.getRegex("(mgid[a-z:]+" + host + ":[A-Za-z0-9_\\-]+)").getMatch(0);
     }
 
-    /** Converts rtmp urls to http urls. Works especially for mtviggy.com. */
+    /** Converts rtmp urls to http urls */
     private String convertRTMPtoHTTP(final String rtmpurl) {
         String httpurl = null;
-        final String important_part = new Regex(rtmpurl, "rt[a-z]+://[^<>\"]+/(gsp\\..+)").getMatch(0);
+        final String important_part = new Regex(rtmpurl, "rtmpe?://[^<>\"]+/(gsp\\..+)").getMatch(0);
         if (important_part != null) {
+            /* Most times used for mtviggy.com */
             /* Also possible: http://a[1-20].akadl.mtvnservices.com/ depending on server/link structure */
             httpurl = "http://viacommtvstrmfs.fplive.net/" + important_part;
+        } else if (rtmpurl.matches("rtmpe?://cp\\d+\\.edgefcs\\.net/ondemand/riptide/r2/.+")) {
+            /* Most times used for gameone.de */
+            /* Using (these particular) http urls will sometimes lead to 403/404 server errors. */
+            httpurl = rtmpurl.replaceAll("^.*?/r2/", "http://cdn.riptide-mtvn.com/r2/");
         }
         return httpurl;
     }
@@ -707,9 +704,11 @@ public class VivaTv extends PluginForHost {
             put("mtvworldwide", "http://all.mtvworldverticals.com/feed-xml/?uri=%s");
             put("mtv.de", "http://movies.mtv.de/mrss/%s");
             put("mtvmovies.com", "http://movies.mtv.de/mrss/%s");
-            put("mtv.com", "http://www.mtv.com/player/embed/AS3/rss/?uri=%s&ref=None&instance=%s&seriesId=%s");
+            put("mtv.com", "http://www.mtv.com/player/embed/AS3/rss/?uri=%s&ref=None");
             put("southpark.de", "http://www.southpark.de/feeds/video-player/mrss/%s");
             put("southpark.cc.com", "http://southpark.cc.com/feeds/video-player/mrss/%s");
+            put("gameone.de", "http://www.gameone.de/api/mrss/");
+            put("gameone.de_2", "https://gameone.de/api/mrss/");
         }
     };
 
@@ -734,6 +733,7 @@ public class VivaTv extends PluginForHost {
              * mgid is not always enough to get the final URLs.
              */
             put("videos.mtv.com", "http://videos.mtvnn.com/mediagen/<some kinda hash (length = 32)>");
+            /* Seems like this one is used for most big mtv sites as well */
             put("nick.de", "http://intl.esperanto.mtvi.com/www/xml/media/mediaGen.jhtml?uri=%s");
             put("mtv.com", "http://www.mtv.com/meta/context/mediaGen?uri=%s");
             put("southpark.de_episode", "http://www.southpark.de/feeds/video-player/mediagen?uri=%s&suppressRegisterBeacon=true&lang=de&acceptMethods=%s");
