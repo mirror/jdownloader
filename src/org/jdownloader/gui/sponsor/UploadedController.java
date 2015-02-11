@@ -306,7 +306,7 @@ public class UploadedController implements AccountControllerListener, Sponsor {
             String lng = TranslationFactory.getDesiredLanguage();
             Browser br = new Browser();
             File png = Application.getResource("tmp/ul_" + lng + "_" + hasOther + "_" + hasUploaded + ".png");
-            if (png.exists() && System.currentTimeMillis() - png.lastModified() < 2 * 60 * 60 * 1000l) {
+            if (png.exists() && System.currentTimeMillis() - png.lastModified() < 24 * 60 * 60 * 1000l) {
                 icon = new ImageIcon(ImageIO.read(png));
                 return;
             }
