@@ -65,7 +65,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         br.setFollowRedirects(true);
         try {
             if (parameter.matches(type_viva)) {
-                decryptVivaDeCharts();
+                decryptVivaTvCharts();
             } else if (parameter.matches(type_mtviggy) || parameter.matches(type_mtvdesi) || parameter.matches(type_mtvk)) {
                 decryptMtviggy();
             } else if (parameter.matches(type_southpark_de_episode)) {
@@ -87,7 +87,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void decryptVivaDeCharts() throws DecrypterException, IOException {
+    private void decryptVivaTvCharts() throws DecrypterException, IOException {
         br.getPage(parameter);
         fpName = br.getRegex("<h1 class=\\'title\\'>([^<>\"]*?)</h1>").getMatch(0);
         if (fpName == null) {
