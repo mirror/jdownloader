@@ -32,7 +32,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.ExtRealCheckBoxMenuItem;
 import org.jdownloader.gui.views.components.PseudoMultiCombo;
 import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.statistics.StatsManager;
 
 public class ProviderPanel extends MigPanel {
 
@@ -103,7 +102,7 @@ public class ProviderPanel extends MigPanel {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                StatsManager.I().track("/donation/button/preselect/" + d);
+
                 input.setText(d + "");
             }
         });

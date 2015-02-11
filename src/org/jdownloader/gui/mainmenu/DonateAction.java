@@ -91,7 +91,7 @@ public class DonateAction extends CustomizableAppAction {
                         StatsManager.I().track("/donation/button/exception/" + URLEncode.encodeRFC2396(e2.getClass() + "/" + e2.getMessage()));
                     }
                 } finally {
-                    StatsManager.I().track("/donation/button/details/" + (details != null && details.isEnabled()));
+
                 }
                 if (details == null || !details.isEnabled() || details.getCategories() == null) {
                     if (Thread.currentThread().isInterrupted()) {

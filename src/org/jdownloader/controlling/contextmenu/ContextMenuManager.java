@@ -441,7 +441,10 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     }
 
     private void delayUpdate() {
-
+        if (Application.isHeadless()) {
+            new Exception("Headless!").printStackTrace();
+            return;
+        }
         if (!SecondLevelLaunch.EXTENSIONS_LOADED.isReached()) {
             if (afterInitCallback != null) {
                 return;

@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Random;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -137,9 +138,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         thread.setName("StatsSender");
         thread.start();
         sessionStart = System.currentTimeMillis();
-        if (Math.random() < 0.001d) {
-            track("start1000");
-        }
+
+        track(1000, "starts");
 
     }
 
@@ -1088,7 +1088,22 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     }
 
-    public void track(final String path) {
+    /**
+     * use the reducer if you want to limit the tracker. 1000 means that only one out of 1000 calls will be accepted
+     * 
+     * @param reducer
+     * @param path
+     */
+    public void track(int reducer, String path2) {
+        if (reducer > 1) {
+            Random random = new Random(System.currentTimeMillis());
+            if (random.nextInt(reducer) != 0) {
+                return;
+            }
+
+            path2 += "_in" + reducer;
+        }
+        final String path = path2;
         final HashMap<String, String> cvar = new HashMap<String, String>();
         try {
             cvar.put("_id", System.getProperty(new String(new byte[] { (byte) 117, (byte) 105, (byte) 100 }, new String(new byte[] { 85, 84, 70, 45, 56 }, "UTF-8"))));
@@ -1112,6 +1127,11 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
             }
         });
+
+    }
+
+    public void track(final String path) {
+        track(1, path);
 
     }
 

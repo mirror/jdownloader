@@ -208,7 +208,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
     }
 
     public void onError(MyJDownloaderError error) {
-        StatsManager.I().track("myjd/error/" + error.name());
+        StatsManager.I().track(1000, "myjd/error/" + error.name());
         CFG_MYJD.CFG.setLatestError(error);
         switch (error) {
         case NONE:

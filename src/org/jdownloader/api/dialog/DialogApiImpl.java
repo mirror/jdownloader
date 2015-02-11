@@ -21,6 +21,7 @@ import org.appwork.uio.CloseReason;
 import org.appwork.uio.In;
 import org.appwork.uio.Out;
 import org.appwork.uio.UserIODefinition;
+import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -31,11 +32,11 @@ import org.jdownloader.myjdownloader.client.bindings.interfaces.DialogInterface;
 
 public class DialogApiImpl implements EventPublisher, DialogApiInterface {
 
-    private RemoteAPIIOHandlerWrapper         callback;
-    private AtomicLong                        id;
-    private LogSource                         logger;
-    private HashMap<Long, ApiHandle>          map;
-    private String[]                          eventIDs;
+    private RemoteAPIIOHandlerWrapper                  callback;
+    private AtomicLong                                 id;
+    private LogSource                                  logger;
+    private HashMap<Long, ApiHandle>                   map;
+    private String[]                                   eventIDs;
     private CopyOnWriteArraySet<RemoteAPIEventsSender> eventSenders;
 
     public static enum Event {
@@ -57,7 +58,8 @@ public class DialogApiImpl implements EventPublisher, DialogApiInterface {
         if (class1 == null) {
             return null;
         }
-        if (!impl.isRemoteAPIEnabled()) {
+        if (!impl.isRemoteAPIEnabled() && !Application.isHeadless()) {
+            // if the application is headless, we have to forward all dialogs.
             return null;
         }
         final ApiHandle ret = new ApiHandle(class1, impl, id.incrementAndGet(), Thread.currentThread());
