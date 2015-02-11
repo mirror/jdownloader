@@ -43,6 +43,7 @@ import org.appwork.remoteapi.events.EventObject;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.api.RemoteAPIController;
@@ -111,8 +112,9 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         RemoteAPIController.getInstance().getEventSender().addListener(this);
         CFG_EVENT_CALLER.SCRIPTS.getEventSender().addListener(this);
         entries = getSettings().getScripts();
-        configPanel = new EventScripterConfigPanel(this);
-
+        if (!Application.isHeadless()) {
+            configPanel = new EventScripterConfigPanel(this);
+        }
         SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
 
             @Override
