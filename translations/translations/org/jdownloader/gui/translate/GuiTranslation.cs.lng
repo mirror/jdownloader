@@ -322,6 +322,7 @@ DonationDialog_popup_amazon=Amazon Pay
 DonationDialog_popup_call2pay=Call 2 Pay
 DonationDialog_popup_creditcard=Platební karta
 DonationDialog_popup_directdebit=Inkaso
+DonationDialog_popup_giropay=Giro Pay
 DonationDialog_popup_mobile=Mobilní platba (např. SMS)
 DonationDialog_popup_other=Jiné
 DonationDialog_popup_paysafe=PaysafeCard
