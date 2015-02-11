@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
@@ -76,9 +77,12 @@ public class VevoCom extends PluginForHost {
     private static final int     free_maxdownloads = -1;
 
     private static final String  type_short        = "http://vevo\\.ly/[A-Za-z0-9]+";
-    private static final String  type_watch        = "http://(www\\.)?vevo\\.com/watch/[A-Za-z0-9\\-_]+/.+";
+    private static final String  type_watch        = "http://(www\\.)?vevo\\.com/watch/[A-Za-z0-9\\-_]+/[^/]+/[A-Z0-9]+";
     private static final String  type_watch_short  = "http://(www\\.)?vevo\\.com/watch/[A-Za-z0-9]+";
     private static final String  type_embedded     = "http://videoplayer\\.vevo\\.com/embed/embedded\\?videoId=[A-Za-z0-9]+";
+
+    private boolean              geoblock_1        = false;
+    private boolean              geoblock_2        = false;
 
     @Override
     public String getAGBLink() {
@@ -95,6 +99,7 @@ public class VevoCom extends PluginForHost {
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        String filename = null;
         if (downloadLink.getDownloadURL().contains("/playlist")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -116,6 +121,23 @@ public class VevoCom extends PluginForHost {
             /* Set- and re-use new (correct) URL in case we had a short URL before */
             downloadLink.setUrlDownload(br.getURL());
         }
+
+        /* Handling especially for e.g. users from Portugal */
+        if (br.containsHTML("THIS PAGE IS CURRENTLY UNAVAILABLE IN YOUR REGION")) {
+            geoblock_1 = true;
+            accessSmi_url(downloadLink);
+            final String rtmpurl = getBestQualityRtmp();
+            final String url_filename = getURLfilename(downloadLink);
+            final String rtmp_filename = new Regex(rtmpurl, "(\\d+k_\\d+x\\d+_[^<>\"]*?\\.mp4)").getMatch(0);
+            if (rtmp_filename != null) {
+                filename = url_filename + "_" + rtmp_filename;
+            } else {
+                filename = url_filename + default_Extension;
+            }
+            downloadLink.setFinalFileName(filename);
+            return AvailableStatus.TRUE;
+        }
+
         final String apijson = br.getRegex("apiResults:[\t\n\r ]*?(\\{.*?\\});").getMatch(0);
         if (apijson == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -135,7 +157,7 @@ public class VevoCom extends PluginForHost {
         if (title == null || artistsInfo == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String filename = year + "_" + artistsInfo + " - " + title;
+        filename = year + "_" + artistsInfo + " - " + title;
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
@@ -146,21 +168,25 @@ public class VevoCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        final String videoid = br.getRegex("\"isrc\":\"([^<>\"]*?)\"").getMatch(0);
-        if (videoid == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.getHeaders().put("Referer", player);
-        br.getPage("http://videoplayer.vevo.com/VideoService/AuthenticateVideo?isrc=" + videoid);
-        final String statusCode = getJson("statusCode");
-        if (statusCode.equals("304")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video is temporarily unavailable", 60 * 60 * 1000l);
-        } else if (statusCode.equals("909")) {
-            /* Should never happen */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!geoblock_1) {
+            final String videoid = br.getRegex("\"isrc\":\"([^<>\"]*?)\"").getMatch(0);
+            if (videoid == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getHeaders().put("Referer", player);
+            br.getPage("http://videoplayer.vevo.com/VideoService/AuthenticateVideo?isrc=" + videoid);
+            final String statusCode = getJson("statusCode");
+            if (statusCode.equals("304")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video is temporarily unavailable", 60 * 60 * 1000l);
+            } else if (statusCode.equals("501")) {
+                geoblock_2 = true;
+            } else if (statusCode.equals("909")) {
+                /* Should never happen */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         /* Check whether we have to go the rtmp way or can use the http streaming */
-        if (statusCode.equals("501")) {
+        if (geoblock_1 || geoblock_2) {
             downloadRTMP(downloadLink);
         } else {
             downloadHTTP(downloadLink);
@@ -170,31 +196,28 @@ public class VevoCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     private void downloadRTMP(final DownloadLink downloadLink) throws Exception {
-        /* Remove old cookies/headers */
-        this.br = new Browser();
-        final String fid = getFID(downloadLink);
-        br.getPage("http://smil.lvl3.vevo.com/Video/V2/VFILE/" + fid + "/" + fid.toLowerCase() + "r.smil");
-        final String[] playpaths = br.getRegex("<video src=\"(mp4:[^<>\"]*?.mp4)\"").getColumn(0);
-        final String rtmpurl = br.getRegex("<meta base=\"(rtmp[^<>\"]*?)\"").getMatch(0);
+        if (geoblock_2) {
+            accessSmi_url(downloadLink);
+        }
+        final String playpath = getBestQualityRtmp();
+        final String rtmp_base = br.getRegex("<meta base=\"(rtmp[^<>\"]*?)\"").getMatch(0);
         final String pageurl = downloadLink.getDownloadURL();
-        if (playpaths == null || playpaths.length == 0 || rtmpurl == null) {
+        if (rtmp_base == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String app = new Regex(rtmpurl, "([a-z0-9]+)$").getMatch(0);
+        String app = new Regex(rtmp_base, "([a-z0-9]+)$").getMatch(0);
         if (app == null) {
             app = "vevood";
         }
-        /* Chose highest quality available */
-        final String playpath = playpaths[playpaths.length - 1];
         try {
-            dl = new RTMPDownload(this, downloadLink, rtmpurl);
+            dl = new RTMPDownload(this, downloadLink, rtmp_base);
         } catch (final NoClassDefFoundError e) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDownload class missing");
         }
         /* Setup rtmp connection */
         jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
         rtmp.setPageUrl(pageurl);
-        rtmp.setUrl(rtmpurl);
+        rtmp.setUrl(rtmp_base);
         rtmp.setPlayPath(playpath);
         rtmp.setApp(app);
         rtmp.setSwfVfy(player);
@@ -279,6 +302,44 @@ public class VevoCom extends PluginForHost {
             }
         }
         return dllink;
+    }
+
+    private void accessSmi_url(final DownloadLink dl) throws IOException, PluginException {
+        /* Remove old cookies/headers */
+        this.br = new Browser();
+        final String fid = getFID(dl);
+        br.getPage("http://smil.lvl3.vevo.com/Video/V2/VFILE/" + fid + "/" + fid.toLowerCase() + "r.smil");
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+    }
+
+    private String getBestQualityRtmp() throws PluginException {
+        final String[] playpaths = br.getRegex("<video src=\"(mp4:[^<>\"]*?.mp4)\"").getColumn(0);
+        if (playpaths == null || playpaths.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* Chose highest quality available */
+        return playpaths[playpaths.length - 1];
+    }
+
+    @SuppressWarnings("deprecation")
+    private String getURLfilename(final DownloadLink dl) {
+        String url_fname = null;
+        if (dl.getDownloadURL().matches(type_short) || dl.getDownloadURL().matches(type_watch_short)) {
+            url_fname = new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+
+        } else if (!br.getURL().matches(type_watch)) {
+            /* User probably added invalid url */
+            final Regex url_artist_title = new Regex(dl.getDownloadURL(), "vevo\\.com/watch/([A-Za-z0-9\\-_]+)/([^/]+)/.+");
+            final String artist = url_artist_title.getMatch(0);
+            final String title = url_artist_title.getMatch(1);
+            url_fname = artist + " - " + title;
+        } else {
+            /* Probably unsupported url format - this should never happen */
+            url_fname = null;
+        }
+        return url_fname;
     }
 
     /* Avoid chars which are not allowed in filenames under certain OS' */
