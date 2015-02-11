@@ -57,19 +57,20 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
         return filter;
     }
 
-    public boolean isAllowedByFilter(String host, Account acc) {
-        if (filter == null) {
+    public boolean isAllowedByFilter(final String host, final Account acc) {
+        final FilterList lFilter = filter;
+        if (lFilter == null) {
             return true;
         }
-        return filter.validate(host, acc == null ? null : acc.getUser());
+        return lFilter.validate(host, acc == null ? null : acc.getUser());
     }
 
-    public void setFilter(FilterList filter) {
+    public void setFilter(final FilterList filter) {
         this.filter = filter;
     }
 
     public ProxyData toProxyData() {
-        ProxyData ret = new ProxyData();
+        final ProxyData ret = new ProxyData();
         ret.setEnabled(isEnabled());
         ret.setFilter(getFilter());
         ret.setRangeRequestsSupported(isResumeAllowed());
@@ -137,20 +138,22 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
     }
 
     public void addSessionBan(ConnectionBan ban) {
-        for (ConnectionBan b : banList) {
-            if (b.isExpired()) {
-                banList.remove(b);
-                continue;
+        if (ban != null) {
+            for (ConnectionBan b : banList) {
+                if (b.isExpired()) {
+                    banList.remove(b);
+                    continue;
+                }
+                if (b.canSwallow(ban)) {
+                    return;
+                }
+                if (ban.canSwallow(b)) {
+                    banList.remove(b);
+                    continue;
+                }
             }
-            if (b.canSwallow(ban)) {
-                return;
-            }
-            if (ban.canSwallow(b)) {
-                banList.remove(b);
-                continue;
-            }
+            banList.addIfAbsent(ban);
         }
-        banList.add(ban);
     }
 
     public boolean isProxyBannedFor(final HTTPProxy orgReference, final URL url, final Plugin pluginFromThread, final boolean ignoreConnectBans) {
