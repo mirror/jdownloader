@@ -17,10 +17,8 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -45,7 +43,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upstore.net", "upsto.re" }, urls = { "http://(www\\.)?(upsto\\.re|upstore\\.net)/[A-Za-z0-9]+", "ejnz905rj5o0jt69pgj50ujz0zhDELETE_MEew7th59vcgzh59prnrjhzj0" }, flags = { 2, 0 })
-public class UpstoRe extends PluginForHost {
+public class UpstoRe extends antiDDoSForHost {
 
     public UpstoRe(PluginWrapper wrapper) {
         super(wrapper);
@@ -77,38 +75,32 @@ public class UpstoRe extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("upsto.re/", "upstore.net/"));
     }
 
-    private final boolean                        useRUA    = true;
-    private static final AtomicReference<String> userAgent = new AtomicReference<String>(null);
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
 
     /**
      * defines custom browser requirements
-     * 
+     *
      * @author raztoki
      * */
-    private Browser prepBrowser(final Browser prepBr) {
-        if (useRUA) {
-            if (userAgent.get() == null) {
-                /* we first have to load the plugin, before we can reference it */
-                JDUtilities.getPluginForHost("mediafire.com");
-                userAgent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
-            }
-            prepBr.getHeaders().put("User-Agent", userAgent.get());
-        }
+    @Override
+    protected Browser prepBrowser(final Browser prepBr) {
+        super.prepBrowser(prepBr);
         prepBr.setCookie("http://upstore.net/", "lang", "en");
-
         return prepBr;
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         correctDownloadLink(link);
-        prepBrowser(br);
         br.setFollowRedirects(true);
         if (link.getDownloadURL().matches(INVALIDLINKS)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        br.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         if (br.containsHTML(">File not found<|>File was deleted by owner or due to a violation of service rules\\.|not found|>SmartErrors powered by")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -134,7 +126,7 @@ public class UpstoRe extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, "freelink");
         if (dllink == null) {
             final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-            br.postPage(downloadLink.getDownloadURL(), "free=Slow+download&hash=" + fid);
+            postPage(downloadLink.getDownloadURL(), "free=Slow+download&hash=" + fid);
             if (br.containsHTML(">This file is available only for Premium users<")) {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -179,7 +171,7 @@ public class UpstoRe extends PluginForHost {
             if (wait > 0) {
                 sleep(wait * 1000l, downloadLink);
             }
-            br.postPage(downloadLink.getDownloadURL(), "free=Get+download+link&hash=" + fid + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
+            postPage(downloadLink.getDownloadURL(), "free=Get+download+link&hash=" + fid + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
             if (br.containsHTML("limit for today|several files recently")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
             }
@@ -217,7 +209,6 @@ public class UpstoRe extends PluginForHost {
         synchronized (LOCK) {
             try {
                 // Load cookies
-                prepBrowser(br);
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
@@ -232,14 +223,26 @@ public class UpstoRe extends PluginForHost {
                             final String value = cookieEntry.getValue();
                             br.setCookie(MAINPAGE, key, value);
                         }
-                        account.getProperty("ua", userAgent.get());
+                        // re-use same agent from cached session.
+                        final String ua = account.getStringProperty("ua", null);
+                        if (ua != null && !ua.equals(agent.get())) {
+                            // cloudflare routine sets user-agent on first request.
+                            agent.set(ua);
+                        }
                         return;
                     }
+                }
+                // dump previous set user-agent
+                if (agent.get() != null) {
+                    agent.set(null);
                 }
                 if (!isMail(account.getUser())) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your mailadress in the 'username' field!\r\nBitte gib deine E-Mail Adresse in das 'Benutzername' Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                br.postPage("http://upstore.net/account/login/", "url=http%253A%252F%252Fupstore.net%252F&send=Login&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                // goto first page
+                getPage("https://upstore.net/");
+                // getPage("/account/soclogin/?url=https%3A%2F%2Fupstore.net%2F");
+                postPage("/account/login/", "url=https%253A%252F%252Fupstore.net%252F&send=Login&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 // some times they force captcha
                 final String cap = br.getRegex(regexLoginCaptcha).getMatch(-1);
                 if (cap != null) {
@@ -256,7 +259,7 @@ public class UpstoRe extends PluginForHost {
                     if (code == null) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nCaptcha required and wasn't provided, account disabled!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
-                    br.postPage(br.getURL(), "url=http%253A%252F%252Fupstore.net%252F&send=sign+in&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&captcha=" + Encoding.urlEncode(code));
+                    postPage(br.getURL(), "url=http%253A%252F%252Fupstore.net%252F&send=sign+in&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&captcha=" + Encoding.urlEncode(code));
                     if (br.containsHTML(regexLoginCaptcha)) {
                         // incorrect captcha, or form values changed
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nIncorrect catpcha, account disabled!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -283,12 +286,12 @@ public class UpstoRe extends PluginForHost {
         account.setProperty("cookies", Property.NULL);
         account.setProperty("lastlogin", Property.NULL);
         account.setProperty("ua", Property.NULL);
-        userAgent.set(null);
+        agent.set(null);
     }
 
     /**
      * saves cookies to HashMap from provided browser
-     * 
+     *
      * @author raztoki
      * @param br
      * @return
@@ -306,7 +309,7 @@ public class UpstoRe extends PluginForHost {
 
     /**
      * returns true if provided Cookie contains keyname is contained within getLoginCookies()
-     * 
+     *
      * @author raztoki
      * @param c
      * @return
@@ -335,13 +338,9 @@ public class UpstoRe extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         br.setFollowRedirects(true);
-        try {
-            areWeStillLoggedIn(account);
-        } catch (PluginException e) {
-            throw e;
-        }
+        areWeStillLoggedIn(account);
         // Make sure that the language is correct
-        br.getPage((br.getHttpConnection() == null ? MAINPAGE : "") + "/?lang=en");
+        getPage((br.getHttpConnection() == null ? MAINPAGE.replace("http://", "https://") : "") + "/?lang=en");
         ai.setUnlimitedTraffic();
         // Check for never-ending premium accounts
         if (!br.containsHTML(lifetimeAccount)) {
@@ -370,7 +369,7 @@ public class UpstoRe extends PluginForHost {
 
     /**
      * Method to determine if current cookie session is still valid.
-     * 
+     *
      * @author raztoki
      * @param account
      * @return
@@ -388,7 +387,7 @@ public class UpstoRe extends PluginForHost {
                     return true;
                 }
                 // send a get page to mainpage to see if premium cookie is cleared.
-                br.getPage(MAINPAGE);
+                getPage(MAINPAGE);
                 // upstore doesn't remove invalid cookies, so we need to also check against account types!
                 if (browserCookiesMatchLoginCookies(br) && br.containsHTML(this.lifetimeAccount + "|" + this.premiumTilAccount)) {
                     // save these incase they changed value.
@@ -409,7 +408,7 @@ public class UpstoRe extends PluginForHost {
 
     /**
      * Array containing all required premium cookies!
-     * 
+     *
      * @return
      */
     private String[] getLoginCookies() {
@@ -420,7 +419,7 @@ public class UpstoRe extends PluginForHost {
      * If default browser contains ALL cookies within 'loginCookies' array, it will return true<br />
      * <br />
      * NOTE: loginCookies[] can only contain true names! Remove all dead names from array!
-     * 
+     *
      * @author raztoki
      * */
     private boolean browserCookiesMatchLoginCookies(final Browser br) {
@@ -463,7 +462,7 @@ public class UpstoRe extends PluginForHost {
         requestFileInformation(link);
         areWeStillLoggedIn(account);
         br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         if (br.containsHTML(premDlLimit)) {
             trafficLeft(account);
         }
@@ -471,7 +470,7 @@ public class UpstoRe extends PluginForHost {
         String dllink = br.getRedirectLocation();
         // No directdownload? Let's "click" on download
         if (dllink == null) {
-            br.postPage("http://upstore.net/load/premium/", "js=1&hash=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+            postPage("http://upstore.net/load/premium/", "js=1&hash=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
             if (br.containsHTML(premDlLimit)) {
                 trafficLeft(account);
             }
@@ -505,7 +504,7 @@ public class UpstoRe extends PluginForHost {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
             try {
-                Browser br2 = br.cloneBrowser();
+                Browser br2 = prepBrowser(br.cloneBrowser());
                 URLConnectionAdapter con = br2.openGetConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
