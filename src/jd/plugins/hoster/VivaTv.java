@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viva.tv", "funnyclips.cc", "comedycentral.tv", "nick.de", "nicknight.de", "nickjr.de", "mtv.de", "mtviggy.com", "mtv.com", "movies.mtv.de", "southpark.de", "southpark.cc.com" }, urls = { "http://www\\.viva\\.tv/(musikvideo|news|shows|musik/video)/\\d+([a-z0-9\\-]+)?", "http://de\\.funnyclips\\.cc/(listen/.+|[A-Za-z0-9\\-]+/\\d+[A-Za-z0-9\\-]+)", "http://www\\.comedycentral\\.tv/(shows|neuigkeiten)/\\d+([a-z0-9\\-]+)?", "http://www\\.nick\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nicknight\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nickjr\\.de/videos/\\d+([a-z0-9\\-]+)?", "http://www\\.mtv\\.de/(shows/\\d+[a-z0-9\\-]+/staffeln/\\d+/folgen/\\d+[a-z0-9\\-]+|artists/[a-z0-9\\-]+/videos/[a-z0-9\\-]+|news/\\d+[a-z0-9\\-]+)",
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viva.tv", "funnyclips.cc", "comedycentral.tv", "nick.de", "nicknight.de", "nickjr.de", "mtv.de", "mtviggy.com", "mtv.com", "movies.mtv.de", "southpark.de", "southpark.cc.com" }, urls = { "https?://www\\.viva\\.tv/(musikvideo|news|shows|musik/video)/\\d+([a-z0-9\\-]+)?", "http://de\\.funnyclips\\.cc/(listen/.+|[A-Za-z0-9\\-]+/\\d+[A-Za-z0-9\\-]+)", "http://www\\.comedycentral\\.tv/(shows|neuigkeiten)/\\d+([a-z0-9\\-]+)?", "http://www\\.nick\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nicknight\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nickjr\\.de/videos/\\d+([a-z0-9\\-]+)?", "http://www\\.mtv\\.de/(shows/\\d+[a-z0-9\\-]+/staffeln/\\d+/folgen/\\d+[a-z0-9\\-]+|artists/[a-z0-9\\-]+/videos/[a-z0-9\\-]+|news/\\d+[a-z0-9\\-]+)",
         "http://www\\.mtviggy_jd_decrypted_jd_\\.com/videos/[a-z0-9\\-]+/|http://media\\.mtvnservices\\.com/embed/mgid:uma:video:mtviggy\\.com:\\d+", "http://www\\.mtv\\.com/(shows/[a-z0-9\\-]+/[^<>\"]+|videos/[^<>\"]+\\.jhtml|videos/\\?vid=\\d+)|http://media\\.mtvnservices\\.com/embed/mgid:uma:video:mtv\\.com:\\d+", "http://movies\\.mtv\\.de/(?!playlists)videos/(trailer/)?[a-z0-9\\-]+/[a-z0-9]+", "http://www\\.southpark\\.de/clips/[a-z0-9]+/[a-z0-9\\-]+|http://media\\.mtvnservices\\.com/mgid:arc:video:southparkstudios\\.com:[a-z0-9\\-]+", "http://media\\.mtvnservices\\.com/mgid:arc:video:southparkstudios_jd_decrypted_jd_\\.com:[a-z0-9\\-]+" }, flags = { 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32 })
 public class VivaTv extends PluginForHost {
 
@@ -112,6 +112,8 @@ public class VivaTv extends PluginForHost {
         String user_added_url = link.getDownloadURL();
         /* Correct decrypted links */
         user_added_url = user_added_url.replace("_jd_decrypted_jd_", "");
+        /* Usually they prefer http anyways */
+        user_added_url = user_added_url.replace("https://", "http://");
         link.setUrlDownload(user_added_url);
     }
 
@@ -136,7 +138,14 @@ public class VivaTv extends PluginForHost {
             if (filename == null) {
                 filename = br.getRegex("<h1 class=\\'title\\'>([^<>]*?)</h1>").getMatch(0);
             }
-            if (link.getDownloadURL().matches(subtype_viva_shows) || link.getDownloadURL().matches(subtype_viva_musicvideo) || link.getDownloadURL().matches(subtype_viva_music_interviews)) {
+            if (link.getDownloadURL().matches(subtype_viva_musicvideo)) {
+                final String title = br.getRegex("content=(?:\\'|\")([^<>\"]*?)(?:\\'|\") itemprop=\\'name\\'").getMatch(0);
+                final String author = br.getRegex("content=(?:\\'|\")([^<>\"]*?)(?:\\'|\") itemprop=\\'author\\'").getMatch(0);
+                if (author == null || title == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                filename = doFilenameEncoding(author) + " - " + doFilenameEncoding(title);
+            } else if (link.getDownloadURL().matches(subtype_viva_shows) || link.getDownloadURL().matches(subtype_viva_music_interviews)) {
                 String h2 = br.getRegex("class=\\'now_playing\\'.*?<h2>([^<>]*?)</h2>.*?class=\\'kobra-watch-count\\'").getMatch(0);
                 if (h2 == null) {
                     h2 = br.getRegex("\">([^<>]*?)</a></h2>").getMatch(0);
@@ -150,7 +159,7 @@ public class VivaTv extends PluginForHost {
                 }
                 filename += " - " + doFilenameEncoding(h2) + " - " + doFilenameEncoding(h3);
             }
-            ext = ".mp4";
+            ext = ".flv";
         } else if (link.getDownloadURL().matches(type_funnyclips)) {
             try {
                 br.getPage(link.getDownloadURL());
@@ -171,7 +180,7 @@ public class VivaTv extends PluginForHost {
             show = doFilenameEncoding(show);
             title = doFilenameEncoding(title);
             filename = show + " - " + title;
-            ext = ".mp4";
+            ext = default_ext;
         } else if (link.getDownloadURL().matches(type_comedycentral)) {
             br.getPage(link.getDownloadURL());
             if (!br.containsHTML("swfobject\\.createCSS") || br.getHttpConnection().getResponseCode() == 404) {
@@ -699,18 +708,18 @@ public class VivaTv extends PluginForHost {
 
     /** Static list of FEED-urls. If one is missing they can be found by accessing the correct player-URL (see list below). */
     public static HashMap<String, String> feedURLs                    = new HashMap<String, String>() {
-        {
-            put("ALL_OTHERS", "http://api.mtvnn.com/v2/mrss.xml?uri=%s");
-            put("mtvworldwide", "http://all.mtvworldverticals.com/feed-xml/?uri=%s");
-            put("mtv.de", "http://movies.mtv.de/mrss/%s");
-            put("mtvmovies.com", "http://movies.mtv.de/mrss/%s");
-            put("mtv.com", "http://www.mtv.com/player/embed/AS3/rss/?uri=%s&ref=None");
-            put("southpark.de", "http://www.southpark.de/feeds/video-player/mrss/%s");
-            put("southpark.cc.com", "http://southpark.cc.com/feeds/video-player/mrss/%s");
-            put("gameone.de", "http://www.gameone.de/api/mrss/");
-            put("gameone.de_2", "https://gameone.de/api/mrss/");
-        }
-    };
+                                                                          {
+                                                                              put("ALL_OTHERS", "http://api.mtvnn.com/v2/mrss.xml?uri=%s");
+                                                                              put("mtvworldwide", "http://all.mtvworldverticals.com/feed-xml/?uri=%s");
+                                                                              put("mtv.de", "http://movies.mtv.de/mrss/%s");
+                                                                              put("mtvmovies.com", "http://movies.mtv.de/mrss/%s");
+                                                                              put("mtv.com", "http://www.mtv.com/player/embed/AS3/rss/?uri=%s&ref=None");
+                                                                              put("southpark.de", "http://www.southpark.de/feeds/video-player/mrss/%s");
+                                                                              put("southpark.cc.com", "http://southpark.cc.com/feeds/video-player/mrss/%s");
+                                                                              put("gameone.de", "http://www.gameone.de/api/mrss/");
+                                                                              put("gameone.de_2", "https://gameone.de/api/mrss/");
+                                                                          }
+                                                                      };
 
     /** Static list of mediagen URLs. These are usually sub-URLs of feed-urls and they'll return the final downloadlinks. */
     /**
@@ -726,33 +735,33 @@ public class VivaTv extends PluginForHost {
      *
      */
     public static HashMap<String, String> mediagenURLs                = new HashMap<String, String>() {
-        {
-            /*
-             * For some of these, we have to access the feed- or player
-             * before to get the mediagen-URL. This means that having the
-             * mgid is not always enough to get the final URLs.
-             */
-            put("videos.mtv.com", "http://videos.mtvnn.com/mediagen/<some kinda hash (length = 32)>");
-            /* Seems like this one is used for most big mtv sites as well */
-            put("nick.de", "http://intl.esperanto.mtvi.com/www/xml/media/mediaGen.jhtml?uri=%s");
-            put("mtv.com", "http://www.mtv.com/meta/context/mediaGen?uri=%s");
-            put("southpark.de_episode", "http://www.southpark.de/feeds/video-player/mediagen?uri=%s&suppressRegisterBeacon=true&lang=de&acceptMethods=%s");
-            put("southpark.de_clips", "http://www.southpark.de/feeds/video-player/mediagen?uri=%s");
-        }
-    };
+                                                                          {
+                                                                              /*
+                                                                               * For some of these, we have to access the feed- or player
+                                                                               * before to get the mediagen-URL. This means that having the
+                                                                               * mgid is not always enough to get the final URLs.
+                                                                               */
+                                                                              put("videos.mtv.com", "http://videos.mtvnn.com/mediagen/<some kinda hash (length = 32)>");
+                                                                              /* Seems like this one is used for most big mtv sites as well */
+                                                                              put("nick.de", "http://intl.esperanto.mtvi.com/www/xml/media/mediaGen.jhtml?uri=%s");
+                                                                              put("mtv.com", "http://www.mtv.com/meta/context/mediaGen?uri=%s");
+                                                                              put("southpark.de_episode", "http://www.southpark.de/feeds/video-player/mediagen?uri=%s&suppressRegisterBeacon=true&lang=de&acceptMethods=%s");
+                                                                              put("southpark.de_clips", "http://www.southpark.de/feeds/video-player/mediagen?uri=%s");
+                                                                          }
+                                                                      };
 
     public static HashMap<String, String> embedURLs                   = new HashMap<String, String>() {
-        {
-            /*
-             * Only a small amount if embeddable - usually embedded links
-             * are never needed but via them we gan get the players url
-             * which contains the feed-URL so this list might be useful in
-             * the future. Strong format --> Put mgid in.
-             */
-            put("ALL_OTHERS", "http://media.mtvnservices.com/%s");
-            put("mtv.com", "http://media.mtvnservices.com/embed/%s/");
-        }
-    };
+                                                                          {
+                                                                              /*
+                                                                               * Only a small amount if embeddable - usually embedded links
+                                                                               * are never needed but via them we gan get the players url
+                                                                               * which contains the feed-URL so this list might be useful in
+                                                                               * the future. Strong format --> Put mgid in.
+                                                                               */
+                                                                              put("ALL_OTHERS", "http://media.mtvnservices.com/%s");
+                                                                              put("mtv.com", "http://media.mtvnservices.com/embed/%s/");
+                                                                          }
+                                                                      };
 
     /**
      * These are only accessed for embedded videos. They contain the feed-URLs. This list might be useful in the future. Strong format:
@@ -763,29 +772,29 @@ public class VivaTv extends PluginForHost {
      * =Even+more+keywords+in+this+format
      */
     public static HashMap<String, String> playerURLs                  = new HashMap<String, String>() {
-        {
-            put("mtv.com", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context49/config.xml?uri=%s");
-            put("southpark.de", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context5/config.xml?uri=%s");
-        }
-    };
+                                                                          {
+                                                                              put("mtv.com", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context49/config.xml?uri=%s");
+                                                                              put("southpark.de", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context5/config.xml?uri=%s");
+                                                                          }
+                                                                      };
 
     public static HashMap<String, String> possibleAcceptMethodsValues = new HashMap<String, String>() {
-        {
-            /*
-             * "acceptMethods" is a parameter of mediagen URLs. It's
-             * optional but has an influence on the final URLs.
-             */
-            /* Default seting (if ever used) */
-            put("default", "fms,hdn1,hds");
-            /*
-             * Returns http links but less available qualities and usually
-             * not as good as their rtmp(e) streams
-             */
-            put("http", "http");
-            put("hls", "http");
-            put("hds", "http");
-        }
-    };
+                                                                          {
+                                                                              /*
+                                                                               * "acceptMethods" is a parameter of mediagen URLs. It's
+                                                                               * optional but has an influence on the final URLs.
+                                                                               */
+                                                                              /* Default seting (if ever used) */
+                                                                              put("default", "fms,hdn1,hds");
+                                                                              /*
+                                                                               * Returns http links but less available qualities and usually
+                                                                               * not as good as their rtmp(e) streams
+                                                                               */
+                                                                              put("http", "http");
+                                                                              put("hls", "http");
+                                                                              put("hds", "http");
+                                                                          }
+                                                                      };
 
     @Override
     public void reset() {
