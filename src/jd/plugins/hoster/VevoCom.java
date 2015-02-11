@@ -44,10 +44,28 @@ public class VevoCom extends PluginForHost {
      * API url (token needed, got no source for that at the moment): https://apiv2.vevo.com/video/<VIDEOID>/streams/hls?token=<APITOKEN> or
      * https://apiv2.vevo.com/video/<VIDEOID>?token=<APITOKEN>
      */
+    /**
+     * Also possible:
+     * http://videoplayer.vevo.com/VideoService/AuthenticateVideo?isrc=<videoid>&domain=<some_domain>&authToken=X-X-X-X-X&pkey=X-X-X-X-X
+     * This way is usually used for embedded videos. Also possible:
+     * http://api.vevo.com/VideoService/AuthenticateVideo?isrc=<videoid>&domain=cache.vevo.com&pkey=af330f2c-5617-4e57-81b5-4a6edbef07cc
+     */
+    /* Also possible: https://svideoplayer.vevo.com/VideoService/AuthenticateVideo?isrc= */
     /** Additional hint: Vevo also has Apps for a lot of platforms: http://www.vevo.com/c/DE/DE/apps */
     /** Additional thanks goes to: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/vevo.py */
-
-    /* Also possible: http://cache.vevo.com/a/swf/versions/3/player.swf?eurl=www.somewebsite.com&cb=<12-digit-number> */
+    /**
+     * Possible API "statusCode" codes an their meaning: 0=all ok, 304=Video is temporarily unavailable, 501=GEO block, 909=Video offline
+     *
+     *
+     * List of all possible qualities: 'High': 'High Definition MP4' ,'Med': 'Standard Definition MP4' ,'Low': 'Ultra Low Definition MP4'
+     * ,'564000': 'Very Low Definition MP4' ,'864000': 'Low Definition MP4' ,'1328000':'Standard Definition MP4' ,'1728000':'Standard
+     * Definition HBR MP4' ,'2528000':'High Definition MP4' ,'3328000':'High Definition HBR MP4' ,'4392000':'Full High Definition MP4'
+     * ,'5392000':'Full High Definition HBR MP4'
+     *
+     *
+     *
+     * /* Also possible: http://cache.vevo.com/a/swf/versions/3/player.swf?eurl=www.somewebsite.com&cb=<12-digit-number>
+     */
     private static final String  player            = "http://cache.vevo.com/a/swf/versions/3/player.swf";
 
     /* Extension which will be used if no correct extension is found */
@@ -58,9 +76,9 @@ public class VevoCom extends PluginForHost {
     private static final int     free_maxdownloads = -1;
 
     private static final String  type_short        = "http://vevo\\.ly/[A-Za-z0-9]+";
-    private static final String  type_video        = "http://(www\\.)?vevo\\.com/watch/[A-Za-z0-9\\-_]+/.+";
-    private static final String  type_video_short  = "http://(www\\.)?vevo\\.com/watch/[A-Za-z0-9]+";
-    private static final String  type_embed        = "http://videoplayer\\.vevo\\.com/embed/embedded\\?videoId=[A-Za-z0-9]+";
+    private static final String  type_watch        = "http://(www\\.)?vevo\\.com/watch/[A-Za-z0-9\\-_]+/.+";
+    private static final String  type_watch_short  = "http://(www\\.)?vevo\\.com/watch/[A-Za-z0-9]+";
+    private static final String  type_embedded     = "http://videoplayer\\.vevo\\.com/embed/embedded\\?videoId=[A-Za-z0-9]+";
 
     @Override
     public String getAGBLink() {
@@ -69,16 +87,11 @@ public class VevoCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        if (link.getDownloadURL().matches(type_embed)) {
+        if (link.getDownloadURL().matches(type_embedded)) {
             link.setUrlDownload("http://www.vevo.com/watch/" + link.getDownloadURL().substring(link.getDownloadURL().lastIndexOf("=") + 1));
         }
     }
 
-    /**
-     * Possible API "statusCode" codes an their meaning: 0=all ok, 304=Video is temporarily unavailable, 501=GEO block, 909=Video offline
-     *
-     * @throws Exception
-     */
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
@@ -92,10 +105,10 @@ public class VevoCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (downloadLink.getDownloadURL().matches(type_short) && !br.getURL().matches(type_video)) {
+        if (downloadLink.getDownloadURL().matches(type_short) && !br.getURL().matches(type_watch)) {
             logger.info("Short url either redirected to unknown url format or is offline");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (!br.getURL().matches(type_video)) {
+        } else if (!br.getURL().matches(type_watch)) {
             /* User probably added invalid url */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -138,11 +151,6 @@ public class VevoCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getHeaders().put("Referer", player);
-        /*
-         * Also possible:
-         * http://videoplayer.vevo.com/VideoService/AuthenticateVideo?isrc=<videoid>&domain=<some_domain>&authToken=X-X-X-X-X&pkey=X-X-X-X-X
-         * This way is usually used for embedded videos.
-         */
         br.getPage("http://videoplayer.vevo.com/VideoService/AuthenticateVideo?isrc=" + videoid);
         final String statusCode = getJson("statusCode");
         if (statusCode.equals("304")) {
@@ -162,7 +170,7 @@ public class VevoCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     private void downloadRTMP(final DownloadLink downloadLink) throws Exception {
-        /* Remove old stuff */
+        /* Remove old cookies/headers */
         this.br = new Browser();
         final String fid = getFID(downloadLink);
         br.getPage("http://smil.lvl3.vevo.com/Video/V2/VFILE/" + fid + "/" + fid.toLowerCase() + "r.smil");
@@ -194,6 +202,11 @@ public class VevoCom extends PluginForHost {
         ((RTMPDownload) dl).startDownload();
     }
 
+    /*
+     * 2nd way to get http streams: http://smilstream.vevo.com/HDFlash/v1/smil/<videoid>/<videoid>.smil
+     *
+     * Examplecode: http://bluecop-xbmc-repo.googlecode.com/svn-history/r383/trunk/plugin.video.vevo/default.py
+     */
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private void downloadHTTP(final DownloadLink downloadLink) throws Exception {
         final String[] possibleQualities = { "High", "Med", "Low" };
