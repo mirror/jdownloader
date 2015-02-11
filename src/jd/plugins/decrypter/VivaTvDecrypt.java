@@ -48,8 +48,8 @@ public class VivaTvDecrypt extends PluginForDecrypt {
     private static final String     type_mtvdesi              = "http://www\\.mtvdesi\\.com/(videos/)?[a-z0-9\\-]+";
     private static final String     type_mtvk                 = "http://www\\.mtvk\\.com/videos/[a-z0-9\\-]+";
 
-    private static final String     type_southpark_de_episode = "http://www\\.southpark\\.de/alle\\-episoden/s\\d{2}e\\d{2}[a-z0-9\\-]+";
-    private static final String     type_southpark_cc_episode = "http://southpark\\.cc\\.com/full\\-episodes/s\\d{2}e\\d{2}[a-z0-9\\-]+";
+    private static final String     type_southpark_de_episode = "http://www\\.southpark\\.de/alle\\-episoden/.+";
+    private static final String     type_southpark_cc_episode = "http://southpark\\.cc\\.com/full\\-episodes/.+";
 
     private ArrayList<DownloadLink> decryptedLinks            = new ArrayList<DownloadLink>();
     private String                  default_ext               = null;
