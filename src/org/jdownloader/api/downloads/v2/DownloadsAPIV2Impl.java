@@ -45,7 +45,6 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         List<FilePackage> packages = null;
 
         if (queryParams.getPackageUUIDs() != null && queryParams.getPackageUUIDs().length > 0) {
-
             packages = convertIdsToPackages(queryParams.getPackageUUIDs());
 
         } else {
@@ -53,6 +52,9 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         }
 
         List<FilePackageAPIStorableV2> ret = new ArrayList<FilePackageAPIStorableV2>(packages.size());
+        if (packages.size() == 0) {
+            return ret;
+        }
         int startWith = queryParams.getStartAt();
         int maxResults = queryParams.getMaxResults();
         if (startWith > dlc.size() - 1) {
