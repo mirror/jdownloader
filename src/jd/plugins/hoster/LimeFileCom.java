@@ -246,7 +246,10 @@ public class LimeFileCom extends PluginForHost {
             if (fileInfo[1] == null) {
                 fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
                 if (fileInfo[1] == null) {
-                    fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                    fileInfo[1] = new Regex(correctedBR, ">Download File: (\\d+(\\.\\d+)? ?(KB|MB|GB))\\s*<").getMatch(0);
+                    if (fileInfo[1] == null) {
+                        fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                    }
                 }
             }
         }
