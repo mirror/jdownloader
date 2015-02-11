@@ -25,7 +25,7 @@ import org.jdownloader.images.NewTheme;
 public class ProxyTable extends BasicJDTable<AbstractProxySelectorImpl> {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1153823766916158314L;
 
@@ -42,7 +42,7 @@ public class ProxyTable extends BasicJDTable<AbstractProxySelectorImpl> {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.appwork.swing.exttable.ExtTable#onContextMenu(javax.swing.JPopupMenu , java.lang.Object, java.util.ArrayList,
      * org.appwork.swing.exttable.ExtColumn)
      */
@@ -76,7 +76,6 @@ public class ProxyTable extends BasicJDTable<AbstractProxySelectorImpl> {
                 sb.append("\r\n");
             }
             sb.append(str);
-
         }
         ClipboardMonitoring.getINSTANCE().setCurrentContent(sb.toString());
         try {
