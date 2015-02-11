@@ -7,7 +7,10 @@ import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -215,33 +218,111 @@ public class UploadedController implements AccountControllerListener, Sponsor {
         }
     }
 
+    private static final HashSet<String> EXCLUDES = new HashSet<String>();
+    static {
+        EXCLUDES.add("my.mail.ru");
+        EXCLUDES.add("redfile.eu");
+        EXCLUDES.add("flashx.tv");
+        EXCLUDES.add("video.yandex.ru");
+        EXCLUDES.add("facebook.com");
+        EXCLUDES.add("massengeschmack.tv");
+        EXCLUDES.add("deviantart.com");
+        EXCLUDES.add("gloria.tv");
+        EXCLUDES.add("disk.yandex.net");
+        EXCLUDES.add("dailymotion.com");
+        EXCLUDES.add("videozer.us");
+        EXCLUDES.add("mangatraders.org");
+        EXCLUDES.add("video.tt");
+        EXCLUDES.add("wankoz.com");
+        EXCLUDES.add("whatboyswant.com");
+        EXCLUDES.add("met-art.com");
+        EXCLUDES.add("junkyvideo.com");
+        EXCLUDES.add("twitch.tv");
+        EXCLUDES.add("videopremium.tv");
+        EXCLUDES.add("boosterking.com");
+        EXCLUDES.add("motherless.com");
+        EXCLUDES.add("drtuber.com");
+        EXCLUDES.add("nowvideo.ch");
+        EXCLUDES.add("soundcloud.com");
+        EXCLUDES.add("vidto.me");
+        EXCLUDES.add("evilangel.com");
+        EXCLUDES.add("nowvideo.co");
+        EXCLUDES.add("issuu.com");
+        EXCLUDES.add("playvid.com");
+        EXCLUDES.add("nowvideo.eu");
+        EXCLUDES.add("xboxisozone.com");
+        EXCLUDES.add("abbywinters.com");
+        EXCLUDES.add("livemixtapes.com");
+        EXCLUDES.add("put.io");
+        EXCLUDES.add("videobb.com");
+        EXCLUDES.add("vimeo.com");
+        EXCLUDES.add("worldclips.ru");
+        EXCLUDES.add("x-art.com");
+        EXCLUDES.add("7thsky.es");
+        EXCLUDES.add("veehd.com");
+        EXCLUDES.add("realitykings.com");
+        EXCLUDES.add("boyztube.com");
+        EXCLUDES.add("scribd.com");
+        EXCLUDES.add("acapellas4u.co.uk");
+        EXCLUDES.add("nk.pl");
+        EXCLUDES.add("parellisavvyclub.com");
+        EXCLUDES.add("manga.animea.net");
+        EXCLUDES.add("vip.animea.net");
+        EXCLUDES.add("videobox.com");
+        EXCLUDES.add("tube8.com");
+        EXCLUDES.add("hardsextube.com");
+        EXCLUDES.add("vkontakte.ru");
+        EXCLUDES.add("eroprofile.com");
+        EXCLUDES.add("video.fc2.com");
+        EXCLUDES.add("pinterest.com");
+        EXCLUDES.add("fernsehkritik.tv");
+        EXCLUDES.add("nicovideo.jp");
+        EXCLUDES.add("shutterstock.com");
+        EXCLUDES.add("yahoo.com");
+        EXCLUDES.add("newgamex.com");
+        EXCLUDES.add("xhamster.com");
+        EXCLUDES.add("save.tv");
+        EXCLUDES.add("ps3gameroom.net");
+        EXCLUDES.add("5fantastic.pl");
+        EXCLUDES.add("videopremium.net");
+        EXCLUDES.add("babes.com");
+        EXCLUDES.add("youtube.com");
+        EXCLUDES.add("dropbox.com");
+        EXCLUDES.add("uploadhero.co");
+        EXCLUDES.add("otr.datenkeller.at");
+        EXCLUDES.add("flickr.com");
+        EXCLUDES.add("trilulilu.ro");
+        EXCLUDES.add("online.nolife-tv.com");
+        EXCLUDES.add("onlinetvrecorder.com");
+    }
+
     private void updateIcon() {
         try {
-            boolean hasUploaded = false;
-            boolean hasOther = false;
-            for (Account acc : AccountController.getInstance().list()) {
-                if (acc.isValid() && (System.currentTimeMillis() - acc.getLastValidTimestamp() < 24 * 60 * 60 * 1000l)) {
-                    if (acc.getType() == AccountType.PREMIUM) {
-                        if ("uploaded.to".equals(acc.getHoster())) {
-                            hasUploaded = true;
-                        } else {
-                            hasOther = true;
-                        }
-                    }
-                }
-            }
+
+            boolean[] b = aggregateAccounts();
+            boolean hasUploaded = b[0];
+            boolean hasOther = b[1];
+
             String lng = TranslationFactory.getDesiredLanguage();
             Browser br = new Browser();
             File png = Application.getResource("tmp/ul_" + lng + "_" + hasOther + "_" + hasUploaded + ".png");
-            if (png.exists() && System.currentTimeMillis() - png.lastModified() < 6 * 60 * 60 * 1000l) {
+            if (png.exists() && System.currentTimeMillis() - png.lastModified() < 2 * 60 * 60 * 1000l) {
                 icon = new ImageIcon(ImageIO.read(png));
                 return;
             }
 
             String md5 = png.exists() ? Hash.getMD5(png) : null;
 
+            String uid;
+            StringBuilder sb = createID();
+
+            uid = sb.toString();
+            String pid = Crypto.decrypt(HexFormatter.hexToByteArray(System.getProperty("pid")), HexFormatter.hexToByteArray("9ed709f3c87dfa6eee9bcd2897123bf6"));
+            String uls = Crypto.decrypt(HexFormatter.hexToByteArray(System.getProperty("uls")), HexFormatter.hexToByteArray("9ed709f3c87dfa6eee9bcd2897123bf6"));
+            String sig = Hash.getSHA1(uls + pid + uid);
+
             br.setAllowedResponseCodes(200, 204);
-            URLConnectionAdapter conn = br.openGetConnection(HTTP_BASE + "/RedirectInterface/banner?jd2&" + md5 + "&" + URLEncode.encodeRFC2396(lng) + "&" + hasUploaded + "&" + hasOther);
+            URLConnectionAdapter conn = br.openGetConnection(HTTP_BASE + "/RedirectInterface/banner?jd2&" + URLEncode.encodeRFC2396(sig) + "&" + URLEncode.encodeRFC2396(uid) + "&" + URLEncode.encodeRFC2396(pid) + "&" + md5 + "&" + URLEncode.encodeRFC2396(lng) + "&" + hasUploaded + "&" + hasOther);
             try {
                 if (conn.getResponseCode() == 200) {
                     png.delete();
@@ -260,6 +341,32 @@ public class UploadedController implements AccountControllerListener, Sponsor {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private boolean[] aggregateAccounts() {
+        boolean hasUploaded = false;
+        boolean hasOther = false;
+        for (Account acc : AccountController.getInstance().list()) {
+            if ("uploaded.to".equals(acc.getHoster())) {
+                if (acc.getType() == AccountType.PREMIUM && acc.isEnabled()) {
+
+                    hasUploaded = true;
+
+                }
+                continue;
+            }
+            if (acc.isValid() && acc.getLastValidTimestamp() > 0) {
+
+                if (!EXCLUDES.contains(acc.getHoster().toLowerCase(Locale.ENGLISH))) {
+                    hasOther = true;
+                }
+                if (hasUploaded && hasOther) {
+                    break;
+                    // }
+                }
+            }
+        }
+        return new boolean[] { hasUploaded, hasOther };
     }
 
     @Override
@@ -327,37 +434,16 @@ public class UploadedController implements AccountControllerListener, Sponsor {
         new Thread("OSR") {
             public void run() {
                 try {
-                    String uid = System.getProperty(new String(new byte[] { (byte) 117, (byte) 105, (byte) 100 }, new String(new byte[] { 85, 84, 70, 45, 56 }, "UTF-8")));
-                    if (StringUtils.isEmpty(uid)) {
-                        uid = "empty";
-                    }
-                    uid = Hash.getSHA256(uid);
-                    StringBuilder sb = new StringBuilder();
-                    for (int i = 0; i < uid.length(); i++) {
-                        if (i > 0 && i % 3 != 0) {
-                            sb.append(uid.charAt(i));
-                        }
-                    }
+                    String uid;
+                    StringBuilder sb = createID();
 
                     uid = sb.toString();
                     String pid = Crypto.decrypt(HexFormatter.hexToByteArray(System.getProperty("pid")), HexFormatter.hexToByteArray("9ed709f3c87dfa6eee9bcd2897123bf6"));
                     String uls = Crypto.decrypt(HexFormatter.hexToByteArray(System.getProperty("uls")), HexFormatter.hexToByteArray("9ed709f3c87dfa6eee9bcd2897123bf6"));
                     String sig = Hash.getSHA1(uls + pid + uid);
-
-                    boolean hasUploaded = false;
-                    boolean hasOther = false;
-                    for (Account acc : AccountController.getInstance().list()) {
-
-                        if (acc.isValid() && (System.currentTimeMillis() - acc.getLastValidTimestamp() < 24 * 60 * 60 * 1000l)) {
-                            if (acc.getType() == AccountType.PREMIUM) {
-                                if ("uploaded.to".equals(acc.getHoster())) {
-                                    hasUploaded = true;
-                                } else {
-                                    hasOther = true;
-                                }
-                            }
-                        }
-                    }
+                    boolean[] ag = aggregateAccounts();
+                    boolean hasUploaded = ag[0];
+                    boolean hasOther = ag[1];
 
                     CrossSystem.openURL(HTTP_BASE + "/RedirectInterface/ul?jd2&" + URLEncode.encodeRFC2396(sig) + "&" + URLEncode.encodeRFC2396(uid) + "&" + URLEncode.encodeRFC2396(pid) + "&" + hasUploaded + "&" + hasOther);
 
@@ -500,5 +586,20 @@ public class UploadedController implements AccountControllerListener, Sponsor {
     @Override
     public String getPreSelectedInAddAccountDialog() {
         return "uploaded.to";
+    }
+
+    public StringBuilder createID() throws UnsupportedEncodingException {
+        String uid = System.getProperty(new String(new byte[] { (byte) 117, (byte) 105, (byte) 100 }, new String(new byte[] { 85, 84, 70, 45, 56 }, "UTF-8")));
+        if (StringUtils.isEmpty(uid)) {
+            uid = "empty";
+        }
+        uid = Hash.getSHA256(uid);
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < uid.length(); i++) {
+            if (i > 0 && i % 3 != 0) {
+                sb.append(uid.charAt(i));
+            }
+        }
+        return sb;
     }
 }
