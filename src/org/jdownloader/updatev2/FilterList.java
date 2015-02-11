@@ -7,26 +7,26 @@ import jd.parser.Regex;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.Storable;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 
 public class FilterList implements Storable {
     public enum Type {
         WHITELIST,
         BLACKLIST;
-
     }
 
-    private Type      type;
-    private Pattern[] domainPatterns;
-    private int       size;
-    private Pattern[] accountPatterns;
+    private Type      type            = Type.BLACKLIST;
+    private Pattern[] domainPatterns  = new Pattern[0];
+    private int       size            = 0;
+    private Pattern[] accountPatterns = new Pattern[0];
 
     public FilterList(/* Storable */) {
-
     }
 
     public FilterList(FilterList.Type selectedItem, String[] lines) {
         this.type = selectedItem;
-        size = 0;
+        this.size = 0;
         setEntries(lines);
     }
 
@@ -35,47 +35,73 @@ public class FilterList implements Storable {
     }
 
     public void setType(Type type) {
-        this.type = type;
+        if (type == null) {
+            this.type = Type.BLACKLIST;
+        } else {
+            this.type = type;
+        }
     }
 
     public String[] getEntries() {
         return entries;
     }
 
-    public void setEntries(String[] entries) {
-        this.entries = entries;
-        domainPatterns = new Pattern[entries.length];
-        accountPatterns = new Pattern[entries.length];
-        for (int i = 0; i < entries.length; i++) {
-            if (entries[i] == null || entries[i].trim().length() == 0 || entries[i].trim().startsWith("//") || entries[i].trim().startsWith("#")) {
-                domainPatterns[i] = null;
-                accountPatterns[i] = null;
-            } else {
-                size++;
-                int index = entries[i].indexOf("@");
-                if (index >= 0) {
-                    String username = entries[i].substring(0, index);
-                    String host = entries[i].substring(index + 1);
-
-                    try {
-                        accountPatterns[i] = Pattern.compile(username, Pattern.CASE_INSENSITIVE);
-                    } catch (Throwable e) {
-
-                        accountPatterns[i] = Pattern.compile(".*" + Pattern.quote(username) + ".*", Pattern.CASE_INSENSITIVE);
-                    }
-                    try {
-                        domainPatterns[i] = Pattern.compile(host, Pattern.CASE_INSENSITIVE);
-                    } catch (Throwable e) {
-
-                        domainPatterns[i] = Pattern.compile(".*" + Pattern.quote(host) + ".*", Pattern.CASE_INSENSITIVE);
-                    }
-                } else {
+    public synchronized void setEntries(String[] entries) {
+        this.size = 0;
+        if (entries == null) {
+            this.entries = new String[0];
+            this.domainPatterns = new Pattern[0];
+            this.accountPatterns = new Pattern[0];
+        } else {
+            final PluginFinder pluginFinder = new PluginFinder();
+            this.entries = entries;
+            this.domainPatterns = new Pattern[entries.length];
+            this.accountPatterns = new Pattern[entries.length];
+            for (int i = 0; i < entries.length; i++) {
+                final String entry = entries[i] == null ? "" : entries[i].trim();
+                if (entry.length() == 0 || entry.startsWith("//") || entry.startsWith("#")) {
+                    /**
+                     * empty/comment lines
+                     */
+                    domainPatterns[i] = null;
                     accountPatterns[i] = null;
-                    try {
-                        domainPatterns[i] = Pattern.compile(entries[i], Pattern.CASE_INSENSITIVE);
-                    } catch (Throwable e) {
-
-                        domainPatterns[i] = Pattern.compile(".*" + Pattern.quote(entries[i]) + ".*", Pattern.CASE_INSENSITIVE);
+                } else {
+                    size++;
+                    final int index = entry.indexOf("@");
+                    if (index >= 0) {
+                        final String username = entry.substring(0, index);
+                        final String host = entry.substring(index + 1);
+                        String assignedHost = pluginFinder.assignHost(host);
+                        if (assignedHost == null) {
+                            assignedHost = host;
+                        }
+                        try {
+                            accountPatterns[i] = Pattern.compile(username, Pattern.CASE_INSENSITIVE);
+                        } catch (Throwable e) {
+                            accountPatterns[i] = Pattern.compile(".*" + Pattern.quote(username) + ".*", Pattern.CASE_INSENSITIVE);
+                        }
+                        try {
+                            domainPatterns[i] = Pattern.compile(assignedHost, Pattern.CASE_INSENSITIVE);
+                        } catch (Throwable e) {
+                            domainPatterns[i] = Pattern.compile(".*" + Pattern.quote(assignedHost) + ".*", Pattern.CASE_INSENSITIVE);
+                        }
+                        if (!StringUtils.equals(host, assignedHost)) {
+                            entries[i] = username.concat("@").concat(assignedHost);
+                        }
+                    } else {
+                        accountPatterns[i] = null;
+                        String assignedHost = pluginFinder.assignHost(entry);
+                        if (assignedHost == null) {
+                            assignedHost = entry;
+                        }
+                        try {
+                            domainPatterns[i] = Pattern.compile(assignedHost, Pattern.CASE_INSENSITIVE);
+                        } catch (Throwable e) {
+                            domainPatterns[i] = Pattern.compile(".*" + Pattern.quote(assignedHost) + ".*", Pattern.CASE_INSENSITIVE);
+                        }
+                        if (!StringUtils.equals(entry, assignedHost)) {
+                            entries[i] = assignedHost;
+                        }
                     }
                 }
             }
@@ -84,43 +110,37 @@ public class FilterList implements Storable {
 
     private String[] entries;
 
-    public boolean validate(String host, String accUser) {
+    public synchronized boolean validate(String host, String accUser) {
         switch (type) {
         case BLACKLIST:
             for (int i = 0; i < domainPatterns.length; i++) {
-                Pattern domain = domainPatterns[i];
-                Pattern account = accountPatterns[i];
+                final Pattern domain = domainPatterns[i];
                 if (domain == null) {
                     continue;
                 }
-                if (account != null) {
-
-                    if (domain.matcher(host).find() && accUser != null && account.matcher(accUser).find()) {
+                final Pattern account = accountPatterns[i];
+                if (account != null && accUser != null) {
+                    if (domain.matcher(host).find() && account.matcher(accUser).find()) {
                         //
                         return false;
                     }
                 } else {
-
                     if (domain.matcher(host).find()) {
                         //
                         return false;
                     }
                 }
-
             }
             return true;
-
         case WHITELIST:
-
             for (int i = 0; i < domainPatterns.length; i++) {
-                Pattern domain = domainPatterns[i];
-                Pattern account = accountPatterns[i];
+                final Pattern domain = domainPatterns[i];
                 if (domain == null) {
                     continue;
                 }
-
-                if (account != null) {
-                    if (domain.matcher(host).find() && accUser != null && account.matcher(accUser).find()) {
+                final Pattern account = accountPatterns[i];
+                if (account != null && accUser != null) {
+                    if (domain.matcher(host).find() && account.matcher(accUser).find()) {
                         //
                         return true;
                     }
@@ -133,13 +153,10 @@ public class FilterList implements Storable {
                     }
                 }
             }
-
             return false;
-
         default:
             throw new WTFException("Unknown Type: " + type);
         }
-
     }
 
     public static void main(String[] args) {
@@ -148,6 +165,6 @@ public class FilterList implements Storable {
     }
 
     public int size() {
-        return size;
+        return this.size;
     }
 }
