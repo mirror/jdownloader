@@ -107,6 +107,10 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     private long                           sessionStart;
 
+    private File                           reducerFile;
+
+    private HashMap<String, Integer>       reducerRandomMap;
+
     private void log(StatsLogInterface dl) {
         if (isEnabled()) {
             // if (Math.random() > 0.1d && !(dl instanceof AbstractTrackEntry)) {
@@ -128,9 +132,21 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
      */
     private StatsManager() {
         list = new ArrayList<StatsLogInterface>();
+        logger = LogController.getInstance().getLogger(StatsManager.class.getName());
+
         counterMap = new HashMap<String, AtomicInteger>();
         config = JsonConfig.create(StatsManagerConfigV2.class);
-        logger = LogController.getInstance().getLogger(StatsManager.class.getName());
+        reducerFile = Application.getResource("cfg/reducer.json");
+        if (reducerFile.exists()) {
+            try {
+                reducerRandomMap = JSonStorage.restoreFromString(IO.readFileToString(reducerFile), TypeRef.HASHMAP_INTEGER);
+            } catch (Throwable e) {
+                logger.log(e);
+            }
+        }
+        if (reducerRandomMap == null) {
+            reducerRandomMap = new HashMap<String, Integer>();
+        }
 
         DownloadWatchDog.getInstance().getEventSender().addListener(this);
         config._getStorageHandler().getKeyHandler("enabled").getEventSender().addListener(this);
@@ -1096,9 +1112,24 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
      */
     public void track(int reducer, String path2) {
         if (reducer > 1) {
-            Random random = new Random(System.currentTimeMillis());
-            if (random.nextInt(reducer) != 0) {
-                return;
+            synchronized (reducerRandomMap) {
+
+                Integer randomValue = reducerRandomMap.get(path2 + "_" + reducer);
+                if (randomValue == null) {
+                    Random random = new Random(System.currentTimeMillis());
+                    randomValue = random.nextInt(reducer);
+                    reducerRandomMap.put(path2 + "_" + reducer, randomValue.intValue());
+                    try {
+                        IO.secureWrite(reducerFile, JSonStorage.serializeToJson(reducerRandomMap).getBytes("UTF-8"));
+                    } catch (Throwable e) {
+                        logger.log(e);
+                    }
+
+                }
+                if (randomValue.intValue() != 0) {
+                    return;
+                }
+
             }
 
             path2 += "_in" + reducer;
