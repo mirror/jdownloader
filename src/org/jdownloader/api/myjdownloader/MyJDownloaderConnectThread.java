@@ -256,13 +256,13 @@ public class MyJDownloaderConnectThread extends Thread {
         return true;
     }
 
-    private void log(String message) {
+    protected void log(String message) {
         if (debugEnabled) {
             logger.info(message);
         }
     }
 
-    private void log(Throwable throwable) {
+    protected void log(Throwable throwable) {
         if (debugEnabled) {
             logger.log(throwable);
         }

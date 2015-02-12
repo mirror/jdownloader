@@ -121,7 +121,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                     Socket connectionSocket = null;
                     HTTPProxy proxy = null;
                     try {
-                        logger.info("Connect " + request.getAddr());
+                        connectThread.log("Connect " + request.getAddr());
                         try {
                             proxy = null;
                             final List<HTTPProxy> list = ProxyController.getInstance().getProxiesByUrl(url);
@@ -157,7 +157,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                     }
                     MyJDownloaderConnectionResponse response = new MyJDownloaderConnectionResponse(this, request, connectionStatus, connectionSocket, e);
                     if (connectThread.putResponse(response) == false) {
-                        logger.info("putResponse failed, maybe connectThread is closed/interrupted.");
+                        connectThread.log("putResponse failed, maybe connectThread is closed/interrupted.");
                         try {
                             connectionSocket.close();
                         } catch (final Throwable ignore) {
@@ -166,7 +166,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                 }
             }
         } catch (final Throwable e) {
-            logger.log(e);
+            connectThread.log(e);
         } finally {
             interrupt();
         }
