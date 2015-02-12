@@ -154,8 +154,8 @@ public class RDMdthk extends PluginForDecrypt {
             }
         }
         if (broadcastID == null) {
-            logger.info("ARDMediathek: MediaID is null! Regex broken?");
-            return;
+            logger.info("ARDMediathek: MediaID is null! link offline?");
+            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
         final String original_ard_ID = broadcastID;
         if (title == null) {
