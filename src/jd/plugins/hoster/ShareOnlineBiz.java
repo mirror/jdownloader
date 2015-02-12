@@ -950,6 +950,10 @@ public class ShareOnlineBiz extends PluginForHost {
             br.setCookie(dlURL, "version", String.valueOf(getVersion()));
             int maxchunks = account_premium_maxchunks;
             maxchunks = maxChunksnew.get();
+            if ("Penalty-Premium".equalsIgnoreCase(account.getStringProperty("group", null))) {
+                logger.info("Account is in penalty, limiting max chunks to 1");
+                maxchunks = 1;
+            }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlURL, account_premium_resume, maxchunks);
             if (dl.getConnection().isContentDisposition() || (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("octet-stream"))) {
                 dl.startDownload();

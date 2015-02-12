@@ -21,6 +21,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -48,6 +49,8 @@ import jd.plugins.decrypter.SoundCloudComDecrypter;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "https://(www\\.)?soundclouddecrypted\\.com/[A-Za-z\\-_0-9]+/[A-Za-z\\-_0-9]+(/[A-Za-z\\-_0-9]+)?" }, flags = { 2 })
 public class SoundcloudCom extends PluginForHost {
 
@@ -57,22 +60,24 @@ public class SoundcloudCom extends PluginForHost {
         this.setConfigElements();
     }
 
-    public final static String  CLIENTID                        = "b45b1aa10f1ac2941910a7f0d10f8e28";
-    public final static String  CLIENTID_8TRACKS                = "3904229f42df3999df223f6ebf39a8fe";
+    public final static String   CLIENTID                        = "b45b1aa10f1ac2941910a7f0d10f8e28";
+    public final static String   CLIENTID_8TRACKS                = "3904229f42df3999df223f6ebf39a8fe";
     /* Another way to get final links: http://api.soundcloud.com/tracks/11111xxx_test_track_ID1111111/streams?format=json&consumer_key= */
-    public final static String  CONSUMER_KEY_MYCLOUDPLAYERS_COM = "PtMyqifCQMKLqwP0A6YQ";
-    public final static String  APP_VERSION                     = "b24e36e";
+    public final static String   CONSUMER_KEY_MYCLOUDPLAYERS_COM = "PtMyqifCQMKLqwP0A6YQ";
+    /* Before: b24e36e */
+    public final static String   APP_VERSION                     = "9194598";
+    public static final String[] qualities                       = { "download_url", "stream_url", "http_mp3_128_url", "hls_mp3_128_url" };
+    public static final String[] streamtypes                     = { "download", "stream", "streams" };
+    private final boolean        ENABLE_TYPE_PRIVATE             = false;
 
-    private final boolean       ENABLE_TYPE_PRIVATE             = false;
+    private final static String  CUSTOM_DATE                     = "CUSTOM_DATE";
+    private final static String  CUSTOM_FILENAME_2               = "CUSTOM_FILENAME_2";
+    private final String         GRAB500THUMB                    = "GRAB500THUMB";
+    private final String         GRABORIGINALTHUMB               = "GRABORIGINALTHUMB";
+    private final String         CUSTOM_PACKAGENAME              = "CUSTOM_PACKAGENAME";
+    private final static String  SETS_ADD_POSITION_TO_FILENAME   = "SETS_ADD_POSITION_TO_FILENAME";
 
-    private final static String CUSTOM_DATE                     = "CUSTOM_DATE";
-    private final static String CUSTOM_FILENAME_2               = "CUSTOM_FILENAME_2";
-    private final String        GRAB500THUMB                    = "GRAB500THUMB";
-    private final String        GRABORIGINALTHUMB               = "GRABORIGINALTHUMB";
-    private final String        CUSTOM_PACKAGENAME              = "CUSTOM_PACKAGENAME";
-    private final static String SETS_ADD_POSITION_TO_FILENAME   = "SETS_ADD_POSITION_TO_FILENAME";
-
-    private static boolean      pluginloaded                    = false;
+    private static boolean       pluginloaded                    = false;
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("soundclouddecrypted", "soundcloud"));
@@ -179,9 +184,25 @@ public class SoundcloudCom extends PluginForHost {
 
     private void doFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (DLLINK == null && link.getBooleanProperty("rtmp", false)) {
+            /* TODO: Fix/remove/implement this */
             link.setProperty("directlink", Property.NULL);
             throw new PluginException(LinkStatus.ERROR_FATAL, "Not downloadable");
+        } else if (DLLINK.contains(".m3u8?")) {
+            if (true) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage("https://api.soundcloud.com/i1/tracks/96274443/streams?client_id=b45b1aa10f1ac2941910a7f0d10f8e28&app_version=9194598");
+            DLLINK = br.getRegex("\"hls_mp3_128_url\":\"(http[^<>\"]*?)\"").getMatch(0);
+            checkFFmpeg(link, "Download a HLS Stream");
+            // if (links == null || links.length == 0) {
+            // requestFileInformation(downloadLink);
+            // }
+            dl = new HLSDownloader(link, br, DLLINK);
+            dl.startDownload();
         } else {
             /* E.g. hls TODO: http://jdownloader.net:8081/pastebin/133160 */
             if (DLLINK == null) {
@@ -300,25 +321,51 @@ public class SoundcloudCom extends PluginForHost {
     public static final String TYPE_API_DOWNLOAD = "https?://api\\.soundcloud\\.com/tracks/\\d+/download";
     public static final String TYPE_API_TOKEN    = "https?://api\\.soundcloud\\.com/tracks/\\d+/stream\\?secret_token=[A-Za-z0-9\\-_]+";
 
+    @SuppressWarnings({ "static-access", "unchecked" })
     public static String getDirectlink(String input) {
         final Browser br2 = new Browser();
         String directlink = null;
         try {
             if (input != null && (input.matches(TYPE_API_ALL))) {
-                final String type = new Regex(input, "api\\.soundcloud\\.com/tracks/\\d+/(stream|download)").getMatch(0);
                 final String track_id = new Regex(input, "tracks/(\\d+)").getMatch(0);
                 final String token = new Regex(input, "secret_token=([A-Za-z0-9\\-_]+)").getMatch(0);
-                input = "https://api.soundcloud.com/tracks/" + track_id + "/" + type + "?format=json";
+                String hybridlink = "https://api.soundcloud.com/tracks/%s/%s?format=json&client_id=%s&app_version=" + SoundcloudCom.APP_VERSION;
                 if (token != null) {
-                    input += "&secret_token=" + token;
+                    hybridlink += "&secret_token=" + token;
                 }
-                input += "&client_id=";
-                br2.getPage(input + SoundcloudCom.CLIENTID);
-                directlink = br2.getRedirectLocation();
-                if (directlink == null || br2.getRequest().getHttpConnection().getResponseCode() == 404) {
-                    br2.getPage(input + SoundcloudCom.CLIENTID_8TRACKS);
-                    directlink = br2.getRedirectLocation();
+                for (final String streamtype : streamtypes) {
+                    try {
+                        String apilink = null;
+                        if (streamtype.equals("streams")) {
+                            apilink = String.format(hybridlink, track_id, streamtype, SoundcloudCom.CLIENTID);
+                            br2.getPage(apilink);
+                            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br2.toString());
+                            for (final String quality : qualities) {
+                                directlink = (String) entries.get(quality);
+                                if (directlink != null) {
+                                    break;
+                                }
+                            }
+                            break;
+                        } else {
+                            apilink = String.format(hybridlink, track_id, streamtype, SoundcloudCom.CLIENTID);
+                            br2.getPage(input);
+                            directlink = br2.getRedirectLocation();
+                            /* TODO: Check if this code is still needed */
+                            if (directlink == null || br2.getRequest().getHttpConnection().getResponseCode() == 404) {
+                                apilink = String.format(hybridlink, track_id, streamtype, SoundcloudCom.CLIENTID_8TRACKS);
+                                br2.getPage(apilink);
+                                directlink = br2.getRedirectLocation();
+                            }
+                        }
+                        if (directlink != null) {
+                            break;
+                        }
+                    } catch (final Throwable e) {
+                        continue;
+                    }
                 }
+
             }
         } catch (final Throwable e) {
         }
