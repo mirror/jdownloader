@@ -121,7 +121,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         int startWith = queryParams.getStartAt();
         int maxResults = queryParams.getMaxResults();
 
-        if (startWith > lc.getPackages().size() - 1) {
+        if (startWith > packages.size() - 1) {
             return result;
         }
 
@@ -129,7 +129,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
             startWith = 0;
         }
         if (maxResults < 0) {
-            maxResults = lc.getPackages().size();
+            maxResults = packages.size();
         }
 
         for (int i = startWith; i < startWith + maxResults; i++) {
@@ -216,7 +216,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
 
                 result.add(cps);
 
-                if (i == lc.getPackages().size() - 1) {
+                if (i == packages.size() - 1) {
                     break;
                 }
             } finally {
