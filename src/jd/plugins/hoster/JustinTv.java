@@ -86,44 +86,48 @@ public class JustinTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (dllink.endsWith("m3u8")) {
-            checkFFProbe(downloadLink, "File Checking a HLS Stream");
-            if (downloadLink.getBooleanProperty("encrypted")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Encrypted HLS is not supported");
-            }
+            // whilst requestFileInformation isn't threaded, I'm calling it directly from decrypter as a setting method. We now want to
+            // prevent more than one thread running, incase of issues from hoster
+            synchronized (ctrlLock) {
+                checkFFProbe(downloadLink, "File Checking a HLS Stream");
+                if (downloadLink.getBooleanProperty("encrypted")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Encrypted HLS is not supported");
+                }
 
-            br.getHeaders().put("Accept", "*/*");
-            br.getHeaders().put("X-Requested-With", "ShockwaveFlash/16.0.0.257");
-            br.getHeaders().put("Referer", downloadLink.getContentUrl());
-            HLSDownloader downloader = new HLSDownloader(downloadLink, br, downloadLink.getStringProperty("m3u", null));
-            StreamInfo streamInfo = downloader.getProbe();
-            if (streamInfo == null) {
-                return AvailableStatus.FALSE;
-            }
+                br.getHeaders().put("Accept", "*/*");
+                br.getHeaders().put("X-Requested-With", "ShockwaveFlash/16.0.0.257");
+                br.getHeaders().put("Referer", downloadLink.getContentUrl());
+                HLSDownloader downloader = new HLSDownloader(downloadLink, br, downloadLink.getStringProperty("m3u", null));
+                StreamInfo streamInfo = downloader.getProbe();
+                if (streamInfo == null) {
+                    return AvailableStatus.FALSE;
+                }
 
-            String extension = ".m4a";
+                String extension = ".m4a";
 
-            for (Stream s : streamInfo.getStreams()) {
-                if ("video".equalsIgnoreCase(s.getCodec_type())) {
-                    extension = ".mp4";
-                    if (s.getHeight() > 0) {
-                        downloadLink.setProperty("videoQuality", s.getHeight() + "p");
-                    }
-                    if (s.getCodec_name() != null) {
-                        downloadLink.setProperty("videoCodec", s.getCodec_name());
-                    }
-                } else if ("audio".equalsIgnoreCase(s.getCodec_type())) {
-                    if (s.getBit_rate() != null) {
-                        downloadLink.setProperty("audioBitrate", (Integer.parseInt(s.getBit_rate()) / 1024) + "kbits");
-                    }
-                    if (s.getCodec_name() != null) {
-                        downloadLink.setProperty("audioCodec", s.getCodec_name());
+                for (Stream s : streamInfo.getStreams()) {
+                    if ("video".equalsIgnoreCase(s.getCodec_type())) {
+                        extension = ".mp4";
+                        if (s.getHeight() > 0) {
+                            downloadLink.setProperty("videoQuality", s.getHeight());
+                        }
+                        if (s.getCodec_name() != null) {
+                            downloadLink.setProperty("videoCodec", s.getCodec_name());
+                        }
+                    } else if ("audio".equalsIgnoreCase(s.getCodec_type())) {
+                        if (s.getBit_rate() != null) {
+                            downloadLink.setProperty("audioBitrate", Integer.parseInt(s.getBit_rate()) / 1024);
+                        }
+                        if (s.getCodec_name() != null) {
+                            downloadLink.setProperty("audioCodec", s.getCodec_name());
+                        }
                     }
                 }
-            }
-            downloadLink.setProperty("extension", extension);
+                downloadLink.setProperty("extension", extension);
 
-            downloadLink.setName(getFormattedFilename(downloadLink));
-            return AvailableStatus.TRUE;
+                downloadLink.setName(getFormattedFilename(downloadLink));
+                return AvailableStatus.TRUE;
+            }
         } else {
             this.setBrowserExclusive();
             URLConnectionAdapter con = null;
@@ -225,9 +229,9 @@ public class JustinTv extends PluginForHost {
         final String channelName = downloadLink.getStringProperty("channel", null);
         final int partNumber = downloadLink.getIntegerProperty("partnumber", -1);
         final String quality = downloadLink.getStringProperty("quality", "");
-        final String videoQuality = downloadLink.getStringProperty("videoQuality", "");
+        final int videoQuality = downloadLink.getIntegerProperty("videoQuality", -1);
         final String videoCodec = downloadLink.getStringProperty("videoCodec", "");
-        final String audioBitrate = downloadLink.getStringProperty("audioBitrate", "");
+        final int audioBitrate = downloadLink.getIntegerProperty("audioBitrate", -1);
         final String audioCodec = downloadLink.getStringProperty("audioCodec", "");
         final String extension = downloadLink.getStringProperty("extension", ".flv");
 
@@ -253,9 +257,9 @@ public class JustinTv extends PluginForHost {
         }
         formattedFilename = formattedFilename.replace("*quality*", quality);
         formattedFilename = formattedFilename.replace("*channelname*", channelName);
-        formattedFilename = formattedFilename.replace("*videoQuality*", videoQuality);
+        formattedFilename = formattedFilename.replace("*videoQuality*", videoQuality == -1 ? "" : videoQuality + "p");
         formattedFilename = formattedFilename.replace("*videoCodec*", videoCodec);
-        formattedFilename = formattedFilename.replace("*audioBitrate*", audioBitrate);
+        formattedFilename = formattedFilename.replace("*audioBitrate*", audioBitrate == -1 ? "" : audioBitrate + "kbits");
         formattedFilename = formattedFilename.replace("*audioCodec*", audioCodec);
         if (formattedDate != null) {
             formattedFilename = formattedFilename.replace("*date*", formattedDate);
@@ -274,12 +278,13 @@ public class JustinTv extends PluginForHost {
         return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
-    private static final String MAINPAGE = "http://twitch.tv";
-    private static Object       LOCK     = new Object();
+    private static final String MAINPAGE    = "http://twitch.tv";
+    private static Object       accountLock = new Object();
+    private static Object       ctrlLock    = new Object();
 
     @SuppressWarnings("unchecked")
     public static void login(final Browser br, final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (accountLock) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
@@ -403,6 +408,16 @@ public class JustinTv extends PluginForHost {
         sb.append("*audioBitrate* = audio bitrate, e.g. '128kbits'\r\n");
         sb.append("*audioCodec* = audio encoding type, e.g. 'aac'");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
+        // best shite for hls
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Quality selection, this is for HLS /v/ links only"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "q1080p", JDL.L("plugins.hoster.youtube.check144p", "Grab 1080?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "q720p", JDL.L("plugins.hoster.youtube.check144p", "Grab 720p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "q480p", JDL.L("plugins.hoster.youtube.check144p", "Grab 480p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "q360p", JDL.L("plugins.hoster.youtube.check144p", "Grab 360p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "q240p", JDL.L("plugins.hoster.youtube.check144p", "Grab 240p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "useBest", JDL.L("plugins.hoster.youtube.check144p", "Only grab Best video within selection above?, Else will return available videos within your selected above")).setDefaultValue(true));
+
     }
 
     @Override
