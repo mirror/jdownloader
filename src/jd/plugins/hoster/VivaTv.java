@@ -719,9 +719,9 @@ public class VivaTv extends PluginForHost {
             put("mtv.com", "http://www.mtv.com/player/embed/AS3/rss/?uri=%s&ref=None");
             put("southpark.de", "http://www.southpark.de/feeds/video-player/mrss/%s");
             put("southpark.cc.com", "http://southpark.cc.com/feeds/video-player/mrss/%s");
-            put("gameone.de", "http://www.gameone.de/api/mrss/");
-            put("gameone.de_2", "https://gameone.de/api/mrss/");
-            put("vh1.com", "http://www.vh1.com/player/embed/AS3/rss/?uri=");
+            put("gameone.de", "http://www.gameone.de/api/mrss/%s");
+            put("gameone.de_2", "https://gameone.de/api/mrss/%s");
+            put("vh1.com", "http://www.vh1.com/player/embed/AS3/rss/?uri=%s");
         }
     };
 
