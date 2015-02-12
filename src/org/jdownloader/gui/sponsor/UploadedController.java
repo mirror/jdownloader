@@ -95,7 +95,7 @@ public class UploadedController implements AccountControllerListener, Sponsor {
 
     /**
      * get the only existing instance of OboomController. This is a singleton
-     * 
+     *
      * @return
      */
     public static UploadedController getInstance() {
@@ -164,7 +164,7 @@ public class UploadedController implements AccountControllerListener, Sponsor {
 
     public static class UlBannerData implements Storable {
         public static final TypeRef<UlBannerData> TYPREF = new TypeRef<UlBannerData>() {
-                                                         };
+        };
 
         public UlBannerData(/* Storable */) {
         }
@@ -298,46 +298,46 @@ public class UploadedController implements AccountControllerListener, Sponsor {
 
     private void updateIcon() {
         try {
+            if (System.getProperty("uls") != null) {
+                boolean[] b = aggregateAccounts();
+                boolean hasUploaded = b[0];
+                boolean hasOther = b[1];
 
-            boolean[] b = aggregateAccounts();
-            boolean hasUploaded = b[0];
-            boolean hasOther = b[1];
-
-            String lng = TranslationFactory.getDesiredLanguage();
-            Browser br = new Browser();
-            File png = Application.getResource("tmp/ul_" + lng + "_" + hasOther + "_" + hasUploaded + ".png");
-            if (png.exists() && System.currentTimeMillis() - png.lastModified() < 24 * 60 * 60 * 1000l) {
-                icon = new ImageIcon(ImageIO.read(png));
-                return;
-            }
-
-            String md5 = png.exists() ? Hash.getMD5(png) : null;
-
-            String uid;
-            StringBuilder sb = createID();
-
-            uid = sb.toString();
-            String pid = Crypto.decrypt(HexFormatter.hexToByteArray(System.getProperty("pid")), HexFormatter.hexToByteArray("9ed709f3c87dfa6eee9bcd2897123bf6"));
-            String uls = Crypto.decrypt(HexFormatter.hexToByteArray(System.getProperty("uls")), HexFormatter.hexToByteArray("9ed709f3c87dfa6eee9bcd2897123bf6"));
-            String sig = Hash.getSHA1(uls + pid + uid);
-
-            br.setAllowedResponseCodes(200, 204);
-            URLConnectionAdapter conn = br.openGetConnection(HTTP_BASE + "/RedirectInterface/banner?jd2&" + URLEncode.encodeRFC2396(sig) + "&" + URLEncode.encodeRFC2396(uid) + "&" + URLEncode.encodeRFC2396(pid) + "&" + md5 + "&" + URLEncode.encodeRFC2396(lng) + "&" + hasUploaded + "&" + hasOther);
-            try {
-                if (conn.getResponseCode() == 200) {
-                    png.delete();
-                    Browser.download(png, conn);
-
+                String lng = TranslationFactory.getDesiredLanguage();
+                Browser br = new Browser();
+                File png = Application.getResource("tmp/ul_" + lng + "_" + hasOther + "_" + hasUploaded + ".png");
+                if (png.exists() && System.currentTimeMillis() - png.lastModified() < 24 * 60 * 60 * 1000l) {
+                    icon = new ImageIcon(ImageIO.read(png));
+                    return;
                 }
-            } finally {
-                if (conn != null) {
-                    conn.disconnect();
+
+                String md5 = png.exists() ? Hash.getMD5(png) : null;
+
+                String uid;
+                StringBuilder sb = createID();
+
+                uid = sb.toString();
+                String pid = Crypto.decrypt(HexFormatter.hexToByteArray(System.getProperty("pid")), HexFormatter.hexToByteArray("9ed709f3c87dfa6eee9bcd2897123bf6"));
+                String uls = Crypto.decrypt(HexFormatter.hexToByteArray(System.getProperty("uls")), HexFormatter.hexToByteArray("9ed709f3c87dfa6eee9bcd2897123bf6"));
+                String sig = Hash.getSHA1(uls + pid + uid);
+
+                br.setAllowedResponseCodes(200, 204);
+                URLConnectionAdapter conn = br.openGetConnection(HTTP_BASE + "/RedirectInterface/banner?jd2&" + URLEncode.encodeRFC2396(sig) + "&" + URLEncode.encodeRFC2396(uid) + "&" + URLEncode.encodeRFC2396(pid) + "&" + md5 + "&" + URLEncode.encodeRFC2396(lng) + "&" + hasUploaded + "&" + hasOther);
+                try {
+                    if (conn.getResponseCode() == 200) {
+                        png.delete();
+                        Browser.download(png, conn);
+
+                    }
+                } finally {
+                    if (conn != null) {
+                        conn.disconnect();
+                    }
+                }
+                if (png.exists()) {
+                    icon = new ImageIcon(ImageIO.read(png));
                 }
             }
-            if (png.exists()) {
-                icon = new ImageIcon(ImageIO.read(png));
-            }
-
         } catch (IOException e) {
             e.printStackTrace();
         }

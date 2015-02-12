@@ -100,15 +100,15 @@ public class ProxyController implements ProxySelectorInterface {
 
     private final Queue                                                     QUEUE  = new Queue(getClass().getName()) {
 
-                                                                                       @Override
-                                                                                       public void killQueue() {
-                                                                                           LogController.CL().log(new Throwable("YOU CANNOT KILL ME!"));
-                                                                                           /*
-                                                                                            * this queue can't be killed
-                                                                                            */
-                                                                                       }
+        @Override
+        public void killQueue() {
+            LogController.CL().log(new Throwable("YOU CANNOT KILL ME!"));
+            /*
+             * this queue can't be killed
+             */
+        }
 
-                                                                                   };
+    };
 
     private boolean                                                         saving = false;
 
@@ -139,16 +139,16 @@ public class ProxyController implements ProxySelectorInterface {
         list = new CopyOnWriteArrayList<AbstractProxySelectorImpl>(loadProxySettings(true));
         getEventSender().addListener(new DefaultEventListener<ProxyEvent<AbstractProxySelectorImpl>>() {
             final DelayedRunnable asyncSaving = new DelayedRunnable(5000l, 60000l) {
-                                                  @Override
-                                                  public void delayedrun() {
-                                                      ProxyController.this.saveProxySettings();
-                                                  }
+                @Override
+                public void delayedrun() {
+                    ProxyController.this.saveProxySettings();
+                }
 
-                                                  @Override
-                                                  public String getID() {
-                                                      return "ProxyController";
-                                                  }
-                                              };
+                @Override
+                public String getID() {
+                    return "ProxyController";
+                }
+            };
 
             @Override
             public void onEvent(final ProxyEvent<AbstractProxySelectorImpl> event) {
@@ -413,7 +413,7 @@ public class ProxyController implements ProxySelectorInterface {
 
     /**
      * returns a copy of current proxy list
-     * 
+     *
      * @return
      */
     public List<AbstractProxySelectorImpl> getList() {
@@ -983,7 +983,7 @@ public class ProxyController implements ProxySelectorInterface {
 
     /**
      * Used by the updatesystem. it returnes all "NOT banned" proxies for the given url.
-     * 
+     *
      * @param url
      * @return
      */
@@ -1018,7 +1018,7 @@ public class ProxyController implements ProxySelectorInterface {
     /**
      * default proxy selector. This method ignores the banned information. it will always return the same proxy order, including banned
      * proxies.
-     * 
+     *
      * @param url
      * @return
      */
@@ -1154,7 +1154,29 @@ public class ProxyController implements ProxySelectorInterface {
                 return null;
             }
         });
+    }
 
+    public boolean reportConnectException(final HTTPProxy proxy, final String url, final IOException e) {
+        try {
+            if (e instanceof ProxyAuthException) {
+                // we handle this
+                return false;
+            } else if (e instanceof ProxyConnectException) {
+                final SelectedProxy selectedProxy = getSelectedProxy(proxy);
+                if (selectedProxy != null && selectedProxy.getSelector() != null) {
+                    AbstractProxySelectorImpl selector = selectedProxy.getSelector();
+                    Plugin plg = getPluginFromThread();
+                    if (plg != null) {
+                        selector.addSessionBan(new ConnectExceptionInPluginBan(plg, selector, selectedProxy));
+                    } else {
+                        selector.addSessionBan(new GenericConnectExceptionBan(selector, selectedProxy, new URL(url)));
+                    }
+                }
+            }
+        } catch (Throwable e1) {
+            LogController.getRebirthLogger(logger).log(e1);
+        }
+        return false;
     }
 
     @Override
