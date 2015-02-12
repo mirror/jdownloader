@@ -32,8 +32,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viva.tv", "funnyclips.cc", "comedycentral.tv", "nick.de", "nicknight.de", "nickjr.de", "mtv.de", "mtviggy.com", "mtv.com", "movies.mtv.de", "southpark.de", "southpark.cc.com", "tvland.com" }, urls = { "https?://www\\.viva\\.tv/(musikvideo|news|shows|musik/video)/\\d+([a-z0-9\\-]+)?", "http://de\\.funnyclips\\.cc/(listen/.+|[A-Za-z0-9\\-]+/\\d+[A-Za-z0-9\\-]+)", "http://www\\.comedycentral\\.tv/(shows|neuigkeiten)/\\d+([a-z0-9\\-]+)?", "http://www\\.nick\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nicknight\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nickjr\\.de/videos/\\d+([a-z0-9\\-]+)?", "http://www\\.mtv\\.de/(shows/\\d+[a-z0-9\\-]+/staffeln/\\d+/folgen/\\d+[a-z0-9\\-]+|artists/[a-z0-9\\-]+/videos/[a-z0-9\\-]+|news/\\d+[a-z0-9\\-]+)",
-        "http://www\\.mtviggy_jd_decrypted_jd_\\.com/videos/[a-z0-9\\-]+/|http://media\\.mtvnservices\\.com/embed/mgid:uma:video:mtviggy\\.com:\\d+", "http://www\\.mtv\\.com/(shows/[a-z0-9\\-]+/[^<>\"]+|videos/[^<>\"]+\\.jhtml|videos/\\?vid=\\d+)|http://media\\.mtvnservices\\.com/embed/mgid:uma:video:mtv\\.com:\\d+", "http://movies\\.mtv\\.de/(?!playlists)videos/(trailer/)?[a-z0-9\\-]+/[a-z0-9]+", "http://www\\.southpark\\.de/clips/[a-z0-9]+/[a-z0-9\\-]+|http://media\\.mtvnservices\\.com/mgid:arc:video:southparkstudios\\.com:[a-z0-9\\-]+", "http://media\\.mtvnservices\\.com/mgid:arc:video:southparkstudios_jd_decrypted_jd_\\.com:[a-z0-9\\-]+", "http://www\\.tvland\\.com/(video\\-clips|episodes)/[a-z0-9]+/[a-z0-9\\-]+" }, flags = { 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viva.tv", "funnyclips.cc", "comedycentral.tv", "nick.de", "nicknight.de", "nickjr.de", "mtv.de", "mtviggy.com", "mtv.com", "movies.mtv.de", "southpark.de", "southpark.cc.com", "tvland.com", "spike.com" }, urls = { "https?://www\\.viva\\.tv/(musikvideo|news|shows|musik/video)/\\d+([a-z0-9\\-]+)?", "http://de\\.funnyclips\\.cc/(listen/.+|[A-Za-z0-9\\-]+/\\d+[A-Za-z0-9\\-]+)", "http://www\\.comedycentral\\.tv/(shows|neuigkeiten)/\\d+([a-z0-9\\-]+)?", "http://www\\.nick\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nicknight\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nickjr\\.de/videos/\\d+([a-z0-9\\-]+)?", "http://www\\.mtv\\.de/(shows/\\d+[a-z0-9\\-]+/staffeln/\\d+/folgen/\\d+[a-z0-9\\-]+|artists/[a-z0-9\\-]+/videos/[a-z0-9\\-]+|news/\\d+[a-z0-9\\-]+)",
+        "http://www\\.mtviggy_jd_decrypted_jd_\\.com/videos/[a-z0-9\\-]+/|http://media\\.mtvnservices\\.com/embed/mgid:uma:video:mtviggy\\.com:\\d+", "http://www\\.mtv\\.com/(shows/[a-z0-9\\-]+/[^<>\"]+|videos/[^<>\"]+\\.jhtml|videos/\\?vid=\\d+)|http://media\\.mtvnservices\\.com/embed/mgid:uma:video:mtv\\.com:\\d+", "http://movies\\.mtv\\.de/(?!playlists)videos/(trailer/)?[a-z0-9\\-]+/[a-z0-9]+", "http://www\\.southpark\\.de/clips/[a-z0-9]+/[a-z0-9\\-]+|http://media\\.mtvnservices\\.com/mgid:arc:video:southparkstudios\\.com:[a-z0-9\\-]+", "http://media\\.mtvnservices\\.com/mgid:arc:video:southparkstudios_jd_decrypted_jd_\\.com:[a-z0-9\\-]+", "http://www\\.tvland\\.com/(video\\-clips|episodes)/[a-z0-9]+/[a-z0-9\\-]+", "http://www\\.spike\\.com/(video\\-clips|full\\-episodes)/[a-z0-9]+/[a-z0-9\\-]+" }, flags = { 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32 })
 public class VivaTv extends PluginForHost {
 
     public VivaTv(PluginWrapper wrapper) {
@@ -83,9 +83,13 @@ public class VivaTv extends PluginForHost {
     private static final String  subtype_tvland_episodes           = "http://www\\.tvland\\.com/episodes/[a-z0-9]+/[a-z0-9\\-]+";
     private static final String  subtype_tvland_clips              = "http://www\\.tvland\\.com/video\\-clips/[a-z0-9]+/[a-z0-9\\-]+";
 
+    private static final String  type_spike                        = "http://www\\.spike\\.com/.+";
+    private static final String  subtype_spike_episodes            = "http://www\\.spike\\.com/full\\-episodes/[a-z0-9]+/[a-z0-9\\-]+";
+    private static final String  subtype_spike_clips               = "http://www\\.spike\\.com/video\\-clips/[a-z0-9]+/[a-z0-9\\-]+";
+
     /**
      * Other: So far unsupported domains: mtvla.com, mtvu.com, vh1.com, cmt.com, nickjr.com, nickatnite.com, nickmom.com, teennick.com,
-     * nicktoons.nick.com, centrictv.com, cc.com, spike.com, tvland.com
+     * nicktoons.nick.com, centrictv.com, cc.com, spike.com
      *
      * NOT using mtv networks for streaming: bet.com
      *
@@ -390,6 +394,17 @@ public class VivaTv extends PluginForHost {
                 filename = br.getRegex("class=\"clipTitle\">([^<>\"]*?)</div>").getMatch(0);
             }
             ext = default_ext;
+        } else if (link.getDownloadURL().matches(type_spike)) {
+            br.getPage(link.getDownloadURL());
+            if (!br.containsHTML("class=\"player_holder\"") || br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (link.getDownloadURL().matches(subtype_spike_episodes)) {
+                filename = br.getRegex("<title>([^<>\"]*?)- Full Episode \\| SPIKE\\.com</title>").getMatch(0);
+            } else {
+                filename = br.getRegex("<title>([^<>\"]*?) \\- Video Clip \\| SPIKE\\.com</title>").getMatch(0);
+            }
+            ext = default_ext;
         }
         if (filename == null) {
             logger.warning("Unsupported url format or plugin broken");
@@ -446,7 +461,7 @@ public class VivaTv extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* Video temporarily or forever offline */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 3 * 60 * 60 * 1000l);
-        } else if (br.containsHTML("status=\"esiblocked\"") || br.containsHTML("/error_country_block")) {
+        } else if (br.containsHTML("status=\"esiblocked\"") || br.containsHTML("/error_country_block") || br.containsHTML(">Sorry, content is not available for your country\\.")) {
             /* Geo block */
             throw new PluginException(LinkStatus.ERROR_FATAL, "This video is not available from your location");
         } else if (br.containsHTML(">Sorry, this video is not found or no longer available due to date or rights restrictions")) {
@@ -523,6 +538,10 @@ public class VivaTv extends PluginForHost {
             /* Special: This domain has it's own feed-URL. */
             find_mgid("tvland.com");
             feed_url = getFEEDurl("tvland.com");
+        } else if (downloadLink.getDownloadURL().matches(type_spike)) {
+            /* Special: This domain has it's own feed-URL. */
+            find_mgid("spike.com");
+            feed_url = getFEEDurl("spike.com");
         } else {
             /* Unknown URL format - should never happen! */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -747,6 +766,7 @@ public class VivaTv extends PluginForHost {
             put("gameone.de_2", "https://gameone.de/api/mrss/%s");
             put("vh1.com", "http://www.vh1.com/player/embed/AS3/rss/?uri=%s");
             put("tvland.com", "http://www.tvland.com/feeds/mrss/?uri=%s&tvlandSyndicated=true");
+            put("spike.com", "http://www.spike.com/feeds/mrss/?uri=%s");
         }
     };
 
@@ -781,6 +801,7 @@ public class VivaTv extends PluginForHost {
             put("southpark.de_clips", "http://www.southpark.de/feeds/video-player/mediagen?uri=%s");
             put("vh1.com", "http://www.vh1.com/player/embed/AS3/includes/mediaGen.jhtml?uri=%s");
             put("tvland.com", "http://www.tvland.com/feeds/mediagen/?uri=%s&device=None");
+            put("spike.com", "http://www.spike.com/feeds/mediagen/?uri=%s");
         }
     };
 
@@ -810,6 +831,7 @@ public class VivaTv extends PluginForHost {
             put("mtv.com", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context49/config.xml?uri=%s");
             put("southpark.de", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context5/config.xml?uri=%s");
             put("tvland.com", "http://media.mtvnservices.com/pmt-arc/e1/players/mgid:arc:video:tvland.com:/context3/config.xml?uri=%s&type=network&ref=www.tvland.com&geo=DE&group=entertainment&network=None&device=Other&site=&nid=82125");
+            put("spike.com", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context4/config.xml?uri=%s");
         }
     };
 

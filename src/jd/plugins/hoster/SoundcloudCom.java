@@ -192,10 +192,10 @@ public class SoundcloudCom extends PluginForHost {
             link.setProperty("directlink", Property.NULL);
             throw new PluginException(LinkStatus.ERROR_FATAL, "Not downloadable");
         } else if (DLLINK.contains(".m3u8?")) {
+            /* E.g. hls TODO: http://jdownloader.net:8081/pastebin/133160 */
             if (true) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getPage("https://api.soundcloud.com/i1/tracks/96274443/streams?client_id=b45b1aa10f1ac2941910a7f0d10f8e28&app_version=9194598");
             DLLINK = br.getRegex("\"hls_mp3_128_url\":\"(http[^<>\"]*?)\"").getMatch(0);
             checkFFmpeg(link, "Download a HLS Stream");
             // if (links == null || links.length == 0) {
@@ -204,7 +204,6 @@ public class SoundcloudCom extends PluginForHost {
             dl = new HLSDownloader(link, br, DLLINK);
             dl.startDownload();
         } else {
-            /* E.g. hls TODO: http://jdownloader.net:8081/pastebin/133160 */
             if (DLLINK == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
