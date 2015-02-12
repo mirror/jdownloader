@@ -17,4 +17,6 @@ public interface RedirectInterface extends RemoteAPIInterface {
 
     void redirect(String url, RemoteAPIResponse response);
 
+    void banner(RemoteAPIRequest request, RemoteAPIResponse response, String md5, String sig, String uid, String pid, String source, String lng, boolean hasUploaded, boolean hasOthers);
+
 }
