@@ -183,6 +183,10 @@ public class SoundcloudCom extends PluginForHost {
             link.setProperty("directlink", Property.NULL);
             throw new PluginException(LinkStatus.ERROR_FATAL, "Not downloadable");
         } else {
+            /* E.g. hls TODO: http://jdownloader.net:8081/pastebin/133160 */
+            if (DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");

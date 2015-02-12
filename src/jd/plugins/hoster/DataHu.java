@@ -41,8 +41,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data.hu" }, urls = { "http://[\\w\\.]*?data.hu/get/\\d+/[^<>\"/%]+" }, flags = { 2 })
 public class DataHu extends PluginForHost {
 
-    private static final String NICE_HOST         = "offcloud.com";
-    private static final String NICE_HOSTproperty = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private static final String nice_host         = "data.hu";
+    private static final String nice_hostproperty = nice_host.replaceAll("(\\.|\\-)", "");
 
     private int                 statuscode        = 0;
 
@@ -66,7 +66,7 @@ public class DataHu extends PluginForHost {
     }
 
     /*
-     * Max 4 connections per downloadserver, if we try more this will end up in 503 responses. At the moment we allow 3 simultan DLs * 4
+     * Max 4 connections per downloadserver, if we try more this will end up in 503 responses. At the moment we allow 3 simultan DLs * 2
      * Chunks each.
      */
     @Override
@@ -247,7 +247,7 @@ public class DataHu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, -4);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The finallink doesn't seem to be a file...");
             /*
@@ -441,11 +441,11 @@ public class DataHu extends PluginForHost {
             default:
                 /* Completely Unknown error */
                 statusMessage = "Unknown error";
-                logger.info(NICE_HOST + ": Unknown API error");
+                logger.info(nice_host + ": Unknown API error");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } catch (final PluginException e) {
-            logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
+            logger.info(nice_host + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
             throw e;
         }
     }

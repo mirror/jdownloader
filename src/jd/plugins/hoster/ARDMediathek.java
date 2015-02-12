@@ -45,26 +45,23 @@ import jd.plugins.download.DownloadInterface;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ard.de" }, urls = { "decrypted://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/.+(\\?documentId=\\d+)?\\&quality=\\w+\\&network=\\w+" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ard.de" }, urls = { "http://ardmediathekdecrypted/\\d+" }, flags = { 32 })
 public class ARDMediathek extends PluginForHost {
 
-    private static final String Q_LOW       = "Q_LOW";
-    private static final String Q_MEDIUM    = "Q_MEDIUM";
-    private static final String Q_HIGH      = "Q_HIGH";
-    private static final String Q_HD        = "Q_HD";
-    private static final String Q_BEST      = "Q_BEST";
-    private static final String Q_HTTP_ONLY = "Q_HTTP_ONLY_3";
-    private static final String AUDIO       = "AUDIO";
-    private static final String Q_SUBTITLES = "Q_SUBTITLES";
+    private static final String Q_LOW                 = "Q_LOW";
+    private static final String Q_MEDIUM              = "Q_MEDIUM";
+    private static final String Q_HIGH                = "Q_HIGH";
+    private static final String Q_HD                  = "Q_HD";
+    private static final String Q_BEST                = "Q_BEST";
+    private static final String Q_HTTP_ONLY           = "Q_HTTP_ONLY_3";
+    private static final String AUDIO                 = "AUDIO";
+    private static final String Q_SUBTITLES           = "Q_SUBTITLES";
+
+    private static final String EXCEPTION_LINKOFFLINE = "EXCEPTION_LINKOFFLINE";
 
     public ARDMediathek(final PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
-    }
-
-    @Override
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("decrypted://", "http://"));
     }
 
     @Override
@@ -86,10 +83,10 @@ public class ARDMediathek extends PluginForHost {
             /* fetch fresh directURL */
             setBrowserExclusive();
             br.setFollowRedirects(true);
-            br.getPage(downloadLink.getDownloadURL());
+            br.getPage(getMainlink(downloadLink));
 
             if (br.containsHTML("<h1>Leider konnte die gew&uuml;nschte Seite<br />nicht gefunden werden.</h1>")) {
-                logger.info("ARD-Mediathek: Nicht mehr verfügbar: " + downloadLink.getDownloadURL());
+                logger.info("ARD-Mediathek: Nicht mehr verfügbar: " + getMainlink(downloadLink));
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
 
@@ -220,9 +217,13 @@ public class ARDMediathek extends PluginForHost {
         }
     }
 
+    private String getMainlink(final DownloadLink dl) {
+        return dl.getStringProperty("mainlink", null);
+    }
+
     /**
      * Converts the ARD Closed Captions subtitles to SRT subtitles. It runs after the completed download.
-     * 
+     *
      * @return The success of the conversion.
      */
     public boolean convertSubtitle(final DownloadLink downloadlink) {
@@ -382,7 +383,8 @@ public class ARDMediathek extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.ard.best", "Load best version ONLY")).setDefaultValue(false);
         getConfig().addEntry(bestonly);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HTTP_ONLY, JDL.L("plugins.hoster.ard.best", "Only download HTTP streams (avoid [RTMP] versions)")).setDefaultValue(true));
+        /* Disabled because not possible at the moment (rtmp streams) */
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HTTP_ONLY, JDL.L("plugins.hoster.ard.best", "Only download HTTP streams (avoid [RTMP] versions)")).setDefaultValue(true).setEnabled(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.ard.loadlow", "Load low version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_MEDIUM, JDL.L("plugins.hoster.ard.loadmedium", "Load medium version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
@@ -391,7 +393,8 @@ public class ARDMediathek extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "For Dossier links:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), AUDIO, JDL.L("plugins.hoster.ard.audio", "Load audio content")).setDefaultValue(false));
+        /* Disabled because not possible at the moment (audio content) */
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), AUDIO, JDL.L("plugins.hoster.ard.audio", "Load audio content")).setDefaultValue(false).setEnabled(false));
     }
 
 }

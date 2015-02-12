@@ -31,7 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mdr.de" }, urls = { "http://(www\\.)?mdr\\.de/[a-z0-9\\-]+/video\\d+[a-z0-9\\-_]*\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mdr.de" }, urls = { "http://(www\\.)?mdr\\.de/(mediathek/)?[a-z0-9\\-]+/video\\d+[a-z0-9\\-_]*\\.html" }, flags = { 0 })
 public class MdrDeDecrypter extends PluginForDecrypt {
 
     public MdrDeDecrypter(PluginWrapper wrapper) {
@@ -53,13 +53,14 @@ public class MdrDeDecrypter extends PluginForDecrypt {
     private static final String                 ALLOW_480x272_lower  = "ALLOW_480x272_lower";
     private static final String                 ALLOW_256x144        = "ALLOW_256x144";
 
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
         final boolean grab_subtitles = cfg.getBooleanProperty(ALLOW_SUBTITLES, false);
 
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        final Regex clipinfo = new Regex(parameter, "mdr\\.de/([a-z0-9\\-]+)/video(\\d+)");
+        final Regex clipinfo = new Regex(parameter, "mdr\\.de/(?:mediathek/)?([a-z0-9\\-]+)/video(\\d+)");
         final String url_clipname = clipinfo.getMatch(0);
         final String clip_id = clipinfo.getMatch(1);
         br.setFollowRedirects(true);
@@ -110,6 +111,7 @@ public class MdrDeDecrypter extends PluginForDecrypt {
             final String ext = ".mp4";
             filename += "_" + qualityString + ext;
             final DownloadLink fina = createDownloadlink("http://mdrdecrypted.de/" + System.currentTimeMillis() + new Random().nextInt(10000000));
+            final String linkdupeid = "mdrde" + clip_id + "_" + qualityString;
             fina.setDownloadSize(Long.parseLong(fsize));
             fina.setAvailable(true);
             fina.setFinalFileName(filename);
@@ -118,7 +120,14 @@ public class MdrDeDecrypter extends PluginForDecrypt {
             fina.setProperty("plain_filename", filename);
             fina.setProperty("plain_filesize", fsize);
             fina.setProperty("plain_qualityString", qualityString);
-            fina.setProperty("LINKDUPEID", "mdrde" + clip_id + "_" + qualityString);
+            try {
+                fina.setContentUrl(parameter);
+                fina.setLinkID(linkdupeid);
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+                fina.setBrowserUrl(parameter);
+                fina.setProperty("LINKDUPEID", linkdupeid);
+            }
             FOUNDQUALITIES.put(qualityString, fina);
         }
 
@@ -185,12 +194,21 @@ public class MdrDeDecrypter extends PluginForDecrypt {
                     final String video_qualitystring = dl.getStringProperty("plain_qualityString", null);
                     final String video_linkdupeid = dl.getStringProperty("LINKDUPEID", null) + "_subtitle";
                     final String subtitle_filename = title + "_" + video_qualitystring + ".xml";
+                    final String linkdupeid = "mdrde" + clip_id + "_subtitle" + video_qualitystring;
                     stitle_dl.setProperty("mainlink", parameter);
                     stitle_dl.setProperty("directlink", subtitle_url);
                     stitle_dl.setProperty("LINKDUPEID", video_linkdupeid);
                     stitle_dl.setProperty("plain_qualityString", "subtitle");
                     stitle_dl.setProperty("plain_filename", subtitle_filename);
                     stitle_dl.setProperty("plain_filesize", "0");
+                    try {
+                        stitle_dl.setContentUrl(parameter);
+                        stitle_dl.setLinkID(linkdupeid);
+                    } catch (final Throwable e) {
+                        /* Not available in old 0.9.581 Stable */
+                        stitle_dl.setBrowserUrl(parameter);
+                        stitle_dl.setProperty("LINKDUPEID", linkdupeid);
+                    }
                     fp.add(stitle_dl);
                     decryptedLinks.add(stitle_dl);
                 }
