@@ -57,14 +57,14 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
             packages = toKeep;
         }
 
-        if (startWith > lc.getPackages().size() - 1) {
+        if (startWith > packages.size() - 1) {
             return result;
         }
         if (startWith < 0) {
             startWith = 0;
         }
         if (maxResults < 0) {
-            maxResults = lc.getPackages().size();
+            maxResults = packages.size();
         }
 
         for (int i = startWith; i < startWith + maxResults; i++) {
@@ -131,7 +131,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
 
                 result.add(cps);
 
-                if (i == lc.getPackages().size() - 1) {
+                if (i == packages.size() - 1) {
                     break;
                 }
             } finally {

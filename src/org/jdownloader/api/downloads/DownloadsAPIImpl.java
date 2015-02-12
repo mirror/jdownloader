@@ -66,17 +66,17 @@ public class DownloadsAPIImpl implements DownloadsAPI {
         List<FilePackageAPIStorable> ret = new ArrayList<FilePackageAPIStorable>(dlc.size());
         int startWith = queryParams.getStartAt();
         int maxResults = queryParams.getMaxResults();
-        if (startWith > dlc.size() - 1) {
+        if (startWith > packages.size() - 1) {
             return ret;
         }
         if (startWith < 0) {
             startWith = 0;
         }
         if (maxResults < 0) {
-            maxResults = dlc.size();
+            maxResults = packages.size();
         }
 
-        for (int i = startWith; i < Math.min(startWith + maxResults, dlc.size()); i++) {
+        for (int i = startWith; i < Math.min(startWith + maxResults, packages.size()); i++) {
             FilePackage fp = packages.get(i);
             boolean readL = fp.getModifyLock().readLock();
             try {
