@@ -38,6 +38,9 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.os.CrossSystem;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
 
 /**
  *
@@ -676,6 +679,33 @@ public abstract class antiDDoSForHost extends PluginForHost {
      */
     protected final String[] getJsonResultsFromArray(final String source) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
+    }
+
+    /**
+     * supports cloudflare email protection crap. because email could be multiple times on a page and to reduce false positives input the
+     * specified component to decode.
+     *
+     *
+     * @author raztoki
+     * @return
+     */
+    public static final String getStringFromCloudFlareEmailProtection(final String input) {
+        // js component. hardcoded for now.
+        final String a = new Regex(input, "data-cfemail\\s*=\\s*\"([a-f0-9]+)\"").getMatch(0);
+        Object result = new Object();
+        if (a != null) {
+            Context cx = null;
+            try {
+                cx = ContextFactory.getGlobal().enterContext();
+                ScriptableObject scope = cx.initStandardObjects();
+                result = cx.evaluateString(scope, "var e, r, n, i, a = '" + a + "';if (a) { for (e = \"\", r = parseInt(a.substr(0, 2), 16), n = 2; a.length - n; n += 2) { i = parseInt(a.substr(n, 2), 16) ^ r; e += String.fromCharCode(i); } }", "<cmd>", 1, null);
+            } catch (final Throwable e) {
+                e.printStackTrace();
+            } finally {
+                Context.exit();
+            }
+        }
+        return result != null ? result.toString() : null;
     }
 
 }
