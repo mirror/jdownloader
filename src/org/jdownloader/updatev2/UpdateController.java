@@ -26,10 +26,12 @@ import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.IO;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
@@ -76,16 +78,17 @@ public class UpdateController implements UpdateCallbackInterface {
 
     }
 
-    private UpdateHandler      handler;
-    private boolean            running;
-    private HashSet<Thread>    confirmedThreads;
-    private String             appid;
-    private String             updaterid;
-    private UpdaterEventSender eventSender;
-    private Icon               statusIcon;
-    private String             statusLabel;
-    private double             statusProgress    = -1;
-    private volatile boolean   hasPendingUpdates = false;
+    private UpdateHandler       handler;
+    private boolean             running;
+    private HashSet<Thread>     confirmedThreads;
+    private String              appid;
+    private String              updaterid;
+    private UpdaterEventSender  eventSender;
+    private Icon                statusIcon;
+    private String              statusLabel;
+    private double              statusProgress    = -1;
+    private volatile boolean    hasPendingUpdates = false;
+    public static final boolean DEBUG_SELFTEST    = System.getProperty("DEBUG_SELFTEST") != null;
 
     public UpdateHandler getHandler() {
         return handler;
@@ -525,13 +528,58 @@ public class UpdateController implements UpdateCallbackInterface {
     @Override
     public Process runExeAsynch(List<String> call, File root) throws IOException {
 
-        call.addAll(RestartController.getInstance().getFilteredRestartParameters());
-        final ProcessBuilder pb = ProcessBuilderFactory.create(call);
-        pb.directory(root);
-        Process process = pb.start();
-        logger.logAsynch(process.getErrorStream());
-        logger.logAsynch(process.getInputStream());
-        return process;
+        if (DEBUG_SELFTEST) {
+            call.addAll(RestartController.getInstance().getFilteredRestartParameters());
+            logger.info("Call: " + call + " in " + root);
+            if (CrossSystem.isWindows()) {
+                StringBuilder sb = new StringBuilder();
+                sb.append("@echo SelfTest for Windows").append("\r\n");
+                long time = System.currentTimeMillis();
+                sb.append("@echo The Selftest will start now and write all outputs in this window and to " + new File(root, "self_log_err/std" + time + ".txt")).append("\r\n");
+                for (String c : call) {
+                    if (sb.length() > 0) {
+                        sb.append(" ");
+                    }
+                    sb.append("\"").append(c).append("\"");
+                }
+                File tmp = Application.getTempResource("selftestLaunch.bat");
+
+                tmp.delete();
+                sb.append(" >self_log_std" + time + ".txt  2>self_log_err" + time + ".txt\r\ntype self_log_std" + time + ".txt\r\ntype self_log_err" + time + ".txt");
+                sb.append("\r\n");
+                sb.append("@echo Please close this window now.");
+                IO.writeStringToFile(tmp, sb.toString());
+                ArrayList<String> newList = new ArrayList<String>();
+                newList.add("cmd");
+                newList.add("/C");
+                newList.add("start");
+                newList.add("/wait");
+                newList.add(tmp.getAbsolutePath());
+                call = newList;
+            }
+
+            final ProcessBuilder pb = ProcessBuilderFactory.create(call);
+            pb.redirectErrorStream();
+            pb.directory(root);
+
+            final Process process = pb.start();
+            if (process != null) {
+                // logger.logAsynch(process.getErrorStream());
+                logger.logAsynch(process.getInputStream());
+            }
+
+            return process;
+
+        } else {
+            call.addAll(RestartController.getInstance().getFilteredRestartParameters());
+            logger.info("Start Process: " + call);
+            final ProcessBuilder pb = ProcessBuilderFactory.create(call);
+            pb.directory(root);
+            Process process = pb.start();
+            logger.logAsynch(process.getErrorStream());
+            logger.logAsynch(process.getInputStream());
+            return process;
+        }
     }
 
     public boolean isExtensionInstalled(String id) {
