@@ -79,7 +79,10 @@ public class VivaTv extends PluginForHost {
     private static final String  type_southpark_de_episode         = "http://www\\.southpark\\.de/alle\\-episoden/.+";
     private static final String  type_southpark_cc_episode         = "http://southpark\\.cc\\.com/full\\-episodes/.+";
 
-    /** Other: So far unsupported domains: mtvla.com */
+    /**
+     * Other: So far unsupported domains: mtvla.com, mtvu.com, vh1.com, cmt.com, nickjr.com, nickatnite.com, nickmom.com, teennick.com,
+     * nicktoons.nick.com, centrictv.com, cc.com, spike.com, tvland.com, epixhdcom, bet.com,
+     */
 
     /* Plugin related things */
     private static final String  player_url                        = "http://player.mtvnn.com/g2/g2player_2.2.1.swf";
@@ -718,6 +721,7 @@ public class VivaTv extends PluginForHost {
             put("southpark.cc.com", "http://southpark.cc.com/feeds/video-player/mrss/%s");
             put("gameone.de", "http://www.gameone.de/api/mrss/");
             put("gameone.de_2", "https://gameone.de/api/mrss/");
+            put("vh1.com", "http://www.vh1.com/player/embed/AS3/rss/?uri=");
         }
     };
 
@@ -730,6 +734,9 @@ public class VivaTv extends PluginForHost {
      * suppressRegisterBeacon=true|false --> Meaning unclear
      *
      * lang=de|en --> Preferred language
+     *
+     * cdnOverride=akamai --> Ability to change the servers from e.g. rtmpe://viacomvh1strmfs.fplive.net/viacomvh1strm/ TO
+     * rtmpe://cp534.edgefcs.net/ondemand/mtvnorigin/
      *
      * acceptMethods= see 'possibleAcceptMethodsValues' HashMap below --> Defines the streaming method we prefer
      *
@@ -747,6 +754,7 @@ public class VivaTv extends PluginForHost {
             put("mtv.com", "http://www.mtv.com/meta/context/mediaGen?uri=%s");
             put("southpark.de_episode", "http://www.southpark.de/feeds/video-player/mediagen?uri=%s&suppressRegisterBeacon=true&lang=de&acceptMethods=%s");
             put("southpark.de_clips", "http://www.southpark.de/feeds/video-player/mediagen?uri=%s");
+            put("vh1.com", "http://www.vh1.com/player/embed/AS3/includes/mediaGen.jhtml?uri=%s");
         }
     };
 

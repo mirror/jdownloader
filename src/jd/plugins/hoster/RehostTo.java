@@ -199,7 +199,7 @@ public class RehostTo extends PluginForHost {
         link.getLinkStatus().setStatusText(message);
     }
 
-    private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
+    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
         if (downloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         }
@@ -256,7 +256,7 @@ public class RehostTo extends PluginForHost {
                 statusMessage = "Download Failed! Temporarily unavailable.";
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, statusMessage, 15 * 60 * 1000);
                 // tempUnavailableHoster(account, downloadLink, 15 * 60 * 1000);
-            } else if (error.equals("no_prem_available")) {
+            } else if (error.equals("no_prem_available") || error.matches("no_prem_available\\d+")) {
                 /*
                  * 'no_prem_available': there is currently no premium account available in our system to process this download. Please
                  * update get_supported_och_dl.
@@ -272,7 +272,7 @@ public class RehostTo extends PluginForHost {
                 if (ai.getProperty("multiHostSupport") != null) {
                     account.getAccountInfo().setMultiHostSupport(this, ai.getMultiHostSupport());
                 }
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+                tempUnavailableHoster(account, downloadLink, 30 * 60 * 1000l);
             } else if (error.equals("invalid_link")) {
                 /*
                  * 'invalid_link': the provided link format is invalid. Plugin outdated? Contact rehost.

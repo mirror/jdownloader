@@ -105,6 +105,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             final DownloadLink dl = createDownloadlink(url);
             if (title.contains("Video nicht verfügbar")) {
                 dl.setAvailable(false);
+                title = title.replace("Video nicht verfügbar: ", "");
                 dl.setFinalFileName(title);
             } else {
                 dl.setAvailable(true);
