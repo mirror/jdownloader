@@ -221,13 +221,13 @@ public class VevoCom extends PluginForHost {
         rtmp.setPlayPath(playpath);
         rtmp.setApp(app);
         rtmp.setSwfVfy(player);
-        rtmp.setResume(true);
+        rtmp.setResume(false);
         ((RTMPDownload) dl).startDownload();
     }
 
     /*
      * 2nd way to get http streams: http://smilstream.vevo.com/HDFlash/v1/smil/<videoid>/<videoid>.smil
-     *
+     * 
      * Examplecode: http://bluecop-xbmc-repo.googlecode.com/svn-history/r383/trunk/plugin.video.vevo/default.py
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
