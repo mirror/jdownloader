@@ -1,21 +1,33 @@
 package org.jdownloader.api.myjdownloader;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.KeyStore;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSocket;
+
 import jd.controlling.reconnect.ipcheck.IP;
 
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxyUtils;
+import org.appwork.utils.net.httpserver.HttpConnection;
+import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.fourthline.cling.UpnpServiceImpl;
 import org.fourthline.cling.model.action.ActionInvocation;
 import org.fourthline.cling.model.message.UpnpResponse;
@@ -38,17 +50,21 @@ public class MyJDownloaderDirectServer extends Thread {
     private final DIRECTMODE                 connectMode;
     private final LogSource                  logger;
     private int                              upnpPort            = -1;
-    
+
     public MyJDownloaderDirectServer(MyJDownloaderConnectThread connectThread, DIRECTMODE connectMode) {
         this.connectThread = connectThread;
         this.connectMode = connectMode;
         logger = connectThread.getLogger();
     }
-    
+
     private ServerSocket createServerSocket(int wished) throws IOException {
         int lastPort = CFG_MYJD.CFG.getLastLocalPort();
-        if (lastPort <= 0 || lastPort > 65000) lastPort = 0;
-        if (wished > 0 && wished < 65000) lastPort = wished;
+        if (lastPort <= 0 || lastPort > 65000) {
+            lastPort = 0;
+        }
+        if (wished > 0 && wished < 65000) {
+            lastPort = wished;
+        }
         try {
             ServerSocket currentServerSocket = new ServerSocket(lastPort);
             CFG_MYJD.CFG.setLastLocalPort(currentServerSocket.getLocalPort());
@@ -60,14 +76,16 @@ public class MyJDownloaderDirectServer extends Thread {
         CFG_MYJD.CFG.setLastLocalPort(currentServerSocket.getLocalPort());
         return currentServerSocket;
     }
-    
+
     public static boolean sameNetwork(String ip1, InetAddress ip2, InetAddress netMask) {
         try {
             byte[] ip1Bytes = InetAddress.getByName(ip1).getAddress();
             byte[] ip2Bytes = ip2.getAddress();
             byte[] maskBytes = netMask.getAddress();
             for (int i = 0; i < ip1Bytes.length; i++) {
-                if ((ip1Bytes[i] & maskBytes[i]) != (ip2Bytes[i] & maskBytes[i])) return false;
+                if ((ip1Bytes[i] & maskBytes[i]) != (ip2Bytes[i] & maskBytes[i])) {
+                    return false;
+                }
             }
             return true;
         } catch (final Throwable e) {
@@ -75,13 +93,41 @@ public class MyJDownloaderDirectServer extends Thread {
             return false;
         }
     }
-    
+
     private static int randomPort() {
         int min = 1025;
         int max = 65000;
         return new Random().nextInt((max - min) + 1) + min;
     }
-    
+
+    public static void main(String[] args) throws Exception {
+        KeyStore ks = KeyStore.getInstance("JKS");
+        ks.load(new FileInputStream(""), "pw".toCharArray());
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+        kmf.init(ks, "pw".toCharArray());
+        SSLContext sc = SSLContext.getInstance("TLS");
+        sc.init(kmf.getKeyManagers(), null, null);
+        SSLServerSocketFactory ssf = sc.getServerSocketFactory();
+        SSLServerSocket s = (SSLServerSocket) ssf.createServerSocket(8888);
+        while (true) {
+            SSLSocket c = (SSLSocket) s.accept();
+            try {
+                new HttpConnection(null, c) {
+                    private final List<HttpRequestHandler> list = new ArrayList<HttpRequestHandler>(0);
+
+                    public java.util.List<org.appwork.utils.net.httpserver.handler.HttpRequestHandler> getHandler() {
+                        return list;
+                    };
+                }.run();
+                System.out.println("next");
+            } catch (final Throwable e) {
+                e.printStackTrace();
+            } finally {
+                c.close();
+            }
+        }
+    }
+
     private int setUPNPPort() throws InterruptedException {
         UDAServiceType[] udaServices = new UDAServiceType[] { new UDAServiceType("WANPPPConnection"), new UDAServiceType("WANIPConnection") };
         UpnpServiceImpl upnpService = null;
@@ -94,7 +140,9 @@ public class MyJDownloaderDirectServer extends Thread {
             for (UDAServiceType udaService : udaServices) {
                 for (Device device : upnpService.getRegistry().getDevices(udaService)) {
                     Service service = device.findService(udaService);
-                    if (service == null) continue;
+                    if (service == null) {
+                        continue;
+                    }
                     String deviceIP = null;
                     DeviceDetails details = device.getDetails();
                     if (details.getBaseURL() != null) {
@@ -106,7 +154,9 @@ public class MyJDownloaderDirectServer extends Thread {
                             deviceIP = remoteIdentity.getDescriptorURL().getHost();
                         }
                     }
-                    if (deviceIP == null) continue;
+                    if (deviceIP == null) {
+                        continue;
+                    }
                     Iterator<InetAddress> it = localIPs.iterator();
                     InetAddress localIP = null;
                     while (it.hasNext()) {
@@ -116,7 +166,9 @@ public class MyJDownloaderDirectServer extends Thread {
                             break;
                         }
                     }
-                    if (localIP == null) continue;
+                    if (localIP == null) {
+                        continue;
+                    }
                     logger.info("Found Router at " + deviceIP + " for " + localIP.getHostAddress());
                     int upnpPort = CFG_MYJD.CFG.getLastUpnpPort();
                     final AtomicBoolean upnpPortMapped = new AtomicBoolean(false);
@@ -128,13 +180,13 @@ public class MyJDownloaderDirectServer extends Thread {
                         final PortMapping desiredMapping = new PortMapping(upnpPort, localIP.getHostAddress(), PortMapping.Protocol.TCP, "MyJDownloader");
                         desiredMapping.setInternalPort(new UnsignedIntegerTwoBytes(CFG_MYJD.CFG.getLastLocalPort()));
                         Future result = upnpService.getControlPoint().execute(new PortMappingAdd(service, desiredMapping) {
-                            
+
                             @Override
                             public void success(ActionInvocation invocation) {
                                 upnpPortMapped.set(true);
                                 logger.info("PortMapping(" + portMappingTry.get() + ") " + desiredMapping.getExternalPort() + " to " + desiredMapping.getInternalClient() + ":" + desiredMapping.getInternalPort() + " successful");
                             }
-                            
+
                             @Override
                             public void failure(ActionInvocation invocation, UpnpResponse operation, String defaultMsg) {
                                 logger.info("PortMapping(" + portMappingTry.get() + ") " + desiredMapping.getExternalPort() + " to " + desiredMapping.getInternalClient() + ":" + desiredMapping.getInternalPort() + " failed");
@@ -154,32 +206,34 @@ public class MyJDownloaderDirectServer extends Thread {
             return -1;
         } finally {
             try {
-                if (upnpService != null) upnpService.shutdown();
+                if (upnpService != null) {
+                    upnpService.shutdown();
+                }
             } catch (final Throwable e) {
             }
         }
     }
-    
+
     @Override
     public void run() {
         try {
             int lastLocalPort = CFG_MYJD.CFG.getLastLocalPort();
             switch (connectMode) {
-                case LAN:
-                    currentServerSocket = createServerSocket(-1);
-                    logger.info("MyJDownloaderDirectConnectionServer: Mode=" + connectMode + " LocalPort=" + currentServerSocket.getLocalPort() + "(" + lastLocalPort + ")");
-                    break;
-                case LAN_WAN_MANUAL:
-                    currentServerSocket = createServerSocket(CFG_MYJD.CFG.getManualLocalPort());
-                    logger.info("MyJDownloaderDirectConnectionServer: Mode=" + connectMode + " RemotePort=" + CFG_MYJD.CFG.getManualRemotePort() + " LocalPort=" + currentServerSocket.getLocalPort() + "(" + lastLocalPort + "|" + CFG_MYJD.CFG.getManualLocalPort() + ")");
-                    break;
-                case LAN_WAN_UPNP:
-                    currentServerSocket = createServerSocket(-1);
-                    upnpPort = setUPNPPort();
-                    logger.info("MyJDownloaderDirectConnectionServer: Mode=" + connectMode + " RemotePort=" + upnpPort + " LocalPort=" + currentServerSocket.getLocalPort() + "(" + lastLocalPort + ")");
-                    break;
-                default:
-                    return;
+            case LAN:
+                currentServerSocket = createServerSocket(-1);
+                logger.info("MyJDownloaderDirectConnectionServer: Mode=" + connectMode + " LocalPort=" + currentServerSocket.getLocalPort() + "(" + lastLocalPort + ")");
+                break;
+            case LAN_WAN_MANUAL:
+                currentServerSocket = createServerSocket(CFG_MYJD.CFG.getManualLocalPort());
+                logger.info("MyJDownloaderDirectConnectionServer: Mode=" + connectMode + " RemotePort=" + CFG_MYJD.CFG.getManualRemotePort() + " LocalPort=" + currentServerSocket.getLocalPort() + "(" + lastLocalPort + "|" + CFG_MYJD.CFG.getManualLocalPort() + ")");
+                break;
+            case LAN_WAN_UPNP:
+                currentServerSocket = createServerSocket(-1);
+                upnpPort = setUPNPPort();
+                logger.info("MyJDownloaderDirectConnectionServer: Mode=" + connectMode + " RemotePort=" + upnpPort + " LocalPort=" + currentServerSocket.getLocalPort() + "(" + lastLocalPort + ")");
+                break;
+            default:
+                return;
             }
             while (connectThread.isAlive()) {
                 Socket clientSocket = null;
@@ -199,8 +253,9 @@ public class MyJDownloaderDirectServer extends Thread {
                             clientSocket.close();
                         } catch (final Throwable ignore) {
                         }
-                    } else
+                    } else {
                         throw e;
+                    }
                 }
             }
         } catch (final Throwable e) {
@@ -212,34 +267,40 @@ public class MyJDownloaderDirectServer extends Thread {
             }
         }
     }
-    
+
     protected void close() {
         try {
             currentServerSocket.close();
         } catch (final Throwable e) {
         }
     }
-    
+
     public int getLocalPort() {
-        if (currentServerSocket == null) return -1;
+        if (currentServerSocket == null) {
+            return -1;
+        }
         return currentServerSocket.getLocalPort();
     }
-    
+
     public int getRemotePort() {
-        if (currentServerSocket == null) return -1;
+        if (currentServerSocket == null) {
+            return -1;
+        }
         switch (connectMode) {
-            case LAN_WAN_MANUAL:
-                return CFG_MYJD.CFG.getManualRemotePort();
-            case LAN_WAN_UPNP:
-                return upnpPort;
-            default:
-                return -1;
+        case LAN_WAN_MANUAL:
+            return CFG_MYJD.CFG.getManualRemotePort();
+        case LAN_WAN_UPNP:
+            return upnpPort;
+        default:
+            return -1;
         }
     }
-    
+
     protected void handleConnection(final Socket clientSocket) throws IOException {
         final MyJDownloaderAPI api = connectThread.getApi();
-        if (api == null) throw new IOException("api no longer available");
+        if (api == null) {
+            throw new IOException("api no longer available");
+        }
         final long requestNumber = connectThread.THREADCOUNTER.incrementAndGet();
         Thread connectionThread = new Thread("MyJDownloaderDirectConnection:" + requestNumber) {
             @Override
