@@ -35,6 +35,7 @@ import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -73,7 +74,9 @@ public class JustinTvDecrypt extends PluginForDecrypt {
     private final String videoSingleHLS = "https?://(?:(?:www\\.|[a-z]{2}\\.)?(?:twitchtv\\.com|twitch\\.tv)/[^<>/\"]+/v/\\d+)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> desiredLinks = new ArrayList<DownloadLink>();
+
         final SubConfiguration cfg = this.getPluginConfig();
         br = new Browser();
         br.setCookie("http://twitch.tv", "language", "en-au");
@@ -345,7 +348,63 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                     } catch (final Throwable e) {
                         /* Not available in old 0.9.581 Stable */
                     }
+                    try {
+                        ((jd.plugins.hoster.JustinTv) plugin).setBrowser(br.cloneBrowser());
+                        dlink.setAvailableStatus(((jd.plugins.hoster.JustinTv) plugin).requestFileInformation(dlink));
+                    } catch (Exception e) {
+                        dlink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+                    }
                     decryptedLinks.add(dlink);
+                }
+                // because its too akward to know bitrate to p rating we online check, then confirm by ffprobe results
+                if (true) {
+                    // highest to lowest determines best. this is how there api returns 'source[chunked], high, medium, low, mobile'
+                    // I assume that is... 1080, 720, 480, 360, 240, but it might not be!
+                    boolean q1080 = this.getPluginConfig().getBooleanProperty("q1080p", true);
+                    boolean q720 = this.getPluginConfig().getBooleanProperty("q720p", true);
+                    boolean q480 = this.getPluginConfig().getBooleanProperty("q480p", true);
+                    boolean q360 = this.getPluginConfig().getBooleanProperty("q360p", true);
+                    boolean q240 = this.getPluginConfig().getBooleanProperty("q240p", true);
+                    // covers when users are idiots and disables all qualities.
+                    if (!q1080 && !q720 && !q480 && !q360 && !q240) {
+                        q1080 = true;
+                        q720 = true;
+                        q480 = true;
+                        q360 = true;
+                        q240 = true;
+                    }
+                    final boolean useBest = this.getPluginConfig().getBooleanProperty("useBest", true);
+
+                    for (final DownloadLink downloadLink : decryptedLinks) {
+                        // chunked and be 1080 outside of norm parmaeters and can have standard size entry also.. so a second 1080. We will
+                        // assume chunked is best (first one). entry one should be the best in this situation, but we must match against
+                        // user setting.
+                        final int vidQual = downloadLink.getIntegerProperty("videoQuality", -1);
+                        if (desiredLinks.isEmpty() || !useBest) {
+                            // videos fall within ranges, not always right on the quality specified above.
+                            if (vidQual >= 1080) {
+                                if (q1080) {
+                                    desiredLinks.add(downloadLink);
+                                }
+                            } else if (vidQual <= 1080 && vidQual >= 720) {
+                                if (q720) {
+                                    desiredLinks.add(downloadLink);
+                                }
+                            } else if (vidQual <= 720 && vidQual >= 480) {
+                                if (q480) {
+                                    desiredLinks.add(downloadLink);
+                                }
+                            } else if (vidQual <= 480 && vidQual >= 360) {
+                                if (q360) {
+                                    desiredLinks.add(downloadLink);
+                                }
+                            } else if (vidQual <= 360 && vidQual >= 240) {
+                                if (q240) {
+                                    desiredLinks.add(downloadLink);
+                                }
+                            }
+                        }
+                    }
                 }
                 String fpName = "";
                 if (channelName != null) {
@@ -381,12 +440,14 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 }
             }
         }
-        return decryptedLinks;
+        return !desiredLinks.isEmpty() ? desiredLinks : decryptedLinks;
     }
 
+    PluginForHost plugin = null;
+
     private boolean getUserLogin(final boolean force) throws Exception {
-        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("twitch.tv");
-        final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
+        plugin = JDUtilities.getPluginForHost("twitch.tv");
+        final Account aa = AccountController.getInstance().getValidAccount(plugin);
         if (aa == null) {
             logger.warning("There is no account available, stopping...");
             return false;
