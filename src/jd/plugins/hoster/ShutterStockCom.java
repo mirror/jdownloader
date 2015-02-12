@@ -52,15 +52,20 @@ public class ShutterStockCom extends PluginForHost {
         return "http://www.shutterstock.com/website_terms.mhtml";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
-        br.getPage(link.getDownloadURL().replace("/pic-", "/language.en/pic-"));
+        br.getPage(link.getDownloadURL().replace("/pic-", "/en/pic-"));
         if (br.containsHTML("<div class=\"photo\\-error\">")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("\"title\":\"\\\\\"([^<>\"]*?)\\\\\"\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
