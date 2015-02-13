@@ -11,7 +11,6 @@ import jd.controlling.proxy.ProxyController;
 import jd.http.SocketConnectionFactory;
 
 import org.appwork.utils.NullsafeAtomicReference;
-import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.api.myjdownloader.MyJDownloaderConnectThread.DeviceConnectionHelper;
 import org.jdownloader.api.myjdownloader.MyJDownloaderConnectThread.SessionInfoWrapper;
@@ -85,17 +84,15 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
 
     }
 
-    protected AtomicBoolean                                           running           = new AtomicBoolean(true);
-    protected NullsafeAtomicReference<MyJDownloaderConnectionRequest> connectionRequest = new NullsafeAtomicReference<MyJDownloaderConnectionRequest>();
-    private final LogSource                                           logger;
-    protected final MyJDownloaderConnectThread                        connectThread;
-    private final static AtomicInteger                                THREADID          = new AtomicInteger(0);
-    private final String                                              url               = "http://api.jdownloader.org";
+    protected final AtomicBoolean                                           running           = new AtomicBoolean(true);
+    protected final NullsafeAtomicReference<MyJDownloaderConnectionRequest> connectionRequest = new NullsafeAtomicReference<MyJDownloaderConnectionRequest>();
+    protected final MyJDownloaderConnectThread                              connectThread;
+    private final static AtomicInteger                                      THREADID          = new AtomicInteger(0);
+    private final String                                                    url               = "http://api.jdownloader.org";
 
     public MyJDownloaderWaitingConnectionThread(MyJDownloaderConnectThread connectThread) {
         this.setDaemon(true);
         this.setName("MyJDownloaderWaitingConnectionThread:" + THREADID.incrementAndGet());
-        logger = connectThread.getLogger();
         this.connectThread = connectThread;
     }
 
@@ -127,8 +124,17 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                             final List<HTTPProxy> list = ProxyController.getInstance().getProxiesByUrl(url);
                             if (list != null && list.size() > 0) {
                                 proxy = list.get(0);
+                                if (proxy.isNone()) {
+                                    /* we do not want none to get disabled! */
+                                    proxy = null;
+                                }
                             }
-                        } catch (Throwable proxyE) {
+                        } catch (Throwable throwable) {
+                            connectThread.log(throwable);
+                            synchronized (connectionRequest) {
+                                connectionRequest.wait(5000);
+                            }
+                            continue;
                         }
                         connectionSocket = SocketConnectionFactory.createSocket(proxy);
                         connectionSocket.setReuseAddress(true);
@@ -139,21 +145,16 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                         connectionSocket.getOutputStream().flush();
                         int validToken = connectionSocket.getInputStream().read();
                         connectionStatus = DeviceConnectionStatus.parse(validToken);
-                    } catch (final IOException ioE) {
-                        ProxyController.getInstance().reportConnectException(proxy, url, ioE);
-                        ioE.printStackTrace();
-                        try {
-                            connectionSocket.close();
-                        } catch (final Throwable ignore) {
-                        }
-                        e = ioE;
                     } catch (final Throwable throwable) {
+                        e = throwable;
+                        if (throwable instanceof IOException) {
+                            ProxyController.getInstance().reportConnectException(proxy, url, (IOException) throwable);
+                        }
                         throwable.printStackTrace();
                         try {
                             connectionSocket.close();
                         } catch (final Throwable ignore) {
                         }
-                        e = throwable;
                     }
                     MyJDownloaderConnectionResponse response = new MyJDownloaderConnectionResponse(this, request, connectionStatus, connectionSocket, e);
                     if (connectThread.putResponse(response) == false) {
@@ -168,7 +169,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
         } catch (final Throwable e) {
             connectThread.log(e);
         } finally {
-            interrupt();
+            abort();
         }
     }
 
@@ -189,12 +190,10 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
         }
     }
 
-    @Override
-    public void interrupt() {
+    public void abort() {
         synchronized (connectionRequest) {
             running.set(false);
             connectionRequest.notifyAll();
         }
-        super.interrupt();
     }
 }

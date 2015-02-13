@@ -751,11 +751,10 @@ public class MyJDownloaderConnectThread extends Thread {
     public void disconnect() {
         MyJDownloaderAPI lapi = api;
         api = null;
-        terminateWaitingConnections();
-        try {
-            interrupt();
-        } catch (final Throwable e) {
+        synchronized (responses) {
+            responses.notifyAll();
         }
+        terminateWaitingConnections();
         disconnectSession(lapi, null);
         synchronized (openConnections) {
             Iterator<Entry<Thread, Socket>> it = openConnections.entrySet().iterator();
@@ -763,10 +762,6 @@ public class MyJDownloaderConnectThread extends Thread {
                 Entry<Thread, Socket> next = it.next();
                 try {
                     next.getValue().close();
-                } catch (final Throwable e) {
-                }
-                try {
-                    next.getKey().interrupt();
                 } catch (final Throwable e) {
                 }
             }
