@@ -69,6 +69,7 @@ import jd.utils.locale.JDL;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.swing.dialog.ContainerDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -147,8 +148,9 @@ public class FreeWayMe extends PluginForHost {
         setStartIntervall(1 * 1000l);
         setConfigElements();
         this.enablePremium("https://www.free-way.me/premium");
-
-        addDiagnostic();
+        if (!Application.isHeadless()) {
+            addDiagnostic();
+        }
     }
 
     private void addDiagnostic() {
