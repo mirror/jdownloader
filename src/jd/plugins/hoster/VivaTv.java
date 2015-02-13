@@ -514,10 +514,10 @@ public class VivaTv extends PluginForHost {
             /* In very rare cases we already have http urls */
             httpurl = src_url;
         } else {
+            /* Prefer http - try to convert the rtmp(e) urls to http urls --> Works in about 50% of all cases! */
             httpurl = convertRTMPtoHTTP(src_url);
         }
         if (httpurl != null) {
-            /* Prefer http */
             downloadHTTP(downloadLink, httpurl);
         } else {
             downloadRTMP(downloadLink, src_url);
@@ -834,7 +834,7 @@ public class VivaTv extends PluginForHost {
             put("southpark.de_episode", "http://www.southpark.de/feeds/video-player/mediagen?uri=%s&suppressRegisterBeacon=true&lang=de&acceptMethods=%s");
             put("southpark.de_clips", "http://www.southpark.de/feeds/video-player/mediagen?uri=%s");
             put("vh1.com", "http://www.vh1.com/player/embed/AS3/includes/mediaGen.jhtml?uri=%s");
-            put("vh1.com_episodes", "http://www.vh1.com/meta/context/mediaGen?uri=");
+            put("vh1.com_episodes", "http://www.vh1.com/meta/context/mediaGen?uri=%s");
             put("tvland.com", "http://www.tvland.com/feeds/mediagen/?uri=%s&device=None");
             put("spike.com", "http://www.spike.com/feeds/mediagen/?uri=%s");
         }
@@ -865,7 +865,7 @@ public class VivaTv extends PluginForHost {
         {
             put("mtv.com", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context49/config.xml?uri=%s");
             put("southpark.de", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context5/config.xml?uri=%s");
-            put("tvland.com", "http://media.mtvnservices.com/pmt-arc/e1/players/mgid:arc:video:tvland.com:/context3/config.xml?uri=%s");
+            put("tvland.com", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context3/config.xml?uri=%s");
             put("spike.com", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context4/config.xml?uri=%s");
             put("vh1.com", "http://media.mtvnservices.com/pmt-arc/e1/players/m%s/context13/config.xml?uri=%s");
         }

@@ -41,11 +41,10 @@ public class Hentai2ReadCom extends PluginForDecrypt {
         final String parameter = param.toString();
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            decryptedLinks.add(getOffline(parameter));
+            return decryptedLinks;
+        } else if (br.containsHTML(">Sorry, this chapter is no longer available due to")) {
+            decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }
         String fpName = br.getRegex("itemprop=\"itemreviewed\">([^<>]*?)</span>").getMatch(0);
@@ -82,6 +81,14 @@ public class Hentai2ReadCom extends PluginForDecrypt {
         }
 
         return decryptedLinks;
+    }
+
+    private DownloadLink getOffline(final String parameter) {
+        final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+        offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
+        offline.setAvailable(false);
+        offline.setProperty("offline", true);
+        return offline;
     }
 
 }
