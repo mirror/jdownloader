@@ -216,6 +216,10 @@ public class VevoCom extends PluginForHost {
     }
 
     private void downloadHLS(final DownloadLink downloadLink) throws Exception {
+        /* TODO */
+        if (true) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         checkFFmpeg(downloadLink, "Download a HLS Stream");
         dl = new HLSDownloader(downloadLink, br, dllink);
         dl.startDownload();
@@ -316,7 +320,6 @@ public class VevoCom extends PluginForHost {
     private static final String ALLOW_RTMP_800  = "version_4_type_1_800";
     private static final String ALLOW_RTMP_1200 = "version_4_type_1_1200";
     private static final String ALLOW_RTMP_1600 = "version_4_type_1_1600";
-
     private static final String ALLOW_HLS_64    = "version_4_type_4_64";
     private static final String ALLOW_HLS_200   = "version_4_type_4_200";
     private static final String ALLOW_HLS_400   = "version_4_type_4_400";
@@ -333,7 +336,7 @@ public class VevoCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HTTP_56, JDL.L("plugins.hoster.vevoCom.ALLOW_HTTP_56", "Load videocodec H264/x264 56kBit/s 176x144 with audio codec AAC/quicktime 24/128/192kBit/s")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HTTP_500, JDL.L("plugins.hoster.vevoCom.ALLOW_HTTP_500", "Load videocodec H264/x264 500 480x360 with audio codec AAC/quicktime 24/128/192kBit/s")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HTTP_2000, JDL.L("plugins.hoster.vevoCom.ALLOW_HTTP_2000", "Load videocodec H264/x264 2000 1280x720 with audio codec AAC/quicktime 24/128/192kBit/s")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "HLS formats:"));
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "HLS formats:"));
         // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HLS_64,
         // JDL.L("plugins.hoster.vevoCom.ALLOW_HLS_64",
         // "Load videocodec h264 64kBit/s 416x342 with audio codec AAC 128kBit/s")).setDefaultValue(false));
