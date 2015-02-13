@@ -32,7 +32,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viva.tv", "mtviggy.com", "southpark.de", "southpark.cc.com" }, urls = { "http://www\\.viva\\.tv/charts/16\\-viva\\-top\\-100", "http://www\\.mtviggy\\.com/videos/[a-z0-9\\-]+/|http://www\\.mtvdesi\\.com/(videos/)?[a-z0-9\\-]+|http://www\\.mtvk\\.com/videos/[a-z0-9\\-]+", "http://www\\.southpark\\.de/alle\\-episoden/s\\d{2}e\\d{2}[a-z0-9\\-]+", "http://southpark\\.cc\\.com/full\\-episodes/s\\d{2}e\\d{2}[a-z0-9\\-]+" }, flags = { 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viva.tv", "mtviggy.com", "southpark.de", "southpark.cc.com", "vh1.com" }, urls = { "http://www\\.viva\\.tv/charts/16\\-viva\\-top\\-100", "http://www\\.mtviggy\\.com/videos/[a-z0-9\\-]+/|http://www\\.mtvdesi\\.com/(videos/)?[a-z0-9\\-]+|http://www\\.mtvk\\.com/videos/[a-z0-9\\-]+", "http://www\\.southpark\\.de/alle\\-episoden/s\\d{2}e\\d{2}[a-z0-9\\-]+", "http://southpark\\.cc\\.com/full\\-episodes/s\\d{2}e\\d{2}[a-z0-9\\-]+", "http://www\\.vh1.com/(shows/[a-z0-9\\-_]+/[a-z0-9\\-_]+/.+|video/play\\.jhtml\\?id=\\d+|video/[a-z0-9\\-_]+/\\d+/[a-z0-9\\-_]+\\.jhtml|events/[a-z0-9\\-_]+/videos/[a-z0-9\\-_]+/\\d+/)" }, flags = { 0, 0, 0, 0, 0 })
 public class VivaTvDecrypt extends PluginForDecrypt {
 
     public VivaTvDecrypt(PluginWrapper wrapper) {
@@ -50,6 +50,11 @@ public class VivaTvDecrypt extends PluginForDecrypt {
 
     private static final String     type_southpark_de_episode = "http://www\\.southpark\\.de/alle\\-episoden/.+";
     private static final String     type_southpark_cc_episode = "http://southpark\\.cc\\.com/full\\-episodes/.+";
+
+    private static final String     type_vh1                  = "http://www\\.vh1.com/.+";
+    private static final String     subtype_vh1_episodes      = "http://www\\.vh1\\.com/shows/.+";
+    private static final String     subtype_vh1_videos        = "http://www\\.vh1\\.com/video/.+";
+    private static final String     subtype_vh1_events        = "http://www\\.vh1\\.com/events/.+";
 
     private ArrayList<DownloadLink> decryptedLinks            = new ArrayList<DownloadLink>();
     private String                  default_ext               = null;
@@ -72,6 +77,8 @@ public class VivaTvDecrypt extends PluginForDecrypt {
                 decryptSouthparkDe();
             } else if (parameter.matches(type_southpark_cc_episode)) {
                 decryptSouthparkCc();
+            } else if (parameter.matches(type_vh1)) {
+                decryptVh1();
             } else {
                 /* Probably unsupported linktype */
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -217,6 +224,28 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             }
             decryptedLinks.add(dl);
         }
+    }
+
+    private void decryptVh1() throws DecrypterException, IOException {
+        br.getPage(parameter);
+        final String vevo_ID = br.getRegex("MTVN\\.Player\\.vevoVideoId = \"([A-Za-z0-9]+)\";").getMatch(0);
+        if (vevo_ID != null) {
+            logger.info("Current link is a VEVO link");
+            decryptedLinks.add(createDownloadlink("http://www.vevo.com/watch/" + vevo_ID));
+            return;
+        }
+        logger.info("Current link is NO VEVO link");
+        final DownloadLink main = createDownloadlink(parameter.replace("vh1.com/", "vh1_jd_decrypted_jd_.com/"));
+        if (!br.containsHTML("MTVN\\.VIDEO\\.PLAYER\\.instance") || br.getHttpConnection().getResponseCode() == 404) {
+            main.setAvailable(false);
+        } else {
+            String filename = jd.plugins.hoster.VivaTv.getFilenameVH1(this.br);
+            if (filename != null) {
+                main.setName(filename + default_ext);
+                main.setAvailable(true);
+            }
+        }
+        decryptedLinks.add(main);
     }
 
     private String getXML(final String parameter) {
