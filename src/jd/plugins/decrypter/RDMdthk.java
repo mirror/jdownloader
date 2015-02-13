@@ -102,7 +102,7 @@ public class RDMdthk extends PluginForDecrypt {
             return decryptedLinks;
         }
         try {
-            if (parameter.matches(type_mediathek)) {
+            if (br.getURL().matches(type_mediathek)) {
                 fsk = br.getRegex(AGE_RESTRICTED).getMatch(0);
                 decryptMediathek();
             } else {
@@ -144,13 +144,13 @@ public class RDMdthk extends PluginForDecrypt {
             broadcastID = new Regex(parameter, "/topvideos/(\\d+)").getMatch(0);
         } else {
             // ardmediathek.de
-            broadcastID = new Regex(parameter, "\\?documentId=(\\d+)").getMatch(0);
+            broadcastID = new Regex(br.getURL(), "\\?documentId=(\\d+)").getMatch(0);
             // mediathek.daserste.de
             if (broadcastID == null) {
-                broadcastID = new Regex(parameter, realBaseUrl + "/[^/]+/[^/]+/(\\d+)").getMatch(0);
+                broadcastID = new Regex(br.getURL(), realBaseUrl + "/[^/]+/[^/]+/(\\d+)").getMatch(0);
             }
             if (broadcastID == null) {
-                broadcastID = new Regex(parameter, realBaseUrl + "/suche/(\\d+)").getMatch(0);
+                broadcastID = new Regex(br.getURL(), realBaseUrl + "/suche/(\\d+)").getMatch(0);
             }
         }
         if (broadcastID == null) {
@@ -181,7 +181,7 @@ public class RDMdthk extends PluginForDecrypt {
         final ArrayList<Object> mediaStreamArray = (ArrayList) _mediaArray_lastentry.get("_mediaStreamArray");
 
         for (final Object stream : mediaStreamArray) {
-            String fmt = null;
+            String directlink = null;
             final LinkedHashMap<String, Object> streammap = (LinkedHashMap<String, Object>) stream;
             final String server = (String) streammap.get("_server");
             String network = (String) streammap.get("_cdn");
@@ -189,9 +189,22 @@ public class RDMdthk extends PluginForDecrypt {
             if (network == null) {
                 network = "default_nonetwork";
             }
-            final int quality = ((Number) streammap.get("_quality")).intValue();
+            /*
+             * Sometimes one quality has multiple streams/sub-qualities --> Usually one qualits is missing in the main array so let's "fix"
+             * that. Happens e.g. for documentId: 24157750
+             */
+            int quality = ((Number) streammap.get("_quality")).intValue();
+            if (streammap.get("_stream") instanceof ArrayList) {
+                final ArrayList<Object> streamArray = (ArrayList) streammap.get("_stream");
+                directlink = (String) streamArray.get(0);
+                /* Add the sub-type stream as current quality */
+                addQuality(network, title, extension, false, (String) streamArray.get(1), quality, t, parameter);
+                /* Move current quality one up to correct this */
+                quality++;
+            } else {
+                directlink = (String) streammap.get("_stream");
+            }
             // rtmp --> hds or rtmp
-            String directlink = (String) streammap.get("_stream");
             final boolean isRTMP = (server != null && !server.equals("") && server.startsWith("rtmp://")) && !directlink.startsWith("http");
             /* Skip HDS */
             if (directlink.endsWith("manifest.f4m")) {
@@ -221,35 +234,25 @@ public class RDMdthk extends PluginForDecrypt {
                 continue;
             }
 
-            fmt = "hd";
-
             switch (Integer.valueOf(quality)) {
             case 0:
                 if ((cfg.getBooleanProperty(Q_LOW, true) || BEST) == false) {
                     continue;
-                } else {
-                    fmt = "low";
                 }
                 break;
             case 1:
                 if ((cfg.getBooleanProperty(Q_MEDIUM, true) || BEST) == false) {
                     continue;
-                } else {
-                    fmt = "medium";
                 }
                 break;
             case 2:
                 if ((cfg.getBooleanProperty(Q_HIGH, true) || BEST) == false) {
                     continue;
-                } else {
-                    fmt = "high";
                 }
                 break;
             case 3:
                 if ((cfg.getBooleanProperty(Q_HD, true) || BEST) == false) {
                     continue;
-                } else {
-                    fmt = "hd";
                 }
                 break;
             default:
@@ -257,10 +260,30 @@ public class RDMdthk extends PluginForDecrypt {
                 continue;
             }
 
-            addQuality(fmt, network, title, extension, isRTMP, directlink, Integer.toString(quality), t, parameter);
+            addQuality(network, title, extension, isRTMP, directlink, quality, t, parameter);
         }
         findBEST();
         return;
+    }
+
+    /* Make fmt String out of quality Integer */
+    private String getFMT(final int quality) {
+        String fmt = null;
+        switch (quality) {
+        case 0:
+            fmt = "low";
+            break;
+        case 1:
+            fmt = "medium";
+            break;
+        case 2:
+            fmt = "high";
+            break;
+        case 3:
+            fmt = "hd";
+            break;
+        }
+        return fmt;
     }
 
     /* INFORMATION: network = akamai or limelight == RTMP */
@@ -325,29 +348,21 @@ public class RDMdthk extends PluginForDecrypt {
             case 0:
                 if ((cfg.getBooleanProperty(Q_LOW, true) || BEST) == false) {
                     continue;
-                } else {
-                    fmt = "low";
                 }
                 break;
             case 1:
                 if ((cfg.getBooleanProperty(Q_MEDIUM, true) || BEST) == false) {
                     continue;
-                } else {
-                    fmt = "medium";
                 }
                 break;
             case 2:
                 if ((cfg.getBooleanProperty(Q_HIGH, true) || BEST) == false) {
                     continue;
-                } else {
-                    fmt = "high";
                 }
                 break;
             case 3:
                 if ((cfg.getBooleanProperty(Q_HD, true) || BEST) == false) {
                     continue;
-                } else {
-                    fmt = "hd";
                 }
                 break;
             default:
@@ -355,7 +370,7 @@ public class RDMdthk extends PluginForDecrypt {
                 continue;
             }
 
-            addQuality(fmt, network, title, extension, isRTMP, directlink, Integer.toString(quality), t, parameter);
+            addQuality(network, title, extension, isRTMP, directlink, quality, t, parameter);
         }
         findBEST();
         return;
@@ -439,7 +454,8 @@ public class RDMdthk extends PluginForDecrypt {
     }
 
     @SuppressWarnings("deprecation")
-    private void addQuality(final String fmt, final String network, final String title, final String extension, final boolean isRTMP, final String url, final String quality_number, final int t, final String orig_link) {
+    private void addQuality(final String network, final String title, final String extension, final boolean isRTMP, final String url, final int quality_int, final int t, final String orig_link) {
+        final String fmt = getFMT(quality_int);
         final String quality_part = fmt.toUpperCase(Locale.ENGLISH) + "-" + network;
         final String plain_name = title + "@" + quality_part;
         final String full_name = plain_name + extension;
@@ -464,7 +480,7 @@ public class RDMdthk extends PluginForDecrypt {
         link.setProperty("plain_quality_part", quality_part);
         link.setProperty("plain_name", plain_name);
         link.setProperty("plain_network", network);
-        link.setProperty("directQuality", quality_number);
+        link.setProperty("directQuality", Integer.toString(quality_int));
         link.setProperty("streamingType", t);
         link.setProperty("mainlink", orig_link);
 

@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -50,28 +51,46 @@ public class OneTwoThreeVideoNl extends PluginForHost {
         link.setUrlDownload("http://www.123video.nl/playvideos.asp?MovieID=" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         /* Offline links should also have nice filenames */
         downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("class=\"error\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        try {
+            br.getPage(downloadLink.getDownloadURL());
+        } catch (final BrowserException e) {
+            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 500) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            throw e;
+        }
+        if (br.containsHTML("class=\"error\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title> Sexvideo: ([^<>\"]*?) \\- Erotiek</title>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (UNDER_DEVELOPMENT) {
             filename = Encoding.htmlDecode(filename).trim() + ".flv";
             downloadLink.setName(filename);
             return AvailableStatus.TRUE;
         }
         DLLINK = br.getRegex("").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("").getMatch(0);
+        }
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".flv";
+        if (ext == null || ext.length() > 5) {
+            ext = ".flv";
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -79,10 +98,11 @@ public class OneTwoThreeVideoNl extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -95,7 +115,9 @@ public class OneTwoThreeVideoNl extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (UNDER_DEVELOPMENT) throw new PluginException(LinkStatus.ERROR_FATAL, "Unfinished plugin, download not yet possible!");
+        if (UNDER_DEVELOPMENT) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Unfinished plugin, download not yet possible!");
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

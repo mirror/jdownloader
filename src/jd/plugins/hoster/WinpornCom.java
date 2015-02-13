@@ -21,7 +21,6 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -58,10 +57,10 @@ public class WinpornCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("class=\"notifications__item notifications__item\\-error\"") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("This video was deleted") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<>\"]*?)\\- Free ").getMatch(0);
+        String filename = br.getRegex("<title>([^<>]*?) \\- \\d+\\. WinPorn\\.com</title>").getMatch(0);
         if (DLLINK == null) {
             DLLINK = br.getRegex("<source src=\"(http[^<>\"]*?)\"").getMatch(0);
             if (DLLINK == null) {
@@ -87,29 +86,8 @@ public class WinpornCom extends PluginForHost {
             filename += ext;
         }
         downloadLink.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            try {
-                con = br2.openGetConnection(DLLINK);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            downloadLink.setProperty("directlink", DLLINK);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
-        }
+        /* Don't check filesize here as server will return wrong filesizes on fast linkchecking. */
+        return AvailableStatus.TRUE;
     }
 
     @Override
