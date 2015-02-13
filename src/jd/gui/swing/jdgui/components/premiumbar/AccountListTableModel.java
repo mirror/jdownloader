@@ -444,7 +444,37 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             private static final long serialVersionUID = -8376056840172682617L;
 
             {
-                replaceSorter(this);
+                setRowSorter(new ExtDefaultRowSorter<AccountEntry>() {
+
+                    private int compareLong(long x, long y) {
+                        return (x < y) ? -1 : ((x == y) ? 0 : 1);
+                    }
+
+                    private int compareTraffic(final AccountEntry o1, final AccountEntry o2) {
+                        final long t1 = getValue(o1);
+                        final long t2 = getValue(o2);
+                        return compareLong(t1, t2);
+                    }
+
+                    private int compareEnabled(boolean x, boolean y) {
+                        return (x == y) ? 0 : (x ? -1 : 1);
+                    }
+
+                    @Override
+                    public int compare(final AccountEntry o1, final AccountEntry o2) {
+                        final boolean b1 = o1.getAccount().isEnabled();
+                        final boolean b2 = o2.getAccount().isEnabled();
+                        if (b1 == b2) {
+                            if (getSortOrderIdentifier() != ExtColumn.SORT_ASC) {
+                                return compareTraffic(o1, o2);
+                            } else {
+                                return -compareTraffic(o1, o2);
+                            }
+                        }
+                        return compareEnabled(b1, b2);
+                    }
+
+                });
             }
 
             @Override
@@ -498,12 +528,12 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             protected long getMax(AccountEntry ac) {
                 AccountInfo ai = ac.getAccount().getAccountInfo();
                 if (!ac.getAccount().isValid()) {
-                    return 100;
+                    return 0;
                 } else if (ai == null) {
-                    return 100;
+                    return 0;
                 } else {
                     if (ai.isUnlimitedTraffic()) {
-                        return 100;
+                        return Long.MAX_VALUE;
                     } else {
                         return ai.getTrafficMax();
                     }
@@ -519,7 +549,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                     return 0;
                 } else {
                     if (ai.isUnlimitedTraffic()) {
-                        return 100;
+                        return Long.MAX_VALUE;
                     } else {
                         return ai.getTrafficLeft();
                     }
