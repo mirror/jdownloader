@@ -207,8 +207,8 @@ public class MangaTradersOrg extends PluginForHost {
                 }
                 // Clear the Referer or the download could start here which then causes an exception
                 br.getHeaders().put("Referer", "");
-                br.setFollowRedirects(false);
-                br.postPage("http://www.mangatraders.org/login/process.php", "email_Login=" + Encoding.urlEncode(account.getUser()) + "&password_Login=" + Encoding.urlEncode(account.getPass()) + "&redirect_Login=%2F&rememberMe=checked");
+                br.setFollowRedirects(true);
+                br.postPage("http://mangatraders.org/login/process.php", "email_Login=" + Encoding.urlEncode(account.getUser()) + "&password_Login=" + Encoding.urlEncode(account.getPass()) + "&redirect_Login=%2F&rememberMe=checked");
                 final String userNameCookie = br.getCookie(mainPage, cookieName);
                 if (userNameCookie == null || "deleted".equalsIgnoreCase(userNameCookie)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
