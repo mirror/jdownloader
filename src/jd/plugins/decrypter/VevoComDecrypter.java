@@ -237,9 +237,8 @@ public class VevoComDecrypter extends PluginForDecrypt {
                     for (final String media : medias) {
                         final String m3u8_part = new Regex(media, "(\\d+/[A-Za-z0-9]+_\\d+k_\\d+x\\d+_[^<>\"]*?\\.m3u8)").getMatch(0);
                         final String hls_filename_part = new Regex(m3u8_part, "(_[0-9]{2,5}k_\\d+x\\d+_[a-z0-9]+_(\\d+)_.+)\\.m3u8$").getMatch(0);
-                        final String directlink = hls_base + m3u8_part;
-
                         final String videoBitrate = new Regex(hls_filename_part, "_\\d+k_\\d+x\\d+_[a-z0-9]+_(\\d+)_").getMatch(0);
+                        final String directlink = hls_base + "/" + m3u8_part;
                         final String final_filename = title + hls_filename_part + ".mp4";
                         final DownloadLink fina = createDloadlink();
                         fina.setAvailable(true);
@@ -298,7 +297,13 @@ public class VevoComDecrypter extends PluginForDecrypt {
                         return null;
                     }
                     final String videoBitrate = new Regex(rtmp_filename_part, "_\\d+k_\\d+x\\d+_[a-z0-9]+_(\\d+)_").getMatch(0);
-                    final String final_filename = title + rtmp_filename_part;
+                    String final_filename;
+                    /* geoblock_1 = no filename available at all --> Use whatever we have in our URL that comes close to the real name. */
+                    if (geoblock_1) {
+                        final_filename = getURLfilename(parameter) + "_" + rtmp_filename_part;
+                    } else {
+                        final_filename = title + rtmp_filename_part;
+                    }
                     final DownloadLink fina = createDloadlink();
                     fina.setAvailable(true);
                     fina.setFinalFileName(final_filename);

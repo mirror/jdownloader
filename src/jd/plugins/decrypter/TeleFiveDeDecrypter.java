@@ -43,7 +43,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tele5.de" }, urls = { "http://(www\\.)?tele5\\.de/.*?/video/[\\w/\\-]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tele5.de" }, urls = { "http://(www\\.)?tele5\\.de/[\\w/\\-]+\\.html" }, flags = { 0 })
 public class TeleFiveDeDecrypter extends PluginForDecrypt {
     // we cannot do core updates right now, and should keep this class internal until we can do core updates
     public class SWFDecompressor {
@@ -139,7 +139,7 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
 
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("/video/")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("kaltura_player_")) {
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setAvailable(false);
             offline.setProperty("offline", true);
@@ -147,7 +147,7 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        final String[] videosinfo = br.getRegex("<div class=\"video\"><script(.*?)</script></div>").getColumn(0);
+        final String[] videosinfo = br.getRegex("kWidget\\.thumbEmbed\\(\\{(.*?)</script>").getColumn(0);
 
         /* parse flash url */
         for (final String vidinfo : videosinfo) {
