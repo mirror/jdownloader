@@ -16,11 +16,17 @@
 
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -57,6 +63,18 @@ public class DataTorCz extends PluginForHost {
         return "http://www.datator.cz/clanek-vseobecne-podminky-3.html";
     }
 
+    /**
+     * Rules to prevent new downloads from commencing
+     *
+     * */
+    public boolean canHandle(DownloadLink downloadLink, Account account) {
+        if (account == null) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
@@ -75,8 +93,67 @@ public class DataTorCz extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FATAL, msg);
     }
 
+    private static final AtomicBoolean useAPI = new AtomicBoolean(true);
+
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        return requestFileInformation(downloadLink, null);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink, Account account) throws Exception {
+        if (account == null) {
+            ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
+            if (accounts != null && accounts.size() != 0) {
+                // lets sort, premium > non premium
+                Collections.sort(accounts, new Comparator<Account>() {
+                    @Override
+                    public int compare(Account o1, Account o2) {
+                        final int io1 = o1.getBooleanProperty("free", false) ? 0 : 1;
+                        final int io2 = o2.getBooleanProperty("free", false) ? 0 : 1;
+                        return io1 <= io2 ? io1 : io2;
+                    }
+                });
+                Iterator<Account> it = accounts.iterator();
+                while (it.hasNext()) {
+                    Account n = it.next();
+                    if (n.isEnabled() && n.isValid()) {
+                        account = n;
+                        break;
+                    }
+                }
+            }
+        }
+        if (useAPI.get() && account != null) {
+            // api can only be used with an account....
+            br.getPage("http://japi.datator.cz/api.php?action=getFileInfo&hash=" + getHash(account) + "&url=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
+            final String filename = getJson("filename");
+            final String filesize = getJson("size");
+            final String error = getJson("error");
+            if (inValidate(filename)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if ("file no exist".equals(error)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if ("auth error".equals(getJson("error"))) {
+                // dump..
+                account.setProperty("hash", Property.NULL);
+                // try web
+                return requestFileInformationWeb(downloadLink);
+            }
+            downloadLink.setName(filename);
+            if (!inValidate(filesize)) {
+                try {
+                    downloadLink.setVerifiedFileSize(Long.parseLong(filesize));
+                } catch (final Throwable t) {
+                    downloadLink.setDownloadSize(Long.parseLong(filesize));
+                }
+            }
+            return AvailableStatus.TRUE;
+        } else {
+            return requestFileInformationWeb(downloadLink);
+        }
+    }
+
+    private AvailableStatus requestFileInformationWeb(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         // offline
@@ -99,13 +176,60 @@ public class DataTorCz extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private final String getHash(final Account account) throws Exception {
+        String hash = account.getStringProperty("hash", null);
+        if (hash == null) {
+            // login again?
+            account.setAccountInfo(fetchAccountInfo(account));
+            hash = account.getStringProperty("hash", null);
+            if (hash == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        return hash;
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        login(account, ai, true, true);
+        // we will use api
+        br.getPage("http://japi.datator.cz/api.php?action=login&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        final String hash = getJson("hash");
+        final String credits = getJson("kredit");
+        if ("auth error".equals(getJson("error")) || hash == null) {
+            if ("de".equalsIgnoreCase(language)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
+        account.setProperty("hash", hash);
+        ai.setTrafficLeft(SizeFormatter.getSize(credits + " MiB"));
+        if (ai.getTrafficLeft() >= 0) {
+            account.setValid(true);
+            ai.setStatus("Premium Account");
+            account.setProperty("free", false);
+        } else {
+            ai.setStatus("Free Account");
+            account.setProperty("free", true);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free accounts are not supported!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        // web (disabled)
+        // login(account, ai, true, true);
+
         return ai;
     }
 
+    /**
+     * disabled..
+     *
+     * @author raztoki
+     * @param account
+     * @param importedAI
+     * @param loginFull
+     * @param loginInfo
+     * @throws Exception
+     */
     @SuppressWarnings("unchecked")
     private void login(final Account account, AccountInfo importedAI, final boolean loginFull, final boolean loginInfo) throws Exception {
         synchronized (ACCLOCK) {
@@ -205,18 +329,45 @@ public class DataTorCz extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        String fuid = getFUID(downloadLink);
-        if (fuid == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String dllink = null;
+        int chunks = 1;
+        boolean resumes = false;
+        if (useAPI.get()) {
+            requestFileInformation(downloadLink, account);
+            br.getPage("http://japi.datator.cz/api.php?action=getDownloadLink&hash=" + getHash(account) + "&url=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
+            if ("auth error".equals(getJson("error"))) {
+                // dump..
+                account.setProperty("hash", Property.NULL);
+                // retry
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            dllink = getJson("downloadLink");
+            final String c = getJson("chunks");
+            if (c != null && c.matches("-?\\d+")) {
+                chunks = Integer.parseInt(c);
+                chunks = chunks < 1 ? -chunks : chunks;
+            }
+            final String r = getJson("resumes");
+            if (r != null && r.matches("true|false")) {
+                resumes = Boolean.parseBoolean(r);
+            }
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        } else {
+            String fuid = getFUID(downloadLink);
+            if (fuid == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            requestFileInformation(downloadLink);
+            login(account, null, false, false);
+            br.getPage(downloadLink.getDownloadURL());
+            dllink = br.getRegex("<a href=\"(https?://" + fuid + "[^\"]*\\.datator\\.cz/[^\"]+-" + fuid + "\\.html)\"[^>]*class=\"button_download\"[^>]*>").getMatch(0);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
-        requestFileInformation(downloadLink);
-        login(account, null, false, false);
-        br.getPage(downloadLink.getDownloadURL());
-        String dllink = br.getRegex("<a href=\"(https?://" + fuid + "[^\"]*\\.datator\\.cz/[^\"]+-" + fuid + "\\.html)\"[^>]*class=\"button_download\"[^>]*>").getMatch(0);
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -233,6 +384,84 @@ public class DataTorCz extends PluginForHost {
         synchronized (ACCLOCK) {
             account.setProperty("cookies", Property.NULL);
             account.setProperty("lastlogin", Property.NULL);
+        }
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from provided Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final Browser ibr, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value given JSon Array of Key from JSon response provided String source.
+     *
+     * @author raztoki
+     * */
+    private String getJsonArray(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJsonArray(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return String[] value from provided JSon Array
+     *
+     * @author raztoki
+     * @param source
+     * @return
+     */
+    private String[] getJsonResultsFromArray(final String source) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
+    }
+
+    /**
+     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
+     *
+     * @param s
+     *            Imported String to match against.
+     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
+     * @author raztoki
+     * */
+    private boolean inValidate(final String s) {
+        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
+            return true;
+        } else {
+            return false;
         }
     }
 
