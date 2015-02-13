@@ -42,7 +42,7 @@ public class MirStkCm extends PluginForDecrypt {
      * I've noticed this with mediafire links for example http://mirrorstack.com/mf_dbfzhyf2hnxm will at times return
      * http://www.mediafire.com/?HASH(0x15053b48), you can then reload a couple times and it will work in jd.. provider problem not plugin.
      * Other example links I've used seem to work fine. - Please keep code generic as possible.
-     * 
+     *
      * Don't use package name as these type of link protection services export a list of hoster urls of a single file. When one imports many
      * links (parts), JD loads many instances of the decrypter and each url/parameter/instance gets a separate packagename and that sucks.
      * It's best to use linkgrabbers default auto packagename sorting.
@@ -63,7 +63,7 @@ public class MirStkCm extends PluginForDecrypt {
 
     // version 0.6
 
-    // Tags: Multi file upload, mirror, mirrirstack
+    // Tags: Multi file upload, mirror, mirrorstack, GeneralMultiuploadDecrypter
 
     // Single link format eg. http://sitedomain/xx_uid. xx = hoster abbreviation
     private final String regexSingleLink = "(https?://[^/]+/[a-z0-9]{2}_[a-z0-9]{12})";
