@@ -17,14 +17,13 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
-import jd.config.Property;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -32,12 +31,16 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vevo.com" }, urls = { "http://www\\.vevo\\.com/watch/([A-Za-z0-9\\-_]+/[^/]+/[A-Z0-9]+|[A-Z0-9]+)|http://vevo\\.ly/[A-Za-z0-9]+|http://videoplayer\\.vevo\\.com/embed/embedded\\?videoId=[A-Za-z0-9]+" }, flags = { 32 })
+import org.jdownloader.downloader.hls.HLSDownloader;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vevo.com" }, urls = { "http://vevodecrypted/\\d+" }, flags = { 2 })
 public class VevoCom extends PluginForHost {
 
     public VevoCom(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
     /** URL that contains all kinds of API/URL/site information: http://cache.vevo.com/a/swf/assets/xml/base_config_v3.xml?cb=20130110 */
@@ -81,130 +84,97 @@ public class VevoCom extends PluginForHost {
     private static final String  type_watch_short  = "http://(www\\.)?vevo\\.com/watch/[A-Za-z0-9]+";
     private static final String  type_embedded     = "http://videoplayer\\.vevo\\.com/embed/embedded\\?videoId=[A-Za-z0-9]+";
 
+    private static final long    streamtype_rtmp   = 1;
+    private static final long    streamtype_http   = 2;
+    private static final long    streamtype_hls    = 4;
+
     private boolean              geoblock_1        = false;
     private boolean              geoblock_2        = false;
+    private long                 streamtype        = -1;
+    String                       dllink            = null;
 
     @Override
     public String getAGBLink() {
         return "http://www.vevo.com/c/DE/DE/legal/terms-conditions";
     }
 
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        if (link.getDownloadURL().matches(type_embedded)) {
-            link.setUrlDownload("http://www.vevo.com/watch/" + link.getDownloadURL().substring(link.getDownloadURL().lastIndexOf("=") + 1));
-        }
-    }
-
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        String filename = null;
         if (downloadLink.getDownloadURL().contains("/playlist")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.setBrowserExclusive();
         br.setAllowedResponseCodes(500);
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(getMainlink(downloadLink));
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (downloadLink.getDownloadURL().matches(type_short) && !br.getURL().matches(type_watch)) {
-            logger.info("Short url either redirected to unknown url format or is offline");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (!br.getURL().matches(type_watch)) {
-            /* User probably added invalid url */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (downloadLink.getDownloadURL().matches(type_short)) {
-            /* Set- and re-use new (correct) URL in case we had a short URL before */
-            downloadLink.setUrlDownload(br.getURL());
-        }
+        dllink = downloadLink.getStringProperty("directlink", null);
+        downloadLink.setFinalFileName(downloadLink.getStringProperty("plain_filename", null));
 
         /* Handling especially for e.g. users from Portugal */
         if (br.containsHTML("THIS PAGE IS CURRENTLY UNAVAILABLE IN YOUR REGION")) {
             geoblock_1 = true;
-            accessSmi_url(downloadLink);
-            final String rtmpurl = getBestQualityRtmp();
-            final String url_filename = getURLfilename(downloadLink);
-            final String rtmp_filename = new Regex(rtmpurl, "(\\d+k_\\d+x\\d+_[^<>\"]*?\\.mp4)").getMatch(0);
-            if (rtmp_filename != null) {
-                filename = url_filename + "_" + rtmp_filename;
-            } else {
-                filename = url_filename + default_Extension;
+            /* Simply access the smil url to determine online/offline status */
+            this.br = new Browser();
+            accessSmi_url(this.br, downloadLink);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setFinalFileName(filename);
             return AvailableStatus.TRUE;
         }
-
-        final String apijson = br.getRegex("apiResults:[\t\n\r ]*?(\\{.*?\\});").getMatch(0);
-        if (apijson == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        streamtype = downloadLink.getLongProperty("sourcetype", -1);
+        if (streamtype == streamtype_http) {
+            URLConnectionAdapter con = null;
+            try {
+                try {
+                    /* @since JD2 */
+                    con = br.openHeadConnection(dllink);
+                } catch (final BrowserException e) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
         }
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(apijson);
-        final ArrayList<Object> videos = (ArrayList) entries.get("videos");
-        if (videos == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final LinkedHashMap<String, Object> videoinfo = (LinkedHashMap<String, Object>) videos.get(0);
-        if (videoinfo == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final String year = Integer.toString(((Number) videoinfo.get("year")).intValue());
-        final String artistsInfo = (String) videoinfo.get("artistsInfo");
-        final String title = (String) videoinfo.get("title");
-        if (title == null || artistsInfo == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = year + "_" + artistsInfo + " - " + title;
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        downloadLink.setFinalFileName(filename + default_Extension);
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (!geoblock_1) {
-            final String videoid = br.getRegex("\"isrc\":\"([^<>\"]*?)\"").getMatch(0);
-            if (videoid == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.getHeaders().put("Referer", player);
-            br.getPage("http://videoplayer.vevo.com/VideoService/AuthenticateVideo?isrc=" + videoid);
-            final String statusCode = getJson("statusCode");
-            if (statusCode.equals("304")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video is temporarily unavailable", 60 * 60 * 1000l);
-            } else if (statusCode.equals("501")) {
-                geoblock_2 = true;
-            } else if (statusCode.equals("909")) {
-                /* Should never happen */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+        if (streamtype == -1) {
+            /* Should never happen */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (geoblock_1) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Not downloadable in your country");
         }
         /* Check whether we have to go the rtmp way or can use the http streaming */
-        if (geoblock_1 || geoblock_2) {
+        if (streamtype == streamtype_rtmp) {
             downloadRTMP(downloadLink);
-        } else {
+        } else if (streamtype == streamtype_http) {
             downloadHTTP(downloadLink);
+        } else if (streamtype == streamtype_hls) {
+            downloadHLS(downloadLink);
         }
 
     }
 
     @SuppressWarnings("deprecation")
     private void downloadRTMP(final DownloadLink downloadLink) throws Exception {
-        if (geoblock_2) {
-            accessSmi_url(downloadLink);
-        }
-        final String playpath = getBestQualityRtmp();
-        final String rtmp_base = br.getRegex("<meta base=\"(rtmp[^<>\"]*?)\"").getMatch(0);
+        final String playpath = dllink;
+        final String rtmp_base = downloadLink.getStringProperty("rtmpbase", null);
         final String pageurl = downloadLink.getDownloadURL();
-        if (rtmp_base == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         String app = new Regex(rtmp_base, "([a-z0-9]+)$").getMatch(0);
         if (app == null) {
             app = "vevood";
@@ -227,45 +197,10 @@ public class VevoCom extends PluginForHost {
 
     /*
      * 2nd way to get http streams: http://smilstream.vevo.com/HDFlash/v1/smil/<videoid>/<videoid>.smil
-     * 
+     *
      * Examplecode: http://bluecop-xbmc-repo.googlecode.com/svn-history/r383/trunk/plugin.video.vevo/default.py
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     private void downloadHTTP(final DownloadLink downloadLink) throws Exception {
-        final String[] possibleQualities = { "High", "Med", "Low" };
-        String dllink = checkDirectLink(downloadLink, "directlink");
-        if (dllink == null) {
-            String html_videosource = null;
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            final LinkedHashMap<String, Object> video = (LinkedHashMap<String, Object>) entries.get("video");
-            final ArrayList<Object> ressourcelist = (ArrayList) video.get("videoVersions");
-            int count = ressourcelist.size();
-            /* Explanation of sourceType: 0=undefined, 1=?Probably HDS?, 2=HTTP, 3=HLS iOS,4=HLS, 10=SmoothStreaming */
-            /*
-             * Explanation of version: Seems to be different vevo data servers as it has no influence on the videoquality: 0==, 1=?,
-             * 2=aka.vevo.com, 3=lvl3.vevo.com, 4=aws.vevo.com --> version 2 never worked for me
-             */
-            /* Last checked: 08.01.2015 */
-            LinkedHashMap<String, Object> tempmap = null;
-            for (int counter = count - 1; counter >= 0; counter--) {
-                tempmap = (LinkedHashMap<String, Object>) ressourcelist.get(counter);
-                final int sourceType = ((Number) tempmap.get("sourceType")).intValue();
-                /* We prefer http */
-                if (sourceType == 2) {
-                    html_videosource = (String) tempmap.get("data");
-                    break;
-                }
-            }
-            /* Clean that */
-            html_videosource = html_videosource.replace("\\", "");
-            for (final String possibleQuality : possibleQualities) {
-                dllink = new Regex(html_videosource, "name=\"" + possibleQuality + "\" url=\"(http[^<>\"]*?)\"").getMatch(0);
-                if (dllink != null) {
-                    logger.info("Found video quality: " + possibleQuality);
-                    break;
-                }
-            }
-        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
@@ -280,58 +215,34 @@ public class VevoCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        }
-        return dllink;
+    private void downloadHLS(final DownloadLink downloadLink) throws Exception {
+        checkFFmpeg(downloadLink, "Download a HLS Stream");
+        dl = new HLSDownloader(downloadLink, br, dllink);
+        dl.startDownload();
     }
 
-    private void accessSmi_url(final DownloadLink dl) throws IOException, PluginException {
-        /* Remove old cookies/headers */
-        this.br = new Browser();
-        final String fid = getFID(dl);
+    private void accessSmi_url(final Browser br, final DownloadLink dl) throws IOException, PluginException {
+        accessSmi_url(br, getFID(dl));
+    }
+
+    public static void accessSmi_url(final Browser br, final String fid) throws IOException, PluginException {
         br.getPage("http://smil.lvl3.vevo.com/Video/V2/VFILE/" + fid + "/" + fid.toLowerCase() + "r.smil");
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-    }
-
-    private String getBestQualityRtmp() throws PluginException {
-        final String[] playpaths = br.getRegex("<video src=\"(mp4:[^<>\"]*?.mp4)\"").getColumn(0);
-        if (playpaths == null || playpaths.length == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        /* Chose highest quality available */
-        return playpaths[playpaths.length - 1];
     }
 
     @SuppressWarnings("deprecation")
     private String getURLfilename(final DownloadLink dl) {
-        String url_fname = null;
-        if (dl.getDownloadURL().matches(type_short) || dl.getDownloadURL().matches(type_watch_short)) {
-            url_fname = new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+        return getURLfilename(getMainlink(dl));
+    }
 
-        } else if (!br.getURL().matches(type_watch)) {
+    @SuppressWarnings("deprecation")
+    public static String getURLfilename(final String parameter) {
+        String url_fname = null;
+        if (parameter.matches(type_short) || parameter.matches(type_watch_short)) {
+            url_fname = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
+
+        } else if (parameter.matches(type_watch)) {
             /* User probably added invalid url */
-            final Regex url_artist_title = new Regex(dl.getDownloadURL(), "vevo\\.com/watch/([A-Za-z0-9\\-_]+)/([^/]+)/.+");
+            final Regex url_artist_title = new Regex(parameter, "vevo\\.com/watch/([A-Za-z0-9\\-_]+)/([^/]+)/.+");
             final String artist = url_artist_title.getMatch(0);
             final String title = url_artist_title.getMatch(1);
             url_fname = artist + " - " + title;
@@ -340,6 +251,10 @@ public class VevoCom extends PluginForHost {
             url_fname = null;
         }
         return url_fname;
+    }
+
+    private String getMainlink(final DownloadLink dl) {
+        return dl.getStringProperty("mainlink", null);
     }
 
     /* Avoid chars which are not allowed in filenames under certain OS' */
@@ -386,6 +301,74 @@ public class VevoCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
+    }
+
+    @Override
+    public String getDescription() {
+        return "JDownloader's vevo Plugin helps downloading videoclips from vevo.tv. You can choose between different video qualities.";
+    }
+
+    /** Settings stuff */
+    private static final String ALLOW_HTTP_56   = "version_4_type_2_56";
+    private static final String ALLOW_HTTP_500  = "version_4_type_2_500";
+    private static final String ALLOW_HTTP_2000 = "version_4_type_2_2000";
+    private static final String ALLOW_RTMP_500  = "version_4_type_1_500";
+    private static final String ALLOW_RTMP_800  = "version_4_type_1_800";
+    private static final String ALLOW_RTMP_1200 = "version_4_type_1_1200";
+    private static final String ALLOW_RTMP_1600 = "version_4_type_1_1600";
+
+    private static final String ALLOW_HLS_64    = "version_4_type_4_64";
+    private static final String ALLOW_HLS_200   = "version_4_type_4_200";
+    private static final String ALLOW_HLS_400   = "version_4_type_4_400";
+    private static final String ALLOW_HLS_500   = "version_4_type_4_500";
+    private static final String ALLOW_HLS_800   = "version_4_type_4_800";
+    private static final String ALLOW_HLS_1200  = "version_4_type_4_1200";
+    private static final String ALLOW_HLS_2400  = "version_4_type_4_2400";
+    private static final String ALLOW_HLS_3200  = "version_4_type_4_3200";
+    private static final String ALLOW_HLS_4200  = "version_4_type_4_4200";
+    private static final String ALLOW_HLS_5200  = "version_4_type_4_5200";
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "HTTP formats:"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HTTP_56, JDL.L("plugins.hoster.vevoCom.ALLOW_HTTP_56", "Load videocodec H264/x264 56kBit/s 176x144 with audio codec AAC/quicktime 24/128/192kBit/s")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HTTP_500, JDL.L("plugins.hoster.vevoCom.ALLOW_HTTP_500", "Load videocodec H264/x264 500 480x360 with audio codec AAC/quicktime 24/128/192kBit/s")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HTTP_2000, JDL.L("plugins.hoster.vevoCom.ALLOW_HTTP_2000", "Load videocodec H264/x264 2000 1280x720 with audio codec AAC/quicktime 24/128/192kBit/s")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "HLS formats:"));
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HLS_64,
+        // JDL.L("plugins.hoster.vevoCom.ALLOW_HLS_64",
+        // "Load videocodec h264 64kBit/s 416x342 with audio codec AAC 128kBit/s")).setDefaultValue(false));
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HLS_200,
+        // JDL.L("plugins.hoster.vevoCom.ALLOW_HLS_200",
+        // "Load videocodec h264 200kBit/s 416x342 with audio codec AAC 128kBit/s")).setDefaultValue(false));
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HLS_400,
+        // JDL.L("plugins.hoster.vevoCom.ALLOW_HLS_400",
+        // "Load videocodec h264 400kBit/s 480x270 with audio codec AAC 128kBit/s")).setDefaultValue(false));
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HLS_500,
+        // JDL.L("plugins.hoster.vevoCom.ALLOW_HLS_500",
+        // "Load videocodec h264 500kBit/s 640x360 with audio codec AAC 128kBit/s")).setDefaultValue(false));
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HLS_800,
+        // JDL.L("plugins.hoster.vevoCom.ALLOW_HLS_800",
+        // "Load videocodec h264 800kBit/s 640x360 with audio codec AAC 128kBit/s")).setDefaultValue(false));
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HLS_1200,
+        // JDL.L("plugins.hoster.vevoCom.ALLOW_HLS_1200",
+        // "Load videocodec h264 1200kBit/s 960x540 with audio codec AAC 128kBit/s")).setDefaultValue(false));
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HLS_2400,
+        // JDL.L("plugins.hoster.vevoCom.ALLOW_HLS_2400",
+        // "Load videocodec h264 2400kBit/s 960x540 with audio codec AAC 128kBit/s")).setDefaultValue(false));
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HLS_3200,
+        // JDL.L("plugins.hoster.vevoCom.ALLOW_HLS_3200",
+        // "Load videocodec h264 3200kBit/s 1280x720 with audio codec AAC 128kBit/s")).setDefaultValue(false));
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HLS_4200,
+        // JDL.L("plugins.hoster.vevoCom.ALLOW_HLS_4200",
+        // "Load videocodec h264 4200kBit/s 1920x1080 with audio codec AAC 128kBit/s")).setDefaultValue(false));
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HLS_5200,
+        // JDL.L("plugins.hoster.vevoCom.ALLOW_HLS_5200",
+        // "Load videocodec h264 5200kBit/s 1920x1080 with audio codec AAC 128kBit/s")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "RTMP formats:"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_RTMP_500, JDL.L("plugins.hoster.vevoCom.ALLOW_RTMP_500", "Load videocodec x264 500kBit/s 212x288 with audio codec quicktime 64kBit/s")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_RTMP_800, JDL.L("plugins.hoster.vevoCom.ALLOW_RTMP_800", "Load videocodec x264 800kBit/s 212x288 with audio codec quicktime 64kBit/s")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_RTMP_1200, JDL.L("plugins.hoster.vevoCom.ALLOW_RTMP_1200", "Load videocodec x264 1200kBit/s 768x432 with audio codec quicktime 128kBit/s")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_RTMP_1600, JDL.L("plugins.hoster.vevoCom.ALLOW_RTMP_1600", "Load videocodec x264 1600kBit/s 768x432 with audio codec quicktime 128kBit/s")).setDefaultValue(false));
     }
 
     @Override
