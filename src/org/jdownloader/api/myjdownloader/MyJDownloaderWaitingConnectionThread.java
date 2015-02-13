@@ -155,6 +155,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                             connectionSocket.close();
                         } catch (final Throwable ignore) {
                         }
+                        continue;
                     }
                     MyJDownloaderConnectionResponse response = new MyJDownloaderConnectionResponse(this, request, connectionStatus, connectionSocket, e);
                     if (connectThread.putResponse(response) == false) {
