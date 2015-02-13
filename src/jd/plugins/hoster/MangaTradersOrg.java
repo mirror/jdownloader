@@ -38,7 +38,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 25467 $", interfaceVersion = 2, names = { "mangatraders.org" }, urls = { "http://(www\\.)*?mangatraders\\.org/manga/download\\.php\\?id=[a-f0-9]{10,}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 25467 $", interfaceVersion = 2, names = { "mangatraders.org" }, urls = { "http://(www\\.)*?mangatraders\\.org/(?:manga/download\\.php|read-online/dl\\.php)\\?id=[a-f0-9]{10,}" }, flags = { 2 })
 public class MangaTradersOrg extends PluginForHost {
 
     private boolean      weAreAlreadyLoggedIn = false;
@@ -85,6 +85,7 @@ public class MangaTradersOrg extends PluginForHost {
                 if (br.getRedirectLocation() == null) {
                     dl.setAvailable(false);
                 } else {
+                    br.setFollowRedirects(true);
                     URLConnectionAdapter con = null;
                     try {
                         if (isNewJD()) {
