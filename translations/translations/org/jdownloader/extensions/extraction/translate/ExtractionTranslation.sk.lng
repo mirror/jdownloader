@@ -102,6 +102,7 @@ settings_passwords=Zoznam hesiel
 settings_remove_after_extract=Odstrániť súbory archívu po úspešnom rozbelení?
 settings_remove_after_extract_downloadlink=Odstrániť odkaz na stiahnutie archívu po úspešnom rozbalení?
 settings_subpath=Formát názvu podpriečinka
+settings_subpath_minnum3=...iba v prípade, že koreňový archív obsahuje aspoň
 settings_use_subpath=Vytvoriť podpriečinok
 settings_various=Rôzne
 showextractlog=Protokol rozbalenia pre %s1
