@@ -404,13 +404,13 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         if (versionCode.equals("VO") && parameter.matches(TYPE_CONCERT)) {
             /* Special case - no different versions available --> We already got the version we want */
             lint = languageVersion;
-        } else if ("VF-STMF".equals(versionCode) || "VOF-STA".equalsIgnoreCase("versionCode") || "VOF-STMF".equals(versionCode) || "VA-STMA".equals(versionCode) || lang.equals("OmU")) {
+        } else if ("VF-STMF".equals(versionCode) || "VOF-STA".equalsIgnoreCase("versionCode") || "VOF-STMF".equals(versionCode) || "VA-STMA".equals(versionCode)) {
             lint = 3;
         } else if (versionCode.equals("VOA-STMA")) {
             lint = 4;
         } else if (versionCode.equals("VAAUD")) {
             lint = 5;
-        } else if (lang.equals("VA") || lang.equals("DE")) {
+        } else if (lang.equals("VA") || lang.equals("DE") || versionCode.equals("VO-STA")) {
             lint = 1;
         } else if (lang.equals("VF") || lang.equals("VOF") || lang.equals("FR")) {
             lint = 2;
@@ -433,7 +433,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         String lang = this.getUrlLang();
         if (lang != null) {
             lang = lang.toUpperCase();
-            if ("DE".equalsIgnoreCase(lang) && vsr.contains("\"versionShortLibelle\":\"DE\"")) {
+            if ("DE".equalsIgnoreCase(lang) && (vsr.contains("\"versionShortLibelle\":\"DE\"") || vsr.contains("\"versionShortLibelle\":\"OmU\""))) {
                 languageVersion = 1;
             } else {
                 languageVersion = 2;
