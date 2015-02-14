@@ -71,12 +71,10 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         // when testing and dropping to frame, components will fail without clean browser.
         br = new Browser();
         setBrowserExclusive();
+        prepBrowser(br);
         br.setFollowRedirects(true);
-        // we do not want German headers!
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
-        br.setCookie("vimeo.com", "v6f", "1");
         try {
-            br.setAllowedResponseCodes(410);
+            br.setAllowedResponseCodes(new int[] { 400, 410 });
         } catch (final Throwable t) {
         }
         if (parameter.matches(LINKTYPE_USER)) {
@@ -177,6 +175,9 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     channelName = getJson(owner_json, "name");
                 }
             } else {
+                // maybe required
+                br.setCookie(this.getHost(), "player", "");
+
                 parameter = cleanVimeoURL;
                 br.getPage(parameter);
 
@@ -207,19 +208,34 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     link.setFinalFileName(ID);
                     return decryptedLinks;
                 }
-                try {
-                    final Browser br2 = br.cloneBrowser();
-                    br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    br2.getHeaders().put("X-Request", "JSON");
-                    br2.getPage(br.getURL() + "?action=status");
-                    if (br2.containsHTML("state\":\"transcode_failed\"")) {
-                        final DownloadLink link = getOffline(parameter);
-                        link.setFinalFileName(ID);
-                        return decryptedLinks;
-                    }
-                } catch (final Throwable e) {
-
+                // try {
+                // final Browser br2 = br.cloneBrowser();
+                // br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                // br2.getHeaders().put("X-Request", "JSON");
+                // br2.getPage(br.getURL() + "?action=status");
+                // if (br2.containsHTML("state\":\"transcode_failed\"")) {
+                // final DownloadLink link = getOffline(parameter);
+                // link.setFinalFileName(ID);
+                // return decryptedLinks;
+                // }
+                // } catch (final Throwable e) {
+                //
+                // }
+                {
+                    final String player = br.getRegex("('|\")(https?://[^\"'<>]+/js/player\\.js)\\1").getMatch(1);
+                    final Browser ajax = new Browser();
+                    ajax.getHeaders().put("Referer", br.getBaseURL());
+                    ajax.getHeaders().put("Accept", "*/*");
+                    ajax.getHeaders().put("Purpose", "prefetch");
+                    ajax.cloneBrowser().getPage(player != null ? player : "https://f.vimeocdn.com/p/2.5.29/js/player.js");
                 }
+                // set this cookie
+                // document.cookie = 'vuid=' + encodeURIComponent('35533916.335958829')
+                final String vuid = br.getRegex("document\\.cookie\\s*=\\s*'vuid='\\s*\\+\\s*encodeURIComponent\\('(\\d+\\.\\d+)'\\)").getMatch(0);
+                if (vuid != null) {
+                    br.setCookie(br.getURL(), "vuid", vuid);
+                }
+
                 date = br.getRegex("itemprop=\"dateCreated\" content=\"(\\d{4}\\-\\d{2}\\-\\d{2}T\\d{2}:\\d{2}:\\d{2})").getMatch(0);
                 channelName = br.getRegex("itemtype=\"http://schema\\.org/Person\">[\t\n\r ]+<meta itemprop=\"name\" content=\"([^<>\"]+)\"").getMatch(0);
             }
@@ -291,7 +307,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                         url = "http://vimeo.com" + url;
                     }
                 }
-                final String linkdupeid = ID + "_" + fmt;
+                // there can be multiple hd/sd etc need to identify with framesize.
+                final String linkdupeid = ID + "_" + fmt + "_" + quality[3];
                 final DownloadLink link = createDownloadlink(parameter.replace("http://", "decryptedforVimeoHosterPlugin" + format + "://"));
                 link.setProperty("directURL", url);
                 // videoTitle is required!
@@ -432,6 +449,11 @@ public class VimeoComDecrypter extends PluginForDecrypt {
     private String getTitle(final Browser ibr) throws PluginException {
         pluginLoaded();
         return ((jd.plugins.hoster.VimeoCom) vimeo_hostPlugin).getTitle(ibr);
+    }
+
+    private Browser prepBrowser(final Browser ibr) throws PluginException {
+        pluginLoaded();
+        return ((jd.plugins.hoster.VimeoCom) vimeo_hostPlugin).prepBrGeneral(null, ibr);
     }
 
     private PluginForHost vimeo_hostPlugin = null;
