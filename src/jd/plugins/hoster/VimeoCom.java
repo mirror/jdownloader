@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -93,19 +94,23 @@ public class VimeoCom extends PluginForHost {
         return -1;
     }
 
-    private void prepBrGeneral(final DownloadLink dl) {
+    private static final AtomicReference<String> userAgent = new AtomicReference<String>("Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.111 Safari/537.36");
+
+    public Browser prepBrGeneral(final DownloadLink dl, final Browser prepBr) {
         final String vimeo_forced_referer = dl != null ? dl.getStringProperty("vimeo_forced_referer", null) : null;
         if (vimeo_forced_referer != null) {
-            br.getHeaders().put("Referer", vimeo_forced_referer);
+            prepBr.getHeaders().put("Referer", vimeo_forced_referer);
         }
-        /* we do not want German headers! */
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
+        // we do not want German headers!
+        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
+        prepBr.getHeaders().put("User-Agent", userAgent.get());
+        return prepBr;
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
-        prepBrGeneral(downloadLink);
+        prepBrGeneral(downloadLink, br);
         if (downloadLink.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -143,8 +148,7 @@ public class VimeoCom extends PluginForHost {
         br = new Browser();
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setCookie("vimeo.com", "v6f", "1");
-        prepBrGeneral(downloadLink);
+        prepBrGeneral(downloadLink, br);
         if (isPrivateLink(downloadLink)) {
             br.getPage("http://player.vimeo.com/video/" + ID);
             if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || "This video does not exist\\.".equals(getJson("message"))) {
@@ -299,7 +303,7 @@ public class VimeoCom extends PluginForHost {
         synchronized (LOCK) {
             try {
                 setBrowserExclusive();
-                this.prepBrGeneral(null);
+                this.prepBrGeneral(null, br);
                 br.setFollowRedirects(true);
                 br.setDebug(true);
                 final Object ret = account.getProperty("cookies", null);
@@ -387,6 +391,9 @@ public class VimeoCom extends PluginForHost {
         Thread.sleep(1000);
         // process the different page layouts
         String qualities[][] = null;
+        String download[][] = null;
+        boolean debug = false;
+
         // qx[0] = url
         // qx[1] = extension
         // qx[2] = format (mobile|sd|hd)
@@ -403,7 +410,7 @@ public class VimeoCom extends PluginForHost {
             gq.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             gq.getPage("http://vimeo.com/" + ID + "?action=download");
             /* german accept language will effect the language of this response, Datei instead of file. */
-            String[][] q = gq.getRegex("<a href=\"(https?://[^<>\"]*?)\" download=\"([^<>\"]*?)\" rel=\"nofollow\">(SD|HD) VBR / 1 PASS</a>[\t\n\r ]+<span>\\((\\d+x\\d+) / (\\d+MB)\\)</span>").getMatches();
+            String[][] q = gq.getRegex("<a href=\"(https?://[^<>\"]*?)\" download=\"([^<>\"]*?)\" rel=\"nofollow\">(Mobile(?: ?(?:SD|HD))?|MP4|SD|HD)[^>]*</a>\\s*<span>\\((\\d+x\\d+) / (\\d+MB)\\)</span>").getMatches();
             if (q != null) {
                 qualities = new String[q.length][quality_info_length];
                 for (int i = 0; i < q.length; i++) {
@@ -417,6 +424,10 @@ public class VimeoCom extends PluginForHost {
                     /* No codec given */
                     qualities[i][6] = null;
                 }
+            }
+            if (debug) {
+                download = qualities;
+                qualities = null;
             }
         }
         /* player.vimeo.com links = Special case as the needed information is already in our current browser. */
@@ -487,6 +498,10 @@ public class VimeoCom extends PluginForHost {
             }
         } else if (configURL == null || (qualities == null || (qualities != null && qualities.length == 0))) {
             // TODO: Find out of we still need this - this function is probably not needed anymore.
+            // best bet todo the above is to throw exception. someone will report error.
+            if (true) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Please report this to JDownloader Development Team");
+            }
             String sig = ibr.getRegex("\"signature\":\"([0-9a-f]+)\"").getMatch(0);
             String time = ibr.getRegex("\"timestamp\":(\\d+)").getMatch(0);
             if (sig != null && time != null) {
@@ -529,6 +544,8 @@ public class VimeoCom extends PluginForHost {
         final String channelName = downloadLink.getStringProperty("channel", null);
         final String videoQuality = downloadLink.getStringProperty("videoQuality", null);
         final String videoID = downloadLink.getStringProperty("videoID", null);
+        final String videoFrameSize = downloadLink.getStringProperty("videoFrameSize", "");
+        final String videoBitrate = downloadLink.getStringProperty("videoBitrate", "");
 
         String formattedDate = null;
         if (date != null) {
@@ -582,6 +599,10 @@ public class VimeoCom extends PluginForHost {
         if (videoTitle != null) {
             formattedFilename = formattedFilename.replace("*videoname*", videoTitle);
         }
+        // size
+        formattedFilename = formattedFilename.replace("*videoFrameSize*", videoFrameSize);
+        // bitrate
+        formattedFilename = formattedFilename.replace("*videoBitrate*", videoBitrate);
 
         return formattedFilename;
     }
@@ -694,6 +715,8 @@ public class VimeoCom extends PluginForHost {
         sb.append("*videoname* = name of the video without extension\r\n");
         sb.append("*quality* = mobile or sd or hd\r\n");
         sb.append("*videoid* = id of the video\r\n");
+        sb.append("*videoFrameSize* = size of video eg. 640x480 (not always available)");
+        sb.append("*videoBitrate* = bitrate of video eg. xxxkbits (not always available)");
         sb.append("*ext* = the extension of the file, in this case usually '.mp4'");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
     }
