@@ -17,6 +17,7 @@ addScheduleEntryDialog_header_time=Čas / Interval
 addScheduleEntryDialog_hours=Hodín
 addScheduleEntryDialog_minute=Minúta
 addScheduleEntryDialog_minutes=Minút
+addScheduleEntryDialog_noAccount=Žiadne účty k dispozícii
 addScheduleEntryDialog_no_parameter=Žiadne parametre k nastaveniu.
 addScheduleEntryDialog_no_parameter_caption=Parameter
 addScheduleEntryDialog_repeat=Opakovať
