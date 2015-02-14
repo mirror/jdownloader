@@ -37,6 +37,7 @@ ExportAction_ExportAction_tt=Uložit pravidlé do súboru.\n- Zálohujte\n- Zdie
 Extraction_onShutdownRequest_=Rozbaľovanie stále prebieha!
 Extraction_onShutdownRequest_msg=Prerušiť rozbaľovanie?
 GenericDeleteFromLinkgrabberAction_getTranslationForClearSearchFilter=Vymazať pole vyhľadávania
+GenericDeleteFromLinkgrabberAction_getTranslationForDeleteDupesEnabled=Odstrániť duplicity
 ImportAction_tt=Importovať pravidla z *.jdfilter (*.jdregexfilter) súborov
 LinkCollector_addCrawledLink_offlinepackage=Offline súbory
 LinkCollector_addCrawledLink_unknownpackage=Neznáme súbory
