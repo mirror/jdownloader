@@ -423,6 +423,7 @@ public class VimeoCom extends PluginForHost {
         if (configURL != null && (qualities == null || (qualities != null && qualities.length == 0)) || ibr.getURL().contains("player.vimeo.com/")) {
             // iconify_down_b could fail, revert to the following if statements.
             final Browser gq = ibr.cloneBrowser();
+            gq.getHeaders().put("Accept", "*/*");
             String json;
             if (configURL != null) {
                 configURL = configURL.replaceAll("&amp;", "&");
