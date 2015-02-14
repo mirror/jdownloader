@@ -356,7 +356,7 @@ public class HLSDownloader extends DownloadInterface {
                                 if (sb.length() > 0) {
                                     sb.append("\r\n");
                                 }
-                                if (s.startsWith("http://")) {
+                                if (s.matches("^https?://.+")) {
                                     sb.append("http://127.0.0.1:" + HLSDownloader.this.port + "/download?id=" + processID + "&url=" + Encoding.urlEncode(s));
                                 } else if (!s.trim().startsWith("#")) {
                                     sb.append("http://127.0.0.1:" + HLSDownloader.this.port + "/download?id=" + processID + "&url=" + Encoding.urlEncode(br.getBaseURL() + s));
