@@ -18,6 +18,14 @@ public interface RemoteAPIConfig extends ConfigInterface {
 
     void setExternInterfaceEnabled(boolean b);
 
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @DescriptionForConfigEntry("ExternInterface(Cnl2,Flashgot) will listen on localhost only")
+    boolean isExternInterfaceLocalhostOnly();
+
+    void setExternInterfaceLocalhostOnly(boolean b);
+
     @AboutConfig
     @DescriptionForConfigEntry("ExternInterface(Cnl2,Flashgot) Authorized Websites")
     ArrayList<String> getExternInterfaceAuth();
