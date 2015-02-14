@@ -137,6 +137,9 @@ public class RDMdthk extends PluginForDecrypt {
     /* INFORMATION: network = akamai or limelight == RTMP */
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private void decryptMediathek() throws Exception {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+        }
         title = br.getRegex("<meta name=\"dcterms\\.title\" content=\"([^\"]+)\"").getMatch(0);
         final String realBaseUrl = new Regex(br.getBaseURL(), "(^.*\\.de)").getMatch(0);
         String broadcastID;

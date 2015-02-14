@@ -129,6 +129,8 @@ public class FileNukeCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        /* Load sister plugin */
+        JDUtilities.getPluginForHost("sharesix.com");
         br.setFollowRedirects(true);
         prepBrowser();
         setFUID(link);
@@ -141,56 +143,23 @@ public class FileNukeCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         final Regex fnameregex = new Regex(correctedBR, "class=\"file(?:\\-|_)name\">Download File ([^<>\"]*?) \\((\\d+(\\.\\d{1,2})? (MB|GB))\\)</p>");
-        String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
-        if (filename == null) {
-            filename = new Regex(correctedBR, "class=\"f_l_name\">Download File ([^<>\"]*?) \\(").getMatch(0);
-            if (filename == null) {
-                filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
-                if (filename == null) {
-                    // generic regex will pick up false positives (html)
-                    // adjust to make work with COOKIE_HOST
-                    filename = new Regex(correctedBR, "(?i)Filename: ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
-                }
+        final String filename = jd.plugins.hoster.ShareSixCom.getFilename(this.correctedBR);
+        final String filesize = jd.plugins.hoster.ShareSixCom.getFilesize(this.correctedBR);
+        if (filename == null || filename.equals("")) {
+            if (correctedBR.contains("You have reached the download\\-limit")) {
+                logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
+                return AvailableStatus.UNCHECKABLE;
             }
+            logger.warning("The filename equals null, throwing \"plugin defect\" now...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (filename == null) {
-            filename = fnameregex.getMatch(0);
+        /* Such links can never be downloaded - others might at least return a final downloadlink although they will often time out */
+        if (filename.equals("file.mp4")) {
+            logger.info("Seems like this link is offline (workaround-offline-detection)");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filesize = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
-        if (filesize == null) {
-            filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-            if (filesize == null) {
-                filesize = fnameregex.getMatch(1);
-            }
-            if (filesize == null) {
-                // generic regex picks up false positives (premium ads above
-                // filesize)
-                // adjust accordingly to make work with COOKIE_HOST
-                filesize = new Regex(correctedBR, "(?i)([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
-            }
-        }
-        /* Workaround for the stupid cloudflare e-mail protection which also kicks in if there is an @ inside the filename... */
-        if (filename == null && correctedBR.contains("=\"file_name\"") && correctedBR.contains("class=\"__cf_email__\"")) {
-            filename = this.fuid;
-            link.setName(filename);
-        } else {
-            if (filename == null || filename.equals("")) {
-                if (correctedBR.contains("You have reached the download\\-limit")) {
-                    logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
-                    return AvailableStatus.UNCHECKABLE;
-                }
-                logger.warning("The filename equals null, throwing \"plugin defect\" now...");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
-            /* Such links can never be downloaded - others might at least return a final downloadlink although they will often time out */
-            if (filename.equals("file.mp4")) {
-                logger.info("Seems like this link is offline (workaround-offline-detection)");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            link.setProperty("plainfilename", filename);
-            link.setFinalFileName(filename.trim());
-        }
+        link.setProperty("plainfilename", filename);
+        link.setFinalFileName(filename.trim());
         if (filesize != null && !filesize.equals("")) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
