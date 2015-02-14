@@ -44,7 +44,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.PluginTaskID;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "https?://(www\\.)?mega\\.co\\.nz/#N?(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "https?://(www\\.)?mega\\.co\\.nz/#N?(!|%21)[a-zA-Z0-9]+(!|%21)([a-zA-Z0-9_,\\-]|%20)+" }, flags = { 0 })
 public class MegaConz extends PluginForHost {
     private static AtomicLong CS        = new AtomicLong(System.currentTimeMillis());
     private final String      USE_SSL   = "USE_SSL_V2";
@@ -63,7 +63,7 @@ public class MegaConz extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("%21", "!"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("%21", "!").replaceAll("%20", ""));
     }
 
     @Override
