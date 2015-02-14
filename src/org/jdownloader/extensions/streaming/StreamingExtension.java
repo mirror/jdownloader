@@ -196,9 +196,10 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
 
     @Override
     protected void initExtension() throws StartException {
-
-        MenuManagerDownloadTableContext.getInstance().registerExtender(this);
-        MenuManagerLinkgrabberTableContext.getInstance().registerExtender(this);
+        if (!Application.isHeadless()) {
+            MenuManagerDownloadTableContext.getInstance().registerExtender(this);
+            MenuManagerLinkgrabberTableContext.getInstance().registerExtender(this);
+        }
     }
 
     @Override

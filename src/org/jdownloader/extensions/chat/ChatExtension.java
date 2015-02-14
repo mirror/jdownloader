@@ -1110,9 +1110,10 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
         } catch (IOException e) {
         }
         Reconnecter.getInstance().getEventSender().addListener(this);
-
-        MenuManagerMainmenu.getInstance().registerExtender(this);
-        MenuManagerMainToolbar.getInstance().registerExtender(this);
+        if (!Application.isHeadless()) {
+            MenuManagerMainmenu.getInstance().registerExtender(this);
+            MenuManagerMainToolbar.getInstance().registerExtender(this);
+        }
     }
 
     @Override

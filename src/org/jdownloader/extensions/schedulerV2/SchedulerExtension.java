@@ -111,22 +111,23 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
 
     @Override
     protected void start() throws StartException {
+        if (!Application.isHeadless()) {
+            new EDTRunner() {
 
-        new EDTRunner() {
+                @Override
+                protected void runInEDT() {
+                    getConfigPanel().updateLayout();
+                }
+            };
 
-            @Override
-            protected void runInEDT() {
-                getConfigPanel().updateLayout();
-            }
-        };
-
-        // The extension can add items to the main toolbar and the main menu.
-        MenuManagerMainToolbar.getInstance().registerExtender(this);
-        MenuManagerMainmenu.getInstance().registerExtender(this);
-
+            // The extension can add items to the main toolbar and the main menu.
+            MenuManagerMainToolbar.getInstance().registerExtender(this);
+            MenuManagerMainmenu.getInstance().registerExtender(this);
+        }
         loadScheduleEntries();
-        getConfigPanel().getTableModel().updateDataModel();
-
+        if (!Application.isHeadless()) {
+            getConfigPanel().getTableModel().updateDataModel();
+        }
         ShutdownController.getInstance().addShutdownEvent(shutDownEvent);
         getLogger().info("Start SchedulerThreadTimer");
         synchronized (lock) {
