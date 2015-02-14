@@ -470,8 +470,10 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
     @Override
     protected void start() throws StartException {
-        MenuManagerMainToolbar.getInstance().registerExtender(this);
-        MenuManagerMainmenu.getInstance().registerExtender(this);
+        if (!Application.isHeadless()) {
+            MenuManagerMainToolbar.getInstance().registerExtender(this);
+            MenuManagerMainmenu.getInstance().registerExtender(this);
+        }
         if (!getSettings().isShutdownActiveByDefaultEnabled()) {
             CFG_SHUTDOWN.SHUTDOWN_ACTIVE.setValue(false);
         }

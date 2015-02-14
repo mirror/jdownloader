@@ -1,7 +1,5 @@
 package org.jdownloader.extensions.infobar;
 
-import java.awt.GraphicsEnvironment;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
@@ -134,8 +132,10 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
             throw new StartException("Not available in Headless Mode");
         }
         LogController.CL().info("InfoBar: OK");
-        MenuManagerMainmenu.getInstance().registerExtender(this);
-        MenuManagerMainToolbar.getInstance().registerExtender(this);
+        if (!Application.isHeadless()) {
+            MenuManagerMainmenu.getInstance().registerExtender(this);
+            MenuManagerMainToolbar.getInstance().registerExtender(this);
+        }
     }
 
     @Override

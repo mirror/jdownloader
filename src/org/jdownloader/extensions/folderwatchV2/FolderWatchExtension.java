@@ -121,9 +121,10 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
 
     @Override
     protected void start() throws StartException {
-
-        MenuManagerMainToolbar.getInstance().registerExtender(this);
-        MenuManagerMainmenu.getInstance().registerExtender(this);
+        if (!Application.isHeadless()) {
+            MenuManagerMainToolbar.getInstance().registerExtender(this);
+            MenuManagerMainmenu.getInstance().registerExtender(this);
+        }
         createDefaultFolder();
         synchronized (lock) {
             scheduler = Executors.newScheduledThreadPool(1);

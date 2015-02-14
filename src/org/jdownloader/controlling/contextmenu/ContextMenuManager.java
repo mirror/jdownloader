@@ -41,6 +41,9 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     protected DelayedRunnable updateDelayer;
 
     public ContextMenuManager() {
+        if (Application.isHeadless()) {
+            return;
+        }
         config = JsonConfig.create(Application.getResource("cfg/menus_v2/" + getStorageKey()), ContextMenuConfigInterface.class);
         logger = LogController.getInstance().getLogger(getClass().getName());
         updateDelayer = new DelayedRunnable(1000l, 2000) {
@@ -423,6 +426,9 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     }
 
     public void registerExtender(MenuExtenderHandler handler) {
+        if (Application.isHeadless()) {
+            return;
+        }
         if (extender.add(handler)) {
             menuData = null;
             delayUpdate();
@@ -434,6 +440,9 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     }
 
     public void unregisterExtender(MenuExtenderHandler handler) {
+        if (Application.isHeadless()) {
+            return;
+        }
         if (extender.remove(handler)) {
             menuData = null;
             delayUpdate();
