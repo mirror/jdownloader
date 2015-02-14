@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hentai2read.com" }, urls = { "http://(www\\.)?hentai2read.com/[a-z0-9\\-_]+/\\d+/1/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hentai2read.com" }, urls = { "http://(www\\.)?hentai2read.com/[a-z0-9\\-_]+/\\d+" }, flags = { 0 })
 public class Hentai2ReadCom extends PluginForDecrypt {
 
     public Hentai2ReadCom(PluginWrapper wrapper) {
@@ -39,7 +39,7 @@ public class Hentai2ReadCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        br.getPage(parameter);
+        br.getPage(parameter + "/1/");
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
