@@ -23,7 +23,7 @@ public class ExternInterface {
                         remoteAPI.register(new ExternInterfaceImpl());
                         while (config.isExternInterfaceEnabled() && !Thread.currentThread().isInterrupted()) {
                             try {
-                                DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(9666, true, remoteAPI);
+                                DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(9666, config.isExternInterfaceLocalhostOnly(), remoteAPI);
                                 break;
                             } catch (IOException e) {
                                 Thread.sleep(30 * 1000l);
