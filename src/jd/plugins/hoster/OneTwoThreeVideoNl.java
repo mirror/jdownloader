@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "123video.nl" }, urls = { "http://(www\\.)?123video\\.nl/(playvideos\\.asp\\?MovieID=\\d+|123video_share\\.swf\\?mediaSrc=\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "123video.nl" }, urls = { "http://(www\\.)?123video\\.nl/sexvideo/\\d+" }, flags = { 0 })
 public class OneTwoThreeVideoNl extends PluginForHost {
 
     public OneTwoThreeVideoNl(PluginWrapper wrapper) {
@@ -43,12 +43,6 @@ public class OneTwoThreeVideoNl extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.123video.nl/";
-    }
-
-    private static final boolean UNDER_DEVELOPMENT = true;
-
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload("http://www.123video.nl/playvideos.asp?MovieID=" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
     }
 
     @SuppressWarnings("deprecation")
@@ -66,22 +60,14 @@ public class OneTwoThreeVideoNl extends PluginForHost {
             }
             throw e;
         }
-        if (br.containsHTML("class=\"error\"")) {
+        if (!br.getURL().contains("/sexvideo/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title> Sexvideo: ([^<>\"]*?) \\- Erotiek</title>").getMatch(0);
+        String filename = br.getRegex("<header class=\"titlerow\">[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (UNDER_DEVELOPMENT) {
-            filename = Encoding.htmlDecode(filename).trim() + ".flv";
-            downloadLink.setName(filename);
-            return AvailableStatus.TRUE;
-        }
-        DLLINK = br.getRegex("").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("").getMatch(0);
-        }
+        DLLINK = br.getRegex("\"(https?://stream\\.123video\\.nl[^<>\"]*?)\"").getMatch(0);
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -115,9 +101,6 @@ public class OneTwoThreeVideoNl extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (UNDER_DEVELOPMENT) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Unfinished plugin, download not yet possible!");
-        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

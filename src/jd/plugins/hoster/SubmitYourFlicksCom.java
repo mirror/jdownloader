@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "submityourflicks.com" }, urls = { "http://(www\\.)?submityourflicks\\.com/(videos/\\d+/[a-z0-9\\-]+\\.html|embconfig/\\d+|embedded/\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "submityourflicks.com" }, urls = { "http://(www\\.)?submityourflicks\\.com/(\\d+[a-z0-9\\-]+\\.html|embconfig/\\d+|embedded/\\d+)" }, flags = { 0 })
 public class SubmitYourFlicksCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -53,20 +53,31 @@ public class SubmitYourFlicksCom extends PluginForHost {
     private static final String EMBEDLINK = "http://(www\\.)?submityourflicks\\.com/(embconfig|embedded)/\\d+";
 
     public void correctDownloadLink(final DownloadLink link) {
-        if (link.getDownloadURL().matches(EMBEDLINK)) link.setUrlDownload("http://submityourflicks.com/videos/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + "/" + System.currentTimeMillis() + new Random().nextInt(100000) + ".html");
+        if (link.getDownloadURL().matches(EMBEDLINK)) {
+            link.setUrlDownload("http://submityourflicks.com/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + "-" + System.currentTimeMillis() + new Random().nextInt(100000) + ".html");
+        }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("submityourflicks.com/404.php") || br.containsHTML("(<title>Wops 404 \\.\\.\\.</title>|class=\"style1\">404 \\- this page does not exist|http-equiv=refresh content=\"2; url=http://www\\.submityourflicks\\.com)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("submityourflicks.com/404.php") || br.containsHTML("(<title>Wops 404 \\.\\.\\.</title>|class=\"style1\">404 \\- this page does not exist|http-equiv=refresh content=\"2; url=http://www\\.submityourflicks\\.com)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\" />").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>SubmitYourFlicks \\- (.*?)</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>SubmitYourFlicks \\- (.*?)</title>").getMatch(0);
+        }
         DLLINK = br.getRegex("addVariable\\(\"file\", \"(http.*?)\"").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("name=\"FlashVars\" value=\"file=(http.*?)http://(www\\.)?submityourflicks\\.com").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("name=\"FlashVars\" value=\"file=(http.*?)http://(www\\.)?submityourflicks\\.com").getMatch(0);
+        }
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
@@ -76,10 +87,11 @@ public class SubmitYourFlicksCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -94,6 +106,11 @@ public class SubmitYourFlicksCom extends PluginForHost {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

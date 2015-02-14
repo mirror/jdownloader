@@ -262,7 +262,7 @@ public class DrssTvDecrypter extends PluginForDecrypt {
                 }
                 if (subtitle.equals("Titelbild")) {
                     if (allow_teaser_pic) {
-                        String teaser_picture = br.getRegex("property=\"og:image\" content=\"(/images/[^<>\"]*?teaser\\.jpg)\"").getMatch(0);
+                        String teaser_picture = br.getRegex("property=\"og:image\" content=\"(/images/[^<>\"]*?\\.jpg)\"").getMatch(0);
                         if (teaser_picture == null) {
                             teaser_picture = br.getRegex("player\\-" + real_counter + "\">[\t\n\r ]+<img height=\"\\d+\" class=\"img\\-responsive\" src=\"(/images/[^<>\"]*?\\.jpg)\"").getMatch(0);
                         }
