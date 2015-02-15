@@ -55,6 +55,7 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxy.TYPE;
+import org.appwork.utils.net.httpconnection.HTTPProxyException;
 import org.appwork.utils.net.httpconnection.ProxyAuthException;
 import org.appwork.utils.net.httpconnection.ProxyConnectException;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -1156,20 +1157,19 @@ public class ProxyController implements ProxySelectorInterface {
         });
     }
 
-    public boolean reportConnectException(final HTTPProxy proxy, final String url, final IOException e) {
+    public boolean reportHTTPProxyException(final HTTPProxy proxy, final String urlString, final IOException e) {
         try {
-            if (e instanceof ProxyAuthException) {
-                // we handle this
-                return false;
-            } else if (e instanceof ProxyConnectException) {
+            if (proxy != null && e != null && urlString != null && e instanceof HTTPProxyException) {
                 final SelectedProxy selectedProxy = getSelectedProxy(proxy);
                 if (selectedProxy != null && selectedProxy.getSelector() != null) {
-                    AbstractProxySelectorImpl selector = selectedProxy.getSelector();
-                    Plugin plg = getPluginFromThread();
-                    if (plg != null) {
-                        selector.addSessionBan(new ConnectExceptionInPluginBan(plg, selector, selectedProxy));
-                    } else {
-                        selector.addSessionBan(new GenericConnectExceptionBan(selector, selectedProxy, new URL(url)));
+                    final URL url = new URL(urlString);
+                    final AbstractProxySelectorImpl selector = selectedProxy.getSelector();
+                    if (e instanceof ProxyConnectException) {
+                        selector.addSessionBan(new GenericConnectExceptionBan(selector, selectedProxy, url));
+                        return true;
+                    } else if (e instanceof ProxyAuthException) {
+                        selector.addSessionBan(new AuthExceptionGenericBan(selector, selectedProxy, url));
+                        return true;
                     }
                 }
             }
