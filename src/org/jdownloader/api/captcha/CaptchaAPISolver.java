@@ -61,8 +61,17 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
     }
 
     @Override
-    public void solve(SolverJob<Object> solverJob) throws InterruptedException, SolverException, SkipException {
-
+    public void solve(SolverJob<Object> job) throws InterruptedException, SolverException, SkipException {
+        // JobRunnable<Object> jr;
+        // jr = new JobRunnable<Object>(this, job);
+        //
+        // synchronized (map) {
+        // map.put(job, jr);
+        //
+        //
+        // }
+        MyJDownloaderController.getInstance().pushCaptchaFlag(true);
+        eventPublisher.fireNewJobEvent(job);
     }
 
     public CaptchaAPISolver() {
@@ -172,17 +181,10 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
 
         if (!isMyJDownloaderActive()) {
             job.setSolverDone(this);
+            return;
         }
 
-        JobRunnable<Object> jr;
-        jr = new JobRunnable<Object>(this, job);
-        synchronized (map) {
-            map.put(job, jr);
-            MyJDownloaderController.getInstance().pushCaptchaFlag(true);
-
-        }
-        jr.fireBeforeSolveEvent();
-        eventPublisher.fireNewJobEvent(job);
+        super.enqueue(job);
 
     }
 

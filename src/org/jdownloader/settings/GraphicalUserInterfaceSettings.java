@@ -52,7 +52,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     /**
      * How many ms the speedmeter shall show/record. Please note that big Timeframes and high fps values may cause high CPU usage
-     *
+     * 
      * @return
      */
     @AboutConfig
@@ -63,7 +63,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     /**
      * How many refreshes and datasamples the speedmeter uses. Please note that big Timeframes and high fps values may cause high CPU usage
-     *
+     * 
      * @return
      */
     @AboutConfig
@@ -1248,4 +1248,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setDonateButtonLatestAutoChange(long currentTimeMillis);
 
     long getDonateButtonLatestAutoChange();
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("If disabled, the captcha has no border painted, and the dialog looks like in jd09")
+    boolean isCaptchaDialogBorderAroundImageEnabled();
+
+    void setCaptchaDialogBorderAroundImageEnabled(boolean b);
 }
