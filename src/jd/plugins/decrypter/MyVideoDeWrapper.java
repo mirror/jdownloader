@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvideo.de" }, urls = { "http://(www\\.)?myvideo\\.(de|at)/(watch/\\d+(/\\w+)?|[a-z0-9\\-]+/[a-z0-9\\-]+/[a-z0-9\\-]+\\-m\\-\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvideo.de" }, urls = { "http://(www\\.)?myvideo\\.(de|at)/(watch/\\d+(/\\w+)?|[a-z0-9\\-]+/[a-z0-9\\-]+/[a-z0-9\\-]+\\-m\\-\\d+|embed/(public/)?\\d+)" }, flags = { 0 })
 public class MyVideoDeWrapper extends PluginForDecrypt {
 
     public MyVideoDeWrapper(PluginWrapper wrapper) {
@@ -36,7 +36,7 @@ public class MyVideoDeWrapper extends PluginForDecrypt {
     }
 
     private static final String type_watch   = "http://(www\\.)?myvideo\\.de/watch/\\d+(/\\w+)?";
-    private static final String type_embed   = "http://(www\\.)?myvideo\\.de/embed/\\d+";
+    private static final String type_embed   = "http://(www\\.)?myvideo\\.de/embed/(public/)?\\d+";
     private static final String type_special = "http://(www\\.)?myvideo\\.de/[a-z0-9\\-]+/[a-z0-9\\-]+/[a-z0-9\\-]+\\-m\\-\\d+";
 
     @Override
@@ -46,7 +46,7 @@ public class MyVideoDeWrapper extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("myvideo.at/", "myvideo.de/");
         if (parameter.matches(type_embed)) {
-            parameter = "http://www.myvideo.de/watch/" + new Regex(parameter, "").getMatch(0);
+            parameter = "http://www.myvideo.de/watch/" + new Regex(parameter, "(\\d+)$").getMatch(0);
         } else if (!parameter.matches(type_watch)) {
             parameter = "http://www.myvideo.de/watch/" + new Regex(parameter, "\\-m\\-(\\d+)$").getMatch(0);
         }
@@ -78,10 +78,13 @@ public class MyVideoDeWrapper extends PluginForDecrypt {
             } else if (redirect != null) {
                 br.getPage(redirect);
             }
-            final String filename = jd.plugins.hoster.MyVideo.getFilename(this.br);
-            fina.setName(filename + ".flv");
 
-            fina.setAvailable(true);
+            if (!br.containsHTML(jd.plugins.hoster.MyVideo.age_restricted)) {
+                final String filename = jd.plugins.hoster.MyVideo.getFilename(this.br);
+                fina.setName(filename + ".flv");
+                fina.setAvailable(true);
+            }
+
             decryptedLinks.add(fina);
         }
         return decryptedLinks;
