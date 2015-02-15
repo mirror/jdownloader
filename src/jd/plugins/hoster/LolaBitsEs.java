@@ -79,7 +79,7 @@ public class LolaBitsEs extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String dllink = null;
-        int maxChunks = 1;
+        int maxChunks = 0;
         try {
             dllink = get_dllink(downloadLink);
         } catch (final Throwable e) {
@@ -101,7 +101,7 @@ public class LolaBitsEs extends PluginForHost {
             dllink = Encoding.htmlDecode(dllink);
             maxChunks = 1;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, maxChunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             /* Whatever happens here, always show server error... */
             if (dl.getConnection().getResponseCode() != 206) {

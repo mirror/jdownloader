@@ -182,6 +182,11 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 }
                 return null;
             }
+            /*
+             * E.g. smil (rtmp) url:
+             * http://www.arte.tv/player/v2/webservices/smil.smil?json_url=http%3A%2F%2Farte.tv%2Fpapi%2Ftvguide%2Fvideos%2Fstream
+             * %2Fplayer%2FD%2F045163-000_PLUS7-D%2FALL%2FALL.json&smil_entries=RTMP_SQ_1%2CRTMP_MQ_1%2CRTMP_LQ_1
+             */
             tvguideUrl = "http://org-www.arte.tv/papi/tvguide/videos/stream/player/" + lang + "/" + id_channel_lang + "/ALL/ALL.json";
             /* Old but useful code */
             // if (preferHBBTV) {
