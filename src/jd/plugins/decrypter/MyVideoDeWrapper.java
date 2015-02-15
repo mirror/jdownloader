@@ -26,35 +26,63 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvideo.de" }, urls = { "http://(www\\.)?myvideo\\.(de|at)/watch/\\d+(/\\w+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvideo.de" }, urls = { "http://(www\\.)?myvideo\\.(de|at)/(watch/\\d+(/\\w+)?|[a-z0-9\\-]+/[a-z0-9\\-]+/[a-z0-9\\-]+\\-m\\-\\d+)" }, flags = { 0 })
 public class MyVideoDeWrapper extends PluginForDecrypt {
 
     public MyVideoDeWrapper(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String type_watch   = "http://(www\\.)?myvideo\\.de/watch/\\d+(/\\w+)?";
+    private static final String type_embed   = "http://(www\\.)?myvideo\\.de/embed/\\d+";
+    private static final String type_special = "http://(www\\.)?myvideo\\.de/[a-z0-9\\-]+/[a-z0-9\\-]+/[a-z0-9\\-]+\\-m\\-\\d+";
+
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        /* Get host plugin */
+        JDUtilities.getPluginForHost("myvideo.de");
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("myvideo.at/", "myvideo.de/");
+        if (parameter.matches(type_embed)) {
+            parameter = "http://www.myvideo.de/watch/" + new Regex(parameter, "").getMatch(0);
+        } else if (!parameter.matches(type_watch)) {
+            parameter = "http://www.myvideo.de/watch/" + new Regex(parameter, "\\-m\\-(\\d+)$").getMatch(0);
+        }
+        br.setFollowRedirects(false);
         br.getPage(parameter);
-        String nextLink = br.getRegex("<object type=(\'|\")application/x\\-shockwave\\-flash(\'|\") data=(\'|\")(http://[^\'\"]+)").getMatch(3);
-        if (nextLink != null && nextLink.contains("sevenload.com")) {
+        String externID = br.getRegex("<object type=(\'|\")application/x\\-shockwave\\-flash(\'|\") data=(\'|\")(http://[^\'\"]+)").getMatch(3);
+        if (externID != null && externID.contains("sevenload.com")) {
             br.setFollowRedirects(false);
-            br.getPage(nextLink);
+            br.getPage(externID);
             String redirect = br.getRedirectLocation();
             if (redirect != null) {
                 redirect = new Regex(redirect, "configPath=(.*?)$").getMatch(0);
                 if (redirect != null) {
                     br.getPage(Encoding.htmlDecode(redirect));
-                    nextLink = br.getRegex("<link target=\"_blank\">(http://[^<]+)").getMatch(0);
-                    if (nextLink != null) decryptedLinks.add(createDownloadlink(nextLink));
+                    externID = br.getRegex("<link target=\"_blank\">(http://[^<]+)").getMatch(0);
+                    if (externID != null) {
+                        decryptedLinks.add(createDownloadlink(externID));
+                    }
                 }
             }
+        } else if (externID != null) {
+            logger.info("MyVideoDeWrapper: nextLink??? = " + externID);
+            return null;
         } else {
-            if (nextLink != null) logger.info("MyVideoDeWrapper: nextLink = " + nextLink);
-            decryptedLinks.add(createDownloadlink(parameter.replaceFirst("http", "fromDecrypter")));
+            final DownloadLink fina = createDownloadlink(parameter.replaceFirst("http", "fromDecrypter"));
+            final String redirect = br.getRedirectLocation();
+            if (redirect != null && (redirect.equals("http://www.myvideo.de/") || redirect.matches("http://(www\\.)?myvideo\\.de/channel/.+"))) {
+                fina.setAvailable(false);
+            } else if (redirect != null) {
+                br.getPage(redirect);
+            }
+            final String filename = jd.plugins.hoster.MyVideo.getFilename(this.br);
+            fina.setName(filename + ".flv");
+
+            fina.setAvailable(true);
+            decryptedLinks.add(fina);
         }
         return decryptedLinks;
     }

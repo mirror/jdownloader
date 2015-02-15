@@ -36,23 +36,29 @@ import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 
 // Altes Decrypterplugin bis Revision 14394
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvideo.de" }, urls = { "fromDecrypter://(www\\.)?myvideo\\.(de|at)/watch/\\d+(/\\w+)?" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvideo.de" }, urls = { "fromDecrypter://(www\\.)?myvideo\\.(de|at)/.+" }, flags = { 32 })
 public class MyVideo extends PluginForHost {
 
-    private String CLIPURL  = null;
-    private String CLIPPATH = null;
-    private String SWFURL   = null;
-    private String KEY      = "Yzg0MDdhMDhiM2M3MWVhNDE4ZWM5ZGM2NjJmMmE1NmU0MGNiZDZkNWExMTRhYTUwZmIxZTEwNzllMTdmMmI4Mw==";
+    private String               CLIPURL         = null;
+    private String               CLIPPATH        = null;
+    private String               SWFURL          = null;
+    private String               KEY             = "Yzg0MDdhMDhiM2M3MWVhNDE4ZWM5ZGM2NjJmMmE1NmU0MGNiZDZkNWExMTRhYTUwZmIxZTEwNzllMTdmMmI4Mw==";
+    private static final boolean rtmpe_supported = false;
+    private static final String  type_watch      = "http://(www\\.)?myvideo\\.de/watch/\\d+(/\\w+)?";
+    private static final String  type_special    = "http://(www\\.)?myvideo\\.de/[a-z0-9\\-]+/[a-z0-9\\-]+/[a-z0-9\\-]+\\-m\\-\\d+";
+    public static final String   age_restricted  = "Dieser Film ist für Zuschauer unter \\d+ Jahren nicht geeignet";
 
     public MyVideo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("myvideo.at/", "myvideo.de/").replaceFirst("fromDecrypter", "http"));
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
@@ -71,7 +77,7 @@ public class MyVideo extends PluginForHost {
         }
         br.setFollowRedirects(true);
 
-        if (br.containsHTML("Dieser Film ist für Zuschauer unter \\d+ Jahren nicht geeignet")) {
+        if (br.containsHTML(age_restricted)) {
             String ageCheck = br.getRegex("class=\'btnMiddle\'><a href=\'(/iframe.*?)\'").getMatch(0);
             if (ageCheck != null) {
                 br.getPage("http://www.myvideo.de" + Encoding.htmlDecode(ageCheck));
@@ -80,35 +86,38 @@ public class MyVideo extends PluginForHost {
             }
         }
 
-        String filename = br.getRegex("name=\\'subject_title\\' value=\\'([^\\'<]+)").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("name=\\'title\\' content=\\'(.*?)(Video)? \\-? (Film|Musik|TV Serie|MyVideo)").getMatch(0);
-        }
-        if (filename == null) {
-            filename = br.getURL();
-            if (filename != null) {
-                filename = filename.substring(filename.lastIndexOf("/") + 1);
-            }
-        }
+        String filename = getFilename(this.br);
         /* get encUrl */
-        HashMap<String, String> p = new HashMap<String, String>();
+        String vid = null;
+        String next = null;
         String values = br.getRegex("flashvars=\\{(.*?)\\}").getMatch(0);
-        for (String[] tmp : new Regex(values == null ? "NPE" : values, "(.*?):\'(.*?)\',").getMatches()) {
-            if (tmp.length != 2) {
-                continue;
+        HashMap<String, String> p = new HashMap<String, String>();
+        if (values != null) {
+            for (String[] tmp : new Regex(values == null ? "NPE" : values, "(.*?):\'(.*?)\',").getMatches()) {
+                if (tmp.length != 2) {
+                    continue;
+                }
+                p.put(tmp[0], tmp[1]);
             }
-            p.put(tmp[0], tmp[1]);
-        }
-        if (p.isEmpty() || !p.containsKey("_encxml") || !p.containsKey("ID")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String next = Encoding.htmlDecode(p.get("_encxml")) + "?";
-        p.remove("_encxml");
-        for (Entry<String, String> valuePair : p.entrySet()) {
-            if (!next.endsWith("?")) {
-                next = next + "&";
+            if (p.isEmpty() || !p.containsKey("_encxml") || !p.containsKey("ID")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            next = next + valuePair.getKey() + "=" + valuePair.getValue();
+            next = Encoding.htmlDecode(p.get("_encxml")) + "?";
+            p.remove("_encxml");
+            for (Entry<String, String> valuePair : p.entrySet()) {
+                if (!next.endsWith("?")) {
+                    next = next + "&";
+                }
+                next = next + valuePair.getKey() + "=" + valuePair.getValue();
+            }
+            vid = p.get("ID");
+        } else {
+            /* Maybe special type - let's build the xml via the other way */
+            vid = new Regex(downloadLink.getDownloadURL(), "/watch/(\\d+)").getMatch(0);
+            if (vid == null) {
+                vid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+            }
+            next = "http://www.myvideo.de/dynamic/get_player_video_xml.php?flash_playertype=D&autorun=yes&ID=" + vid + "&ds=1";
         }
         SWFURL = br.getRegex("(SWFObject|embedSWF)\\(\'(.*?)\',").getMatch(1);
         SWFURL = SWFURL == null ? "http://is4.myvideo.de/de/player/mingR11q/ming.swf" : SWFURL;
@@ -120,11 +129,12 @@ public class MyVideo extends PluginForHost {
         input = input.replaceAll("%0D%0A", "").trim();
         String result;
         try {
-            result = decrypt(input, p.get("ID"));
+            result = decrypt(input, vid);
         } catch (Throwable e) {
             e.printStackTrace();
             return AvailableStatus.UNCHECKABLE;
         }
+        System.out.println(result);
         CLIPURL = new Regex(result, "connectionurl=\'(.*?)\'").getMatch(0);
         CLIPPATH = new Regex(result, "source=\'(.*?)\'").getMatch(0);
         if (CLIPURL.equals("") || CLIPPATH == null) {
@@ -150,10 +160,15 @@ public class MyVideo extends PluginForHost {
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
         /* filesize */
         if (CLIPURL.startsWith("http://")) {
+            final String hq_url = CLIPPATH.replace(".flv", ".flv_hq.flv");
             Browser br2 = br.cloneBrowser();
             URLConnectionAdapter con = null;
             try {
-                con = br2.openGetConnection(CLIPURL + CLIPPATH);
+                con = br2.openHeadConnection(CLIPURL + hq_url);
+                /* Check if hq is actually available (only possible way is to try it) */
+                if (con.getContentType().contains("html")) {
+                    con = br2.openHeadConnection(CLIPURL + CLIPPATH);
+                }
                 if (!con.getContentType().contains("html")) {
                     downloadLink.setDownloadSize(con.getLongContentLength());
                 } else {
@@ -167,6 +182,25 @@ public class MyVideo extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    public static String getFilename(final Browser br) {
+        String filename = null;
+        if (br.getURL().matches(type_watch)) {
+            filename = br.getRegex("name=\\'subject_title\\' value=\\'([^\\'<]+)").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("name=\\'title\\' content=\\'(.*?)(Video)? \\-? (Film|Musik|TV Serie|MyVideo)").getMatch(0);
+            }
+        } else {
+            filename = br.getRegex("<title>([^<>\"]*?)\\– Musikvideo kostenlos auf MyVideo ansehen\\!</title>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getURL();
+            if (filename != null) {
+                filename = filename.substring(filename.lastIndexOf("/") + 1);
+            }
+        }
+        return filename;
     }
 
     private String decrypt(String cipher, String id) {
@@ -231,13 +265,17 @@ public class MyVideo extends PluginForHost {
     private void setupRTMPConnection(final DownloadInterface dl) {
         jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
         String app = CLIPURL.replaceAll("\\w+://[\\w\\.]+/", "");
-        if (!CLIPURL.contains("token")) {
+        /* Ensure we're using the right protocol */
+        if (!rtmpe_supported) {
+            CLIPURL = CLIPURL.replaceAll("rtmpe://", "rtmp://");
             rtmp.setProtocol(0);
         }
         rtmp.setPlayPath(CLIPPATH);
+        /* = usually "myvideo3" + maybe "?token=" + token */
         rtmp.setApp(app);
         rtmp.setUrl(CLIPURL);
         rtmp.setSwfVfy(SWFURL);
+        rtmp.setFlashVer("WIN 16,0,0,305");
         rtmp.setResume(true);
     }
 
