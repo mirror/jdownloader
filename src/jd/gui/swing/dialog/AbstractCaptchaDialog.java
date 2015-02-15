@@ -869,8 +869,8 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-
-                BufferedImage scaled = IconIO.getScaledInstance(images[frame], getWidth() - 10, getHeight() - 10, Interpolation.BICUBIC, true);
+                int insets = CFG_GUI.CFG.isCaptchaDialogBorderAroundImageEnabled() ? 10 : 0;
+                BufferedImage scaled = IconIO.getScaledInstance(images[frame], getWidth() - insets, getHeight() - insets, Interpolation.BICUBIC, true);
                 g.drawImage(scaled, (getWidth() - scaled.getWidth()) / 2, (getHeight() - scaled.getHeight()) / 2, col, null);
                 scaleFaktor = images[frame].getWidth(null) / (double) scaled.getWidth();
                 offset = new Point((getWidth() - scaled.getWidth()) / 2, (getHeight() - scaled.getHeight()) / 2);
@@ -878,6 +878,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
             }
 
         };
+
         SwingUtils.setOpaque(iconPanel, false);
 
         // iconPanel.add(refreshBtn, "alignx right,aligny bottom");
@@ -900,6 +901,11 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
         field.add(iconPanel);
 
         sp = new HeaderScrollPane(field);
+        if (!CFG_GUI.CFG.isCaptchaDialogBorderAroundImageEnabled()) {
+            sp.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+            SwingUtils.setOpaque(field, false);
+
+        }
 
         panel.add(sp);
         if (headerPanel != null) {
