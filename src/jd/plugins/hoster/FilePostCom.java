@@ -313,6 +313,7 @@ public class FilePostCom extends PluginForHost {
         br.setFollowRedirects(true);
         prepBrowser(br);
         br.getPage(downloadLink.getDownloadURL());
+        generalErrorhandling();
         String premiumlimit = br.getRegex("Files over (.*?) can be downloaded by premium").getMatch(0);
         if (premiumlimit != null) {
             try {
@@ -556,6 +557,7 @@ public class FilePostCom extends PluginForHost {
             logger.info("Not logged in anymore, this is a filepost.com issue, NOT a JDownloader issue (same in browser)!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
+        generalErrorhandling();
         String dllink = null;
         String passCode = link.getStringProperty("pass", null);
         /** Password handling */
@@ -710,6 +712,13 @@ public class FilePostCom extends PluginForHost {
                 account.setProperty("cookies", null);
                 throw e;
             }
+        }
+    }
+
+    /** Handles errors that can happen ind free + premium mode */
+    private void generalErrorhandling() throws PluginException {
+        if (br.containsHTML("class=\"file_info file_info_private\"")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file is set as private so it is available only for the person who has uploaded it");
         }
     }
 
