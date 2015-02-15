@@ -25,6 +25,7 @@ import javax.sound.sampled.LineListener;
 import javax.swing.JTextPane;
 
 import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.http.Browser;
 import net.sourceforge.htmlunit.corejs.javascript.Function;
 import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
@@ -186,6 +187,15 @@ public class ScriptEnvironment {
 
             return retObject;
         } catch (Throwable e) {
+            throw new EnvironmentException(e);
+        }
+    }
+
+    @ScriptAPI(description = "Request a reconnect", parameters = {}, example = "requestReconnect();")
+    public static String requestReconnect(boolean waitForresult) throws EnvironmentException {
+        try {
+            return DownloadWatchDog.getInstance().requestReconnect(waitForresult).name();
+        } catch (InterruptedException e) {
             throw new EnvironmentException(e);
         }
     }
