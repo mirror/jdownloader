@@ -65,14 +65,14 @@ public class VevoComDecrypter extends PluginForDecrypt {
     private static final String                 ALLOW_HLS_4200   = "version_4_type_4_4200";
     private static final String                 ALLOW_HLS_5200   = "version_4_type_4_5200";
 
+    final String[]                              formats          = { ALLOW_HTTP_56, ALLOW_HTTP_500, ALLOW_HTTP_2000, ALLOW_RTMP_500, ALLOW_RTMP_800, ALLOW_RTMP_1200, ALLOW_RTMP_1600, ALLOW_HLS_64, ALLOW_HLS_200, ALLOW_HLS_400, ALLOW_HLS_500, ALLOW_HLS_800, ALLOW_HLS_1200, ALLOW_HLS_2400, ALLOW_HLS_3200, ALLOW_HLS_4200, ALLOW_HLS_5200 };
+
     /* Linktypes */
     private static final String                 type_short       = "http://vevo\\.ly/[A-Za-z0-9]+";
     private static final String                 type_watch       = "http://(www\\.)?vevo\\.com/watch/[A-Za-z0-9\\-_]+/[^/]+/[A-Z0-9]+";
     private static final String                 type_watch_short = "http://(www\\.)?vevo\\.com/watch/[A-Za-z0-9]+";
     private static final String                 type_embedded    = "http://videoplayer\\.vevo\\.com/embed/embedded\\?videoId=[A-Za-z0-9]+";
     private static final String                 player           = "http://cache.vevo.com/a/swf/versions/3/player.swf";
-
-    final String[]                              formats          = { ALLOW_HTTP_56, ALLOW_HTTP_500, ALLOW_HTTP_2000, ALLOW_RTMP_500, ALLOW_RTMP_800, ALLOW_RTMP_1200, ALLOW_RTMP_1600, ALLOW_HLS_64, ALLOW_HLS_200, ALLOW_HLS_400, ALLOW_HLS_500, ALLOW_HLS_800, ALLOW_HLS_1200, ALLOW_HLS_2400, ALLOW_HLS_3200, ALLOW_HLS_4200, ALLOW_HLS_5200 };
 
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
