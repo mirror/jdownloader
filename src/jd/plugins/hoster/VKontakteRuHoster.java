@@ -50,16 +50,17 @@ import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 //Links are coming from a decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(vkontaktedecrypted\\.ru/(picturelink/(\\-)?[\\d\\-]+_[\\d\\-]+(\\?tag=[\\d\\-]+)?|audiolink/[\\d\\-]+_[\\d\\-]+|videolink/[\\d\\-]+)|vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(vkontaktedecrypted\\.ru/(picturelink/(\\-)?[\\d\\-]+_[\\d\\-]+(\\?tag=[\\d\\-]+)?|audiolink/[\\d\\-]+_[\\d\\-]+|videolink/[\\d\\-]+)|vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?)|https?://cs[a-z0-9]+\\.(vk\\.com|userapi\\.com|vk\\.me)/u\\d+/audios?/[^<>\"]+" }, flags = { 2 })
 public class VKontakteRuHoster extends PluginForHost {
 
     private static final String DOMAIN                      = "http://vk.com";
     private static Object       LOCK                        = new Object();
     private String              finalUrl                    = null;
-    private static final String AUDIOLINK                   = "http://vkontaktedecrypted\\.ru/audiolink/[\\d\\-]+_[\\d\\-]+";
-    private static final String VIDEOLINK                   = "http://vkontaktedecrypted\\.ru/videolink/[\\d\\-]+";
-    private static final String PICTURELINK                 = "http://vkontaktedecrypted\\.ru/picturelink/(\\-)?[\\d\\-]+_[\\d\\-]+(\\?tag=[\\d\\-]+)?";
-    private static final String DOCLINK                     = "http://vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?";
+    private static final String TYPE_AUDIOLINK              = "http://vkontaktedecrypted\\.ru/audiolink/[\\d\\-]+_[\\d\\-]+";
+    private static final String TYPE_VIDEOLINK              = "http://vkontaktedecrypted\\.ru/videolink/[\\d\\-]+";
+    private static final String TYPE_AUDIO_DIRECT           = "https?://cs[a-z0-9]+\\.(vk\\.com|userapi\\.com|vk\\.me)/u\\d+/audios?/[^<>\"]+";
+    private static final String TYPE_PICTURELINK            = "http://vkontaktedecrypted\\.ru/picturelink/(\\-)?[\\d\\-]+_[\\d\\-]+(\\?tag=[\\d\\-]+)?";
+    private static final String TYPE_DOCLINK                = "http://vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?";
     private int                 MAXCHUNKS                   = 1;
     private static final String TEMPORARILYBLOCKED          = jd.plugins.decrypter.VKontakteRu.TEMPORARILYBLOCKED;
     /* Settings stuff */
@@ -98,6 +99,7 @@ public class VKontakteRuHoster extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        String filename = null;
         /* Check if offline was set via decrypter */
         if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -107,8 +109,36 @@ public class VKontakteRuHoster extends PluginForHost {
         this.setBrowserExclusive();
 
         this.br.setFollowRedirects(false);
-        // Login required to check/download
-        if (link.getDownloadURL().matches(VKontakteRuHoster.DOCLINK)) {
+        if (link.getDownloadURL().matches(TYPE_AUDIO_DIRECT)) {
+            this.finalUrl = link.getDownloadURL();
+            this.br.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
+            /* Prefer filename inside url */
+            filename = new Regex(this.finalUrl, "/([^<>\"/]+\\.mp3)$").getMatch(0);
+            try {
+                try {
+                    /* They do not accept HEAD connections */
+                    con = br.openGetConnection(link.getDownloadURL());
+                } catch (final BrowserException e) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (!con.getContentType().contains("html")) {
+                    if (filename == null) {
+                        filename = getFileNameFromHeader(con);
+                    }
+                    filename = Encoding.htmlDecode(filename).trim();
+                    link.setFinalFileName(filename);
+                    link.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        } else if (link.getDownloadURL().matches(VKontakteRuHoster.TYPE_DOCLINK)) {
             this.MAXCHUNKS = 0;
             this.br.getPage(link.getDownloadURL());
             if (this.br.containsHTML("File deleted")) {
@@ -119,7 +149,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 link.setName(new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
                 return AvailableStatus.TRUE;
             }
-            String filename = this.br.getRegex("title>([^<>\"]*?)</title>").getMatch(0);
+            filename = this.br.getRegex("title>([^<>\"]*?)</title>").getMatch(0);
             this.finalUrl = this.br.getRegex("var src = \\'(http://[^<>\"]*?)\\';").getMatch(0);
             if (filename == null || this.finalUrl == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -135,7 +165,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } else {
-            // Only log in if needed
+            // Check if login is required to check/download
             final boolean noLogin = checkNoLoginNeeded(link);
             final Account aa = AccountController.getInstance().getValidAccount(this);
             if (!noLogin && aa == null) {
@@ -145,7 +175,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 /* Always login if possible. */
                 this.login(this.br, aa, false);
             }
-            if (link.getDownloadURL().matches(VKontakteRuHoster.AUDIOLINK)) {
+            if (link.getDownloadURL().matches(VKontakteRuHoster.TYPE_AUDIOLINK)) {
                 // final String audioID = link.getStringProperty("owner_id", null) + "_" + link.getStringProperty("content_id", null) + "1";
                 String finalFilename = link.getFinalFileName();
                 if (finalFilename == null) {
@@ -176,7 +206,7 @@ public class VKontakteRuHoster extends PluginForHost {
                     }
                     link.setProperty("directlink", this.finalUrl);
                 }
-            } else if (link.getDownloadURL().matches(VKontakteRuHoster.VIDEOLINK)) {
+            } else if (link.getDownloadURL().matches(VKontakteRuHoster.TYPE_VIDEOLINK)) {
                 this.MAXCHUNKS = 0;
                 this.br.setFollowRedirects(true);
                 this.finalUrl = link.getStringProperty("directlink", null);
@@ -244,11 +274,11 @@ public class VKontakteRuHoster extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        if (downloadLink.getDownloadURL().matches(VKontakteRuHoster.DOCLINK)) {
+        if (downloadLink.getDownloadURL().matches(VKontakteRuHoster.TYPE_DOCLINK)) {
             if (this.br.containsHTML("This document is available only to its owner\\.")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This document is available only to its owner");
             }
-        } else if (downloadLink.getDownloadURL().matches(PICTURELINK)) {
+        } else if (downloadLink.getDownloadURL().matches(TYPE_PICTURELINK)) {
             if (this.finalUrl == null) {
                 /*
                  * Because of the availableCheck, we already know that the picture is online but we can't be sure that it really is
@@ -373,10 +403,11 @@ public class VKontakteRuHoster extends PluginForHost {
         this.generalErrorhandling();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         /* Doc-links and other links with permission can be downloaded without login */
-        if (downloadLink.getDownloadURL().matches(VKontakteRuHoster.DOCLINK)) {
+        if (downloadLink.getDownloadURL().matches(VKontakteRuHoster.TYPE_DOCLINK) || downloadLink.getDownloadURL().matches(VKontakteRuHoster.TYPE_AUDIO_DIRECT)) {
             this.requestFileInformation(downloadLink);
             this.doFree(downloadLink);
         } else if (checkNoLoginNeeded(downloadLink)) {
@@ -397,7 +428,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private boolean checkNoLoginNeeded(final DownloadLink dl) {
         boolean noLogin = dl.getBooleanProperty("nologin", false);
         if (!noLogin) {
-            noLogin = dl.getDownloadURL().matches(PICTURELINK);
+            noLogin = dl.getDownloadURL().matches(TYPE_PICTURELINK);
         }
         return noLogin;
     }
@@ -749,6 +780,10 @@ public class VKontakteRuHoster extends PluginForHost {
                 }
             }
         }
+    }
+
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override
