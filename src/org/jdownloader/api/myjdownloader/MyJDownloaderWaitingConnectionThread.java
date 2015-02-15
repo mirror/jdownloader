@@ -89,7 +89,6 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
     protected final NullsafeAtomicReference<MyJDownloaderConnectionRequest> connectionRequest = new NullsafeAtomicReference<MyJDownloaderConnectionRequest>();
     protected final MyJDownloaderConnectThread                              connectThread;
     private final static AtomicInteger                                      THREADID          = new AtomicInteger(0);
-    private final String                                                    url               = "http://api.jdownloader.org";
 
     public MyJDownloaderWaitingConnectionThread(MyJDownloaderConnectThread connectThread) {
         this.setDaemon(true);
@@ -118,6 +117,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                     request.getConnectionHelper().backoff();
                     Socket connectionSocket = null;
                     HTTPProxy proxy = null;
+                    final String url = "http://" + request.getAddr().getHostString() + ":" + request.getAddr().getPort();
                     try {
                         connectThread.log("Connect " + request.getAddr());
                         final List<HTTPProxy> list = ProxyController.getInstance().getProxiesByUrl(url, false, false);

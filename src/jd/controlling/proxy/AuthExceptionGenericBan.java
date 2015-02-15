@@ -11,7 +11,11 @@ import org.jdownloader.translate._JDT;
 public class AuthExceptionGenericBan extends AbstractBan {
 
     private final WeakReference<HTTPProxy> proxy;
-    protected final URL                    url;
+    private final URL                      url;
+
+    public URL getUrl() {
+        return url;
+    }
 
     public AuthExceptionGenericBan(AbstractProxySelectorImpl proxySelector, HTTPProxy proxy, URL url) {
         super(proxySelector);
@@ -25,6 +29,7 @@ public class AuthExceptionGenericBan extends AbstractBan {
 
     @Override
     public String toString() {
+
         HTTPProxy proxy = getProxy();
         return _JDT._.AuthExceptionGenericBan_toString(proxy == null ? "" : proxy.toString());
     }
