@@ -192,9 +192,9 @@ public class ScriptEnvironment {
     }
 
     @ScriptAPI(description = "Request a reconnect", parameters = {}, example = "requestReconnect();")
-    public static String requestReconnect(boolean waitForresult) throws EnvironmentException {
+    public static void requestReconnect() throws EnvironmentException {
         try {
-            return DownloadWatchDog.getInstance().requestReconnect(waitForresult).name();
+            DownloadWatchDog.getInstance().requestReconnect(false);
         } catch (InterruptedException e) {
             throw new EnvironmentException(e);
         }
