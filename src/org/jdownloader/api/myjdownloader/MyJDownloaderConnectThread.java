@@ -286,9 +286,9 @@ public class MyJDownloaderConnectThread extends Thread {
             if (response.getThrowable() != null) {
                 throw response.getThrowable();
             }
-            DeviceConnectionStatus connectionStatus = response.getConnectionStatus();
+            final DeviceConnectionStatus connectionStatus = response.getConnectionStatus();
             final Socket socket = response.getConnectionSocket();
-            if (connectionStatus != null) {
+            if (socket != null && connectionStatus != null) {
                 setConnected(MyJDownloaderConnectionStatus.CONNECTED);
                 switch (connectionStatus) {
                 case OUTDATED:
@@ -392,7 +392,10 @@ public class MyJDownloaderConnectThread extends Thread {
         } finally {
             if (closeSocket) {
                 try {
-                    response.getConnectionSocket().close();
+                    final Socket socket = response.getConnectionSocket();
+                    if (socket != null) {
+                        socket.close();
+                    }
                 } catch (final Throwable ignore) {
                 }
             }
@@ -712,7 +715,10 @@ public class MyJDownloaderConnectThread extends Thread {
             MyJDownloaderConnectionResponse next = null;
             while ((next = responses.poll()) != null) {
                 try {
-                    next.getConnectionSocket().close();
+                    final Socket socket = next.getConnectionSocket();
+                    if (socket != null) {
+                        socket.close();
+                    }
                 } catch (final Throwable e) {
                 }
             }
