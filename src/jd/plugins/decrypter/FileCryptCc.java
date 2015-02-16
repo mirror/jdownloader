@@ -74,7 +74,7 @@ public class FileCryptCc extends PluginForDecrypt {
             return decryptedLinks;
         }
         // Separate password and captcha. this is easier for count reasons!
-        int counter = 0;
+        int counter = -1;
         final int retry = 3;
         while (counter++ < retry && containsPassword()) {
             Form passwordForm = null;
@@ -105,7 +105,7 @@ public class FileCryptCc extends PluginForDecrypt {
             throw new DecrypterException(DecrypterException.PASSWORD);
         }
         // captcha time!
-        counter = 0;
+        counter = -1;
         while (counter++ < retry && containsCaptcha()) {
             Form captchaForm = null;
             final Form[] allForms = br.getForms();
@@ -153,7 +153,11 @@ public class FileCryptCc extends PluginForDecrypt {
                 if (counter > 1) {
                     final String code = getCaptchaCode(captcha, param);
                     if ("".equals(code)) {
-                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                        if (counter + 1 < retry) {
+                            continue;
+                        } else {
+                            throw new DecrypterException(DecrypterException.CAPTCHA);
+                        }
                     }
                     captchaForm.put("recaptcha_response_field", Encoding.urlEncode(code));
                 } else {
