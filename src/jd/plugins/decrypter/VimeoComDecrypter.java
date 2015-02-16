@@ -27,6 +27,7 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -176,7 +177,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 }
             } else {
                 // maybe required
-                br.setCookie(this.getHost(), "player", "");
+                // br.setCookie(this.getHost(), "player", "");
 
                 parameter = cleanVimeoURL;
                 br.getPage(parameter);
@@ -227,7 +228,18 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     ajax.getHeaders().put("Referer", br.getBaseURL());
                     ajax.getHeaders().put("Accept", "*/*");
                     ajax.getHeaders().put("Purpose", "prefetch");
-                    ajax.cloneBrowser().getPage(player != null ? player : "https://f.vimeocdn.com/p/2.5.29/js/player.js");
+                    URLConnectionAdapter con = null;
+                    try {
+                        con = ajax.cloneBrowser().openHeadConnection(player != null ? player : "https://f.vimeocdn.com/p/2.5.29/js/player.js");
+                    } catch (final Exception e) {
+                    } finally {
+                        try {
+                            con.disconnect();
+                        } catch (final Exception e) {
+                        }
+                    }
+                    ajax.getHeaders().remove("Purpose");
+                    ajax.getPage(player != null ? player : "https://f.vimeocdn.com/p/2.5.29/js/player.js");
                 }
                 // set this cookie
                 // document.cookie = 'vuid=' + encodeURIComponent('35533916.335958829')
