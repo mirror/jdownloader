@@ -65,8 +65,8 @@ public class DeerFileCom extends PluginForHost {
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
-    /* 400gb according to a user */
-    private static final long    monthly_limit                = 400 * 1024 * 1024 * 1024l;
+    /* 80gb according to a user */
+    private static final long    monthly_limit                = 80 * 1024 * 1024 * 1024l;
     // note: can not be negative -x or 0 .:. [1-*]
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
     // don't touch
