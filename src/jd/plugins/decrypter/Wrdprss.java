@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -28,10 +29,9 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
-public class Wrdprss extends PluginForDecrypt {
+public class Wrdprss extends antiDDoSForDecrypt {
     /**
      * Returns the annotations names array
      *
@@ -49,7 +49,7 @@ public class Wrdprss extends PluginForDecrypt {
     public static String[] getAnnotationUrls() {
 
         StringBuilder completePattern = new StringBuilder();
-        completePattern.append("http://(\\w+\\.)?(");
+        completePattern.append("https?://(\\w+\\.)?(");
         completePattern.append("(cinetopia\\.ws/.*\\.html)");
         String[] listType1 = { "hd-area.org", "movie-blog.org", "doku.cc" };
         for (String pattern : listType1) {
@@ -60,8 +60,9 @@ public class Wrdprss extends PluginForDecrypt {
             completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/blog\\.php\\?id=[\\d]+)");
         }
         completePattern.append("|hi10anime\\.com/([\\w\\-]+/){2}");
+        completePattern.append("|watchseries-online\\.ch/episode/.+");
         completePattern.append(")");
-        System.out.println(("Wrdprss: " + (10 + listType1.length + listType2.length) + " Pattern added!"));
+        // System.out.println(("Wrdprss: " + (10 + listType1.length + listType2.length) + " Pattern added!"));
         return new String[] { completePattern.toString() };
     }
 
@@ -90,11 +91,10 @@ public class Wrdprss extends PluginForDecrypt {
     // @Override
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        // System.out.println(param);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        br.getPage(parameter);
+        getPage(parameter);
 
         /* Defaultpasswörter der Seite setzen */
         ArrayList<String> link_passwds = new ArrayList<String>();
@@ -118,14 +118,19 @@ public class Wrdprss extends PluginForDecrypt {
         /* Alle Parts suchen */
         String[] links = br.getRegex(Pattern.compile("href=.*?((?:(?:https?|ftp):)?//[^\"']+)", Pattern.CASE_INSENSITIVE)).getColumn(0);
         progress.setRange(links.length);
+        final String protocol = new Regex(br.getURL(), "^https?:").getMatch(-1);
+        final HashSet<String> dupe = new HashSet<String>();
         for (String link : links) {
-            final String protocol = new Regex(br.getURL(), "^(https?:)").getMatch(-1);
+            if (!dupe.add(link)) {
+                progress.increase(1);
+                continue;
+            }
             // respect current protocol under RFC
-            if (link.matches("^//.+") && protocol != null) {
+            if (link.matches("^//.+")) {
                 link = protocol + link;
             }
             // this will construct basic relative path
-            else if (link.matches("^/.+") && protocol != null) {
+            else if (link.matches("^/.+")) {
                 link = protocol + "//" + Browser.getHost(br.getURL(), true) + link;
             }
             if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link, true) && !link.matches(".+\\.(css|xml)(.*)?")) {
@@ -137,8 +142,8 @@ public class Wrdprss extends PluginForDecrypt {
                     dLink.setProperty("customHeader", customHeaders);
                 }
                 decryptedLinks.add(dLink);
-                progress.increase(1);
             }
+            progress.increase(1);
         }
 
         return decryptedLinks;

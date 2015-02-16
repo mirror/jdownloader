@@ -66,7 +66,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
     protected final WeakHashMap<Browser, Boolean> browserPrepped  = new WeakHashMap<Browser, Boolean>();
     protected static AtomicReference<String>      agent           = new AtomicReference<String>(null);
 
-    protected Browser prepBrowser(final Browser prepBr) {
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
         if ((browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
             return prepBr;
         }
@@ -80,7 +80,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             if (!antiDDoSCookies.isEmpty()) {
                 for (final Map.Entry<String, Cookies> cookieEntry : antiDDoSCookies.entrySet()) {
                     final String key = cookieEntry.getKey();
-                    if (key != null && key.contains(this.getHost())) {
+                    if (key != null && key.equals(host)) {
                         try {
                             prepBr.setCookies(key, cookieEntry.getValue(), false);
                         } catch (final Throwable e) {
@@ -115,7 +115,10 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         if (page == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        prepBrowser(ibr);
+        // virgin browser will have no protocol, we will be able to get from page. existing page request might be with relative paths, we
+        // use existing browser session to determine host
+        final String host = ibr.getURL() != null ? Browser.getHost(ibr.getURL()) : Browser.getHost(page);
+        prepBrowser(ibr, host);
         final boolean follows_redirects = ibr.isFollowingRedirects();
         URLConnectionAdapter con = null;
         ibr.setFollowRedirects(true);
@@ -146,7 +149,10 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         if (page == null || postData == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        prepBrowser(ibr);
+        // virgin browser will have no protocol, we will be able to get from page. existing page request might be with relative paths, we
+        // use existing browser session to determine host
+        final String host = ibr.getURL() != null ? Browser.getHost(ibr.getURL()) : Browser.getHost(page);
+        prepBrowser(ibr, host);
         // stable sucks
         if (isJava7nJDStable() && page.startsWith("https")) {
             page = page.replaceFirst("^https://", "http://");
@@ -180,7 +186,10 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         if (form == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        prepBrowser(ibr);
+        // virgin browser will have no protocol, we will be able to get from page. existing page request might be with relative paths, we
+        // use existing browser session to determine host
+        final String host = ibr.getURL() != null ? Browser.getHost(ibr.getURL()) : Browser.getHost(form.getAction());
+        prepBrowser(ibr, host);
         // stable sucks && lame to the max, lets try and send a form outside of desired protocol. (works with oteupload)
         if (Form.MethodType.POST.equals(form.getMethod())) {
             // if the form doesn't contain an action lets set one based on current br.getURL().
@@ -481,7 +490,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             }
             // save the session!
             synchronized (antiDDoSCookies) {
-                antiDDoSCookies.put(this.getHost(), cookies);
+                antiDDoSCookies.put(ibr.getHost(), cookies);
             }
         }
     }

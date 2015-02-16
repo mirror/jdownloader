@@ -149,9 +149,9 @@ public class UploadBoyCom extends antiDDoSForHost {
     }
 
     @Override
-    protected Browser prepBrowser(final Browser br) {
+    protected Browser prepBrowser(final Browser br, final String host) {
         br.setCookie(COOKIE_HOST, "lang", "english");
-        super.prepBrowser(br);
+        super.prepBrowser(br, host);
         return br;
     }
 

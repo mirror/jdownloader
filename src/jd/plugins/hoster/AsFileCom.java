@@ -64,15 +64,14 @@ public class AsFileCom extends antiDDoSForHost {
     }
 
     @Override
-    protected Browser prepBrowser(final Browser prepBr) {
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
         prepBr.setRequestIntervalLimit(this.getHost(), 1500);
-        return super.prepBrowser(prepBr);
+        return super.prepBrowser(prepBr, host);
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        prepBrowser(br);
         br.setFollowRedirects(true);
         getPage(link.getDownloadURL());
         if (br.containsHTML("(<title>ASfile\\.com</title>|>Page not found<|Delete Reason:|No htmlCode read)") || br.getURL().contains("/file_is_unavailable/")) {
@@ -110,7 +109,6 @@ public class AsFileCom extends antiDDoSForHost {
         String passCode = null;
         String dllink = downloadLink.getStringProperty("directFree", null);
         if (dllink != null) {
-            prepBrowser(br);
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
@@ -250,7 +248,6 @@ public class AsFileCom extends antiDDoSForHost {
 
     @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
-        prepBrowser(br);
         final boolean follows_redirect = br.isFollowingRedirects();
         br.setReadTimeout(3 * 60 * 1000);
         synchronized (LOCK) {
