@@ -710,7 +710,7 @@ public class DirectHTTP extends PluginForHost {
                 String urlParams = null;
                 if ((urlConnection.getResponseCode() == 401 || urlConnection.getResponseCode() == 400 || urlConnection.getResponseCode() == 404 || urlConnection.getResponseCode() == 403) && (urlParams = downloadLink.getStringProperty(DirectHTTP.POSSIBLE_URLPARAM, null)) != null) {
                     /* check if we need the URLPARAMS to download the file */
-                    urlConnection.disconnect();
+                    br.followConnection();
                     final String newURL = downloadLink.getDownloadURL() + urlParams;
                     downloadLink.setProperty(DirectHTTP.POSSIBLE_URLPARAM, Property.NULL);
                     downloadLink.setUrlDownload(newURL);
@@ -721,7 +721,7 @@ public class DirectHTTP extends PluginForHost {
                         /* no basic auth */
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    urlConnection.disconnect();
+                    br.followConnection();
                     invalidateLogins(pw, downloadLink);
                 } else {
                     validateLogins(downloadLink, pw);
@@ -771,28 +771,34 @@ public class DirectHTTP extends PluginForHost {
                 /* if this page does redirect via js/html, try to follow */
                 if (urlConnection.getRequest() instanceof HeadRequest) {
                     preferHeadRequest = false;
-                    urlConnection.disconnect();
+                    br.followConnection();
+                    return this.requestFileInformation(downloadLink);
+                } else {
+                    this.br.followConnection();
+
+                    /* search urls */
+                    /*
+                     * TODO: Change to org.appwork.utils.parser.HTMLParser.findUrls with next major-update
+                     */
+                    final ArrayList<String> follow = DirectHTTP.findUrls(this.br.toString());
+                    /*
+                     * if we already tried htmlRedirect or not exactly one link found, throw File not available
+                     */
+                    if (follow.size() != 1 || downloadLink.getBooleanProperty("htmlRedirect", false)) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    /* found one valid url */
+                    downloadLink.setUrlDownload(follow.get(0).trim());
+                    /* we set property here to avoid loops */
+                    downloadLink.setProperty("htmlRedirect", true);
                     return this.requestFileInformation(downloadLink);
                 }
-                this.br.followConnection();
-                /* search urls */
-                /*
-                 * TODO: Change to org.appwork.utils.parser.HTMLParser.findUrls with next major-update
-                 */
-                final ArrayList<String> follow = DirectHTTP.findUrls(this.br.toString());
-                /*
-                 * if we already tried htmlRedirect or not exactly one link found, throw File not available
-                 */
-                if (follow.size() != 1 || downloadLink.getBooleanProperty("htmlRedirect", false)) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                /* found one valid url */
-                downloadLink.setUrlDownload(follow.get(0).trim());
-                /* we set property here to avoid loops */
-                downloadLink.setProperty("htmlRedirect", true);
-                return this.requestFileInformation(downloadLink);
             } else {
-                urlConnection.disconnect();
+                if (urlConnection.getRequest() instanceof HeadRequest) {
+                    br.followConnection();
+                } else {
+                    urlConnection.disconnect();
+                }
             }
             /* if final filename already set, do not change */
             if (downloadLink.getFinalFileName() == null) {
