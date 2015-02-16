@@ -33,6 +33,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rehost.to" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs-rehost" }, flags = { 2 })
 public class RehostTo extends PluginForHost {
 
@@ -109,7 +111,7 @@ public class RehostTo extends PluginForHost {
     private void handleDL(Account account, DownloadLink link, String dllink) throws Exception {
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
-        if (link.getDownloadURL().contains("filesmonster")) {
+        if (link.getDownloadURL().contains("filesmonster") || StringUtils.equalsIgnoreCase("uploaded.to", link.getHost())) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -10);
@@ -238,8 +240,14 @@ public class RehostTo extends PluginForHost {
         } else {
             return;
         }
+        if (br.containsHTML("ERROR:TOO_MANY_ASSIGNMENTS")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "ERROR:TOO_MANY_ASSIGNMENTS", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
         try {
-            if (error.equals("low_prem_credits")) {
+            if (error.equals("dls_ul")) {
+                statusMessage = "No more downloads possible for this host. Please wait and retry later!";
+                tempUnavailableHoster(account, downloadLink, 5 * 60 * 1000l);
+            } else if (error.equals("low_prem_credits")) {
                 /*
                  * 'low_prem_credits': this code tells you that the login information posted to process_download.php is invalid (cross check
                  * with get_premum_credits) or that the user ran out of premium traffic. If the premium credits are low and downloads are
@@ -267,12 +275,12 @@ public class RehostTo extends PluginForHost {
                     // quota exhausted
                     statusMessage = "Out of quota for " + downloadLink.getHost();
                 }
-                AccountInfo ai = new AccountInfo();
+                final AccountInfo ai = new AccountInfo();
                 hostUpdate(br, account, ai);
                 if (ai.getProperty("multiHostSupport") != null) {
                     account.getAccountInfo().setMultiHostSupport(this, ai.getMultiHostSupport());
                 }
-                tempUnavailableHoster(account, downloadLink, 30 * 60 * 1000l);
+                tempUnavailableHoster(account, downloadLink, 10 * 60 * 1000l);
             } else if (error.equals("invalid_link")) {
                 /*
                  * 'invalid_link': the provided link format is invalid. Plugin outdated? Contact rehost.
