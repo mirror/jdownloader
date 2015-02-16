@@ -382,149 +382,155 @@ public class VimeoCom extends PluginForHost {
     }
 
     public static final int quality_info_length = 7;
+    private static Object   ctrlLock            = new Object();
 
     @SuppressWarnings("unchecked")
     public String[][] getQualities(final Browser ibr, final String ID) throws Exception {
-        /*
-         * little pause needed so the next call does not return trash
-         */
-        Thread.sleep(1000);
-        // process the different page layouts
-        String qualities[][] = null;
-        String download[][] = null;
-        boolean debug = false;
+        synchronized (ctrlLock) {
+            /*
+             * little pause needed so the next call does not return trash
+             */
+            Thread.sleep(2500);
+            // process the different page layouts
+            String qualities[][] = null;
+            String download[][] = null;
+            boolean debug = false;
 
-        // qx[0] = url
-        // qx[1] = extension
-        // qx[2] = format (mobile|sd|hd)
-        // qx[3] = frameSize (\d+x\d+)
-        // qx[4] = bitrate (\d+)
-        // qx[5] = fileSize (\d [a-zA-Z]{2})
-        // qx[6] = Codec
-        String configURL = ibr.getRegex("data-config-url=\"(https?://player\\.vimeo\\.com/(v2/)?video/\\d+/config.*?)\"").getMatch(0);
-        if (ibr.containsHTML("iconify_down_b")) {
-            /* E.g. video 1761235 */
-            /* download button.. does this give you all qualities? If not we should drop this. */
-            Browser gq = ibr.cloneBrowser();
-            /* With dl button */
-            gq.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            gq.getPage("http://vimeo.com/" + ID + "?action=download");
-            /* german accept language will effect the language of this response, Datei instead of file. */
-            String[][] q = gq.getRegex("<a href=\"(https?://[^<>\"]*?)\" download=\"([^<>\"]*?)\" rel=\"nofollow\">(Mobile(?: ?(?:SD|HD))?|MP4|SD|HD)[^>]*</a>\\s*<span>\\((\\d+x\\d+) / (\\d+MB)\\)</span>").getMatches();
-            if (q != null) {
-                qualities = new String[q.length][quality_info_length];
-                for (int i = 0; i < q.length; i++) {
-                    // does not have reference to bitrate here.
-                    qualities[i][0] = q[i][0]; // download button link expires just like the rest!
-                    qualities[i][1] = new Regex(q[i][1], ".+(\\.[a-z0-9]{3,4})$").getMatch(0);
-                    qualities[i][2] = q[i][2];
-                    qualities[i][3] = q[i][3];
-                    qualities[i][4] = null;
-                    qualities[i][5] = q[i][4];
-                    /* No codec given */
-                    qualities[i][6] = null;
+            // qx[0] = url
+            // qx[1] = extension
+            // qx[2] = format (mobile|sd|hd)
+            // qx[3] = frameSize (\d+x\d+)
+            // qx[4] = bitrate (\d+)
+            // qx[5] = fileSize (\d [a-zA-Z]{2})
+            // qx[6] = Codec
+            String configURL = ibr.getRegex("data-config-url=\"(https?://player\\.vimeo\\.com/(v2/)?video/\\d+/config.*?)\"").getMatch(0);
+            if (ibr.containsHTML("iconify_down_b")) {
+                /* E.g. video 1761235 */
+                /* download button.. does this give you all qualities? If not we should drop this. */
+                Browser gq = ibr.cloneBrowser();
+                /* With dl button */
+                gq.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                gq.getPage("http://vimeo.com/" + ID + "?action=download");
+                /* german accept language will effect the language of this response, Datei instead of file. */
+                String[][] q = gq.getRegex("<a href=\"(https?://[^<>\"]*?)\" download=\"([^<>\"]*?)\" rel=\"nofollow\">(Mobile(?: ?(?:SD|HD))?|MP4|SD|HD)[^>]*</a>\\s*<span>\\((\\d+x\\d+) / (\\d+MB)\\)</span>").getMatches();
+                if (q != null) {
+                    qualities = new String[q.length][quality_info_length];
+                    for (int i = 0; i < q.length; i++) {
+                        // does not have reference to bitrate here.
+                        qualities[i][0] = q[i][0]; // download button link expires just like the rest!
+                        qualities[i][1] = new Regex(q[i][1], ".+(\\.[a-z0-9]{3,4})$").getMatch(0);
+                        qualities[i][2] = q[i][2];
+                        qualities[i][3] = q[i][3];
+                        qualities[i][4] = null;
+                        qualities[i][5] = q[i][4];
+                        /* No codec given */
+                        qualities[i][6] = null;
+                    }
+                }
+                if (debug) {
+                    download = qualities;
+                    qualities = null;
                 }
             }
-            if (debug) {
-                download = qualities;
-                qualities = null;
-            }
-        }
-        /* player.vimeo.com links = Special case as the needed information is already in our current browser. */
-        if (configURL != null && (qualities == null || (qualities != null && qualities.length == 0)) || ibr.getURL().contains("player.vimeo.com/")) {
-            // iconify_down_b could fail, revert to the following if statements.
-            final Browser gq = ibr.cloneBrowser();
-            gq.getHeaders().put("Accept", "*/*");
-            String json;
-            if (configURL != null) {
-                configURL = configURL.replaceAll("&amp;", "&");
-                gq.getPage(configURL);
-                json = gq.toString();
-            } else {
-                json = ibr.getRegex("a=(\\{\"cdn_url\".*?);if\\(a\\.request\\)").getMatch(0);
-            }
-            /* Old handling without DummyScriptEnginePlugin removed AFTER revision 28754 */
-            if (json != null) {
-                int foundqualities = 0;
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
-                final LinkedHashMap<String, Object> request = (LinkedHashMap<String, Object>) entries.get("request");
-                final LinkedHashMap<String, Object> files = (LinkedHashMap<String, Object>) request.get("files");
-                /*
-                 * h264 with sd, mobile and sometimes hd is available most times. vp6 is only available if a download button is available
-                 * (as far as we know) and thus should never be decrypted.
-                 */
-                final String[] codecs = { "h264", "vp6" };
-                for (final String codec : codecs) {
-                    final LinkedHashMap<String, Object> codecmap = (LinkedHashMap<String, Object>) files.get(codec);
-                    if (codecmap != null) {
-                        final String[] possibleQualities = { "mobile", "hd", "sd" };
-                        qualities = new String[3][quality_info_length];
-                        int counter = 0;
-                        for (final String currentQuality : possibleQualities) {
-                            final LinkedHashMap<String, Object> qualitymap = (LinkedHashMap<String, Object>) codecmap.get(currentQuality);
-                            if (qualitymap != null) {
-                                final String url = (String) qualitymap.get("url");
-                                Integer.toString(((Number) qualitymap.get("height")).intValue());
-                                final String height = Integer.toString(((Number) qualitymap.get("height")).intValue());
-                                final String width = Integer.toString(((Number) qualitymap.get("width")).intValue());
-                                String bitrate = null;
-                                final Object o_bitrate = qualitymap.get("bitrate");
-                                if (o_bitrate != null) {
-                                    /* Bitrate is 'null' for vp6 codec */
-                                    bitrate = Integer.toString(((Number) o_bitrate).intValue());
+            /* player.vimeo.com links = Special case as the needed information is already in our current browser. */
+            if (configURL != null && (qualities == null || (qualities != null && qualities.length == 0)) || ibr.getURL().contains("player.vimeo.com/")) {
+                // iconify_down_b could fail, revert to the following if statements.
+                final Browser gq = ibr.cloneBrowser();
+                gq.getHeaders().put("Accept", "*/*");
+                String json;
+                if (configURL != null) {
+                    configURL = configURL.replaceAll("&amp;", "&");
+                    gq.getPage(configURL);
+                    json = gq.toString();
+                } else {
+                    json = ibr.getRegex("a=(\\{\"cdn_url\".*?);if\\(a\\.request\\)").getMatch(0);
+                }
+                /* Old handling without DummyScriptEnginePlugin removed AFTER revision 28754 */
+                if (json != null) {
+                    int foundqualities = 0;
+                    final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+                    final LinkedHashMap<String, Object> request = (LinkedHashMap<String, Object>) entries.get("request");
+                    final LinkedHashMap<String, Object> files = (LinkedHashMap<String, Object>) request.get("files");
+                    /*
+                     * h264 with sd, mobile and sometimes hd is available most times. vp6 is only available if a download button is
+                     * available (as far as we know) and thus should never be decrypted.
+                     */
+                    final String[] codecs = { "h264", "vp6" };
+                    for (final String codec : codecs) {
+                        final LinkedHashMap<String, Object> codecmap = (LinkedHashMap<String, Object>) files.get(codec);
+                        if (codecmap != null) {
+                            final String[] possibleQualities = { "mobile", "hd", "sd" };
+                            qualities = new String[3][quality_info_length];
+                            int counter = 0;
+                            for (final String currentQuality : possibleQualities) {
+                                final LinkedHashMap<String, Object> qualitymap = (LinkedHashMap<String, Object>) codecmap.get(currentQuality);
+                                if (qualitymap != null) {
+                                    final String url = (String) qualitymap.get("url");
+                                    Integer.toString(((Number) qualitymap.get("height")).intValue());
+                                    final String height = Integer.toString(((Number) qualitymap.get("height")).intValue());
+                                    final String width = Integer.toString(((Number) qualitymap.get("width")).intValue());
+                                    String bitrate = null;
+                                    final Object o_bitrate = qualitymap.get("bitrate");
+                                    if (o_bitrate != null) {
+                                        /* Bitrate is 'null' for vp6 codec */
+                                        bitrate = Integer.toString(((Number) o_bitrate).intValue());
+                                    }
+                                    String ext = new Regex(url, "(\\.[a-z0-9]{3,4})\\?token2=").getMatch(0);
+                                    if (ext == null) {
+                                        ext = new Regex(url, ".+(\\.[a-z0-9]{3,4})$").getMatch(0);
+                                    }
+                                    qualities[counter][0] = url;
+                                    qualities[counter][1] = ext;
+                                    qualities[counter][2] = currentQuality;
+                                    qualities[counter][3] = (height == null || width == null ? null : width + "x" + height);
+                                    qualities[counter][4] = bitrate;
+                                    /* No filesize given */
+                                    qualities[counter][5] = null;
+                                    qualities[counter][6] = codec;
+                                    foundqualities++;
                                 }
-                                String ext = new Regex(url, "(\\.[a-z0-9]{3,4})\\?token2=").getMatch(0);
-                                if (ext == null) {
-                                    ext = new Regex(url, ".+(\\.[a-z0-9]{3,4})$").getMatch(0);
-                                }
-                                qualities[counter][0] = url;
-                                qualities[counter][1] = ext;
-                                qualities[counter][2] = currentQuality;
-                                qualities[counter][3] = (height == null || width == null ? null : width + "x" + height);
-                                qualities[counter][4] = bitrate;
-                                /* No filesize given */
-                                qualities[counter][5] = null;
-                                qualities[counter][6] = codec;
-                                foundqualities++;
+                                counter++;
                             }
-                            counter++;
+                        }
+                        if (foundqualities > 0) {
+                            /*
+                             * We only decrypt one coded at the moment - if needed this can be changed to support more/all codecs in the
+                             * future.
+                             */
+                            break;
                         }
                     }
-                    if (foundqualities > 0) {
-                        /* We only decrypt one coded at the moment - if needed this can be changed to support more/all codecs in the future. */
-                        break;
+                }
+            } else if (configURL == null || (qualities == null || (qualities != null && qualities.length == 0))) {
+                // TODO: Find out of we still need this - this function is probably not needed anymore.
+                // best bet todo the above is to throw exception. someone will report error.
+                if (true) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Please report this to JDownloader Development Team");
+                }
+                String sig = ibr.getRegex("\"signature\":\"([0-9a-f]+)\"").getMatch(0);
+                String time = ibr.getRegex("\"timestamp\":(\\d+)").getMatch(0);
+                if (sig != null && time != null) {
+                    String fmts = ibr.getRegex("\"files\":\\{\"h264\":\\[(.*?)\\]\\}").getMatch(0);
+                    if (fmts != null) {
+                        String quality[] = fmts.replaceAll("\"", "").split(",");
+                        qualities = new String[quality.length][quality_info_length];
+                        for (int i = 0; i < quality.length; i++) {
+                            qualities[i][0] = "http://player.vimeo.com/play_redirect?clip_id=" + ID + "&sig=" + sig + "&time=" + time + "&quality=" + quality[i];
+                            qualities[i][2] = quality[i];
+                            qualities[i][3] = null;
+                        }
+                    } else {
+                        // Nothing found so SD should be available at least...
+                        qualities = new String[1][quality_info_length];
+                        qualities[0][0] = ibr.getRegex("").getMatch(0);
+                        qualities[0][0] = "http://player.vimeo.com/play_redirect?clip_id=" + ID + "&sig=" + sig + "&time=" + time + "&quality=sd&codecs=H264,VP8,VP6&type=moogaloop_local&embed_location=&seek=0";
+                        qualities[0][2] = "sd";
+                        qualities[0][3] = null;
                     }
                 }
             }
-        } else if (configURL == null || (qualities == null || (qualities != null && qualities.length == 0))) {
-            // TODO: Find out of we still need this - this function is probably not needed anymore.
-            // best bet todo the above is to throw exception. someone will report error.
-            if (true) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Please report this to JDownloader Development Team");
-            }
-            String sig = ibr.getRegex("\"signature\":\"([0-9a-f]+)\"").getMatch(0);
-            String time = ibr.getRegex("\"timestamp\":(\\d+)").getMatch(0);
-            if (sig != null && time != null) {
-                String fmts = ibr.getRegex("\"files\":\\{\"h264\":\\[(.*?)\\]\\}").getMatch(0);
-                if (fmts != null) {
-                    String quality[] = fmts.replaceAll("\"", "").split(",");
-                    qualities = new String[quality.length][quality_info_length];
-                    for (int i = 0; i < quality.length; i++) {
-                        qualities[i][0] = "http://player.vimeo.com/play_redirect?clip_id=" + ID + "&sig=" + sig + "&time=" + time + "&quality=" + quality[i];
-                        qualities[i][2] = quality[i];
-                        qualities[i][3] = null;
-                    }
-                } else {
-                    // Nothing found so SD should be available at least...
-                    qualities = new String[1][quality_info_length];
-                    qualities[0][0] = ibr.getRegex("").getMatch(0);
-                    qualities[0][0] = "http://player.vimeo.com/play_redirect?clip_id=" + ID + "&sig=" + sig + "&time=" + time + "&quality=sd&codecs=H264,VP8,VP6&type=moogaloop_local&embed_location=&seek=0";
-                    qualities[0][2] = "sd";
-                    qualities[0][3] = null;
-                }
-            }
+            return qualities;
         }
-        return qualities;
     }
 
     @SuppressWarnings("deprecation")
