@@ -648,6 +648,7 @@ public class DirectHTTP extends PluginForHost {
     }
 
     private boolean preferHeadRequest = true;
+    private boolean raz               = false;
 
     @SuppressWarnings("deprecation")
     @Override
@@ -661,7 +662,9 @@ public class DirectHTTP extends PluginForHost {
         this.br.setDefaultSSLTrustALL(isSSLTrustALL());
         /* disable gzip, because current downloadsystem cannot handle it correct */
         // identity can have adverse effects also!
-        this.br.getHeaders().put("Accept-Encoding", "identity");
+        if (!raz) {
+            this.br.getHeaders().put("Accept-Encoding", "identity");
+        }
         final String authinURL = new Regex(downloadLink.getDownloadURL(), "https?://(.+)@.*?($|/)").getMatch(0);
         String authSaved = null;
         String authProperty = null;
@@ -705,6 +708,10 @@ public class DirectHTTP extends PluginForHost {
                 } else {
                     basicauth = null;
                     this.br.getHeaders().remove("Authorization");
+                }
+                if (raz) {
+                    // test, identifying as german will redirect on direct links.
+                    br.getHeaders().put("Accept-Language", "en");
                 }
                 urlConnection = this.prepareConnection(this.br, downloadLink);
                 String urlParams = null;
@@ -795,7 +802,12 @@ public class DirectHTTP extends PluginForHost {
                 }
             } else {
                 if (urlConnection.getRequest() instanceof HeadRequest) {
-                    br.followConnection();
+                    // TODO: JIAZ FIX, when requesting data it will try to download it, following connection should only
+                    if (urlConnection.getResponseCode() == 200 && !urlConnection.getContentType().contains("html")) {
+                        urlConnection.disconnect();
+                    } else {
+                        br.followConnection();
+                    }
                 } else {
                     urlConnection.disconnect();
                 }
