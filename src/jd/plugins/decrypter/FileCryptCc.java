@@ -150,7 +150,7 @@ public class FileCryptCc extends PluginForDecrypt {
                 // they use recaptcha response field key for non recaptcha.. math sum and text =
                 // http://filecrypt.cc/captcha/captcha.php?namespace=container
                 // using bismarck original observation, this type is skipable.
-                if (counter > 1) {
+                if (counter > 0) {
                     final String code = getCaptchaCode(captcha, param);
                     if ("".equals(code)) {
                         if (counter + 1 < retry) {
