@@ -317,23 +317,23 @@ public class FlickrCom extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.getPage("https://www.flickr.com/signin/");
                 for (int i = 1; i <= 5; i++) {
-                    final String u = br.getRegex("type=\"hidden\" name=\"\\.u\" value=\"([^<>\"\\'/]+)\"").getMatch(0);
-                    final String challenge = br.getRegex("type=\"hidden\" name=\"\\.challenge\" value=\"([^<>\"\\'/]+)\"").getMatch(0);
-                    final String done = br.getRegex("type=\"hidden\" name=\"\\.done\" value=\"([^<>\"\\']+)\"").getMatch(0);
-                    final String pd = br.getRegex("type=\"hidden\" name=\"\\.pd\" value=\"([^<>\"\\'/]+)\"").getMatch(0);
-                    String action = br.getRegex("<form method=\"post\" action=\"(https?://login\\.yahoo.com/config/[^<>\"]*?)\"").getMatch(0);
-                    if (u == null || challenge == null || done == null || pd == null || action == null) {
+                    final String _ts = br.getRegex("name=\"_ts\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
+                    final String _crumb = br.getRegex("name=\"_crumb\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
+                    final String _uuid = br.getRegex("name=\"_uuid\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
+                    String action = br.getRegex("c7: \"(http[^<>\"]*?)\"").getMatch(0);
+                    if (_ts == null || _crumb == null || _uuid == null || action == null) {
                         if ("de".equalsIgnoreCase(lang)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         } else {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
                     }
+                    action = Encoding.htmlDecode(action);
                     // action = "https://login.yahoo.com/config/login";
 
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
 
-                    final String post_data_basic = ".tries=1&.src=flickrsignin&.md5=&.hash=&.js=&.last=&promo=&.intl=" + intl + "&.lang=" + lang_post + "&.bypass=&.partner=&.u=" + u + "&.v=0&.challenge=" + challenge + "&.yplus=&.emailCode=&pkg=&stepid=&.ev=&hasMsgr=0&.chkP=Y&.done=" + Encoding.urlEncode(done) + "&.pd=" + Encoding.urlEncode(pd) + "&.ws=1&.cp=0&nr=0&pad=6&aad=6&login=" + Encoding.urlEncode(account.getUser()) + "&passwd=" + Encoding.urlEncode(account.getPass()) + "&.persistent=y&.save=&passwd_raw=";
+                    final String post_data_basic = "countrycode=49&username=" + Encoding.urlEncode(account.getUser()) + "&passwd=" + Encoding.urlEncode(account.getPass()) + "&.persistent=y&signin=&_crumb=" + _crumb + "&_ts=" + _ts + "&_format=json&_uuid=" + _uuid + "&_seqid=2&_loadtpl=1";
                     String post_data = post_data_basic;
                     /* Captcha for/before login */
                     if (action.contains("login_verify2")) {
@@ -358,7 +358,10 @@ public class FlickrCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                String stepForward = br.getRegex("\"url\" : \"(https?://[^<>\"\\']+)\"").getMatch(0);
+                String stepForward = br.getRegex("\"url\"[\t\n\r ]*?:[\t\n\r ]*?\"(https?://[^<>\"\\']+)\"").getMatch(0);
+                if (stepForward == null) {
+                    stepForward = br.getRegex("\"url\":\"(https?[^<>\"\\']+)\"").getMatch(0);
+                }
                 if (stepForward == null) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -366,6 +369,7 @@ public class FlickrCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
+                stepForward = stepForward.replace("\\", "");
                 br.getPage(stepForward);
                 stepForward = br.getRegex("Please <a href=\"(http://(www\\.)?flickr\\.com/[^<>\"]+)\"").getMatch(0);
                 if (stepForward != null) {
