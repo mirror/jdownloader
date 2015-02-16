@@ -174,7 +174,7 @@ public class FernsehkritikTvA extends PluginForDecrypt {
         }
         dlLink.setProperty("directdate", DATE);
         dlLink.setProperty("directepisodenumber", EPISODENUMBER);
-        dlLink.setProperty("directtype", ".flv");
+        dlLink.setProperty("directtype", ".mp4");
         dlLink.setProperty("directlink", finallink);
         final String formattedFilename = ((jd.plugins.hoster.FernsehkritikTv) HOSTPLUGIN).getFKTVFormattedFilename(dlLink);
         dlLink.setFinalFileName(formattedFilename);
