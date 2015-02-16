@@ -27,7 +27,6 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -209,39 +208,6 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     link.setFinalFileName(ID);
                     return decryptedLinks;
                 }
-                // try {
-                // final Browser br2 = br.cloneBrowser();
-                // br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                // br2.getHeaders().put("X-Request", "JSON");
-                // br2.getPage(br.getURL() + "?action=status");
-                // if (br2.containsHTML("state\":\"transcode_failed\"")) {
-                // final DownloadLink link = getOffline(parameter);
-                // link.setFinalFileName(ID);
-                // return decryptedLinks;
-                // }
-                // } catch (final Throwable e) {
-                //
-                // }
-                {
-                    final String player = br.getRegex("('|\")(https?://[^\"'<>]+/js/player\\.js)\\1").getMatch(1);
-                    final Browser ajax = new Browser();
-                    ajax.getHeaders().put("Referer", br.getBaseURL());
-                    ajax.getHeaders().put("Accept", "*/*");
-                    ajax.getHeaders().put("Purpose", "prefetch");
-                    URLConnectionAdapter con = null;
-                    try {
-                        con = ajax.cloneBrowser().openHeadConnection(player != null ? player : "https://f.vimeocdn.com/p/2.5.29/js/player.js");
-                    } catch (final Exception e) {
-                    } finally {
-                        try {
-                            con.disconnect();
-                        } catch (final Exception e) {
-                        }
-                    }
-                    ajax.getHeaders().remove("Purpose");
-                    ajax.getPage(player != null ? player : "https://f.vimeocdn.com/p/2.5.29/js/player.js");
-                }
-                // set this cookie
                 // document.cookie = 'vuid=' + encodeURIComponent('35533916.335958829')
                 final String vuid = br.getRegex("document\\.cookie\\s*=\\s*'vuid='\\s*\\+\\s*encodeURIComponent\\('(\\d+\\.\\d+)'\\)").getMatch(0);
                 if (vuid != null) {
