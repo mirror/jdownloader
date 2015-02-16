@@ -142,7 +142,7 @@ public class FileCryptCc extends PluginForDecrypt {
                     counter++;
                 } while (!success && counter <= retry);
                 if (!success) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    throw new DecrypterException(DecrypterException.CAPTCHA);
                 }
                 captchaForm.put("g-recaptcha-response", Encoding.urlEncode(responseToken));
                 submitForm(captchaForm);
@@ -152,6 +152,9 @@ public class FileCryptCc extends PluginForDecrypt {
                 // using bismarck original observation, this type is skipable.
                 if (counter > 1) {
                     final String code = getCaptchaCode(captcha, param);
+                    if ("".equals(code)) {
+                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                    }
                     captchaForm.put("recaptcha_response_field", Encoding.urlEncode(code));
                 } else {
                     captchaForm.put("recaptcha_response_field", "");

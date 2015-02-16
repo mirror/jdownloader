@@ -25,6 +25,7 @@ import jd.PluginWrapper;
 import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -59,6 +60,7 @@ public class Wrdprss extends antiDDoSForDecrypt {
         for (String pattern : listType2) {
             completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/blog\\.php\\?id=[\\d]+)");
         }
+        completePattern.append("|hd-area\\.org/index\\.php\\?id=\\d+");
         completePattern.append("|hi10anime\\.com/([\\w\\-]+/){2}");
         completePattern.append("|watchseries-online\\.ch/episode/.+");
         completePattern.append(")");
@@ -116,11 +118,15 @@ public class Wrdprss extends antiDDoSForDecrypt {
             link_passwds.add(password.trim());
         }
         /* Alle Parts suchen */
-        String[] links = br.getRegex(Pattern.compile("href=.*?((?:(?:https?|ftp):)?//[^\"']+)", Pattern.CASE_INSENSITIVE)).getColumn(0);
+        String[] links = br.getRegex(Pattern.compile("href=.*?((?:(?:https?|ftp):)?//[^\"']{2,}|(&#x[a-f0-9]{2};)+)", Pattern.CASE_INSENSITIVE)).getColumn(0);
         progress.setRange(links.length);
         final String protocol = new Regex(br.getURL(), "^https?:").getMatch(-1);
         final HashSet<String> dupe = new HashSet<String>();
         for (String link : links) {
+            if (link.matches("(&#x[a-f0-9]{2};)+")) {
+                // decode
+                link = HTMLEntities.unhtmlentities(link);
+            }
             if (!dupe.add(link)) {
                 progress.increase(1);
                 continue;
@@ -133,7 +139,7 @@ public class Wrdprss extends antiDDoSForDecrypt {
             else if (link.matches("^/.+")) {
                 link = protocol + "//" + Browser.getHost(br.getURL(), true) + link;
             }
-            if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link, true) && !link.matches(".+\\.(css|xml)(.*)?")) {
+            if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link, true) && !link.matches(".+\\.(css|xml)(.*)?|.+://img\\.hd-area\\.org/.+")) {
                 DownloadLink dLink = createDownloadlink(link);
                 if (link_passwds != null && link_passwds.size() > 0) {
                     dLink.setSourcePluginPasswordList(link_passwds);
