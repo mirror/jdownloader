@@ -86,8 +86,8 @@ public class UpstoRe extends antiDDoSForHost {
      * @author raztoki
      * */
     @Override
-    protected Browser prepBrowser(final Browser prepBr) {
-        super.prepBrowser(prepBr);
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        super.prepBrowser(prepBr, host);
         prepBr.setCookie("http://upstore.net/", "lang", "en");
         return prepBr;
     }
@@ -504,7 +504,7 @@ public class UpstoRe extends antiDDoSForHost {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
             try {
-                Browser br2 = prepBrowser(br.cloneBrowser());
+                Browser br2 = prepBrowser(br.cloneBrowser(), Browser.getHost(dllink));
                 URLConnectionAdapter con = br2.openGetConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);

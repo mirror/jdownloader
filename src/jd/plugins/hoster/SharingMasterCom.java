@@ -167,9 +167,9 @@ public class SharingMasterCom extends antiDDoSForHost {
      * defines custom browser requirements.
      * */
     @Override
-    protected Browser prepBrowser(final Browser prepBr) {
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
         prepBr.setCookie(COOKIE_HOST, "lang", "english");
-        super.prepBrowser(prepBr);
+        super.prepBrowser(prepBr, host);
         return prepBr;
     }
 
@@ -303,10 +303,9 @@ public class SharingMasterCom extends antiDDoSForHost {
      * */
     private String[] altAvailStat(final DownloadLink downloadLink, final String[] fileInfo) throws Exception {
         Browser alt = new Browser();
-        prepBrowser(alt);
         // cloudflare initial support is within getPage.. otherwise not needed.
-        alt.getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/?op=checkfiles");
-        alt.postPage("/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + downloadLink.getDownloadURL());
+        getPage(alt, COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/?op=checkfiles");
+        postPage(alt, "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + downloadLink.getDownloadURL());
         String[] linkInformation = alt.getRegex(">" + downloadLink.getDownloadURL() + "</td><td style=\"color:[^;]+;\">(\\w+)</td><td>([^<>]+)?</td>").getRow(0);
         if (linkInformation != null && linkInformation[0].equalsIgnoreCase("found")) {
             downloadLink.setAvailable(true);
