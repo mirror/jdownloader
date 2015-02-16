@@ -469,7 +469,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
 
                 // get cookies we want/need.
                 // refresh these with every getPage/postPage/submitForm?
-                final Cookies add = ibr.getCookies(this.getHost());
+                final Cookies add = ibr.getCookies(ibr.getHost());
                 for (final Cookie c : add.getCookies()) {
                     if (new Regex(c.getKey(), "(cfduid|cf_clearance)").matches()) {
                         cookies.add(c);
