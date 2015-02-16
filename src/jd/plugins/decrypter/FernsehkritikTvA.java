@@ -28,7 +28,6 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -80,60 +79,32 @@ public class FernsehkritikTvA extends PluginForDecrypt {
         br.setCustomCharset("utf-8");
         br.getPage(parameter);
 
-        DATE = br.getRegex("var flattr_tle = \\'Fernsehkritik\\-TV Folge \\d+ vom(.*?)\\'").getMatch(0);
-        if (DATE == null) {
-            DATE = br.getRegex("id=\"eptitle\" href=\"\\.\\./folge\\-\\d+/\">Folge \\d+ vom ([^<>\"/]*?)</a>").getMatch(0);
-        }
+        DATE = br.getRegex("vom (\\d{1,2}\\. [A-Za-z]+ \\d{4})</h3>").getMatch(0);
         if (DATE == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         DATE = Encoding.htmlDecode(DATE.trim());
 
-        final boolean episode_is_old = Integer.valueOf(EPISODENUMBER) < 69;
-
         if (CFG.getBooleanProperty(GRAB_POSTECKE, false)) {
             /* Check for external links */
-            final String external_link = br.getRegex("rel=\"postecke\" href=\"(http://(www\\.)?youtube\\.com/watch\\?v=[A-Za-z0-9\\-_]+)\"").getMatch(0);
-            if (external_link != null) {
-                decryptedLinks.add(createDownloadlink(external_link));
-            } else {
-                String posteckeepisode = br.getRegex(">Zuschauerreaktionen: Postecke (\\d+)</a>").getMatch(0);
-                // Only use episode number of fktv episode if postecke episodenumber is not available
-                if (posteckeepisode == null) {
-                    posteckeepisode = EPISODENUMBER;
+            String posteckelink = br.getRegex("<a href=\"([^<>\"]*?)\" class=\"btn btn\\-default\"><i class=\"fa fa\\-play\\-circle\"></i> Feedback <span").getMatch(0);
+            /* Check if we got a new massengeschmack link - simply add it. */
+            if (posteckelink != null && posteckelink.matches("http://massengeschmack\\.tv/play/.+")) {
+                decryptedLinks.add(createDownloadlink(posteckelink));
+            } else if (posteckelink != null) {
+                br.setFollowRedirects(false);
+                /* External link - redirects to youtube/myvideo or similar */
+                if (!posteckelink.startsWith("http")) {
+                    posteckelink = "http://fernsehkritik.tv" + posteckelink;
                 }
-                String posteckelink = br.getRegex("\"(http://(www\\.)?fernsehkritik\\.tv/inline\\-video/postecke\\.php\\?[^<>\"]*?)\"").getMatch(0);
-                if (posteckelink == null) {
-                    posteckelink = br.getRegex("\"(http://massengeschmack\\.tv/play/\\d+/postecke\\d+)\"").getMatch(0);
+                br.getPage(posteckelink);
+                final String extern_link = br.getRedirectLocation();
+                if (extern_link == null) {
+                    return null;
                 }
-
-                /* No postecke link there? Check if they forgot to add it! */
-                if (posteckelink == null && !episode_is_old) {
-                    try {
-                        final Browser br2 = br.cloneBrowser();
-                        final String postecke_check_link = "http://massengeschmack.tv/play/1/postecke" + EPISODENUMBER;
-                        br2.getPage(postecke_check_link);
-                        if (!br2.containsHTML(">Clip nicht gefunden")) {
-                            posteckelink = postecke_check_link;
-                        }
-                    } catch (final Throwable e) {
-                    }
-                }
-
-                if (posteckelink != null) {
-                    final DownloadLink posteckedl = createDownloadlink(posteckelink);
-                    posteckedl.setProperty("directposteckeepisode", posteckeepisode);
-                    posteckedl.setProperty("directdate", DATE);
-                    posteckedl.setProperty("directepisodenumber", EPISODENUMBER);
-                    posteckedl.setProperty("directtype", ".flv");
-                    final String formattedFilename = ((jd.plugins.hoster.FernsehkritikTv) HOSTPLUGIN).getFKTVPost_FormattedFilename(posteckedl);
-                    posteckedl.setFinalFileName(formattedFilename);
-                    if (FASTCHECKENABLED) {
-                        posteckedl.setAvailable(true);
-                    }
-                    decryptedLinks.add(posteckedl);
-                }
+                decryptedLinks.add(createDownloadlink(extern_link));
+                br.setFollowRedirects(true);
             }
         }
 
@@ -188,56 +159,29 @@ public class FernsehkritikTvA extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     private ArrayList<DownloadLink> getParts(final String parameter, final String episode) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.getPage(parameter + "/Start/");
-        ArrayList<String> parts = new ArrayList<String>();
-        if (br.containsHTML("playlist = \\[\\{ url: base \\+ ep \\+ \\'\\.flv\\' \\}\\]")) {
-            parts.add(episode + ".flv");
-        } else {
-            String[] jumps = br.getRegex("url: base \\+ \\'\\d+\\-(\\d+)\\.flv\\'").getColumn(0);
-            if (jumps == null || jumps.length == 0) {
-                logger.warning("FATAL error, no parts found for link: " + parameter);
-                return null;
-            }
-            for (String jump : jumps) {
-                if (!parts.contains(jump)) {
-                    if (jump.equals("1")) {
-                        /* First part doesn't contain any "-PARTNUMBER.flv" */
-                        parts.add(episode + ".flv");
-                    } else {
-                        parts.add(episode + "-" + jump + ".flv");
-                    }
-                }
-            }
-            parts.add(episode + ".flv");
+        br.getPage(parameter + "/play/");
+        final String finallink = br.getRegex("type=\"video/mp4\" src=\"(http://[^<>\"]*?\\.mp4)\"").getMatch(0);
+        if (finallink == null) {
+            return null;
         }
         final String formattedpackagename = getFormattedPackagename(EPISODENUMBER, DATE);
-        for (final String part : parts) {
-            String directlink = "http://fernsehkritik.tv/js/directme.php?file=";
-            directlink += part;
-            final DownloadLink dlLink = createDownloadlink("http://fernsehkritik.tv/jdownloaderfolgeneu" + System.currentTimeMillis() + new Random().nextInt(1000000));
-            try {
-                dlLink.setContentUrl(parameter);
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-                dlLink.setBrowserUrl(parameter);
-            }
-            String partnumber = new Regex(part, "\\d+\\-(\\d+)\\.flv").getMatch(0);
-            if (partnumber == null || parts.size() == 1) {
-                /* Special handling for the first part and/or if the episode has only 1 part. */
-                partnumber = "1";
-            }
-            dlLink.setProperty("directpartnumber", partnumber);
-            dlLink.setProperty("directdate", DATE);
-            dlLink.setProperty("directepisodenumber", EPISODENUMBER);
-            dlLink.setProperty("directtype", ".flv");
-            dlLink.setProperty("originallink", directlink);
-            final String formattedFilename = ((jd.plugins.hoster.FernsehkritikTv) HOSTPLUGIN).getFKTVFormattedFilename(dlLink);
-            dlLink.setFinalFileName(formattedFilename);
-            if (FASTCHECKENABLED) {
-                dlLink.setAvailable(true);
-            }
-            decryptedLinks.add(dlLink);
+        final DownloadLink dlLink = createDownloadlink("http://fernsehkritik.tv/jdownloaderfolgeneu" + System.currentTimeMillis() + new Random().nextInt(1000000));
+        try {
+            dlLink.setContentUrl(parameter);
+        } catch (final Throwable e) {
+            /* Not available in old 0.9.581 Stable */
+            dlLink.setBrowserUrl(parameter);
         }
+        dlLink.setProperty("directdate", DATE);
+        dlLink.setProperty("directepisodenumber", EPISODENUMBER);
+        dlLink.setProperty("directtype", ".flv");
+        dlLink.setProperty("directlink", finallink);
+        final String formattedFilename = ((jd.plugins.hoster.FernsehkritikTv) HOSTPLUGIN).getFKTVFormattedFilename(dlLink);
+        dlLink.setFinalFileName(formattedFilename);
+        if (FASTCHECKENABLED) {
+            dlLink.setAvailable(true);
+        }
+        decryptedLinks.add(dlLink);
         return decryptedLinks;
     }
 
