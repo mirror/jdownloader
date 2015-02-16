@@ -802,15 +802,10 @@ public class DirectHTTP extends PluginForHost {
                 }
             } else {
                 if (urlConnection.getRequest() instanceof HeadRequest) {
-                    // TODO: JIAZ FIX, https://svn.jdownloader.org/issues/63037
-                    if (urlConnection.getResponseCode() == 200 && !urlConnection.getContentType().contains("html")) {
-                        urlConnection.disconnect();
-                    } else {
-                        br.followConnection();
-                    }
+                    br.followConnection();
                 } else {
-                        urlConnection.disconnect();
-                    }
+                    urlConnection.disconnect();
+                }
             }
             /* if final filename already set, do not change */
             if (downloadLink.getFinalFileName() == null) {
