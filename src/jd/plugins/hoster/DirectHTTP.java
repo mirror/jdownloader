@@ -647,8 +647,8 @@ public class DirectHTTP extends PluginForHost {
         this.handleFree(link);
     }
 
-    private boolean preferHeadRequest = true;
-    private boolean raz               = false;
+    private boolean       preferHeadRequest = true;
+    private final boolean raz               = false;
 
     @SuppressWarnings("deprecation")
     @Override
@@ -802,12 +802,7 @@ public class DirectHTTP extends PluginForHost {
                 }
             } else {
                 if (urlConnection.getRequest() instanceof HeadRequest) {
-                    // TODO: JIAZ FIX, when requesting data it will try to download it, following connection should only
-                    if (urlConnection.getResponseCode() == 200 && !urlConnection.getContentType().contains("html")) {
-                        urlConnection.disconnect();
-                    } else {
-                        br.followConnection();
-                    }
+                    br.followConnection();
                 } else {
                     urlConnection.disconnect();
                 }
