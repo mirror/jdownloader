@@ -21,145 +21,66 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adultddl.ws" }, urls = { "http://(www\\.)?adultddl\\.(com|ws)/\\d{4}/\\d{2}/\\d{2}/[^<>\"\\'/]+" }, flags = { 0 })
+import org.jdownloader.captcha.utils.recaptcha.api2.Recaptcha2Helper;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "adultddl.ws" }, urls = { "http://(www\\.)?adultddl\\.(com|ws)/\\d{4}/\\d{2}/\\d{2}/[^<>\"'/]+" }, flags = { 0 })
 public class AdltDlCom extends PluginForDecrypt {
 
     public AdltDlCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private Browser br2 = null;
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("adultddl.com/", "adultddl.ws/");
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        // Offline1
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("404 Not Found<|Sorry, the page could not be found")) {
-            logger.info("Link offline: " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+        if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("404 Not Found<|Sorry, the page could not be found") || br.containsHTML("<title> \\| AdultDDL</title>") || parameter.contains("adultddl.ws/1970/")) {
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
-        // Offline2
-        if (br.containsHTML("<title> \\| AdultDDL</title>")) {
-            logger.info("Link offline: " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
-        }
-        // Offline3
-        if (parameter.contains("adultddl.ws/1970/")) {
-            logger.info("Link offline: " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
-        }
-        String fpName = br.getRegex(" title=\"Comment on ([^<>\"\\']+)\"").getMatch(0);
+        String fpName = br.getRegex("<h2[^>]+entry-title[^>]+>(.*?)</h2>").getMatch(0);
         if (fpName == null) {
-            fpName = br.getRegex("<title>([^<>\"\\']+) \\| AdultDDL</title>").getMatch(0);
+            fpName = br.getRegex("<title>([^<>\"']+) (?:\\||-) AdultDDL</title>").getMatch(0);
         }
-        final String streamLink = br.getRegex("\\'(http://(www\\.)?(putlocker|firedrive)\\.com/embed/[A-Z0-9]+)\\'").getMatch(0);
+        // these are still shown, keep until we remove firedirve/putlocker.
+        final String streamLink = br.getRegex("'(http://(www\\.)?(putlocker|firedrive)\\.com/embed/[A-Z0-9]+)'").getMatch(0);
         if (streamLink != null) {
             decryptedLinks.add(createDownloadlink(streamLink));
         }
-        final String linksText = br.getRegex("<div class=\\'links\\'>(.*?)(?:<div id=\"comment\\-section\"|<!--//entry-content)").getMatch(0);
+        final String linksText = br.getRegex("<div class='links'>(.*?)(?:<div id=\"comment-section\"|<!--//entry-content)").getMatch(0);
         if (linksText == null) {
             logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String decryptPage = new Regex(linksText, "<iframe src=\\'(http://secure\\.adultddl\\.(com|ws)/\\?decrypt=\\d+)\\'").getMatch(0);
-        if (decryptPage != null) {
-            br.getPage(decryptPage);
-            final String[] cryptedLinks = br.getRegex("\\'(http://secure\\.adultddl\\.ws/\\?decrypt=\\d+)\\'").getColumn(0);
-            if (cryptedLinks == null || cryptedLinks.length == 0) {
-                if (!br.containsHTML("<form method='post' action='captcha\\.php'>")) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                final String cryptID = new Regex(decryptPage, "(\\d+)$").getMatch(0);
-                if (!handleCaptcha(param, cryptID)) {
-                    throw new DecrypterException(DecrypterException.CAPTCHA);
-                }
-                final String[] links = HTMLParser.getHttpLinks(br.toString(), "");
-                if ((links == null || links.length == 0) && streamLink == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                for (String singleLink : links) {
-                    if (!singleLink.contains("adultddl.com/")) {
-                        final DownloadLink dl = createDownloadlink(singleLink);
-                        try {
-                            distribute(dl);
-                        } catch (final Throwable e) {
-                            // Not available in old 0.9.581 Stable
-                        }
-                        decryptedLinks.add(dl);
-                    }
-                }
-                return decryptedLinks;
-            }
-            for (final String cryptedLink : cryptedLinks) {
-                final String cryptID = new Regex(cryptedLink, "(\\d+)$").getMatch(0);
-                if (!handleCaptcha(param, cryptID)) {
-                    throw new DecrypterException(DecrypterException.CAPTCHA);
-                }
-                final String[] links = HTMLParser.getHttpLinks(br.toString(), "");
-                if ((links == null || links.length == 0) && streamLink == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                if (links != null && links.length != 0) {
-                    for (String singleLink : links) {
-                        if (!singleLink.contains("adultddl.com/")) {
-                            final DownloadLink dl = createDownloadlink(singleLink);
-                            try {
-                                distribute(dl);
-                            } catch (final Throwable e) {
-                                // Not available in old 0.9.581 Stable
-                            }
-                            decryptedLinks.add(dl);
-                        }
-                    }
-                }
-            }
-        } else {
-            final String[] links = HTMLParser.getHttpLinks(linksText, "");
-            if ((links == null || links.length == 0) && streamLink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            if (links != null && links.length != 0) {
-                for (String singleLink : links) {
-                    if (!singleLink.contains("adultddl.com/")) {
-                        final DownloadLink dl = createDownloadlink(singleLink);
-                        try {
-                            distribute(dl);
-                        } catch (final Throwable e) {
-                            // Not available in old 0.9.581 Stable
-                        }
-                        decryptedLinks.add(dl);
-                    }
-                }
-            }
+        final String[] decryptPage = new Regex(linksText, "<iframe src='(http://secure\\.adultddl\\.(?:ws|com)/\\?decrypt=\\d+)'").getColumn(0);
+        if (decryptPage == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        for (final String dp : decryptPage) {
+            br2 = br.cloneBrowser();
+            br2.getPage(dp);
+            handleCaptcha(param);
+            addLinks(decryptedLinks, parameter);
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
@@ -169,37 +90,78 @@ public class AdltDlCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private boolean handleCaptcha(final CryptedLink param, final String id) throws Exception {
-        boolean done = false;
-        for (int i = 1; i <= 3; i++) {
-            br.postPage("http://secure.adultddl.ws/captcha.php", "submit=Click+Here&decrypt=" + id);
-            String c = null;
-            String postData = null;
-            if (br.containsHTML("google\\.com/recaptcha")) {
+    private void addLinks(final ArrayList<DownloadLink> decryptedLinks, final String parameter) throws PluginException {
+        final String[] links = HTMLParser.getHttpLinks(br2.toString(), "");
+        if ((links == null || links.length == 0) && decryptedLinks.isEmpty()) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        for (String singleLink : links) {
+            if (singleLink.matches(".+://img\\.adultddl\\.(?:ws|com)/.+") || !singleLink.matches(".+://.*?adultddl\\.(?:ws|com)/.+")) {
+                decryptedLinks.add(createDownloadlink(singleLink));
+            }
+        }
+    }
+
+    private void handleCaptcha(final CryptedLink param) throws Exception {
+        final int retry = 3;
+        Form captcha = br2.getForm(0);
+        if (captcha != null && captcha.containsHTML("value='Click Here'> to continue...")) {
+            // base link requires another submit
+            br2.submitForm(captcha);
+            captcha = br2.getForm(0);
+        }
+        for (int i = 1; i < retry; i++) {
+            if (captcha == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (br2.containsHTML("class=\"g-recaptcha\"") && br2.containsHTML("google\\.com/recaptcha")) {
+                // recaptcha v2
+                int counter = 0;
+                boolean success = false;
+                String responseToken = null;
+                do {
+                    Recaptcha2Helper rchelp = new Recaptcha2Helper();
+                    rchelp.init(this.br2);
+                    final File outputFile = rchelp.loadImageFile();
+                    String code = getCaptchaCode("recaptcha", outputFile, param);
+                    success = rchelp.sendResponse(code);
+                    responseToken = rchelp.getResponseToken();
+                    counter++;
+                } while (!success && counter <= retry);
+                if (!success) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                captcha.put("g-recaptcha-response", Encoding.urlEncode(responseToken));
+            } else if (br2.containsHTML("google\\.com/recaptcha")) {
+                // recaptcha v1
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br2);
                 rc.findID();
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                c = getCaptchaCode("recaptcha", cf, param);
-                postData = "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c);
+                final String c = getCaptchaCode("recaptcha", cf, param);
+                captcha.put("recaptcha_challenge_field", rc.getChallenge());
+                captcha.put("recaptcha_response_field", Encoding.urlEncode(c));
             } else {
-                final String cLnk = br.getRegex("\\'(/securimage/securimage_show\\.php\\?\\d+)\\'").getMatch(0);
+                final String cLnk = br2.getRegex("\\'(/securimage/securimage_show\\.php\\?\\d+)\\'").getMatch(0);
                 if (cLnk == null) {
-                    return false;
+                    throw new DecrypterException(DecrypterException.CAPTCHA);
                 }
-                c = getCaptchaCode("http://secure.adultddl.ws" + cLnk, param);
-                postData = "captcha_code=" + c;
+                final String c = getCaptchaCode("http://secure.adultddl.ws" + cLnk, param);
+                captcha.put("captcha_code", Encoding.urlEncode(c));
             }
-            postData += "&submit=Submit&decrypt=" + id;
-            br.postPage("http://secure.adultddl.ws/verify.php", postData);
-            if (br.containsHTML("The CAPTCHA entered was incorrect|Please go back and try again")) {
-                continue;
+            br2.submitForm(captcha);
+            if (br2.containsHTML("The CAPTCHA entered was incorrect|Please go back and try again")) {
+                if (i + 1 > retry) {
+                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                } else {
+                    captcha = br2.getForm(0);
+                    continue;
+                }
             }
-            done = true;
             break;
         }
-        return done;
     }
 
     /* NO OVERRIDE!! */
