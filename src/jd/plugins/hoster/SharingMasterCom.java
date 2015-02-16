@@ -277,6 +277,9 @@ public class SharingMasterCom extends antiDDoSForHost {
                 }
             }
         }
+        if (inValidate(fileInfo[0])) {
+            fileInfo[0] = cbr.getRegex("class=\"filename\">([^<>\"]*?) \\(\\d+.*?\\)</h2>").getMatch(0);
+        }
         if (inValidate(fileInfo[1])) {
             fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
             if (inValidate(fileInfo[1])) {
