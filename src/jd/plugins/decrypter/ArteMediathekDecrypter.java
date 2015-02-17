@@ -38,7 +38,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "arte.tv", "concert.arte.tv" }, urls = { "http://www\\.arte\\.tv/guide/[a-z]{2}/\\d+\\-\\d+/[A-Za-z0-9\\-_]+", "http://concert\\.arte\\.tv/(de|fr)/[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "arte.tv", "concert.arte.tv" }, urls = { "http://www\\.arte\\.tv/guide/[a-z]{2}/\\d+\\-\\d+/[A-Za-z0-9\\-_]+", "http://concert\\.arte\\.tv/(de|fr)/[a-z0-9\\-]+" }, flags = { 0, 0 })
 public class ArteMediathekDecrypter extends PluginForDecrypt {
 
     private static final String EXCEPTION_LINKOFFLINE      = "EXCEPTION_LINKOFFLINE";
