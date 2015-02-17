@@ -63,6 +63,7 @@ public class Wrdprss extends antiDDoSForDecrypt {
         completePattern.append("|hd-area\\.org/index\\.php\\?id=\\d+");
         completePattern.append("|hi10anime\\.com/([\\w\\-]+/){2}");
         completePattern.append("|watchseries-online\\.ch/episode/.+");
+        completePattern.append("|solarmovie\\.ws/watch-[\\w-]+\\.html");
         completePattern.append(")");
         // System.out.println(("Wrdprss: " + (10 + listType1.length + listType2.length) + " Pattern added!"));
         return new String[] { completePattern.toString() };
