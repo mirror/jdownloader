@@ -35,7 +35,7 @@ urls = { "http://(www\\.)?gogoanime\\.com/(?!flowplayer)(embed(\\.php)?\\?.*?vid
         "http://(www\\.)?easyvideo\\.me/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)", "http://(www\\.)?videozoo\\.me/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)", "http://(www\\.)?video66\\.org/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)", "http://(www\\.)?animewow\\.tv/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)", "http://(www\\.)?dramago\\.com/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)",
         "http://(www\\.)?playpanda\\.net/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)", "http://(www\\.)?byzoo\\.org/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)", "http://(www\\.)?vidzur\\.com/(?!embed)(gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)" },
 
-flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+        flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class GogoanimeCom extends antiDDoSForDecrypt {
 
     // NOTE:
@@ -79,7 +79,12 @@ public class GogoanimeCom extends antiDDoSForDecrypt {
             // use single hoster plugin so connection settings are aok.
             final String url = br.getRegex(".+url: (\"|')(.+\\.(mp4|flv|avi|mpeg|mkv).*?)\\1").getMatch(1);
             if (url != null) {
-                decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(url)));
+                final DownloadLink link = createDownloadlink(Encoding.htmlDecode(url));
+                if (link != null) {
+                    link.setProperty("forcenochunkload", Boolean.TRUE);
+                    link.setProperty("forcenochunk", Boolean.TRUE);
+                    decryptedLinks.add(link);
+                }
             }
         } else {
             String fpName = br.getRegex("<h1( class=\"generic\">|>[^\r\n]+)(.*?)</h1>").getMatch(1);
@@ -98,6 +103,8 @@ public class GogoanimeCom extends antiDDoSForDecrypt {
                     singleLink = Encoding.htmlDecode(singleLink);
                     final DownloadLink dl = createDownloadlink(singleLink);
                     if (dl != null) {
+                        dl.setProperty("forcenochunkload", Boolean.TRUE);
+                        dl.setProperty("forcenochunk", Boolean.TRUE);
                         decryptedLinks.add(dl);
                     }
                 }
