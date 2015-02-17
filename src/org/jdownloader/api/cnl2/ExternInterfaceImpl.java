@@ -429,6 +429,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                         if (StringUtils.isNotEmpty(finalPackageName)) {
                             getPackageInfo(link).setName(finalPackageName);
                             getPackageInfo(link).setUniqueId(null);
+                            getPackageInfo(link).setIgnoreVarious(true);
                         }
                         if (StringUtils.isNotEmpty(finalDestination)) {
                             getPackageInfo(link).setDestinationFolder(finalDestination);
@@ -472,10 +473,10 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                                 if (!dl.hasBrowserUrl() && StringUtils.isNotEmpty(referer)) {
                                     dl.setBrowserUrl(referer);
                                 }
-                                if (index2 < desc.length) {
+                                if (index2 < desc.length && StringUtils.isNotEmpty(desc[index2])) {
                                     dl.setComment(desc[index2]);
                                 }
-                                if (index2 < fnames.length) {
+                                if (index2 < fnames.length && StringUtils.isNotEmpty(fnames[index2])) {
                                     dl.setForcedFileName(fnames[index2]);
                                 }
                                 if (StringUtils.isNotEmpty(cookies)) {
@@ -504,16 +505,22 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                                 Log.exception(e);
                             }
                             final DownloadLink direct = new DownloadLink(defaultplg, name, "DirectHTTP", url, true);
-                            if (downloadPassword != null) {
+                            if (StringUtils.isNotEmpty(downloadPassword)) {
                                 direct.setDownloadPassword(downloadPassword);
                             }
-                            if (index2 < desc.length) {
+                            if (index2 < desc.length && StringUtils.isNotEmpty(desc[index2])) {
                                 direct.setComment(desc[index2]);
                             }
-                            direct.setProperty("cookies", cookies);
-                            direct.setProperty("post", post);
-                            direct.setProperty("referer", referer);
-                            if (index2 < fnames.length) {
+                            if (StringUtils.isNotEmpty(cookies)) {
+                                direct.setProperty("cookies", cookies);
+                            }
+                            if (StringUtils.isNotEmpty(post)) {
+                                direct.setProperty("post", post);
+                            }
+                            if (StringUtils.isNotEmpty(referer)) {
+                                direct.setProperty("referer", referer);
+                            }
+                            if (index2 < fnames.length && StringUtils.isNotEmpty(fnames[index2])) {
                                 direct.setProperty("fixName", fnames[index2]);
                             }
                             try {
