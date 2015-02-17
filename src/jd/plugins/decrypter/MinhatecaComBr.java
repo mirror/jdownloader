@@ -182,6 +182,9 @@ public class MinhatecaComBr extends PluginForDecrypt {
                 if (linkinfo == null || linkinfo.length == 0) {
                     linkinfo = br.getRegex("<div class=\"filerow fileItemContainer\">(.*?)class=\"fileCommentsAction\"").getColumn(0);
                 }
+                if (linkinfo == null || linkinfo.length == 0) {
+                    linkinfo = br.getRegex("class=\"filename\"(.*?)class=\"showSharedOptions\"").getColumn(0);
+                }
                 if (linkinfo == null || linkinfo.length == 0 || fpName == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
@@ -253,5 +256,4 @@ public class MinhatecaComBr extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
 }

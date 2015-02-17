@@ -77,12 +77,12 @@ public class MyVideoDeWrapper extends PluginForDecrypt {
                 fina.setAvailable(false);
             } else if (redirect != null) {
                 br.getPage(redirect);
-            }
-
-            if (!br.containsHTML(jd.plugins.hoster.MyVideo.age_restricted)) {
-                final String filename = jd.plugins.hoster.MyVideo.getFilename(this.br);
-                fina.setName(filename + ".flv");
-                fina.setAvailable(true);
+            } else {
+                if (!br.containsHTML(jd.plugins.hoster.MyVideo.age_restricted)) {
+                    final String filename = jd.plugins.hoster.MyVideo.getFilename(this.br);
+                    fina.setName(filename + ".flv");
+                    fina.setAvailable(true);
+                }
             }
 
             decryptedLinks.add(fina);
