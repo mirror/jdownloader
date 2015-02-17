@@ -192,6 +192,8 @@ public class MyJDownloaderConnectThread extends Thread {
         this.myJDownloaderController = myJDownloaderExtension;
         debugEnabled = CFG_MYJD.CFG.isDebugEnabled();
         if (debugEnabled) {
+            logger = myJDownloaderExtension.getLogger();
+        } else {
             logger = new LogSource("Dummy") {
 
                 @Override
@@ -201,8 +203,6 @@ public class MyJDownloaderConnectThread extends Thread {
                 public synchronized void log(java.util.logging.LogRecord record) {
                 };
             };
-        } else {
-            logger = myJDownloaderExtension.getLogger();
         }
         api = new MyJDownloaderAPI() {
             @Override
