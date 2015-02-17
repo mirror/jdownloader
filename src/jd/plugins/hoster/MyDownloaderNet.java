@@ -62,7 +62,7 @@ public class MyDownloaderNet extends PluginForHost {
         return "http://mydownloader.net/privacy.php";
     }
 
-    private static final String USE_API     = "USE_API";
+    private static final String USE_API     = "USE_API_V2";
     private static final String NOCHUNKS    = "NOCHUNKS";
     private static Object       LOCK        = new Object();
     private static final String COOKIE_HOST = "http://mydownloader.net/";
@@ -581,7 +581,7 @@ public class MyDownloaderNet extends PluginForHost {
         return this.getPluginConfig().getBooleanProperty(USE_API, default_api);
     }
 
-    private final boolean default_api = true;
+    private final boolean default_api = false;
 
     public void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_API, JDL.L("plugins.hoster.mydownloadernet.useAPI", "Use API (recommended)?")).setDefaultValue(default_api));
