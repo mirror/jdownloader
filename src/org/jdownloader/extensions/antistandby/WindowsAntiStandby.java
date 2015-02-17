@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.antistandby;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 
 import org.appwork.utils.logging2.LogSource;
@@ -23,42 +25,34 @@ import org.jdownloader.logging.LogController;
 
 public class WindowsAntiStandby extends Thread implements Runnable {
 
-    private boolean                    run   = false;
-    private static final int           sleep = 5000;
+    private final AtomicBoolean        lastState = new AtomicBoolean(false);
+    private static final int           sleep     = 5000;
     private final AntiStandbyExtension jdAntiStandby;
+    private final Kernel32             kernel32;
+    private final LogSource            logger;
 
-    public WindowsAntiStandby(AntiStandbyExtension jdAntiStandby) {
+    public WindowsAntiStandby(final AntiStandbyExtension jdAntiStandby) {
         super();
         this.jdAntiStandby = jdAntiStandby;
-
+        this.setDaemon(true);
+        setName("WindowsAntiStandby");
+        kernel32 = (Kernel32) com.sun.jna.Native.loadLibrary("kernel32", Kernel32.class);
+        logger = LogController.CL(AntiStandbyExtension.class);
     }
 
     @Override
     public void run() {
-        LogSource logger = LogController.CL(AntiStandbyExtension.class);
         try {
-            while (!isInterrupted()) {
+            while (jdAntiStandby.isAntiStandbyThread()) {
                 switch (jdAntiStandby.getMode()) {
                 case DOWNLOADING:
                     if (DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.STOPPING_STATE)) {
-                        if (!run) {
-                            run = true;
-                            logger.fine("JDAntiStandby: Start");
-                        }
                         enableAntiStandby(true);
                     } else {
-                        if (run) {
-                            run = false;
-                            logger.fine("JDAntiStandby: Stop");
-                            enableAntiStandby(false);
-                        }
+                        enableAntiStandby(false);
                     }
                     break;
                 case RUNNING:
-                    if (!run) {
-                        run = true;
-                        logger.fine("JDAntiStandby: Start");
-                    }
                     enableAntiStandby(true);
                     break;
                 default:
@@ -80,17 +74,19 @@ public class WindowsAntiStandby extends Thread implements Runnable {
         }
     }
 
-    private void enableAntiStandby(boolean enabled) {
-        Kernel32 kernel32 = (Kernel32) com.sun.jna.Native.loadLibrary("kernel32", Kernel32.class);
-        if (enabled) {
-            if (jdAntiStandby.getSettings().isDisplayRequired()) {
-
-                kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS | Kernel32.ES_SYSTEM_REQUIRED | Kernel32.ES_DISPLAY_REQUIRED);
+    private void enableAntiStandby(final boolean enabled) {
+        if (lastState.compareAndSet(!enabled, enabled)) {
+            if (enabled) {
+                if (jdAntiStandby.getSettings().isDisplayRequired()) {
+                    kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS | Kernel32.ES_SYSTEM_REQUIRED | Kernel32.ES_DISPLAY_REQUIRED);
+                } else {
+                    kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS | Kernel32.ES_SYSTEM_REQUIRED);
+                }
+                logger.fine("JDAntiStandby: Start");
             } else {
-                kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS | Kernel32.ES_SYSTEM_REQUIRED);
+                kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS);
+                logger.fine("JDAntiStandby: Stop");
             }
-        } else {
-            kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS);
         }
     }
 

@@ -1,6 +1,8 @@
 package org.jdownloader.extensions.antistandby;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 
@@ -10,86 +12,86 @@ import org.jdownloader.logging.LogController;
 
 public class MacAntiStandBy extends Thread {
 
-    private AntiStandbyExtension extension;
-    private LogSource            logger;
-    private Process              process;
+    private final AntiStandbyExtension     jdAntiStandby;
+    private static final int               sleep       = 5000;
+    private final LogSource                logger;
+    private final AtomicBoolean            lastState   = new AtomicBoolean(false);
+    private final AtomicReference<Process> lastProcess = new AtomicReference<Process>(null);
 
     public MacAntiStandBy(AntiStandbyExtension antiStandbyExtension) {
-        super("MacAntiStandByThread");
-        extension = antiStandbyExtension;
+        setDaemon(true);
+        setName("MacAntiStandby");
+        jdAntiStandby = antiStandbyExtension;
         logger = LogController.CL(AntiStandbyExtension.class);
     }
 
     public void run() {
         try {
-            while (true) {
-
-                switch (extension.getMode()) {
+            while (jdAntiStandby.isAntiStandbyThread()) {
+                switch (jdAntiStandby.getMode()) {
                 case DOWNLOADING:
-                    if (DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.PAUSE_STATE, DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.STOPPING_STATE)) {
-
-                        if (!processIsRunning()) {
-
-                            logger.fine("JDAntiStandby: Start");
-                            doit();
-                        }
-
+                    if (DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.STOPPING_STATE)) {
+                        enableAntiStandby(true);
                     } else {
-                        if (processIsRunning()) {
-
-                            process.destroy();
-                            process = null;
-                        }
+                        enableAntiStandby(false);
                     }
                     break;
                 case RUNNING:
-                    if (!processIsRunning()) {
-                        doit();
-                    }
+                    enableAntiStandby(true);
                     break;
                 default:
-                    logger.finest("JDAntiStandby: Config error (unknown mode: " + extension.getMode() + ")");
+                    logger.finest("JDAntiStandby: Config error (unknown mode: " + jdAntiStandby.getMode() + ")");
+                    break;
                 }
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException e) {
-                    logger.log(e);
-                    return;
-                }
+                sleep(sleep);
             }
+        } catch (Throwable e) {
+            logger.log(e);
         } finally {
-            if (processIsRunning()) {
-
-                process.destroy();
-                process = null;
+            try {
+                enableAntiStandby(false);
+            } catch (final Throwable e) {
+            } finally {
+                logger.fine("JDAntiStandby: Terminated");
+                logger.close();
             }
         }
-
     }
 
-    private boolean processIsRunning() {
-
-        if (process == null) return false;
-        try {
-            process.exitValue();
-        } catch (IllegalThreadStateException e) {
-            return true;
+    private void enableAntiStandby(final boolean enabled) {
+        if (lastState.compareAndSet(!enabled, enabled)) {
+            if (enabled) {
+                final Process process = lastProcess.get();
+                if (process != null) {
+                    try {
+                        process.exitValue();
+                    } catch (IllegalThreadStateException e) {
+                        return;
+                    }
+                }
+                lastProcess.set(createProcess());
+                logger.fine("JDAntiStandby: Start");
+            } else {
+                final Process process = lastProcess.getAndSet(null);
+                if (process != null) {
+                    process.destroy();
+                    logger.fine("JDAntiStandby: Stop");
+                }
+            }
         }
-        return false;
     }
 
-    public void doit() {
+    private Process createProcess() {
         try {
             String[] command = { "pmset", "noidle" };
             // windows debug
             // command = new String[] { "calc.exe" };
             ProcessBuilder probuilder = ProcessBuilderFactory.create(command);
             logger.info("Call pmset nodile");
-            process = probuilder.start();
-
+            return probuilder.start();
         } catch (IOException e) {
             logger.log(e);
-
         }
+        return null;
     }
 }

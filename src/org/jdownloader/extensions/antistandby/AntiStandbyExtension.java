@@ -16,6 +16,8 @@
 
 package org.jdownloader.extensions.antistandby;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import jd.plugins.AddonPanel;
 
 import org.appwork.utils.os.CrossSystem;
@@ -27,7 +29,7 @@ import org.jdownloader.extensions.antistandby.translate.AntistandbyTranslation;
 
 public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, AntistandbyTranslation> {
 
-    private Thread                                     asthread = null;
+    private final AtomicReference<Thread>              currentThread = new AtomicReference<Thread>(null);
     private ExtensionConfigPanel<AntiStandbyExtension> configPanel;
 
     public ExtensionConfigPanel<AntiStandbyExtension> getConfigPanel() {
@@ -55,10 +57,11 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
 
     @Override
     protected void stop() throws StopException {
-        if (asthread != null) {
-            asthread.interrupt();
-            asthread = null;
-        }
+        currentThread.set(null);
+    }
+
+    protected boolean isAntiStandbyThread() {
+        return Thread.currentThread() == currentThread.get();
     }
 
     @Override
@@ -75,18 +78,16 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
         new Thread("AntiStandByLoader") {
             public void run() {
                 if (CrossSystem.isWindows()) {
-
-                    asthread = new WindowsAntiStandby(AntiStandbyExtension.this);
-                    asthread.start();
-
+                    final Thread thread = new WindowsAntiStandby(AntiStandbyExtension.this);
+                    currentThread.set(thread);
+                    thread.start();
                 } else if (CrossSystem.isMac()) {
-                    asthread = new MacAntiStandBy(AntiStandbyExtension.this);
-                    asthread.start();
-
+                    final Thread thread = new MacAntiStandBy(AntiStandbyExtension.this);
+                    currentThread.set(thread);
+                    thread.start();
                 }
             }
         }.start();
-
     }
 
     @Override
@@ -101,7 +102,6 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
 
     @Override
     protected void initExtension() throws StartException {
-
         configPanel = new AntistandbyConfigPanel(this);
     }
 
