@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 //xvideos.com by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvideos.com" }, urls = { "http://((www\\.)?xvideos\\.com/video[0-9]+/|\\w+\\.xvideos\\.com/embedframe/\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvideos.com" }, urls = { "http://((www\\.)?xvideos\\.com/video[0-9]+/|\\w+\\.xvideos\\.com/embedframe/\\d+|(www\\.)?xvideos\\.com/[a-z0-9\\-]+/upload/[a-z0-9\\-]+/\\d+)" }, flags = { 0 })
 public class XvideosCom extends PluginForHost {
 
     public XvideosCom(PluginWrapper wrapper) {
@@ -45,8 +45,18 @@ public class XvideosCom extends PluginForHost {
         return -1;
     }
 
-    private static final String NOCHUNKS = "NOCHUNKS";
-    private String              DLLINK   = null;
+    private static final String type_normal  = "http://(www\\.)?xvideos\\.com/video[0-9]+/";
+    private static final String type_embed   = "http://\\w+\\.xvideos\\.com/embedframe/\\d+";
+    private static final String type_special = "http://(www\\.)?xvideos\\.com/[a-z0-9\\-]+/upload/[a-z0-9\\-]+/\\d+";
+    private static final String NOCHUNKS     = "NOCHUNKS";
+    private String              DLLINK       = null;
+
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        if (link.getDownloadURL().matches(type_special)) {
+            link.setUrlDownload("http://www.xvideos.com/video" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + "/");
+        }
+    }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
