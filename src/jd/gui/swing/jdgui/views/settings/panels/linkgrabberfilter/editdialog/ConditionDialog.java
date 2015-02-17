@@ -431,7 +431,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         txtName = new ExtTextField() {
 
             /**
-             * 
+             *
              */
             private static final long serialVersionUID = 9217479913947520012L;
 
@@ -838,7 +838,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         txtHoster.addMouseListener(ml);
         cbRegHoster.addMouseListener(ml);
         panel.add(cbHoster);
-        panel.add(new JLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_hoster()));
+        panel.add(new JLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_dlurl()));
         panel.add(cobHoster);
         panel.add(txtHoster, "spanx,pushx,growx,split 2");
         panel.add(cbRegHoster, "width 22!,height 22!");
@@ -880,7 +880,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         cobSource.addMouseListener(ml);
         cbRegSource.addMouseListener(ml);
         panel.add(cbSource);
-        panel.add(lblSource = new JLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_source()));
+        panel.add(lblSource = new JLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_sourceurl()));
         panel.add(cobSource);
         panel.add(txtSource, "spanx,pushx,growx,split 2");
         panel.add(cbRegSource, "width 22!,height 22!");

@@ -871,14 +871,14 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enter comma seperated extensions like 'pdf,html,png,' ... (Use * as Wildcard)" })
     String FilterRuleDialog_createTypeFilter_mime_custom_help();
 
-    @Default(lngs = { "en" }, values = { "Hoster" })
-    String FilterRuleDialog_layoutDialogContent_lbl_hoster();
+    @Default(lngs = { "en" }, values = { "Downloadurl" })
+    String FilterRuleDialog_layoutDialogContent_lbl_dlurl();
 
     @Default(lngs = { "en" }, values = { "Enter a URL Expression like 'rapidshare.com'... (Use * as Wildcard)" })
     String FilterRuleDialog_layoutDialogContent_lbl_hoster_help();
 
-    @Default(lngs = { "en" }, values = { "Source" })
-    String FilterRuleDialog_layoutDialogContent_lbl_source();
+    @Default(lngs = { "en" }, values = { "Sourceurl(s)" })
+    String FilterRuleDialog_layoutDialogContent_lbl_sourceurl();
 
     @Default(lngs = { "en" }, values = { "Enter a Crawler Source Expression like 'jamendo.com'... (Use * as Wildcard)" })
     String FilterRuleDialog_layoutDialogContent_lbl_source_help();
