@@ -9,7 +9,7 @@ public class PackageInfo {
     private UniqueAlltimeID uniqueId              = null;
 
     private boolean         packagizerRuleMatched = false;
-    private boolean         ignoreVarious         = false;
+    private Boolean         ignoreVarious         = null;
 
     public UniqueAlltimeID getUniqueId() {
         return uniqueId;
@@ -59,7 +59,7 @@ public class PackageInfo {
     /**
      * Returns a packageID or null, of no id specific values are set. if this method returns a value !=null, it should get an own package,
      * which is not part of autopackaging.
-     * 
+     *
      * @return
      */
     public String createPackageID() {
@@ -125,7 +125,7 @@ public class PackageInfo {
     /**
      * @return the ignoreVarious
      */
-    public boolean isIgnoreVarious() {
+    public Boolean isIgnoreVarious() {
         return ignoreVarious;
     }
 

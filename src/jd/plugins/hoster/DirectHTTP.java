@@ -753,7 +753,7 @@ public class DirectHTTP extends PluginForHost {
                 validateLogins(downloadLink, basicauthInfo[1], basicauthInfo[2]);
 
             }
-            if (urlConnection.getResponseCode() == 404 || !urlConnection.isOK()) {
+            if (urlConnection.getResponseCode() == 404 || urlConnection.getResponseCode() == 410 || !urlConnection.isOK()) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             downloadLink.setProperty("auth", basicauth);
@@ -944,6 +944,8 @@ public class DirectHTTP extends PluginForHost {
         map.put("image/jpeg", "jpeg");
         map.put("image/png", "png");
         map.put("image/tiff", "tiff");
+        map.put("video/mp4", "mp4");
+        map.put("audio/mp3", "mp3");
         map.put("application/gzip", "gz");
         map.put("application/pdf", "pdf");
         return map.get(mimeType.toLowerCase(Locale.ENGLISH));
