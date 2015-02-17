@@ -717,6 +717,7 @@ public class DirectHTTP extends PluginForHost {
                 String urlParams = null;
                 if ((urlConnection.getResponseCode() == 401 || urlConnection.getResponseCode() == 400 || urlConnection.getResponseCode() == 404 || urlConnection.getResponseCode() == 403) && (urlParams = downloadLink.getStringProperty(DirectHTTP.POSSIBLE_URLPARAM, null)) != null) {
                     /* check if we need the URLPARAMS to download the file */
+                    urlConnection.setAllowedResponseCodes(new int[] { urlConnection.getResponseCode() });
                     br.followConnection();
                     final String newURL = downloadLink.getDownloadURL() + urlParams;
                     downloadLink.setProperty(DirectHTTP.POSSIBLE_URLPARAM, Property.NULL);
@@ -728,6 +729,7 @@ public class DirectHTTP extends PluginForHost {
                         /* no basic auth */
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
+                    urlConnection.setAllowedResponseCodes(new int[] { urlConnection.getResponseCode() });
                     br.followConnection();
                     invalidateLogins(pw, downloadLink);
                 } else {
