@@ -73,11 +73,12 @@ public class PureVidCom extends PluginForHost {
         return "http://www.videobug.net/";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("id=\"error\"")) {
+        if (br.containsHTML("id=\"error\"|error/errorbg\\.png") || br.containsHTML("Impossible de trouver info sur volume")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Browser fl = br.cloneBrowser();
@@ -86,7 +87,7 @@ public class PureVidCom extends PluginForHost {
         fl.getHeaders().put("Pragma", null);
         fl.getHeaders().put("Accept-Charset", null);
         fl.getHeaders().put("Cache-Control", null);
-        fl.getPage("/?m=video_info_embed_dev&id=" + getFID(downloadLink));
+        fl.getPage("/?m=video_info_embed_flv&id=" + getFID(downloadLink) + "&pv=1");
         final String filename = fl.getRegex("\"titleHeader\":\"([^\"]+)").getMatch(0);
         final String sid = fl.getRegex("\"sid\",\"value\":\"(\\d+)\"").getMatch(0);
         dllink = fl.getRegex("\"url\":\"(http[^\"]+purevid\\.com[^\"]+/get[^\"]+)").getMatch(0);
@@ -94,9 +95,10 @@ public class PureVidCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = dllink.replaceAll("\\\\/", "/");
+        dllink += "?token=&uid=&id=" + getFID(downloadLink) + "&sas=&sid=" + sid;
         final String ext = dllink.substring(dllink.lastIndexOf("."));
         downloadLink.setFinalFileName(filename + ext);
-        br.getPage("http://www.purevid.com/?m=statuscheck&token=&uid=&id=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)").getMatch(0) + "&sas=&sid=" + sid + "&cc=");
+        br.getPage("/?m=statuscheck&token=&uid=&id=" + getFID(downloadLink) + "&sas=&sid=" + sid + "&cc=");
         if (br.containsHTML("\\?m=upgrade")) {
             downloadLink.getLinkStatus().setStatusText("Only downloadable for registered/premium users");
             return AvailableStatus.TRUE;
@@ -106,7 +108,11 @@ public class PureVidCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(dllink);
+            if (isJDStable()) {
+                con = br2.openGetConnection(dllink);
+            } else {
+                con = br2.openHeadConnection(dllink);
+            }
             // only way to check for made up links... or offline is here
             if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -183,10 +189,15 @@ public class PureVidCom extends PluginForHost {
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                if (isJDStable()) {
+                    con = br2.openGetConnection(dllink);
+                } else {
+                    con = br2.openHeadConnection(dllink);
+                }
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -198,6 +209,10 @@ public class PureVidCom extends PluginForHost {
             }
         }
         return dllink;
+    }
+
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override
