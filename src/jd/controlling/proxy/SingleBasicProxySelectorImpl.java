@@ -104,10 +104,13 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
         switch (value) {
         case HTTP:
             proxy.setType(TYPE.HTTP);
+            break;
         case SOCKS4:
             proxy.setType(TYPE.SOCKS4);
+            break;
         case SOCKS5:
             proxy.setType(TYPE.SOCKS5);
+            break;
         default:
             throw new IllegalStateException("Illegal Operation");
         }
