@@ -2130,9 +2130,12 @@ public class LinkCrawler {
         return null;
     }
 
+    private final String LINKCRAWLER_POSTPROCESSED_FLAG = "LCPPF";
+
     protected void postprocessFinalCrawledLink(CrawledLink link) {
         final DownloadLink downloadLink = link.getDownloadLink();
-        if (downloadLink != null) {
+        if (downloadLink != null && !downloadLink.getBooleanProperty(LINKCRAWLER_POSTPROCESSED_FLAG, false)) {
+            downloadLink.setProperty(LINKCRAWLER_POSTPROCESSED_FLAG, Boolean.TRUE);
             final HashSet<String> knownURLs = new HashSet<String>();
             knownURLs.add(downloadLink.getPluginPatternMatcher());
             if (downloadLink.getContentUrl() != null) {
@@ -2239,6 +2242,10 @@ public class LinkCrawler {
         if (isCrawledLinkFiltered(link) == false) {
             /* link is not filtered, so we can process it normally */
             crawledLinksCounter.incrementAndGet();
+            final DownloadLink downloadLink = link.getDownloadLink();
+            if (downloadLink != null) {
+                downloadLink.removeProperty(LINKCRAWLER_POSTPROCESSED_FLAG);
+            }
             getHandler().handleFinalLink(link);
         }
     }
