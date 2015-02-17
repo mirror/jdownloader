@@ -175,15 +175,15 @@ public class FlickrCom extends PluginForDecrypt {
             csrf = "1405808633%3Ai01dgnb1q25wxw29%3Ac82715e60f008b97cb7e8fa3529ce156";
         }
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        String forcedOwner = null;
         String apilink = null;
         String path_alias = null;
-        String owner = null;
         if (parameter.matches(TYPE_SET)) {
             final String setid = new Regex(parameter, "(\\d+)/?$").getMatch(0);
             /* This request is only needed to get the title and owner of the photoset, */
             api_getPage("https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&method=flickr.photosets.getInfo&photoset_id=" + Encoding.urlEncode(setid));
-            owner = getJson("owner");
-            if (owner == null) {
+            forcedOwner = getJson("owner");
+            if (forcedOwner == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 decryptedLinks = null;
                 return;
@@ -246,7 +246,11 @@ public class FlickrCom extends PluginForDecrypt {
             final String jsontext = br.getRegex("\"photo\":\\[(\\{.*?\\})\\]").getMatch(0);
             final String[] jsonarray = jsontext.split("\\},\\{");
             for (final String jsonentry : jsonarray) {
-                if (owner == null) {
+                String owner = null;
+                /* E.g. in a set, all pictures got the same owner so the "owner" key is not available here. */
+                if (forcedOwner != null) {
+                    owner = forcedOwner;
+                } else {
                     owner = getJson(jsonentry, "owner");
                 }
                 final String photo_id = getJson(jsonentry, "id");
@@ -266,6 +270,9 @@ public class FlickrCom extends PluginForDecrypt {
                         fina.setComment(description);
                     } catch (Throwable e) {
                     }
+                }
+                if (photo_id.equals("16282385845")) {
+                    logger.warning("");
                 }
                 final String contenturl = "https://www.flickr.com/photos/" + owner + "/" + photo_id;
                 try {
