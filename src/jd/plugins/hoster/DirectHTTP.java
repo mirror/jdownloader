@@ -785,7 +785,7 @@ public class DirectHTTP extends PluginForHost {
 
                     /* search urls */
                     /*
-                     * TODO: Change to org.appwork.utils.parser.HTMLParser.findUrls with next major-update
+                     * TODO: change to org.appwork.utils.parser.HTMLParser.findUrls with next major-update
                      */
                     final ArrayList<String> follow = DirectHTTP.findUrls(this.br.toString());
                     /*
