@@ -262,19 +262,23 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                     protected void runInEDT() {
                         try {
                             removeTrayIcon();
-                            SystemTray systemTray = SystemTray.getSystemTray();
+                            final SystemTray systemTray = SystemTray.getSystemTray();
+                            final int trayIconWidth = (int) systemTray.getTrayIconSize().getWidth();
+                            final int trayIconHeight = (int) systemTray.getTrayIconSize().getHeight();
 
-                            BufferedImage img = IconIO.getScaledInstance(NewTheme.I().getImage("logo/jd_logo_128_128", -1), (int) systemTray.getTrayIconSize().getWidth(), (int) systemTray.getTrayIconSize().getHeight());
-
+                            final BufferedImage img;
                             if (getSettings().isGreyIconEnabled()) {
-                                img = ImageProvider.convertToGrayScale(img);
+                                img = ImageProvider.convertToGrayScale(IconIO.getScaledInstance(NewTheme.I().getImage("logo/jd_logo_128_128", -1), trayIconWidth, trayIconHeight));
+                            } else {
+                                img = IconIO.getScaledInstance(NewTheme.I().getImage("logo/jd_logo_128_128", -1), trayIconWidth, trayIconHeight);
                             }
-
+                            LogController.CL(TrayExtension.class).info("TrayIconSize:" + trayIconWidth + "x" + trayIconHeight + "->IconSize:" + img.getWidth() + "x" + img.getHeight());
                             // workaround for gnome 3 transparency bug
                             if (getSettings().isGnomeTrayIconTransparentEnabled() && CrossSystem.isLinux()) {
                                 // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6453521
                                 DesktopSupportLinux desktop = new DesktopSupportLinux();
                                 if (desktop.isGnomeDesktop() || desktop.isXFCEDesktop()) {
+                                    LogController.CL(TrayExtension.class).info("Apply LinuxTrayIcon workaround");
                                     java.awt.Robot robo = new java.awt.Robot();
                                     Color tmp, newColor;
                                     int cr, cb, cg;
