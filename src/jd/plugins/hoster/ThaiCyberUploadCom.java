@@ -42,8 +42,15 @@ public class ThaiCyberUploadCom extends PluginForHost {
         return "http://www.thaicyberupload.com/";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://www.thaicyberupload.com/get/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        final String contenturl = "http://www.thaicyberupload.com/get/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+        link.setUrlDownload(contenturl);
+        try {
+            link.setContentUrl(contenturl);
+        } catch (final Throwable e) {
+            /* Not available in old 0.9.581 Stable */
+        }
     }
 
     @Override
