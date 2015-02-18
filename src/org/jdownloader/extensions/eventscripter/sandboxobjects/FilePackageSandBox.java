@@ -70,7 +70,8 @@ public class FilePackageSandBox {
             @Override
             public void run() {
                 for (DownloadLink link : filePackage.getChildren()) {
-                    if (!FinalLinkState.CheckFinished(link.getFinalLinkState())) {
+                    // only enabled links count. this is the same in the jd gui, so let's use the same logic here
+                    if (link.isEnabled() && !FinalLinkState.CheckFinished(link.getFinalLinkState())) {
                         finished.set(false);
                         break;
                     }
