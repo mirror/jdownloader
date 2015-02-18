@@ -248,7 +248,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         final Priority finalPriority = (Priority) priority.getSelectedItem();
         ret.setDeepAnalyse(isDeepAnalyse());
         final BooleanStatus finalExtractStatus = this.extractToggle.isSelected() ? BooleanStatus.TRUE : BooleanStatus.FALSE;
-        ret.setCrawledLinkModifier(new CrawledLinkModifier() {
+        final CrawledLinkModifier modifier = new CrawledLinkModifier() {
 
             private PackageInfo getPackageInfo(CrawledLink link, boolean createIfNotExisting) {
                 PackageInfo packageInfo = link.getDesiredPackageInfo();
@@ -308,8 +308,11 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                     link.getArchiveInfo().getExtractionPasswords().addAll(finalPasswords);
                 }
             }
-        });
-
+        };
+        ret.setCrawledLinkModifierPrePackagizer(modifier);
+        if (overwritePackagizerRules) {
+            ret.setCrawledLinkModifierPostPackagizer(modifier);
+        }
         return ret;
 
     }
