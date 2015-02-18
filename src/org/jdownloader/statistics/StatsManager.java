@@ -1111,46 +1111,62 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
      * @param reducer
      * @param path
      */
-    public void track(int reducer, String path2) {
+    public void track(final int reducer, String path2) {
         if (reducer > 1) {
+            path2 += "_in" + reducer;
             synchronized (reducerRandomMap) {
 
-                Integer randomValue = reducerRandomMap.get(path2 + "_" + reducer);
-                if (randomValue == null) {
-                    Random random = new Random(System.currentTimeMillis());
-                    randomValue = random.nextInt(reducer);
-                    reducerRandomMap.put(path2 + "_" + reducer, randomValue.intValue());
-                    try {
-                        IO.secureWrite(reducerFile, JSonStorage.serializeToJson(reducerRandomMap).getBytes("UTF-8"));
-                    } catch (Throwable e) {
-                        logger.log(e);
-                    }
+                Integer randomValue = reducerRandomMap.get(path2);
+                if (randomValue != null) {
 
-                }
-                if (randomValue.intValue() != 0) {
-                    return;
+                    if (randomValue.intValue() != 0) {
+                        return;
+                    }
                 }
 
             }
 
-            path2 += "_in" + reducer;
         }
         final String path = path2;
-        final HashMap<String, String> cvar = new HashMap<String, String>();
-        try {
-            cvar.put("_id", System.getProperty(new String(new byte[] { (byte) 117, (byte) 105, (byte) 100 }, new String(new byte[] { 85, 84, 70, 45, 56 }, "UTF-8"))));
-        } catch (UnsupportedEncodingException e1) {
-            e1.printStackTrace();
-        }
-
-        cvar.put("source", "jd2");
-        cvar.put("os", CrossSystem.getOS().name());
-
         log(new AbstractTrackEntry() {
 
             @Override
             public void send(Browser br) {
                 try {
+
+                    if (reducer > 1) {
+                        synchronized (reducerRandomMap) {
+
+                            Integer randomValue = reducerRandomMap.get(path);
+                            if (randomValue == null) {
+                                Random random = new Random(System.currentTimeMillis());
+                                randomValue = random.nextInt(reducer);
+                                reducerRandomMap.put(path, randomValue.intValue());
+                                try {
+                                    IO.secureWrite(reducerFile, JSonStorage.serializeToJson(reducerRandomMap).getBytes("UTF-8"));
+                                } catch (Throwable e) {
+                                    logger.log(e);
+                                }
+
+                            }
+                            if (randomValue.intValue() != 0) {
+                                return;
+                            }
+
+                        }
+
+                    }
+
+                    final HashMap<String, String> cvar = new HashMap<String, String>();
+                    try {
+                        cvar.put("_id", System.getProperty(new String(new byte[] { (byte) 117, (byte) 105, (byte) 100 }, new String(new byte[] { 85, 84, 70, 45, 56 }, "UTF-8"))));
+                    } catch (UnsupportedEncodingException e1) {
+                        e1.printStackTrace();
+                    }
+
+                    cvar.put("source", "jd2");
+                    cvar.put("os", CrossSystem.getOS().name());
+
                     URLConnectionAdapter con = new Browser().openGetConnection("http://stats.appwork.org/jcgi/event/track?" + Encoding.urlEncode(path) + "&" + Encoding.urlEncode(JSonStorage.serializeToJson(cvar)));
                     con.disconnect();
                 } catch (Throwable e) {
