@@ -621,21 +621,22 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
     }
 
     private void verifyHost(final String verifyHost) throws ReconnectException {
-        if (verifiedIPs == null || !verifiedIPs.contains(verifyHost)) {
+        final String verify = Browser.getHost(verifyHost, false);
+        if (verifiedIPs == null || !verifiedIPs.contains(verify)) {
             try {
-                final String hostIP = InetAddress.getByName(verifyHost).getHostAddress();
-                if (!IP.isLocalIP(hostIP)) {
-                    throw new ReconnectException("Invalid Router Host:" + verifyHost + "->" + hostIP);
+                final String verifyIP = InetAddress.getByName(verify).getHostAddress();
+                if (!IP.isLocalIP(verifyIP)) {
+                    throw new ReconnectException("Invalid Router Host:" + verify + "->" + verifyIP);
                 }
                 final String routerIP = getRouterIP();
-                if (!StringUtils.equals(routerIP, hostIP)) {
-                    throw new ReconnectException("IP missmatch! (HOST)" + hostIP + "!=" + routerIP + "(ROUTER)");
+                if (!StringUtils.equals(routerIP, verifyIP)) {
+                    throw new ReconnectException("IP missmatch! (HOST)" + verifyIP + "!=" + routerIP + "(ROUTER)");
                 }
                 if (verifiedIPs != null) {
-                    verifiedIPs.add(verifyHost);
+                    verifiedIPs.add(verify);
                 }
             } catch (Throwable e) {
-                throw new ReconnectException("Invalid Router Host:" + verifyHost, e);
+                throw new ReconnectException("Invalid Router Host:" + verify, e);
             }
         }
     }
