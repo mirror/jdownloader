@@ -11,18 +11,18 @@ public interface UpdateSettings extends ConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("If enabled, JDownloader will update all plugins silently in the background without restarting")
-    boolean isDoNotAskToInstallPlugins();
+    boolean isInstallUpdatesSilentlyIfPossibleEnabled();
 
-    void setDoNotAskToInstallPlugins(boolean b);
+    void setInstallUpdatesSilentlyIfPossibleEnabled(boolean b);
 
     @AboutConfig
-    @DefaultBooleanValue(true)
+    @DefaultBooleanValue(false)
     @DescriptionForConfigEntry("If enabled, JD will install Updates silently during the next JDStart")
-    boolean isDoNotAskJustInstallOnNextStartupEnabled();
+    boolean isAskMyBeforeInstallingAnUpdateEnabled();
 
-    void setDoNotAskJustInstallOnNextStartupEnabled(boolean b);
+    void setAskMyBeforeInstallingAnUpdateEnabled(boolean b);
 
-    @AboutConfig
+    // @AboutConfig
     @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("Jar diffs speed up the update process because it reduces the update package size a lot. Do NOT disable this without a very good reason")
     boolean isJarDiffEnabled();
@@ -51,27 +51,6 @@ public interface UpdateSettings extends ConfigInterface {
     boolean isUpdateGuiAlwaysOnTop();
 
     void setUpdateGuiAlwaysOnTop(boolean b);
-
-    @DefaultBooleanValue(true)
-    @AboutConfig
-    @DescriptionForConfigEntry("If enabled, The Updater will install updates without asking if the JDownloader core could not start.")
-    boolean isDoNotAskToInstallEmergencyUpdates();
-
-    void setDoNotAskToInstallEmergencyUpdates(boolean b);
-
-    @DefaultBooleanValue(true)
-    @AboutConfig
-    @DescriptionForConfigEntry("If enabled, The Updater will download updates without asking if the JDownloader core could not start.")
-    boolean isDoNotAskToDownloadEmergencyUpdates();
-
-    void setDoNotAskToDownloadEmergencyUpdates(boolean b);
-
-    @DefaultBooleanValue(true)
-    @AboutConfig
-    @DescriptionForConfigEntry("If enabled, Updates will be installed before JDownloader Core starts without asking.")
-    boolean isDoNotAskToInstallUpdatesOnStartup();
-
-    void setDoNotAskToInstallUpdatesOnStartup(boolean b);
 
     @DefaultBooleanValue(false)
     @AboutConfig
@@ -113,4 +92,19 @@ public interface UpdateSettings extends ConfigInterface {
     long getLastST();
 
     void setLastST(long currentTimeMillis);
+
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    @DescriptionForConfigEntry("Try to install updates when you exit JDownloader")
+    boolean isInstallUpdatesOnExitEnabled();
+
+    void setInstallUpdatesOnExitEnabled(boolean b);
+
+    @DefaultBooleanValue(false)
+    @AboutConfig
+    @DescriptionForConfigEntry("Show the tray panel when installing updates on exit")
+    boolean isInstallUpdatesOnExitPanelVisibleDev();
+
+    void setInstallUpdatesOnExitPanelVisibleDev(boolean b);
+
 }

@@ -15,7 +15,13 @@ public class UpdateAPIImpl implements UpdateAPI {
 
     @Override
     public boolean isUpdateAvailable() {
+
         return UpdateController.getInstance().hasPendingUpdates();
+    }
+
+    @Override
+    public void runUpdateCheck() {
+        UpdateController.getInstance().runUpdateChecker(true);
     }
 
 }

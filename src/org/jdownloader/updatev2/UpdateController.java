@@ -24,6 +24,7 @@ import jd.gui.swing.jdgui.components.IconedProcessIndicator;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -35,7 +36,6 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -108,6 +108,7 @@ public class UpdateController implements UpdateCallbackInterface {
         this.updaterid = updaterid;
         hasPendingUpdates = handler.hasPendingUpdates();
         handler.startIntervalChecker();
+
         try {
             jd.SecondLevelLaunch.UPDATE_HANDLER_SET.setReached();
         } catch (Throwable e) {
@@ -375,7 +376,7 @@ public class UpdateController implements UpdateCallbackInterface {
             if (handler.hasPendingSelfupdate()) {
                 fireUpdatesAvailable(false, handler.createAWFInstallLog());
                 if (!isThreadConfirmed()) {
-                    if (!handler.isGuiVisible() && settings.isDoNotAskJustInstallOnNextStartupEnabled()) {
+                    if (!handler.isGuiVisible() && !settings.isAskMyBeforeInstallingAnUpdateEnabled()) {
                         return;
                     }
                     logger.info("ASK for installing selfupdate");
@@ -417,7 +418,7 @@ public class UpdateController implements UpdateCallbackInterface {
             if (awfoverview.getModifiedRestartRequiredFiles().size() == 0) {
                 logger.info("Only directs");
                 // can install direct
-                if (!settings.isDoNotAskToInstallPlugins()) {
+                if (!settings.isInstallUpdatesSilentlyIfPossibleEnabled()) {
                     logger.info("ask to install plugins");
                     confirm(UIOManager.LOGIC_COUNTDOWN, _UPDATE._.confirmdialog_new_update_available_frametitle(), _UPDATE._.confirmdialog_new_update_available_for_install_message_plugin(), _UPDATE._.confirmdialog_new_update_available_answer_now_install(), _UPDATE._.confirmdialog_new_update_available_answer_later_install());
 
@@ -450,7 +451,7 @@ public class UpdateController implements UpdateCallbackInterface {
                 fireUpdatesAvailable(false, null);
             } else {
 
-                if (!handler.isGuiVisible() && settings.isDoNotAskJustInstallOnNextStartupEnabled()) {
+                if (!handler.isGuiVisible() && settings.isAskMyBeforeInstallingAnUpdateEnabled()) {
                     return;
                 }
                 List<String> rInstalls = handler.getRequestedInstalls();
@@ -505,7 +506,7 @@ public class UpdateController implements UpdateCallbackInterface {
 
         };
 
-        Dialog.getInstance().showDialog(cd);
+        UIOManager.I().show(ConfirmDialogInterface.class, cd).throwCloseExceptions();
         if (cd.isClosedBySkipUntilNextRestart()) {
             if (lhandler != null) {
                 lhandler.stopIntervalChecker();

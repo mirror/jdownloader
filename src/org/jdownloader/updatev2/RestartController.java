@@ -15,6 +15,7 @@ import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
@@ -65,7 +66,9 @@ public class RestartController implements ShutdownVetoListener {
 
     public void setRoot(File root) {
 
-        if (root == null) root = Application.getTemp().getParentFile();
+        if (root == null) {
+            root = Application.getTemp().getParentFile();
+        }
 
         log("Set Root: " + root.getAbsolutePath());
         this.root = root;
@@ -88,7 +91,12 @@ public class RestartController implements ShutdownVetoListener {
             @Override
             public void onShutdown(final ShutdownRequest shutdownRequest) {
                 if (shutdownRequest instanceof RestartRequest) {
-                    restarter.restart(getRoot(), getFilteredRestartParameters(((RestartRequest) shutdownRequest).getArguments()));
+                    try {
+                        String[] arguments = ((RestartRequest) shutdownRequest).getArguments();
+                        restarter.restart(getRoot(), getFilteredRestartParameters(arguments));
+                    } catch (NoRestartException e) {
+                        // ok no restart required
+                    }
                 }
             }
 
@@ -104,9 +112,13 @@ public class RestartController implements ShutdownVetoListener {
         ArrayList<String> ret = new ArrayList<String>();
         if (startupParameters != null) {
             for (Entry<String, CommandSwitch> es : startupParameters.getMap().entrySet()) {
-                if (IGNORE_COMMAND_SWITCHES.contains(es.getKey() == null ? null : es.getKey().toLowerCase(Locale.ENGLISH))) continue;
+                if (IGNORE_COMMAND_SWITCHES.contains(es.getKey() == null ? null : es.getKey().toLowerCase(Locale.ENGLISH))) {
+                    continue;
+                }
 
-                if (es.getKey() != null) ret.add("-" + es.getKey());
+                if (es.getKey() != null) {
+                    ret.add("-" + es.getKey());
+                }
                 for (String p : es.getValue().getParameters()) {
                     ret.add(p);
                 }
@@ -114,7 +126,9 @@ public class RestartController implements ShutdownVetoListener {
         }
         if (arguments != null) {
             for (String s : arguments) {
-                if (s != null) ret.add(s);
+                if (s != null) {
+                    ret.add(s);
+                }
             }
         }
 
@@ -148,9 +162,24 @@ public class RestartController implements ShutdownVetoListener {
     }
 
     public void exitAsynch(final ShutdownRequest filter) {
-        if (filter == null) throw new NullPointerException();
+
+        if (filter == null) {
+            throw new NullPointerException();
+        }
+        if (!Application.isHeadless()) {
+            UpdateSettings cfg = JsonConfig.create(UpdateSettings.class);
+            if (filter.getClass() == SmartRlyExitRequest.class && cfg.isInstallUpdatesOnExitEnabled()) {
+                if (UpdateController.getInstance().hasPendingUpdates()) {
+
+                    asyncRestart(new InstallUpdatesOnExitRestartRequest(filter));
+                    return;
+
+                }
+            }
+        }
         new Thread("ExitAsynch") {
             public void run() {
+
                 ShutdownController.getInstance().requestShutdown(filter);
             }
         }.start();
@@ -158,7 +187,9 @@ public class RestartController implements ShutdownVetoListener {
 
     public synchronized ParameterParser getParameterParser(String[] args) {
         if (startupParameters == null) {
-            if (args == null) throw new IllegalStateException();
+            if (args == null) {
+                throw new IllegalStateException();
+            }
             startupParameters = new ParameterParser(args);
         }
         if (args != null) {
@@ -169,8 +200,12 @@ public class RestartController implements ShutdownVetoListener {
 
     @Override
     public void onShutdownVetoRequest(ShutdownRequest shutdownVetoExceptions) throws ShutdownVetoException {
-        if (shutdownVetoExceptions.hasVetos()) { return; }
-        if (shutdownVetoExceptions.isSilent()) return;
+        if (shutdownVetoExceptions.hasVetos()) {
+            return;
+        }
+        if (shutdownVetoExceptions.isSilent()) {
+            return;
+        }
         try {
             if (shutdownVetoExceptions instanceof RestartRequest) {
 

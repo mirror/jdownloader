@@ -18,7 +18,7 @@ public class BasicRestartRequest extends BasicShutdownRequest implements Restart
     }
 
     @Override
-    public String[] getArguments() {
+    public String[] getArguments() throws NoRestartException {
         return arguments;
     }
 

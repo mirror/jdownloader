@@ -218,4 +218,22 @@ public interface UpdaterTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Do you really want to restart JDownloader?" })
     String RestartController_confirmTorestart_msg();
 
+    @Default(lngs = { "en" }, values = { "Installing Update..." })
+    String installonexitframe_start();
+
+    @Default(lngs = { "en" }, values = { "JDownloader Update" })
+    String installonexitframe_title();
+
+    @Default(lngs = { "en" }, values = { "JDownloader Update" })
+    String installonexitframe_tray_tt();
+
+    @Default(lngs = { "en" }, values = { "Cancel the update" })
+    String installonexitframe_cancel();
+
+    @Default(lngs = { "en" }, values = { "Hide the panel" })
+    String installonexitframe_hide();
+
+    @Default(lngs = { "en" }, values = { "Panel visible" })
+    String installonexitframe_panel_visible();
+
 }

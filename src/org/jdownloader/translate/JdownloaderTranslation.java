@@ -954,4 +954,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Hidden (Usermode)" })
     String DonateButtonState_CUSTOM_HIDDEN();
 
+    @Default(lngs = { "en", "de" }, values = { "Updates are ready for Installation. Do you want to run the update now?" })
+    String update_dialog_msg_x_updates_available();
+
 }

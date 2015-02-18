@@ -7,5 +7,7 @@ import org.appwork.remoteapi.annotations.ApiNamespace;
 public interface UpdateAPI extends RemoteAPIInterface {
     public void restartAndUpdate();
 
+    public void runUpdateCheck();
+
     public boolean isUpdateAvailable();
 }

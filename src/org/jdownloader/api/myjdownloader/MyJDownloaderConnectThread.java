@@ -555,6 +555,7 @@ public class MyJDownloaderConnectThread extends Thread {
         if (connected.getAndSet(set) == set) {
             return;
         }
+        System.out.println(" set  " + set);
         StatsManager.I().track(1000, "myjd/connection/" + set);
         myJDownloaderController.fireConnectionStatusChanged(set, getEstablishedConnections());
     }
