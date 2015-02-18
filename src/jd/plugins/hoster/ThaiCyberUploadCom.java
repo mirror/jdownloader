@@ -51,15 +51,23 @@ public class ThaiCyberUploadCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://www.thaicyberupload.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://www.thaicyberupload.com/") || br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = get("File name");
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) \\- Upload and Download File for Free</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?) \\- Upload and Download File for Free</title>").getMatch(0);
+        }
         final String filesize = get("Size");
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         final String md5 = get("MD5 Sum");
-        if (md5 != null) link.setMD5Hash(md5.trim());
+        if (md5 != null) {
+            link.setMD5Hash(md5.trim());
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -67,11 +75,17 @@ public class ThaiCyberUploadCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex("class=\"frmupload\" name=\"frm\" action=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://data\\d+\\.thaicyberupload\\.com/dl/[A-Za-z0-9]+/\\d+/[^<>\"/]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://data\\d+\\.thaicyberupload\\.com/dl/[A-Za-z0-9]+/\\d+/[^<>\"/]*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         int wait = 60;
         final String waittime = br.getRegex("Please wait for (\\d+) seconds or refresh this page to renew the link").getMatch(0);
-        if (waittime != null) wait = Integer.parseInt(waittime);
+        if (waittime != null) {
+            wait = Integer.parseInt(waittime);
+        }
         sleep(wait * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
