@@ -307,4 +307,5 @@ system_download_doCRC2_waiting=Aguardando verificação hash
 system_download_errors_couldnotdelete=Não foi possível excluir a parte existente do arquivo
 system_download_errors_couldnotrename=Não foi possível renomear parte do arquivo
 system_download_errors_linkisBlocked=Mirror %s1 está carregando
+update_dialog_msg_x_updates_available=Atualizações prontas para instalação. Deseja executar a atualização agora?
 video_description=Arquivos de Vídeo: mp4, avi, mov...
