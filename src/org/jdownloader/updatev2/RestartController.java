@@ -40,7 +40,7 @@ public class RestartController implements ShutdownVetoListener {
 
     /**
      * get the only existing instance of RestartController. This is a singleton
-     * 
+     *
      * @return
      */
     public static RestartController getInstance() {
@@ -162,19 +162,14 @@ public class RestartController implements ShutdownVetoListener {
     }
 
     public void exitAsynch(final ShutdownRequest filter) {
-
         if (filter == null) {
             throw new NullPointerException();
         }
-        if (!Application.isHeadless()) {
-            UpdateSettings cfg = JsonConfig.create(UpdateSettings.class);
-            if (filter.getClass() == SmartRlyExitRequest.class && cfg.isInstallUpdatesOnExitEnabled()) {
-                if (UpdateController.getInstance().hasPendingUpdates()) {
-
-                    asyncRestart(new InstallUpdatesOnExitRestartRequest(filter));
-                    return;
-
-                }
+        if (!Application.isHeadless() && SmartRlyExitRequest.class == filter.getClass()) {
+            final UpdateSettings cfg = JsonConfig.create(UpdateSettings.class);
+            if (cfg.isInstallUpdatesOnExitEnabled() && UpdateController.getInstance().hasPendingUpdates()) {
+                asyncRestart(new InstallUpdatesOnExitRestartRequest(filter));
+                return;
             }
         }
         new Thread("ExitAsynch") {
