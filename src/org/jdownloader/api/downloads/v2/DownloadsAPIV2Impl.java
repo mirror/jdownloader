@@ -85,6 +85,10 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     public FilePackageAPIStorableV2 toStorable(PackageQueryStorable queryParams, FilePackage fp, FilePackageView fpView, DownloadWatchDog dwd) {
         FilePackageAPIStorableV2 fps = new FilePackageAPIStorableV2(fp);
 
+        if (queryParams.isPriority()) {
+            fps.setPriority(org.jdownloader.myjdownloader.client.bindings.PriorityStorable.valueOf(fp.getPriorityEnum().name()));
+        }
+
         if (queryParams.isSaveTo()) {
             fps.setSaveTo(fp.getView().getDownloadDirectory());
 
@@ -224,6 +228,10 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         FilePackageAPIStorableV2 fps = new FilePackageAPIStorableV2(fp);
         FilePackageView fpView = new FilePackageView(fp);
         fpView.setItems(null);
+
+        if (queryParams.isPriority()) {
+            fps.setPriority(org.jdownloader.myjdownloader.client.bindings.PriorityStorable.valueOf(fp.getPriorityEnum().name()));
+        }
 
         if (queryParams.isSaveTo()) {
             fps.setSaveTo(fpView.getDownloadDirectory());
@@ -669,10 +677,15 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
     @Override
     public void setPriority(PriorityStorable priority, long[] linkIds, long[] packageIds) throws BadParameterException {
-        org.jdownloader.controlling.Priority jdPriority = org.jdownloader.controlling.Priority.valueOf(priority.name());
-        for (DownloadLink dl : getSelectionInfo(linkIds, packageIds).getChildren()) {
-            dl.setPriorityEnum(jdPriority);
-        }
+            org.jdownloader.controlling.Priority jdPriority = org.jdownloader.controlling.Priority.valueOf(priority.name());
+            List<DownloadLink> children = convertIdsToLinks(linkIds);
+            List<FilePackage> pkgs = convertIdsToPackages(packageIds);
+            for (DownloadLink dl : children) {
+                dl.setPriorityEnum(jdPriority);
+            }
+            for (FilePackage pkg : pkgs) {
+                pkg.setPriorityEnum(jdPriority);
+            }
     }
 
     @Override
