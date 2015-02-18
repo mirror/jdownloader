@@ -183,6 +183,14 @@ public class JSHtmlUnitPermissionRestricter {
                         Log.L.severe("Javascript error occured");
                         LOADED.add(className);
                         return true;
+                    } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.ConsString")) {
+                        // if (true) {
+                        // ScriptRuntime.constructError("Thread Loaded ", className).printStackTrace();
+                        //
+                        // }
+                        Log.L.severe("Javascript error occured");
+                        LOADED.add(className);
+                        return true;
                     } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.JavaScriptException")) {
                         // if (true) {
                         // ScriptRuntime.constructError("Thread Loaded ", className).printStackTrace();
