@@ -280,10 +280,6 @@ public class DevArtCm extends PluginForDecrypt {
             fp.setProperty("ALLOW_MERGE", true);
         }
         do {
-            // if (counter == 2) {
-            // currentOffset = 5136;
-            // maxOffset = 5136 - offsetIncrease;
-            // }
             try {
                 if (this.isAbort()) {
                     logger.info("Decryption aborted by user: " + PARAMETER);
