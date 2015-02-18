@@ -59,7 +59,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     private static final String LOAD_LANGUAGE_FRENCH       = "LOAD_LANGUAGE_FRENCH";
     private static final String THUMBNAIL                  = "THUMBNAIL";
 
-    final String[]              formats                    = { http_800, http_1500, http_2200 };
+    final String[]              formats                    = { http_300, http_800, http_1500, http_2200 };
 
     private static boolean      pluginloaded               = false;
     private int                 languageVersion            = 1;
