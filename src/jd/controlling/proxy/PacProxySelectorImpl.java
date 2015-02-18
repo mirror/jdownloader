@@ -20,6 +20,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxy.TYPE;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
+import org.appwork.utils.net.socketconnection.SocketConnection;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.InternetConnectionSettings;
 import org.jdownloader.updatev2.ProxyData;
@@ -101,11 +102,19 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
                                         }
                                         break;
                                     case HTTP:
-                                        httpProxy = new HTTPProxy(TYPE.HTTP, ((InetSocketAddress) p.address()).getHostString(), ((InetSocketAddress) p.address()).getPort());
-                                        break;
+                                        if (p.address() != null) {
+                                            httpProxy = new HTTPProxy(TYPE.HTTP, SocketConnection.getHostName(p.address()), ((InetSocketAddress) p.address()).getPort());
+                                            break;
+                                        } else {
+                                            continue;
+                                        }
                                     case SOCKS:
-                                        httpProxy = new HTTPProxy(TYPE.SOCKS5, ((InetSocketAddress) p.address()).getHostString(), ((InetSocketAddress) p.address()).getPort());
-                                        break;
+                                        if (p.address() != null) {
+                                            httpProxy = new HTTPProxy(TYPE.SOCKS5, SocketConnection.getHostName(p.address()), ((InetSocketAddress) p.address()).getPort());
+                                            break;
+                                        } else {
+                                            continue;
+                                        }
                                     default:
                                         continue;
                                     }

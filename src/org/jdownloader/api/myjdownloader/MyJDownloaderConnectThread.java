@@ -91,17 +91,35 @@ public class MyJDownloaderConnectThread extends Thread {
     }
 
     protected class DeviceConnectionHelper {
-        private AtomicLong              backoffCounter = new AtomicLong(0);
+        private final AtomicLong    backoffCounter = new AtomicLong(0);
 
-        private AtomicBoolean           backOff        = new AtomicBoolean(false);
-        private final InetSocketAddress addr;
+        private final AtomicBoolean backOff        = new AtomicBoolean(false);
+        private final String        host;
+
+        public String getHost() {
+            return host;
+        }
+
+        public int getPort() {
+            return port;
+        }
+
+        private final int                  port;
+
+        private volatile InetSocketAddress addr;
 
         public InetSocketAddress getAddr() {
             return addr;
         }
 
-        private DeviceConnectionHelper(int port, String url) {
-            addr = new InetSocketAddress(url, port);
+        private void refresh() {
+            addr = new InetSocketAddress(host, port);
+        }
+
+        private DeviceConnectionHelper(int port, String host) {
+            this.host = host;
+            this.port = port;
+            refresh();
         }
 
         public void requestbackoff() {
@@ -115,6 +133,7 @@ public class MyJDownloaderConnectThread extends Thread {
             if (backOff.get()) {
                 synchronized (backOff) {
                     if (backOff.get()) {
+                        refresh();
                         long currentBackOff = backoffCounter.get();
                         try {
                             long timeout = 300 * 1000l;

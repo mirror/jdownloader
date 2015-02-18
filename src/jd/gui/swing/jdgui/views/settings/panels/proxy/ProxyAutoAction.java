@@ -21,6 +21,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxy.TYPE;
+import org.appwork.utils.net.socketconnection.SocketConnection;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.MessageDialogImpl;
 import org.jdownloader.actions.AppAction;
@@ -46,7 +47,7 @@ public class ProxyAutoAction extends AppAction {
     }
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = -197136045388327528L;
 
@@ -105,12 +106,16 @@ public class ProxyAutoAction extends AppAction {
                                         }
                                         break;
                                     case HTTP:
-                                        httpProxy = new HTTPProxy(TYPE.HTTP, ((InetSocketAddress) p.address()).getHostString(), ((InetSocketAddress) p.address()).getPort());
-                                        setProxy(new SingleBasicProxySelectorImpl(httpProxy));
+                                        if (p.address() != null) {
+                                            httpProxy = new HTTPProxy(TYPE.HTTP, SocketConnection.getHostName(p.address()), ((InetSocketAddress) p.address()).getPort());
+                                            setProxy(new SingleBasicProxySelectorImpl(httpProxy));
+                                        }
                                         break;
                                     case SOCKS:
-                                        httpProxy = new HTTPProxy(TYPE.SOCKS5, ((InetSocketAddress) p.address()).getHostString(), ((InetSocketAddress) p.address()).getPort());
-                                        setProxy(new SingleBasicProxySelectorImpl(httpProxy));
+                                        if (p.address() != null) {
+                                            httpProxy = new HTTPProxy(TYPE.SOCKS5, SocketConnection.getHostName(p.address()), ((InetSocketAddress) p.address()).getPort());
+                                            setProxy(new SingleBasicProxySelectorImpl(httpProxy));
+                                        }
                                         break;
                                     }
                                 }

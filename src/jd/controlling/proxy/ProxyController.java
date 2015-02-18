@@ -58,6 +58,7 @@ import org.appwork.utils.net.httpconnection.HTTPProxy.TYPE;
 import org.appwork.utils.net.httpconnection.HTTPProxyException;
 import org.appwork.utils.net.httpconnection.ProxyAuthException;
 import org.appwork.utils.net.httpconnection.ProxyConnectException;
+import org.appwork.utils.net.socketconnection.SocketConnection;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.ProxyDialog;
@@ -582,17 +583,21 @@ public class ProxyController implements ProxySelectorInterface {
                                             }
                                             break;
                                         case HTTP:
-                                            httpProxy = new HTTPProxy(TYPE.HTTP, ((InetSocketAddress) p.address()).getHostString(), ((InetSocketAddress) p.address()).getPort());
-                                            final SingleBasicProxySelectorImpl basic = new SingleBasicProxySelectorImpl(httpProxy);
-                                            if (proxies.add(basic)) {
-                                                logger.info("Add Basic: " + basic);
+                                            if (p.address() != null) {
+                                                httpProxy = new HTTPProxy(TYPE.HTTP, SocketConnection.getHostName(p.address()), ((InetSocketAddress) p.address()).getPort());
+                                                final SingleBasicProxySelectorImpl basic = new SingleBasicProxySelectorImpl(httpProxy);
+                                                if (proxies.add(basic)) {
+                                                    logger.info("Add Basic: " + basic);
+                                                }
                                             }
                                             break;
                                         case SOCKS:
-                                            httpProxy = new HTTPProxy(TYPE.SOCKS5, ((InetSocketAddress) p.address()).getHostString(), ((InetSocketAddress) p.address()).getPort());
-                                            final SingleBasicProxySelectorImpl socks = new SingleBasicProxySelectorImpl(httpProxy);
-                                            if (proxies.add(socks)) {
-                                                logger.info("Add Socks: " + socks);
+                                            if (p.address() != null) {
+                                                httpProxy = new HTTPProxy(TYPE.SOCKS5, SocketConnection.getHostName(p.address()), ((InetSocketAddress) p.address()).getPort());
+                                                final SingleBasicProxySelectorImpl socks = new SingleBasicProxySelectorImpl(httpProxy);
+                                                if (proxies.add(socks)) {
+                                                    logger.info("Add Socks: " + socks);
+                                                }
                                             }
                                             break;
                                         }
