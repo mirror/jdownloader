@@ -93,18 +93,18 @@ public interface UpdateSettings extends ConfigInterface {
 
     void setLastST(long currentTimeMillis);
 
-    @DefaultBooleanValue(true)
-    @AboutConfig
-    @DescriptionForConfigEntry("Try to install updates when you exit JDownloader")
-    boolean isInstallUpdatesOnExitEnabled();
-
-    void setInstallUpdatesOnExitEnabled(boolean b);
-
     @DefaultBooleanValue(false)
     @AboutConfig
-    @DescriptionForConfigEntry("Show the tray panel when installing updates on exit")
-    boolean isInstallUpdatesOnExitPanelVisibleDev();
+    @DescriptionForConfigEntry("Try to install updates when you exit JDownloader")
+    boolean isInstallUpdatesOnExitEnabledDev();
 
-    void setInstallUpdatesOnExitPanelVisibleDev(boolean b);
+    void setInstallUpdatesOnExitEnabledDev(boolean b);
+
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    @DescriptionForConfigEntry("Show the tray panel when installing updates on exit")
+    boolean isInstallUpdatesOnExitPanelVisible();
+
+    void setInstallUpdatesOnExitPanelVisible(boolean b);
 
 }
