@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -97,7 +98,11 @@ public class UlabsDe extends PluginForHost {
             maxChunks = 1;
         }
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, maxChunks);
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, maxChunks);
+        } catch (final SocketTimeoutException e) {
+            handlePluginBroken(acc, link, "timeout_dlstart", 5);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             final String errorcode = new Regex(br.getURL(), "code=(\\d+)").getMatch(0);

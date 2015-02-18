@@ -35,7 +35,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/(?!art/)[^<>\"]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/(?!art/|status/)[^<>\"]+" }, flags = { 0 })
 public class DevArtCm extends PluginForDecrypt {
 
     /**
@@ -213,7 +213,9 @@ public class DevArtCm extends PluginForDecrypt {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void decryptStandard() throws DecrypterException, IOException {
+        final boolean fastcheck = SubConfiguration.getConfig("deviantart.com").getBooleanProperty(FASTLINKCHECK_2, false);
         /* Correct input links */
         if (PARAMETER.matches("http://[^<>\"/]+\\.deviantart\\.com/gallery/\\?\\d+")) {
             final Regex paramregex = new Regex(PARAMETER, "(http://[^<>\"/]+\\.deviantart\\.com/gallery/\\?)(\\d+)");
@@ -278,6 +280,10 @@ public class DevArtCm extends PluginForDecrypt {
             fp.setProperty("ALLOW_MERGE", true);
         }
         do {
+            // if (counter == 2) {
+            // currentOffset = 5136;
+            // maxOffset = 5136 - offsetIncrease;
+            // }
             try {
                 if (this.isAbort()) {
                     logger.info("Decryption aborted by user: " + PARAMETER);
@@ -303,44 +309,54 @@ public class DevArtCm extends PluginForDecrypt {
                     br.getPage(PARAMETER + "?offset=" + currentOffset);
                 }
             }
-            final boolean fastcheck = SubConfiguration.getConfig("deviantart.com").getBooleanProperty(FASTLINKCHECK_2, false);
-            final String grab = br.getRegex("<smoothie q=(.*?)(class=\"folderview-bottom\"></div>|div id=\"gallery_pager\")").getMatch(0);
-            String[] links = new Regex(grab, "\"(https?://[\\w\\.\\-]*?deviantart\\.com/(art|journal)/[\\w\\-]+)\"").getColumn(0);
-            if ((links == null || links.length == 0) && counter == 1) {
-                logger.warning("Possible Plugin error, with finding /(art|journal)/ links: " + PARAMETER);
-                throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
-            } else if (links == null || links.length == 0) {
-                /* We went too far - we should already have links */
-                logger.info("Current offset contains no links --> Stopping");
-                break;
-            }
-            if (links != null && links.length != 0) {
-                for (final String artlink : links) {
-                    final DownloadLink fina = createDownloadlink(artlink);
-                    if (fastcheck) {
-                        fina.setAvailable(true);
+            try {
+                final String grab = br.getRegex("<smoothie q=(.*?)(class=\"folderview-bottom\"></div>|div id=\"gallery_pager\")").getMatch(0);
+                String[] links = new Regex(grab, "\"(https?://[\\w\\.\\-]*?deviantart\\.com/(art|journal)/[\\w\\-]+)\"").getColumn(0);
+                if ((links == null || links.length == 0) && counter == 1) {
+                    logger.warning("Possible Plugin error, with finding /(art|journal)/ links: " + PARAMETER);
+                    throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
+                } else if (links == null || links.length == 0) {
+                    /* "deviation in storage" links are no links - that are empty items so there is no reason to stop. */
+                    final String[] empty_links = br.getRegex("class=\"(instorage)\"").getColumn(0);
+                    if (empty_links != null && empty_links.length > 0) {
+                        logger.info("This offset only contains dummy links --> Continuing");
+                        continue;
                     }
-                    /* No reason to hide their single links */
-                    try {/* JD2 only */
-                        fina.setContentUrl(artlink);
-                    } catch (Throwable e) {/* Stable */
-                        fina.setBrowserUrl(artlink);
-                    }
-                    if (fp != null) {
-                        fp.add(fina);
-                    }
-                    try {
-                        distribute(fina);
-                    } catch (final Throwable e) {
-                        // Not available in old 0.9.581 Stable
-                    }
-                    decryptedLinks.add(fina);
+                    /* We went too far - we should already have links */
+                    logger.info("Current offset contains no links --> Stopping");
+                    break;
                 }
+                if (links != null && links.length != 0) {
+                    for (final String artlink : links) {
+                        final DownloadLink fina = createDownloadlink(artlink);
+                        if (fastcheck) {
+                            fina.setAvailable(true);
+                        }
+                        /* No reason to hide their single links */
+                        try {
+                            /* JD2 only */
+                            fina.setContentUrl(artlink);
+                        } catch (Throwable e) {
+                            /* Stable */
+                            fina.setBrowserUrl(artlink);
+                        }
+                        if (fp != null) {
+                            fp.add(fina);
+                        }
+                        try {
+                            distribute(fina);
+                        } catch (final Throwable e) {
+                            // Not available in old 0.9.581 Stable
+                        }
+                        decryptedLinks.add(fina);
+                    }
+                }
+            } finally {
+                currentOffset += offsetIncrease;
+                counter++;
             }
-
-            currentOffset += offsetIncrease;
-            counter++;
-        } while (currentOffset <= maxOffset);
+            /* Really make sure that we're not ending up in an infinite loop! */
+        } while (currentOffset <= maxOffset && br.containsHTML("\">\\d+</a></li><li class=\"next\""));
         if (fpName != null) {
             fp.addLinks(decryptedLinks);
         }

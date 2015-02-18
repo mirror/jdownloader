@@ -38,7 +38,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de" }, urls = { "http://www\\.(ardmediathek|mediathek\\.daserste)\\.de/.+|http://www\\.daserste\\.de/[^<>\"]+/videos/[a-z0-9\\-]+\\.html" }, flags = { 32 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de" }, urls = { "http://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/.+|http://www\\.daserste\\.de/[^<>\"]+/videos/[a-z0-9\\-]+\\.html" }, flags = { 32 })
 public class RDMdthk extends PluginForDecrypt {
 
     /* Settings */
@@ -58,7 +58,7 @@ public class RDMdthk extends PluginForDecrypt {
     private static final String                 AGE_RESTRICTED        = "(Diese Sendung ist für Jugendliche unter \\d+ Jahren nicht geeignet\\. Der Clip ist deshalb nur von \\d+ bis \\d+ Uhr verfügbar\\.)";
     private static final String                 type_unsupported      = "http://(www\\.)?ardmediathek\\.de/(tv/live\\?kanal=\\d+|dossiers/.*)";
     private static final String                 type_invalid          = "http://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/(download|livestream).+";
-    private static final String                 type_mediathek        = "http://www\\.(ardmediathek|mediathek\\.daserste)\\.de/.+";
+    private static final String                 type_mediathek        = "http://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/.+";
     private static final String                 type_ardvideo         = "http://www\\.daserste\\.de/[^<>\"]+/videos/[a-z0-9\\-]+\\.html";
     private SubConfiguration                    cfg                   = null;
 
