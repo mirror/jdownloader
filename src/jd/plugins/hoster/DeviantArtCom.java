@@ -44,7 +44,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/art/[\\w\\-]+|https?://[\\w\\.\\-]*?deviantartdecrypted\\.com/journal/[\\w\\-]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/art/[\\w\\-]+|https?://[\\w\\.\\-]*?\\.deviantart\\.com/status/\\d+|https?://[\\w\\.\\-]*?deviantartdecrypted\\.com/journal/[\\w\\-]+" }, flags = { 2 })
 public class DeviantArtCom extends PluginForHost {
 
     private String              DLLINK                       = null;
@@ -71,6 +71,7 @@ public class DeviantArtCom extends PluginForHost {
 
     private static final String LINKTYPE_ART                 = "https?://[\\w\\.\\-]*?deviantart\\.com/art/[^<>\"/]+";
     private static final String LINKTYPE_JOURNAL             = "https?://[\\w\\.\\-]*?deviantart\\.com/journal/[\\w\\-]+";
+    private static final String LINKTYPE_STATUS              = "https?://[\\w\\.\\-]*?\\.deviantart\\.com/status/\\d+";
 
     /**
      * @author raztoki
@@ -98,6 +99,7 @@ public class DeviantArtCom extends PluginForHost {
         return false;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -118,21 +120,27 @@ public class DeviantArtCom extends PluginForHost {
             }
         }
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("/error\\-title\\-oops\\.png\\)")) {
+        if (br.containsHTML("/error\\-title\\-oops\\.png\\)") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Motionbooks are not supported (yet)
         if (br.containsHTML(",target: \\'motionbooks/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex(GENERALFILENAMEREGEX).getMatch(0);
+        String filename;
+        if (link.getDownloadURL().matches(LINKTYPE_STATUS)) {
+            filename = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+        } else {
+            filename = br.getRegex(GENERALFILENAMEREGEX).getMatch(0);
+        }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename.trim());
         String ext = null;
         String filesize = null;
-        if (this.getPluginConfig().getBooleanProperty(FORCEHTMLDOWNLOAD, false) || link.getDownloadURL().matches(LINKTYPE_JOURNAL)) {
+        /* Check if either user wants to download the html code or if we have a linktype which needs this. */
+        if (this.getPluginConfig().getBooleanProperty(FORCEHTMLDOWNLOAD, false) || link.getDownloadURL().matches(LINKTYPE_JOURNAL) || link.getDownloadURL().matches(LINKTYPE_STATUS)) {
             HTMLALLOWED = true;
             DLLINK = br.getURL();
             filename = findServerFilename(filename);

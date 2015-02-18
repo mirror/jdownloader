@@ -32,9 +32,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viva.tv", "funnyclips.cc", "comedycentral.tv", "nick.de", "nicknight.de", "nickjr.de", "mtv.de", "mtviggy.com", "mtv.com", "movies.mtv.de", "southpark.de", "southpark.cc.com", "tvland.com", "spike.com", "vh1.com", "nickmom.com", "nicktoons.nick.com" }, urls = { "https?://www\\.viva\\.tv/(musikvideo|news|shows|musik/video)/\\d+([a-z0-9\\-]+)?", "http://de\\.funnyclips\\.cc/(listen/.+|[A-Za-z0-9\\-]+/\\d+[A-Za-z0-9\\-]+)", "http://www\\.comedycentral\\.tv/(shows|neuigkeiten)/\\d+([a-z0-9\\-]+)?", "http://www\\.nick\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nicknight\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nickjr\\.de/videos/\\d+([a-z0-9\\-]+)?",
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viva.tv", "funnyclips.cc", "comedycentral.tv", "nick.de", "nicknight.de", "nickjr.de", "mtv.de", "mtviggy.com", "mtv.com", "movies.mtv.de", "southpark.de", "southpark.cc.com", "tvland.com", "spike.com", "vh1.com", "nickmom.com", "cmt.com" }, urls = { "https?://www\\.viva\\.tv/(musikvideo|news|shows|musik/video)/\\d+([a-z0-9\\-]+)?", "http://de\\.funnyclips\\.cc/(listen/.+|[A-Za-z0-9\\-]+/\\d+[A-Za-z0-9\\-]+)", "http://www\\.comedycentral\\.tv/(shows|neuigkeiten)/\\d+([a-z0-9\\-]+)?", "http://www\\.nick\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nicknight\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nickjr\\.de/videos/\\d+([a-z0-9\\-]+)?",
         "http://www\\.mtv\\.de/(shows/\\d+[a-z0-9\\-]+/staffeln/\\d+/folgen/\\d+[a-z0-9\\-]+|artists/[a-z0-9\\-]+/videos/[a-z0-9\\-]+|news/\\d+[a-z0-9\\-]+)", "http://www\\.mtviggy_jd_decrypted_jd_\\.com/videos/[a-z0-9\\-]+/|http://media\\.mtvnservices\\.com/embed/mgid:uma:video:mtviggy\\.com:\\d+", "http://www\\.mtv\\.com/(shows/[a-z0-9\\-]+/[^<>\"]+|videos/[^<>\"]+\\.jhtml|videos/\\?vid=\\d+)|http://media\\.mtvnservices\\.com/embed/mgid:uma:video:mtv\\.com:\\d+", "http://movies\\.mtv\\.de/(?!playlists)videos/(trailer/)?[a-z0-9\\-]+/[a-z0-9]+", "http://www\\.southpark\\.de/clips/[a-z0-9]+/[a-z0-9\\-]+|http://media\\.mtvnservices\\.com/mgid:arc:video:southparkstudios\\.com:[a-z0-9\\-]+", "http://media\\.mtvnservices\\.com/mgid:arc:video:southparkstudios_jd_decrypted_jd_\\.com:[a-z0-9\\-]+", "http://www\\.tvland\\.com/(video\\-clips|episodes)/[a-z0-9]+/[a-z0-9\\-]+",
-        "http://www\\.spike\\.com/(video\\-clips|full\\-episodes)/[a-z0-9]+/[a-z0-9\\-]+", "http://www\\.vh1_jd_decrypted_jd_\\.com/.+", "http://www\\.nickmom_jd_decrypted_jd_\\.com/.+", "http://nicktoons\\.nick\\.com/videos/[a-z0-9\\-]+\\.html" }, flags = { 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32 })
+        "http://www\\.spike\\.com/(video\\-clips|full\\-episodes)/[a-z0-9]+/[a-z0-9\\-]+", "http://www\\.vh1_jd_decrypted_jd_\\.com/.+", "http://www\\.nickmom_jd_decrypted_jd_\\.com/.+", "http://www\\.cmt\\.com/videos/[a-z0-9\\-]+/\\d+/[a-z0-9\\-]+\\.jhtml" }, flags = { 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32 })
 public class VivaTv extends PluginForHost {
 
     public VivaTv(PluginWrapper wrapper) {
@@ -97,18 +97,19 @@ public class VivaTv extends PluginForHost {
     /* Links come from the decrypter */
     private static final String  type_nickmom_com                  = "http://www\\.nickmom\\.com/videos/[a-z0-9\\-]+/";
 
-    // private static final String type_nick_com = "http://www\\.nick\\.com/videos/clip/[a-z0-9\\-]+\\.html";
-    //
-    // private static final String type_nicktoons_com = "http://nicktoons\\.nick\\.com/videos/clip/[a-z0-9\\-]+\\.html";
+    private static final String  type_cmt                          = "http://www\\.cmt\\.com/videos/[a-z0-9\\-]+/\\d+/[a-z0-9\\-]+\\.jhtml";
+    private static final String  subtype_cmt_episodes              = "http://www\\.cmt\\.com/videos/[a-z0-9\\-]+/\\d+/full\\-episode\\.jhtml";
 
     /**
-     * Other: So far unsupported domains: mtvla.com, mtvu.com, cmt.com, nickatnite.com, cc.com
+     * Other: So far unsupported domains: mtvla.com, mtvu.com, cc.com, tosh.cc.com, thedailyshow.cc.com
      *
      * NOT using mtv networks for streaming: bet.com, icarly.com
      *
-     * NOT important/contains no(important) content: epixhd.com, centrictv.com, nickjr.com
+     * NOT important/contains no(important) content: epixhd.com, centrictv.com
      *
-     * Sites that did not work serverside: nick.com, nicktoons.nick.com, teennick.com
+     * Sites that did not work serverside: nick.com, nicktoons.nick.com, teennick.com, nickatnite.com, nickjr.com
+     *
+     * Implementation not (yet) possible because of geoblock (germany):
      */
 
     /*
@@ -439,12 +440,24 @@ public class VivaTv extends PluginForHost {
             this.mgid = br.getRegex("data-contenturi=\"([a-z0-9:\\-\\.]*?)\"").getMatch(0);
             this.mediagen_url = this.getMEDIAGENurl("nickmom.com");
             ext = default_ext;
-        } else if (link.getDownloadURL().matches("")) {
+        } else if (link.getDownloadURL().matches(type_cmt)) {
             br.getPage(link.getDownloadURL());
-            if (!br.containsHTML("\"http://media\\.mtvnservices\\.com/player/") || br.getHttpConnection().getResponseCode() == 404) {
+            if (!br.containsHTML("MTVN\\.Player\\.") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = getFilenameNickmomCom(this.br);
+            if (link.getDownloadURL().matches(subtype_cmt_episodes)) {
+                filename = br.getRegex("ame=\"mtvn_title\"[\t\n\r ]+content=\"([^<>]*?)\"/>").getMatch(0);
+            } else {
+                filename = br.getRegex("class=\"group-abc\">[\t\n\r ]+<div>([^<>]*?)</div>").getMatch(0);
+                /* Maybe we have a music video */
+                if (filename == null) {
+                    filename = br.getRegex("<title>CMT : Music Video :([^<>]*?)</title>").getMatch(0);
+                }
+                /* Maybe we have a 'videos' link */
+                if (filename == null) {
+                    filename = br.getRegex("<title>CMT : Videos :([^<>]*?): </title>").getMatch(0);
+                }
+            }
             ext = default_ext;
         }
         if (filename == null) {
@@ -575,14 +588,11 @@ public class VivaTv extends PluginForHost {
             /* Special: This domain has it's own feed-URL. */
             find_mgid("southparkstudios.com");
             feed_url = getFEEDurl("southpark.de");
-        } else if (downloadLink.getDownloadURL().matches(type_tvland)) {
+        } else if (downloadLink.getDownloadURL().matches(type_tvland) || downloadLink.getDownloadURL().matches(type_spike) || downloadLink.getDownloadURL().matches(type_cmt)) {
             /* Special: This domain has it's own feed-URL. */
-            find_mgid("tvland.com");
-            feed_url = getFEEDurl("tvland.com");
-        } else if (downloadLink.getDownloadURL().matches(type_spike)) {
-            /* Special: This domain has it's own feed-URL. */
-            find_mgid("spike.com");
-            feed_url = getFEEDurl("spike.com");
+            final String current_host = downloadLink.getHost();
+            find_mgid(current_host);
+            feed_url = getFEEDurl(current_host);
         } else {
             /* Unknown URL format - should never happen! */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -832,6 +842,8 @@ public class VivaTv extends PluginForHost {
                                                                               put("spike.com", "http://www.spike.com/feeds/mrss/?uri=%s");
                                                                               put("nick.com", "http://www.nick.com/dynamo/video/data/mrssGen.jhtml?mgid=%s");
                                                                               put("nickmom.com", "http://www.nickmom.com/services/mrss/?mgid=%s");
+                                                                              put("cmt.com", "http://www.cmt.com/sitewide/apps/player/embed/rss/?uri=%s");
+                                                                              put("cc.com", "http://www.cc.com/feeds/mrss?uri=%s");
                                                                           }
                                                                       };
 
@@ -845,8 +857,9 @@ public class VivaTv extends PluginForHost {
      *
      * lang=de|en --> Preferred language
      *
-     * cdnOverride=akamai --> Ability to change the servers from e.g. rtmpe://viacomvh1strmfs.fplive.net/viacomvh1strm/ TO
-     * rtmpe://cp534.edgefcs.net/ondemand/mtvnorigin/
+     * cdnOverride=akamai|level3
+     *
+     * level3 = rtmpe://viacomvh1strmfs.fplive.net/viacomvh1strm/ ||||akamai = akamai = rtmpe://cp534.edgefcs.net/ondemand/mtvnorigin/
      *
      * acceptMethods= see 'possibleAcceptMethodsValues' HashMap below --> Defines the streaming method we prefer
      *
@@ -870,6 +883,8 @@ public class VivaTv extends PluginForHost {
                                                                               put("spike.com", "http://www.spike.com/feeds/mediagen/?uri=%s");
                                                                               put("nick.com", "http://www.nick.com/dynamo/video/data/mediaGen.jhtml?mgid=%s");
                                                                               put("nickmom.com", "http://media-utils-api.mtvnservices.com/services/MediaGenerator/%s");
+                                                                              put("cmt.com", "http://www.cmt.com/sitewide/apps/player/embed/includes/mediaGen.jhtml?uri=%s");
+                                                                              put("cc.com", "http://www.cc.com/feeds/mediagen/?uri=%s&device={device}");
                                                                           }
                                                                       };
 
@@ -901,6 +916,8 @@ public class VivaTv extends PluginForHost {
                                                                               put("tvland.com", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context3/config.xml?uri=%s");
                                                                               put("spike.com", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context4/config.xml?uri=%s");
                                                                               put("vh1.com", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context13/config.xml?uri=%s");
+                                                                              put("cmt.com", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context40/context6/config.xml?uri=%s");
+                                                                              put("mtvla.com", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/config.xml?uri=%s");
                                                                           }
                                                                       };
 
