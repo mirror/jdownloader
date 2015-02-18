@@ -90,7 +90,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * get the only existing instance of StatsManager. This is a singleton
-     *
+     * 
      * @return
      */
     public static StatsManager I() {
@@ -113,9 +113,9 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     private void log(StatsLogInterface dl) {
         if (isEnabled()) {
-            // if (Math.random() > 0.1d && !(dl instanceof AbstractTrackEntry)) {
-            // return;
-            // }
+            if (Math.random() > 0.25d && !(dl instanceof AbstractTrackEntry)) {
+                return;
+            }
             synchronized (list) {
                 if (list.size() > 20) {
                     list.clear();
@@ -166,7 +166,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * this setter does not set the config flag. Can be used to disable the logger for THIS session.
-     *
+     * 
      * @param b
      */
     public void setEnabled(boolean b) {
@@ -1107,7 +1107,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * use the reducer if you want to limit the tracker. 1000 means that only one out of 1000 calls will be accepted
-     *
+     * 
      * @param reducer
      * @param path
      */
