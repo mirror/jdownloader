@@ -1824,7 +1824,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /**
      * saves List of CrawledPackages to given File as ZippedJSon
-     *
+     * 
      * @param packages
      * @param file
      */
@@ -2086,11 +2086,12 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     if (JDGui.bugme(WarnLevel.NORMAL)) {
                         if (UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.LinkCollector_onShutdownRequest_(), _JDT._.LinkCollector_onShutdownRequest_msg(), NewTheme.I().getIcon("linkgrabber", 32), _JDT._.literally_yes(), null)) {
                         } else {
-                            return;
+                            throw new ShutdownVetoException("LinkCollector is still running", this);
+
                         }
                         return;
                     }
-                    throw new ShutdownVetoException("LinkCollector is still running", this);
+
                 }
             }
         }
@@ -2146,7 +2147,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         /* add the converted FilePackages to DownloadController */
         /**
          * addTop = 0, to insert the packages at the top
-         *
+         * 
          * addBottom = negative number -> add at the end
          */
         DownloadController.getInstance().addAllAt(filePackagesToAdd, addTop ? 0 : -(filePackagesToAdd.size() + 10));
