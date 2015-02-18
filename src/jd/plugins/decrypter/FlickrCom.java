@@ -271,9 +271,6 @@ public class FlickrCom extends PluginForDecrypt {
                     } catch (Throwable e) {
                     }
                 }
-                if (photo_id.equals("16282385845")) {
-                    logger.warning("");
-                }
                 final String contenturl = "https://www.flickr.com/photos/" + owner + "/" + photo_id;
                 try {
                     fina.setContentUrl(contenturl);

@@ -193,10 +193,17 @@ public class PremiumRapeitNet extends PluginForHost {
             }
             ac.setMultiHostSupport(this, supportedHosts);
         }
-        final String traffic_left = br.getRegex(">Available premium bandwidth: <strong>([^<>\"]*?)</strong>").getMatch(0);
-        final String traffic_downloaded = br.getRegex(">Total used premium bandwidth: <strong>([^<>\"]*?)</strong>").getMatch(0);
-        ac.setTrafficLeft(SizeFormatter.getSize(traffic_left));
-        ac.setTrafficMax(ac.getTrafficLeft() + SizeFormatter.getSize(traffic_downloaded));
+        String traffic_left = br.getRegex("Available premium bandwidth: <strong>([^<>\"]*?)</strong>").getMatch(0);
+        String traffic_downloaded = br.getRegex("Total used premium bandwidth: <strong>([^<>\"]*?)</strong>").getMatch(0);
+        if (traffic_left != null && traffic_downloaded != null) {
+            traffic_left = traffic_left.replace(",", ".");
+            traffic_downloaded = traffic_downloaded.replace(",", ".");
+            ac.setTrafficLeft(SizeFormatter.getSize(traffic_left));
+            ac.setTrafficMax(ac.getTrafficLeft() + SizeFormatter.getSize(traffic_downloaded));
+        } else {
+            /* Don't fail here just because the values are null. */
+            ac.setUnlimitedTraffic();
+        }
         /* They only have accounts with traffic, no free/premium difference (other than no traffic) */
         account.setType(AccountType.PREMIUM);
         account.setMaxSimultanDownloads(-1);
