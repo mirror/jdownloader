@@ -376,7 +376,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
             LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.EXTENSION, "FolderWatch:" + f.getAbsolutePath()), j.getText());
             job.setDeepAnalyse(j.isDeepAnalyseEnabled());
 
-            job.setCrawledLinkModifier(new CrawledLinkModifier() {
+            final CrawledLinkModifier modifier = new CrawledLinkModifier() {
 
                 private PackageInfo getPackageInfo(CrawledLink link, boolean createIfNotExisting) {
                     PackageInfo packageInfo = link.getDesiredPackageInfo();
@@ -458,8 +458,11 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
 
                     }
                 }
-            });
-
+            };
+            job.setCrawledLinkModifierPrePackagizer(modifier);
+            if (j.isOverwritePackagizerEnabled()) {
+                job.setCrawledLinkModifierPostPackagizer(modifier);
+            }
             LinkCrawler lc = LinkCollector.getInstance().addCrawlerJob(job);
             lc.waitForCrawling();
             if (lc.getCrawledLinksFoundCounter() == 0) {

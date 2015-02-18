@@ -266,7 +266,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
             extPws.add(extractPassword);
         }
         final HashSet<String> finalExtPws = extPws;
-        lcj.setCrawledLinkModifier(new CrawledLinkModifier() {
+        lcj.setCrawledLinkModifierPrePackagizer(new CrawledLinkModifier() {
             private PackageInfo getPackageInfo(CrawledLink link) {
                 PackageInfo packageInfo = link.getDesiredPackageInfo();
                 if (packageInfo != null) {

@@ -297,7 +297,7 @@ public class ClipboardMonitoring {
                                     LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.CLIPBOARD, null), handleThisRound);
                                     final HashSet<String> pws = PasswordUtils.getPasswords(handleThisRound);
                                     if (pws != null && pws.size() > 0) {
-                                        job.setCrawledLinkModifier(new CrawledLinkModifier() {
+                                        job.setCrawledLinkModifierPrePackagizer(new CrawledLinkModifier() {
 
                                             @Override
                                             public void modifyCrawledLink(CrawledLink link) {
@@ -598,7 +598,7 @@ public class ClipboardMonitoring {
                 job.setCustomSourceUrl(browserUrl);
                 final HashSet<String> pws = PasswordUtils.getPasswords(content);
                 if (pws != null && pws.size() > 0) {
-                    job.setCrawledLinkModifier(new CrawledLinkModifier() {
+                    job.setCrawledLinkModifierPrePackagizer(new CrawledLinkModifier() {
 
                         @Override
                         public void modifyCrawledLink(CrawledLink link) {

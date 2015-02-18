@@ -31,6 +31,7 @@ import jd.controlling.linkchecker.LinkCheckerHandler;
 import jd.controlling.linkcollector.autostart.AutoStartManager;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
 import jd.controlling.linkcrawler.CrawledLinkProperty;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.CrawledPackage.TYPE;
@@ -1182,9 +1183,14 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     private void clearCrawledLinkReferences(final CrawledLink link) {
         if (link != null) {
+            link.setBrokenCrawlerHandler(null);
+            link.setCustomCrawledLinkModifier(null);
+            link.setUnknownHandler(null);
+            link.setDesiredPackageInfo(null);
             link.setCollectingInfo(null);
             link.setSourceJob(null);
             link.setMatchingFilter(null);
+            link.setMatchingRule(null);
         }
     }
 
@@ -1219,12 +1225,13 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
                     @Override
                     protected Void run() throws RuntimeException {
-                        applyJobCrawledLinkModifier(link);
+                        applyJobCrawledLinkModifier(link, true);
                         final PackagizerInterface pc = getPackagizer();
                         if (pc != null) {
                             /* run packagizer on un-checked link */
                             pc.runByUrl(link);
                         }
+                        applyJobCrawledLinkModifier(link, false);
                         addCrawledLink(link);
                         return null;
                     }
@@ -1262,12 +1269,13 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
                 @Override
                 protected Void run() throws RuntimeException {
-                    applyJobCrawledLinkModifier(link);
+                    applyJobCrawledLinkModifier(link, true);
                     final PackagizerInterface pc = getPackagizer();
                     if (pc != null) {
                         /* run packagizer on checked link */
                         pc.runByFile(link);
                     }
+                    applyJobCrawledLinkModifier(link, false);
                     addCrawledLink(link);
                     return null;
                 }
@@ -1275,13 +1283,19 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
     }
 
-    private void applyJobCrawledLinkModifier(CrawledLink link) {
+    private void applyJobCrawledLinkModifier(final CrawledLink link, final boolean prePackagizer) {
         if (link != null) {
             final LinkCollectingJob job = link.getSourceJob();
             if (job != null) {
                 try {
-                    if (job.getCrawledLinkModifier() != null) {
-                        job.getCrawledLinkModifier().modifyCrawledLink(link);
+                    final CrawledLinkModifier modifier;
+                    if (prePackagizer) {
+                        modifier = job.getCrawledLinkModifierPrePackagizer();
+                    } else {
+                        modifier = job.getCrawledLinkModifierPostPackagizer();
+                    }
+                    if (modifier != null) {
+                        modifier.modifyCrawledLink(link);
                     }
                 } catch (final Throwable e) {
                     logger.log(e);
@@ -1824,7 +1838,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /**
      * saves List of CrawledPackages to given File as ZippedJSon
-     * 
+     *
      * @param packages
      * @param file
      */
@@ -2147,7 +2161,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         /* add the converted FilePackages to DownloadController */
         /**
          * addTop = 0, to insert the packages at the top
-         * 
+         *
          * addBottom = negative number -> add at the end
          */
         DownloadController.getInstance().addAllAt(filePackagesToAdd, addTop ? 0 : -(filePackagesToAdd.size() + 10));

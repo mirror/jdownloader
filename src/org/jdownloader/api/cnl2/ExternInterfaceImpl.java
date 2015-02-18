@@ -153,7 +153,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         final String finalDestination = request.getParameterbyKey("dir");
         job.setCustomSourceUrl(source);
         final String finalPackageName = request.getParameterbyKey("package");
-        job.setCrawledLinkModifier(new CrawledLinkModifier() {
+        job.setCrawledLinkModifierPrePackagizer(new CrawledLinkModifier() {
             private HashSet<String> pws = null;
             {
                 if (StringUtils.isNotEmpty(finalPasswords)) {
@@ -259,7 +259,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         if (StringUtils.isNotEmpty(passwords)) {
             final HashSet<String> pws = new HashSet<String>();
             pws.add(passwords);
-            job.setCrawledLinkModifier(new CrawledLinkModifier() {
+            job.setCrawledLinkModifierPrePackagizer(new CrawledLinkModifier() {
 
                 @Override
                 public void modifyCrawledLink(CrawledLink link) {
@@ -398,7 +398,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 final String finalPackageName = request.getParameterbyKey("package");
                 final String finalDestination = request.getParameterbyKey("dir");
 
-                job.setCrawledLinkModifier(new CrawledLinkModifier() {
+                job.setCrawledLinkModifierPrePackagizer(new CrawledLinkModifier() {
                     private HashSet<String> pws = null;
                     {
                         if (archivePasswords != null) {
