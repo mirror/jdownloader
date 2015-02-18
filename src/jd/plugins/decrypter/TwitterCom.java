@@ -19,14 +19,19 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitter.com" }, urls = { "https?://(www\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/(media|status/\\d+/photo/\\d+)" }, flags = { 0 })
 public class TwitterCom extends PluginForDecrypt {
@@ -41,10 +46,18 @@ public class TwitterCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("http://", "https://");
+        final String urlfilename = getUrlFname(parameter);
         br.setFollowRedirects(true);
+        /* Some profiles can only be accessed if they accepted others as followers --> Log in if the user has added his twitter account */
+        if (getUserLogin(false)) {
+            logger.info("Account available and we're logged in");
+        } else {
+            logger.info("No account available or login failed");
+        }
         br.getPage(parameter);
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setFinalFileName(urlfilename);
             offline.setAvailable(false);
             offline.setProperty("offline", true);
             decryptedLinks.add(offline);
@@ -52,6 +65,7 @@ public class TwitterCom extends PluginForDecrypt {
         } else if (br.containsHTML("class=\"ProtectedTimeline\"")) {
             logger.info("This tweet timeline is protected");
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setFinalFileName("This tweet timeline is protected_" + urlfilename);
             offline.setAvailable(false);
             offline.setProperty("offline", true);
             decryptedLinks.add(offline);
@@ -109,7 +123,7 @@ public class TwitterCom extends PluginForDecrypt {
                             if (remove != null) {
                                 singleLink = singleLink.replace(remove, "");
                             }
-                            final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(singleLink.trim()));
+                            final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(singleLink.trim()));
                             fp.add(dl);
                             dl.setAvailable(true);
                             try {
@@ -138,14 +152,43 @@ public class TwitterCom extends PluginForDecrypt {
                 final Regex fin_al = new Regex(alink, "https?://[^<>\"]+/media/([A-Za-z0-9\\-_]+)\\.(jpg|png|gif):large");
                 final String servername = fin_al.getMatch(0);
                 final String ending = fin_al.getMatch(1);
-                final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(alink.trim()));
+                final String final_filename = status_id + "_" + servername + "." + ending;
+                final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(alink.trim()));
                 dl.setAvailable(true);
-                dl.setFinalFileName(status_id + "_" + servername + "." + ending);
+                dl.setProperty("decryptedfilename", final_filename);
+                dl.setName(final_filename);
                 decryptedLinks.add(dl);
             }
         }
-
         return decryptedLinks;
+    }
+
+    private String getUrlFname(final String parameter) {
+        String urlfilename;
+        if (parameter.matches(TYPE_USER_ALL)) {
+            urlfilename = new Regex(parameter, "twitter\\.com/([A-Za-z0-9_\\-]+)/media").getMatch(0);
+        } else {
+            urlfilename = new Regex(parameter, "twitter\\.com/status/\\d+/photo/(\\d+)").getMatch(0);
+        }
+        return urlfilename;
+    }
+
+    /** Log in the account of the hostplugin */
+    @SuppressWarnings({ "deprecation", "static-access" })
+    private boolean getUserLogin(final boolean force) throws Exception {
+        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("twitter.com");
+        final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
+        if (aa == null) {
+            logger.warning("There is no account available, stopping...");
+            return false;
+        }
+        try {
+            ((jd.plugins.hoster.TwitterCom) hostPlugin).login(this.br, aa, force);
+        } catch (final PluginException e) {
+            aa.setValid(false);
+            return false;
+        }
+        return true;
     }
 
 }

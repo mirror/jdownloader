@@ -245,19 +245,16 @@ public class MegarapidoNet extends PluginForHost {
         final Regex premium_time = br.getRegex("(\\d{1,2}) DIAS, (\\d{1,2}) HORAS, (\\d{1,2}) MINUTOS E (\\d{1,2}) SEGUNDOS");
         final String[][] time_matches = premium_time.getMatches();
         if (time_matches.length == 0) {
-            final String userLanguage = System.getProperty("user.language");
-            if ("de".equalsIgnoreCase(userLanguage)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else if ("pl".equalsIgnoreCase(userLanguage)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
+            /* Prevent downloads via free account - they have no traffic! */
+            ai.setTrafficLeft(0);
+            ai.setStatus("Registered (free) account");
+            account.setType(AccountType.FREE);
+        } else {
+            ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(time_matches[0][0]) * 24 * 60 * 60 * 1000 + Long.parseLong(time_matches[0][1]) * 60 * 60 * 1000l + Long.parseLong(time_matches[0][2]) * 60 * 1000l + Long.parseLong(time_matches[0][2]) * 1000l);
+            ai.setUnlimitedTraffic();
+            ai.setStatus("Premium account");
+            account.setType(AccountType.PREMIUM);
         }
-        ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(time_matches[0][0]) * 24 * 60 * 60 * 1000 + Long.parseLong(time_matches[0][1]) * 60 * 60 * 1000l + Long.parseLong(time_matches[0][2]) * 60 * 1000l + Long.parseLong(time_matches[0][2]) * 1000l);
-        ai.setUnlimitedTraffic();
-        ai.setStatus("Premium account");
-        account.setType(AccountType.PREMIUM);
         account.setValid(true);
         final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us" };
         final ArrayList<String> supportedHosts = new ArrayList<String>();

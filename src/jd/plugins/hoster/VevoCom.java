@@ -101,6 +101,7 @@ public class VevoCom extends PluginForHost {
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        streamtype = downloadLink.getLongProperty("sourcetype", -1);
         if (downloadLink.getDownloadURL().contains("/playlist")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -121,7 +122,6 @@ public class VevoCom extends PluginForHost {
             this.br = new Browser();
             return AvailableStatus.TRUE;
         }
-        streamtype = downloadLink.getLongProperty("sourcetype", -1);
         if (streamtype == streamtype_http) {
             URLConnectionAdapter con = null;
             try {
@@ -193,7 +193,7 @@ public class VevoCom extends PluginForHost {
 
     /*
      * 2nd way to get http streams: http://smilstream.vevo.com/HDFlash/v1/smil/<videoid>/<videoid>.smil
-     *
+     * 
      * Examplecode: http://bluecop-xbmc-repo.googlecode.com/svn-history/r383/trunk/plugin.video.vevo/default.py
      */
     private void downloadHTTP(final DownloadLink downloadLink) throws Exception {
