@@ -13,6 +13,7 @@ import jd.http.SocketConnectionFactory;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyException;
+import org.appwork.utils.net.socketconnection.SocketConnection;
 import org.jdownloader.api.myjdownloader.MyJDownloaderConnectThread.DeviceConnectionHelper;
 import org.jdownloader.api.myjdownloader.MyJDownloaderConnectThread.SessionInfoWrapper;
 import org.jdownloader.myjdownloader.client.json.DeviceConnectionStatus;
@@ -117,7 +118,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                     request.getConnectionHelper().backoff();
                     Socket connectionSocket = null;
                     HTTPProxy proxy = null;
-                    final String url = "http://" + request.getAddr().getHostString() + ":" + request.getAddr().getPort();
+                    final String url = "http://" + SocketConnection.getHostName(request.getAddr()) + ":" + request.getAddr().getPort();
                     try {
                         connectThread.log("Connect " + request.getAddr());
                         final List<HTTPProxy> list = ProxyController.getInstance().getProxiesByUrl(url, false, false);
