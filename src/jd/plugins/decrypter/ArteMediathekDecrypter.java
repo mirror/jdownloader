@@ -233,12 +233,18 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 final String versionShortLibelle = (String) qualitymap.get("versionShortLibelle");
                 final String url = (String) qualitymap.get("url");
 
-                final int language_code = getLanguageInt(versionShortLibelle, versionCode);
-                final String quality_intern = selectedLanguage + "_" + language_code + "_http_" + videoBitrate;
+                final int format_code = getFormatCode(versionShortLibelle, versionCode);
+                final String short_lang_current = get_short_lang_from_format_code(format_code);
+                final String quality_intern = selectedLanguage + "_" + get_intern_format_code_from_format_code(format_code) + "_http_" + videoBitrate;
                 final String linkid = fid + "_" + quality_intern;
-                final String filename = title + "_" + getLongLanguage(selectedLanguage) + "_" + get_user_format_from_code(language_code) + "_" + width + "x" + height + "_" + videoBitrate + ".mp4";
+                final String filename = title + "_" + getLongLanguage(selectedLanguage) + "_" + get_user_format_from_format_code(format_code) + "_" + width + "x" + height + "_" + videoBitrate + ".mp4";
                 /* Ignore HLS/RTMP versions */
                 if (!url.startsWith("http") || url.contains(".m3u8")) {
+                    logger.info("Skipping " + filename + " because it is not a supported streaming format");
+                    continue;
+                }
+                if (!short_lang_current.equals(selectedLanguage)) {
+                    logger.info("Skipping " + filename + " because it is not the selected language");
                     continue;
                 }
                 final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
@@ -323,7 +329,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     }
 
     /* Non-subtitled versions, 3 = Subtitled versions, 4 = Subtitled versions for disabled people, 5 = Audio descriptions */
-    private int getLanguageInt(final String versionShortLibelle, final String versionCode) throws DecrypterException {
+    private int getFormatCode(final String versionShortLibelle, final String versionCode) throws DecrypterException {
         /* versionShortLibelle: What is UTH?? */
         if (versionShortLibelle == null || versionCode == null) {
             throw new DecrypterException("Decrypter broken");
@@ -332,18 +338,19 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         if (versionCode.equals("VO") && parameter.matches(TYPE_CONCERT)) {
             /* Special case - no different versions available --> We already got the version we want */
             lint = languageVersion;
-        } else if ("VF-STMF".equals(versionCode) || "VOF-STA".equalsIgnoreCase(versionCode) || "VOF-STMF".equals(versionCode) || "VA-STMA".equals(versionCode)) {
+        } else if ("VOF-STA".equalsIgnoreCase(versionCode) || "VOF-STMF".equals(versionCode) || "VA-STMA".equals(versionCode)) {
+            /* Definitly NOT subtitled: VF-STMF */
             lint = 3;
         } else if (versionCode.equals("VOA-STMA")) {
             lint = 4;
         } else if (versionCode.equals("VAAUD")) {
             lint = 5;
-        } else if (versionShortLibelle.equals("VA") || versionShortLibelle.equals("DE") || versionCode.equals("VO-STA")) {
+        } else if (versionShortLibelle.equals("DE") || versionShortLibelle.equals("VA") || versionCode.equals("VO-STA")) {
             /* German */
             lint = 1;
-        } else if (versionShortLibelle.equals("VF") || versionShortLibelle.equals("VOF") || versionShortLibelle.equals("FR") || versionShortLibelle.equals("VOSTF") || versionCode.equals("VO")) {
+        } else if (versionShortLibelle.equals("FR") || versionShortLibelle.equals("VF") || versionShortLibelle.equals("VOF") || versionShortLibelle.equals("VOSTF") || versionCode.equals("VO") || versionCode.equals("VF-STMF")) {
             /* French - use same number than for german as the handling has changed. */
-            lint = 1;
+            lint = 2;
         } else {
             /* Unknown - use language inside the link */
             /* Unknown language Strings so far: VOA */
@@ -355,9 +362,13 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     }
 
     /* 1 = No subtitle, 3 = Subtitled version, 4 = Subtitled version for disabled people, 5 = Audio description */
-    private String get_user_format_from_code(final int version) {
+    private String get_user_format_from_format_code(final int version) {
         switch (version) {
         case 1:
+            /* German */
+            return "no_subtitle";
+        case 2:
+            /* French */
             return "no_subtitle";
         case 3:
             return "subtitled";
@@ -365,6 +376,33 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             return "subtitled_handicapped";
         case 5:
             return "audio_description";
+        default:
+            /* Obviously this should never happen */
+            return "WTF_PLUGIN_FAILED";
+        }
+    }
+
+    /**
+     * Inout: Normal formatCode Output: formatCode for internal use (1+2 = 1) 1=German, 2 = French, both no_subtitle --> We only need the
+     * 'no subtitle' information which has the code 1.
+     */
+    private int get_intern_format_code_from_format_code(final int formatCode) {
+        if (formatCode == 1 || formatCode == 2) {
+            return 1;
+        } else {
+            return formatCode;
+        }
+    }
+
+    /* 1 = No subtitle, 3 = Subtitled version, 4 = Subtitled version for disabled people, 5 = Audio description */
+    private String get_short_lang_from_format_code(final int version) {
+        switch (version) {
+        case 1:
+            /* German */
+            return "de";
+        case 2:
+            /* French */
+            return "fr";
         default:
             /* Obviously this should never happen */
             return "WTF_PLUGIN_FAILED";
