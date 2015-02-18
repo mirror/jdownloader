@@ -53,6 +53,26 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         logger = LogController.getInstance().getLogger(LinkCollectorAPIImplV2.class.getName());
     }
 
+    public static List<AbstractNode> convertIdsToObjects(long[] linkIds, long[] packageIds) {
+        final ArrayList<AbstractNode> ret = new ArrayList<AbstractNode>();
+
+        return convertIdsToObjects(ret, linkIds, packageIds);
+    }
+
+    public static List<CrawledPackage> convertIdsToPackages(long... packageIds) {
+        final List<CrawledPackage> ret = new ArrayList<CrawledPackage>();
+
+        convertIdsToObjects(ret, null, packageIds);
+        return ret;
+    }
+
+    public static List<CrawledLink> convertIdsToLinks(long... linkIds) {
+        final List<CrawledLink> ret = new ArrayList<CrawledLink>();
+
+        convertIdsToObjects(ret, linkIds, null);
+        return ret;
+    }
+
     @SuppressWarnings("unchecked")
     public static <T extends AbstractNode> List<T> convertIdsToObjects(final List<T> ret, long[] linkIds, long[] packageIds) {
         final HashSet<Long> linklookUp = DownloadsAPIV2Impl.createLookupSet(linkIds);
@@ -152,6 +172,9 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 if (queryParams.isChildCount()) {
                     cps.setChildCount(view.getItems().size());
 
+                }
+                if (queryParams.isPriority()) {
+                    cps.setPriority(PriorityStorable.valueOf(pkg.getPriorityEnum().name()));
                 }
                 if (queryParams.isHosts()) {
                     Set<String> hosts = new HashSet<String>();
@@ -675,15 +698,14 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
 
     @Override
     public void setPriority(PriorityStorable priority, long[] linkIds, long[] packageIds) throws BadParameterException {
-        try {
             org.jdownloader.controlling.Priority jdPriority = org.jdownloader.controlling.Priority.valueOf(priority.name());
-            LinkCollector.getInstance().writeLock();
-            List<CrawledLink> sdl = getSelectionInfo(linkIds, packageIds).getChildren();
-            for (CrawledLink dl : sdl) {
+            List<CrawledLink> children = convertIdsToLinks(linkIds);
+            List<CrawledPackage> pkgs = convertIdsToPackages(packageIds);
+            for (CrawledLink dl : children) {
                 dl.setPriority(jdPriority);
             }
-        } finally {
-            LinkCollector.getInstance().writeUnlock();
-        }
+            for (CrawledPackage pkg : pkgs) {
+                pkg.setPriorityEnum(jdPriority);
+            }
     }
 }

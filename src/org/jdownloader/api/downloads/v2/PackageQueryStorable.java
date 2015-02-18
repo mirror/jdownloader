@@ -18,11 +18,11 @@ public class PackageQueryStorable extends DownloadPackageQuery implements Storab
         FULL.setComment(true);
         FULL.setEnabled(true);
         FULL.setEta(true);
+        FULL.setPriority(true);
 
         FULL.setFinished(true);
 
         FULL.setRunning(true);
-
         FULL.setSpeed(true);
         FULL.setStatus(true);
         FULL.setChildCount(true);
