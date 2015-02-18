@@ -71,6 +71,7 @@ public class DevArtCm extends PluginForDecrypt {
     private static final String   TYPE_CATPATH_2   = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath=[a-z0-9]{1,}(\\&offset=\\d+)?";
     private static final String   TYPE_JOURNAL     = "https?://[\\w\\.\\-]*?deviantart\\.com/journal.+";
     private static final String   LINKTYPE_JOURNAL = "https?://[\\w\\.\\-]*?deviantart\\.com/journal/[\\w\\-]+";
+    private static final String   TYPE_BLOG        = "https?://[\\w\\.\\-]*?deviantart\\.com/blog/";
 
     final ArrayList<DownloadLink> decryptedLinks   = new ArrayList<DownloadLink>();
 
@@ -116,6 +117,8 @@ public class DevArtCm extends PluginForDecrypt {
             decryptJournals();
         } else if (PARAMETER.matches(TYPE_COLLECTIONS)) {
             decryptCollections();
+        } else if (PARAMETER.matches(TYPE_BLOG)) {
+            decryptBlog();
         } else if (PARAMETER.contains("/gallery/") || PARAMETER.contains("/favourites/")) {
             decryptStandard();
         } else {
@@ -209,13 +212,31 @@ public class DevArtCm extends PluginForDecrypt {
             throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
         }
         for (final String aLink : links) {
-            decryptedLinks.add(createDownloadlink(aLink));
+            final DownloadLink dl = createDownloadlink(aLink);
+            if (FASTLINKCHECK) {
+                dl.setAvailable(true);
+            }
+            decryptedLinks.add(dl);
+        }
+    }
+
+    private void decryptBlog() throws DecrypterException, IOException {
+        final String[] links = br.getRegex("<a href=\"(http://[^<>\"/]+\\.deviantart\\.com/journal/[^<>\"]*?)\"").getColumn(0);
+        if (links == null || links.length == 0) {
+            logger.warning("Plugin broken for link: " + PARAMETER);
+            throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
+        }
+        for (final String aLink : links) {
+            final DownloadLink dl = createDownloadlink(aLink);
+            if (FASTLINKCHECK) {
+                dl.setAvailable(true);
+            }
+            decryptedLinks.add(dl);
         }
     }
 
     @SuppressWarnings("deprecation")
     private void decryptStandard() throws DecrypterException, IOException {
-        final boolean fastcheck = SubConfiguration.getConfig("deviantart.com").getBooleanProperty(FASTLINKCHECK_2, false);
         /* Correct input links */
         if (PARAMETER.matches("http://[^<>\"/]+\\.deviantart\\.com/gallery/\\?\\d+")) {
             final Regex paramregex = new Regex(PARAMETER, "(http://[^<>\"/]+\\.deviantart\\.com/gallery/\\?)(\\d+)");
@@ -325,7 +346,7 @@ public class DevArtCm extends PluginForDecrypt {
                 if (links != null && links.length != 0) {
                     for (final String artlink : links) {
                         final DownloadLink fina = createDownloadlink(artlink);
-                        if (fastcheck) {
+                        if (FASTLINKCHECK) {
                             fina.setAvailable(true);
                         }
                         /* No reason to hide their single links */
@@ -352,7 +373,7 @@ public class DevArtCm extends PluginForDecrypt {
                 counter++;
             }
             /* Really make sure that we're not ending up in an infinite loop! */
-        } while (currentOffset <= maxOffset && br.containsHTML("\">\\d+</a></li><li class=\"next\""));
+        } while (currentOffset <= maxOffset && br.containsHTML("class=\"next\"><a class=\"away\" data\\-offset=\"\\d+\""));
         if (fpName != null) {
             fp.addLinks(decryptedLinks);
         }
