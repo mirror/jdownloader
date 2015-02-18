@@ -18,9 +18,9 @@ public interface UpdateSettings extends ConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(false)
     @DescriptionForConfigEntry("If enabled, JD will install Updates silently during the next JDStart")
-    boolean isAskMyBeforeInstallingAnUpdateEnabled();
+    boolean isDoAskMyBeforeInstallingAnUpdateEnabled();
 
-    void setAskMyBeforeInstallingAnUpdateEnabled(boolean b);
+    void setDoAskMyBeforeInstallingAnUpdateEnabled(boolean b);
 
     // @AboutConfig
     @DefaultBooleanValue(true)
@@ -93,12 +93,12 @@ public interface UpdateSettings extends ConfigInterface {
 
     void setLastST(long currentTimeMillis);
 
-    @DefaultBooleanValue(false)
+    @DefaultBooleanValue(true)
     @AboutConfig
     @DescriptionForConfigEntry("Try to install updates when you exit JDownloader")
-    boolean isInstallUpdatesOnExitEnabledDev();
+    boolean isInstallUpdatesOnExitEnabled();
 
-    void setInstallUpdatesOnExitEnabledDev(boolean b);
+    void setInstallUpdatesOnExitEnabled(boolean b);
 
     @DefaultBooleanValue(true)
     @AboutConfig

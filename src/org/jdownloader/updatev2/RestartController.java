@@ -167,7 +167,7 @@ public class RestartController implements ShutdownVetoListener {
         }
         if (!Application.isHeadless() && SmartRlyExitRequest.class == filter.getClass()) {
             final UpdateSettings cfg = JsonConfig.create(UpdateSettings.class);
-            if (cfg.isInstallUpdatesOnExitEnabledDev() && UpdateController.getInstance().hasPendingUpdates()) {
+            if (cfg.isInstallUpdatesOnExitEnabled() && UpdateController.getInstance().hasPendingUpdates()) {
                 asyncRestart(new InstallUpdatesOnExitRestartRequest(filter));
                 return;
             }
