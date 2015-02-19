@@ -7,6 +7,7 @@ package org.jdownloader.captcha.v2.solver.dbc.api;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -21,7 +22,7 @@ import org.appwork.utils.encoding.Base64;
 
 /**
  * Death by Captcha socket API client.
- * 
+ *
  */
 public class SocketClient extends Client {
     final static public String HOST       = "api.dbcapi.me";
@@ -31,53 +32,74 @@ public class SocketClient extends Client {
     final static public String TERMINATOR = "\r\n";
 
     protected SocketChannel    channel    = null;
-    protected Object           callLock   = new Object();
 
     protected String sendAndReceive(byte[] payload) throws IOException {
-        ByteBuffer sbuf = ByteBuffer.wrap(payload);
-        ByteBuffer rbuf = ByteBuffer.allocateDirect(256);
-        CharsetDecoder rbufDecoder = Charset.forName("UTF-8").newDecoder();
-        StringBuilder response = new StringBuilder();
+        final ByteBuffer sbuf = ByteBuffer.wrap(payload);
+        final ByteBuffer rbuf = ByteBuffer.allocate(256);
+        final CharsetDecoder rbufDecoder = Charset.forName("UTF-8").newDecoder();
+        final StringBuilder response = new StringBuilder();
 
-        int ops = SelectionKey.OP_WRITE | SelectionKey.OP_READ;
+        final int ops;
         if (this.channel.isConnectionPending()) {
-            ops = ops | SelectionKey.OP_CONNECT;
+            ops = SelectionKey.OP_CONNECT;
+        } else {
+            if (sbuf.hasRemaining()) {
+                ops = SelectionKey.OP_WRITE;
+            } else {
+                ops = SelectionKey.OP_READ;
+            }
         }
-
-        Selector selector = Selector.open();
+        final Selector selector = Selector.open();
         try {
             this.channel.register(selector, ops);
             while (true) {
-                if (0 < selector.select(Client.POLLS_INTERVAL * 1000)) {
-                    Iterator keys = selector.selectedKeys().iterator();
+                if (selector.select(Client.POLLS_INTERVAL * 1000) > 0) {
+                    final Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
                     while (keys.hasNext()) {
-                        SelectionKey key = (SelectionKey) keys.next();
-                        SocketChannel ch = (SocketChannel) key.channel();
-                        if (key.isConnectable()) {
-                            // Just connected
-                            ch.finishConnect();
-                        }
-                        if (key.isReadable() && !sbuf.hasRemaining()) {
-                            // Receiving the response
-                            while (0 < ch.read(rbuf)) {
-                                rbuf.flip();
-                                response.append(rbufDecoder.decode(rbuf).toString());
+                        try {
+                            final SelectionKey key = keys.next();
+                            if (key.isValid()) {
+                                final SocketChannel ch = (SocketChannel) key.channel();
+                                if (key.isConnectable()) {
+                                    // Just connected
+                                    ch.finishConnect();
+                                    if (sbuf.hasRemaining()) {
+                                        key.interestOps(SelectionKey.OP_WRITE);
+                                    } else {
+                                        key.interestOps(SelectionKey.OP_READ);
+                                    }
+                                } else {
+                                    if (key.isWritable()) {
+                                        // Sending the request
+                                        while (0 < ch.write(sbuf) && sbuf.hasRemaining()) {
+                                            //
+                                        }
+                                        if (!sbuf.hasRemaining()) {
+                                            key.interestOps(SelectionKey.OP_READ);
+                                        }
+                                    }
+                                    if (key.isReadable()) {
+                                        // Receiving the response
+                                        int read = 0;
+                                        while ((read = ch.read(rbuf)) > 0) {
+                                            rbuf.flip();
+                                            response.append(rbufDecoder.decode(rbuf).toString());
+                                        }
+                                        if (2 <= response.length() && response.substring(response.length() - 2, response.length()).equals(SocketClient.TERMINATOR)) {
+                                            response.setLength(response.length() - 2);
+                                            return response.toString();
+                                        } else if (0 == response.length() || read == -1) {
+                                            //
+                                            throw new IOException("Connection lost");
+                                        }
+                                    }
+                                }
+                            } else {
+                                throw new IOException("Invalid key");
                             }
-                            if (2 <= response.length() && response.substring(response.length() - 2, response.length()).equals(SocketClient.TERMINATOR)) {
-                                response.setLength(response.length() - 2);
-                                return response.toString();
-                            } else if (0 == response.length()) {
-                                //
-                                throw new IOException("Connection lost");
-                            }
+                        } finally {
+                            keys.remove();
                         }
-                        if (key.isWritable() && sbuf.hasRemaining()) {
-                            // Sending the request
-                            while (0 < ch.write(sbuf) && sbuf.hasRemaining()) {
-                                //
-                            }
-                        }
-                        keys.remove();
                     }
                 }
             }
@@ -91,6 +113,7 @@ public class SocketClient extends Client {
     /**
      * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#close
      */
+    @Override
     public void close() {
         if (null != this.channel) {
             this.log("CLOSE");
@@ -109,7 +132,6 @@ public class SocketClient extends Client {
                     }
                 }
             }
-
             try {
                 this.channel.socket().close();
             } catch (java.lang.Exception e) {
@@ -123,33 +145,29 @@ public class SocketClient extends Client {
     /**
      * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#connect
      */
-    public boolean connect() throws IOException {
+    @Override
+    public synchronized boolean connect() throws IOException {
         if (null == this.channel) {
             this.log("OPEN");
-
-            InetAddress host = null;
+            final InetAddress host;
             try {
                 host = InetAddress.getByName(SocketClient.HOST);
-            } catch (java.lang.Exception e) {
-                // System.out.println(e)
-                throw new IOException("API host not found");
+            } catch (UnknownHostException e) {
+                throw new IOException("API host not found", e);
             }
-
-            SocketChannel channel = SocketChannel.open();
+            final SocketChannel channel = SocketChannel.open();
             channel.configureBlocking(false);
             try {
                 channel.connect(new InetSocketAddress(host, SocketClient.FIRST_PORT + new Random().nextInt(SocketClient.LAST_PORT - SocketClient.FIRST_PORT + 1)));
             } catch (IOException e) {
-                throw new IOException("API connection failed");
+                throw new IOException("API connection failed", e);
             }
-
             this.channel = channel;
         }
-
         return null != this.channel;
     }
 
-    protected DataObject call(String cmd, DataObject args) throws IOException, Exception {
+    protected synchronized DataObject call(String cmd, DataObject args) throws IOException, Exception {
 
         args.put("cmd", cmd).put("version", Client.API_VERSION);
 
@@ -162,26 +180,24 @@ public class SocketClient extends Client {
             if (null == this.channel && !cmd.equals("login")) {
                 this.call("login", this.getCredentials());
             }
-            synchronized (this.callLock) {
-                if (this.connect()) {
-                    this.log("SEND", args.toString());
-                    try {
-                        response = new DataObject(this.sendAndReceive(payload));
-                    } catch (java.lang.Exception e) {
-                        logger.log(e);
-                        this.close();
-                    }
+            if (this.connect()) {
+                this.log("SEND", args.toString());
+                try {
+                    response = new DataObject(this.sendAndReceive(payload));
+                } catch (java.lang.Exception e) {
+                    this.logger.log(e);
+                    this.close();
                 }
             }
         }
-        if (null == response) { throw new IOException("API connection lost or timed out"); }
+        if (null == response) {
+            throw new IOException("API connection lost or timed out");
+        }
 
         this.log("RECV", response.toString());
         String error = response.optString("error", null);
         if (null != error) {
-            synchronized (this.callLock) {
-                this.close();
-            }
+            this.close();
             if (error.equals("not-logged-in")) {
                 throw new AccessDeniedException("Access denied, check your credentials");
             } else if (error.equals("banned")) {
@@ -215,6 +231,7 @@ public class SocketClient extends Client {
 
     }
 
+    @Override
     public void finalize() {
         this.close();
     }
@@ -222,6 +239,7 @@ public class SocketClient extends Client {
     /**
      * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#getUser
      */
+    @Override
     public User getUser() throws IOException, Exception {
         return new User(this.call("user"));
     }
@@ -229,6 +247,7 @@ public class SocketClient extends Client {
     /**
      * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#upload
      */
+    @Override
     public Captcha upload(byte[] img) throws IOException, Exception {
         DataObject args = new DataObject();
 
@@ -243,6 +262,7 @@ public class SocketClient extends Client {
     /**
      * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#getCaptcha
      */
+    @Override
     public Captcha getCaptcha(int id) throws IOException, Exception {
         DataObject args = new DataObject();
 
@@ -254,11 +274,12 @@ public class SocketClient extends Client {
     /**
      * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#report
      */
+    @Override
     public boolean report(int id) throws IOException, Exception {
         DataObject args = new DataObject();
 
         args.put("captcha", id);
 
-        return !(new Captcha(this.call("report", args))).isCorrect();
+        return !new Captcha(this.call("report", args)).isCorrect();
     }
 }
