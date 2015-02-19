@@ -168,7 +168,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
         track(1000, "starts");
 
-        if ((checkReducer("advanced", 10) && !config.isAskedToContributeAdvancedSetup())) {
+        if ((checkReducer("advanced", 100) && !config.isAskedToContributeAdvancedSetup())) {
             if (!Application.isHeadless()) {
                 new Thread() {
                     {
