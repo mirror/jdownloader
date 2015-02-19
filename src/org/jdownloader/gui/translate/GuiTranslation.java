@@ -5779,4 +5779,19 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Giro Pay" })
     String DonationDialog_popup_giropay();
 
+    @Default(lngs = { "en" }, values = { "We need your help!" })
+    String StatsManager_StatsManager_advanced_survey_title();
+
+    @Default(lngs = { "en" }, values = { "We would like to improve the settings panels and to create a setup wizard that guides you through the most important settings. To do this, we need to know which options are used most.\r\nYou can help us by allowing JDownloader to send a list of all options that have been changed by you. This does not contain any personal data. Click [Show List] if you want to check the list before sending it." })
+    String StatsManager_StatsManager_advanced_survey_msg();
+
+    @Default(lngs = { "en" }, values = { "Send list now!" })
+    String StatsManager_StatsManager_advanced_survey_send();
+
+    @Default(lngs = { "en" }, values = { "Show list" })
+    String StatsManager_StatsManager_advanced_survey_show();
+
+    @Default(lngs = { "en" }, values = { "This list will be sent." })
+    String StatsManager_StatsManager_advanced_survey_title_list();
+
 }

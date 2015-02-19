@@ -25,4 +25,8 @@ public interface StatsManagerConfigV2 extends ConfigInterface {
 
     void setCaptchaUploadPercentage(double d);
 
+    @DefaultBooleanValue(false)
+    boolean isAskedToContributeAdvancedSetup();
+
+    void setAskedToContributeAdvancedSetup(boolean b);
 }
