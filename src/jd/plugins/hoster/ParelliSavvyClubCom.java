@@ -50,7 +50,7 @@ public class ParelliSavvyClubCom extends PluginForHost {
         setConfigElements();
     }
 
-    private static final String fast_linkcheck = "fast_linkcheck";
+    private static final String fast_linkcheck = "fast_linkcheck_2";
     private static final String MAINPAGE       = "http://parelliconnect.com";
     private static Object       LOCK           = new Object();
     private String              DLLINK         = null;
