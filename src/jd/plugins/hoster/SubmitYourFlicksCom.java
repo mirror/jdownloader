@@ -53,8 +53,9 @@ public class SubmitYourFlicksCom extends PluginForHost {
     private static final String EMBEDLINK = "http://(www\\.)?submityourflicks\\.com/(embconfig|embedded)/\\d+";
 
     public void correctDownloadLink(final DownloadLink link) {
-        if (link.getDownloadURL().matches(EMBEDLINK)) {
-            link.setUrlDownload("http://submityourflicks.com/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + "-" + System.currentTimeMillis() + new Random().nextInt(100000) + ".html");
+        final String addedlink = link.getDownloadURL().toLowerCase();
+        if (addedlink.matches(EMBEDLINK)) {
+            link.setUrlDownload("http://submityourflicks.com/" + new Regex(addedlink, "(\\d+)$").getMatch(0) + "-" + System.currentTimeMillis() + new Random().nextInt(100000) + ".html");
         }
     }
 
@@ -64,7 +65,7 @@ public class SubmitYourFlicksCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("submityourflicks.com/404.php") || br.containsHTML("(<title>Wops 404 \\.\\.\\.</title>|class=\"style1\">404 \\- this page does not exist|http-equiv=refresh content=\"2; url=http://www\\.submityourflicks\\.com)")) {
+        if (br.getURL().contains("submityourflicks.com/404.php") || br.containsHTML("(<title>Wops 404 \\.\\.\\.</title>|class=\"style1\">404 \\- this page does not exist|http-equiv=refresh content=\"2; url=http://www\\.submityourflicks\\.com)") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\" />").getMatch(0);

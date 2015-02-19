@@ -16,8 +16,11 @@
 
 package jd.plugins.decrypter;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -32,6 +35,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "parelliconnect.com" }, urls = { "http://www\\.parelliconnect\\.com/resources" }, flags = { 0 })
 public class ParelliSavvyClubComDecrypter extends PluginForDecrypt {
@@ -81,7 +86,7 @@ public class ParelliSavvyClubComDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             } else {
                 final FilePackage fp = FilePackage.getInstance();
-                fp.setName(package_title + "_" + package_releasedate);
+                fp.setName(getFormattedDate(package_releasedate) + "_" + package_title);
                 fp.setComment(package_description);
                 if (media_videos != null) {
                     for (final Object media_video : media_videos) {
@@ -91,7 +96,11 @@ public class ParelliSavvyClubComDecrypter extends PluginForDecrypt {
                             logger.warning("WTF");
                         }
                         final String title = (String) single_video.get("title");
-                        final String releasedate = (String) single_video.get("releasedate");
+                        /* Releasedate is always given - if not for the single item, then for the complete package. */
+                        String releasedate = (String) single_video.get("releasedate");
+                        if (releasedate == null) {
+                            releasedate = package_releasedate;
+                        }
                         final String media_id = Integer.toString(((Number) single_video.get("id")).intValue());
                         final DownloadLink dl = makeDownloadlink(media_id, "mp4", title, releasedate, fp);
                         decryptedLinks.add(dl);
@@ -106,7 +115,11 @@ public class ParelliSavvyClubComDecrypter extends PluginForDecrypt {
                             logger.warning("WTF");
                         }
                         final String title = (String) single_pdf.get("title");
-                        final String releasedate = (String) single_pdf.get("releasedate");
+                        /* Releasedate is always given - if not for the single item, then for the complete package. */
+                        String releasedate = (String) single_pdf.get("releasedate");
+                        if (releasedate == null) {
+                            releasedate = package_releasedate;
+                        }
                         final String media_id = Integer.toString(((Number) single_pdf.get("id")).intValue());
                         final DownloadLink dl = makeDownloadlink(media_id, "pdf", title, releasedate, fp);
                         decryptedLinks.add(dl);
@@ -117,9 +130,14 @@ public class ParelliSavvyClubComDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private DownloadLink makeDownloadlink(final String content_id, final String type, final String title, final String releasedate, final FilePackage fp) {
+    private DownloadLink makeDownloadlink(final String content_id, final String type, final String title, String releasedate, final FilePackage fp) {
+        String filename = null;
         String ext;
         final DownloadLink dl;
+        if (releasedate == null) {
+            logger.warning("WTF");
+        }
+        releasedate = releasedate.replaceAll("Z$", "+0000");
         if (type.equals("pdf")) {
             dl = createDownloadlink("http://www.parelliconnect.com/ajax/resources/" + content_id + "/vault_display_pdf");
             ext = ".pdf";
@@ -130,11 +148,28 @@ public class ParelliSavvyClubComDecrypter extends PluginForDecrypt {
         if (fastlinkcheck) {
             dl.setAvailable(true);
         }
+        filename = getFormattedDate(releasedate) + "_" + title;
         dl.setProperty("decryptedtitle", title);
-        dl.setProperty("decryptedreleasedate", releasedate);
-        dl.setName(title + "_" + releasedate + ext);
+        dl.setProperty("decryptedreleasedate", getDateMilliseconds(releasedate));
+        dl.setProperty("decryptedfilename", filename);
+        dl.setFinalFileName(filename + ext);
         dl._setFilePackage(fp);
         return dl;
+    }
+
+    private long getDateMilliseconds(final String date) {
+        return TimeFormatter.getMilliSeconds(date, "yyyy-MM-dd'T'HH:mm:ssZ", Locale.ENGLISH);
+    }
+
+    private String getFormattedDate(String inputDate) {
+        // 2011-12-01T00:00:00Z
+        /* Make sure out date is parsable */
+        inputDate = inputDate.replaceAll("Z$", "+0000");
+        final long datemilliseconds = getDateMilliseconds(inputDate);
+        Date theDate = new Date(datemilliseconds);
+        final SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+        final String formattedDate = formatter.format(theDate);
+        return formattedDate;
     }
 
     /** Log in the account of the hostplugin */

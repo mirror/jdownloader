@@ -77,7 +77,7 @@ public class ParelliSavvyClubCom extends PluginForHost {
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        String title = link.getStringProperty("decryptedtitle", null);
+        String title = link.getStringProperty("decryptedfilename", null);
         if (title == null) {
             title = new Regex(link.getDownloadURL(), "resources/(\\d+)/").getMatch(0);
         }

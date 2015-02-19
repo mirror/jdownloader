@@ -45,16 +45,17 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogSource;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "https?://((www\\.|player\\.)?vimeo\\.com/((video/)?\\d+(\\&forced_referer=[A-Za-z0-9=]+)?|channels/[a-z0-9\\-_]+/\\d+)|vimeo\\.com/[A-Za-z0-9\\-_]+/videos)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "https?://(www\\.)?vimeo\\.com/(\\d+|channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos)|http://player\\.vimeo.com/(video|external)/\\d+(\\&forced_referer=[A-Za-z0-9=]+)?" }, flags = { 0 })
 public class VimeoComDecrypter extends PluginForDecrypt {
 
-    private static final String type_player_private = "https?://player\\.vimeo\\.com/video/\\d+";
-    private static final String Q_MOBILE            = "Q_MOBILE";
-    private static final String Q_ORIGINAL          = "Q_ORIGINAL";
-    private static final String Q_HD                = "Q_HD";
-    private static final String Q_SD                = "Q_SD";
-    private static final String Q_BEST              = "Q_BEST";
-    private String              password            = null;
+    private static final String type_player_private_external = "http://player\\.vimeo.com/external/\\d+(\\&forced_referer=[A-Za-z0-9=]+)?";
+    private static final String type_player_private          = "http://player\\.vimeo.com/video/\\d+(\\&forced_referer=[A-Za-z0-9=]+)?";
+    private static final String Q_MOBILE                     = "Q_MOBILE";
+    private static final String Q_ORIGINAL                   = "Q_ORIGINAL";
+    private static final String Q_HD                         = "Q_HD";
+    private static final String Q_SD                         = "Q_SD";
+    private static final String Q_BEST                       = "Q_BEST";
+    private String              password                     = null;
 
     public VimeoComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -67,6 +68,9 @@ public class VimeoComDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        if (parameter.matches(type_player_private_external)) {
+            parameter = parameter.replace("/external/", "/video/");
+        }
         final SubConfiguration cfg = SubConfiguration.getConfig("vimeo.com");
         // when testing and dropping to frame, components will fail without clean browser.
         br = new Browser();

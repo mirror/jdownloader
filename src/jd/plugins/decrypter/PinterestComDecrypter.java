@@ -56,6 +56,12 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }
+        try {
+            /* Sometimes html can be very big */
+            br.setLoadLimit(br.getLoadLimit() * 2);
+        } catch (final Throwable e) {
+            /* Not available in old 0.9.581 Stable */
+        }
         final boolean loggedIN = getUserLogin(false);
         String fpName = null;
         br.getPage(parameter);
