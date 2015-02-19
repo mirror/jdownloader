@@ -75,7 +75,7 @@ public class ParelliSavvyClubComDecrypter extends PluginForDecrypt {
             final String package_expiredate = (String) media_item.get("enddate");
             final String package_description = (String) media_item.get("description");
             final ArrayList<Object> media_videos = (ArrayList) media_item.get("media_videos");
-            final ArrayList<Object> media_pdfs = (ArrayList) media_item.get("media_videos");
+            final ArrayList<Object> media_pdfs = (ArrayList) media_item.get("media_pdfs");
             /* Maybe we got a single video */
             if (media_videos == null && media_pdfs == null) {
                 final String package_media_id = Integer.toString(((Number) media_item.get("id")).intValue());
@@ -87,6 +87,10 @@ public class ParelliSavvyClubComDecrypter extends PluginForDecrypt {
                 fp.setComment(package_description);
                 if (media_videos != null) {
                     for (final Object media_video : media_videos) {
+                        /*
+                         * "media_files" hashmap inside single_video hashmap = qualities available - don't use this as the IDs are not
+                         * always valid!
+                         */
                         final LinkedHashMap<String, Object> single_video = (LinkedHashMap<String, Object>) media_video;
                         final String title = (String) single_video.get("title");
                         /* Releasedate is always given - if not for the single item, then for the complete package. */
