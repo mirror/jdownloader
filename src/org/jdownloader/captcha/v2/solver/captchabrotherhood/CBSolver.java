@@ -14,7 +14,6 @@ import jd.nutils.encoding.Encoding;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.BasicHTTP.BasicHTTP;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseValidation;
@@ -103,8 +102,8 @@ public class CBSolver extends CESChallengeSolver<String> implements ChallengeRes
             byte[] data = IO.readFile(challenge.getImageFile());
             job.setStatus(_GUI._.DeathByCaptchaSolver_solveBasicCaptchaChallenge_uploading(), NewTheme.I().getIcon(IconKey.ICON_UPLOAD, 20));
 
-            BasicHTTP http = new BasicHTTP();
-            String ret = new String(http.postPage(new URL(url), data), "UTF-8");
+            final Browser br = new Browser();
+            String ret = br.postPageRaw(url, data);
             job.setStatus(_GUI._.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_UPLOAD, 20));
 
             job.getLogger().info("Send Captcha. Answer: " + ret);
@@ -119,7 +118,7 @@ public class CBSolver extends CESChallengeSolver<String> implements ChallengeRes
                 Thread.sleep(1000);
                 url = "http://www.captchabrotherhood.com/askCaptchaResult.aspx?username=" + Encoding.urlEncode(config.getUser()) + "&password=" + Encoding.urlEncode(config.getPass()) + "&captchaID=" + Encoding.urlEncode(captchaID) + "&version=1.1.7";
                 job.getLogger().info("Ask " + url);
-                ret = http.getPage(new URL(url));
+                ret = br.getPage(url);
                 job.getLogger().info("Answer " + ret);
                 if (ret.startsWith("OK-answered-")) {
                     counterSolved.incrementAndGet();
