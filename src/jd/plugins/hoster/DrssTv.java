@@ -67,6 +67,8 @@ public class DrssTv extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        String qualityparam = null;
+        String filename = null;
         if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -81,14 +83,19 @@ public class DrssTv extends PluginForHost {
             /* Only get date from url when site fails as url date is sometimes wrong/not accurate! */
             date = new Regex(link.getDownloadURL(), "sendung/(\\d{2}\\-\\d{2}\\-\\d{4})/").getMatch(0).replace("-", ".");
         }
-        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        DLLINK = br.getRegex("\"(http://[^<>\"]*?(\\.mp4|\\.flv|/flv))\"").getMatch(0);
+        filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        if (link.getBooleanProperty("special_vimeo", false)) {
+            DLLINK = br.getRegex("data\\-url=\"(http://player\\.vimeo\\.com/external/\\d+\\.hd\\.mp4\\?s=[a-z0-9]+)\"").getMatch(0);
+            qualityparam = "SPECIAL_1920x1080_FULLHD_";
+        } else {
+            DLLINK = br.getRegex("\"(http://[^<>\"]*?(\\.mp4|\\.flv|/flv))\"").getMatch(0);
+        }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename).trim();
         filename = encodeUnicode(filename);
-        filename = date + "_" + filename;
+        filename = qualityparam + date + "_" + filename;
 
         if (DLLINK.contains("medianac.nacamar.de/")) {
             br.getHeaders().put("Accept-Encoding", null);

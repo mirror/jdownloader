@@ -71,6 +71,12 @@ public class DrssTvDecrypter extends PluginForDecrypt {
             return DECRYPTEDLINKS;
         }
         MAIN = createDownloadlink(PARAMETER.replace("drss.tv/", "drssdecrypted.tv/"));
+        try {
+            MAIN.setContentUrl(PARAMETER);
+        } catch (final Throwable e) {
+            /* Not available ind old 0.9.581 Stable */
+            MAIN.setBrowserUrl(PARAMETER);
+        }
         br.getPage(PARAMETER);
         if (br.getHttpConnection().getResponseCode() == 404) {
             MAIN.setFinalFileName("drss Sendung vom " + new Regex(PARAMETER, "endung/(\\d{2}\\-\\d{2}\\-\\d{4})/").getMatch(0) + ".mp4");
@@ -146,17 +152,20 @@ public class DrssTvDecrypter extends PluginForDecrypt {
             } else {
                 /* Full episode either in one part hosted by drss or extern. */
                 externID = br.getRegex("<div class=\"player active current player\\-1\">[\t\n\r ]+<iframe src=\"(https?://player\\.vimeo\\.com/video/\\d+)\"").getMatch(0);
-                if (externID != null) {
+                if (externID == null) {
+                    /* New vimeo embed */
+                    externID = br.getRegex("<div class=\"player active current player\\-1\">[\t\n\r ]+<div[^>]+data\\-url=\"(http://player\\.vimeo.com/external/\\d+)").getMatch(0);
+                }
+                /* Add special quality if available */
+                final String specialVimeoFULL_HDLink = br.getRegex("<div class=\"player active current player\\-1\">[\t\n\r ]+<div[^>]+data\\-url=\"(http://player\\.vimeo.com/external/\\d+\\.hd\\.mp4\\?s=[a-z0-9]+)\"").getMatch(0);
+                if (specialVimeoFULL_HDLink != null) {
+                    MAIN.setProperty("special_vimeo", true);
+                    DECRYPTEDLINKS.add(MAIN);
+                } else if (externID != null) {
                     externID = externID + "&forced_referer=" + Encoding.Base64Encode(this.br.getURL());
                     DECRYPTEDLINKS.add(createDownloadlink(externID));
                 } else {
                     /* Now let's assume that the video is hosted on drss.tv and return the link to the host plugin. */
-                    try {
-                        MAIN.setContentUrl(PARAMETER);
-                    } catch (final Throwable e) {
-                        /* Not available ind old 0.9.581 Stable */
-                        MAIN.setBrowserUrl(PARAMETER);
-                    }
                     DECRYPTEDLINKS.add(MAIN);
                 }
             }

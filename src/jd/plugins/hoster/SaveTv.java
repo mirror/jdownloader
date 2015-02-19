@@ -146,11 +146,11 @@ public class SaveTv extends PluginForHost {
     public static final String   QUALITY_HD                                = "HD";
     public static final String   EXTENSION                                 = ".mp4";
 
-    /* Save.tv internal quality/format constants */
+    /* Save.tv internal quality/format constants for the API */
     private static final String  API_FORMAT_HD                             = "6";
     private static final String  API_FORMAT_HQ                             = "5";
     private static final String  API_FORMAT_LQ                             = "4";
-
+    /* Save.tv internal quality/format constants for the website */
     private static final String  SITE_FORMAT_HD                            = "2";
     private static final String  SITE_FORMAT_HQ                            = "0";
     private static final String  SITE_FORMAT_LQ                            = "1";
