@@ -85,14 +85,6 @@ public interface UpdateSettings extends ConfigInterface {
 
     long getLastSuccessfulConnection();
 
-    String getSTID();
-
-    void setSTID(String stid);
-
-    long getLastST();
-
-    void setLastST(long currentTimeMillis);
-
     @DefaultBooleanValue(true)
     @AboutConfig
     @DescriptionForConfigEntry("Try to install updates when you exit JDownloader")

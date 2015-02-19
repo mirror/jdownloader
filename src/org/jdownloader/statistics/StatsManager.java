@@ -1,6 +1,7 @@
 package org.jdownloader.statistics;
 
 import java.awt.Dialog.ModalityType;
+import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -8,11 +9,14 @@ import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
@@ -64,13 +68,17 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.sendlogs.LogFolder;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.InputDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.appwork.utils.swing.dialog.ProgressInterface;
 import org.appwork.utils.zip.ZipIOException;
 import org.appwork.utils.zip.ZipIOWriter;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
@@ -80,6 +88,8 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
 import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.plugins.tasks.PluginSubTask;
+import org.jdownloader.settings.advanced.AdvancedConfigEntry;
+import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
 public class StatsManager implements GenericConfigEventListener<Object>, DownloadWatchdogListener, Runnable {
     private static final StatsManager INSTANCE           = new StatsManager();
@@ -158,6 +168,197 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
         track(1000, "starts");
 
+        if ((checkReducer("advanced", 100) && !config.isAskedToContributeAdvancedSetup())) {
+            if (!Application.isHeadless()) {
+                new Thread() {
+                    {
+                        setDaemon(true);
+                    }
+
+                    public boolean equals(Object x, Object y) {
+                        if (x instanceof Collection && ((Collection) x).size() == 0) {
+                            x = null;
+                        }
+                        if (y instanceof Collection && ((Collection) y).size() == 0) {
+                            y = null;
+                        }
+                        if (x instanceof List && ((List) x).size() == 0) {
+                            x = null;
+                        }
+                        if (y instanceof List && ((List) y).size() == 0) {
+                            y = null;
+                        }
+                        if (x instanceof Map && ((Map) x).size() == 0) {
+                            x = null;
+                        }
+                        if (y instanceof Map && ((Map) y).size() == 0) {
+                            y = null;
+                        }
+                        if (x == y) {
+                            return true;
+                        }
+                        if (x == null && y != null) {
+                            return false;
+                        }
+                        if (y == null && x != null) {
+                            return false;
+                        }
+
+                        if (x instanceof Storable && y instanceof Storable) {
+                            boolean ret = JSonStorage.serializeToJson(x).equals(JSonStorage.serializeToJson(y));
+                            if (ret) {
+                                return true;
+                            } else {
+                                return false;
+                            }
+                        }
+                        if (x instanceof String && y instanceof String) {
+                            if (StringUtils.isEmpty((String) x) && StringUtils.isEmpty((String) y)) {
+                                return true;
+                            }
+                        }
+                        boolean ret = x.equals(y);
+                        if (ret) {
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    }
+
+                    public void run() {
+                        try {
+                            Thread.sleep(2);
+
+                            final HashSet<String> map = new HashSet<String>();
+                            final ArrayList<String> list = new ArrayList<String>();
+                            final StringBuilder sb = new StringBuilder();
+                            HashSet<String> exclude = new HashSet<String>();
+                            exclude.add("FFmpegSetup.dash2aaccommand");
+                            exclude.add("FFmpegSetup.dash2m4acommand");
+                            exclude.add("FFmpegSetup.dash2oggaudiocommand");
+                            exclude.add("FFmpegSetup.demux2aaccommand");
+                            exclude.add("FFmpegSetup.demux2m4acommand");
+                            exclude.add("FFmpegSetup.demux2mp3command");
+                            exclude.add("FFmpegSetup.demuxandconvert2ogg");
+                            exclude.add("FFmpegSetup.demuxgenericcommand");
+                            exclude.add("FFmpegSetup.muxtomp4command");
+                            exclude.add("FFmpegSetup.muxtowebmcommand");
+                            exclude.add("GeneralSettings.browsercommandline");
+                            exclude.add("GeneralSettings.domainrules");
+                            exclude.add("GraphicalUserInterfaceSettings.overviewpositions");
+                            exclude.add("GraphicalUserInterfaceSettings.windowswindowmanageraltkeycombi");
+                            exclude.add("InternetConnectionSettings.customproxylist");
+                            exclude.add("LAFSettings.popupborderinsets");
+                            exclude.add("LinkFilterSettings.filterlist");
+                            exclude.add("LinkgrabberSettings.downloaddestinationhistory");
+                            exclude.add("MyJDownloaderSettings.deviceconnectports");
+                            exclude.add("PackagizerSettings.rulelist");
+                            exclude.add("PackagizerSettings.tryjd1importenabled");
+                            exclude.add("Reconnect.activepluginid");
+
+                            for (AdvancedConfigEntry value : AdvancedConfigManager.getInstance().list()) {
+                                if (exclude.contains(value.getKey())) {
+                                    continue;
+                                }
+                                if (!equals(value.getValue(), value.getDefault())) {
+                                    if (map.add(value.getKey().replace(".", "_"))) {
+                                        list.add(value.getKey().replace(".", "_"));
+                                    }
+                                }
+                            }
+                            if (map.size() == 0) {
+                                return;
+                            }
+                            Collections.sort(list);
+                            for (String l : list) {
+                                if (sb.length() > 0) {
+                                    sb.append("\r\n");
+                                }
+                                sb.append(l);
+
+                            }
+                            config.setAskedToContributeAdvancedSetup(true);
+                            ConfirmDialog d = new ConfirmDialog(0, _GUI._.StatsManager_StatsManager_advanced_survey_title(), _GUI._.StatsManager_StatsManager_advanced_survey_msg(), null, _GUI._.StatsManager_StatsManager_advanced_survey_send(), _GUI._.lit_no()) {
+                                @Override
+                                public ModalityType getModalityType() {
+                                    return ModalityType.MODELESS;
+                                }
+                            };
+                            d.setLeftActions(new AppAction() {
+                                {
+                                    setName(_GUI._.StatsManager_StatsManager_advanced_survey_show());
+                                }
+
+                                @Override
+                                public void actionPerformed(ActionEvent e) {
+                                    final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_LARGE | UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.StatsManager_StatsManager_advanced_survey_title_list(), sb.toString(), null, _GUI._.lit_close(), null) {
+                                        @Override
+                                        protected int getPreferredHeight() {
+                                            return 750;
+                                        }
+
+                                        @Override
+                                        public ModalityType getModalityType() {
+                                            return ModalityType.MODELESS;
+                                        }
+
+                                        @Override
+                                        protected int getPreferredWidth() {
+                                            return super.getPreferredWidth();
+                                        }
+                                    };
+                                    new Thread() {
+                                        {
+                                            setDaemon(true);
+                                        }
+
+                                        public void run() {
+                                            UIOManager.I().show(null, d);
+
+                                        }
+                                    }.start();
+
+                                }
+                            });
+                            UIOManager.I().show(null, d).throwCloseExceptions();
+                            new Browser().postPageRaw("http://stats.appwork.org/jcgi/event/adv", JSonStorage.serializeToJson(list));
+
+                        } catch (InterruptedException e1) {
+
+                        } catch (DialogClosedException e1) {
+                            e1.printStackTrace();
+                        } catch (DialogCanceledException e1) {
+                            e1.printStackTrace();
+                        } catch (StorageException e1) {
+                            e1.printStackTrace();
+                        } catch (IOException e1) {
+                            e1.printStackTrace();
+                        }
+                    };
+                }.start();
+            }
+
+        }
+
+    }
+
+    private boolean checkReducer(String path, int reducer) {
+        synchronized (reducerRandomMap) {
+            path += "_" + reducer;
+            Integer randomValue = reducerRandomMap.get(path);
+            if (randomValue == null) {
+                Random random = new Random(System.currentTimeMillis());
+                randomValue = random.nextInt(reducer);
+                reducerRandomMap.put(path, randomValue.intValue());
+                try {
+                    IO.secureWrite(reducerFile, JSonStorage.serializeToJson(reducerRandomMap).getBytes("UTF-8"));
+                } catch (Throwable e) {
+                    logger.log(e);
+                }
+
+            }
+            return randomValue != null && randomValue == 0;
+        }
     }
 
     public long getSessionStart() {
