@@ -123,9 +123,6 @@ public class ParelliSavvyClubComDecrypter extends PluginForDecrypt {
         String filename = null;
         String ext;
         final DownloadLink dl;
-        if (releasedate == null) {
-            logger.warning("WTF");
-        }
         releasedate = releasedate.replaceAll("Z$", "+0000");
         if (type.equals("pdf")) {
             dl = createDownloadlink("http://www.parelliconnect.com/ajax/resources/" + content_id + "/vault_display_pdf");
