@@ -119,9 +119,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         // use existing browser session to determine host
         final String host = ibr.getURL() != null ? Browser.getHost(ibr.getURL()) : Browser.getHost(page);
         prepBrowser(ibr, host);
-        final boolean follows_redirects = ibr.isFollowingRedirects();
         URLConnectionAdapter con = null;
-        ibr.setFollowRedirects(true);
         try {
             con = ibr.openGetConnection(page);
             readConnection(con, ibr);
@@ -131,7 +129,6 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 con.disconnect();
             } catch (Throwable e) {
             }
-            ibr.setFollowRedirects(follows_redirects);
         }
     }
 
@@ -392,7 +389,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                         }
                     }
                 } else if (responseCode == 503 && cloudflare != null) {
-                    // 503 response code with javascript math section
+                    // 503 response code with javascript math section && with 5 second pause
                     final String[] line1 = ibr.getRegex("var t,r,a,f, (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
                     String line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length\\;)").getMatch(0);
                     StringBuilder sb = new StringBuilder();
@@ -409,6 +406,10 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                     if (ibr.getFormbyProperty("id", "ChallengeForm") != null || ibr.getFormbyProperty("id", "challenge-form") != null) {
                         logger.warning("Possible plugin error within cloudflare handling");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    // if it works, there should be a redirect.
+                    if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
+                        ibr.getPage(ibr.getRedirectLocation());
                     }
                 } else if (responseCode == 520 || responseCode == 522) {
                     // HTTP/1.1 520 Origin Error
