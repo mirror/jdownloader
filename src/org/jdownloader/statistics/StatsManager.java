@@ -255,7 +255,13 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                             exclude.add("PackagizerSettings.rulelist");
                             exclude.add("PackagizerSettings.tryjd1importenabled");
                             exclude.add("Reconnect.activepluginid");
-
+                            exclude.add("StatsManagerV2.captchauploadpercentage");
+                            exclude.add("GraphicalUserInterfaceSetting.specialdealoboomdialogvisibleonstartup");
+                            exclude.add("GraphicalUserInterfaceSettings.windowswindowmanagerforegroundlocktimeout");
+                            exclude.add("GraphicalUserInterfaceSettings.premiumexpirewarningmapv2");
+                            exclude.add("MyJDownloaderSettings.latesterror");
+                            exclude.add("LinkgrabberSettings.packagenamehistory");
+                            exclude.add("MyJDownloaderSettings.devicename");
                             for (AdvancedConfigEntry value : AdvancedConfigManager.getInstance().list()) {
                                 if (exclude.contains(value.getKey())) {
                                     continue;
