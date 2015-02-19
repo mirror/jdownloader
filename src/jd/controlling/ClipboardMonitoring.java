@@ -41,22 +41,6 @@ import sun.awt.datatransfer.SunClipboard;
 
 public class ClipboardMonitoring {
 
-    private enum CLIPBOARD_MIMES {
-        BROWSER_URLANDTITLE("text/x-moz-url"),
-        BROWSER_DESCRIPTION("text/x-moz-url-desc"),
-        BROWSER_URLONLY("text/x-moz-url-data");
-
-        private final String mime;
-
-        public final String getMime() {
-            return mime;
-        }
-
-        private CLIPBOARD_MIMES(final String mime) {
-            this.mime = mime;
-        }
-    }
-
     private static class WindowsClipboardHack {
         Method          openClipboard    = null;
         Method          closeClipboard   = null;
@@ -351,19 +335,6 @@ public class ClipboardMonitoring {
                     htmlContent = getHTMLTransferData(currentContent);
                     if (htmlContent != null) {
                         browserUrl = getCurrentBrowserURL(currentContent);
-                    }
-                } catch (final Throwable e) {
-                    e.printStackTrace();
-                }
-                try {
-                    if (false) {
-                        String a = getBrowserMime(CLIPBOARD_MIMES.BROWSER_DESCRIPTION.getMime(), currentContent);
-                        String b = getBrowserMime(CLIPBOARD_MIMES.BROWSER_URLANDTITLE.getMime(), currentContent);
-                        String c = getBrowserMime(CLIPBOARD_MIMES.BROWSER_URLONLY.getMime(), currentContent);
-                        String d = getBrowserMime("text/_moz_htmlcontext", currentContent);
-                        String e = getBrowserMime("text/_moz_htmlinfo", currentContent);
-                        String f = getBrowserMime("text/x-moz-url-priv", currentContent);
-                        int x = 1;
                     }
                 } catch (final Throwable e) {
                     e.printStackTrace();
