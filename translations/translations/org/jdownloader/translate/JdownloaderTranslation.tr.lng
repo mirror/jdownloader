@@ -307,4 +307,5 @@ system_download_doCRC2_waiting=Adresleme kontrolü için bekleniyor
 system_download_errors_couldnotdelete=Mevcut parça dosyası silinemedi
 system_download_errors_couldnotrename=Parça dosyası yeniden adlandırılamadı
 system_download_errors_linkisBlocked=%s1 yansısı yükleniyor
+update_dialog_msg_x_updates_available=Güncellemeler Kurulum için hazır. Şimdi güncellemeyi çalıştırmak istiyor musunuz?
 video_description=Görüntü Dosyaları: mp4, avi, mov,...
