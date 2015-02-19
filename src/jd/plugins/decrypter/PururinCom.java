@@ -57,8 +57,12 @@ public class PururinCom extends PluginForDecrypt {
         // correct cryptedUrl
         param.setCryptedUrl(parameter);
 
-        if (br.containsHTML(">Page not found")) {
+        if (br.containsHTML(">Page not found|This gallery was deleted.")) {
             logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         if (br.containsHTML("<h1>Pururin is under maintenance</h1>")) {
