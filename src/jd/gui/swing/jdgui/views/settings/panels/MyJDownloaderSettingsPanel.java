@@ -54,7 +54,7 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
 
     private static final long serialVersionUID = 1L;
     private SettingsButton    openMyJDownloader;
-    private TextInput         userName;
+    private TextInput         email;
     private PasswordInput     passWord;
 
     private JTextArea         error;
@@ -89,7 +89,7 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
             }
         });
         deviceName = new TextInput(CFG_MYJD.DEVICE_NAME);
-        userName = new TextInput(CFG_MYJD.EMAIL);
+        email = new TextInput(CFG_MYJD.EMAIL);
         passWord = new PasswordInput(CFG_MYJD.PASSWORD);
         GenericConfigEventListener<String> loginsChangeListener = new GenericConfigEventListener<String>() {
 
@@ -186,7 +186,7 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
         this.addHeader(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), NewTheme.I().getIcon(IconKey.ICON_LOGINS, 32));
         // addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
         this.addDescriptionPlain(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_jd_logins());
-        addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_username_(), null, userName);
+        addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_email_(), null, email);
         addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_password_(), null, passWord);
 
         this.addDescriptionPlain(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_jd_name());

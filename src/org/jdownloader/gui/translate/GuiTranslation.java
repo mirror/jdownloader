@@ -2524,8 +2524,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Black-/Whitelist" })
     String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_blackwhitelist_();
 
-    @Default(lngs = { "en" }, values = { "Username/Email" })
-    String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_username_();
+    @Default(lngs = { "en" }, values = { "Email" })
+    String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_email_();
 
     @Default(lngs = { "en" }, values = { "Password" })
     String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_password_();
