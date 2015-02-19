@@ -2130,12 +2130,9 @@ public class LinkCrawler {
         return null;
     }
 
-    private final String LINKCRAWLER_POSTPROCESSED_FLAG = "LCPPF";
-
     protected void postprocessFinalCrawledLink(CrawledLink link) {
         final DownloadLink downloadLink = link.getDownloadLink();
-        if (downloadLink != null && !downloadLink.getBooleanProperty(LINKCRAWLER_POSTPROCESSED_FLAG, false)) {
-            downloadLink.setProperty(LINKCRAWLER_POSTPROCESSED_FLAG, Boolean.TRUE);
+        if (downloadLink != null) {
             final HashSet<String> knownURLs = new HashSet<String>();
             knownURLs.add(downloadLink.getPluginPatternMatcher());
             if (downloadLink.getContentUrl() != null) {
@@ -2212,41 +2209,38 @@ public class LinkCrawler {
     }
 
     protected void handleFinalCrawledLink(CrawledLink link) {
-        if (link == null) {
-            return;
-        }
-        link.setCreated(getCreated());
-        preprocessFinalCrawledLink(link);
-        CrawledLink origin = link.getOriginLink();
-        CrawledLinkModifier customModifier = link.getCustomCrawledLinkModifier();
-        link.setCustomCrawledLinkModifier(null);
-        if (customModifier != null) {
-            try {
-                customModifier.modifyCrawledLink(link);
-            } catch (final Throwable e) {
-                LogController.CL().log(e);
+        if (link != null) {
+            final CrawledLink origin = link.getOriginLink();
+            if (link.getCreated() == -1) {
+                link.setCreated(getCreated());
+                preprocessFinalCrawledLink(link);
+                final CrawledLinkModifier customModifier = link.getCustomCrawledLinkModifier();
+                link.setCustomCrawledLinkModifier(null);
+                if (customModifier != null) {
+                    try {
+                        customModifier.modifyCrawledLink(link);
+                    } catch (final Throwable e) {
+                        LogController.CL().log(e);
+                    }
+                }
+                postprocessFinalCrawledLink(link);
+                /* clean up some references */
+                link.setBrokenCrawlerHandler(null);
+                link.setUnknownHandler(null);
             }
-        }
-        postprocessFinalCrawledLink(link);
-        /* clean up some references */
-        link.setBrokenCrawlerHandler(null);
-        link.setUnknownHandler(null);
-        /* specialHandling: Crypted A - > B - > Final C , and A equals C */
-        // if link comes from flashgot, origin might be null
-        boolean specialHandling = origin != null && (origin != link) && (StringUtils.equals(origin.getLinkID(), link.getLinkID()));
-        if (isDoDuplicateFinderFinalCheck()) {
-            if (duplicateFinderFinal.putIfAbsent(link.getLinkID(), this) != null && !specialHandling) {
-                return;
+            if (isDoDuplicateFinderFinalCheck()) {
+                /* specialHandling: Crypted A - > B - > Final C , and A equals C */
+                // if link comes from flashgot, origin might be null
+                final boolean specialHandling = origin != null && (origin != link) && (StringUtils.equals(origin.getLinkID(), link.getLinkID()));
+                if (duplicateFinderFinal.putIfAbsent(link.getLinkID(), this) != null && !specialHandling) {
+                    return;
+                }
             }
-        }
-        if (isCrawledLinkFiltered(link) == false) {
-            /* link is not filtered, so we can process it normally */
-            crawledLinksCounter.incrementAndGet();
-            final DownloadLink downloadLink = link.getDownloadLink();
-            if (downloadLink != null) {
-                downloadLink.removeProperty(LINKCRAWLER_POSTPROCESSED_FLAG);
+            if (isCrawledLinkFiltered(link) == false) {
+                /* link is not filtered, so we can process it normally */
+                crawledLinksCounter.incrementAndGet();
+                getHandler().handleFinalLink(link);
             }
-            getHandler().handleFinalLink(link);
         }
     }
 
