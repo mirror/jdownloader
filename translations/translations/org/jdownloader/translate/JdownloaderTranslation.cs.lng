@@ -307,4 +307,5 @@ system_download_doCRC2_waiting=Čekání na kontrolu hash
 system_download_errors_couldnotdelete=Nelze odstranit existující část souboru
 system_download_errors_couldnotrename=Nelze přejmenovat dočasný soubor
 system_download_errors_linkisBlocked=Zrcadlení %s1 se načítá
+update_dialog_msg_x_updates_available=Aktualizace jsou připraveny k instalaci. Chcete spustit aktualizace nyní?
 video_description=Soubory videa: mp4, avi, mov, ...
