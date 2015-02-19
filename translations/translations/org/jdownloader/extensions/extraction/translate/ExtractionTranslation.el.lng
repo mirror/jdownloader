@@ -10,6 +10,7 @@ ValidateArchiveAction_ValidateArchiveAction_multi=Επικύρωση συμπι�
 ValidateArchiveAction_ValidateArchiveAction_object_=Επικύρωση συμπιεσμένων αρχείων
 ValidateArchiveAction_actionPerformed_=Το συμπιεσμένο αρχείο έχει %s1 τμήματα και είναι ολοκληρωμένο.
 ValidateArchiveAction_actionPerformed_bad=Το συμπιεσμένο αρχείο έχει %s1 τμήματα και δεν είναι ολοκληρωμένο.
+ValidateArchiveAction_actionPerformed_information=Πληροφορίες συμπιεσμένου αρχείου: %s1
 and=και τουλάχιστον
 archive=Συμπιεσμένο αρχείο:
 archive_file=Αρχείο:
