@@ -138,7 +138,7 @@ public class ParelliSavvyClubComDecrypter extends PluginForDecrypt {
             expiredate = expiredate.replaceAll("Z$", "+0000");
             filename = getFormattedDate(releasedate) + "_expires_" + getFormattedDate(expiredate) + "_" + title;
         } else {
-            filename = getFormattedDate(releasedate) + "_expires_NEVER_" + "_" + title;
+            filename = getFormattedDate(releasedate) + "_expires_NEVER_" + title;
         }
         dl.setProperty("decryptedtitle", title);
         dl.setProperty("decryptedreleasedate", getDateMilliseconds(releasedate));
