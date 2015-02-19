@@ -1,0 +1,13 @@
+addScheduleEntryDialog_time=Heure
+description=Planifier l'execution d'actions, le démarrage de téléchargements, ...
+lit_copy=Dupliquer
+scheduleTable_column_name=Nom
+scheduleTable_column_repeats=Répétitions
+title=Planificateur
+weekday_short_friday=Ven
+weekday_short_monday=Lun
+weekday_short_saturday=Sam
+weekday_short_sunday=Dim
+weekday_short_thursday=Jeu
+weekday_short_tuesday=Mar
+weekday_short_wednesday=Mer

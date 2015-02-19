@@ -1,4 +1,7 @@
 CaptchaQuickSettingsContainer_CaptchaQuickSettingsContainer=Accéder aux paramètres du Captcha
+DeleteOption_final_delete=Supprimer definitivement les fichiers
+DeleteOption_no_delete=Ne supprimer aucun fichier
+DeleteOption_recycle=Mettre les fichiers à la corbeille
 DownloadLink_setSkipped_statusmessage=Ignoré
 DownloadLink_setSkipped_statusmessage_account=Ignoré - Nécessite un compte
 DownloadLink_setSkipped_statusmessage_captcha=Ignoré - Captcha demandé
