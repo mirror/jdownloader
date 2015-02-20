@@ -1117,6 +1117,7 @@ SpeedlimitToggleAction_SpeedlimitToggleAction=Brzinomjer je vidljiv
 SplitPackagesByHost_SplitPackagesByHost_object_=Podijeli pakete po Domaćinu
 Sponsor_run_hide_msg=Jeste li sigurni da želite da sakrijete ovu ponudu?
 Sponsor_run_hide_title=Sakriti Specijalne ponude?
+StatsManager_StatsManager_advanced_survey_msg=Željeli bi da unaprijedimo panele poidešenja i da kreiramo čarobnjaka za podešenje koji vas vodi kroz najvažnija podešenja. Da bi to uradili, moramo znati koj eopcije su najčešće korištene.\r\nMožete nam pomoći tako što ćete dozvoliti JDownloader-u da pošalje listu opcija koje ste izmijenili. Lista ne sadrži nikakve lične podatke. Kliknite na [Prikaži Listu] ako želite da da pogledate listu prije slanja.
 StatsManager_StatsManager_advanced_survey_send=Pošalji listu sada!
 StatsManager_StatsManager_advanced_survey_show=Prikaži listu
 StatsManager_StatsManager_advanced_survey_title=Potrebna nam je vaša pomoć!
