@@ -112,7 +112,198 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         }
 
         try {
-            decryptedLinks.addAll(getDownloadLinks(this.br));
+            ArrayList<String> selectedFormats = new ArrayList<String>();
+            ArrayList<String> selectedLanguages = new ArrayList<String>();
+            HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
+            String title = null;
+            String fid;
+            String thumbnailUrl = null;
+            final String plain_domain = new Regex(parameter, "([a-z]+\\.arte\\.tv)").getMatch(0);
+            final String plain_domain_decrypter = plain_domain.replace("arte.tv", "artejd_decrypted_jd.tv");
+            final SubConfiguration cfg = SubConfiguration.getConfig("arte.tv");
+            ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+
+            String hybridAPIUrl = null;
+
+            if (parameter.matches(TYPE_CONCERT)) {
+                fid = new Regex(parameter, "concert\\.arte\\.tv/(.+)").getMatch(0);
+                if (!br.containsHTML("class=\"video\\-container\"")) {
+                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                }
+                fid = br.getRegex("\"http://concert\\.arte\\.tv/[a-z]{2}/player/(\\d+)").getMatch(0);
+                hybridAPIUrl = "http://concert.arte.tv/%s/player/%s";
+            } else {
+                /* Make sure not to download trailers or announcements to movies by grabbing the whole section of the videoplayer! */
+                final String video_section = br.getRegex("(<section class=\\'focus\\' data-action=.*?</section>)").getMatch(0);
+                if (video_section == null) {
+                    return null;
+                }
+                fid = new Regex(video_section, "/stream/player/[A-Za-z]{1,5}/([^<>\"/]*?)/").getMatch(0);
+                if (fid == null) {
+                    if (!br.containsHTML("arte_vp_config=")) {
+                        throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                    }
+                    return null;
+                }
+                /*
+                 * first "ALL" can e.g. be replaced with "HBBTV" to only get the HBBTV qualities. Also possible:
+                 * https://api.arte.tv/api/player/v1/config/fr/051939-015-A?vector=CINEMA
+                 */
+                hybridAPIUrl = "http://org-www.arte.tv/papi/tvguide/videos/stream/player/%s/%s/ALL/ALL.json";
+            }
+            if (cfg.getBooleanProperty(LOAD_LANGUAGE_URL, false)) {
+                selectedLanguages.add(this.getUrlLang());
+            } else {
+                if (cfg.getBooleanProperty(LOAD_LANGUAGE_GERMAN, false)) {
+                    selectedLanguages.add("de");
+                }
+                if (cfg.getBooleanProperty(LOAD_LANGUAGE_FRENCH, false)) {
+                    selectedLanguages.add("fr");
+                }
+            }
+            for (final String selectedLanguage : selectedLanguages) {
+                final String apiurl = this.getAPIUrl(hybridAPIUrl, selectedLanguage, fid);
+                br.getPage(apiurl);
+                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                final LinkedHashMap<String, Object> videoJsonPlayer = (LinkedHashMap<String, Object>) entries.get("videoJsonPlayer");
+                title = (String) videoJsonPlayer.get("VTI");
+                final String description = (String) videoJsonPlayer.get("VDE");
+                final String errormessage = (String) entries.get("msg");
+                if (errormessage != null) {
+                    final DownloadLink offline = createofflineDownloadLink(parameter);
+                    offline.setFinalFileName(title + errormessage);
+                    offline.setComment(description);
+                    ret.add(offline);
+                    return ret;
+                }
+                if (thumbnailUrl == null) {
+                    thumbnailUrl = (String) videoJsonPlayer.get("programImage");
+                }
+                final String vru = (String) videoJsonPlayer.get("VRU");
+                final String vra = (String) videoJsonPlayer.get("VRA");
+                if (vra == null || vru == null) {
+                    return null;
+                }
+                /*
+                 * In this case the video is not yet released and there usually is a value "VDB" which contains the release-date of the
+                 * video --> But we don't need that - right now, such videos are simply offline and will be added as offline.
+                 */
+                final String expired_message = jd.plugins.hoster.ArteTv.getExpireMessage(selectedLanguage, convertDateFormat(vra), convertDateFormat(vru));
+                if (expired_message != null) {
+                    final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
+                    link.setComment(description);
+                    link.setProperty("offline", true);
+                    link.setFinalFileName(expired_message + "_" + title);
+                    decryptedLinks.add(link);
+                    return decryptedLinks;
+                }
+                final Collection<Object> vsr_quals = ((LinkedHashMap<String, Object>) videoJsonPlayer.get("VSR")).values();
+                /* One packagename for every language */
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(title);
+
+                for (final Object o : vsr_quals) {
+                    final LinkedHashMap<String, Object> qualitymap = (LinkedHashMap<String, Object>) o;
+                    final int videoBitrate = ((Number) qualitymap.get("bitrate")).intValue();
+                    final int width = ((Number) qualitymap.get("width")).intValue();
+                    final int height = ((Number) qualitymap.get("height")).intValue();
+                    final String versionCode = (String) qualitymap.get("versionCode");
+                    final String versionLibelle = (String) qualitymap.get("versionLibelle");
+                    final String versionShortLibelle = (String) qualitymap.get("versionShortLibelle");
+                    final String url = (String) qualitymap.get("url");
+
+                    final int format_code = getFormatCode(versionShortLibelle, versionCode);
+                    final String short_lang_current = get_short_lang_from_format_code(format_code);
+                    final String quality_intern = selectedLanguage + "_" + get_intern_format_code_from_format_code(format_code) + "_http_" + videoBitrate;
+                    final String linkid = fid + "_" + quality_intern;
+                    final String filename = title + "_" + getLongLanguage(selectedLanguage) + "_" + get_user_format_from_format_code(format_code) + "_" + width + "x" + height + "_" + videoBitrate + ".mp4";
+                    /* Ignore HLS/RTMP versions */
+                    if (!url.startsWith("http") || url.contains(".m3u8")) {
+                        logger.info("Skipping " + filename + " because it is not a supported streaming format");
+                        continue;
+                    }
+                    if (!short_lang_current.equals(selectedLanguage)) {
+                        logger.info("Skipping " + filename + " because it is not the selected language");
+                        continue;
+                    }
+                    final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
+
+                    link.setFinalFileName(filename);
+                    try {
+                        /* JD2 only */
+                        link.setContentUrl(parameter);
+                    } catch (Throwable e) {
+                        /* Stable */
+                        link.setBrowserUrl(parameter);
+                    }
+                    link._setFilePackage(fp);
+                    link.setProperty("directURL", url);
+                    link.setProperty("directName", filename);
+                    link.setProperty("apiurl", apiurl);
+                    link.setProperty("VRA", convertDateFormat(vra));
+                    link.setProperty("VRU", convertDateFormat(vru));
+                    link.setProperty("quality_intern", quality_intern);
+                    link.setProperty("langShort", selectedLanguage);
+                    link.setProperty("mainlink", parameter);
+                    try {
+                        if (link.getComment() == null) {
+                            link.setComment(description);
+                        }
+                        link.setContentUrl(parameter);
+                        link.setLinkID(linkid);
+                    } catch (final Throwable e) {
+                        /* Not available in old 0.9.581 Stable */
+                        link.setBrowserUrl(parameter);
+                        link.setProperty("LINKDUPEID", linkid);
+                    }
+                    link.setAvailable(true);
+                    bestMap.put(quality_intern, link);
+                }
+
+                /* Build a list of selected formats */
+                for (final String format : formats) {
+                    if (cfg.getBooleanProperty(format, false)) {
+                        if (cfg.getBooleanProperty(V_NORMAL, false)) {
+                            selectedFormats.add(selectedLanguage + "_1_" + format);
+                        }
+                        /* 1 = German, 2 = French, 3 = Subtitled version, 4 = Subtitled version for disabled people, 5 = Audio description */
+                        if (cfg.getBooleanProperty(V_SUBTITLED, false)) {
+                            selectedFormats.add(selectedLanguage + "_3_" + format);
+                        }
+                        if (cfg.getBooleanProperty(V_SUBTITLE_DISABLED_PEOPLE, false)) {
+                            selectedFormats.add(selectedLanguage + "_4_" + format);
+                        }
+                        if (cfg.getBooleanProperty(V_AUDIO_DESCRIPTION, false)) {
+                            selectedFormats.add(selectedLanguage + "_5_" + format);
+                        }
+
+                    }
+                }
+            }
+
+            if (bestMap.isEmpty()) {
+                logger.warning("Decrypter broken");
+                return null;
+            }
+
+            /* Add selected & existing formats */
+            for (final String selectedFormat : selectedFormats) {
+                final DownloadLink thisformat = bestMap.get(selectedFormat);
+                if (thisformat != null) {
+                    decryptedLinks.add(thisformat);
+                }
+            }
+
+            if (cfg.getBooleanProperty(THUMBNAIL, false)) {
+                final DownloadLink link = createDownloadlink("directhttp://" + thumbnailUrl);
+                link.setFinalFileName(title + ".jpg");
+                decryptedLinks.add(link);
+            }
+            if (decryptedLinks.size() > 1) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(title);
+                fp.addLinks(decryptedLinks);
+            }
         } catch (final Exception e) {
             if (e instanceof DecrypterException && e.getMessage().equals(EXCEPTION_LINKOFFLINE)) {
                 decryptedLinks.add(createofflineDownloadLink(parameter));
