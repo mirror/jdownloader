@@ -63,7 +63,6 @@ public class RDMdthk extends PluginForDecrypt {
     private SubConfiguration                    cfg                   = null;
 
     /* Variables */
-
     private final ArrayList<DownloadLink>       newRet                = new ArrayList<DownloadLink>();
     private final HashMap<String, DownloadLink> bestMap               = new HashMap<String, DownloadLink>();
     private String                              subtitleLink          = null;
@@ -299,7 +298,7 @@ public class RDMdthk extends PluginForDecrypt {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(xml_URL);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.getHttpConnection().getContentType().equals("application/xml")) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
         title = getXML("shareTitle");
