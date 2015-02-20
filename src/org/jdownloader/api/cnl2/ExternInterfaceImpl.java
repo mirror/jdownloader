@@ -398,7 +398,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 final String finalPackageName = request.getParameterbyKey("package");
                 final String finalDestination = request.getParameterbyKey("dir");
 
-                job.setCrawledLinkModifierPrePackagizer(new CrawledLinkModifier() {
+                final CrawledLinkModifier modifier = new CrawledLinkModifier() {
                     private HashSet<String> pws = null;
                     {
                         if (archivePasswords != null) {
@@ -433,6 +433,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                         }
                         if (StringUtils.isNotEmpty(finalDestination)) {
                             getPackageInfo(link).setDestinationFolder(finalDestination);
+                            getPackageInfo(link).setIgnoreVarious(true);
                             getPackageInfo(link).setUniqueId(null);
                         }
                         if (pws != null && pws.size() > 0) {
@@ -443,7 +444,9 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                             link.setAutoStartEnabled(true);
                         }
                     }
-                });
+                };
+                job.setCrawledLinkModifierPrePackagizer(modifier);
+                job.setCrawledLinkModifierPostPackagizer(modifier);
 
                 LazyHostPlugin lazyp = HostPluginController.getInstance().get("DirectHTTP");
                 final PluginForHost defaultplg = lazyp.getPrototype(null);
