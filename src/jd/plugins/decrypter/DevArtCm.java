@@ -85,6 +85,11 @@ public class DevArtCm extends PluginForDecrypt {
             checkFeatureDialog();
         }
         PARAMETER = param.toString();
+        /* Remove trash */
+        final String replace = new Regex(PARAMETER, "(#.+)").getMatch(0);
+        if (replace != null) {
+            PARAMETER = PARAMETER.replace(replace, "");
+        }
         if (PARAMETER.matches(LINKTYPE_JOURNAL)) {
             final DownloadLink journal = createDownloadlink(PARAMETER.replace("deviantart.com/", "deviantartdecrypted.com/"));
             journal.setName(new Regex(PARAMETER, "deviantart\\.com/journal/([\\w\\-]+)").getMatch(0));

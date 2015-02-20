@@ -50,6 +50,7 @@ public class SpankWireCom extends PluginForHost {
     }
 
     // main code by external user "hpdub33"
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -87,7 +88,7 @@ public class SpankWireCom extends PluginForHost {
                 downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
                 return AvailableStatus.TRUE;
             }
-            filename = br.getRegex("playerData.articleTitle\\s+= \'(([^\']+))\';").getMatch(0);
+            filename = br.getRegex("playerData.articleTitle\\s+= \'(([^\']*?))\';").getMatch(0);
             if (filename != null) {
                 filename = Encoding.htmlDecode(filename.trim());
                 filename = filename.replaceAll("\\+", " ");
@@ -95,6 +96,9 @@ public class SpankWireCom extends PluginForHost {
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (filename.equals("")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         downloadLink.setName(filename.trim());
         // File not found can have good name

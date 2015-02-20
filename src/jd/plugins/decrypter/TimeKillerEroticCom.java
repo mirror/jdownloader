@@ -83,9 +83,12 @@ public class TimeKillerEroticCom extends PluginForDecrypt {
                 dl.setFinalFileName(filename + ".flv");
                 return decryptedLinks;
             }
-            externID = br.getRegex("\"(http://(www\\.)?xhamster\\.com/xembed\\.php\\?video=\\d+)\"").getMatch(0);
+            externID = br.getRegex("\"http://(?:www\\.)?xhamster\\.com/xembed\\.php\\?video=(\\d+)\"").getMatch(0);
+            if (externID == null) {
+                externID = br.getRegex("xhamsterplayer\\.php\\?video=(\\d+)\"").getMatch(0);
+            }
             if (externID != null) {
-                decryptedLinks.add(createDownloadlink(externID));
+                decryptedLinks.add(createDownloadlink("http://xhamster.com/movies/" + externID + "/xxx.html"));
                 return decryptedLinks;
             }
             externID = br.getRegex("file=(http://(www\\.)?hostave\\d+\\.net/.*?)\\&screenfile").getMatch(0);

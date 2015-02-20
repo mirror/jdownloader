@@ -505,11 +505,6 @@ public class VideozerUs extends PluginForHost {
                     }
                 }
                 br.getPage(loginstart + this.getHost() + "/files//account_home." + type);
-                if (!br.containsHTML("class=\"badge badge\\-success\">PAID USER</span>")) {
-                    account.setProperty("free", true);
-                } else {
-                    account.setProperty("free", false);
-                }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(mainpage);
@@ -538,16 +533,12 @@ public class VideozerUs extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        if (account.getBooleanProperty("free", false)) {
-            try {
-                account.setType(AccountType.FREE);
-                account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
-            MAXPREM.set(account_FREE_MAXDOWNLOADS);
-            ai.setStatus("Registered (free) user");
-        } else {
+        if (br.containsHTML("class=\"badge badge\\-danger\">ADMIN AREA</span>")) {
+            /* Admin accounts can expire but they're still premium (yeah, this logic!) */
+            account.setProperty("free", false);
+            ai.setStatus("Admin premium account");
+        } else if (br.containsHTML("class=\"badge badge\\-success\">PAID USER</span>")) {
+            account.setProperty("free", false);
             br.getPage("http://" + this.getHost() + "/upgrade." + type);
             /* If the premium account is expired we'll simply accept it as a free account. */
             final String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
@@ -578,6 +569,15 @@ public class VideozerUs extends PluginForHost {
                 MAXPREM.set(account_PREMIUM_MAXDOWNLOADS);
                 ai.setStatus("Premium account");
             }
+        } else {
+            try {
+                account.setType(AccountType.FREE);
+                account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+            }
+            MAXPREM.set(account_FREE_MAXDOWNLOADS);
+            ai.setStatus("Registered (free) user");
         }
         account.setValid(true);
         ai.setUnlimitedTraffic();
