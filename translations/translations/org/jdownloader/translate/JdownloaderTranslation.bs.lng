@@ -307,4 +307,5 @@ system_download_doCRC2_waiting=Čekanje na Hash provjeru
 system_download_errors_couldnotdelete=Nije bilo moguće izbrisati postojeći part dokument
 system_download_errors_couldnotrename=Nije bilo moguće preimenovati Dio (Part) dokumenta
 system_download_errors_linkisBlocked=Mirror %s1 se učitava
+update_dialog_msg_x_updates_available=Nadgradnje su spremne za Instalaciju. Želite li sada pokrenuti nadgradnju?
 video_description=Video dokumenti: mp4, avi, mov,...
