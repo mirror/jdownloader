@@ -58,6 +58,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.os.CrossSystem;
@@ -846,10 +847,11 @@ public class ShareOnlineBiz extends PluginForHost {
             this.requestFileInformation(link);
             doFree(link);
         } else {
+            final boolean preferHttps = userPrefersHttps() && !StringUtils.equalsIgnoreCase(account.getStringProperty("group", null), "VIP");
             final String linkID = getID(link);
             String dlC = infos.get("dl");
             if (dlC != null && !"not_available".equalsIgnoreCase(dlC)) {
-                if (userPrefersHttps()) {
+                if (preferHttps) {
                     br.setCookie("https://www.share-online.biz", "dl", dlC);
                 } else {
                     br.setCookie("http://www.share-online.biz", "dl", dlC);
@@ -857,7 +859,7 @@ public class ShareOnlineBiz extends PluginForHost {
             }
             String a = infos.get("a");
             if (a != null && !"not_available".equalsIgnoreCase(a)) {
-                if (userPrefersHttps()) {
+                if (preferHttps) {
                     br.setCookie("https://www.share-online.biz", "a", a);
                 } else {
                     br.setCookie("http://www.share-online.biz", "a", a);
@@ -942,7 +944,7 @@ public class ShareOnlineBiz extends PluginForHost {
             br.setFollowRedirects(true);
             /* Datei herunterladen */
             /* api does allow resume, but only 1 chunk */
-            if (userPrefersHttps()) {
+            if (preferHttps) {
                 dlURL = dlURL.replace("http://", "https://");
             }
             logger.info("used url: " + dlURL);
