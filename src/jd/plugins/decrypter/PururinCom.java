@@ -43,6 +43,7 @@ public class PururinCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(true);
         String parameter = param.toString();
         parameter = parameter.replaceFirst("pururin\\.com/(gallery|thumbs)/", "pururin\\.com/gallery/");
         getPage(parameter);
@@ -92,6 +93,7 @@ public class PururinCom extends PluginForDecrypt {
         } else if (links.length > 99) {
             df_links = new DecimalFormat("000");
         }
+        br.setFollowRedirects(false);
         for (String link : links) {
             final DownloadLink dl = createDownloadlink("http://pururin.com" + link);
             dl.setAvailable(true);
@@ -100,6 +102,11 @@ public class PururinCom extends PluginForDecrypt {
             dl.setName(fn[0] + "-" + df_links.format(Integer.parseInt(fn[2])) + fn[3].replace(".html", ".jpg"));
             dl.setProperty("links_length", links.length);
             decryptedLinks.add(dl);
+        }
+        /* Sometimes a gallery is downloadable as a single file */
+        final String downloadlink = br.getRegex("class=\"btn btn\\-download\" href=\"(http[^<>\"]*?)\"").getMatch(0);
+        if (downloadlink != null) {
+            decryptedLinks.add(createDownloadlink(downloadlink));
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();

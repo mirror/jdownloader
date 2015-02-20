@@ -53,10 +53,12 @@ public class ProPornCom extends PluginForHost {
 
     /* Similar sites: drtuber.com, proporn.com, viptube.com */
     /* IMPORTANT: If the crypto stuff fails, use the mobile version of the sites to get uncrypted finallinks! */
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setCookie("http://proporn.com/", "lang", "en");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("class=\"nothing\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

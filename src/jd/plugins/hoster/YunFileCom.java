@@ -65,7 +65,7 @@ public class YunFileCom extends PluginForHost {
             /* we first have to load the plugin, before we can reference it */
             agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
         }
-        prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/34.0");
+        prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:35.0) Gecko/20100101 Firefox/35.0");
         prepBr.getHeaders().put("Accept-Language", "de,en-us;q=0.7,en;q=0.3");
         prepBr.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         prepBr.getHeaders().put("Accept-Charset", null);
@@ -104,6 +104,7 @@ public class YunFileCom extends PluginForHost {
     }
 
     // Works like MountFileCom and HowFileCom
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         // this.setBrowserExclusive();
@@ -170,6 +171,13 @@ public class YunFileCom extends PluginForHost {
         String userid = null;
         String fileid = null;
         requestFileInformation(downloadLink);
+        br.setCookie("http://yunfile.com/", "validCodeUrl", "\"http://page1.yunfile.com:8880/view?module=service&action=queryValidCode\"");
+        br.setCookie("http://p1.yunfile.com/", "JSESSIONID", br.getCookie("http://yunfile.com/", "JSESSIONID"));
+        br.cloneBrowser().openGetConnection("http://img.yfdisk.com/templates/yunfile/user/skyblue/css/skyblue.css?version=20150128");
+        br.cloneBrowser().openGetConnection("http://img.yfdisk.com/templates/yunfile/js/jquery.js?version=20150128");
+        br.cloneBrowser().openGetConnection("http://img.yfdisk.com/templates/yunfile/user/skyblue/js/skyblue.js?version=20150128");
+        // br.openGetConnection("");
+        // br.openGetConnection("");
         /* Try multiple times - it will also fail in browser, most times on first attempt because wrong domain is used. */
         for (int i = 1; i <= 3; i++) {
             if (br.getHttpConnection().getResponseCode() == 404) {
@@ -213,8 +221,8 @@ public class YunFileCom extends PluginForHost {
                 freelink = freelink.replace(".html", "/" + Encoding.urlEncode(code) + ".html");
             }
             try {
-                br.cloneBrowser().getPage("http://www.yunfile.com/ckcounter.jsp?userId=" + userid);
-                br.cloneBrowser().getPage("http://www.yunfile.com//counter.jsp?userId=" + userid + "&fileId=" + fileid + "&dr=" + downloadLink.getDownloadURL());
+                // br.cloneBrowser().getPage("http://www.yunfile.com/ckcounter.jsp?userId=" + userid);
+                br.cloneBrowser().getPage("http://www.yunfile.com//counter.jsp?userId=" + userid + "&fileId=" + fileid + "&dr=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
             } catch (final Throwable e) {
             }
             int wait = 30;
@@ -231,23 +239,28 @@ public class YunFileCom extends PluginForHost {
         }
 
         /* Check here if the plugin is broken */
+        final String savecdnurl = br.getRegex("saveCdnUrl=\"(http[^<>\"]*?)\"").getMatch(0);
+        final String finalurl_pt2 = br.getRegex("form\\.setAttribute\\(\"action\",saveCdnUrl\\+\"(view[^<>\"]*?)\");").getMatch(0);
         final String vid1 = br.getRegex("name=\"vid1\" value=\"([a-z0-9]+)\"").getMatch(0);
         final String vid = br.getRegex("var vericode = \"([a-z0-9]+)\";").getMatch(0);
-        action = br.getRegex("\"(http://dl\\d+\\.yunfile\\.com/view\\?fid=[a-z0-9]+)\"").getMatch(0);
         final String md5 = br.getRegex("name=\"md5\" value=\"([a-z0-9]{32})\"").getMatch(0);
         logger.info("vid = " + vid + " vid1 = " + vid1 + " action = " + action + " md5 = " + md5);
-        if (action == null || vid1 == null || vid == null || md5 == null) {
+        if (vid1 == null || vid == null || md5 == null || savecdnurl == null || finalurl_pt2 == null) {
             if (br.containsHTML(CAPTCHAPART)) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        action = savecdnurl + finalurl_pt2;
         br.setFollowRedirects(true);
         postData = "module=fileService&action=downfile&userId=" + userid + "&fileId=" + fileid + "&vid=" + vid + "&vid1=" + vid1 + "&md5=" + md5;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, action, postData, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             checkErrors();
+            if (br.containsHTML(">Please wait")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -261,6 +274,7 @@ public class YunFileCom extends PluginForHost {
         return freelink;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);

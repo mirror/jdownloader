@@ -75,4 +75,9 @@ public class RefSo extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    /* More can lead to blank captchas */
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
+    }
+
 }
