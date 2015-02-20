@@ -159,6 +159,11 @@ public class DrssTvDecrypter extends PluginForDecrypt {
                 /* Add special quality if available */
                 final String specialVimeoFULL_HDLink = br.getRegex("<div class=\"player active current player\\-1\">[\t\n\r ]+<div[^>]+data\\-url=\"(http://player\\.vimeo.com/external/\\d+\\.hd\\.mp4\\?s=[a-z0-9]+)\"").getMatch(0);
                 if (specialVimeoFULL_HDLink != null) {
+                    /*
+                     * In theory this is a bad workaround but it's the best solution here as we do not easily get a http link to this
+                     * quality via the vimeo "API" so it's easier to just grab this one as it's plain in the html code and download it via
+                     * hostplugin.
+                     */
                     MAIN.setProperty("special_vimeo", true);
                     DECRYPTEDLINKS.add(MAIN);
                 } else if (externID != null) {

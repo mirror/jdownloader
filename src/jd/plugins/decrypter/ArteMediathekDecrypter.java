@@ -70,7 +70,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     }
 
     /** TODO: Rewrite this baby, then also use a json parser... */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "deprecation" })
     /*
      * E.g. smil (rtmp) url:
      * http://www.arte.tv/player/v2/webservices/smil.smil?json_url=http%3A%2F%2Farte.tv%2Fpapi%2Ftvguide%2Fvideos%2Fstream
@@ -82,6 +82,18 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         JDUtilities.getPluginForHost("arte.tv");
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         parameter = param.toString();
+        ArrayList<String> selectedFormats = new ArrayList<String>();
+        ArrayList<String> selectedLanguages = new ArrayList<String>();
+        HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
+        String title = getUrlFilename();
+        String fid;
+        String thumbnailUrl = null;
+        final String plain_domain = new Regex(parameter, "([a-z]+\\.arte\\.tv)").getMatch(0);
+        final String plain_domain_decrypter = plain_domain.replace("arte.tv", "artejd_decrypted_jd.tv");
+        final SubConfiguration cfg = SubConfiguration.getConfig("arte.tv");
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        String hybridAPIUrl = null;
+
         setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(parameter);
@@ -113,18 +125,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         }
 
         try {
-            ArrayList<String> selectedFormats = new ArrayList<String>();
-            ArrayList<String> selectedLanguages = new ArrayList<String>();
-            HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
-            String title = null;
-            String fid;
-            String thumbnailUrl = null;
-            final String plain_domain = new Regex(parameter, "([a-z]+\\.arte\\.tv)").getMatch(0);
-            final String plain_domain_decrypter = plain_domain.replace("arte.tv", "artejd_decrypted_jd.tv");
-            final SubConfiguration cfg = SubConfiguration.getConfig("arte.tv");
-            ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-
-            String hybridAPIUrl = null;
 
             if (parameter.matches(TYPE_CONCERT)) {
                 fid = new Regex(parameter, "concert\\.arte\\.tv/(.+)").getMatch(0);
@@ -142,6 +142,11 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 fid = new Regex(video_section, "/stream/player/[A-Za-z]{1,5}/([^<>\"/]*?)/").getMatch(0);
                 if (fid == null) {
                     if (!br.containsHTML("arte_vp_config=")) {
+                        throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                    }
+                    /* Title is only available on DVD (buyable) */
+                    if (video_section.contains("class='badge-vod'>VOD DVD</span>")) {
+                        title = "only_available_on_DVD_" + title;
                         throw new DecrypterException(EXCEPTION_LINKOFFLINE);
                     }
                     return null;
@@ -165,6 +170,11 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             for (final String selectedLanguage : selectedLanguages) {
                 final String apiurl = this.getAPIUrl(hybridAPIUrl, selectedLanguage, fid);
                 br.getPage(apiurl);
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    /* In most cases this simply means that one of the selected languages is not available so let's go on. */
+                    logger.info("This language is not available: " + selectedLanguage);
+                    continue;
+                }
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
                 final LinkedHashMap<String, Object> videoJsonPlayer = (LinkedHashMap<String, Object>) entries.get("videoJsonPlayer");
                 title = (String) videoJsonPlayer.get("VTI");
@@ -317,7 +327,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             }
         } catch (final Exception e) {
             if (e instanceof DecrypterException && e.getMessage().equals(EXCEPTION_LINKOFFLINE)) {
-                decryptedLinks.add(createofflineDownloadLink(parameter));
+                final DownloadLink offline = createofflineDownloadLink(parameter);
+                offline.setFinalFileName(title);
+                decryptedLinks.add(offline);
                 return decryptedLinks;
             }
             throw e;
@@ -394,15 +406,8 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 final String description = (String) videoJsonPlayer.get("VDE");
                 final String errormessage = (String) entries.get("msg");
                 if (errormessage != null) {
-                    final DownloadLink offline = createofflineDownloadLink(parameter);
-                    offline.setFinalFileName(title + errormessage);
-                    try {
-                        offline.setComment(description);
-                    } catch (final Throwable e) {
-                        /* Not available in 0.9.581 Stable */
-                    }
-                    ret.add(offline);
-                    return ret;
+                    title = errormessage + "_" + title;
+                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
                 }
                 if (thumbnailUrl == null) {
                     thumbnailUrl = (String) videoJsonPlayer.get("programImage");
@@ -651,6 +656,16 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             apilang = "F";
         }
         return apilang;
+    }
+
+    private String getUrlFilename() {
+        String urlfilename;
+        if (parameter.matches(TYPE_CONCERT)) {
+            urlfilename = new Regex(parameter, "http://concert\\.arte\\.tv/(?:de|fr)/([a-z0-9\\-]+)").getMatch(0);
+        } else {
+            urlfilename = new Regex(parameter, "http://www\\.arte\\.tv/guide/[a-z]{2}/\\d+\\-\\d+/([A-Za-z0-9\\-_]+)").getMatch(0);
+        }
+        return urlfilename;
     }
 
     private String getLongLanguage(final String shortLanguage) {

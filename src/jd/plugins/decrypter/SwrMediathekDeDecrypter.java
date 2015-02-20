@@ -40,12 +40,6 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String           DOMAIN               = "swrmediathek.de";
-
-    private LinkedHashMap<String, String> FOUNDQUALITIES       = new LinkedHashMap<String, String>();
-    private String                        FILENAME             = null;
-    private String                        PARAMETER            = null;
-
     /** Settings stuff */
     private static final String           FASTLINKCHECK        = "FASTLINKCHECK";
     private static final String           Q_SUBTITLES          = "Q_SUBTITLES";
@@ -54,6 +48,13 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
     private static final String           ALLOW_544p           = "ALLOW_544p";
     private static final String           ALLOW_288p           = "ALLOW_288p";
     private static final String           ALLOW_180p           = "ALLOW_180p";
+    /* Constants */
+    private static final String           DOMAIN               = "swrmediathek.de";
+
+    /* Variables */
+    private LinkedHashMap<String, String> FOUNDQUALITIES       = new LinkedHashMap<String, String>();
+    private String                        FILENAME             = null;
+    private String                        PARAMETER            = null;
 
     private static Object                 ctrlLock             = new Object();
     private static AtomicBoolean          pluginLoaded         = new AtomicBoolean(false);
@@ -93,7 +94,7 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
              * http://swrmediathek.de/player.htm?show=3229e410-166d-11e4-9894-0026b975f2e6
              */
             br.getPage("http://swrmediathek.de/AjaxEntry?ekey=" + VIDEOID);
-            if (br.getHttpConnection().getResponseCode() == 440 || br.toString().length() < 100) {
+            if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || br.toString().length() < 100) {
                 final DownloadLink dl = createDownloadlink("directhttp://" + PARAMETER);
                 dl.setFinalFileName(VIDEOID);
                 dl.setProperty("offline", true);
@@ -219,12 +220,14 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    @SuppressWarnings("deprecation")
     private DownloadLink getVideoDownloadlink(final String plain_qualityname) throws ParseException {
+        DownloadLink dl = null;
         final String directlink = FOUNDQUALITIES.get(plain_qualityname);
         if (directlink != null) {
             final String ext = directlink.substring(directlink.lastIndexOf("."));
             final String ftitle = FILENAME + "_" + plain_qualityname + ext;
-            final DownloadLink dl = createDownloadlink("http://swrmediathekdecrypted.de/" + System.currentTimeMillis() + new Random().nextInt(10000));
+            dl = createDownloadlink("http://swrmediathekdecrypted.de/" + System.currentTimeMillis() + new Random().nextInt(10000));
             dl.setProperty("directlink", directlink);
             dl.setProperty("plain_qualityname", plain_qualityname);
             dl.setProperty("mainlink", PARAMETER);
@@ -236,12 +239,17 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
             if (FASTLINKCHECK_active) {
                 dl.setAvailable(true);
             }
+            try {
+                dl.setContainerUrl(PARAMETER);
+            } catch (final Throwable e) {
+                dl.setBrowserUrl(PARAMETER);
+            }
             return dl;
-        } else {
-            return null;
         }
+        return dl;
     }
 
+    @SuppressWarnings("deprecation")
     private DownloadLink getSubtitleDownloadlink(final DownloadLink vidlink) throws ParseException {
         final String plain_qualityname = vidlink.getStringProperty("plain_qualityname", null);
         final String ext = ".xml";
@@ -256,6 +264,11 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
         dl.setProperty("plain_ext", ".srt");
         dl.setProperty("LINKDUPEID", DOMAIN + "_" + ftitle);
         dl.setName(ftitle);
+        try {
+            dl.setContainerUrl(PARAMETER);
+        } catch (final Throwable e) {
+            dl.setBrowserUrl(PARAMETER);
+        }
         dl.setAvailable(true);
         return dl;
     }
