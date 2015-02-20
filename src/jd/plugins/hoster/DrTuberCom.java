@@ -186,7 +186,7 @@ public class DrTuberCom extends PluginForHost {
                     if (new_handling) {
                         /*
                          * Very very very very bad js workaround
-                         * 
+                         *
                          * IMPORTANT: If we find no other way to fix this in the future, switch to /embed/ links, old handling still works
                          * fine for them
                          */
@@ -261,49 +261,50 @@ public class DrTuberCom extends PluginForHost {
         downloadLink.setProperty("ftitle", filename);
         downloadLink.setProperty("fext", ext);
         downloadLink.setName(filename + ext);
-        final Browser br2 = br.cloneBrowser();
-        URLConnectionAdapter con = null;
-        try {
-            if (use_mobile) {
-                // br2.setFollowRedirects(false);
-                // br2.getPage(DLLINK);
-                // DLLINK = br2.getRedirectLocation();
-                // if (DLLINK == null) {
-                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                // }
-                br2.setFollowRedirects(true);
-                br2.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-                // br2.getHeaders().put("Accept-Encoding", "identity");
-                br2.getHeaders().put("Accept-Encoding", "gzip, deflate");
-                br2.getHeaders().put("Accept-Language", "de,en-US;q=0.7,en;q=0.3");
-                br2.getHeaders().put("Cache-Control", null);
-                br2.getHeaders().put("Pragma", null);
-                // br2.getHeaders().put("", "");
-                // br2.getHeaders().put("", "");
-            } else {
-                br2.getHeaders().put("Referer", "http://www.drtuber.com/player/videoplayer.swf?v=18.41&ps=CCCCCC");
-                br2.getHeaders().put("Accept-Language", "de,en-US;q=0.7,en;q=0.3");
-                br2.getHeaders().put("Accept-Encoding", "gzip,deflate");
-            }
-            try {
-                /* @since JD2 */
-                con = br2.openGetConnection(DLLINK);
-            } catch (final Throwable t) {
-                /* Not supported in old 0.9.581 Stable */
-                con = br2.openGetConnection(DLLINK);
-            }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
-        }
+        // final Browser br2 = br.cloneBrowser();
+        // URLConnectionAdapter con = null;
+        // try {
+        // if (use_mobile) {
+        // // br2.setFollowRedirects(false);
+        // // br2.getPage(DLLINK);
+        // // DLLINK = br2.getRedirectLocation();
+        // // if (DLLINK == null) {
+        // // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // // }
+        // br2.setFollowRedirects(true);
+        // br2.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        // // br2.getHeaders().put("Accept-Encoding", "identity");
+        // br2.getHeaders().put("Accept-Encoding", "gzip, deflate");
+        // br2.getHeaders().put("Accept-Language", "de,en-US;q=0.7,en;q=0.3");
+        // br2.getHeaders().put("Cache-Control", null);
+        // br2.getHeaders().put("Pragma", null);
+        // // br2.getHeaders().put("", "");
+        // // br2.getHeaders().put("", "");
+        // } else {
+        // br2.getHeaders().put("Referer", "http://www.drtuber.com/player/videoplayer.swf?v=18.41&ps=CCCCCC");
+        // br2.getHeaders().put("Accept-Language", "de,en-US;q=0.7,en;q=0.3");
+        // br2.getHeaders().put("Accept-Encoding", "gzip,deflate");
+        // }
+        // try {
+        // /* @since JD2 */
+        // con = br2.openGetConnection(DLLINK);
+        // } catch (final Throwable t) {
+        // /* Not supported in old 0.9.581 Stable */
+        // con = br2.openGetConnection(DLLINK);
+        // }
+        // if (!con.getContentType().contains("html")) {
+        // downloadLink.setDownloadSize(con.getLongContentLength());
+        // } else {
+        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // }
+        // return AvailableStatus.TRUE;
+        // } finally {
+        // try {
+        // con.disconnect();
+        // } catch (final Throwable e) {
+        // }
+        // }
+        return AvailableStatus.TRUE;
     }
 
     @Override
