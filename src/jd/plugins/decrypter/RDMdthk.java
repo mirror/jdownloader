@@ -174,6 +174,10 @@ public class RDMdthk extends PluginForDecrypt {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
         br.getPage("http://www.ardmediathek.de/play/media/" + original_ard_ID + "?devicetype=pc&features=flash");
+        /* No json --> No media to crawl! */
+        if (!br.getHttpConnection().getContentType().contains("application/json")) {
+            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+        }
         subtitleLink = getJson("_subtitleUrl", br.toString());
         int t = 0;
 

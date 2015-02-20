@@ -61,6 +61,7 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
     private String                        VIDEOID        = null;
     private String                        SUBTITLE_URL   = null;
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -102,19 +103,32 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
              * http://swrmediathek.de/player.htm?show=3229e410-166d-11e4-9894-0026b975f2e6
              */
             br.getPage("http://swrmediathek.de/AjaxEntry?ekey=" + VIDEOID);
-            SUBTITLE_URL = br.getRegex("\"entry_capuri\":\"(https?://[^<>\"]*?)\"").getMatch(0);
-            br.getPage("http://swrmediathek.de/rtmpQuals/" + VIDEOID + "/clips.smil");
-            final String[] qualities = br.getRegex("src=\"([^<>\"]*?\\.mp4)\"").getColumn(0);
-            for (String directquality : qualities) {
-                directquality = "http://pd-ondemand.swr.de/" + directquality;
-                if (directquality.contains("m.mp4")) {
-                    FOUNDQUALITIES.put("288p", directquality);
-                } else if (directquality.contains("xl.mp4")) {
-                    FOUNDQUALITIES.put("720p", directquality);
-                } else if (directquality.contains("l.mp4")) {
-                    FOUNDQUALITIES.put("544p", directquality);
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            final ArrayList<Object> sub = (ArrayList) entries.get("sub");
+            for (final Object o : sub) {
+                final LinkedHashMap<String, Object> media_info = (LinkedHashMap<String, Object>) o;
+                final String media_type = (String) media_info.get("name");
+                /* Skip thumbnails and other stuff */
+                if (media_type == null || !media_type.equals("entry_media")) {
+                    continue;
+                }
+                final LinkedHashMap<String, Object> attr = (LinkedHashMap<String, Object>) media_info.get("attr");
+                // final String media_qualitynumber = (String) attr.get("val1");
+                final String media_codec = (String) attr.get("val0");
+                final String media_url = (String) attr.get("val2");
+                /* Skip hds/hls mobile stuff */
+                if (media_url == null || media_codec == null || !media_codec.equals("h264")) {
+                    continue;
+                }
+                if (media_url.contains("m.mp4")) {
+                    FOUNDQUALITIES.put("288p", media_url);
+                } else if (media_url.contains("xl.mp4")) {
+                    FOUNDQUALITIES.put("720p", media_url);
+                } else if (media_url.contains("l.mp4")) {
+                    FOUNDQUALITIES.put("544p", media_url);
                 }
             }
+            SUBTITLE_URL = (String) entries.get("entry_capuri");
 
             if (FOUNDQUALITIES == null) {
                 logger.warning("Decrypter broken for link: " + PARAMETER);
