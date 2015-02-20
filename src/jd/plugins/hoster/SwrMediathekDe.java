@@ -61,6 +61,7 @@ public class SwrMediathekDe extends PluginForHost {
     private static final String ALLOW_720p    = "ALLOW_720p";
     private static final String ALLOW_544p    = "ALLOW_544p";
     private static final String ALLOW_288p    = "ALLOW_288p";
+    private static final String ALLOW_180p    = "ALLOW_180p";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, ParseException {
@@ -219,6 +220,7 @@ public class SwrMediathekDe extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.SwrMediathekDe.best", "Load best version ONLY")).setDefaultValue(true);
         getConfig().addEntry(bestonly);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_180p, JDL.L("plugins.hoster.SwrMediathekDe.check180p", "Grab 180?")).setDefaultValue(false).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_288p, JDL.L("plugins.hoster.SwrMediathekDe.check288p", "Grab 288p?")).setDefaultValue(false).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_544p, JDL.L("plugins.hoster.SwrMediathekDe.check544p", "Grab 544p?")).setDefaultValue(false).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_720p, JDL.L("plugins.hoster.SwrMediathekDe.check720p", "Grab 720p?")).setDefaultValue(false).setEnabledCondidtion(bestonly, false));

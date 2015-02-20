@@ -70,6 +70,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     }
 
     /** TODO: Rewrite this baby, then also use a json parser... */
+    @SuppressWarnings("unchecked")
     /*
      * E.g. smil (rtmp) url:
      * http://www.arte.tv/player/v2/webservices/smil.smil?json_url=http%3A%2F%2Farte.tv%2Fpapi%2Ftvguide%2Fvideos%2Fstream
@@ -172,7 +173,11 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 if (errormessage != null) {
                     final DownloadLink offline = createofflineDownloadLink(parameter);
                     offline.setFinalFileName(title + errormessage);
-                    offline.setComment(description);
+                    try {
+                        offline.setComment(description);
+                    } catch (final Throwable e) {
+                        /* Not available in 0.9.581 Stable */
+                    }
                     ret.add(offline);
                     return ret;
                 }
@@ -191,7 +196,11 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 final String expired_message = jd.plugins.hoster.ArteTv.getExpireMessage(selectedLanguage, convertDateFormat(vra), convertDateFormat(vru));
                 if (expired_message != null) {
                     final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
-                    link.setComment(description);
+                    try {
+                        link.setComment(description);
+                    } catch (final Throwable e) {
+                        /* Not available in 0.9.581 Stable */
+                    }
                     link.setProperty("offline", true);
                     link.setFinalFileName(expired_message + "_" + title);
                     decryptedLinks.add(link);
@@ -246,8 +255,10 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     link.setProperty("langShort", selectedLanguage);
                     link.setProperty("mainlink", parameter);
                     try {
-                        if (link.getComment() == null) {
+                        try {
                             link.setComment(description);
+                        } catch (final Throwable e) {
+                            /* Not available in 0.9.581 Stable */
                         }
                         link.setContentUrl(parameter);
                         link.setLinkID(linkid);
@@ -385,7 +396,11 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 if (errormessage != null) {
                     final DownloadLink offline = createofflineDownloadLink(parameter);
                     offline.setFinalFileName(title + errormessage);
-                    offline.setComment(description);
+                    try {
+                        offline.setComment(description);
+                    } catch (final Throwable e) {
+                        /* Not available in 0.9.581 Stable */
+                    }
                     ret.add(offline);
                     return ret;
                 }
@@ -404,7 +419,11 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 final String expired_message = jd.plugins.hoster.ArteTv.getExpireMessage(selectedLanguage, convertDateFormat(vra), convertDateFormat(vru));
                 if (expired_message != null) {
                     final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
-                    link.setComment(description);
+                    try {
+                        link.setComment(description);
+                    } catch (final Throwable e) {
+                        /* Not available in 0.9.581 Stable */
+                    }
                     link.setProperty("offline", true);
                     link.setFinalFileName(expired_message + "_" + title);
                     newRet.add(link);
@@ -459,8 +478,10 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     link.setProperty("langShort", selectedLanguage);
                     link.setProperty("mainlink", parameter);
                     try {
-                        if (link.getComment() == null) {
+                        try {
                             link.setComment(description);
+                        } catch (final Throwable e) {
+                            /* Not available in 0.9.581 Stable */
                         }
                         link.setContentUrl(parameter);
                         link.setLinkID(linkid);
