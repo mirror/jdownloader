@@ -307,4 +307,5 @@ system_download_doCRC2_waiting=ハッシュ確認を待機中
 system_download_errors_couldnotdelete=既存分割ファイルを削除できません
 system_download_errors_couldnotrename=分割部品をリネーム出来ません
 system_download_errors_linkisBlocked=ミラー %s1 を読込中
+update_dialog_msg_x_updates_available=更新をインストールする準備が整いました。\n今すぐ更新作業を行いますか?
 video_description=動画ファイル: mp4, avi, mov,...
