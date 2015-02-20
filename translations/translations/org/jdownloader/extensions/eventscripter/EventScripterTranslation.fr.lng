@@ -1,0 +1,14 @@
+NONE=Aucun
+ON_NEW_FILE=Un nouveau fichier a été créé
+edit_script=Editer le script
+editor_showhelp=Afficher/Masquer l'aide
+editor_testcompile=Tester la compilation
+editor_testrun=Tester l'exécution
+emptyScript=//Ajoutez votre script ici. N'hésitez pas à utiliser les propriétés et méthodes de l'API disponibles.
+event_trigger=Déclencheur
+none_trigger=//Cet événement ne sera jamais déclenché.
+permission_msg=Le script '%s1' demande la permission pour le déclencheur '%s2'.\nLe script tente de %s3.\nVoulez-vous autoriser cela ? Si vous n'êtes pas sur, verifiez votre script !
+script_editor_title=Edition du script %s1
+securityLoading=Vous êtes en train de charger et exécuter du JavaScript à partir de %s1. Merci de garder à l'esprit que ce script a un accès total aux propriétés et fonction de ce logiciel. Ne chargez que du code vérifié ! Nous vous recommandons de charger seulement des fichiers JavaScript locaux et vérifiés.
+sure_delete_entries=Voulez-vous vraiment supprimer %s1 script(s) ?
+title=Scripts
