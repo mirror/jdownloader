@@ -25,7 +25,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -41,28 +40,32 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String           DOMAIN         = "swrmediathek.de";
+    private static final String           DOMAIN               = "swrmediathek.de";
 
-    private LinkedHashMap<String, String> FOUNDQUALITIES = new LinkedHashMap<String, String>();
-    private String                        FILENAME       = null;
-    private String                        PARAMETER      = null;
+    private LinkedHashMap<String, String> FOUNDQUALITIES       = new LinkedHashMap<String, String>();
+    private String                        FILENAME             = null;
+    private String                        PARAMETER            = null;
 
     /** Settings stuff */
-    private static final String           FASTLINKCHECK  = "FASTLINKCHECK";
-    private static final String           Q_SUBTITLES    = "Q_SUBTITLES";
-    private static final String           Q_BEST         = "Q_BEST";
-    private static final String           ALLOW_720p     = "ALLOW_720p";
-    private static final String           ALLOW_544p     = "ALLOW_544p";
-    private static final String           ALLOW_288p     = "ALLOW_288p";
+    private static final String           FASTLINKCHECK        = "FASTLINKCHECK";
+    private static final String           Q_SUBTITLES          = "Q_SUBTITLES";
+    private static final String           Q_BEST               = "Q_BEST";
+    private static final String           ALLOW_720p           = "ALLOW_720p";
+    private static final String           ALLOW_544p           = "ALLOW_544p";
+    private static final String           ALLOW_288p           = "ALLOW_288p";
+    private static final String           ALLOW_180p           = "ALLOW_180p";
 
-    private static Object                 ctrlLock       = new Object();
-    private static AtomicBoolean          pluginLoaded   = new AtomicBoolean(false);
+    private static Object                 ctrlLock             = new Object();
+    private static AtomicBoolean          pluginLoaded         = new AtomicBoolean(false);
 
-    private String                        VIDEOID        = null;
-    private String                        SUBTITLE_URL   = null;
+    private String                        VIDEOID              = null;
+    private String                        SUBTITLE_URL         = null;
+    private boolean                       FASTLINKCHECK_active = false;
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        FASTLINKCHECK_active = SubConfiguration.getConfig(DOMAIN).getBooleanProperty(FASTLINKCHECK, false);
+        final FilePackage fp = FilePackage.getInstance();
         final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final ArrayList<String> selectedQualities = new ArrayList<String>();
@@ -71,39 +74,39 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(true);
         synchronized (ctrlLock) {
             if (!pluginLoaded.get()) {
-                // load plugin!
+                // load host plugin!
                 JDUtilities.getPluginForHost(DOMAIN);
                 pluginLoaded.set(true);
             }
-            br.getPage(PARAMETER);
-            VIDEOID = new Regex(br.getURL(), "show=([a-z0-9\\-]+)$").getMatch(0);
-            if (VIDEOID == null || !VIDEOID.contains("-")) {
+            VIDEOID = new Regex(PARAMETER, "show=([a-z0-9\\-]+)$").getMatch(0);
+            if (!VIDEOID.contains("-")) {
                 final DownloadLink dl = createDownloadlink("directhttp://" + PARAMETER);
-                dl.setFinalFileName(new Regex(PARAMETER, "swrmediathek\\.de/player\\.htm\\?show=(.+)").getMatch(0));
-                dl.setProperty("offline", true);
                 dl.setFinalFileName(VIDEOID);
+                dl.setProperty("offline", true);
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
             /* Decrypt start */
-            final String title = br.getRegex("<p class=\"dachzeile\">([^<>\"]*?)</p>").getMatch(0);
-            final String subtitle = br.getRegex("</p>[\t\n\r ]+<h4 class=\"headline\">([^<>\"]*?)<").getMatch(0);
-            if (title == null || subtitle == null) {
-                logger.warning("Decrypter broken for link: " + PARAMETER);
-                return null;
-            }
-            FILENAME = Encoding.htmlDecode(title).trim() + " - " + Encoding.htmlDecode(subtitle).trim();
-            FILENAME = encodeUnicode(FILENAME);
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(FILENAME);
-
             /* Decrypt qualities START */
             /*
-             * Example of a link which does not seem to be available via http:
+             * Example of a link which is by default not available via http:
              * http://swrmediathek.de/player.htm?show=3229e410-166d-11e4-9894-0026b975f2e6
              */
             br.getPage("http://swrmediathek.de/AjaxEntry?ekey=" + VIDEOID);
+            if (br.getHttpConnection().getResponseCode() == 440 || br.toString().length() < 100) {
+                final DownloadLink dl = createDownloadlink("directhttp://" + PARAMETER);
+                dl.setFinalFileName(VIDEOID);
+                dl.setProperty("offline", true);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            final LinkedHashMap<String, Object> attr_main = (LinkedHashMap<String, Object>) entries.get("attr");
+            final String description = (String) attr_main.get("entry_descl");
+            final boolean rtmpExists = br.containsHTML("rtmp://");
+            FILENAME = (String) attr_main.get("entry_title");
+            FILENAME = encodeUnicode(FILENAME);
+            fp.setName(FILENAME);
             final ArrayList<Object> sub = (ArrayList) entries.get("sub");
             for (final Object o : sub) {
                 final LinkedHashMap<String, Object> media_info = (LinkedHashMap<String, Object>) o;
@@ -115,12 +118,26 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
                 final LinkedHashMap<String, Object> attr = (LinkedHashMap<String, Object>) media_info.get("attr");
                 // final String media_qualitynumber = (String) attr.get("val1");
                 final String media_codec = (String) attr.get("val0");
-                final String media_url = (String) attr.get("val2");
+                String media_url = (String) attr.get("val2");
                 /* Skip hds/hls mobile stuff */
                 if (media_url == null || media_codec == null || !media_codec.equals("h264")) {
                     continue;
                 }
-                if (media_url.contains("m.mp4")) {
+                /*
+                 * If we got rtmp + http urls, the http urls will be broken so we have to take the rtmp urls and convert them to working
+                 * http urls (what a logic...)
+                 */
+                if (rtmpExists && !media_url.startsWith("rtmp")) {
+                    continue;
+                }
+                /* Avoid rtmp */
+                if (media_url.matches("rtmp://fm-ondemand\\.[a-z0-9\\.]+/ondemand/.+")) {
+                    media_url = "http://pd-ondemand." + new Regex(media_url, "rtmp://fm-ondemand\\.(.+)").getMatch(0);
+                    media_url = media_url.replace("/ondemand/", "/");
+                }
+                if (media_url.contains("s.mp4")) {
+                    FOUNDQUALITIES.put("180p", media_url);
+                } else if (media_url.contains("m.mp4")) {
                     FOUNDQUALITIES.put("288p", media_url);
                 } else if (media_url.contains("xl.mp4")) {
                     FOUNDQUALITIES.put("720p", media_url);
@@ -146,6 +163,7 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
                 }
             } else {
                 /** User selected nothing -> Decrypt everything */
+                boolean q180p = cfg.getBooleanProperty(ALLOW_180p, false);
                 boolean q288p = cfg.getBooleanProperty(ALLOW_288p, false);
                 boolean q544p = cfg.getBooleanProperty(ALLOW_544p, false);
                 boolean q720p = cfg.getBooleanProperty(ALLOW_720p, false);
@@ -153,6 +171,9 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
                     q288p = true;
                     q544p = true;
                     q720p = true;
+                }
+                if (q180p) {
+                    selectedQualities.add("180p");
                 }
                 if (q288p) {
                     selectedQualities.add("288p");
@@ -169,8 +190,22 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
                 if (dl != null) {
                     if (grabsubtitles && SUBTITLE_URL != null) {
                         final DownloadLink subtitlelink = getSubtitleDownloadlink(dl);
+                        if (description != null) {
+                            try {
+                                subtitlelink.setComment(description);
+                            } catch (final Throwable e) {
+                                /* Not available in 0.9.581 Stable */
+                            }
+                        }
                         fp.add(subtitlelink);
                         decryptedLinks.add(subtitlelink);
+                    }
+                    if (description != null) {
+                        try {
+                            dl.setComment(description);
+                        } catch (final Throwable e) {
+                            /* Not available in 0.9.581 Stable */
+                        }
                     }
                     fp.add(dl);
                     decryptedLinks.add(dl);
@@ -198,7 +233,7 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
             dl.setProperty("plain_ext", ext);
             dl.setProperty("LINKDUPEID", DOMAIN + "_" + ftitle);
             dl.setName(ftitle);
-            if (SubConfiguration.getConfig(DOMAIN).getBooleanProperty(FASTLINKCHECK, false)) {
+            if (FASTLINKCHECK_active) {
                 dl.setAvailable(true);
             }
             return dl;
