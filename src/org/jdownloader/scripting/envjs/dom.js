@@ -1048,8 +1048,9 @@ __extend__(Node.prototype, {
     getElementsByTagName : function(tagname) {
         log.debug('getElementsByTagName %s',tagname);
         // delegate to _getElementsByTagNameRecursive
-        var nodeList=new NodeList(__ownerDocument__(this));
-        __getElementsByTagNameRecursive__(document,tagname,nodeList);
+        var doc=__ownerDocument__(this);
+        var nodeList=new NodeList(doc);
+        __getElementsByTagNameRecursive__(doc,tagname,nodeList);
         return nodeList;
         // recurse childNodes
 //		
