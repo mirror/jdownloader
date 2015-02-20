@@ -55,7 +55,10 @@ public class DrTuberCom extends PluginForHost {
         this.enablePremium("http://www.drtuber.com/signup?track=top_menu");
     }
 
-    /* Similar sites: drtuber.com, proporn.com, viptube.com */
+    /*
+     * Similar sites: drtuber.com, proporn.com, viptube.com. Last revision with old filecheck handling: 29195. Checking the directlinks
+     * inside requestFileInformation may lead to 404 errors and offline links which are online via browser so better avoid that.
+     */
     @Override
     public String getAGBLink() {
         return "http://www.drtuber.com/static/terms";
@@ -69,7 +72,7 @@ public class DrTuberCom extends PluginForHost {
     }
 
     /* IMPORTANT: This can be used as a workaround if the normal handling fails and there is no time to fix it or it's not easily fixable... */
-    private boolean              use_mobile                   = true;
+    private boolean              use_mobile                   = false;
     /*
      * Allow usage of uncrypted finallinks - quality might be lower than when using the complicated way but overall it might stability..
      */
@@ -178,6 +181,9 @@ public class DrTuberCom extends PluginForHost {
                 if (filename == null) {
                     filename = br.getRegex("<h1 class=\"name\">(.*?)</h1>").getMatch(0);
                 }
+                if (filename == null) {
+                    filename = br.getRegex("class=\"hd_title\" style=\"text-align:left;\">([^<>\"]*?)</h1>").getMatch(0);
+                }
                 if (allow_uncrypted_downloadlink) {
                     DLLINK = getUncryptedFinallink();
                 }
@@ -261,49 +267,6 @@ public class DrTuberCom extends PluginForHost {
         downloadLink.setProperty("ftitle", filename);
         downloadLink.setProperty("fext", ext);
         downloadLink.setName(filename + ext);
-        // final Browser br2 = br.cloneBrowser();
-        // URLConnectionAdapter con = null;
-        // try {
-        // if (use_mobile) {
-        // // br2.setFollowRedirects(false);
-        // // br2.getPage(DLLINK);
-        // // DLLINK = br2.getRedirectLocation();
-        // // if (DLLINK == null) {
-        // // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // // }
-        // br2.setFollowRedirects(true);
-        // br2.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        // // br2.getHeaders().put("Accept-Encoding", "identity");
-        // br2.getHeaders().put("Accept-Encoding", "gzip, deflate");
-        // br2.getHeaders().put("Accept-Language", "de,en-US;q=0.7,en;q=0.3");
-        // br2.getHeaders().put("Cache-Control", null);
-        // br2.getHeaders().put("Pragma", null);
-        // // br2.getHeaders().put("", "");
-        // // br2.getHeaders().put("", "");
-        // } else {
-        // br2.getHeaders().put("Referer", "http://www.drtuber.com/player/videoplayer.swf?v=18.41&ps=CCCCCC");
-        // br2.getHeaders().put("Accept-Language", "de,en-US;q=0.7,en;q=0.3");
-        // br2.getHeaders().put("Accept-Encoding", "gzip,deflate");
-        // }
-        // try {
-        // /* @since JD2 */
-        // con = br2.openGetConnection(DLLINK);
-        // } catch (final Throwable t) {
-        // /* Not supported in old 0.9.581 Stable */
-        // con = br2.openGetConnection(DLLINK);
-        // }
-        // if (!con.getContentType().contains("html")) {
-        // downloadLink.setDownloadSize(con.getLongContentLength());
-        // } else {
-        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // }
-        // return AvailableStatus.TRUE;
-        // } finally {
-        // try {
-        // con.disconnect();
-        // } catch (final Throwable e) {
-        // }
-        // }
         return AvailableStatus.TRUE;
     }
 
