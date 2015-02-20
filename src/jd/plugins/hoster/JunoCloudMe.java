@@ -676,7 +676,9 @@ public class JunoCloudMe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
         }
         if (cbr.containsHTML("Error happened when generating Download Link")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
+            // That seems to be a permanent and not only a temporary issue
+            throw new PluginException(LinkStatus.FILE_NOT_FOUND, "Server error!");
+            //throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         }
         /** Error handling for account based restrictions */
         // non account && free account (you would hope..)
