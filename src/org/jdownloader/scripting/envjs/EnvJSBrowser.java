@@ -2,6 +2,7 @@ package org.jdownloader.scripting.envjs;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -11,6 +12,8 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+
+import javax.swing.SwingUtilities;
 
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -35,6 +38,8 @@ import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
 import net.sourceforge.htmlunit.corejs.javascript.debug.DebugFrame;
 import net.sourceforge.htmlunit.corejs.javascript.debug.DebuggableScript;
 import net.sourceforge.htmlunit.corejs.javascript.debug.Debugger;
+import net.sourceforge.htmlunit.corejs.javascript.tools.debugger.Main;
+import net.sourceforge.htmlunit.corejs.javascript.tools.debugger.SourceProvider;
 import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
 
 import org.appwork.exceptions.WTFException;
@@ -300,6 +305,7 @@ public class EnvJSBrowser implements ContextCallback {
     }
 
     public static final class JsDebugger implements Debugger {
+
         @Override
         public void handleCompilationDone(Context paramContext, DebuggableScript paramDebuggableScript, String paramString) {
             // System.out.println(" ----> " + paramString);
@@ -615,53 +621,19 @@ public class EnvJSBrowser implements ContextCallback {
     }
 
     public void init() {
-        final ContextFactory factory = ContextFactory.getGlobal();
-        scope = new Global();
-        // try {
-        // SwingUtilities.invokeAndWait(new Runnable() {
-        //
-        // @Override
-        // public void run() {
-        // Main main = new Main("JS Debugger");
-        // main.doBreak();
-        //
-        // main.attachTo(factory);
-        //
-        // if ((scope instanceof Global)) {
-        // Global global = scope;
-        // global.setIn(main.getIn());
-        // global.setOut(main.getOut());
-        // global.setErr(main.getErr());
-        // }
-        // main.setScope(scope);
-        //
-        // main.pack();
-        // main.setSize(600, 460);
-        // main.setVisible(true);
-        // main.setSourceProvider(new SourceProvider() {
-        //
-        // @Override
-        // public String getSource(DebuggableScript paramDebuggableScript) {
-        // return null;
-        // }
-        // });
-        //
-        // }
-        // });
-        // } catch (InvocationTargetException e1) {
-        // e1.printStackTrace();
-        // } catch (InterruptedException e1) {
-        // e1.printStackTrace();
-        // }
 
+        scope = new Global();
+        if (getDebugLevel() == DebugLevel.DEBUG) {
+            initGuiDebugger();
+
+        }
         cx = Context.enter(JSHtmlUnitPermissionRestricter.makeContext(this));
         cx.setOptimizationLevel(-1);
         scope.init(cx);
-        // net.sourceforge.htmlunit.corejs.javascript.tools.debugger.Main.main(null);
 
         cx.setOptimizationLevel(-1);
         cx.setLanguageVersion(Context.VERSION_1_5);
-        initGuiDebugger();
+
         tick = cx.compileString("var e=envjsglobals.Envjs;delete envjsglobals;  e.tick();  ", "ticker", 1, null);
         if (br == null) {
             throw new NullPointerException("browser is null");
@@ -716,7 +688,7 @@ public class EnvJSBrowser implements ContextCallback {
                 }
             }
             // if (getDebugLevel() == DebugLevel.DEBUG) {
-            // cx.setDebugger(new JsDebugger(), "debugger");
+            // cx.setDebugger(new JsDebugger(), "debugger");ou
             // }
             initDone = true;
             // evaluateTrustedString(cx, scope, "delete EnvJs;delete After;", "CleanUp", 1, null);
@@ -740,6 +712,45 @@ public class EnvJSBrowser implements ContextCallback {
     }
 
     public void initGuiDebugger() {
+        try {
+            final ContextFactory factory = ContextFactory.getGlobal();
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+
+                    JSHtmlUnitPermissionRestricter.TRUSTED_THREAD.put(Thread.currentThread(), true);
+                    Main main = new Main("JS Debugger");
+                    main.doBreak();
+
+                    main.attachTo(factory);
+
+                    if ((scope instanceof Global)) {
+                        Global global = scope;
+                        global.setIn(main.getIn());
+                        global.setOut(main.getOut());
+                        global.setErr(main.getErr());
+                    }
+                    main.setScope(scope);
+
+                    main.pack();
+                    main.setSize(600, 460);
+                    main.setVisible(true);
+                    main.setSourceProvider(new SourceProvider() {
+
+                        @Override
+                        public String getSource(DebuggableScript paramDebuggableScript) {
+                            return null;
+                        }
+                    });
+
+                }
+            });
+        } catch (InvocationTargetException e1) {
+            e1.printStackTrace();
+        } catch (InterruptedException e1) {
+            e1.printStackTrace();
+        }
     }
 
     public void close() {
