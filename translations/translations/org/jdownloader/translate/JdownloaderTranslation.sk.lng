@@ -168,4 +168,5 @@ system_download_doCRC2_success=[%s1] CRC OK
 system_download_errors_couldnotdelete=Nemožno odstrániť existujúcu časť súboru
 system_download_errors_couldnotrename=Nemôžem premenovať tento diel
 system_download_errors_linkisBlocked=Zrkadlo %s1 sa načítava
+update_dialog_msg_x_updates_available=Aktualizácie sú pripravené na inštaláciu. Prajete si spustiť aktualizáciu teraz?
 video_description=Video súbory: mp4, avi, mov,...
