@@ -307,4 +307,5 @@ system_download_doCRC2_waiting=Attesa verifica hash
 system_download_errors_couldnotdelete=Impossibile eliminare un file parte esistente
 system_download_errors_couldnotrename=Impossibile rinominare parte file
 system_download_errors_linkisBlocked=Caricamento mirror %s1
+update_dialog_msg_x_updates_available=Gli aggiornamenti sono pronti per l'installazione. Vuoi avviare l'aggiornamento ora?
 video_description=File video: MP4, AVI, MOV...
