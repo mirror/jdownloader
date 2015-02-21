@@ -177,9 +177,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     /* In most cases this simply means that one of the selected languages is not available so let's go on. */
                     logger.info("This language is not available: " + selectedLanguage);
                     continue;
-                } else if (br.containsHTML("<\\!DOCTYPE html")) {
-                    title = "unknown_offline_case_livestreams_are_not_supported_" + title;
-                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
                 }
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
                 final LinkedHashMap<String, Object> videoJsonPlayer = (LinkedHashMap<String, Object>) entries.get("videoJsonPlayer");
