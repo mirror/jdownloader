@@ -382,7 +382,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
             extPws.add(query.getExtractPassword());
         }
         final HashSet<String> finalExtPws = extPws;
-        lcj.setCrawledLinkModifierPrePackagizer(new CrawledLinkModifier() {
+        final CrawledLinkModifier modifier = new CrawledLinkModifier() {
             private PackageInfo getPackageInfo(CrawledLink link) {
                 PackageInfo packageInfo = link.getDesiredPackageInfo();
                 if (packageInfo != null) {
@@ -400,11 +400,13 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 }
                 if (StringUtils.isNotEmpty(query.getPackageName())) {
                     getPackageInfo(link).setName(query.getPackageName());
+                    getPackageInfo(link).setIgnoreVarious(true);
                     getPackageInfo(link).setUniqueId(null);
                 }
                 link.setPriority(fp);
                 if (StringUtils.isNotEmpty(query.getDestinationFolder())) {
                     getPackageInfo(link).setDestinationFolder(query.getDestinationFolder());
+                    getPackageInfo(link).setIgnoreVarious(true);
                     getPackageInfo(link).setUniqueId(null);
                 }
                 DownloadLink dlLink = link.getDownloadLink();
@@ -418,7 +420,11 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                     link.setAutoStartEnabled(true);
                 }
             }
-        });
+        };
+        lcj.setCrawledLinkModifierPrePackagizer(modifier);
+        if (StringUtils.isNotEmpty(query.getDestinationFolder()) || StringUtils.isNotEmpty(query.getPackageName())) {
+            lcj.setCrawledLinkModifierPostPackagizer(modifier);
+        }
         lc.addCrawlerJob(lcj);
 
     }
@@ -698,14 +704,14 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
 
     @Override
     public void setPriority(PriorityStorable priority, long[] linkIds, long[] packageIds) throws BadParameterException {
-            org.jdownloader.controlling.Priority jdPriority = org.jdownloader.controlling.Priority.valueOf(priority.name());
-            List<CrawledLink> children = convertIdsToLinks(linkIds);
-            List<CrawledPackage> pkgs = convertIdsToPackages(packageIds);
-            for (CrawledLink dl : children) {
-                dl.setPriority(jdPriority);
-            }
-            for (CrawledPackage pkg : pkgs) {
-                pkg.setPriorityEnum(jdPriority);
-            }
+        org.jdownloader.controlling.Priority jdPriority = org.jdownloader.controlling.Priority.valueOf(priority.name());
+        List<CrawledLink> children = convertIdsToLinks(linkIds);
+        List<CrawledPackage> pkgs = convertIdsToPackages(packageIds);
+        for (CrawledLink dl : children) {
+            dl.setPriority(jdPriority);
+        }
+        for (CrawledPackage pkg : pkgs) {
+            pkg.setPriorityEnum(jdPriority);
+        }
     }
 }
