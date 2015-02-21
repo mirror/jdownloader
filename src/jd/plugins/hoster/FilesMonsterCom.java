@@ -93,6 +93,10 @@ public class FilesMonsterCom extends PluginForHost {
         br.setFollowRedirects(false);
         if (downloadLink.getDownloadURL().contains("/free/2/")) {
             br.getPage(downloadLink.getStringProperty("mainlink"));
+            // Link offline 404
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (br.getRedirectLocation() != null) {
                 if (br.getRedirectLocation().contains(REDIRECTFNF)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -108,6 +112,10 @@ public class FilesMonsterCom extends PluginForHost {
             br.getPage(downloadLink.getDownloadURL());
             // Link offline
             if (br.containsHTML("(>File was deleted by owner or it was deleted for violation of copyrights<|>File not found<|>The link could not be decoded<)")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            // Link offline 404
+            if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             // Advertising link
