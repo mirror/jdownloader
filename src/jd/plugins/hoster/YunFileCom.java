@@ -43,7 +43,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www|(p(?:age)?\\d)\\.)?(yunfile|filemarkets|yfdisk)\\.com/(file/(down/)?[a-z0-9]+/[a-z0-9]+|fs/[a-z0-9]+/?)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www|(p(?:age)?\\d|share)\\.)?(yunfile|filemarkets|yfdisk)\\.com/(file/(down/)?[a-z0-9]+/[a-z0-9]+|fs/[a-z0-9]+/?)" }, flags = { 2 })
 public class YunFileCom extends PluginForHost {
 
     private static final String            MAINPAGE    = "http://yunfile.com/";
@@ -57,6 +57,11 @@ public class YunFileCom extends PluginForHost {
         super(wrapper);
         this.enablePremium("http://www.yunfile.com/user/premiumMembership.html");
         // this.setStartIntervall(15 * 1000l);
+    }
+
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("share.yunfile.com/", "yunfile.com/"));
     }
 
     private Browser prepBrowser(final Browser prepBr) {
@@ -133,7 +138,7 @@ public class YunFileCom extends PluginForHost {
         }
         String filename = null, filesize = null;
         // if (br.getURL().matches("http://page\\d+\\.yunfile.com/fs/[a-z0-9]+/")) ;
-        filename = br.getRegex("Downloading:\\&nbsp;<a></a>\\&nbsp;([^ ]*)[^<>]+<").getMatch(0);
+        filename = br.getRegex("Downloading:\\&nbsp;<a></a>\\&nbsp;([^<>]*) - [^<>]+<").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?) \\- Yunfile\\.com \\- Free File Hosting and Sharing, Permanently Save </title>").getMatch(0);
         }
@@ -144,7 +149,7 @@ public class YunFileCom extends PluginForHost {
         if (filesize == null) {
             filesize = br.getRegex("File Size: <b>([^<>\"]*?)</b>").getMatch(0);
             if (filesize == null) {
-                filesize = br.getRegex("Downloading:[^ \"]+ - (\\d*(\\.\\d*)? (K|M|G)?B)<").getMatch(0);
+                filesize = br.getRegex("Downloading:\\&nbsp;<a></a>\\&nbsp;[^<>]+ \\- (\\d*(\\.\\d*)? (K|M|G)?B)[\t\n\r ]*?<").getMatch(0);
             }
         }
         if (filename == null) {

@@ -94,7 +94,7 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
              * http://swrmediathek.de/player.htm?show=3229e410-166d-11e4-9894-0026b975f2e6
              */
             br.getPage("http://swrmediathek.de/AjaxEntry?ekey=" + VIDEOID);
-            if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || br.toString().length() < 100) {
+            if (br.containsHTML("<h1>HTTP Status 403") || br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || br.toString().length() < 100) {
                 final DownloadLink dl = createDownloadlink("directhttp://" + PARAMETER);
                 dl.setFinalFileName(VIDEOID);
                 dl.setProperty("offline", true);
