@@ -153,7 +153,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         final String finalDestination = request.getParameterbyKey("dir");
         job.setCustomSourceUrl(source);
         final String finalPackageName = request.getParameterbyKey("package");
-        job.setCrawledLinkModifierPrePackagizer(new CrawledLinkModifier() {
+        final CrawledLinkModifier modifier = new CrawledLinkModifier() {
             private HashSet<String> pws = null;
             {
                 if (StringUtils.isNotEmpty(finalPasswords)) {
@@ -176,10 +176,12 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             public void modifyCrawledLink(CrawledLink link) {
                 if (StringUtils.isNotEmpty(finalDestination)) {
                     getPackageInfo(link).setDestinationFolder(finalDestination);
+                    getPackageInfo(link).setIgnoreVarious(true);
                     getPackageInfo(link).setUniqueId(null);
                 }
                 if (StringUtils.isNotEmpty(finalPackageName)) {
                     getPackageInfo(link).setName(finalPackageName);
+                    getPackageInfo(link).setIgnoreVarious(true);
                     getPackageInfo(link).setUniqueId(null);
                 }
                 DownloadLink dlLink = link.getDownloadLink();
@@ -192,7 +194,11 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                     link.getArchiveInfo().getExtractionPasswords().addAll(pws);
                 }
             }
-        });
+        };
+        job.setCrawledLinkModifierPrePackagizer(modifier);
+        if (StringUtils.isNotEmpty(finalPackageName) || StringUtils.isNotEmpty(finalDestination)) {
+            job.setCrawledLinkModifierPostPackagizer(modifier);
+        }
         LinkCollector.getInstance().addCrawlerJob(job);
     }
 
@@ -446,7 +452,9 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                     }
                 };
                 job.setCrawledLinkModifierPrePackagizer(modifier);
-                job.setCrawledLinkModifierPostPackagizer(modifier);
+                if (StringUtils.isNotEmpty(finalPackageName) || StringUtils.isNotEmpty(finalDestination)) {
+                    job.setCrawledLinkModifierPostPackagizer(modifier);
+                }
 
                 LazyHostPlugin lazyp = HostPluginController.getInstance().get("DirectHTTP");
                 final PluginForHost defaultplg = lazyp.getPrototype(null);

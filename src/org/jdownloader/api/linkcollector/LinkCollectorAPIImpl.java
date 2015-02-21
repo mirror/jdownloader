@@ -266,7 +266,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
             extPws.add(extractPassword);
         }
         final HashSet<String> finalExtPws = extPws;
-        lcj.setCrawledLinkModifierPrePackagizer(new CrawledLinkModifier() {
+        final CrawledLinkModifier modifier = new CrawledLinkModifier() {
             private PackageInfo getPackageInfo(CrawledLink link) {
                 PackageInfo packageInfo = link.getDesiredPackageInfo();
                 if (packageInfo != null) {
@@ -284,10 +284,12 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
                 }
                 if (StringUtils.isNotEmpty(finalPackageName)) {
                     getPackageInfo(link).setName(finalPackageName);
+                    getPackageInfo(link).setIgnoreVarious(true);
                     getPackageInfo(link).setUniqueId(null);
                 }
                 if (StringUtils.isNotEmpty(destinationFolder)) {
                     getPackageInfo(link).setDestinationFolder(destinationFolder);
+                    getPackageInfo(link).setIgnoreVarious(true);
                     getPackageInfo(link).setUniqueId(null);
                 }
                 DownloadLink dlLink = link.getDownloadLink();
@@ -301,7 +303,11 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
                     link.setAutoStartEnabled(true);
                 }
             }
-        });
+        };
+        lcj.setCrawledLinkModifierPrePackagizer(modifier);
+        if (StringUtils.isNotEmpty(finalPackageName) || StringUtils.isNotEmpty(destinationFolder)) {
+            lcj.setCrawledLinkModifierPostPackagizer(modifier);
+        }
         lc.addCrawlerJob(lcj);
         return true;
     }
