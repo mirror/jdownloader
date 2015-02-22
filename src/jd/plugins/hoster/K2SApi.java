@@ -1961,7 +1961,7 @@ public abstract class K2SApi extends PluginForHost {
          * @author raztoki
          * */
         public static String getJsonArray(final String source, final String key) {
-            String result = new Regex(source, "\"" + key + "\":(\\[[^\\]]+\\])").getMatch(0);
+            String result = new Regex(source, "\"" + key + "\":(\\[.*?\\])(?:,|\\})").getMatch(0);
             if (result != null) {
                 result = unescape(result);
             }
