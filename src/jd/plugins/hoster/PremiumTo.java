@@ -40,17 +40,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent\\d*\\.premium\\.to/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://(?:torrent|storage)\\d*\\.premium\\.to/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*" }, flags = { 2 })
 public class PremiumTo extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static HashMap<String, Integer>                connectionLimits   = new HashMap<String, Integer>();
     private static AtomicBoolean                           shareOnlineLocked  = new AtomicBoolean(false);
-    private static final String                            NOCHUNKS           = "NOCHUNKS";
+    private final String                                   noChunks           = "noChunks";
     private static Object                                  LOCK               = new Object();
     private final String                                   lang               = System.getProperty("user.language");
-    private static final String                            normalTraffic      = "normalTraffic";
-    private static final String                            specialTraffic     = "specialTraffic";
+    private final String                                   normalTraffic      = "normalTraffic";
+    private final String                                   specialTraffic     = "specialTraffic";
 
     public PremiumTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -245,7 +245,7 @@ public class PremiumTo extends PluginForHost {
             if (link.getChunks() != -1) {
                 connections = link.getChunks();
             }
-            if (link.getBooleanProperty(PremiumTo.NOCHUNKS, false)) {
+            if (link.getBooleanProperty(noChunks, false)) {
                 connections = 1;
             }
 
@@ -297,8 +297,8 @@ public class PremiumTo extends PluginForHost {
                 dl.startDownload();
             } catch (final PluginException ex) {
                 /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(PremiumTo.NOCHUNKS, false) == false) {
-                    link.setProperty(PremiumTo.NOCHUNKS, Boolean.valueOf(true));
+                if (link.getBooleanProperty(noChunks, false) == false) {
+                    link.setProperty(noChunks, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
