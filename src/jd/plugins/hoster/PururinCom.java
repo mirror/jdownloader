@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 /**
  * @author raztoki
  * */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pururin.com" }, urls = { "^http://(www\\.)?pururin\\.com/view/\\d+/\\d+/[\\-a-z0-9]+_\\d+\\.html$" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pururin.com" }, urls = { "^http://(?:www\\.)?pururin\\.com/(?:view/\\d+/\\d+/[\\-a-z0-9]+_\\d+\\.html|download/\\d+/.+)$" }, flags = { 0 })
 public class PururinCom extends antiDDoSForHost {
 
     // raztoki embed video player template.
@@ -59,6 +59,22 @@ public class PururinCom extends antiDDoSForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (this.isSelfHostedContent(downloadLink) && dl.getConnection().getResponseCode() == 403) {
+                if (br.containsHTML("Error: You cannot download this file because it exceeds your daily download quota.")) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download Quota exceeded.", 1 * 60 * 60 * 1000);
+                } else if (br.containsHTML("Error: Account required. Visit the account page to register one.")) {
+                    try {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account required.", PluginException.VALUE_ID_PREMIUM_ONLY);
+                    } catch (final Throwable e) {
+                        if (e instanceof PluginException) {
+                            throw (PluginException) e;
+                        }
+                    }
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Account required.");
+                } else if (br.containsHTML("Error: Invalid or expired download link. Please visit the site for a new one.")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                }
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -68,43 +84,63 @@ public class PururinCom extends antiDDoSForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         getPage(downloadLink.getDownloadURL());
-        dllink = br.getRegex("\"(/f/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = Encoding.urlDecode(dllink, false);
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(dllink);
-            // only way to check for made up links... or offline is here
-            if (con.getResponseCode() == 404) {
+        if (this.isSelfHostedContent(downloadLink)) {
+            dllink = br.getRegex("(/get/[a-zA-Z0-9]+/[^\"]+)[^>]+download-button").getMatch(0);
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (!con.getContentType().contains("html")) {
-                int links_length = downloadLink.getIntegerProperty("links_length", 1);
-                DecimalFormat df_links = new DecimalFormat("00");
-                if (links_length > 999) {
-                    df_links = new DecimalFormat("0000");
-                } else if (links_length > 99) {
-                    df_links = new DecimalFormat("000");
-                }
-                // now we have a connection to the link we should format again! and provide proper file extension.
-                final String[] fn = new Regex(getFileNameFromHeader(con), "([^/]+)(_|-)(\\d+)(\\.[a-z0-9]{3,4})$").getRow(0);
-                downloadLink.setFinalFileName(fn[0] + "-" + df_links.format(Integer.parseInt(fn[2])) + fn[3]);
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            final String filename = new Regex(dllink, "/([^/]+)$").getMatch(0);
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            downloadLink.setName(filename);
             return AvailableStatus.TRUE;
-        } finally {
+        } else {
+            dllink = br.getRegex("\"(/f/[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dllink = Encoding.urlDecode(dllink, false);
+            Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (Throwable e) {
+                con = br2.openGetConnection(dllink);
+                // only way to check for made up links... or offline is here
+                if (con.getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (!con.getContentType().contains("html")) {
+                    int links_length = downloadLink.getIntegerProperty("links_length", 1);
+                    DecimalFormat df_links = new DecimalFormat("00");
+                    if (links_length > 999) {
+                        df_links = new DecimalFormat("0000");
+                    } else if (links_length > 99) {
+                        df_links = new DecimalFormat("000");
+                    }
+                    // now we have a connection to the link we should format again! and provide proper file extension.
+                    final String[] fn = new Regex(getFileNameFromHeader(con), "([^/]+)(_|-)(\\d+)(\\.[a-z0-9]{3,4})$").getRow(0);
+                    downloadLink.setFinalFileName(fn[0] + "-" + df_links.format(Integer.parseInt(fn[2])) + fn[3]);
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                return AvailableStatus.TRUE;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
         }
+    }
+
+    private boolean isSelfHostedContent(final DownloadLink downloadLink) {
+        if (downloadLink == null) {
+            return false;
+        }
+        return downloadLink.getDownloadURL().matches(".+/download/\\d+/.+$");
     }
 
     public void getPage(final String page) throws Exception {
