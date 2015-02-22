@@ -45,7 +45,7 @@ public class NitroFlareCom extends PluginForDecrypt {
         String fpName = getJson("name");
         String filesArray = getJsonArray("files");
         if (!inValidate(filesArray)) {
-            String[] files = new Regex(filesArray, "\\{\"name\"[^\\}]+\\}").getColumn(-1);
+            String[] files = new Regex(filesArray, "\\{\"name\":.*?\\}(?:,|\\])").getColumn(-1);
             if (files != null && files.length > 0) {
                 for (String file : files) {
                     // for now just return uid, nitroflare mass linkcheck shows avialable status and other values we need!
