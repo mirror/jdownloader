@@ -21,7 +21,6 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -72,29 +71,12 @@ public class PururinCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         /* Sometimes a gallery is downloadable as a single file && this is on the gallery page */
-        final String downloadlink = br.getRegex("class=\"btn btn\\-download\" href=\"([^\"]+)\"").getMatch(0);
+        String downloadlink = br.getRegex("class=\"btn btn\\-download\" href=\"([^\"]+)\"").getMatch(0);
         if (downloadlink != null) {
-            if (downloadlink.matches("^/download/\\d+/.+$")) {
-                // covers direct links (hosted by them), be aware that they have daily download limits. once over this limit 403 will be
-                // thrown with the following message.
-                // Error: You cannot download this file because it exceeds your daily download quota. (You have 25.00 MB remaining, 101.36
-                // MB needed for this download.)
-                Browser br2 = br.cloneBrowser();
-                br2.getPage(downloadlink);
-                final String get = br2.getRegex("(/get/[a-zA-Z0-9]+/[^\"]+)[^>]+download-button").getMatch(0);
-                if (get != null) {
-                    final String link = new Regex(br2.getURL(), "https?://[^/]+").getMatch(-1) + get;
-                    final DownloadLink dl = createDownloadlink(link);
-                    ArrayList<String[]> customHeaders = new ArrayList<String[]>();
-                    customHeaders.add(new String[] { "Referer", br2.getURL() });
-                    dl.setProperty("customHeader", customHeaders);
-                    // you seem to use quota if you request to the url.
-                    dl.setAvailable(true);
-                    decryptedLinks.add(dl);
-                }
-            } else {
-                decryptedLinks.add(createDownloadlink(downloadlink));
-            }
+            if (downloadlink.matches("/download/\\d+/.+")) {
+                downloadlink = new Regex(br.getURL(), "https?://[^/]+").getMatch(-1) + downloadlink;
+            } // self hosted content (goes to its own plugin), or hoster links
+            decryptedLinks.add(createDownloadlink(downloadlink));
         }
         if (!br.getURL().contains("/thumbs/")) {
             Thread.sleep(500);
