@@ -246,7 +246,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
 
         this.addHeader(T._.settings_multi(), NewTheme.I().getIcon("settings", 32));
         toggleUseOriginalFileDate = this.addPair(T._.settings_multi_use_original_file_date(), null, new Checkbox());
-        blacklist = this.addPair(T._.settings_blacklist(), null, new TextArea());
+        blacklist = this.addPair(T._.settings_blacklist_regex(), null, new TextArea());
 
         this.addHeader(T._.settings_passwords(), NewTheme.I().getIcon("password", 32));
         passwordlist = addPair(T._.settings_passwordlist(), null, new TextArea());
