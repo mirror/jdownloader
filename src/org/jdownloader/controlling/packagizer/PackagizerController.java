@@ -19,6 +19,7 @@ import jd.controlling.linkcrawler.PackageInfo;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatus;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatusMatchtype;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 
 import org.appwork.exceptions.WTFException;
@@ -266,15 +267,18 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 if (modifiers == null) {
                     return input;
                 }
-                int id = Integer.parseInt(modifiers);
-                String[] sources = link.getSourceUrls();
-                String txt = input;
-                // the i counter allows us to write regular expressions that adress a certain line only.
-                String pattern = lgr.getSourceRule().getPattern().pattern();
-                boolean indexed = pattern.matches("^\\-?\\d+\\\\\\. .+");
-                boolean inverted = pattern.startsWith("-");
+                final int id = Integer.parseInt(modifiers);
 
-                if (sources == null) {
+                String output = input;
+                // the i counter allows us to write regular expressions that adress a certain line only.
+                final String pattern = lgr.getSourceRule().getPattern().pattern();
+                final boolean indexed = pattern.matches("^\\-?\\d+\\\\\\. .+");
+                final boolean inverted = pattern.startsWith("-");
+
+                final String[] sources;
+                if (link.getSourceUrls() != null) {
+                    sources = link.getSourceUrls();
+                } else {
                     /* the first link never has sourceURLs */
                     sources = new String[2];
                     sources[0] = link.getURL();
@@ -285,34 +289,27 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 }
                 int i = 1;
                 for (int j = inverted ? 0 : sources.length - 1; (inverted ? (j < sources.length) : (j >= 0)); j = (inverted ? (j + 1) : (j - 1))) {
-
-                    String s = sources[j];
+                    final String s = sources[j];
                     if (s == null) {
                         continue;
                     }
-                    String toMatch = indexed ? (inverted ? "-" : "") + (i++) + ". " + s : s;
-
+                    final String toMatch = indexed ? (inverted ? "-" : "") + (i++) + ". " + s : s;
                     Regex regex = new Regex(toMatch, lgr.getSourceRule().getPattern());
+                    String[] values = null;
                     if (regex.matches()) {
-                        String[] values = regex.getRow(0);
-                        if (values[id - 1] != null) {
-                            txt = Pattern.compile("<jd:source:" + id + "/?>").matcher(txt).replaceAll(Matcher.quoteReplacement(values[id - 1]));
-                        }
+                        values = regex.getRow(0);
                     } else {
                         regex = new Regex(s, lgr.getSourceRule().getPattern());
                         if (regex.matches()) {
-                            String[] values = regex.getRow(0);
-                            if (values[id - 1] != null) {
-                                txt = Pattern.compile("<jd:source:" + id + "/?>").matcher(txt).replaceAll(Matcher.quoteReplacement(values[id - 1]));
-                            }
+                            values = regex.getRow(0);
                         }
                     }
-
+                    if (values != null && values.length > (id - 1)) {
+                        output = Pattern.compile("<jd:source:" + id + "/?>").matcher(output).replaceAll(Matcher.quoteReplacement(Encoding.urlDecode(values[id - 1], false)));
+                    }
                 }
-
-                return txt;
+                return output;
             }
-
         });
 
         addReplacer(new PackagizerReplacer() {
