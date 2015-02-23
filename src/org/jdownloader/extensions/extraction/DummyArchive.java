@@ -1,13 +1,17 @@
 package org.jdownloader.extensions.extraction;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class DummyArchive {
 
     private final String name;
     private int          missingCount    = 0;
     private int          incompleteCount = 0;
+    private final String archiveType;
+
+    public String getArchiveType() {
+        return archiveType;
+    }
 
     public int getIncompleteCount() {
         return incompleteCount;
@@ -23,8 +27,9 @@ public class DummyArchive {
         return list;
     }
 
-    public DummyArchive(Archive archive) {
+    public DummyArchive(Archive archive, String archiveType) {
         name = archive.getName();
+        this.archiveType = archiveType;
         list = new ArrayList<DummyArchiveFile>();
     }
 
@@ -44,19 +49,6 @@ public class DummyArchive {
 
     public int getSize() {
         return list.size();
-    }
-
-    public static DummyArchive create(Archive archive2, List<String> missing) {
-        DummyArchive ret = new DummyArchive(archive2);
-        if (missing != null) {
-            for (String miss : missing) {
-                ret.add(new DummyArchiveFile(miss, archive2.getFolder()));
-            }
-        }
-        for (ArchiveFile af : archive2.getArchiveFiles()) {
-            ret.add(new DummyArchiveFile(af));
-        }
-        return ret;
     }
 
     public String getName() {

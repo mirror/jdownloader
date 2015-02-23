@@ -60,55 +60,47 @@ public class Archive {
     /**
      * ArchiveFiles of the archive.
      */
-    private java.util.List<ArchiveFile> archives;
+    private List<ArchiveFile>       archives;
 
     /**
      * First part of the archives.
      */
-    private ArchiveFile                 firstArchiveFile = null;
+    private ArchiveFile             firstArchiveFile = null;
 
     /**
      * Exitcode of the extrraction.
      */
-    private int                         exitCode         = -1;
-
-    /**
-     * Extractionprocress got interrupted
-     */
-    private boolean                     gotInterrupted   = false;
-
-    /**
-     * Size of the corrent extracted files.
-     */
-    private long                        extracted        = 0;
+    private int                     exitCode         = -1;
 
     /**
      * Is extraction process active.
      */
-    private boolean                     active           = false;
+    private boolean                 active           = false;
 
     /**
      * Type of the archive.
      */
-    private ArchiveType                 type             = null;
+    private ArchiveType             type             = null;
 
     /**
      * ArchiveFiles CRC error.
      */
-    private java.util.List<ArchiveFile> crcError;
+    private final List<ArchiveFile> crcError;
 
     /**
      * List of the extracted files.
      */
-    private java.util.List<File>        extractedFiles;
+    private final List<File>        extractedFiles;
 
-    private ArchiveFactory              factory;
+    private final List<File>        skippedFiles;
 
-    private String                      name;
+    private ArchiveFactory          factory;
 
-    private ContentView                 contents;
+    private String                  name;
 
-    private boolean                     passwordRequiredToOpen;
+    private ContentView             contents;
+
+    private boolean                 passwordRequiredToOpen;
 
     public ArchiveFactory getFactory() {
         return factory;
@@ -119,6 +111,7 @@ public class Archive {
         archives = new CopyOnWriteArrayList<ArchiveFile>();
         crcError = new CopyOnWriteArrayList<ArchiveFile>();
         extractedFiles = new CopyOnWriteArrayList<File>();
+        skippedFiles = new CopyOnWriteArrayList<File>();
         contents = new ContentView();
     }
 
@@ -175,17 +168,6 @@ public class Archive {
         return firstArchiveFile;
     }
 
-    /**
-     * Returns how much bytes got extracted. this is NOT getSize() after extracting in some cases. Because files may be filtered, or not
-     * extracted due to overwrite rules. user {@link ExtractionController#getProgress()} to get the extraction progress
-     * 
-     * @return
-     */
-
-    public long getExtractedFilesSize() {
-        return extracted;
-    }
-
     public void setActive(boolean active) {
         this.active = active;
     }
@@ -211,15 +193,19 @@ public class Archive {
     }
 
     public void addExtractedFiles(File file) {
-
-        if (this.extractedFiles.add(file)) {
-            extracted += file.length();
-        }
-
+        this.extractedFiles.add(file);
     }
 
-    public java.util.List<File> getExtractedFiles() {
+    public List<File> getExtractedFiles() {
         return extractedFiles;
+    }
+
+    public List<File> getSkippedFiles() {
+        return skippedFiles;
+    }
+
+    public void addSkippedFiles(File file) {
+        this.skippedFiles.add(file);
     }
 
     public boolean contains(ArchiveFile link) {
@@ -309,7 +295,6 @@ public class Archive {
     private void notifyChanges(Object identifier) {
         for (ArchiveFile af : getArchiveFiles()) {
             af.notifyChanges(identifier);
-
         }
     }
 
@@ -317,7 +302,6 @@ public class Archive {
         if (getSettings().getAutoExtract() == booleanStatus) {
             return;
         }
-
         getSettings().setAutoExtract(booleanStatus);
         notifyChanges(ArchiveSettings.AUTO_EXTRACT);
     }

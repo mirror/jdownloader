@@ -16,76 +16,64 @@
 
 package org.jdownloader.extensions.extraction.split;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
+import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import net.sf.sevenzipjbinding.SevenZipException;
+import jd.plugins.download.raf.FileBytesCache;
+import jd.plugins.download.raf.FileBytesCacheFlusher;
 
+import org.appwork.uio.CloseReason;
 import org.appwork.utils.Files;
-import org.appwork.utils.Regex;
+import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.formatter.StringFormatter;
+import org.appwork.utils.awfc.AWFCUtils;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.DummyArchive;
-import org.jdownloader.extensions.extraction.ExtSevenZipException;
+import org.jdownloader.extensions.extraction.DummyArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
+import org.jdownloader.extensions.extraction.ExtractionControllerException;
 import org.jdownloader.extensions.extraction.IExtraction;
 import org.jdownloader.extensions.extraction.Item;
+import org.jdownloader.extensions.extraction.MissingArchiveFile;
 import org.jdownloader.extensions.extraction.content.PackedFile;
 import org.jdownloader.extensions.extraction.gui.iffileexistsdialog.IfFileExistsDialog;
+import org.jdownloader.extensions.extraction.multi.ArchiveException;
+import org.jdownloader.extensions.extraction.multi.CheckException;
 import org.jdownloader.settings.IfFileExistsAction;
 
-/**
- * Joins XtreamSplit files.
- * 
- * @author botzi
- * 
- */
 public class XtreamSplit extends IExtraction {
 
-    private final static int        HEADER_SIZE = 104;
-    private final static int        BUFFER_SIZE = 2048;
+    private final static int                       HEADER_SIZE = 104;
 
-    private boolean                 md5;
-    private File                    file;
-    private HashMap<String, String> hashes      = new HashMap<String, String>();
-    private List<String>            files       = new ArrayList<String>();
+    private boolean                                md5         = false;
+    private File                                   outputFile;
+    private final WeakHashMap<ArchiveFile, byte[]> hashes      = new WeakHashMap<ArchiveFile, byte[]>();
 
-    public Archive buildArchive(ArchiveFactory link) {
-        String pattern = "^" + Regex.escape(link.getFilePath().replaceAll("(?i)\\.[\\d]+\\.xtm$", "")) + "\\.[\\d]+\\.xtm$";
-        Archive a = SplitUtil.buildArchive(link, pattern, ".*\\.001\\.xtm$");
-        a.setName(getArchiveName(link));
-        return a;
+    private final SplitType                        splitType   = SplitType.XTREMSPLIT;
+
+    public Archive buildArchive(ArchiveFactory link) throws ArchiveException {
+        return SplitType.createArchive(link, splitType, false);
     }
 
     @Override
     public boolean isMultiPartArchive(ArchiveFactory factory) {
         return true;
     }
-
-    // @Override
-    // public Archive buildDummyArchive(String file) {
-    // Archive a = SplitUtil.buildDummyArchive(file, ".*\\.[\\d]+\\.xtm$",
-    // ".*\\.001\\.xtm$");
-    // a.setExtractor(this);
-    // return a;
-    // }
 
     @Override
     public boolean findPassword(ExtractionController controller, String password, boolean optimized) {
@@ -94,127 +82,164 @@ public class XtreamSplit extends IExtraction {
 
     @Override
     public void extract(ExtractionController ctrl) {
-        byte[] buffer = new byte[BUFFER_SIZE];
-        Archive archive = controller.getArchiv();
-        BufferedOutputStream out = null;
-        BufferedInputStream in = null;
+        final Archive archive = controller.getArchiv();
+        final FileBytesCache cache = controller.getFileBytesCache();
+        RandomAccessFile fos = null;
+        FileBytesCacheFlusher flusher = null;
+        final AtomicBoolean fileOpen = new AtomicBoolean(false);
         try {
+            long size = -HEADER_SIZE + (md5 ? (32 * archive.getArchiveFiles().size()) : 0);
+            for (ArchiveFile l : archive.getArchiveFiles()) {
+                size += l.getFileSize();
+            }
             /* file already exists */
-            if (file.exists()) {
+            if (outputFile.exists()) {
                 IfFileExistsAction action = controller.getIfFileExistsAction();
                 while (action == null || action == IfFileExistsAction.ASK_FOR_EACH_FILE) {
-                    IfFileExistsDialog d = new IfFileExistsDialog(file, controller.getCurrentActiveItem(), archive);
+                    final IfFileExistsDialog d = new IfFileExistsDialog(outputFile, controller.getCurrentActiveItem(), archive);
                     d.show();
-                    try {
-                        d.throwCloseExceptions();
-                    } catch (Exception e) {
-                        throw new SevenZipException(e);
+                    if (d.getCloseReason() != CloseReason.OK) {
+                        throw new ExtractionControllerException(ExtractionControllerConstants.EXIT_CODE_USER_BREAK);
+                    } else {
+                        action = d.getAction();
                     }
-                    action = d.getAction();
-                    if (action == null) throw new SevenZipException("Cannot handle if file exists");
+                    if (action == null) {
+                        throw new ExtractionControllerException(ExtractionControllerConstants.EXIT_CODE_USER_BREAK);
+                    }
                     if (action == IfFileExistsAction.AUTO_RENAME) {
-                        file = new File(file.getParentFile(), d.getNewName());
-                        if (file.exists()) {
+                        outputFile = new File(outputFile.getParentFile(), d.getNewName());
+                        if (outputFile.exists()) {
                             action = IfFileExistsAction.ASK_FOR_EACH_FILE;
                         }
                     }
                 }
                 switch (action) {
                 case OVERWRITE_FILE:
-                    if (!FileCreationManager.getInstance().delete(file, null)) { throw new ExtSevenZipException(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR, "Could not overwrite(delete) " + file); }
+                    if (!FileCreationManager.getInstance().delete(outputFile, null)) {
+                        throw new ExtractionControllerException(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR, "Could not overwrite(delete) " + outputFile);
+                    }
                     break;
                 case SKIP_FILE:
                     /* skip file */
-                    archive.addExtractedFiles(file);
-                    throw new ExtSevenZipException(ExtractionControllerConstants.EXIT_CODE_OUTPUTFILE_EXIST, "Outputfile exists: " + file);
+                    archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_SUCCESS);
+                    archive.addSkippedFiles(outputFile);
+                    return;
                 case AUTO_RENAME:
-                    String extension = Files.getExtension(file.getName());
-                    String name = StringUtils.isEmpty(extension) ? file.getName() : file.getName().substring(0, file.getName().length() - extension.length() - 1);
+                    String extension = Files.getExtension(outputFile.getName());
+                    String name = StringUtils.isEmpty(extension) ? outputFile.getName() : outputFile.getName().substring(0, outputFile.getName().length() - extension.length() - 1);
                     int i = 1;
-                    while (file.exists()) {
+                    final File parent = outputFile.getParentFile();
+                    while (outputFile.exists()) {
                         if (StringUtils.isEmpty(extension)) {
-                            file = new File(file.getParentFile(), name + "_" + i);
+                            outputFile = new File(parent, name + "_" + i++);
                         } else {
-                            file = new File(file.getParentFile(), name + "_" + i + "." + extension);
+                            outputFile = new File(parent, name + "_" + (i++) + "." + extension);
                         }
-                        i++;
                     }
                     break;
                 }
             }
-            if ((!file.getParentFile().exists() && !FileCreationManager.getInstance().mkdir(file.getParentFile())) || !file.createNewFile()) {
+            if ((!outputFile.getParentFile().exists() && !FileCreationManager.getInstance().mkdir(outputFile.getParentFile())) || !outputFile.createNewFile()) {
                 archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
                 return;
-            }
-            long size = 0l;
-            for (String l : files) {
-                size += new File(l).length() - HEADER_SIZE;
             }
             controller.getArchiv().getContentView().add(new PackedFile(false, archive.getName(), size));
             controller.setCompleteBytes(size);
             controller.setProcessedBytes(0);
-            archive.addExtractedFiles(file);
-            out = new BufferedOutputStream(new FileOutputStream(file));
-            controller.setCurrentActiveItem(new Item(file.getName(), size, file));
-            MessageDigest md = null;
-            for (int i = 0; i < files.size(); i++) {
-                File source = new File(files.get(i));
+            fos = new RandomAccessFile(outputFile, "rw");
+            archive.addExtractedFiles(outputFile);
+            long fileWritePosition = 0;
+            fileOpen.set(true);
+            final RandomAccessFile ffos = fos;
+            final NullsafeAtomicReference<IOException> ioException = new NullsafeAtomicReference<IOException>(null);
+            flusher = new FileBytesCacheFlusher() {
+
+                @Override
+                public void flushed() {
+                }
+
+                @Override
+                public void flush(byte[] writeCache, int writeCachePosition, int length, long fileWritePosition) {
+                    if (fileOpen.get()) {
+                        try {
+                            ffos.seek(fileWritePosition);
+                            ffos.write(writeCache, writeCachePosition, length);
+                        } catch (final IOException e) {
+                            ioException.set(e);
+                            fileOpen.set(false);
+                        }
+                    }
+                }
+            };
+            controller.setCurrentActiveItem(new Item(outputFile.getName(), size, outputFile));
+            final byte[] buffer = new byte[32767];
+            for (int partIndex = 0; partIndex < archive.getArchiveFiles().size(); partIndex++) {
+                final File part = new File(archive.getArchiveFiles().get(partIndex).getFilePath());
+                InputStream in = null;
+                MessageDigest md = null;
                 try {
-                    in = new BufferedInputStream(new FileInputStream(source));
-                    if (md5) md = MessageDigest.getInstance("md5");
+                    in = new FileInputStream(part);
+                    if (md5) {
+                        md = MessageDigest.getInstance("md5");
+                    }
                     // Skip header in case of the first file
                     // can't call in.skip(), because the header counts
                     // the towards md5 hash.
-                    long length = source.length();
-                    if (i == 0) {
+                    long partLength = part.length();
+                    if (partIndex == 0) {
                         int alreadySkipped = 0;
                         final int toBeSkipped = HEADER_SIZE;
                         while (alreadySkipped < toBeSkipped) {
                             // Read data
                             int l = in.read(buffer, 0, toBeSkipped - alreadySkipped);
                             alreadySkipped += l;
-                            // Update MD5
-                            if (md5) md.update(buffer, 0, l);
+                            if (md5) {
+                                // Update MD5
+                                md.update(buffer, 0, l);
+                            }
                         }
-                        length = length - toBeSkipped;
+                        partLength = partLength - toBeSkipped;
                     }
 
-                    long read = 0;
+                    long partRead = 0;
                     // Skip md5 hashes at the end if it's the last file
-                    boolean isItTheLastFile = i == (files.size() - 1);
+                    final boolean isItTheLastFile = partIndex == (archive.getArchiveFiles().size() - 1);
                     if (md5 && isItTheLastFile) {
-                        length = length - 32 * files.size();
+                        partLength = partLength - 32 * archive.getArchiveFiles().size();
                     }
                     // Merge
-                    while (length > read) {
-                        // Calculate the read buffer for the remaining byte. Max
-                        // BUFFER
-                        int buf = ((length - read) < BUFFER_SIZE) ? (int) (length - read) : BUFFER_SIZE;
-                        // Read data
-                        int read2 = in.read(buffer, 0, buf);
-                        // Write data
-                        if (read2 > 0) {
-                            out.write(buffer, 0, read2);
-                            if (controller.gotKilled()) throw new IOException("Extraction has been aborted!");
+                    while (partLength > partRead) {
+                        // Calculate the read buffer for the remaining byte.
+                        final int readLength = ((partLength - partRead) < buffer.length) ? (int) (partLength - partRead) : buffer.length;
+                        final int dataRead = in.read(buffer, 0, readLength);
+                        if (dataRead > 0) {
+                            cache.write(flusher, fileWritePosition, buffer, dataRead);
+                            fileWritePosition += dataRead;
+                            if (controller.gotKilled()) {
+                                throw new ExtractionControllerException(ExtractionControllerConstants.EXIT_CODE_USER_BREAK, "Extraction has been aborted!");
+                            }
+                            if (ioException.get() != null) {
+                                throw ioException.get();
+                            }
                             // Sum up bytes for control
-                            controller.addAndGetProcessedBytes(read2);
-                            read += read2;
-                            // Update MD5
-                            if (md5) md.update(buffer, 0, read2);
-                        } else if (read2 < 0) throw new IOException("EOF during extraction");
+                            controller.addAndGetProcessedBytes(dataRead);
+                            partRead += dataRead;
+                            if (md5) {
+                                // Update MD5
+                                md.update(buffer, 0, dataRead);
+                            }
+                        } else if (dataRead < 0) {
+                            throw new EOFException("EOF during merge");
+                        }
                     }
 
                     // Check MD5 hashes
                     if (md5) {
-                        final String calculatedHash = HexFormatter.byteArrayToHex(md.digest()).toUpperCase();
-                        final String hashStoredWithinFiles = hashes.get(source.getAbsolutePath());
-                        if (hashStoredWithinFiles != null && !hashStoredWithinFiles.equals(calculatedHash)) {
-                            for (ArchiveFile link : archive.getArchiveFiles()) {
-                                if (link.getFilePath().equals(source.getAbsolutePath())) {
-                                    archive.addCrcError(link);
-                                    break;
-                                }
-                            }
+                        final byte[] calculatedHash = md.digest();
+                        final byte[] knownHash = hashes.get(archive.getArchiveFiles().get(partIndex));
+                        if (knownHash != null && !Arrays.equals(knownHash, calculatedHash)) {
+                            archive.addCrcError(archive.getArchiveFiles().get(partIndex));
+                            throw new ExtractionControllerException(ExtractionControllerConstants.EXIT_CODE_CRC_ERROR);
                         }
                     }
                 } finally {
@@ -224,47 +249,48 @@ public class XtreamSplit extends IExtraction {
                     }
                 }
             }
-        } catch (ExtSevenZipException e) {
+            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_SUCCESS);
+            return;
+        } catch (ExtractionControllerException e) {
             setException(e);
-            logger.log(e);
             archive.setExitCode(e.getExitCode());
-        } catch (SevenZipException e) {
-            setException(e);
-            logger.log(e);
-            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
-            return;
-        } catch (FileNotFoundException e) {
-            controller.setExeption(e);
-            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_WRITE_ERROR);
-            return;
         } catch (IOException e) {
-            controller.setExeption(e);
-            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_WRITE_ERROR);
-            return;
-        } catch (NoSuchAlgorithmException e) {
-            controller.setExeption(e);
+            setException(e);
+            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_INCOMPLETE_ERROR);
+        } catch (Exception e) {
+            setException(e);
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
-            return;
         } finally {
+            final FileBytesCacheFlusher fflusher = flusher;
+            cache.execute(new Runnable() {
+
+                @Override
+                public void run() {
+                    if (fileOpen.get()) {
+                        try {
+                            if (fflusher != null) {
+                                cache.flushIfContains(fflusher);
+                            }
+                        } finally {
+                            fileOpen.set(false);
+                        }
+                    }
+                }
+
+            });
             try {
-                out.flush();
-            } catch (Throwable e) {
-            }
-            try {
-                out.close();
+                try {
+                    if (fos != null) {
+                        fos.getChannel().force(true);
+                    }
+                } finally {
+                    if (fos != null) {
+                        fos.close();
+                    }
+                }
             } catch (Throwable e) {
             }
         }
-
-        if (archive.getCrcError().size() > 0) {
-            if (!FileCreationManager.getInstance().delete(file, null)) {
-                logger.warning("Could not delete outputfile after crc error");
-            }
-            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CRC_ERROR);
-            return;
-        }
-
-        archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_SUCCESS);
     }
 
     @Override
@@ -279,114 +305,154 @@ public class XtreamSplit extends IExtraction {
 
     @Override
     public boolean prepare() {
-        for (ArchiveFile l : archive.getArchiveFiles()) {
-            files.add(l.getFilePath());
-        }
-
-        Collections.sort(files);
-
-        file = new File(archive.getFirstArchiveFile().getFilePath().replaceFirst("\\.[\\d]+\\.xtm$", ""));
-        BufferedInputStream in = null;
+        final Archive archive = getArchive();
+        outputFile = new File(archive.getFirstArchiveFile().getFilePath().replaceFirst("\\.[\\d]+\\.xtm$", ""));
+        FileInputStream in = null;
         try {
-            in = new BufferedInputStream(new FileInputStream(archive.getFirstArchiveFile().getFilePath()));
-            // Skip useless bytes
-            in.skip(40);
-
-            // Original filename
-            byte[] buffer = new byte[in.read()];
-            in.read(buffer);
-            in.skip(50 - buffer.length);
-
-            String filename = new String(buffer, "UTF-8");
-
+            in = new FileInputStream(archive.getFirstArchiveFile().getFilePath());
+            AWFCUtils awfc = new AWFCUtils(in);
+            in.skip(40);// Skip useless bytes
+            byte[] buffer = new byte[awfc.ensureRead()]; // original fileName length
+            awfc.ensureRead(buffer.length, buffer); // original fileName
+            in.skip(50 - buffer.length);// skip rest
+            final String filename = new String(buffer, "UTF-8");
             // Set filename. If no filename was set, take the archivename
-            if (filename != null && filename.trim().length() != 0)
-                file = new File(file.getAbsolutePath().replace(file.getName(), filename));
-            else {
-                logger.warning("Could not read from XtremSplit file " + file.getAbsolutePath());
+            if (filename != null && filename.trim().length() != 0) {
+                outputFile = new File(outputFile.getAbsolutePath().replace(outputFile.getName(), filename));
+            } else {
+                logger.warning("Could not read from XtremSplit file " + outputFile.getAbsolutePath());
             }
-
-            // MD5 Hashes are present
-            md5 = in.read() == 1 ? true : false;
-
-            // Get MD5 Hashes
+            md5 = awfc.ensureRead() == 1 ? true : false;// MD5 Hashes are present
+            buffer = new byte[4];
+            awfc.ensureRead(4, buffer);// numberOfParts
+            final int numberOfFiles = ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).getInt();
+            buffer = new byte[8];
+            awfc.ensureRead(8, buffer);// fileLength
+            in.close();
+            // fileLength = ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).getLong();//my xtm example seems broken
+            if (numberOfFiles > archive.getArchiveFiles().size()) {
+                logger.warning("Archive incomplete: " + numberOfFiles + "!=" + archive.getArchiveFiles().size());
+                archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_INCOMPLETE_ERROR);
+                return false;
+            }
             if (md5) {
-                in.close();
+                // Get MD5 Hashes
+                final File lastFile = new File(archive.getArchiveFiles().get(numberOfFiles - 1).getFilePath());
+                final RandomAccessFile raf = new RandomAccessFile(lastFile, "r");
+                try {
+                    awfc = new AWFCUtils(new InputStream() {
 
-                File f = new File(files.get(files.size() - 1));
-                in = new BufferedInputStream(new FileInputStream(f));
-                in.skip(f.length() - (32 * files.size()));
-                buffer = new byte[32];
+                        @Override
+                        public int read() throws IOException {
+                            return raf.read();
+                        }
 
-                for (int i = 0; i < files.size(); i++) {
-                    in.read(buffer);
-                    hashes.put(files.get(i), new String(buffer));
+                        @Override
+                        public int read(byte[] b, int off, int len) throws IOException {
+                            return raf.read(b, off, len);
+                        }
+                    });
+                    raf.seek(lastFile.length() - (32 * numberOfFiles));
+                    buffer = new byte[32];
+                    for (int i = 0; i < numberOfFiles; i++) {
+                        awfc.ensureRead(32, buffer);
+                        hashes.put(archive.getArchiveFiles().get(i), buffer);
+                    }
+                } finally {
+                    if (raf != null) {
+                        raf.close();
+                    }
                 }
             }
-        } catch (IOException e) {
+            return true;
+        } catch (Exception e) {
+            setException(e);
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
             return false;
         } finally {
             try {
-                if (in != null) in.close();
+                if (in != null) {
+                    in.close();
+                }
             } catch (IOException e) {
-                archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
-                return false;
             }
         }
-        return true;
     }
 
     public String getArchiveName(ArchiveFactory factory) {
-        return createID(factory);
+        return SplitType.createArchiveName(factory, splitType);
     }
 
     public boolean isArchivSupported(ArchiveFactory factory, boolean allowDeepInspection) {
-        if (factory.getName().matches(".*\\.[\\d]+\\.xtm$")) return true;
-        return false;
+        return createID(factory) != null;
     }
-
-    // public boolean isArchivSupportedFileFilter(String file) {
-    // if (file.matches(".*\\.001\\.xtm$")) return true;
-    // return false;
-    // }
 
     public void close() {
+        hashes.clear();
     }
 
-    public DummyArchive checkComplete(Archive archive) {
-        int last = 1;
-        List<String> missing = new ArrayList<String>();
-        List<Integer> erg = new ArrayList<Integer>();
-
-        Regex r = new Regex(archive.getFirstArchiveFile().getFilePath(), ".*\\.([\\d]+)\\.xtm$");
-        int length = r.getMatch(0).length();
-        String archivename = archive.getName();
-
-        for (ArchiveFile l : archive.getArchiveFiles()) {
-            String e = "";
-            if ((e = new Regex(l.getFilePath(), ".*\\.([\\d]+)\\.xtm$").getMatch(0)) != null) {
-                int p = Integer.parseInt(e);
-
-                if (p > last) last = p;
-
-                erg.add(p);
+    public DummyArchive checkComplete(Archive archive) throws CheckException {
+        try {
+            final DummyArchive ret = new DummyArchive(archive, splitType.name());
+            boolean hasMissingArchiveFiles = false;
+            for (ArchiveFile archiveFile : archive.getArchiveFiles()) {
+                if (archiveFile instanceof MissingArchiveFile) {
+                    hasMissingArchiveFiles = true;
+                }
+                ret.add(new DummyArchiveFile(archiveFile));
             }
-        }
-
-        for (int i = 1; i <= last; i++) {
-            if (!erg.contains(i)) {
-                String part = archivename + "." + StringFormatter.fillString(i + "", "0", "", length) + ".xtm";
-                missing.add(part);
+            if (hasMissingArchiveFiles == false && archive.getFirstArchiveFile().exists()) {
+                final String firstArchiveFile = archive.getFirstArchiveFile().getFilePath();
+                final String partNumberOfFirstArchiveFile = splitType.getPartNumberString(firstArchiveFile);
+                if (splitType.getFirstPartIndex() != splitType.getPartNumber(partNumberOfFirstArchiveFile)) {
+                    throw new CheckException("Wrong firstArchiveFile(" + firstArchiveFile + ") for Archive(" + archive.getName() + ")");
+                }
+                InputStream is = null;
+                try {
+                    is = new FileInputStream(firstArchiveFile);
+                    AWFCUtils awfc = new AWFCUtils(is);
+                    is.skip(40);// Skip useless bytes
+                    byte[] buffer = new byte[awfc.ensureRead()];// original fileName length
+                    awfc.ensureRead(buffer.length, buffer); // original fileName
+                    is.skip(50 - buffer.length);// skip rest
+                    awfc.ensureRead();// md5
+                    buffer = new byte[4];
+                    awfc.ensureRead(4, buffer); // numberOfParts
+                    final int numberOfParts = ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).getInt();
+                    is.close();
+                    final List<ArchiveFile> missingArchiveFiles = SplitType.getMissingArchiveFiles(archive, splitType, numberOfParts);
+                    if (missingArchiveFiles != null) {
+                        for (ArchiveFile missingArchiveFile : missingArchiveFiles) {
+                            ret.add(new DummyArchiveFile(missingArchiveFile));
+                        }
+                    }
+                    if (ret.getSize() < numberOfParts) {
+                        throw new CheckException("Missing archiveParts(" + numberOfParts + "!=" + ret.getSize() + ") for Archive(" + archive.getName() + ")");
+                    } else if (ret.getSize() > numberOfParts) {
+                        throw new CheckException("Too many archiveParts(" + numberOfParts + "!=" + ret.getSize() + ") for Archive(" + archive.getName() + ")");
+                    }
+                } finally {
+                    if (is != null) {
+                        is.close();
+                    }
+                }
             }
+            return ret;
+        } catch (CheckException e) {
+            throw e;
+        } catch (Throwable e) {
+            throw new CheckException("Cannot check Archive(" + archive.getName() + ")", e);
         }
-
-        return DummyArchive.create(archive, missing);
     }
 
     @Override
     public String createID(ArchiveFactory factory) {
-        return factory.getName().replaceFirst("\\.[\\d]+\\.xtm$", "");
+        return SplitType.createArchiveID(factory, splitType);
+    }
+
+    @Override
+    public boolean isFileSupported(ArchiveFactory factory, boolean allowDeepInspection) {
+        return splitType.matches(factory.getFilePath());
     }
 
 }

@@ -31,7 +31,7 @@ import org.jdownloader.extensions.extraction.multi.CheckException;
  */
 public abstract class IExtraction {
 
-    protected Archive              archive;
+    private Archive                archive;
     protected ExtractionController controller;
     protected LogSource            logger;
     protected ExtractionConfig     config;
@@ -62,6 +62,10 @@ public abstract class IExtraction {
      */
     public final void setArchiv(Archive archive) {
         this.archive = archive;
+    }
+
+    public final Archive getArchive() {
+        return archive;
     }
 
     /**
@@ -102,8 +106,8 @@ public abstract class IExtraction {
     }
 
     /**
-     * Builds an {@link Archive} with an finished {@link DownloadLink}. If the {@link DownloadLink} contains only a part of an multipart archive, it has not to
-     * be to first one (eg. test.part1.rar).
+     * Builds an {@link Archive} with an finished {@link DownloadLink}. If the {@link DownloadLink} contains only a part of an multipart
+     * archive, it has not to be to first one (eg. test.part1.rar).
      * 
      * @param link
      *            An complete downloaded file.
@@ -130,8 +134,8 @@ public abstract class IExtraction {
     public abstract void extract(ExtractionController controller);
 
     /**
-     * Checks if the extraction method can be used on the system. If it's not possible the method should try to fix that. If that fails it should return false.
-     * The extraction method will not be used anymore in this session for extraction.
+     * Checks if the extraction method can be used on the system. If it's not possible the method should try to fix that. If that fails it
+     * should return false. The extraction method will not be used anymore in this session for extraction.
      * 
      * @return True if all works.
      */
@@ -145,8 +149,8 @@ public abstract class IExtraction {
     public abstract int getCrackProgress();
 
     /**
-     * Is used to let the extraction method prepare for the extraction. Will be called after the system started an extraction, but before the
-     * {@link crackPassword} and {@link extract}.
+     * Is used to let the extraction method prepare for the extraction. Will be called after the system started an extraction, but before
+     * the {@link crackPassword} and {@link extract}.
      * 
      * @return False if we need a password to extract
      */
@@ -170,6 +174,8 @@ public abstract class IExtraction {
      * @return
      */
     public abstract boolean isArchivSupported(ArchiveFactory factory, boolean allowDeepInspection);
+
+    public abstract boolean isFileSupported(ArchiveFactory factory, boolean allowDeepInspection);
 
     //
     // /**

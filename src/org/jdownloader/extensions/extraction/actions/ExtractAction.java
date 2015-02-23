@@ -115,7 +115,8 @@ public class ExtractAction extends AbstractExtractionContextAction {
                         }
 
                         for (IExtraction extractor : _getExtension().getExtractors()) {
-                            if (extractor.isArchivSupported(new FileArchiveFactory(pathname), false)) {
+                            if (extractor.isFileSupported(new FileArchiveFactory(pathname), false)) {
+                                /* no deep inspection to speedup the accept method */
                                 return true;
                             }
                         }
@@ -144,7 +145,10 @@ public class ExtractAction extends AbstractExtractionContextAction {
 
                         try {
                             final Archive archive = _getExtension().buildArchive(new FileArchiveFactory(archiveStartFile));
-
+                            if (archive == null) {
+                                /* archive can be null because deep inspection may result in insupported archive */
+                                continue;
+                            }
                             switch (getExtractToPathLogic()) {
 
                             case USE_CUSTOMEXTRACTIONPATH:
@@ -162,17 +166,14 @@ public class ExtractAction extends AbstractExtractionContextAction {
                                 break;
                             case ASK_ONCE:
                                 archive.getSettings().setExtractPath(extractTo.getAbsolutePath());
-
                                 break;
-
                             case EXTRACT_TO_ARCHIVE_PARENT:
                                 archive.getSettings().setExtractPath(archiveStartFile.getParentFile().getAbsolutePath());
                                 break;
-
                             }
                             ProgressDialog dialog = new ProgressDialog(new ProgressGetter() {
 
-                                private ExtractionController controller;
+                                private volatile ExtractionController controller = null;
 
                                 @Override
                                 public void run() throws Exception {
@@ -216,13 +217,13 @@ public class ExtractAction extends AbstractExtractionContextAction {
                                     }
                                 }
 
-                                private DecimalFormat format = new DecimalFormat("00.00");
+                                private final DecimalFormat format = new DecimalFormat("00.00");
 
                                 @Override
                                 public String getString() {
-
-                                    if (controller != null) {
-                                        return T._.extractprogress_label(format.format(controller.getProgress()) + " %", controller.getArchiv().getExtractedFiles().size() + "");
+                                    final ExtractionController lController = controller;
+                                    if (lController != null) {
+                                        return T._.extractprogress_label(format.format(lController.getProgress()) + " %", lController.getArchiv().getExtractedFiles().size() + "");
                                     } else {
                                         return format.format(0d) + " %";
                                     }
@@ -230,15 +231,15 @@ public class ExtractAction extends AbstractExtractionContextAction {
 
                                 @Override
                                 public int getProgress() {
-                                    if (controller == null) {
+                                    final ExtractionController lController = controller;
+                                    if (lController == null) {
                                         return 0;
                                     }
-                                    return Math.min(99, (int) controller.getProgress());
+                                    return Math.min(99, (int) lController.getProgress());
                                 }
 
                                 @Override
                                 public String getLabelString() {
-
                                     return null;
                                 }
                             }, 0, T._.extracting_archive(archive.getName()), T._.extracting_wait(archive.getName()), new ExtMergedIcon(new AbstractIcon(org.jdownloader.gui.IconKey.ICON_COMPRESS, 32)).add(new AbstractIcon(IconKey.ICON_MEDIA_PLAYBACK_START, 24), 6, 6), null, null) {

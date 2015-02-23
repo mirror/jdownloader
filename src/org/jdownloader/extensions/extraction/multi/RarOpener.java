@@ -16,6 +16,7 @@
 
 package org.jdownloader.extensions.extraction.multi;
 
+import java.io.Closeable;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -24,7 +25,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 import jd.parser.Regex;
@@ -46,27 +46,29 @@ import org.jdownloader.extensions.extraction.ArchiveFile;
  * @author botzi
  * 
  */
-class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICryptoGetTextPassword {
-    private Map<String, OpenerAccessTracker> openedRandomAccessFileList = new HashMap<String, OpenerAccessTracker>();
-    private String                           name;
-    private final String                     password;
-    private final Archive                    archive;
-    private HashMap<String, ArchiveFile>     map;
-    private String                           firstName;
-    private Logger                           logger;
-    private final AtomicLong                 accessCounter              = new AtomicLong(0);
+class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICryptoGetTextPassword, Closeable {
+    private final Map<String, OpenerAccessTracker> openedRandomAccessFileList = new HashMap<String, OpenerAccessTracker>();
+    private String                                 name                       = null;
+    private final String                           password;
+    private final Archive                          archive;
+    private final HashMap<String, ArchiveFile>     map                        = new HashMap<String, ArchiveFile>();
+    private String                                 firstName;
+    private final Logger                           logger;
+    private long                                   accessCounter              = 0l;
 
-    RarOpener(Archive archive) {
-        this(archive, null);
+    RarOpener(Archive archive, Logger logger) {
+        this(archive, null, logger);
     }
 
-    RarOpener(Archive archive, String password) {
+    RarOpener(Archive archive, String password, Logger logger) {
         if (password == null) {
             /* password null will crash jvm */
-            password = "";
+            this.password = "";
+        } else {
+            this.password = password;
         }
-        this.password = password;
         this.archive = archive;
+        this.logger = logger;
         init();
     }
 
@@ -77,18 +79,23 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
     }
 
     private void init() {
-        map = new HashMap<String, ArchiveFile>();
         // support for test.part01-blabla.tat archives.
         // we have to create a rename matcher map in this case because 7zip cannot handle this type
-        if (logger != null) logger.info("Init Map:");
+        if (logger != null) {
+            logger.info("Init Map:");
+        }
         if (archive.getFirstArchiveFile().getFilePath().matches("(?i).*\\.pa?r?t?\\.?\\d+\\D.*?\\.rar$")) {
             for (ArchiveFile af : archive.getArchiveFiles()) {
                 String name = archive.getName() + "." + new Regex(af.getFilePath(), ".*(part\\d+)").getMatch(0) + ".rar";
 
-                if (logger != null) logger.info(af.getFilePath() + " name: " + name);
+                if (logger != null) {
+                    logger.info(af.getFilePath() + " name: " + name);
+                }
                 if (af == archive.getFirstArchiveFile()) {
                     firstName = name;
-                    if (logger != null) logger.info(af.getFilePath() + " FIRSTNAME name: " + name);
+                    if (logger != null) {
+                        logger.info(af.getFilePath() + " FIRSTNAME name: " + name);
+                    }
                 }
                 if (map.put(name, af) != null) {
                     //
@@ -107,10 +114,6 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
         return null;
     }
 
-    public boolean isStreamOpen(String filename) {
-        return openedRandomAccessFileList.containsKey(filename);
-    }
-
     public IInStream getStream(ArchiveFile firstArchiveFile) throws SevenZipException {
         return getStream(firstName == null ? firstArchiveFile.getFilePath() : firstName);
     }
@@ -124,14 +127,22 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
                 tracker = new OpenerAccessTracker(filename, new RandomAccessFile(filename, "r"));
                 openedRandomAccessFileList.put(filename, tracker);
             }
-            name = filename;
+            if (name == null) {
+                name = filename;
+            }
             final OpenerAccessTracker finalTracker = tracker;
             finalTracker.getRandomAccessFile().seek(0);
             return new RandomAccessFileInStream(finalTracker.getRandomAccessFile()) {
                 @Override
                 public int read(byte[] abyte0) throws SevenZipException {
-                    finalTracker.setAccessIndex(accessCounter.incrementAndGet());
+                    finalTracker.setAccessIndex(++accessCounter);
                     return super.read(abyte0);
+                }
+
+                @Override
+                public long seek(long l, int i) throws SevenZipException {
+                    finalTracker.setAccessIndex(++accessCounter);
+                    return super.seek(l, i);
                 }
 
             };
@@ -147,7 +158,7 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
      * 
      * @throws IOException
      */
-    void close() throws IOException {
+    public void close() throws IOException {
         Iterator<Entry<String, OpenerAccessTracker>> it = openedRandomAccessFileList.entrySet().iterator();
         while (it.hasNext()) {
             Entry<String, OpenerAccessTracker> next = it.next();
@@ -172,10 +183,6 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
 
     public String cryptoGetTextPassword() throws SevenZipException {
         return password;
-    }
-
-    public void setLogger(Logger logger) {
-        this.logger = logger;
     }
 
 }

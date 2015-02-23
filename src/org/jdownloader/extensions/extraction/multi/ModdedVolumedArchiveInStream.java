@@ -6,7 +6,6 @@ import java.util.List;
 
 import net.sf.sevenzipjbinding.IArchiveOpenVolumeCallback;
 import net.sf.sevenzipjbinding.IInStream;
-import net.sf.sevenzipjbinding.PropID;
 import net.sf.sevenzipjbinding.SevenZipException;
 import net.sf.sevenzipjbinding.impl.VolumedArchiveInStream;
 
@@ -22,18 +21,14 @@ public class ModdedVolumedArchiveInStream implements IInStream {
     private final IArchiveOpenVolumeCallback archiveOpenVolumeCallback;
     private String                           cuttedVolumeFilename;
 
-    public ModdedVolumedArchiveInStream(IArchiveOpenVolumeCallback archiveOpenVolumeCallback) throws SevenZipException {
-        this((String) archiveOpenVolumeCallback.getProperty(PropID.NAME), archiveOpenVolumeCallback);
-    }
-
     /**
      * Creates instance of {@link VolumedArchiveInStream} using {@link IArchiveOpenVolumeCallback}.
      * 
      * @param firstVolumeFilename
      *            the file name of the first volume.
      * @param archiveOpenVolumeCallback
-     *            call back implementation used to access different volumes of archive. The file name should ends with <code>.7z.001</code> or SevenZipException
-     *            will be thrown.
+     *            call back implementation used to access different volumes of archive. The file name should ends with <code>.7z.001</code>
+     *            or SevenZipException will be thrown.
      * @throws SevenZipException
      *             in error case
      */
@@ -45,11 +40,15 @@ public class ModdedVolumedArchiveInStream implements IInStream {
     }
 
     private void openVolume(int index, boolean seekToBegin) throws SevenZipException {
-        if (currentIndex == index) { return; }
+        if (currentIndex == index) {
+            return;
+        }
         for (int i = volumePositions.size(); i < index && absoluteLength == -1; i++) {
             openVolume(i, false);
         }
-        if (absoluteLength != -1 && volumePositions.size() <= index) { return; }
+        if (absoluteLength != -1 && volumePositions.size() <= index) {
+            return;
+        }
         String volumeFilename = cuttedVolumeFilename + MessageFormat.format("{0,number,000}", Integer.valueOf(index));
         // Get new IInStream
         IInStream newInStream = archiveOpenVolumeCallback.getStream(volumeFilename);
@@ -61,7 +60,9 @@ public class ModdedVolumedArchiveInStream implements IInStream {
         if (volumePositions.size() == index) {
             // Determine volume size
             currentVolumeLength = currentInStream.seek(0, SEEK_END);
-            if (currentVolumeLength == 0) { throw new RuntimeException("Volume " + index + " is empty"); }
+            if (currentVolumeLength == 0) {
+                throw new RuntimeException("Volume " + index + " is empty");
+            }
             volumePositions.add(Long.valueOf(volumePositions.get(index - 1).longValue() + currentVolumeLength));
             if (seekToBegin) {
                 currentInStream.seek(0, SEEK_SET);
@@ -81,7 +82,9 @@ public class ModdedVolumedArchiveInStream implements IInStream {
     // 1______2______3______4 - volume
     private void openVolumeToAbsoluteOffset() throws SevenZipException {
         int index = volumePositions.size() - 1;
-        if (absoluteLength != -1 && absoluteOffset >= absoluteLength) { return; }
+        if (absoluteLength != -1 && absoluteOffset >= absoluteLength) {
+            return;
+        }
         while (volumePositions.get(index).longValue() > absoluteOffset) {
             index--;
         }
@@ -118,7 +121,9 @@ public class ModdedVolumedArchiveInStream implements IInStream {
         default:
             throw new RuntimeException("Seek: unknown origin: " + seekOrigin);
         }
-        if (newOffset == absoluteOffset && !proceedWithSeek) { return newOffset; }
+        if (newOffset == absoluteOffset && !proceedWithSeek) {
+            return newOffset;
+        }
         absoluteOffset = newOffset;
         openVolumeToAbsoluteOffset();
         if (absoluteLength != -1 && absoluteLength <= absoluteOffset) {
@@ -134,7 +139,9 @@ public class ModdedVolumedArchiveInStream implements IInStream {
      * ${@inheritDoc}
      */
     public int read(byte[] data) throws SevenZipException {
-        if (absoluteLength != -1 && absoluteOffset >= absoluteLength) { return 0; }
+        if (absoluteLength != -1 && absoluteOffset >= absoluteLength) {
+            return 0;
+        }
         int read = currentInStream.read(data);
         absoluteOffset += read;
         currentVolumeOffset += read;

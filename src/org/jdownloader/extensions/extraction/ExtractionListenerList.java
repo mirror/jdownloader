@@ -36,6 +36,7 @@ import jd.controlling.TaskQueue;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import net.sf.sevenzipjbinding.ArchiveFormat;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.uio.UIOManager;
@@ -358,10 +359,13 @@ public class ExtractionListenerList implements ExtractionListener {
 
                     @Override
                     protected Void run() throws RuntimeException {
-                        FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(controller, FileCreationEvent.Type.NEW_FILES, controller.getArchiv().getExtractedFiles().toArray(new File[controller.getArchiv().getExtractedFiles().size()])));
-                        if (ex.getSettings().isDeleteInfoFilesAfterExtraction()) {
-                            File fileOutput = new File(controller.getArchiv().getFirstArchiveFile().getFilePath());
-                            File infoFiles = new File(fileOutput.getParentFile(), fileOutput.getName().replaceFirst("(?i)(\\.pa?r?t?\\.?[0-9]+\\.rar|\\.rar)$", "") + ".info");
+                        final Archive archive = controller.getArchiv();
+                        final ArrayList<File> files = new ArrayList<File>(archive.getExtractedFiles());
+                        files.addAll(archive.getSkippedFiles());
+                        FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(controller, FileCreationEvent.Type.NEW_FILES, files.toArray(new File[files.size()])));
+                        if (ex.getSettings().isDeleteInfoFilesAfterExtraction() && ArchiveFormat.RAR.equals(archive.getType().getArchiveFormat())) {
+                            final File fileOutput = new File(archive.getFirstArchiveFile().getFilePath());
+                            final File infoFiles = new File(fileOutput.getParentFile(), fileOutput.getName().replaceFirst("(?i)(\\.pa?r?t?\\.?[0-9]+\\.rar|\\.rar)$", "") + ".info");
                             if (infoFiles.exists() && infoFiles.delete()) {
                                 logger.info(infoFiles.getName() + " removed");
                             }
@@ -390,15 +394,7 @@ public class ExtractionListenerList implements ExtractionListener {
                 }
                 if (controller.gotKilled()) {
                     controller.getArchiv().getFirstArchiveFile().setMessage(controller, null);
-                    for (File f : controller.getArchiv().getExtractedFiles()) {
-                        if (f.exists()) {
-                            if (!FileCreationManager.getInstance().delete(f, null)) {
-                                logger.warning("Could not delete file " + f.getAbsolutePath());
-                            } else {
-                                logger.warning("Deleted file " + f.getAbsolutePath());
-                            }
-                        }
-                    }
+                    cleanUpIncomplete(controller);
                 }
             } finally {
                 controller.getArchiv().setActive(false);
@@ -429,15 +425,7 @@ public class ExtractionListenerList implements ExtractionListener {
                 } else {
                     controller.getArchiv().setStatus(controller, ExtractionStatus.ERRROR_FILE_NOT_FOUND);
                 }
-                for (File f : controller.getArchiv().getExtractedFiles()) {
-                    if (f.exists()) {
-                        if (!FileCreationManager.getInstance().delete(f, null)) {
-                            logger.warning("Could not delete file " + f.getAbsolutePath());
-                        } else {
-                            logger.warning("Deleted file " + f.getAbsolutePath());
-                        }
-                    }
-                }
+                cleanUpIncomplete(controller);
             } finally {
                 controller.getArchiv().setActive(false);
                 ex.onFinished(controller);

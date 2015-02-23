@@ -13,16 +13,12 @@ public class DummyArchiveFile {
     private final String      name;
     private final boolean     missing;
     private final ArchiveFile archiveFile;
-    private final File        file;
 
     public ArchiveFile getArchiveFile() {
         return archiveFile;
     }
 
     public boolean isIncomplete() {
-        if (file != null && file.exists()) {
-            return false;
-        }
         return archiveFile == null || !archiveFile.isComplete();
     }
 
@@ -32,8 +28,7 @@ public class DummyArchiveFile {
 
     public DummyArchiveFile(String miss, File folder) {
         name = miss;
-        this.file = new File(folder, miss);
-        missing = !file.exists();
+        missing = true;
         this.archiveFile = null;
     }
 
@@ -44,14 +39,9 @@ public class DummyArchiveFile {
     public DummyArchiveFile(ArchiveFile af) {
         name = af.getName();
         if (af instanceof MissingArchiveFile) {
-            this.file = null;
             missing = true;
-        } else if (af instanceof CrawledLinkArchiveFile) {
-            file = null;
-            missing = false;
         } else {
-            file = new File(af.getFilePath());
-            missing = !file.exists();
+            missing = false;
         }
         archiveFile = af;
     }
@@ -78,9 +68,6 @@ public class DummyArchiveFile {
     }
 
     public boolean isLocalFileAvailable() {
-        if (file != null) {
-            return file.exists();
-        }
         if (archiveFile != null) {
             return archiveFile.exists();
         }

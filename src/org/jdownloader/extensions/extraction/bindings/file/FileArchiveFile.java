@@ -2,6 +2,7 @@ package org.jdownloader.extensions.extraction.bindings.file;
 
 import java.awt.Color;
 import java.io.File;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.extraction.Archive;
@@ -11,11 +12,12 @@ import org.jdownloader.extensions.extraction.ExtractionStatus;
 
 public class FileArchiveFile implements ArchiveFile {
 
-    private final File   file;
-    private final String name;
-    private final String filePath;
-    private boolean      isFirstArchiveFile = false;
-    private final int    hashCode;
+    private final File                     file;
+    private final String                   name;
+    private final String                   filePath;
+    private boolean                        isFirstArchiveFile = false;
+    private final int                      hashCode;
+    private final AtomicReference<Boolean> exists             = new AtomicReference<Boolean>(null);
 
     public boolean isFirstArchiveFile() {
         return isFirstArchiveFile;
@@ -25,8 +27,9 @@ public class FileArchiveFile implements ArchiveFile {
         this.isFirstArchiveFile = isFirstArchiveFile;
     }
 
-    public FileArchiveFile(File f) {
+    protected FileArchiveFile(File f) {
         this.file = f;
+        exists.set(Boolean.TRUE);
         name = file.getName();
         filePath = file.getAbsolutePath();
         hashCode = (getClass() + name).hashCode();
@@ -37,7 +40,7 @@ public class FileArchiveFile implements ArchiveFile {
     }
 
     public boolean isComplete() {
-        return getFile().exists();
+        return exists();
     }
 
     public String getFilePath() {
@@ -61,8 +64,8 @@ public class FileArchiveFile implements ArchiveFile {
     }
 
     public void deleteFile(FileCreationManager.DeleteOption option) {
-        FileCreationManager.getInstance().delete(file, option);
-
+        FileCreationManager.getInstance().delete(getFile(), option);
+        invalidateExists();
     }
 
     public String toString() {
@@ -101,7 +104,12 @@ public class FileArchiveFile implements ArchiveFile {
 
     @Override
     public boolean exists() {
-        return getFile().exists();
+        Boolean ret = exists.get();
+        if (ret == null) {
+            ret = getFile().exists();
+            exists.compareAndSet(null, ret);
+        }
+        return ret;
     }
 
     @Override
@@ -110,6 +118,11 @@ public class FileArchiveFile implements ArchiveFile {
 
     @Override
     public void removePluginProgress(ExtractionController controller) {
+    }
+
+    @Override
+    public void invalidateExists() {
+        exists.set(null);
     }
 
 }

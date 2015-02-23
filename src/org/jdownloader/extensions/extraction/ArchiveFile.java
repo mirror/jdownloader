@@ -18,6 +18,8 @@ public interface ArchiveFile {
 
     public boolean exists();
 
+    public void invalidateExists();
+
     public String getName();
 
     public void setStatus(ExtractionController controller, ExtractionStatus error);

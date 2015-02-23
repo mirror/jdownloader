@@ -75,4 +75,8 @@ public class MissingArchiveFile implements ArchiveFile {
     public void notifyChanges(Object type) {
     }
 
+    @Override
+    public void invalidateExists() {
+    }
+
 }
