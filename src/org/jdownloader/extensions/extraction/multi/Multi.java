@@ -855,7 +855,7 @@ public class Multi extends IExtraction {
                 filter.clear();
                 for (final String entry : entries) {
                     try {
-                        if (StringUtils.isNotEmpty(entry)) {
+                        if (StringUtils.isNotEmpty(entry) && !entry.startsWith("##")) {
                             filter.add(Pattern.compile(entry));
                         }
                     } catch (final Throwable e) {
