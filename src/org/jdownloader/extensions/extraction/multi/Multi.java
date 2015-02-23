@@ -516,12 +516,17 @@ public class Multi extends IExtraction {
         final Archive archive = getArchive();
         String path = item.getPath();
         if (StringUtils.isEmpty(path)) {
-            // example: test.tar.gz contains a test.tar file, that has
+            // example: test.tar.gz / test.tgz contains a test.tar file, that has
             // NO name. we create a dummy name here.
-            String archivename = archive.getFactory().toFile(archive.getFirstArchiveFile().getFilePath()).getName();
-            int in = archivename.lastIndexOf(".");
+            final String firstPartName = archive.getFactory().toFile(archive.getFirstArchiveFile().getFilePath()).getName();
+            final int in = firstPartName.lastIndexOf(".");
             if (in > 0) {
-                path = archivename.substring(0, in);
+                path = firstPartName.substring(0, in);
+            } else {
+                path = "UnknownExtractionFilename";
+            }
+            if (ArchiveType.TGZ_SINGLE.equals(ctrl.getArchiv().getType()) && !StringUtils.endsWithCaseInsensitive(path, ".tar")) {
+                path = path + ".tar";
             }
         }
         final Long size = item.getSize();
