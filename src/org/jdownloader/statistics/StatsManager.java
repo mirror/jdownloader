@@ -207,7 +207,6 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                         if (randomValue == null) {
                             Random random = new Random(System.currentTimeMillis());
                             randomValue = random.nextInt(reducer);
-                            randomValue = 0;
                             reducerRandomMap.put(path, randomValue.intValue());
                             try {
                                 IO.secureWrite(reducerFile, JSonStorage.serializeToJson(reducerRandomMap).getBytes("UTF-8"));
