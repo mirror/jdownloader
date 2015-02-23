@@ -71,7 +71,7 @@ public class DailyMotionComV2 extends DailyMotionCom {
             super.downloadDirect(downloadLink);
         } else {
             DailyMotionVariant var = downloadLink.getVariant(DailyMotionVariant.class);
-            if (var.getConvertTo() == null) {
+            if (var == null || var.getConvertTo() == null) {
                 super.downloadDirect(downloadLink);
             } else {
 
@@ -164,8 +164,8 @@ public class DailyMotionComV2 extends DailyMotionCom {
                     }
                     downloadLink.setDownloadSize(con.getLongContentLength());
                     if (downloadLink.hasVariantSupport()) {
-                        DailyMotionVariant var = downloadLink.getVariant(DailyMotionVariant.class);
-                        if (var.getConvertTo() != null) {
+                        final DailyMotionVariant var = downloadLink.getVariant(DailyMotionVariant.class);
+                        if (var != null && var.getConvertTo() != null) {
                             if (downloadLink.getProperty("FFP_BITRATE") == null) {
                                 checkFFProbe(downloadLink, _JDT._.plugin_for_host_reason_for_ffmpeg_demux());
                                 StreamInfo streamInfo = new FFprobe().getStreamInfo(dllink);
@@ -234,7 +234,7 @@ public class DailyMotionComV2 extends DailyMotionCom {
 
     @Override
     public void setActiveVariantByLink(DownloadLink downloadLink, LinkVariant variant) {
-        if (variant instanceof DailyMotionVariant) {
+        if (variant != null && variant instanceof DailyMotionVariant) {
             DailyMotionVariant dmv = (DailyMotionVariant) variant;
 
             try {
