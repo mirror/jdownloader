@@ -404,6 +404,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
 
     @Override
     public void actionPerformed(ActionEvent e) {
+
         if (e.getSource() == okButton) {
             if (hoster != null && hoster.getSelectedItem() != null && editAccountPanel.validateInputs()) {
                 super.actionPerformed(e);
