@@ -65,19 +65,17 @@ public class BigCamTubeCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?), Blondes, Video \\- Big Cam Tube</title>").getMatch(0);
         }
+        DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
         if (DLLINK == null) {
-            DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
-            }
+            DLLINK = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
             if (DLLINK == null) {
                 DLLINK = br.getRegex("file:[\t\n\r ]*?\"(http[^<>\"]*?)\"").getMatch(0);
-            }
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=\"video/(?:mp4|flv)\"").getMatch(0);
-            }
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
+                if (DLLINK == null) {
+                    DLLINK = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=\"video/(?:mp4|flv)\"").getMatch(0);
+                    if (DLLINK == null) {
+                        DLLINK = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
+                    }
+                }
             }
         }
         if (filename == null || DLLINK == null) {
