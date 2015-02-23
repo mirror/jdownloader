@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "superhqporn.com" }, urls = { "http://(www\\.)?superhqporn\\.com/\\?v=[A-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "superhqporn.com" }, urls = { "http://www\\.superhqporndecrypted\\.com/\\?v=[A-Z0-9]+" }, flags = { 0 })
 public class SuperHqPornCom extends PluginForHost {
 
     public SuperHqPornCom(PluginWrapper wrapper) {
@@ -44,19 +44,34 @@ public class SuperHqPornCom extends PluginForHost {
         return "http://superhqporn.com/";
     }
 
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("superhqporndecrypted.com/", "superhqporn.com/"));
+    }
+
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">Video Not Exists<|>Requested video not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = new Regex(downloadLink.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0);
+        if (br.containsHTML(">Video Not Exists<|>Requested video not exist") || br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("<title>([^<>\"]*?)\\- Super HQ Porn</title>").getMatch(0);
+        if (filename == null) {
+            filename = new Regex(downloadLink.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0);
+        }
         DLLINK = br.getRegex("url: \\'(http[^<>\"]*?)\\'").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".mp4";
+        if (ext == null || ext.length() > 5) {
+            ext = ".mp4";
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -64,10 +79,11 @@ public class SuperHqPornCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

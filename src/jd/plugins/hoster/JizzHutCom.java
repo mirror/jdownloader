@@ -55,14 +55,19 @@ public class JizzHutCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         // Link offline
-        if (br.containsHTML("Datei nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Datei nicht gefunden")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // Link offline without any errormessage
-        if (!br.containsHTML("\\'http://(www\\.)?jizzhut.com/videos/embed/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!br.containsHTML("(\\'|\")http://(www\\.)?jizzhut\\.com/videos/embed/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("DESCRIPTION\" content=\"(.*?)\"").getMatch(0);
@@ -70,23 +75,31 @@ public class JizzHutCom extends PluginForHost {
                 filename = br.getRegex("<h2 style=\\'clear: both;\\' align=\\'left\\'>(.*?)</h2>").getMatch(0);
             }
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String Embed = br.getRegex("src=\\'(http://(www\\.)?jizzhut\\.com/videos/embed/[0-9]+)\\'").getMatch(0);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String Embed = br.getRegex("src=(?:\\'|\")(http://(www\\.)?jizzhut\\.com/videos/embed/[0-9]+)(?:\\'|\")").getMatch(0);
         br.getPage(Embed);
         dllink = br.getRegex("addVariable\\(\"file\",.*?\"(http://.*?\\.flv(\\?.*?)?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\"(http://(mediax|cdn[a-z]\\.videos)\\.jizzhut\\.com/[A-Z0-9]+\\.flv(\\?.*?)?)\"").getMatch(0);
             if (dllink == null) {
                 String playlist = br.getRegex("so\\.addVariable\\(\"playlist\", \"(https?://(www\\.)?(jizzhut|youjizz)\\.com/playlist\\.php\\?id=\\d+)").getMatch(0);
-                if (playlist == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (playlist == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 Browser br2 = br.cloneBrowser();
                 br2.getPage(playlist);
                 // multiple qualities (low|med|high) grab highest for now, decrypter will be needed for others.
                 dllink = br2.getRegex("<level bitrate=\"\\d+\" file=\"(https?://(\\w+\\.){1,}(jizzhut|youjizz)\\.com/[^\"]+)\" ?></level>[\r\n\t ]+</levels>").getMatch(0);
-                if (dllink != null) dllink = dllink.replace("%252", "%2");
+                if (dllink != null) {
+                    dllink = dllink.replace("%252", "%2");
+                }
             }
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -97,8 +110,9 @@ public class JizzHutCom extends PluginForHost {
                 String ext = getFileNameFromHeader(con).substring(getFileNameFromHeader(con).lastIndexOf("."));
                 downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            } else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

@@ -56,6 +56,7 @@ public class HoodAmateursCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -72,10 +73,8 @@ public class HoodAmateursCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        if (DLLINK == null) {
-            br.getPage("http://www.hoodamateurs.com/modules/video/player/nuevo/config.php?id=" + new Regex(downloadLink.getDownloadURL(), "hoodamateurs\\.com/(\\d+)/").getMatch(0));
-            DLLINK = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
-        }
+        br.getPage("http://www.hoodamateurs.com/modules/video/player/nuevo/config.php?id=" + new Regex(downloadLink.getDownloadURL(), "hoodamateurs\\.com/(\\d+)/").getMatch(0));
+        DLLINK = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

@@ -54,6 +54,7 @@ public class WinpornCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -61,14 +62,12 @@ public class WinpornCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>]*?) \\- \\d+\\. WinPorn\\.com</title>").getMatch(0);
+        DLLINK = br.getRegex("<source src=\"(http[^<>\"]*?)\"").getMatch(0);
         if (DLLINK == null) {
-            DLLINK = br.getRegex("<source src=\"(http[^<>\"]*?)\"").getMatch(0);
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("\\'file\\':[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
-            }
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("file:[\t\n\r ]*?\"(http[^<>\"]*?)\"").getMatch(0);
-            }
+            DLLINK = br.getRegex("\\'file\\':[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+        }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("file:[\t\n\r ]*?\"(http[^<>\"]*?)\"").getMatch(0);
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
