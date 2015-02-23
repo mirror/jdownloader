@@ -144,16 +144,57 @@ public class ParelliSavvyClubCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
     }
 
+    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        /* No need to log in as we're already logged in. */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        /* No need to log in as we've already logged in in the availablecheck. */
+        if (link.getBooleanProperty("force_rtmp", false)) {
+            /* In very rare cases (0,XX%), http fails because of server issues --> This is a fallback to rtmp */
+            logger.info("Handling RTMP");
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            final ArrayList<Object> ressourcelist = (ArrayList) entries.get("result");
+            final LinkedHashMap<String, Object> videoinfo = (LinkedHashMap<String, Object>) ressourcelist.get(0);
+
+            final String rtmpurl = (String) videoinfo.get("stream_url");
+            String playpath = (String) videoinfo.get("cloudfront_url");
+            if (playpath == null || rtmpurl == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            playpath = "mp4:" + playpath;
+            try {
+                dl = new RTMPDownload(this, link, rtmpurl);
+            } catch (final NoClassDefFoundError e) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDownload class missing");
+            }
+            /* Setup rtmp connection */
+            jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+            rtmp.setPageUrl(br.getURL());
+            rtmp.setUrl(rtmpurl);
+            rtmp.setPlayPath(playpath);
+            rtmp.setApp("cfx/st/");
+            rtmp.setFlashVer("WIN 16,0,0,305");
+            rtmp.setSwfVfy("http://p.jwpcdn.com/6/11/jwplayer.flash.swf");
+            rtmp.setResume(true);
+            ((RTMPDownload) dl).startDownload();
+        } else {
+            logger.info("Handling HTTP");
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
+            if (dl.getConnection().getResponseCode() == 403 && link.getDownloadURL().matches(type_video)) {
+                link.setProperty("force_rtmp", true);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Server_error 403");
+            } else if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
+            }
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404 (probably offline)");
+                }
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     @SuppressWarnings("deprecation")
