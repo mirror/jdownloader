@@ -12,6 +12,7 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.swing.components.ExtCheckBox;
 import org.jdownloader.translate._JDT;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class Header extends JPanel {
 
@@ -35,6 +36,7 @@ public class Header extends JPanel {
         label = new JLabel("<html><u><b>" + name + "</b></u></html>");
 
         label.setBorder(null);
+        LAFOptions.getInstance().applyConfigHeaderTextColor(label);
 
         add(label);
         add(new JSeparator());

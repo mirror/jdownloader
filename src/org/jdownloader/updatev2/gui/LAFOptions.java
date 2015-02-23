@@ -109,6 +109,26 @@ public class LAFOptions {
 
     }
 
+    public void applyConfigDescriptionTextColor(JLabel lbl) {
+
+        Color c = createColor(cfg.getColorForConfigPanelDescriptionText());
+        if (c != null) {
+            lbl.setForeground(c);
+
+        }
+
+    }
+
+    public void applyConfigHeaderTextColor(JLabel lbl) {
+
+        Color c = createColor(cfg.getColorForConfigHeaderTextColor());
+        if (c != null) {
+            lbl.setForeground(c);
+
+        }
+
+    }
+
     public void applyHeaderColorBackground(JLabel lbl) {
 
         Color c = createColor(cfg.getColorForPanelHeaderForeground());
@@ -300,4 +320,5 @@ public class LAFOptions {
     public Color getColorForLinkgrabberDupeHighlighter() {
         return createColor(cfg.getColorForLinkgrabberDupeHighlighter());
     }
+
 }

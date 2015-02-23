@@ -31,6 +31,7 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public abstract class AbstractConfigPanel extends SwitchPanel implements DirectFeedbackInterface {
 
@@ -193,7 +194,8 @@ public abstract class AbstractConfigPanel extends SwitchPanel implements DirectF
         JLabel txt = new JLabel();
         SwingUtils.setOpaque(txt, false);
         txt.setEnabled(false);
-        // txt.setEnabled(false);
+        LAFOptions.getInstance().applyConfigDescriptionTextColor(txt);
+
         txt.setText(description);
         add(txt, "gaptop 0,spanx,growx,pushx,gapleft " + getLeftGap() + ",gapbottom 5,wmin 10");
 

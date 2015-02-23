@@ -395,4 +395,21 @@ public interface LAFSettings extends ConfigInterface {
     public String getColorForLinkgrabberDupeHighlighter();
 
     public void setColorForLinkgrabberDupeHighlighter(String color);
+
+    @DescriptionForConfigEntry("Customized Color for the Description text in the config panels in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @HexColorString
+    @DefaultStringValue("FF808080")
+    public String getColorForConfigPanelDescriptionText();
+
+    public void setColorForConfigPanelDescriptionText(String color);
+
+    @DescriptionForConfigEntry("Customized Color for the Header text in the config panels in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @HexColorString
+    @DefaultStringValue("FF202020")
+    public String getColorForConfigHeaderTextColor();
+
+    public void setColorForConfigHeaderTextColor(String color);
+
 }
