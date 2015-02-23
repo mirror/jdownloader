@@ -389,6 +389,10 @@ public class DeviantArtCom extends PluginForHost {
     }
 
     private void handleServerErrors(final DownloadLink dlink) throws PluginException {
+        /* Happens sometimes - download should work fine later though. */
+        if (dl.getConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 10 * 60 * 1000l);
+        }
         if (dl.getConnection().getResponseCode() == 404) {
             logger.info(NICE_HOST + ": 404servererror");
             int timesFailed = dlink.getIntegerProperty(NICE_HOSTproperty + "timesfailed_404servererror", 0);

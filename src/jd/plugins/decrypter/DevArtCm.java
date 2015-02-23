@@ -229,6 +229,7 @@ public class DevArtCm extends PluginForDecrypt {
     }
 
     private void decryptBlog() throws DecrypterException, IOException {
+        String fpName = br.getRegex("name=\"og:title\" content=\"([^<>\"]*?) on DeviantArt\"").getMatch(0);
         final boolean stop_after_first_run = getOffsetFromURL() != null;
         int currentOffset = 0;
         do {
@@ -258,6 +259,13 @@ public class DevArtCm extends PluginForDecrypt {
             }
             currentOffset += 5;
         } while (br.containsHTML("class=\"next\"><a class=\"away\" data\\-offset=\"\\d+\"") && !stop_after_first_run);
+        if (fpName != null) {
+            fpName = Encoding.htmlDecode(fpName).trim();
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName + " - Journal");
+            fp.setProperty("ALLOW_MERGE", true);
+            fp.addLinks(decryptedLinks);
+        }
     }
 
     @SuppressWarnings("deprecation")

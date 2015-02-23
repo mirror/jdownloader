@@ -69,12 +69,15 @@ public class SwrMediathekDe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.setBrowserExclusive();
+        downloadLink.setFinalFileName(downloadLink.getStringProperty("plain_filename", null));
         br.setFollowRedirects(true);
         DLLINK = downloadLink.getStringProperty("directlink", null);
         if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setFinalFileName(downloadLink.getStringProperty("plain_filename", null));
+        if (DLLINK.startsWith("rtmp")) {
+            return AvailableStatus.TRUE;
+        }
         // In case the link redirects to the finallink
         URLConnectionAdapter con = null;
         try {
@@ -84,7 +87,6 @@ public class SwrMediathekDe extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -101,6 +103,9 @@ public class SwrMediathekDe extends PluginForHost {
 
     private void doFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (DLLINK.startsWith("rtmp")) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported streaming format");
+        }
         /* Workaround for old downloadcore bug that can lead to incomplete files */
         if ("subtitle".equals(downloadLink.getStringProperty("streamingType", null))) {
             br.getHeaders().put("Accept-Encoding", "identity");

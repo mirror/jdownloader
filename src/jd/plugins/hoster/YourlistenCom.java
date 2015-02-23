@@ -57,7 +57,14 @@ public class YourlistenCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        try {
+            br.getPage(downloadLink.getDownloadURL());
+        } catch (final BrowserException e) {
+            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() != 200) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            throw e;
+        }
         if (!br.getURL().matches("http://(www\\.)?yourlisten\\.com/[A-Za-z0-9\\-]+/[A-Za-z0-9]+") || !br.containsHTML("id=\"player\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
