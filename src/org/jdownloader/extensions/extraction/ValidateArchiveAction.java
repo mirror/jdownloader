@@ -61,16 +61,12 @@ public class ValidateArchiveAction<PackageType extends AbstractPackageNode<Child
             for (Archive archive : archives) {
                 try {
                     DummyArchive da = createDummyArchive(archive);
-
                     DummyArchiveDialog d = new DummyArchiveDialog(da);
-
                     try {
                         Dialog.getInstance().showDialog(d);
-
                     } catch (DialogCanceledException e1) {
                         e1.printStackTrace();
                     }
-
                 } catch (CheckException e1) {
                     Dialog.getInstance().showExceptionDialog("Error", "Cannot Check Archive", e1);
                 }

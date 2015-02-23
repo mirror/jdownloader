@@ -16,15 +16,18 @@
 
 package org.jdownloader.extensions.extraction.multi;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import jd.plugins.download.raf.FileBytesCache;
+import jd.plugins.download.raf.FileBytesCacheFlusher;
 import net.sf.sevenzipjbinding.ISequentialOutStream;
 import net.sf.sevenzipjbinding.SevenZipException;
 
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.extraction.CPUPriority;
 import org.jdownloader.extensions.extraction.ExtractionConfig;
 import org.jdownloader.extensions.extraction.ExtractionController;
@@ -32,16 +35,19 @@ import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 
 /**
  * Gets the decrypted bytes and writes it into the file.
- * 
+ *
  * @author botzi
- * 
+ *
  */
-class MultiCallback implements ISequentialOutStream {
-    protected final FileOutputStream     fos;
-    protected final CPUPriority          priority;
-    protected final BufferedOutputStream bos;
-    protected long                       written = 0;
-    protected final File                 file;
+class MultiCallback implements ISequentialOutStream, FileBytesCacheFlusher {
+    protected final RandomAccessFile fos;
+    protected final CPUPriority      priority;
+    protected volatile long          fileWritePosition = 0;
+    protected volatile long          flushedBytes      = 0;
+    protected final File             file;
+    private final FileBytesCache     cache;
+    private AtomicBoolean            fileOpen          = new AtomicBoolean(true);
+    private volatile IOException     ioException       = null;
 
     MultiCallback(File file, ExtractionController con, ExtractionConfig config, boolean shouldCrc) throws FileNotFoundException {
         final CPUPriority priority = config.getCPUPriority();
@@ -50,24 +56,27 @@ class MultiCallback implements ISequentialOutStream {
         } else {
             this.priority = priority;
         }
-        final int maxbuffersize = Math.max(config.getBufferSize() * 1024, 10240);
         this.file = file;
-        FileOutputStream fos = null;
+        RandomAccessFile fos = null;
         try {
-            fos = new FileOutputStream(file, false);
+            fos = new RandomAccessFile(file, "rw");
         } catch (final FileNotFoundException e) {
-            /**
-             * too fast file opening/extraction (eg image gallery) can result in "access denied" exception
-             */
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e1) {
+            if (CrossSystem.isWindows()) {
+                /**
+                 * too fast file opening/extraction (eg image gallery) can result in "access denied" exception
+                 */
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e1) {
+                    throw e;
+                }
+                fos = new RandomAccessFile(file, "rw");
+            } else {
                 throw e;
             }
-            fos = new FileOutputStream(file, false);
         }
         this.fos = fos;
-        bos = new BufferedOutputStream(this.fos, maxbuffersize);
+        cache = con.getFileBytesCache();
     }
 
     protected void waitCPUPriority() throws SevenZipException {
@@ -83,14 +92,14 @@ class MultiCallback implements ISequentialOutStream {
     }
 
     public int write(byte[] data) throws SevenZipException {
-        try {
-            bos.write(data);
-            written += data.length;
+        if (fileOpen.get()) {
+            cache.write(this, fileWritePosition, data, data.length);
+            fileWritePosition += data.length;
             waitCPUPriority();
-        } catch (IOException e) {
-            throw new MultiSevenZipException(e, ExtractionControllerConstants.EXIT_CODE_WRITE_ERROR);
+            return data.length;
+        } else {
+            throw new MultiSevenZipException(ioException, ExtractionControllerConstants.EXIT_CODE_WRITE_ERROR);
         }
-        return data.length;
     }
 
     public File getFile() {
@@ -98,30 +107,59 @@ class MultiCallback implements ISequentialOutStream {
     }
 
     public long getWritten() {
-        return written;
+        return flushedBytes;
     }
 
     /**
      * Closes the unpacking.
-     * 
+     *
      * @throws IOException
      */
     void close() throws IOException {
         try {
-            bos.flush();
-        } catch (Throwable e) {
+            cache.execute(new Runnable() {
+                @Override
+                public void run() {
+                    if (fileOpen.get()) {
+                        try {
+                            cache.flushIfContains(MultiCallback.this);
+                        } finally {
+                            fileOpen.set(false);
+                        }
+                    }
+                }
+            });
+        } finally {
+            try {
+                try {
+                    if (fos != null) {
+                        fos.getChannel().force(true);
+                    }
+                } finally {
+                    if (fos != null) {
+                        fos.close();
+                    }
+                }
+            } catch (Throwable e) {
+            }
         }
-        try {
-            bos.close();
-        } catch (Throwable e) {
+    }
+
+    @Override
+    public void flush(byte[] writeCache, int writeCachePosition, int length, long fileWritePosition) {
+        if (fileOpen.get()) {
+            try {
+                fos.seek(fileWritePosition);
+                fos.write(writeCache, writeCachePosition, length);
+                flushedBytes += length;
+            } catch (final IOException e) {
+                ioException = e;
+                fileOpen.set(false);
+            }
         }
-        try {
-            fos.flush();
-        } catch (Throwable e) {
-        }
-        try {
-            fos.close();
-        } catch (Throwable e) {
-        }
+    }
+
+    @Override
+    public void flushed() {
     }
 }

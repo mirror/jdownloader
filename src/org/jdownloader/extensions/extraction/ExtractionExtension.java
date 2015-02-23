@@ -84,7 +84,8 @@ import org.jdownloader.extensions.extraction.multi.ArchiveException;
 import org.jdownloader.extensions.extraction.multi.CheckException;
 import org.jdownloader.extensions.extraction.multi.Multi;
 import org.jdownloader.extensions.extraction.split.HJSplit;
-import org.jdownloader.extensions.extraction.split.Unix;
+import org.jdownloader.extensions.extraction.split.HachaSplit;
+import org.jdownloader.extensions.extraction.split.UnixSplit;
 import org.jdownloader.extensions.extraction.split.XtreamSplit;
 import org.jdownloader.extensions.extraction.translate.ExtractionTranslation;
 import org.jdownloader.extensions.extraction.translate.T;
@@ -146,8 +147,9 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
      */
     private void initExtractors() {
         /* the order is important because hjsplit and multi listen to same patterns (xy.001, because 7zip can have that pattern as well) */
-        setExtractor(new Unix());
+        setExtractor(new UnixSplit());
         setExtractor(new XtreamSplit());
+        setExtractor(new HachaSplit());
         setExtractor(new HJSplit());
         /* must be last one! */
         setExtractor(new Multi());
@@ -178,7 +180,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                 return true;
             }
         }
-
         return false;
     }
 
@@ -187,7 +188,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         for (IExtraction extractor : extractors) {
             if (extractor.isArchivSupported(factory, deepInspection)) {
                 return extractor.isMultiPartArchive(factory);
-
             }
         }
         return false;
@@ -209,7 +209,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
             }
         }
-
         return null;
     }
 
@@ -218,7 +217,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         for (IExtraction extractor : extractors) {
             if (extractor.isArchivSupported(factory, deepInspection)) {
                 return extractor.getArchiveName(factory);
-
             }
         }
         return null;
@@ -238,7 +236,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             logger.info("First File is not complete: " + archive.getFirstArchiveFile());
             return null;
         }
-        IExtraction extractor = getExtractorByFactory(archive.getFactory());
+        IExtraction extractor = getExtractorInstanceByFactory(archive.getFactory());
         if (extractor == null) {
             return null;
         }
@@ -262,7 +260,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             return false;
         case TRUE:
             return true;
-
         }
         return getSettings().isDeleteArchiveDownloadlinksAfterExtraction();
     }
@@ -275,15 +272,11 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             switch (getSettings().getDeleteArchiveFilesAfterExtractionAction()) {
             case NO_DELETE:
             case RECYCLE:
-
                 return FileCreationManager.DeleteOption.RECYCLE;
-
             case NULL:
                 return FileCreationManager.DeleteOption.NULL;
-
             }
         }
-
         return getSettings().getDeleteArchiveFilesAfterExtractionAction();
     }
 
@@ -306,23 +299,19 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                 return archive;
             }
         }
-        IExtraction extractor = getExtractorByFactory(link);
-        if (extractor == null) {
-            //
-            return null;
+        final IExtraction extractor = getExtractorPrototypeByFactory(link);
+        if (extractor != null) {
+            final Archive archive = extractor.buildArchive(link);
+            if (archive != null) {
+                link.onArchiveFinished(archive);
+                return archive;
+            }
         }
-        Archive archive = extractor.buildArchive(link);
-        if (archive != null) {
-            link.onArchiveFinished(archive);
-            // logger.info("Created Archive: " + archive);
-            // Log.L.info("Created Archive: " + archive);
-            // logger.info("Files: " + archive.getArchiveFiles());
-        }
-        return archive;
+        return null;
     }
 
     public DummyArchive createDummyArchive(Archive archive) throws CheckException {
-        IExtraction extrctor = getExtractorByFactory(archive.getFactory());
+        final IExtraction extrctor = getExtractorPrototypeByFactory(archive.getFactory());
         if (extrctor != null) {
             return extrctor.checkComplete(archive);
         }
@@ -341,45 +330,13 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         return false;
     }
 
-    // /**
-    // * Builds an dummy archive for an file.
-    // *
-    // * @param file
-    // * @return
-    // */
-    // private Archive buildDummyArchive(final File file) {
-    // final String lfile = file.getAbsolutePath();
-    // List<DownloadLink> links =
-    // DownloadController.getInstance().getChildrenByFilter(new
-    // AbstractPackageChildrenNodeFilter<DownloadLink>() {
-    //
-    // public boolean isChildrenNodeFiltered(DownloadLink node) {
-    // if (node.getFileOutput().equals(lfile)) {
-    // if (node.getLinkStatus().hasStatus(LinkStatus.FINISHED)) return true;
-    // }
-    // return false;
-    // }
-    //
-    // public int returnMaxResults() {
-    // return 1;
-    // }
-    // });
-    // if (links == null || links.size() == 0) {
-    // /* link no longer in list */
-    // DummyDownloadLink link0 = new DummyDownloadLink(file.getName());
-    // link0.setFile(file);
-    // return buildArchive(link0);
-    // }
-    // return buildArchive(links.get(0));
-    // }
-
     /**
      * Returns the extractor for the {@link DownloadLink}.
      * 
      * @param link
      * @return
      */
-    public IExtraction getExtractorByFactory(ArchiveFactory factory) {
+    protected IExtraction getExtractorInstanceByFactory(ArchiveFactory factory) {
         for (IExtraction extractor : extractors) {
             try {
                 if (extractor.isArchivSupported(factory, true)) {
@@ -391,6 +348,19 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                 e.printStackTrace();
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
+            }
+        }
+        return null;
+    }
+
+    protected IExtraction getExtractorPrototypeByFactory(ArchiveFactory factory) {
+        for (IExtraction extractor : extractors) {
+            try {
+                if (extractor.isArchivSupported(factory, true)) {
+                    return extractor;
+                }
+            } catch (final Throwable e) {
+                logger.log(e);
             }
         }
         return null;

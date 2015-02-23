@@ -25,6 +25,7 @@ import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
+import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFactory;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.settings.GeneralSettings;
 
@@ -59,14 +60,14 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
             ret.add(this);
             return ret;
         } else {
+            final HashMap<String, ArchiveFile> map = new HashMap<String, ArchiveFile>();
             final ModifyLock modifyLock = parentNode.getModifyLock();
             boolean readL = modifyLock.readLock();
             try {
-                final HashMap<String, CrawledLinkArchiveFile> map = new HashMap<String, CrawledLinkArchiveFile>();
                 for (CrawledLink link : parentNode.getChildren()) {
                     final String linkName = link.getName();
-                    if (linkName.equals(file) || pat.matcher(linkName).matches()) {
-                        CrawledLinkArchiveFile af = map.get(linkName);
+                    if (pat.matcher(linkName).matches()) {
+                        CrawledLinkArchiveFile af = (CrawledLinkArchiveFile) map.get(linkName);
                         if (af == null) {
                             af = new CrawledLinkArchiveFile(link);
                             map.put(linkName, af);
@@ -75,10 +76,26 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
                         }
                     }
                 }
-                return new ArrayList<ArchiveFile>(map.values());
             } finally {
                 modifyLock.readUnlock(readL);
             }
+            final File directory = LinkTreeUtils.getDownloadDirectory(parentNode);
+            if (directory != null) {
+                final List<ArchiveFile> localFiles = new FileArchiveFactory(directory).createPartFileList(file, pattern);
+                for (ArchiveFile localFile : localFiles) {
+                    final ArchiveFile archiveFile = map.get(localFile.getName());
+                    if (archiveFile == null) {
+                        // There is a matching local file, without a downloadlink link. this can happen if the user removes finished
+                        // downloads
+                        // immediatelly
+                        map.put(localFile.getName(), localFile);
+                    } else if (archiveFile instanceof CrawledLinkArchiveFile) {
+                        final CrawledLinkArchiveFile af = (CrawledLinkArchiveFile) archiveFile;
+                        af.setExists(true);
+                    }
+                }
+            }
+            return new ArrayList<ArchiveFile>(map.values());
         }
     }
 

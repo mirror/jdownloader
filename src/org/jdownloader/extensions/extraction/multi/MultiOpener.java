@@ -16,6 +16,7 @@
 
 package org.jdownloader.extensions.extraction.multi;
 
+import java.io.Closeable;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -24,7 +25,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicLong;
 
 import net.sf.sevenzipjbinding.IArchiveOpenCallback;
 import net.sf.sevenzipjbinding.IArchiveOpenVolumeCallback;
@@ -34,16 +34,19 @@ import net.sf.sevenzipjbinding.PropID;
 import net.sf.sevenzipjbinding.SevenZipException;
 import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
 
+import org.jdownloader.extensions.extraction.ArchiveFile;
+
 /**
  * Used to join the separated HJSplit and 7z files.
  * 
  * @author botzi
  * 
  */
-class MultiOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICryptoGetTextPassword {
+class MultiOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICryptoGetTextPassword, Closeable {
     private Map<String, OpenerAccessTracker> openedRandomAccessFileList = new HashMap<String, OpenerAccessTracker>();
     private final String                     password;
-    private final AtomicLong                 accessCounter              = new AtomicLong(0);
+    private long                             accessCounter              = 0;
+    private String                           name                       = null;
 
     MultiOpener() {
         this(null);
@@ -58,11 +61,15 @@ class MultiOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, I
     }
 
     public Object getProperty(PropID propID) throws SevenZipException {
+        switch (propID) {
+        case NAME:
+            return name;
+        }
         return null;
     }
 
-    public boolean isStreamOpen(String filename) {
-        return openedRandomAccessFileList.containsKey(filename);
+    public IInStream getStream(ArchiveFile archiveFile) throws SevenZipException {
+        return getStream(archiveFile.getFilePath());
     }
 
     public IInStream getStream(String filename) throws SevenZipException {
@@ -72,18 +79,21 @@ class MultiOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, I
                 tracker = new OpenerAccessTracker(filename, new RandomAccessFile(filename, "r"));
                 openedRandomAccessFileList.put(filename, tracker);
             }
+            if (name == null) {
+                name = filename;
+            }
             final OpenerAccessTracker finalTracker = tracker;
             finalTracker.getRandomAccessFile().seek(0);
             return new RandomAccessFileInStream(finalTracker.getRandomAccessFile()) {
                 @Override
                 public int read(byte[] abyte0) throws SevenZipException {
-                    finalTracker.setAccessIndex(accessCounter.incrementAndGet());
+                    finalTracker.setAccessIndex(++accessCounter);
                     return super.read(abyte0);
                 }
 
                 @Override
                 public long seek(long l, int i) throws SevenZipException {
-                    finalTracker.setAccessIndex(accessCounter.incrementAndGet());
+                    finalTracker.setAccessIndex(++accessCounter);
                     return super.seek(l, i);
                 }
             };
@@ -109,7 +119,7 @@ class MultiOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, I
      * 
      * @throws IOException
      */
-    void close() throws IOException {
+    public void close() throws IOException {
         Iterator<Entry<String, OpenerAccessTracker>> it = openedRandomAccessFileList.entrySet().iterator();
         while (it.hasNext()) {
             Entry<String, OpenerAccessTracker> next = it.next();

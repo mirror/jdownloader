@@ -5,6 +5,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -28,23 +29,24 @@ import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class DownloadLinkArchiveFile implements ArchiveFile {
 
-    private final List<DownloadLink> downloadLinks;
-    private final String             name;
-    private final String             filePath;
-    private volatile long            size;
-    private final int                hashCode;
+    private final List<DownloadLink>       downloadLinks;
+    private final String                   name;
+    private final String                   filePath;
+    private volatile long                  size;
+    private final int                      hashCode;
+    private final AtomicReference<Boolean> exists = new AtomicReference<Boolean>(null);
 
     public DownloadLinkArchiveFile(DownloadLink link) {
         downloadLinks = new CopyOnWriteArrayList<DownloadLink>();
         downloadLinks.add(link);
         filePath = link.getFileOutput(false, true);
-        name = new File(filePath).getName();
+        name = new File(getFilePath()).getName();
         size = link.getView().getBytesTotalEstimated();
         hashCode = (getClass() + name).hashCode();
     }
 
     public String toString() {
-        return "DownloadLink: " + filePath + " Complete:" + isComplete();
+        return "DownloadLink: " + getFilePath() + " Complete:" + isComplete();
     }
 
     @Override
@@ -72,7 +74,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     @Override
     public boolean isComplete() {
         for (DownloadLink downloadLink : getDownloadLinks()) {
-            if ((SkipReason.FILE_EXISTS.equals(downloadLink.getSkipReason()) || FinalLinkState.FAILED_EXISTS.equals(downloadLink.getFinalLinkState()) || FinalLinkState.CheckFinished(downloadLink.getFinalLinkState())) && new File(filePath).exists()) {
+            if ((SkipReason.FILE_EXISTS.equals(downloadLink.getSkipReason()) || FinalLinkState.FAILED_EXISTS.equals(downloadLink.getFinalLinkState()) || FinalLinkState.CheckFinished(downloadLink.getFinalLinkState()))) {
                 return true;
             }
         }
@@ -138,12 +140,16 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     @Override
     public long getFileSize() {
-        return size;
+        if (exists()) {
+            return Math.max(new File(getFilePath()).length(), size);
+        }
+        return Math.max(0, size);
     }
 
     @Override
     public void deleteLink() {
         DownloadController.getInstance().removeChildren(new ArrayList<DownloadLink>(getDownloadLinks()));
+        invalidateExists();
     }
 
     public void addMirror(DownloadLink link) {
@@ -246,7 +252,16 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     @Override
     public boolean exists() {
-        return new File(filePath).exists();
+        Boolean ret = exists.get();
+        if (ret == null) {
+            ret = new File(getFilePath()).exists();
+            exists.compareAndSet(null, ret);
+        }
+        return ret;
+    }
+
+    protected void setExists(boolean b) {
+        exists.set(b);
     }
 
     @Override
@@ -261,6 +276,11 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
         for (final DownloadLink downloadLink : getDownloadLinks()) {
             downloadLink.removePluginProgress(controller.getExtractionProgress());
         }
+    }
+
+    @Override
+    public void invalidateExists() {
+        exists.set(null);
     }
 
 }

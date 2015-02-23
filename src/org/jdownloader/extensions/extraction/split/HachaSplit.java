@@ -1,27 +1,9 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
-//
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
-//
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
-//
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.extensions.extraction.split;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 
-import jd.utils.JDHexUtils;
-
+import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
@@ -31,21 +13,48 @@ import org.jdownloader.extensions.extraction.DummyArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.ExtractionControllerException;
-import org.jdownloader.extensions.extraction.FileSignatures;
 import org.jdownloader.extensions.extraction.IExtraction;
 import org.jdownloader.extensions.extraction.MissingArchiveFile;
 import org.jdownloader.extensions.extraction.multi.ArchiveException;
 import org.jdownloader.extensions.extraction.multi.CheckException;
+import org.jdownloader.logging.LogController;
 
-/**
- * Joins HJSplit files.
- * 
- * @author botzi
- * 
- */
-public class HJSplit extends IExtraction {
+public class HachaSplit extends IExtraction {
 
-    private final SplitType splitType = SplitType.HJ_SPLIT;
+    public static class HachaHeader {
+
+        protected final String fileName;
+
+        public String getFileName() {
+            return fileName;
+        }
+
+        public long getFileSize() {
+            return fileSize;
+        }
+
+        public int getNumberOfParts() {
+            return numberOfParts;
+        }
+
+        protected final long fileSize;
+        protected final int  headerSize;
+
+        public int getHeaderSize() {
+            return headerSize;
+        }
+
+        protected final int numberOfParts;
+
+        protected HachaHeader(final String fileName, final int headerSize, final long fileSize, final int numberOfParts) {
+            this.fileName = fileName;
+            this.fileSize = fileSize;
+            this.headerSize = headerSize;
+            this.numberOfParts = numberOfParts;
+        }
+    }
+
+    private final SplitType splitType = SplitType.HACHA_SPLIT;
 
     public Archive buildArchive(ArchiveFactory link) throws ArchiveException {
         return SplitType.createArchive(link, splitType, false);
@@ -59,21 +68,11 @@ public class HJSplit extends IExtraction {
     @Override
     public void extract(ExtractionController ctrl) {
         final Archive archive = getArchive();
-        final String matches[] = splitType.getMatches(archive.getFirstArchiveFile().getName());
+        final String matches[] = splitType.getMatches(archive.getFirstArchiveFile().getFilePath());
         if (matches != null) {
             try {
-                final String fileName;
-                final int skipBytes;
-                final String signature = JDHexUtils.toString(FileSignatures.readFileSignature(new File(archive.getFirstArchiveFile().getFilePath())));
-                if (new Regex(signature, "^[\\w]{3}  \\d{3}").matches()) {
-                    final String extension = new Regex(signature, "^([\\w]{3})").getMatch(0);
-                    fileName = matches[0] + "." + extension;
-                    skipBytes = 8;
-                } else {
-                    skipBytes = 0;
-                    fileName = matches[0];
-                }
-                if (SplitUtil.merge(controller, fileName, skipBytes, getConfig())) {
+                final HachaHeader hachaHeader = parseHachaHeader(archive.getFirstArchiveFile());
+                if (SplitUtil.merge(controller, hachaHeader.getFileName(), hachaHeader.getHeaderSize(), getConfig())) {
                     archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_SUCCESS);
                 } else {
                     if (archive.getExitCode() == -1) {
@@ -83,8 +82,6 @@ public class HJSplit extends IExtraction {
                 return;
             } catch (ExtractionControllerException e) {
                 archive.setExitCode(e.getExitCode());
-            } catch (IOException e) {
-                archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
             }
         } else {
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
@@ -142,24 +139,17 @@ public class HJSplit extends IExtraction {
                     throw new CheckException("Wrong firstArchiveFile(" + firstArchiveFile + ") for Archive(" + archive.getName() + ")");
                 }
                 if (archive.getFirstArchiveFile().exists()) {
-                    final String signature = JDHexUtils.toString(FileSignatures.readFileSignature(new File(firstArchiveFile)));
-                    if (new Regex(signature, "^[\\w]{3}  \\d{3}").matches()) {
-                        /**
-                         * cutkiller header: extension and number of files
-                         */
-                        final String numberOfPartsString = new Regex(signature, "^[\\w]{3}  (\\d{3})").getMatch(0);
-                        final int numberOfParts = Integer.parseInt(numberOfPartsString);
-                        final List<ArchiveFile> missingArchiveFiles = SplitType.getMissingArchiveFiles(archive, splitType, numberOfParts);
-                        if (missingArchiveFiles != null) {
-                            for (ArchiveFile missingArchiveFile : missingArchiveFiles) {
-                                ret.add(new DummyArchiveFile(missingArchiveFile));
-                            }
+                    final HachaHeader hachaHeader = parseHachaHeader(archive.getFirstArchiveFile());
+                    final List<ArchiveFile> missingArchiveFiles = SplitType.getMissingArchiveFiles(archive, splitType, hachaHeader.getNumberOfParts());
+                    if (missingArchiveFiles != null) {
+                        for (ArchiveFile missingArchiveFile : missingArchiveFiles) {
+                            ret.add(new DummyArchiveFile(missingArchiveFile));
                         }
-                        if (ret.getSize() < numberOfParts) {
-                            throw new CheckException("Missing archiveParts(" + numberOfParts + "!=" + ret.getSize() + ") for Archive(" + archive.getName() + ")");
-                        } else if (ret.getSize() > numberOfParts) {
-                            throw new CheckException("Too many archiveParts(" + numberOfParts + "!=" + ret.getSize() + ") for Archive(" + archive.getName() + ")");
-                        }
+                    }
+                    if (ret.getSize() < hachaHeader.getNumberOfParts()) {
+                        throw new CheckException("Missing archiveParts(" + hachaHeader.getNumberOfParts() + "!=" + ret.getSize() + ") for Archive(" + archive.getName() + ")");
+                    } else if (ret.getSize() > hachaHeader.getNumberOfParts()) {
+                        throw new CheckException("Too many archiveParts(" + hachaHeader.getNumberOfParts() + "!=" + ret.getSize() + ") for Archive(" + archive.getName() + ")");
                     }
                 }
             }
@@ -169,6 +159,27 @@ public class HJSplit extends IExtraction {
         } catch (Throwable e) {
             throw new CheckException("Cannot check Archive(" + archive.getName() + ")", e);
         }
+    }
+
+    public static HachaHeader parseHachaHeader(ArchiveFile archiveFile) {
+        try {
+            if (archiveFile != null && archiveFile.exists()) {
+                final byte[] hachaHeaderBytes = IO.readFile(new File(archiveFile.getFilePath()), 1024);
+                if (hachaHeaderBytes.length > 9) {
+                    final String hachaHeaderString = new String(hachaHeaderBytes, 9, hachaHeaderBytes.length - 9, "US-ASCII");
+                    final String parsedHachaHeader[] = new Regex(hachaHeaderString, "\\?{5}(.*?)\\?{5}(\\d+)\\?{5}(\\d+)\\?{5}").getRow(0);
+                    final long fileSize = Long.parseLong(parsedHachaHeader[1]);
+                    final int headerSize = 4 + (5 * 5) + parsedHachaHeader[0].length() + parsedHachaHeader[1].length() + parsedHachaHeader[2].length();
+                    final long completeSize = fileSize + headerSize;
+                    final long segmentSize = Long.parseLong(parsedHachaHeader[2]);
+                    final int numberOfParts = (int) (completeSize / segmentSize) + (completeSize % segmentSize == 0 ? 0 : 1);
+                    return new HachaHeader(parsedHachaHeader[0], headerSize, fileSize, numberOfParts);
+                }
+            }
+        } catch (final Throwable e) {
+            LogController.CL().log(e);
+        }
+        return null;
     }
 
     @Override

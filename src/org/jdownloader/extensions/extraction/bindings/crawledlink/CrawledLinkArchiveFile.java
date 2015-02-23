@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.io.File;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkProperty;
@@ -18,12 +19,12 @@ import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 
 public class CrawledLinkArchiveFile implements ArchiveFile {
 
-    private final List<CrawledLink> links;
+    private final List<CrawledLink>        links;
 
-    private final String            name;
-    private volatile long           size;
-
-    private final int               hashCode;
+    private final String                   name;
+    private volatile long                  size;
+    private final AtomicReference<Boolean> exists = new AtomicReference<Boolean>(null);
+    private final int                      hashCode;
 
     public CrawledLinkArchiveFile(CrawledLink l) {
         links = new CopyOnWriteArrayList<CrawledLink>();
@@ -78,6 +79,7 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
     }
 
     public void deleteFile(DeleteOption option) {
+        invalidateExists();
     }
 
     public String getName() {
@@ -95,6 +97,9 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
 
     @Override
     public long getFileSize() {
+        if (exists()) {
+            return Math.max(size, new File(LinkTreeUtils.getDownloadDirectory(getLinks().get(0)), getName()).length());
+        }
         return Math.max(0, size);
     }
 
@@ -146,7 +151,16 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
 
     @Override
     public boolean exists() {
-        return new File(LinkTreeUtils.getDownloadDirectory(getLinks().get(0)), name).exists();
+        Boolean ret = exists.get();
+        if (ret == null) {
+            ret = new File(LinkTreeUtils.getDownloadDirectory(getLinks().get(0)), getName()).exists();
+            exists.compareAndSet(null, ret);
+        }
+        return ret;
+    }
+
+    protected void setExists(boolean b) {
+        exists.set(b);
     }
 
     @Override
@@ -158,5 +172,10 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
 
     @Override
     public void removePluginProgress(ExtractionController controller) {
+    }
+
+    @Override
+    public void invalidateExists() {
+        exists.set(null);
     }
 }

@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
 
+import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
@@ -38,71 +39,82 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
         this.origin = origin;
     }
 
-    public java.util.List<ArchiveFile> createPartFileList(String file, String pattern) {
-        final Pattern pat = Pattern.compile(pattern, CrossSystem.isWindows() ? Pattern.CASE_INSENSITIVE : 0);
-        List<ArchiveFile> ret = new ArrayList<ArchiveFile>();
-        if (getFile().getParentFile() != null && getFile().getParentFile().exists()) {
-            File[] list = getFile().getParentFile().listFiles();
-            if (list != null) {
-                for (File f : list) {
-                    if (f.isDirectory()) {
-                        continue;
-                    }
-                    String nodeFile = f.getAbsolutePath();
-                    if (nodeFile.equals(file) || pat.matcher(nodeFile).matches()) {
-                        if (origin == null) {
-                            ret.add(new FileArchiveFile(f));
-                        } else {
-                            ret.add(new FileArchiveFile(f) {
-
-                                @Override
-                                public void setStatus(ExtractionController controller, ExtractionStatus error) {
-                                    if (isFirstArchiveFile()) {
-                                        origin.getFirstArchiveFile().setStatus(controller, error);
-                                    } else {
-                                        for (ArchiveFile archiveFile : origin.getArchiveFiles()) {
-                                            archiveFile.setStatus(controller, error);
-                                        }
-                                    }
-                                    super.setStatus(controller, error);
-                                }
-
-                                @Override
-                                public void setMessage(ExtractionController controller, String plugins_optional_extraction_status_notenoughspace) {
-                                    if (isFirstArchiveFile()) {
-                                        origin.getFirstArchiveFile().setMessage(controller, plugins_optional_extraction_status_notenoughspace);
-                                    } else {
-                                        for (ArchiveFile archiveFile : origin.getArchiveFiles()) {
-                                            archiveFile.setMessage(controller, plugins_optional_extraction_status_notenoughspace);
-                                        }
-                                    }
-                                    super.setMessage(controller, plugins_optional_extraction_status_notenoughspace);
-                                }
-
-                                @Override
-                                public void setProgress(ExtractionController controller, long value, long max, Color color) {
-                                    if (isFirstArchiveFile()) {
-                                        origin.getFirstArchiveFile().setProgress(controller, value, max, color);
-                                    }
-                                    super.setProgress(controller, value, max, color);
-                                }
-
-                                @Override
-                                public void removePluginProgress(ExtractionController controller) {
-                                    if (isFirstArchiveFile()) {
-                                        origin.getFirstArchiveFile().removePluginProgress(controller);
-                                    } else {
-                                        for (ArchiveFile archiveFile : origin.getArchiveFiles()) {
-                                            archiveFile.removePluginProgress(controller);
-                                        }
-                                    }
-                                    super.removePluginProgress(controller);
-                                }
-
-                            });
+    protected List<File> findFiles(Pattern pattern, File directory) {
+        if (Application.getJavaVersion() >= Application.JAVA17) {
+            return new FileArchiveFactoryNIO().findFiles(pattern, directory);
+        } else {
+            final ArrayList<File> ret = new ArrayList<File>();
+            if (pattern != null && directory != null && directory.exists()) {
+                final File[] directoryFiles = directory.listFiles();
+                if (directoryFiles != null) {
+                    for (final File directoryFile : directoryFiles) {
+                        final String directoryFilePath = directoryFile.getAbsolutePath();
+                        if (pattern.matcher(directoryFilePath).matches()) {
+                            if (directoryFile.isFile()) {
+                                ret.add(directoryFile);
+                            }
                         }
                     }
                 }
+            }
+            return ret;
+        }
+    }
+
+    public java.util.List<ArchiveFile> createPartFileList(String file, String patternString) {
+        final Pattern pattern = Pattern.compile(patternString, CrossSystem.isWindows() ? Pattern.CASE_INSENSITIVE : 0);
+        final List<ArchiveFile> ret = new ArrayList<ArchiveFile>();
+        for (final File foundFile : findFiles(pattern, getFile().getParentFile())) {
+            if (origin == null) {
+                ret.add(new FileArchiveFile(foundFile));
+            } else {
+                ret.add(new FileArchiveFile(foundFile) {
+
+                    @Override
+                    public void setStatus(ExtractionController controller, ExtractionStatus error) {
+                        if (isFirstArchiveFile()) {
+                            origin.getFirstArchiveFile().setStatus(controller, error);
+                        } else {
+                            for (ArchiveFile archiveFile : origin.getArchiveFiles()) {
+                                archiveFile.setStatus(controller, error);
+                            }
+                        }
+                        super.setStatus(controller, error);
+                    }
+
+                    @Override
+                    public void setMessage(ExtractionController controller, String plugins_optional_extraction_status_notenoughspace) {
+                        if (isFirstArchiveFile()) {
+                            origin.getFirstArchiveFile().setMessage(controller, plugins_optional_extraction_status_notenoughspace);
+                        } else {
+                            for (ArchiveFile archiveFile : origin.getArchiveFiles()) {
+                                archiveFile.setMessage(controller, plugins_optional_extraction_status_notenoughspace);
+                            }
+                        }
+                        super.setMessage(controller, plugins_optional_extraction_status_notenoughspace);
+                    }
+
+                    @Override
+                    public void setProgress(ExtractionController controller, long value, long max, Color color) {
+                        if (isFirstArchiveFile()) {
+                            origin.getFirstArchiveFile().setProgress(controller, value, max, color);
+                        }
+                        super.setProgress(controller, value, max, color);
+                    }
+
+                    @Override
+                    public void removePluginProgress(ExtractionController controller) {
+                        if (isFirstArchiveFile()) {
+                            origin.getFirstArchiveFile().removePluginProgress(controller);
+                        } else {
+                            for (ArchiveFile archiveFile : origin.getArchiveFiles()) {
+                                archiveFile.removePluginProgress(controller);
+                            }
+                        }
+                        super.removePluginProgress(controller);
+                    }
+
+                });
             }
         }
         return ret;

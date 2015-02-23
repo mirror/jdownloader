@@ -247,7 +247,6 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                         if (extractTo == null) {
                             throw new SevenZipException("Extraction error, extractTo == null");
                         }
-                        archive.addExtractedFiles(extractTo);
                         ret = new MultiCallback(extractTo, ctrl, config, false) {
 
                             @Override
@@ -279,6 +278,7 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                             }
 
                         };
+                        archive.addExtractedFiles(extractTo);
                     }
                 }
                 outStreams[index] = ret;

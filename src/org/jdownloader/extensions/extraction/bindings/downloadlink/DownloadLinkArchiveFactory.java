@@ -114,7 +114,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
                     // http://board.jdownloader.org/showthread.php?t=59031
                     return false;
                 }
-                if (file.equals(nodeFile) || pat.matcher(nodeFile).matches()) {
+                if (pat.matcher(nodeFile).matches()) {
                     final String nodeName = node.getView().getDisplayName();
                     DownloadLinkArchiveFile af = (DownloadLinkArchiveFile) map.get(nodeName);
                     if (af == null) {
@@ -130,12 +130,15 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
         }, true);
 
         final List<ArchiveFile> localFiles = new FileArchiveFactory(new File(getFilePath())).createPartFileList(file, pattern);
-        for (ArchiveFile af : localFiles) {
-            final ArchiveFile archiveFile = map.get(af.getName());
+        for (ArchiveFile localFile : localFiles) {
+            final ArchiveFile archiveFile = map.get(localFile.getName());
             if (archiveFile == null) {
                 // There is a matching local file, without a downloadlink link. this can happen if the user removes finished downloads
                 // immediatelly
-                map.put(af.getName(), af);
+                map.put(localFile.getName(), localFile);
+            } else if (archiveFile instanceof DownloadLinkArchiveFile) {
+                final DownloadLinkArchiveFile af = (DownloadLinkArchiveFile) archiveFile;
+                af.setExists(true);
             }
         }
         return new ArrayList<ArchiveFile>(map.values());

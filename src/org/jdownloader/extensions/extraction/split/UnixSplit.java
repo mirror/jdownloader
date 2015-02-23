@@ -16,13 +16,6 @@
 
 package org.jdownloader.extensions.extraction.split;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-
-import jd.utils.JDHexUtils;
-
-import org.appwork.utils.Regex;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
@@ -31,21 +24,14 @@ import org.jdownloader.extensions.extraction.DummyArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.ExtractionControllerException;
-import org.jdownloader.extensions.extraction.FileSignatures;
 import org.jdownloader.extensions.extraction.IExtraction;
 import org.jdownloader.extensions.extraction.MissingArchiveFile;
 import org.jdownloader.extensions.extraction.multi.ArchiveException;
 import org.jdownloader.extensions.extraction.multi.CheckException;
 
-/**
- * Joins HJSplit files.
- * 
- * @author botzi
- * 
- */
-public class HJSplit extends IExtraction {
+public class UnixSplit extends IExtraction {
 
-    private final SplitType splitType = SplitType.HJ_SPLIT;
+    private final SplitType splitType = SplitType.UNIX_SPLIT;
 
     public Archive buildArchive(ArchiveFactory link) throws ArchiveException {
         return SplitType.createArchive(link, splitType, false);
@@ -62,18 +48,7 @@ public class HJSplit extends IExtraction {
         final String matches[] = splitType.getMatches(archive.getFirstArchiveFile().getName());
         if (matches != null) {
             try {
-                final String fileName;
-                final int skipBytes;
-                final String signature = JDHexUtils.toString(FileSignatures.readFileSignature(new File(archive.getFirstArchiveFile().getFilePath())));
-                if (new Regex(signature, "^[\\w]{3}  \\d{3}").matches()) {
-                    final String extension = new Regex(signature, "^([\\w]{3})").getMatch(0);
-                    fileName = matches[0] + "." + extension;
-                    skipBytes = 8;
-                } else {
-                    skipBytes = 0;
-                    fileName = matches[0];
-                }
-                if (SplitUtil.merge(controller, fileName, skipBytes, getConfig())) {
+                if (SplitUtil.merge(controller, matches[0], 0, getConfig())) {
                     archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_SUCCESS);
                 } else {
                     if (archive.getExitCode() == -1) {
@@ -83,8 +58,6 @@ public class HJSplit extends IExtraction {
                 return;
             } catch (ExtractionControllerException e) {
                 archive.setExitCode(e.getExitCode());
-            } catch (IOException e) {
-                archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
             }
         } else {
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
@@ -109,8 +82,7 @@ public class HJSplit extends IExtraction {
 
     public boolean isArchivSupported(ArchiveFactory factory, boolean allowDeepInspection) {
         try {
-            final Archive archive = SplitType.createArchive(factory, splitType, allowDeepInspection);
-            return archive != null;
+            return SplitType.createArchive(factory, splitType, allowDeepInspection) != null;
         } catch (ArchiveException e) {
             getLogger().log(e);
             return false;
@@ -118,11 +90,6 @@ public class HJSplit extends IExtraction {
     }
 
     public void close() {
-    }
-
-    @Override
-    public String createID(ArchiveFactory factory) {
-        return SplitType.createArchiveID(factory, splitType);
     }
 
     public DummyArchive checkComplete(Archive archive) throws CheckException {
@@ -141,27 +108,6 @@ public class HJSplit extends IExtraction {
                 if (splitType.getFirstPartIndex() != splitType.getPartNumber(partNumberOfFirstArchiveFile)) {
                     throw new CheckException("Wrong firstArchiveFile(" + firstArchiveFile + ") for Archive(" + archive.getName() + ")");
                 }
-                if (archive.getFirstArchiveFile().exists()) {
-                    final String signature = JDHexUtils.toString(FileSignatures.readFileSignature(new File(firstArchiveFile)));
-                    if (new Regex(signature, "^[\\w]{3}  \\d{3}").matches()) {
-                        /**
-                         * cutkiller header: extension and number of files
-                         */
-                        final String numberOfPartsString = new Regex(signature, "^[\\w]{3}  (\\d{3})").getMatch(0);
-                        final int numberOfParts = Integer.parseInt(numberOfPartsString);
-                        final List<ArchiveFile> missingArchiveFiles = SplitType.getMissingArchiveFiles(archive, splitType, numberOfParts);
-                        if (missingArchiveFiles != null) {
-                            for (ArchiveFile missingArchiveFile : missingArchiveFiles) {
-                                ret.add(new DummyArchiveFile(missingArchiveFile));
-                            }
-                        }
-                        if (ret.getSize() < numberOfParts) {
-                            throw new CheckException("Missing archiveParts(" + numberOfParts + "!=" + ret.getSize() + ") for Archive(" + archive.getName() + ")");
-                        } else if (ret.getSize() > numberOfParts) {
-                            throw new CheckException("Too many archiveParts(" + numberOfParts + "!=" + ret.getSize() + ") for Archive(" + archive.getName() + ")");
-                        }
-                    }
-                }
             }
             return ret;
         } catch (CheckException e) {
@@ -169,6 +115,11 @@ public class HJSplit extends IExtraction {
         } catch (Throwable e) {
             throw new CheckException("Cannot check Archive(" + archive.getName() + ")", e);
         }
+    }
+
+    @Override
+    public String createID(ArchiveFactory factory) {
+        return SplitType.createArchiveID(factory, splitType);
     }
 
     @Override

@@ -28,7 +28,9 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.DownloadSession;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.plugins.download.raf.FileBytesCache;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
@@ -90,6 +92,11 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     private boolean                  askForUnknownPassword = false;
     private Item                     currentActiveItem;
     private final ExtractionProgress extractionProgress;
+    protected final FileBytesCache   fileBytesCache;
+
+    public FileBytesCache getFileBytesCache() {
+        return fileBytesCache;
+    }
 
     public boolean isSuccessful() {
         return successful;
@@ -123,6 +130,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         extractor.setLogger(logger);
         passwordList = new CopyOnWriteArrayList<String>();
         archive.onControllerAssigned(this);
+        fileBytesCache = DownloadSession.getDownloadWriteCache();
     }
 
     public ExtractionQueue getExtractionQueue() {
