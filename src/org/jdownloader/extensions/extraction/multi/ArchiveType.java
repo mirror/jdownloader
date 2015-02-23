@@ -690,6 +690,63 @@ public enum ArchiveType {
         }
     },
     /**
+     * SinglePart Tar.GZ Archive (.tgz)
+     */
+    TGZ_SINGLE {
+        private final Pattern pattern = Pattern.compile("(?i)(.*)\\.tgz$");
+
+        @Override
+        public ArchiveFormat getArchiveFormat() {
+            return ArchiveFormat.GZIP;
+        }
+
+        @Override
+        public boolean matches(String filePathOrName) {
+            return filePathOrName != null && pattern.matcher(filePathOrName).matches();
+        }
+
+        @Override
+        protected String buildIDPattern(String[] matches) {
+            return "\\.tgz";
+        }
+
+        @Override
+        public Pattern buildArchivePattern(String[] matches) {
+            final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches) + "$";
+            return Pattern.compile(pattern);
+        }
+
+        @Override
+        public String[] getMatches(String filePathOrName) {
+            return filePathOrName != null ? new Regex(filePathOrName, pattern).getRow(0) : null;
+        }
+
+        @Override
+        protected String getPartNumberString(String filePathOrName) {
+            return null;
+        }
+
+        @Override
+        protected int getPartNumber(String partNumberString) {
+            return 0;
+        }
+
+        @Override
+        protected int getFirstPartIndex() {
+            return 0;
+        }
+
+        @Override
+        protected int getMinimumNeededPartIndex() {
+            return 0;
+        }
+
+        @Override
+        protected String buildMissingPart(String[] matches, int partIndex, int partStringLength) {
+            return matches[0] + ".tgz";
+        }
+    },
+    /**
      * SinglePart GZIP Archive (.gz)
      */
     GZIP_SINGLE {
@@ -987,7 +1044,7 @@ public enum ArchiveType {
                 final List<ArchiveFile> ret = new ArrayList<ArchiveFile>();
                 /**
                  * some archives start at 0 (0...x-1)
-                 * 
+                 *
                  * some archives start at 1 (1....x)
                  */
                 final int minimumParts = Math.max(archiveType.getMinimumNeededPartIndex(), numberOfParts) - (1 - archiveType.getFirstPartIndex());
