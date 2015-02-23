@@ -55,6 +55,7 @@ public class XxxBunkerCom extends PluginForDecrypt {
             con = br.openGetConnection(parameter);
             if (con.getResponseCode() == 404) {
                 logger.info("Link offline: " + parameter);
+                decryptedLinks.add(getOffline(parameter));
                 return decryptedLinks;
             }
             br.followConnection();
@@ -64,17 +65,21 @@ public class XxxBunkerCom extends PluginForDecrypt {
             } catch (Throwable e) {
             }
         }
-        if (br.containsHTML(">FILE NOT FOUND<")) {
+        if (br.containsHTML(">FILE NOT FOUND<|>this video is no longer available")) {
+            decryptedLinks.add(getOffline(parameter));
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         } else if (br.getURL().equals("http://xxxbunker.com/")) {
             logger.info("Link offline: " + parameter);
+            decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         } else if (br.containsHTML(">your video is being loaded, please wait")) {
             logger.info("Link offline: " + parameter);
+            decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         } else if (br.containsHTML("<strong>SITE MAINTENANCE</strong>")) {
             logger.info("Site maintenance, cannot decrypt link: " + parameter);
+            decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }
         br.setFollowRedirects(false);
@@ -191,6 +196,13 @@ public class XxxBunkerCom extends PluginForDecrypt {
             return false;
         }
         return true;
+    }
+
+    private DownloadLink getOffline(final String parameter) {
+        final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+        offline.setAvailable(false);
+        offline.setProperty("offline", true);
+        return offline;
     }
 
     /* NO OVERRIDE!! */

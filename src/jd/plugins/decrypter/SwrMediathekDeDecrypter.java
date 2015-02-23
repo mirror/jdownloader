@@ -135,6 +135,8 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
                 if (media_url.matches("rtmp://fm-ondemand\\.[a-z0-9\\.]+/ondemand/.+")) {
                     media_url = "http://pd-ondemand." + new Regex(media_url, "rtmp://fm-ondemand\\.(.+)").getMatch(0);
                     media_url = media_url.replace("/ondemand/", "/");
+                } else if (media_url.matches("rtmp://fc\\-ondemand\\.swr\\.de/[^<>\"]*?/swr\\-fernsehen/[a-z0-9\\-_]+/\\d+\\.[a-z]+\\.mp4")) {
+                    media_url = "http://pd-ondemand.swr.de/swr-fernsehen/" + new Regex(media_url, "swr\\-fernsehen/([a-z0-9\\-_]+/\\d+\\.[a-z]+\\.mp4)").getMatch(0);
                 }
                 if (media_url.contains("s.mp4")) {
                     FOUNDQUALITIES.put("180p", media_url);

@@ -50,6 +50,7 @@ public class NicoVideoJp extends PluginForHost {
     private static final String  TYPE_SO                      = "http://(www\\.)?nicovideo\\.jp/watch/so\\d+";
     private static final String  TYPE_WATCH                   = "http://(www\\.)?nicovideo\\.jp/watch/\\d+";
     private static final String  default_extension            = ".flv";
+    private static final String  privatevid                   = "account.nicovideo.jp";
 
     private static final String  NOCHUNKS                     = "NOCHUNKS";
     private static final String  AVOID_ECONOMY_MODE           = "AVOID_ECONOMY_MODE";
@@ -74,6 +75,7 @@ public class NicoVideoJp extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, ParseException {
+        final String linkid_url = getLID(link);
         link.setProperty("extension", default_extension);
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
@@ -85,6 +87,11 @@ public class NicoVideoJp extends PluginForHost {
         if (br.containsHTML("this video inappropriate.<")) {
             String watch = br.getRegex("harmful_link\" href=\"([^<>\"]*?)\">Watch this video</a>").getMatch(0);
             br.getPage(watch);
+        }
+        if (br.getURL().contains(privatevid)) {
+            link.getLinkStatus().setStatusText("This is a private video");
+            link.setName(linkid_url);
+            return AvailableStatus.TRUE;
         }
         String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
@@ -174,17 +181,22 @@ public class NicoVideoJp extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        final String linkid_url = getLID(link);
         requestFileInformation(link);
         login(account);
         br.setFollowRedirects(true);
         // Important, without accessing the link we cannot get the downloadurl!
         br.getPage(link.getDownloadURL());
-        if (Encoding.htmlDecode(br.toString()).contains("closed=1\\&done=true")) {
+        /* Can happen if its not clear whether the video is private or offline */
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (Encoding.htmlDecode(br.toString()).contains("closed=1\\&done=true")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+        } else if (br.containsHTML(">This is a private video and not available")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Now downloadable: This is a private video");
         }
         if (link.getDownloadURL().matches(TYPE_SO) || link.getDownloadURL().matches(TYPE_WATCH)) {
-            final String linkid = new Regex(br.getURL(), "(\\d+)$").getMatch(0);
-            br.postPage("http://flapi.nicovideo.jp/api/getflv", "v=" + linkid);
+            br.postPage("http://flapi.nicovideo.jp/api/getflv", "v=" + linkid_url);
         } else {
             final String vid = new Regex(br.getURL(), "((sm|nm)\\d+)$").getMatch(0);
             br.postPage("http://flapi.nicovideo.jp/api/getflv", "v=" + vid);
@@ -317,6 +329,10 @@ public class NicoVideoJp extends PluginForHost {
         formattedFilename = formattedFilename.replace("*videoname*", videoName);
 
         return formattedFilename;
+    }
+
+    private String getLID(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "(\\d+)$").getMatch(0);
     }
 
     /**
