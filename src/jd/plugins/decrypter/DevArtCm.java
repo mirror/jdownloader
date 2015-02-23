@@ -245,7 +245,7 @@ public class DevArtCm extends PluginForDecrypt {
             if (currentOffset > 0) {
                 accessOffset(currentOffset);
             }
-            final String[] links = br.getRegex("<a href=\"(http://[^<>\"/]+\\.deviantart\\.com/(journal|art)/[^<>\"]*?)\"").getColumn(0);
+            final String[] links = br.getRegex("<a href=\"(http://[^<>\"/]+\\.deviantart\\.com/journal/[^<>\"]*?)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Plugin broken for link: " + PARAMETER);
                 throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
