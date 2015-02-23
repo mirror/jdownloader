@@ -89,32 +89,30 @@ public class DefineBabeCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
         }
-        if (DLLINK == null) {
-            String video_id = br.getRegex("video_id=(\\d+)").getMatch(0);
-            if (video_id == null) {
-                video_id = br.getRegex("id=\\'comment_object_id\\' value=\"(\\d+)\"").getMatch(0);
-            }
-            if (video_id == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.getPage("http://www." + downloadLink.getHost() + "/playlist/playlist.php?type=regular&video_id=" + video_id);
-            final String decrypted = decryptRC4HexString("TubeContext@Player", br.toString().trim());
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(decrypted);
-            final LinkedHashMap<String, Object> videos = (LinkedHashMap<String, Object>) entries.get("videos");
-            /* Usually only 360 is available */
-            final String[] qualities = { "1080p", "720p", "480p", "360p", "320p", "240p", "180p" };
-            for (final String currentqual : qualities) {
-                final LinkedHashMap<String, Object> quality_info = (LinkedHashMap<String, Object>) videos.get("_" + currentqual);
-                if (quality_info != null) {
-                    DLLINK = (String) quality_info.get("fileUrl");
-                    break;
-                }
-            }
-            if (DLLINK == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            DLLINK = Encoding.htmlDecode(DLLINK);
+        String video_id = br.getRegex("video_id=(\\d+)").getMatch(0);
+        if (video_id == null) {
+            video_id = br.getRegex("id=\\'comment_object_id\\' value=\"(\\d+)\"").getMatch(0);
         }
+        if (video_id == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage("http://www." + downloadLink.getHost() + "/playlist/playlist.php?type=regular&video_id=" + video_id);
+        final String decrypted = decryptRC4HexString("TubeContext@Player", br.toString().trim());
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(decrypted);
+        final LinkedHashMap<String, Object> videos = (LinkedHashMap<String, Object>) entries.get("videos");
+        /* Usually only 360 is available */
+        final String[] qualities = { "1080p", "720p", "480p", "360p", "320p", "240p", "180p" };
+        for (final String currentqual : qualities) {
+            final LinkedHashMap<String, Object> quality_info = (LinkedHashMap<String, Object>) videos.get("_" + currentqual);
+            if (quality_info != null) {
+                DLLINK = (String) quality_info.get("fileUrl");
+                break;
+            }
+        }
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        DLLINK = Encoding.htmlDecode(DLLINK);
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

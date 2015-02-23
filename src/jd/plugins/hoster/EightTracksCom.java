@@ -83,14 +83,22 @@ public class EightTracksCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         current_downloadlink = link;
-        if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (link.getBooleanProperty("offline", false)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.setBrowserExclusive();
         prepBr(link);
         MAIN_LINK = link.getStringProperty("mainlink", null);
         br.getPage(MAIN_LINK);
-        if (br.containsHTML(">Sorry, that page doesn\\'t exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.getURL().contains("/explore/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML(">The mix you\\'re looking for is currently in private mode")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Sorry, that page doesn\\'t exist")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.getURL().contains("/explore/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML(">The mix you\\'re looking for is currently in private mode")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         link.setName(link.getStringProperty("tempname_with_ext", null));
         return AvailableStatus.TRUE;
     }
@@ -104,28 +112,42 @@ public class EightTracksCom extends PluginForHost {
         String dllink = null;
         String ext = null;
         String filename = downloadLink.getStringProperty("final_filename", null);
-        if (filename == null) filename = downloadLink.getStringProperty("tempname", null);
+        if (filename == null) {
+            filename = downloadLink.getStringProperty("tempname", null);
+        }
         final int tracknumber = (int) getLongProperty(downloadLink, "tracknumber", -1);
         /* http://8tracks.com/tracks/TRACKID */
         currenttrackid = downloadLink.getStringProperty("trackid", null);
         /* Only go in this handling if the user added a single tracks, otherwise we will get low quality 30 seconds preview files */
         if (downloadLink.getBooleanProperty("single_link", false)) {
             /* This should never happen */
-            if (currenttrackid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (currenttrackid == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
 
             clipData = getPage(MAINPAGE + "sets/play_track/" + currenttrackid + "?format=jsonh");
             dllink = getDllink();
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (getFilename() != null) filename = getFilename();
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (getFilename() != null) {
+                filename = getFilename();
+            }
             finallink = getFinalDirectlink(dllink);
-            if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (finallink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         } else if (finallink == null) {
             /* This should never happen */
-            if (tracknumber == -1) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (tracknumber == -1) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
 
             String sameLink = "";
             String playToken = downloadLink.getStringProperty("playtoken", null);
-            if (TEST_MODE && TEST_MODE_TOKEN != null) playToken = TEST_MODE_TOKEN;
+            if (TEST_MODE && TEST_MODE_TOKEN != null) {
+                playToken = TEST_MODE_TOKEN;
+            }
             final String mixid = downloadLink.getStringProperty("mixid", null);
             final int last_track_number = (int) getLongProperty(downloadLink, "lasttracknumber", 0);
             final boolean NEED_LAST_TRACK = (tracknumber == last_track_number);
@@ -156,7 +178,9 @@ public class EightTracksCom extends PluginForHost {
                     clipData = br.getPage(MAINPAGE + "sets/" + playToken + "/tracks_played?mix_id=" + mixid + "&reverse=true&format=jsonh");
                     final String tracklist_text = br.getRegex("\\{\"tracks\":\\[(.*?)\\],\"status\"").getMatch(0);
                     String[] ids = null;
-                    if (tracklist_text != null) ids = new Regex(tracklist_text, "(\\{.*?\\})").getColumn(0);
+                    if (tracklist_text != null) {
+                        ids = new Regex(tracklist_text, "(\\{.*?\\})").getColumn(0);
+                    }
                     /* Check how many tracks we already unlocked and if our token still works */
                     if (ids != null && ids.length != 0) {
                         final int list_length = ids.length;
@@ -216,12 +240,16 @@ public class EightTracksCom extends PluginForHost {
                             this.sleep(WAITTIME_SECONDS_SKIPLIMIT * 1000l, downloadLink);
                             // Maybe listened to the track -> Next track
                             clipData = getPage(MAINPAGE + "sets/" + playToken + "/next?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
-                            if (clipData.contains("\"notices\":\"Sorry, but track skips are limited by our license.\"")) continue;
+                            if (clipData.contains("\"notices\":\"Sorry, but track skips are limited by our license.\"")) {
+                                continue;
+                            }
                             break;
 
                         }
                         /* In case it fails after 10 minutes */
-                        if (clipData.contains("\"notices\":\"Sorry, but track skips are limited by our license.\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+                        if (clipData.contains("\"notices\":\"Sorry, but track skips are limited by our license.\"")) {
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+                        }
                     }
                 }
                 logger.info("current track: " + i + " // looking for track: " + tracknumber + " // last tracknumber: " + last_track_number);
@@ -251,8 +279,12 @@ public class EightTracksCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             /* This may happen if the 8tracks.com serverside bug exists */
-            if (AT_END) { throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to get desired track"); }
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (AT_END) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to get desired track");
+            }
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
 
             /* Not yet sure how to handle these cases */
             if (EIGHT_TRACKS_BUG_EXISTS) {
@@ -276,7 +308,9 @@ public class EightTracksCom extends PluginForHost {
                     }
                 }
             }
-            if (getFilename() != null) filename = getFilename();
+            if (getFilename() != null) {
+                filename = getFilename();
+            }
             logger.info("Updating track ID the last time");
             currenttrackid = updateTrackID();
             downloadLink.setProperty("trackid", currenttrackid);
@@ -287,12 +321,22 @@ public class EightTracksCom extends PluginForHost {
             downloadLink.setProperty("savedlink", dllink);
             finallink = getFinalDirectlink(dllink);
             /* If it fails here it's probably a serverside soundcdloud.com or 8tracks.com bug */
-            if (finallink == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            if (finallink == null) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            }
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (finallink.contains(".mp3")) ext = "mp3";
-        if (ext == null && finallink.contains(".")) ext = finallink.substring(finallink.lastIndexOf(".") + 1);
-        if (ext == null || ext.equals("m4a") || ext.length() > 5) ext = "m4a";
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (finallink.contains(".mp3")) {
+            ext = "mp3";
+        }
+        if (ext == null && finallink.contains(".")) {
+            ext = finallink.substring(finallink.lastIndexOf(".") + 1);
+        }
+        if (ext == null || ext.equals("m4a") || ext.length() > 5) {
+            ext = "m4a";
+        }
         downloadLink.setProperty("final_filename", filename);
         if (tracknumber != -1) {
             filename = tracknumber + "." + filename;
@@ -306,7 +350,9 @@ public class EightTracksCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (dllink != null) downloadLink.setProperty("savedlink", dllink);
+        if (dllink != null) {
+            downloadLink.setProperty("savedlink", dllink);
+        }
         try {
             dl.startDownload();
         } catch (final PluginException e) {
@@ -330,7 +376,9 @@ public class EightTracksCom extends PluginForHost {
             if (dllink.contains("soundcloud.com/")) {
                 accessSoundcloudLink(br2, dllink);
                 final String track_duration_millisecs = br2.getRegex("\"duration\":(\\d+)").getMatch(0);
-                if (track_duration_millisecs == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (track_duration_millisecs == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 waitSeconds = Long.parseLong(track_duration_millisecs) / 1000;
             } else {
                 URLConnectionAdapter con = br2.openGetConnection(dllink);
@@ -356,18 +404,23 @@ public class EightTracksCom extends PluginForHost {
         waitSeconds = waitSeconds / WAITTIME_DIVISOR + WAITTIME_SECONDS_EXTRA;
         /* Maybe needed if they change their system */
         // waitSeconds = waitSeconds - WAITTIME_SECONDS_BEFORE_TRACK_PLAYED_CONFIRMATION + WAITTIME_SECONDS_EXTRA;
-        if (TEST_MODE) waitSeconds = WAITTIME_SECONDS_TEST_MODE;
+        if (TEST_MODE) {
+            waitSeconds = WAITTIME_SECONDS_TEST_MODE;
+        }
         logger.info("Waiting " + waitSeconds + " seconds from now on...");
-        if (waitSeconds > 0) this.sleep(waitSeconds * 1000l, current_downloadlink);
+        if (waitSeconds > 0) {
+            this.sleep(waitSeconds * 1000l, current_downloadlink);
+        }
         return waitSeconds;
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) throws IOException, PluginException {
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) throws Exception {
+        final Browser br2 = br.cloneBrowser();
         String dllink = downloadLink.getStringProperty(property);
-        dllink = getFinalDirectlink(dllink);
+        br2.getPage(dllink);
+        dllink = getFinalDirectlink(br2.toString());
         if (dllink != null) {
             try {
-                final Browser br2 = br.cloneBrowser();
                 final URLConnectionAdapter con = br2.openGetConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
@@ -382,7 +435,7 @@ public class EightTracksCom extends PluginForHost {
         return dllink;
     }
 
-    private String getFinalDirectlink(final String dlink) throws IOException, PluginException {
+    private String getFinalDirectlink(final String dlink) {
         if (dlink != null && dlink.contains("soundcloud.com/")) {
             final Browser br2 = br.cloneBrowser();
             br2.setFollowRedirects(false);
@@ -390,10 +443,7 @@ public class EightTracksCom extends PluginForHost {
                 accessSoundcloudLink(br2, dlink);
             } catch (final Throwable e) {
             }
-            String streamlink = br2.getRegex("\"stream_url\":\"(https?://api\\.soundcloud\\.com/tracks/\\d+/stream)\"").getMatch(0);
-            if (streamlink != null) {
-                streamlink = jd.plugins.hoster.SoundcloudCom.getDirectlink(streamlink);
-            }
+            final String streamlink = jd.plugins.hoster.SoundcloudCom.getDirectlink(br2.toString());
             return streamlink;
         } else {
             return dlink;
@@ -429,11 +479,19 @@ public class EightTracksCom extends PluginForHost {
         String album = getClipData("release_name");
         String title = name_and_artist.getMatch(0);
         String artist = name_and_artist.getMatch(1);
-        if (title == null || artist == null) return null;
+        if (title == null || artist == null) {
+            return null;
+        }
 
-        if (album.equals("null")) album = null;
-        if (album != null && album.contains(":")) album = album.substring(0, album.indexOf(":"));
-        if (album != null && (album.equals(title) || isEmpty(album))) album = null;
+        if (album.equals("null")) {
+            album = null;
+        }
+        if (album != null && album.contains(":")) {
+            album = album.substring(0, album.indexOf(":"));
+        }
+        if (album != null && (album.equals(title) || isEmpty(album))) {
+            album = null;
+        }
 
         title = encodeUnicode(Encoding.htmlDecode(title.trim()));
         artist = encodeUnicode(Encoding.htmlDecode(artist.trim()));
@@ -455,7 +513,9 @@ public class EightTracksCom extends PluginForHost {
         br.setReadTimeout(90 * 1000);
         /* This UA will give us better audio quality */
         String ua = dl.getStringProperty("user_agent", null);
-        if (ua == null) ua = "Mozilla/5.0 (webOS/2.1.0; U; en-US) AppleWebKit/532.2 (KHTML, like Gecko) Version/1.0 Safari/532.2 Pre/1.2";
+        if (ua == null) {
+            ua = "Mozilla/5.0 (webOS/2.1.0; U; en-US) AppleWebKit/532.2 (KHTML, like Gecko) Version/1.0 Safari/532.2 Pre/1.2";
+        }
         if (dl.getBooleanProperty("change_ua")) {
             /* we first have to load the plugin, before we can reference it */
             JDUtilities.getPluginForHost("mediafire.com");
@@ -556,7 +616,9 @@ public class EightTracksCom extends PluginForHost {
         /* we have to make sure the youtube plugin is loaded */
         if (pluginloaded == false) {
             final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+            if (plugin == null) {
+                throw new IllegalStateException("youtube plugin not found!");
+            }
             pluginloaded = true;
         }
         return jd.plugins.hoster.Youtube.unescape(s);
