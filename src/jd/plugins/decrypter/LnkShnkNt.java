@@ -16,14 +16,20 @@
 
 package jd.plugins.decrypter;
 
+import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
 /**
  * Earn money sharing shrinked links<br />
@@ -45,13 +51,40 @@ public class LnkShnkNt extends PluginForDecrypt {
         if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) {
             logger.warning("Invalid Link!");
         }
-        final String continu = br.getRegex("href=\"([^\"]+)\">Continue").getMatch(0);
-        if (continu != null) {
-            br.getPage(continu);
-            final String link = br.getRedirectLocation();
-            if (link != null) {
-                decryptedLinks.add(createDownloadlink(link));
+        if (br.containsHTML("api\\.solvemedia\\.com/papi")) {
+            /* This part was coded blindly! */
+            for (int i = 0; i <= 3; i++) {
+                final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+                File cf = null;
+                try {
+                    cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                } catch (final Exception e) {
+                    if (jd.plugins.decrypter.LnkCrptWs.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                    }
+                    throw e;
+                }
+                final String code = getCaptchaCode(cf, param);
+                final String chid = sm.getChallenge(code);
+                br.postPage(br.getURL(), "adcopy_response=manual_challenge&adcopy_challenge=" + Encoding.urlEncode(chid));
+                if (br.containsHTML("api\\.solvemedia\\.com/papi")) {
+                    continue;
+                }
+                break;
             }
+            if (br.containsHTML("api\\.solvemedia\\.com/papi")) {
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
+        }
+        final String continu = br.getRegex("href=\"([^\"]+)\">Continue").getMatch(0);
+        if (continu == null) {
+            return null;
+        }
+        br.getPage(continu);
+        final String link = br.getRedirectLocation();
+        if (link != null) {
+            decryptedLinks.add(createDownloadlink(link));
         }
         return decryptedLinks;
     }

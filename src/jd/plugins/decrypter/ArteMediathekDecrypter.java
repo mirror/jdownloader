@@ -38,12 +38,13 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "arte.tv", "concert.arte.tv" }, urls = { "http://www\\.arte\\.tv/guide/[a-z]{2}/\\d+\\-\\d+/[A-Za-z0-9\\-_]+", "http://concert\\.arte\\.tv/(de|fr)/[a-z0-9\\-]+" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv" }, urls = { "http://www\\.arte\\.tv/guide/[a-z]{2}/\\d+\\-\\d+/[A-Za-z0-9\\-_]+", "http://concert\\.arte\\.tv/(de|fr)/[a-z0-9\\-]+", "http://creative\\.arte\\.tv/(de|fr)/[a-z0-9\\-]+/[a-z0-9\\-]+" }, flags = { 0, 0, 0 })
 public class ArteMediathekDecrypter extends PluginForDecrypt {
 
     private static final String EXCEPTION_LINKOFFLINE      = "EXCEPTION_LINKOFFLINE";
 
     private static final String TYPE_CONCERT               = "http://(www\\.)?concert\\.arte\\.tv/(de|fr)/[a-z0-9\\-]+";
+    private static final String TYPE_CREATIVE              = "http://(www\\.)?creative\\.arte\\.tv/(de|fr)/[a-z0-9\\-]+/[a-z0-9\\-]+";
     private static final String TYPE_GUIDE                 = "http://((videos|www)\\.)?arte\\.tv/guide/[a-z]{2}/[0-9\\-]+";
 
     private static final String V_NORMAL                   = "V_NORMAL";
@@ -97,11 +98,25 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(parameter);
+        /* First we need to have some basic data - this part is link-specific. */
         if (parameter.matches(TYPE_CONCERT)) {
             if (!br.containsHTML("id=\"section\\-player\"")) {
                 decryptedLinks.add(createofflineDownloadLink(parameter));
                 return decryptedLinks;
             }
+            fid = new Regex(parameter, "concert\\.arte\\.tv/(.+)").getMatch(0);
+            if (!br.containsHTML("class=\"video\\-container\"")) {
+                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            }
+            fid = br.getRegex("\"http://concert\\.arte\\.tv/[a-z]{2}/player/(\\d+)").getMatch(0);
+            hybridAPIUrl = "http://concert.arte.tv/%s/player/%s";
+        } else if (parameter.matches(TYPE_CREATIVE)) {
+            fid = new Regex(parameter, "creative\\.arte\\.tv/(.+)").getMatch(0);
+            if (!br.containsHTML("class=\"video\\-container")) {
+                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            }
+            fid = br.getRegex("\"http://creative\\.arte\\.tv/[a-z]{2}/player/(\\d+)").getMatch(0);
+            hybridAPIUrl = "http://creative.arte.tv/%s/player/%s";
         } else {
             if (br.getRedirectLocation() != null) {
                 br.getPage(br.getRedirectLocation());
@@ -122,44 +137,41 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(createofflineDownloadLink(parameter));
                 return decryptedLinks;
             }
+            /* Make sure not to download trailers or announcements to movies by grabbing the whole section of the videoplayer! */
+            final String video_section = br.getRegex("(<section class=\\'focus\\' data-action=.*?</section>)").getMatch(0);
+            if (video_section == null) {
+                return null;
+            }
+            fid = new Regex(video_section, "/stream/player/[A-Za-z]{1,5}/([^<>\"/]*?)/").getMatch(0);
+            if (fid == null) {
+                if (!br.containsHTML("arte_vp_config=")) {
+                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                }
+                /* Title is only available on DVD (buyable) */
+                if (video_section.contains("class='badge-vod'>VOD DVD</span>")) {
+                    title = "only_available_on_DVD_" + title;
+                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                } else if (video_section.contains("class='badge-live'")) {
+                    title = "livestreams_are_not_supported_" + title;
+                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                }
+                return null;
+            }
+            /*
+             * first "ALL" can e.g. be replaced with "HBBTV" to only get the HBBTV qualities. Also possible:
+             * https://api.arte.tv/api/player/v1/config/fr/051939-015-A?vector=CINEMA
+             */
+            hybridAPIUrl = "http://org-www.arte.tv/papi/tvguide/videos/stream/player/%s/%s/ALL/ALL.json";
+        }
+        if (fid == null) {
+            return null;
         }
 
         try {
-
-            if (parameter.matches(TYPE_CONCERT)) {
-                fid = new Regex(parameter, "concert\\.arte\\.tv/(.+)").getMatch(0);
-                if (!br.containsHTML("class=\"video\\-container\"")) {
-                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-                }
-                fid = br.getRegex("\"http://concert\\.arte\\.tv/[a-z]{2}/player/(\\d+)").getMatch(0);
-                hybridAPIUrl = "http://concert.arte.tv/%s/player/%s";
-            } else {
-                /* Make sure not to download trailers or announcements to movies by grabbing the whole section of the videoplayer! */
-                final String video_section = br.getRegex("(<section class=\\'focus\\' data-action=.*?</section>)").getMatch(0);
-                if (video_section == null) {
-                    return null;
-                }
-                fid = new Regex(video_section, "/stream/player/[A-Za-z]{1,5}/([^<>\"/]*?)/").getMatch(0);
-                if (fid == null) {
-                    if (!br.containsHTML("arte_vp_config=")) {
-                        throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-                    }
-                    /* Title is only available on DVD (buyable) */
-                    if (video_section.contains("class='badge-vod'>VOD DVD</span>")) {
-                        title = "only_available_on_DVD_" + title;
-                        throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-                    } else if (video_section.contains("class='badge-live'")) {
-                        title = "livestreams_are_not_supported_" + title;
-                        throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-                    }
-                    return null;
-                }
-                /*
-                 * first "ALL" can e.g. be replaced with "HBBTV" to only get the HBBTV qualities. Also possible:
-                 * https://api.arte.tv/api/player/v1/config/fr/051939-015-A?vector=CINEMA
-                 */
-                hybridAPIUrl = "http://org-www.arte.tv/papi/tvguide/videos/stream/player/%s/%s/ALL/ALL.json";
-            }
+            /*
+             * Now let's check which languages the user wants. We'll do the quality selection later but we have to access webpages to get
+             * the different languages so let's keep the load low by only grabbing what the user selected.
+             */
             if (cfg.getBooleanProperty(LOAD_LANGUAGE_URL, false)) {
                 selectedLanguages.add(this.getUrlLang());
             } else {
@@ -170,6 +182,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     selectedLanguages.add("fr");
                 }
             }
+            /* Finally, grab all we can get (in the selected language(s)) */
             for (final String selectedLanguage : selectedLanguages) {
                 final String apiurl = this.getAPIUrl(hybridAPIUrl, selectedLanguage, fid);
                 br.getPage(apiurl);
@@ -305,6 +318,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 }
             }
 
+            /* We should always have 3 links (their basic qualities) or more! */
             if (bestMap.isEmpty()) {
                 logger.warning("Decrypter broken");
                 return null;
@@ -318,6 +332,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 }
             }
 
+            /* Check if user wants to download the thumbnail as well. */
             if (cfg.getBooleanProperty(THUMBNAIL, false)) {
                 final DownloadLink link = createDownloadlink("directhttp://" + thumbnailUrl);
                 link.setFinalFileName(title + ".jpg");
@@ -640,13 +655,13 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
 
     private String getAPIUrl(final String hybridAPIlink, final String lang, final String id) {
         String apilink;
-        if (hybridAPIlink.contains("concert.arte.tv")) {
-            apilink = String.format(hybridAPIlink, lang, id);
-        } else {
+        if (parameter.matches(TYPE_GUIDE)) {
             final String api_language = this.artetv_api_language(lang);
             final String id_without_lang = id.substring(0, id.length() - 1);
             final String id_with_lang = id_without_lang + api_language;
             apilink = String.format(hybridAPIlink, api_language, id_with_lang);
+        } else {
+            apilink = String.format(hybridAPIlink, lang, id);
         }
         return apilink;
     }
@@ -667,10 +682,10 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
 
     private String getUrlFilename() {
         String urlfilename;
-        if (parameter.matches(TYPE_CONCERT)) {
-            urlfilename = new Regex(parameter, "http://concert\\.arte\\.tv/(?:de|fr)/([a-z0-9\\-]+)").getMatch(0);
-        } else {
+        if (parameter.matches(TYPE_GUIDE)) {
             urlfilename = new Regex(parameter, "http://www\\.arte\\.tv/guide/[a-z]{2}/\\d+\\-\\d+/([A-Za-z0-9\\-_]+)").getMatch(0);
+        } else {
+            urlfilename = new Regex(parameter, "([a-z0-9\\-]+)$").getMatch(0);
         }
         return urlfilename;
     }
