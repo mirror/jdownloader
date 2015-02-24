@@ -428,7 +428,7 @@ public class SmoozedCom extends PluginForHost {
                     }
                 }
             } else if ("retry".equals(state)) {
-                if (StringUtils.equalsIgnoreCase(message, "Hoster temporary not available")) {
+                if (StringUtils.equalsIgnoreCase(message, "Hoster temporary not available") || StringUtils.equalsIgnoreCase(message, "Internal error")) {
                     // Hoster temporary not available
                     if (seconds != null) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster temporary not available", seconds.intValue() * 1000);
