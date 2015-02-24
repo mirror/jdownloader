@@ -1,18 +1,18 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2008  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.decrypter;
 
@@ -37,45 +37,41 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv" }, urls = { "http://www\\.arte\\.tv/guide/(de|fr)/\\d+\\-\\d+/[a-z0-9\\-_]+", "http://concert\\.arte\\.tv/(de|fr)/[a-z0-9\\-]+", "http://creative\\.arte\\.tv/(de|fr)/(?!scald_dmcloud_json)[a-z0-9\\-]+(/[a-z0-9\\-]+)?" }, flags = { 0, 0, 0 })
-public class ArteMediathekDecrypter extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "test.de" }, urls = { "http://creative\\.arte\\.tv/(de|fr)/scald_dmcloud_json/\\d+" }, flags = { 0 })
+public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
 
     private static final String EXCEPTION_LINKOFFLINE      = "EXCEPTION_LINKOFFLINE";
 
-    private static final String TYPE_CONCERT               = "http://(www\\.)?concert\\.arte\\.tv/(de|fr)/[a-z0-9\\-]+";
-    private static final String TYPE_CREATIVE              = "http://(www\\.)?creative\\.arte\\.tv/(de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?";
-    private static final String TYPE_GUIDE                 = "http://www\\.arte\\.tv/guide/(de|fr)/\\d+\\-\\d+/[a-z0-9\\-_]+";
+    private static final String TYPE_CREATIVE              = "http://creative\\.arte\\.tv/(de|fr)/scald_dmcloud_json/\\d+";
 
     private static final String V_NORMAL                   = "V_NORMAL";
     private static final String V_SUBTITLED                = "V_SUBTITLED";
     private static final String V_SUBTITLE_DISABLED_PEOPLE = "V_SUBTITLE_DISABLED_PEOPLE";
     private static final String V_AUDIO_DESCRIPTION        = "V_AUDIO_DESCRIPTION";
-    private static final String http_300                   = "http_300";
-    private static final String http_800                   = "http_800";
-    private static final String http_1500                  = "http_1500";
-    private static final String http_2200                  = "http_2200";
+    // private static final String http_300 = "http_300";
+    // private static final String http_800 = "http_800";
+    // private static final String http_1500 = "http_1500";
+    private static final String http_extern_1000           = "http_extern_1000";
     private static final String LOAD_LANGUAGE_URL          = "LOAD_LANGUAGE_URL";
     private static final String LOAD_LANGUAGE_GERMAN       = "LOAD_LANGUAGE_GERMAN";
     private static final String LOAD_LANGUAGE_FRENCH       = "LOAD_LANGUAGE_FRENCH";
     private static final String THUMBNAIL                  = "THUMBNAIL";
     private static final String FAST_LINKCHECK             = "FAST_LINKCHECK";
 
-    final String[]              formats                    = { http_300, http_800, http_1500, http_2200 };
+    final String[]              formats                    = { http_extern_1000 };
 
     private int                 languageVersion            = 1;
     private String              parameter;
 
-    @SuppressWarnings("deprecation")
-    public ArteMediathekDecrypter(final PluginWrapper wrapper) {
+    public ArteMediathekDecrypterExtern(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    @SuppressWarnings({ "unchecked", "deprecation" })
-    /*
-     * E.g. smil (rtmp) url:
-     * http://www.arte.tv/player/v2/webservices/smil.smil?json_url=http%3A%2F%2Farte.tv%2Fpapi%2Ftvguide%2Fvideos%2Fstream
-     * %2Fplayer%2FD%2F045163-000_PLUS7-D%2FALL%2FALL.json&smil_entries=RTMP_SQ_1%2CRTMP_MQ_1%2CRTMP_LQ_1
+    /**
+     * TODO: Check if whether we can also have subtitled versions or even other languages than given in the link here - probably not -->
+     * Change code accordingly!
      */
+    @SuppressWarnings({ "unchecked", "deprecation" })
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         /* Load host plugin to access some static methods later */
@@ -100,83 +96,11 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         br.getPage(parameter);
         try {
             /* First we need to have some basic data - this part is link-specific. */
-            if (parameter.matches(TYPE_CONCERT)) {
-                if (!br.containsHTML("id=\"section\\-player\"")) {
-                    decryptedLinks.add(createofflineDownloadLink(parameter));
-                    return decryptedLinks;
-                }
-                if (!br.containsHTML("class=\"video\\-container\"")) {
-                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-                }
-                fid = br.getRegex("\"http://concert\\.arte\\.tv/[a-z]{2}/player/(\\d+)").getMatch(0);
-                hybridAPIUrl = "http://concert.arte.tv/%s/player/%s";
-            } else if (parameter.matches(TYPE_CREATIVE)) {
-                /* Return external links if existant */
-                final String[] externURLsRegexes = { "data\\-url=\"(http://creative\\.arte\\.tv/(de|fr)/scald_dmcloud_json/\\d+)\"", "src=\"(https?://(?:www\\.)?youtube\\.com/embed/[^<>\"]*?)\"" };
-                for (final String externURLRegex : externURLsRegexes) {
-                    final String[] externURLs = br.getRegex(externURLRegex).getColumn(0);
-                    if (externURLs != null && externURLs.length > 0) {
-                        for (final String externURL : externURLs) {
-                            decryptedLinks.add(createDownloadlink(externURL));
-                        }
-                    }
-                }
-                if (decryptedLinks.size() > 0) {
-                    return decryptedLinks;
-                }
-                if (!br.containsHTML("class=\"video\\-container")) {
-                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-                }
-                fid = br.getRegex("\"http://creative\\.arte\\.tv/[a-z]{2}/player/(\\d+)").getMatch(0);
-                hybridAPIUrl = "http://creative.arte.tv/%s/player/%s";
-            } else {
-                if (br.getRedirectLocation() != null) {
-                    br.getPage(br.getRedirectLocation());
-                }
-                int status = br.getHttpConnection().getResponseCode();
-                if (br.getHttpConnection().getResponseCode() == 400 || br.containsHTML("<h1>Error 404</h1>") || (!parameter.contains("tv/guide/") && status == 200)) {
-                    decryptedLinks.add(createofflineDownloadLink(parameter));
-                    return decryptedLinks;
-                }
-                /* new arte+7 handling */
-                if (status == 301 || status == 302) {
-                    br.setFollowRedirects(true);
-                    if (br.getRedirectLocation() != null) {
-                        parameter = br.getRedirectLocation();
-                        br.getPage(parameter);
-                    }
-                } else if (status != 200) {
-                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-                }
-                /* Make sure not to download trailers or announcements to movies by grabbing the whole section of the videoplayer! */
-                final String video_section = br.getRegex("(<section class=\\'focus\\' data-action=.*?</section>)").getMatch(0);
-                if (video_section == null) {
-                    return null;
-                }
-                fid = new Regex(video_section, "/stream/player/[A-Za-z]{1,5}/([^<>\"/]*?)/").getMatch(0);
-                if (fid == null) {
-                    if (!br.containsHTML("arte_vp_config=")) {
-                        throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-                    }
-                    /* Title is only available on DVD (buyable) */
-                    if (video_section.contains("class='badge-vod'>VOD DVD</span>")) {
-                        title = "only_available_on_DVD_" + title;
-                        throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-                    } else if (video_section.contains("class='badge-live'")) {
-                        title = "livestreams_are_not_supported_" + title;
-                        throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-                    }
-                    throw new DecrypterException("Decrypter broken: " + parameter);
-                }
-                /*
-                 * first "ALL" can e.g. be replaced with "HBBTV" to only get the HBBTV qualities. Also possible:
-                 * https://api.arte.tv/api/player/v1/config/fr/051939-015-A?vector=CINEMA
-                 */
-                hybridAPIUrl = "http://org-www.arte.tv/papi/tvguide/videos/stream/player/%s/%s/ALL/ALL.json";
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
             }
-            if (fid == null) {
-                return null;
-            }
+            fid = new Regex(parameter, "scald_dmcloud_json/(\\d+)").getMatch(0);
+            hybridAPIUrl = "http://creative.arte.tv/%s/scald_dmcloud_json/%s";
             /*
              * Now let's check which languages the user wants. We'll do the quality selection later but we have to access webpages to get
              * the different languages so let's keep the load low by only grabbing what the user selected.
@@ -203,7 +127,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 }
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
                 final LinkedHashMap<String, Object> videoJsonPlayer = (LinkedHashMap<String, Object>) entries.get("videoJsonPlayer");
-                final String sourceURL = (String) videoJsonPlayer.get("VTR");
                 title = encodeUnicode((String) videoJsonPlayer.get("VTI"));
                 final String description = (String) videoJsonPlayer.get("VDE");
                 final String errormessage = (String) entries.get("msg");
@@ -249,22 +172,28 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
 
                 for (final Object o : vsr_quals) {
                     final LinkedHashMap<String, Object> qualitymap = (LinkedHashMap<String, Object>) o;
-                    final String protocol = "http";
-                    final int videoBitrate = ((Number) qualitymap.get("bitrate")).intValue();
-                    final int width = ((Number) qualitymap.get("width")).intValue();
-                    final int height = ((Number) qualitymap.get("height")).intValue();
-                    final String versionCode = (String) qualitymap.get("versionCode");
-                    final String versionLibelle = (String) qualitymap.get("versionLibelle");
-                    final String versionShortLibelle = (String) qualitymap.get("versionShortLibelle");
+                    final String protocol = "http_extern";
+                    final String quality = (String) qualitymap.get("quality");
+                    int videoBitrate;
+                    int width;
+                    int height;
                     final String url = (String) qualitymap.get("url");
-
-                    final int format_code = getFormatCode(versionShortLibelle, versionCode);
-                    final String short_lang_current = get_short_lang_from_format_code(format_code);
-                    final String quality_intern = selectedLanguage + "_" + get_intern_format_code_from_format_code(format_code) + "_" + protocol + "_" + videoBitrate;
+                    if (quality.equals("High quality")) {
+                        videoBitrate = 1000;
+                        width = 504;
+                        height = 284;
+                    } else {
+                        /* This should never happen */
+                        videoBitrate = 0;
+                        width = 0;
+                        height = 0;
+                    }
+                    final String short_lang_current = get_short_lang_from_format_code(this.languageVersion);
+                    final String quality_intern = selectedLanguage + "_" + get_intern_format_code_from_format_code(this.languageVersion) + "_" + protocol + "_" + videoBitrate;
                     final String linkid = fid + "_" + quality_intern;
-                    final String filename = title + "_" + getLongLanguage(selectedLanguage) + "_" + get_user_format_from_format_code(format_code) + "_" + width + "x" + height + "_" + videoBitrate + ".mp4";
+                    final String filename = title + "_" + getLongLanguage(selectedLanguage) + "_" + get_user_format_from_format_code(this.languageVersion) + "_" + width + "x" + height + "_" + videoBitrate + ".mp4";
                     /* Ignore HLS/RTMP versions */
-                    if (!url.startsWith("http") || url.contains(".m3u8")) {
+                    if (!url.startsWith("http") || url.contains(".m3u8") || url.contains("/hls/")) {
                         logger.info("Skipping " + filename + " because it is not a supported streaming format");
                         continue;
                     }
@@ -290,18 +219,18 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     link.setProperty("VRU", convertDateFormat(vru));
                     link.setProperty("quality_intern", quality_intern);
                     link.setProperty("langShort", selectedLanguage);
-                    link.setProperty("mainlink", sourceURL);
+                    link.setProperty("mainlink", parameter);
                     try {
                         try {
                             link.setComment(description);
                         } catch (final Throwable e) {
                             /* Not available in 0.9.581 Stable */
                         }
-                        link.setContentUrl(sourceURL);
+                        link.setContentUrl(parameter);
                         link.setLinkID(linkid);
                     } catch (final Throwable e) {
                         /* Not available in old 0.9.581 Stable */
-                        link.setBrowserUrl(sourceURL);
+                        link.setBrowserUrl(parameter);
                         link.setProperty("LINKDUPEID", linkid);
                     }
                     if (fastLinkcheck) {
@@ -381,10 +310,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             throw new DecrypterException("Decrypter broken");
         }
         int lint;
-        if (versionCode.equals("VO") && parameter.matches(TYPE_CONCERT)) {
-            /* Special case - no different versions available --> We already got the version we want */
-            lint = languageVersion;
-        } else if ("VOF-STA".equalsIgnoreCase(versionCode) || "VOF-STMF".equals(versionCode) || "VA-STMA".equals(versionCode)) {
+        if ("VOF-STA".equalsIgnoreCase(versionCode) || "VOF-STMF".equals(versionCode) || "VA-STMA".equals(versionCode)) {
             /* Definitly NOT subtitled: VF-STMF */
             lint = 3;
         } else if (versionCode.equals("VOA-STMA")) {
@@ -468,14 +394,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
 
     private String getAPIUrl(final String hybridAPIlink, final String lang, final String id) {
         String apilink;
-        if (parameter.matches(TYPE_GUIDE)) {
-            final String api_language = this.artetv_api_language(lang);
-            final String id_without_lang = id.substring(0, id.length() - 1);
-            final String id_with_lang = id_without_lang + api_language;
-            apilink = String.format(hybridAPIlink, api_language, id_with_lang);
-        } else {
-            apilink = String.format(hybridAPIlink, lang, id);
-        }
+        apilink = String.format(hybridAPIlink, lang, id);
         return apilink;
     }
 
@@ -543,11 +462,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     @SuppressWarnings("unused")
     private String getURLFilename(final String parameter) {
         String urlfilename;
-        if (parameter.matches(TYPE_CONCERT)) {
-            urlfilename = new Regex(parameter, "concert\\.arte\\.tv/(de|fr)/(.+)").getMatch(1);
-        } else {
-            urlfilename = new Regex(parameter, "arte\\.tv/guide/[a-z]{2}/(.+)").getMatch(0);
-        }
+        urlfilename = new Regex(parameter, "arte\\.tv/guide/[a-z]{2}/(.+)").getMatch(0);
         return urlfilename;
     }
 

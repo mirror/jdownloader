@@ -49,10 +49,13 @@ public class ArteTv extends PluginForHost {
     private static final String http_800                   = "http_800";
     private static final String http_1500                  = "http_1500";
     private static final String http_2200                  = "http_2200";
+    /* creative.arte.tv extern qualities */
+    private static final String http_extern_1000           = "http_extern_1000";
     private static final String LOAD_LANGUAGE_URL          = "LOAD_LANGUAGE_URL";
     private static final String LOAD_LANGUAGE_GERMAN       = "LOAD_LANGUAGE_GERMAN";
     private static final String LOAD_LANGUAGE_FRENCH       = "LOAD_LANGUAGE_FRENCH";
     private static final String THUMBNAIL                  = "THUMBNAIL";
+    private static final String FAST_LINKCHECK             = "FAST_LINKCHECK";
 
     private static final String TYPE_GUIDE                 = "http://www\\.arte\\.tv/guide/[a-z]{2}/.+";
     private static final String TYPE_CONCERT               = "http://(www\\.)?concert\\.arte\\.tv/.+";
@@ -60,11 +63,13 @@ public class ArteTv extends PluginForHost {
     private String              dllink                     = null;
     private String              flashplayer                = null;
 
+    @SuppressWarnings("deprecation")
     public ArteTv(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("jd_decrypted_jd", ""));
@@ -97,12 +102,14 @@ public class ArteTv extends PluginForHost {
         dllink = downloadLink.getStringProperty("directURL", null);
         flashplayer = downloadLink.getStringProperty("flashplayer", null);
 
-        status = getExpireMessage(lang, expiredBefore, expiredAfter);
-        /* TODO: Improve this case! */
-        if (status != null) {
-            logger.warning(status);
-            downloadLink.setName(status + "_" + fileName);
-            return AvailableStatus.FALSE;
+        if (expiredBefore != null && expiredAfter != null) {
+            status = getExpireMessage(lang, expiredBefore, expiredAfter);
+            /* TODO: Improve this case! */
+            if (status != null) {
+                logger.warning(status);
+                downloadLink.setName(status + "_" + fileName);
+                return AvailableStatus.FALSE;
+            }
         }
 
         if (fileName == null || dllink == null) {
@@ -180,7 +187,6 @@ public class ArteTv extends PluginForHost {
             if (date.getTime() < System.currentTimeMillis()) {
                 return true;
             }
-            SimpleDateFormat dfto = new SimpleDateFormat("dd. MMM yyyy 'ab' HH:mm 'Uhr'");
         } catch (Throwable e) {
             return false;
         }
@@ -318,6 +324,8 @@ public class ArteTv extends PluginForHost {
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Auswahl der manchmal verfügbaren Qualitätsstufen:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), http_300, JDL.L("plugins.hoster.arte.http_300", "300kBit/s 384x216")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Auswahl der manchmal verfügbaren Qualitätsstufen für spezielle externe creative.arte.tv Videos:"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), http_extern_1000, JDL.L("plugins.hoster.arte.http_extern_1000", "1000kBit/s 504x284")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Auswahl der immer verfügbaren Qualitätsstufen:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), http_800, JDL.L("plugins.hoster.arte.http_800", "800kBit/s 720x406")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), http_1500, JDL.L("plugins.hoster.arte.http_1500", "1500kBit/s 720x406")).setDefaultValue(true));
@@ -330,13 +338,14 @@ public class ArteTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), V_AUDIO_DESCRIPTION, JDL.L("plugins.hoster.arte.V_AUDIO_DESCRIPTION", "Audio Deskription")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Auswahl der Sprachversionen:"));
-        final ConfigEntry cfge = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LOAD_LANGUAGE_URL, JDL.L("plugins.hoster.arte.LOAD_LANGUAGE_URL", "Sprachausgabe der URL laden (je nach dem, ob '/de/' oder '/fr/' im eingefügten Link steht)?")).setDefaultValue(true);
+        final ConfigEntry cfge = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LOAD_LANGUAGE_URL, JDL.L("plugins.hoster.arte.LOAD_LANGUAGE_URL", "Sprachausgabe der URL laden (je nach dem, ob '/de/' oder '/fr/' im eingefügten Link steht)?\r\n<html><b>WICHTIG: Falls nur eine Sprachversion verfügbar ist, aber beide ausgewählt sind kann es passieren, dass diese doppelt (als deutsch und englisch) im Linkgrabber landet!</b></html>")).setDefaultValue(true);
         getConfig().addEntry(cfge);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LOAD_LANGUAGE_GERMAN, JDL.L("plugins.hoster.arte.LOAD_LANGUAGE_GERMAN", "Sprachausgabe Deutsch laden?")).setDefaultValue(false).setEnabledCondidtion(cfge, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LOAD_LANGUAGE_FRENCH, JDL.L("plugins.hoster.arte.LOAD_LANGUAGE_FRENCH", "Sprachausgabe Französisch laden?")).setDefaultValue(false).setEnabledCondidtion(cfge, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Sonstiges:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), THUMBNAIL, JDL.L("plugins.hoster.arte.loadthumbnail", "Thumbnail laden?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, JDL.L("plugins.hoster.arte.loadthumbnail", "Schnellen Linkcheck aktivieren?\r\n<html><b>WICHTIG: Dadurch erscheinen die Links schneller im Linkgrabber, aber die Dateigröße wird erst beim Downloadstart (oder manuellem Linkcheck) angezeigt.</b></html>")).setDefaultValue(true));
     }
 
 }

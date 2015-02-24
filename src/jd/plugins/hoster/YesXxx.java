@@ -22,9 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -32,64 +30,70 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "proporn.com" }, urls = { "http://((www|de|fr|ru|es|it|jp|nl|pl|pt)\\.)?proporn\\.com/(video|embed)/\\d+" }, flags = { 0 })
-public class ProPornCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yes.xxx" }, urls = { "http://(www\\.)?yes\\.xxx/\\?v=[A-Z0-9]+" }, flags = { 0 })
+public class YesXxx extends PluginForHost {
 
-    public ProPornCom(PluginWrapper wrapper) {
+    public YesXxx(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String SKEY   = "VjN0NlJLRlkxMU9RNEo0Ug==";
-    private String              DLLINK = null;
+    /* Extension which will be used if no correct extension is found */
+    private static final String  default_Extension = ".mp4";
+    /* Connection stuff */
+    private static final boolean free_resume       = true;
+    private static final int     free_maxchunks    = 0;
+    private static final int     free_maxdownloads = -1;
+
+    private String               DLLINK            = null;
 
     @Override
     public String getAGBLink() {
-        return "http://www.proporn.com/static/terms";
+        return "http://www.yes.xxx/?s=terms";
     }
 
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload("http://www.proporn.com/video/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
-    }
-
-    /* Similar sites: drtuber.com, proporn.com, viptube.com */
-    /* IMPORTANT: If the crypto stuff fails, use the mobile version of the sites to get uncrypted finallinks! */
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setCookie("http://proporn.com/", "lang", "en");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("class=\"nothing\"")) {
+        if (br.getURL().contains(">Requested video not exist") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<>\"]*?)\\- Free Porn Video").getMatch(0);
-        final String h = br.getRegex("\\'h=([a-z0-9]+)").getMatch(0);
-        final String t = br.getRegex("t=(\\d+)\\'").getMatch(0);
-        final String vkey = br.getRegex("vkey=\\' \\+ \\'([a-z0-9]+)\\';").getMatch(0);
-        br.getPage("http://www.proporn.com/player_config/?h=" + h + "&t=" + t + "&vkey=" + vkey + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode(SKEY)) + "&aid=&domain_id=");
-        DLLINK = br.getRegex("<video_file>(http://[^<>\"]*?)</video_file>").getMatch(0);
+        String filename = br.getRegex("<title>([^<>]*?)\\- YES\\.XXX</title>").getMatch(0);
         if (DLLINK == null) {
-            DLLINK = br.getRegex("<video_file><\\!\\[CDATA\\[(http://[^<>\"]*?)\\]\\]></video_file>").getMatch(0);
+            DLLINK = br.getRegex("type=\"video/(?:mp4|flash)\" src=\"(http[^<>\"]*?)\">").getMatch(0);
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
+        filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
+        filename = encodeUnicode(filename);
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".mp4";
+        /* Make sure that we get a correct extension */
+        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
+            ext = default_Extension;
         }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        if (!filename.endsWith(ext)) {
+            filename += ext;
+        }
+        downloadLink.setFinalFileName(filename);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openGetConnection(DLLINK);
+                try {
+                    /* @since JD2 */
+                    con = br.openHeadConnection(DLLINK);
+                } catch (final Throwable t) {
+                    /* Not supported in old 0.9.581 Stable */
+                    con = br.openGetConnection(DLLINK);
+                }
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -98,6 +102,7 @@ public class ProPornCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            downloadLink.setProperty("directlink", DLLINK);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -110,17 +115,42 @@ public class ProPornCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
+    /* Avoid chars which are not allowed in filenames under certain OS' */
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "/");
+        output = output.replace("\\", "");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return free_maxdownloads;
+    }
+
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override

@@ -23,6 +23,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -30,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "winporn.com" }, urls = { "http://(www\\.)?winporn\\.com/video/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "winporn.com" }, urls = { "http://((www|de|fr|ru|es|it|jp|nl|pl|pt)\\.)?winporn\\.com/video/\\d+" }, flags = { 0 })
 public class WinpornCom extends PluginForHost {
 
     public WinpornCom(PluginWrapper wrapper) {
@@ -52,16 +53,21 @@ public class WinpornCom extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload("http://www.winporn.com/video/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
+    }
+
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("This video was deleted") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("This video was deleted") || br.containsHTML("class=\"notifications__item notifications__item-error\"") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<>]*?) \\- \\d+\\. WinPorn\\.com</title>").getMatch(0);
+        String filename = br.getRegex("class=\"contain\"><div.*?<h2 class=\"box\\-mt\\-output\">([^<>\"]*?)</h2>").getMatch(0);
         DLLINK = br.getRegex("<source src=\"(http[^<>\"]*?)\"").getMatch(0);
         if (DLLINK == null) {
             DLLINK = br.getRegex("\\'file\\':[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
