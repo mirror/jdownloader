@@ -156,7 +156,6 @@ public class CBSolver extends CESChallengeSolver<String> implements ChallengeRes
             } else {
                 ret.setError(result);
             }
-
         } catch (Exception e) {
 
             ret.setError(e.getMessage());

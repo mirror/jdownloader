@@ -124,6 +124,49 @@ public class Multi extends IExtraction {
         return false;
     }
 
+    public void setPermissions(ISimpleInArchiveItem item, File extractTo) {
+        if (item != null && extractTo != null && extractTo.exists()) {
+            try {
+                FilePermissionSet filePermissionSet = null;
+                final Integer attributesInteger = item.getAttributes();
+                if (attributesInteger != null && attributesInteger != 0) {
+                    final int attributes = attributesInteger.intValue();
+                    int attributeIndex = 0;
+                    switch (CrossSystem.getOSFamily()) {
+                    case LINUX:
+                        filePermissionSet = new FilePermissionSet();
+                        attributeIndex = 16;
+                        filePermissionSet.setOtherExecute((attributes & 1 << attributeIndex++) != 0);
+                        filePermissionSet.setOtherWrite((attributes & 1 << attributeIndex++) != 0);
+                        filePermissionSet.setOtherRead((attributes & 1 << attributeIndex++) != 0);
+                        filePermissionSet.setGroupExecute((attributes & 1 << attributeIndex++) != 0);
+                        filePermissionSet.setGroupWrite((attributes & 1 << attributeIndex++) != 0);
+                        filePermissionSet.setGroupRead((attributes & 1 << attributeIndex++) != 0);
+                        filePermissionSet.setUserExecute((attributes & 1 << attributeIndex++) != 0);
+                        filePermissionSet.setUserWrite((attributes & 1 << attributeIndex++) != 0);
+                        filePermissionSet.setUserRead((attributes & 1 << attributeIndex++) != 0);
+                        break;
+                    default:
+                        return;
+                    }
+                }
+                if (filePermissionSet != null) {
+                    if (Application.getJavaVersion() >= Application.JAVA17) {
+                        FilePermission17.setFilePermission(extractTo, filePermissionSet);
+                    } else {
+                        if (filePermissionSet.isUserExecute()) {
+                            if (!extractTo.setExecutable(true, filePermissionSet.isOtherExecute() == false && filePermissionSet.isOtherExecute() == false)) {
+                                throw new IOException("Failed to set " + filePermissionSet + " to " + extractTo);
+                            }
+                        }
+                    }
+                }
+            } catch (final Throwable e) {
+                logger.log(e);
+            }
+        }
+    }
+
     public void setLastModifiedDate(ISimpleInArchiveItem item, File extractTo) {
         // Set last write time
         try {
@@ -440,6 +483,7 @@ public class Multi extends IExtraction {
                         }
 
                         setLastModifiedDate(item, extractTo);
+                        setPermissions(item, extractTo);
                         if (size != null && size != extractTo.length()) {
                             if (ExtractOperationResult.OK == res) {
                                 logger.info("Size missmatch for " + item.getPath() + ", but Extraction returned OK?! Archive seems incomplete");

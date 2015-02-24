@@ -19,7 +19,7 @@ public class PasswordInput extends ExtPasswordField implements SettingsComponent
 
     }
 
-    private AtomicInteger setting = new AtomicInteger(0);
+    private final AtomicInteger setting = new AtomicInteger(0);
 
     @Override
     public void onChanged() {
