@@ -1,6 +1,7 @@
 package org.jdownloader.captcha.v2;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.concurrent.ScheduledExecutorService;
 
 import jd.controlling.captcha.SkipException;
@@ -92,6 +93,7 @@ public class JobRunnable<T> implements Runnable {
                     }
                 }
                 System.out.println("Logged");
+
                 for (ChallengeSolver<?> s : job.getSolverList()) {
                     if (s != solver) {
                         int waitForThisSolver = solver.getService().getWaitForByID(s.getService().getID());
@@ -107,6 +109,26 @@ public class JobRunnable<T> implements Runnable {
                         } else {
                             job.getLogger().info(solver + " wait VALIDATION FAILED!" + TimeFormatter.formatMilliSeconds(waitForThisSolver, 0) + " for " + s);
                             job.getLogger().info("Wait Loop- >" + waitLoop + "");
+                            try {
+                                SolverService lastService = null;
+                                for (SolverService le : waitLoop) {
+                                    if (lastService != null) {
+                                        job.getLogger().info("Wait Loop- " + le.getName() + " waits " + le.getWaitForByID(lastService.getID()) + " for " + lastService.getName() + "");
+
+                                    }
+                                    lastService = le;
+                                }
+                                HashSet<Object> service = new HashSet<Object>();
+                                for (ChallengeSolver<?> ss : job.getSolverList()) {
+                                    if (service.add(ss.getService())) {
+                                        job.getLogger().info("Debug " + ss.getService().getName());
+
+                                        job.getLogger().info(ss.getService().getConfig() + "");
+                                    }
+                                }
+                            } catch (Throwable e) {
+                                job.getLogger().log(e);
+                            }
                         }
                     }
                 }
