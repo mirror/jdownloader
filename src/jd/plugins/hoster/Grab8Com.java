@@ -188,6 +188,10 @@ public class Grab8Com extends PluginForHost {
                 /* Should never happen */
                 handleErrorRetries("dllinknull", 10, 2 * 60 * 1000l);
             }
+            /* Happens sometimes - in the tests it frequently happened with share-online.biz links */
+            if (dllink.equals("files/ip")) {
+                handleErrorRetries("dllink_invalid_ip", 10, 2 * 60 * 1000l);
+            }
             dllink = br.getBaseURL() + dllink;
         }
         handleDL(account, link, dllink);
