@@ -183,6 +183,8 @@ public class GeneralSettingsConfigPanel extends AbstractConfigPanel {
         ExtCheckBox cb = null;
 
         lbl = createLabel(name);
+
+        // javax.swing.plaf.synth.SynthLabelUI.class
         add(lbl, lblConstraints);
 
         // COL 2/3: If T component enabled state is defined, add a checkbox to col 2 to toggle its state
