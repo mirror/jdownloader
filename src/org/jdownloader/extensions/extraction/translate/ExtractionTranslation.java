@@ -108,13 +108,13 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "CPU Priority" })
     String settings_cpupriority();
 
-    @Default(lngs = { "en" }, values = { "High" })
+    @Default(lngs = { "en" }, values = { "High(Fast extraction)" })
     String settings_cpupriority_high();
 
     @Default(lngs = { "en" }, values = { "Middle" })
     String settings_cpupriority_middle();
 
-    @Default(lngs = { "en" }, values = { "Low" })
+    @Default(lngs = { "en" }, values = { "Low(Slow extraction)" })
     String settings_cpupriority_low();
 
     @Default(lngs = { "en" }, values = { "Use original file date if possible" })
