@@ -117,9 +117,6 @@ public class ArteTv extends PluginForHost {
             ext = ext == null ? ".flv" : "." + ext;
         }
 
-        if (fileName.endsWith(".")) {
-            fileName = fileName.substring(0, fileName.length() - 1);
-        }
         if (dllink.startsWith("http")) {
             URLConnectionAdapter con = null;
             final Browser br2 = br.cloneBrowser();
@@ -139,7 +136,7 @@ public class ArteTv extends PluginForHost {
                 }
             }
         }
-        downloadLink.setFinalFileName(fileName.trim() + ext);
+        downloadLink.setFinalFileName(fileName);
         if (downloadLink.getBooleanProperty("ISLIVE", false)) {
             logger.info("arte.live.tv: Live videos not downloadable! --> " + link);
             return AvailableStatus.FALSE;
