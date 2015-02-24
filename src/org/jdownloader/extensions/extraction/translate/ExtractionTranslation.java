@@ -105,8 +105,8 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Special settings (Only for rar, 7z and zip. Not for split files)" })
     String settings_multi();
 
-    @Default(lngs = { "en" }, values = { "CPU Priority" })
-    String settings_cpupriority();
+    @Default(lngs = { "en" }, values = { "CPU/IO Usage" })
+    String settings_cpupriority_v2();
 
     @Default(lngs = { "en" }, values = { "High(Fast extraction)" })
     String settings_cpupriority_high();
