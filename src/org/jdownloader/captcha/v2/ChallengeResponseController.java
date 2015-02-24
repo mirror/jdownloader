@@ -2,6 +2,7 @@ package org.jdownloader.captcha.v2;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -256,4 +257,12 @@ public class ChallengeResponseController {
         return null;
     }
 
+    public void resetTiming() {
+        HashSet<Object> dupe = new HashSet<Object>();
+        for (ChallengeSolver<?> s : solverList) {
+            if (dupe.add(s.getService())) {
+                s.getService().getConfig().setWaitForMap(null);
+            }
+        }
+    }
 }

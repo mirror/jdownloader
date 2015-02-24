@@ -5794,4 +5794,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "This list will be sent." })
     String StatsManager_StatsManager_advanced_survey_title_list();
 
+    @Default(lngs = { "en" }, values = { "Reset Solver Timing" })
+    String AntiCaptchaConfigPanel_AntiCaptchaConfigPanel_reset();
+
+    @Default(lngs = { "en" }, values = { "Are you sure that you want to reset all timing setups. \r\nThis will reset the order your captcha solvers run." })
+    String AntiCaptchaConfigPanel_AntiCaptchaConfigPanel_reset_lit_are_you_sure();
+
 }
