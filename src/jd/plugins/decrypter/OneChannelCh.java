@@ -26,10 +26,14 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1channel.ch" }, urls = { "http://(www\\.)?(vodly\\.to|primewire\\.ag)/(watch\\-\\d+([A-Za-z0-9\\-_]+)?|tv\\-\\d+[A-Za-z0-9\\-_]+/season\\-\\d+\\-episode\\-\\d+)" }, flags = { 0 })
-public class OneChannelCh extends PluginForDecrypt {
+/**
+ *
+ * note: primewire.ag using cloudflare. -raztoki20150225
+ *
+ */
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1channel.ch" }, urls = { "https?://(www\\.)?(vodly\\.to|primewire\\.ag)/(watch\\-\\d+([A-Za-z0-9\\-_]+)?|tv\\-\\d+[A-Za-z0-9\\-_]+/season\\-\\d+\\-episode\\-\\d+)" }, flags = { 0 })
+public class OneChannelCh extends antiDDoSForDecrypt {
 
     public OneChannelCh(PluginWrapper wrapper) {
         super(wrapper);
@@ -39,7 +43,7 @@ public class OneChannelCh extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("vodly.to/", "primewire.ag/");
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.containsHTML("\\(TV Show\\) \\-  on 1Channel \\| LetMeWatchThis</title>")) {
             final String[] episodes = br.getRegex("class=\"tv_episode_item\"> <a href=\"(/tv[^<>\"]*?)\"").getColumn(0);
             if (episodes == null || episodes.length == 0) {
@@ -83,11 +87,11 @@ public class OneChannelCh extends PluginForDecrypt {
             br.setFollowRedirects(false);
             for (final String singleLink : links) {
                 String finallink;
-                final String b64link = new Regex(singleLink, "url=([^<>\"]+)\\&").getMatch(0);
+                final String b64link = new Regex(singleLink, "url=([^<>\"&]+)").getMatch(0);
                 if (b64link != null) {
                     finallink = Encoding.Base64Decode(b64link);
                 } else {
-                    br.getPage(singleLink);
+                    getPage(singleLink);
                     finallink = br.getRedirectLocation();
                     if (finallink == null) {
                         finallink = br.getRegex("<frame src=\"(http[^<>\"]*?)\"").getMatch(0);
