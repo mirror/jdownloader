@@ -486,7 +486,7 @@ public class VidToMe extends PluginForHost {
             }
         }
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") !=null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("nginx")) {
+            if (dl.getConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("nginx")) {
                 controlSimHost(account);
                 controlHost(account, downloadLink, false);
 
@@ -919,7 +919,7 @@ public class VidToMe extends PluginForHost {
         if (account.getBooleanProperty("free")) {
             getPage(downloadLink.getDownloadURL());
             // if the cached cookie expired, relogin.
-            if ((br.getCookie(COOKIE_HOST, "login")) == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
+            if ((br.getCookie(COOKIE_HOST, "login")) == null || br.getCookie(COOKIE_HOST, "xfsts") == null) {
                 synchronized (ACCLOCK) {
                     account.setProperty("cookies", Property.NULL);
                     // if you retry, it can use another account...
@@ -938,7 +938,7 @@ public class VidToMe extends PluginForHost {
                     getPage(br.getRedirectLocation());
                 }
                 // if the cached cookie expired, relogin.
-                if ((br.getCookie(COOKIE_HOST, "login")) == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
+                if ((br.getCookie(COOKIE_HOST, "login")) == null || br.getCookie(COOKIE_HOST, "xfsts") == null) {
                     synchronized (ACCLOCK) {
                         account.setProperty("cookies", Property.NULL);
                         // if you retry, it can use another account...
@@ -992,7 +992,7 @@ public class VidToMe extends PluginForHost {
                 }
             }
             if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") !=null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("nginx")) {
+                if (dl.getConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("nginx")) {
                     controlSimHost(account);
                     controlHost(account, downloadLink, false);
 
@@ -1188,7 +1188,7 @@ public class VidToMe extends PluginForHost {
                 throw (PluginException) e;
             }
             // should only be picked up now if not JD2
-            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") !=null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
+            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
                 logger.warning("Cloudflare anti DDoS measures enabled, your version of JD can not support this. In order to go any further you will need to upgrade to JDownloader 2");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cloudflare anti DDoS measures enabled");
             } else {
@@ -1196,7 +1196,7 @@ public class VidToMe extends PluginForHost {
             }
         }
         // prevention is better than cure
-        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") !=null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
+        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
             String host = new Regex(page, "https?://([^/]+)(:\\d+)?/").getMatch(0);
             Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
             if (cloudflare == null) {
