@@ -3,6 +3,7 @@ package jd.gui.swing.jdgui.views.settings.panels.advanced;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
+import java.lang.reflect.Array;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -124,11 +125,44 @@ public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
 
         }
 
+        private boolean equals(Object x, Object y) {
+            if (x == null && y == null) {
+                return true;
+            } else if (x != null && y != null) {
+                if (x == y || x.equals(y)) {
+                    return true;
+                } else {
+                    if (x.getClass().isArray() && y.getClass().isArray()) {
+                        final int xL = Array.getLength(x);
+                        final int yL = Array.getLength(y);
+                        if (xL == yL) {
+                            for (int index = 0; index < xL; index++) {
+                                final Object xE = Array.get(x, index);
+                                final Object yE = Array.get(y, index);
+                                if (equals(xE, yE) == false) {
+                                    return false;
+                                }
+                            }
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    } else {
+                        return false;
+                    }
+                }
+            }
+            return false;
+        }
+
         public void setEntry(AdvancedConfigEntry value) {
-            if (value.getValue() == null) {
-                setEnabledIntern(value.getDefault() != null);
+            final Object currentValue = value.getValue();
+            if (currentValue == null) {
+                setEnabledIntern(value.getKeyHandler().hasDefaultValue());
             } else {
-                setEnabledIntern(!value.getValue().equals(value.getDefault()));
+                final Object defaultValue = value.getDefault();
+                final boolean isDefault = equals(currentValue, defaultValue);
+                setEnabledIntern(!isDefault);
             }
             this.value = value;
         }
