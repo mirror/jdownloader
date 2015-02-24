@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "instagram.com" }, urls = { "http://(www\\.)?(instagram\\.com|instagr\\.am)/p/[A-Za-z0-9_-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "instagram.com" }, urls = { "https?://(www\\.)?(instagram\\.com|instagr\\.am)/p/[A-Za-z0-9_-]+" }, flags = { 0 })
 public class InstaGramCom extends PluginForHost {
 
     public InstaGramCom(PluginWrapper wrapper) {
@@ -45,9 +45,10 @@ public class InstaGramCom extends PluginForHost {
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("instagr.am/", "instagram.com/"));
+        link.setUrlDownload(link.getDownloadURL().replace("instagr.am/", "instagram.com/").replace("http://", "https://"));
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -102,7 +103,12 @@ public class InstaGramCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        /* Chunkload makes no sense for pictures */
+        int maxchunks = 1;
+        if (downloadLink.getFinalFileName().contains(".mp4")) {
+            maxchunks = 0;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

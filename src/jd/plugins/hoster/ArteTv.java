@@ -38,7 +38,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "arte.tv", "concert.arte.tv" }, urls = { "http://www\\.artejd_decrypted_jd\\.tv/\\d+", "http://concert\\.artejd_decrypted_jd\\.tv/\\d+" }, flags = { 32, 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv" }, urls = { "http://www\\.artejd_decrypted_jd\\.tv/\\d+", "http://concert\\.artejd_decrypted_jd\\.tv/\\d+", "http://creative\\.artejd_decrypted_jd\\.tv/\\d+" }, flags = { 32, 32, 32 })
 public class ArteTv extends PluginForHost {
 
     private static final String V_NORMAL                   = "V_NORMAL";
