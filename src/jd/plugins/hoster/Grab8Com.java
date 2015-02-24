@@ -23,6 +23,8 @@ import java.util.Locale;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -39,32 +41,37 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "grab8.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class Grab8Com extends PluginForHost {
 
-    private static final String                            NICE_HOST                    = "grab8.com";
-    private static final String                            NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
-    private static final String                            NOCHUNKS                     = NICE_HOSTproperty + "NOCHUNKS";
-    private static final String                            NORESUME                     = NICE_HOSTproperty + "NORESUME";
+    private static final String                            NICE_HOST                      = "grab8.com";
+    private static final String                            NICE_HOSTproperty              = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private static final String                            NOCHUNKS                       = NICE_HOSTproperty + "NOCHUNKS";
+    private static final String                            NORESUME                       = NICE_HOSTproperty + "NORESUME";
+    private static final String                            CLEAR_DOWNLOAD_HISTORY         = "CLEAR_DOWNLOAD_HISTORY";
+    private final boolean                                  default_clear_download_history = false;
+    private static final String                            default_premium_page           = "http://p3.grab8.com/2/index.php";
 
     /* Connection limits */
-    private static final boolean                           ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int                               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final boolean                           ACCOUNT_PREMIUM_RESUME         = true;
+    private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS      = 0;
+    private static final int                               ACCOUNT_PREMIUM_MAXDOWNLOADS   = 20;
 
-    private int                                            statuscode                   = 0;
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap           = new HashMap<Account, HashMap<String, Long>>();
-    private static HashMap<String, Integer>                hostMaxchunksMap             = new HashMap<String, Integer>();
-    private Account                                        currAcc                      = null;
-    private DownloadLink                                   currDownloadLink             = null;
-    private static Object                                  LOCK                         = new Object();
+    private int                                            statuscode                     = 0;
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap             = new HashMap<Account, HashMap<String, Long>>();
+    private static HashMap<String, Integer>                hostMaxchunksMap               = new HashMap<String, Integer>();
+    private Account                                        currAcc                        = null;
+    private DownloadLink                                   currDownloadLink               = null;
+    private static Object                                  LOCK                           = new Object();
 
     public Grab8Com(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://grab8.com/");
+        setConfigElements();
     }
 
     @Override
@@ -129,6 +136,7 @@ public class Grab8Com extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+        String transferID = link.getStringProperty("transferID", null);
         this.br = newBrowser();
         setConstants(account, link);
         this.login(false);
@@ -137,12 +145,14 @@ public class Grab8Com extends PluginForHost {
             /* Sometimes we have to send this form to finally start the transfer. */
             br.setFollowRedirects(true);
             br.getPage("http://grab8.com/member/index.php");
-            final String transloadpage = br.getRegex("<b>Your Premium Page is at: </b><a href=(?:\\'|\")(http://[a-z0-9\\-\\.]+\\.grab8\\.com[^<>\"]*?)(?:\\'|\")").getMatch(0);
-            if (transloadpage == null) {
+            final String premiumPage = br.getRegex("<b>Your Premium Page is at: </b><a href=(?:\\'|\")(http://[a-z0-9\\-\\.]+\\.grab8\\.com[^<>\"]*?)(?:\\'|\")").getMatch(0);
+            if (premiumPage == null) {
                 logger.warning("Transloadpage is null");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getPage(transloadpage);
+            /* Save this for later usage! */
+            link.setProperty("premiumPage", premiumPage);
+            br.getPage(premiumPage);
             dllink = br.getBaseURL();
             br.setFollowRedirects(true);
             this.postAPISafe(br.getBaseURL() + "index.php", "referer=&yt_fmt=highest&tor_user=&tor_pass=&mu_cookie=&cookie=&email=&method=tc&partSize=10&proxy=&proxyuser=&proxypass=&premium_acc=on&premium_user=&premium_pass=&path=%2Fhome%2Fgrab8%2Fpublic_html%2F2%2Ffiles&link=" + Encoding.urlEncode(link.getDownloadURL()));
@@ -152,6 +162,19 @@ public class Grab8Com extends PluginForHost {
                     handleErrorRetries("continueformnull", 10, 2 * 60 * 1000l);
                 }
                 br.submitForm(continueForm);
+            }
+            /*
+             * If e.g. the user already transfered the file to the server but this code tries to do it again for whatever reason we will not
+             * see the transferID in the html although it exists and hasn't changed. In this case we should still have it saved from the
+             * first download attempt.
+             */
+            final String newtransferID = br.getRegex("name=\"files\\[\\]\" value=\"(\\d+)\"").getMatch(0);
+            if (newtransferID != null) {
+                transferID = newtransferID;
+                logger.info("Successfully found transferID");
+                link.setProperty("transferID", transferID);
+            } else {
+                logger.warning("Failed to find transferID");
             }
             /* Normal case: Requested file is downloaded to the multihost and downloadable via the multihost. */
             dllink = br.getRegex("File <b><a href=\"/\\d+/(files/[^<>\"]*?)\"").getMatch(0);
@@ -173,6 +196,9 @@ public class Grab8Com extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
+        final String transferID = link.getStringProperty("transferID", null);
+        final boolean deleteAfterDownload = this.getPluginConfig().getBooleanProperty(CLEAR_DOWNLOAD_HISTORY, false);
+        final String premiumPage = link.getStringProperty("premiumPage", default_premium_page);
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
         /* First set hardcoded limit */
@@ -203,7 +229,23 @@ public class Grab8Com extends PluginForHost {
                 handleErrorRetries("unknowndlerror", 50, 2 * 60 * 1000l);
             }
             try {
-                if (!this.dl.startDownload()) {
+                if (this.dl.startDownload()) {
+                    if (transferID != null && deleteAfterDownload) {
+                        boolean success = false;
+                        try {
+                            /* We can skip this first step and directly confirm that we want to delete that file. */
+                            // br.postPage(premiumPage, "act=delete&files%5B%5D=" + transferID);
+                            br.postPage(premiumPage, "act=delete_go&files%5B%5D=" + transferID + "&yes=Yes");
+                            success = true;
+                        } catch (final Throwable e) {
+                        }
+                        if (success) {
+                            logger.info("Successfully deleted file from server");
+                        } else {
+                            logger.warning("Failed to delete file from server");
+                        }
+                    }
+                } else {
                     try {
                         if (dl.externalDownloadStop()) {
                             return;
@@ -474,6 +516,10 @@ public class Grab8Com extends PluginForHost {
     @Override
     public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
         return ACCOUNT_PREMIUM_MAXDOWNLOADS;
+    }
+
+    public void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEAR_DOWNLOAD_HISTORY, JDL.L("plugins.hoster.grab8com.clear_serverside_download_history", "Delete downloaded file in grab8 account after successful download?")).setDefaultValue(default_clear_download_history));
     }
 
     @Override
