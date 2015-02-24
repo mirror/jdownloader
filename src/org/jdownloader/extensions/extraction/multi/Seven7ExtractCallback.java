@@ -124,6 +124,7 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                 /* null is only permitted in non extract mode */
                 return null;
             }
+            final Integer attributes = (Integer) inArchive.getProperty(index, PropID.ATTRIBUTES);
             final Boolean isFolder = (Boolean) inArchive.getProperty(index, PropID.IS_FOLDER);
             final String path = (String) inArchive.getProperty(index, PropID.PATH);
             final Long itemSize = (Long) inArchive.getProperty(index, PropID.SIZE);
@@ -153,7 +154,7 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
 
                 @Override
                 public Integer getAttributes() throws SevenZipException {
-                    return null;
+                    return attributes;
                 }
 
                 @Override
@@ -372,6 +373,7 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                     /* extraction successfully ,continue with next file */
                     if (callback != null) {
                         multi.setLastModifiedDate(item, callback.getFile());
+                        multi.setPermissions(item, callback.getFile());
                     }
                     break;
                 case CRCERROR:
