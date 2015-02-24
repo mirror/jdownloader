@@ -125,7 +125,7 @@ public class Multi extends IExtraction {
     }
 
     public void setPermissions(ISimpleInArchiveItem item, File extractTo) {
-        if (item != null && extractTo != null && extractTo.exists()) {
+        if (config.isRestoreFilePermissions() && item != null && extractTo != null && extractTo.exists()) {
             try {
                 FilePermissionSet filePermissionSet = null;
                 final Integer attributesInteger = item.getAttributes();
@@ -134,6 +134,7 @@ public class Multi extends IExtraction {
                     int attributeIndex = 0;
                     switch (CrossSystem.getOSFamily()) {
                     case LINUX:
+                    case MAC:
                         filePermissionSet = new FilePermissionSet();
                         attributeIndex = 16;
                         filePermissionSet.setOtherExecute((attributes & 1 << attributeIndex++) != 0);
