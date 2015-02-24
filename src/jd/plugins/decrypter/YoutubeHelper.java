@@ -778,7 +778,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         }
 
         if (vid.length <= 0) {
-            final String match = this.br.getRegex("\"length_seconds\"\\: (\\d+)").getMatch(0);
+            final String match = this.br.getRegex("\"length_seconds\"\\\\s*:\\s*(\\d+)").getMatch(0);
             if (StringUtils.isNotEmpty(match)) {
                 vid.length = Integer.parseInt(match);
 
@@ -1784,7 +1784,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     public ArrayList<YoutubeSubtitleInfo> loadSubtitles(YoutubeClipData vid) throws IOException {
         HashMap<String, YoutubeSubtitleInfo> urls = new HashMap<String, YoutubeSubtitleInfo>();
-        String ttsUrl = br.getRegex("\"ttsurl\": (\"http.*?\")").getMatch(0);
+        String ttsUrl = br.getRegex("\"ttsurl\"\\s*:\\s*(\"http.*?\")").getMatch(0);
         if (ttsUrl != null) {
             ttsUrl = JSonStorage.restoreFromString(ttsUrl, TypeRef.STRING);
         } else {
