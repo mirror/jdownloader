@@ -38,14 +38,14 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv" }, urls = { "http://www\\.arte\\.tv/guide/[a-z]{2}/\\d+\\-\\d+/[A-Za-z0-9\\-_]+", "http://concert\\.arte\\.tv/(de|fr)/[a-z0-9\\-]+", "http://creative\\.arte\\.tv/(de|fr)/[a-z0-9\\-]+/[a-z0-9\\-]+" }, flags = { 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv" }, urls = { "http://www\\.arte\\.tv/guide/(de|fr)/\\d+\\-\\d+/[a-z0-9\\-_]+", "http://concert\\.arte\\.tv/(de|fr)/[a-z0-9\\-]+", "http://creative\\.arte\\.tv/(de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?" }, flags = { 0, 0, 0 })
 public class ArteMediathekDecrypter extends PluginForDecrypt {
 
     private static final String EXCEPTION_LINKOFFLINE      = "EXCEPTION_LINKOFFLINE";
 
     private static final String TYPE_CONCERT               = "http://(www\\.)?concert\\.arte\\.tv/(de|fr)/[a-z0-9\\-]+";
-    private static final String TYPE_CREATIVE              = "http://(www\\.)?creative\\.arte\\.tv/(de|fr)/[a-z0-9\\-]+/[a-z0-9\\-]+";
-    private static final String TYPE_GUIDE                 = "http://((videos|www)\\.)?arte\\.tv/guide/[a-z]{2}/[0-9\\-]+";
+    private static final String TYPE_CREATIVE              = "http://(www\\.)?creative\\.arte\\.tv/(de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?";
+    private static final String TYPE_GUIDE                 = "http://www\\.arte\\.tv/guide/(de|fr)/\\d+\\-\\d+/[a-z0-9\\-_]+";
 
     private static final String V_NORMAL                   = "V_NORMAL";
     private static final String V_SUBTITLED                = "V_SUBTITLED";
@@ -586,10 +586,10 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             lint = 4;
         } else if (versionCode.equals("VAAUD")) {
             lint = 5;
-        } else if (versionShortLibelle.equals("OmU")) {
+        } else if (versionShortLibelle.equals("OmU") || versionShortLibelle.equals("VO")) {
             /* Without language --> So it simply is our current language */
             lint = languageVersion;
-        } else if (versionShortLibelle.equals("DE") || versionShortLibelle.equals("VA") || versionCode.equals("VO-STA")) {
+        } else if (versionShortLibelle.equals("DE") || versionShortLibelle.equals("VA") || versionCode.equals("VO-STA") || versionShortLibelle.equals("VOSTA")) {
             /* German */
             lint = 1;
         } else if (versionShortLibelle.equals("FR") || versionShortLibelle.equals("VF") || versionShortLibelle.equals("VOF") || versionShortLibelle.equals("VOSTF") || versionCode.equals("VF-STMF")) {
@@ -682,11 +682,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
 
     private String getUrlFilename() {
         String urlfilename;
-        if (parameter.matches(TYPE_GUIDE)) {
-            urlfilename = new Regex(parameter, "http://www\\.arte\\.tv/guide/[a-z]{2}/\\d+\\-\\d+/([A-Za-z0-9\\-_]+)").getMatch(0);
-        } else {
-            urlfilename = new Regex(parameter, "([a-z0-9\\-]+)$").getMatch(0);
-        }
+        urlfilename = new Regex(parameter, "([A-Za-z0-9\\-]+)$").getMatch(0);
         return urlfilename;
     }
 
@@ -743,7 +739,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     }
 
     private String getUrlLang() {
-        final String lang = new Regex(parameter, "(concert\\.arte\\.tv|guide)/(\\w+)/.+").getMatch(1);
+        final String lang = new Regex(parameter, "((?:concert|creative)\\.arte\\.tv|guide)/(\\w+)/.+").getMatch(1);
         return lang;
     }
 
