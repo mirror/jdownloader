@@ -1,5 +1,7 @@
 package jd.gui.swing.jdgui.views.settings.components;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -17,10 +19,17 @@ public class PasswordInput extends ExtPasswordField implements SettingsComponent
 
     }
 
+    private AtomicInteger setting = new AtomicInteger(0);
+
     @Override
     public void onChanged() {
         super.onChanged();
-        keyhandler.setValue(getText());
+        setting.incrementAndGet();
+        try {
+            keyhandler.setValue(getText());
+        } finally {
+            setting.decrementAndGet();
+        }
     }
 
     @Override
@@ -39,6 +48,9 @@ public class PasswordInput extends ExtPasswordField implements SettingsComponent
 
     @Override
     public void onConfigValueModified(KeyHandler<String> keyHandler, String newValue) {
+        if (setting.get() > 0) {
+            return;
+        }
         setText(keyhandler.getValue());
     }
 
