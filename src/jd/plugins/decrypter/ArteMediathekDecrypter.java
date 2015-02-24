@@ -203,7 +203,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 }
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
                 final LinkedHashMap<String, Object> videoJsonPlayer = (LinkedHashMap<String, Object>) entries.get("videoJsonPlayer");
-                final String sourceURL = (String) videoJsonPlayer.get("VTR");
+                // final String sourceURL = (String) videoJsonPlayer.get("VTR");
                 title = encodeUnicode((String) videoJsonPlayer.get("VTI"));
                 final String description = (String) videoJsonPlayer.get("VDE");
                 final String errormessage = (String) entries.get("msg");
@@ -290,18 +290,18 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     link.setProperty("VRU", convertDateFormat(vru));
                     link.setProperty("quality_intern", quality_intern);
                     link.setProperty("langShort", selectedLanguage);
-                    link.setProperty("mainlink", sourceURL);
+                    link.setProperty("mainlink", parameter);
                     try {
                         try {
                             link.setComment(description);
                         } catch (final Throwable e) {
                             /* Not available in 0.9.581 Stable */
                         }
-                        link.setContentUrl(sourceURL);
+                        link.setContentUrl(parameter);
                         link.setLinkID(linkid);
                     } catch (final Throwable e) {
                         /* Not available in old 0.9.581 Stable */
-                        link.setBrowserUrl(sourceURL);
+                        link.setBrowserUrl(parameter);
                         link.setProperty("LINKDUPEID", linkid);
                     }
                     if (fastLinkcheck) {
