@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -133,6 +134,7 @@ public class Grab8Com extends PluginForHost {
         this.login(false);
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
+            /* Sometimes we have to send this form to finally start the transfer. */
             br.setFollowRedirects(true);
             br.getPage("http://grab8.com/member/index.php");
             final String transloadpage = br.getRegex("<b>Your Premium Page is at: </b><a href=(?:\\'|\")(http://[a-z0-9\\-\\.]+\\.grab8\\.com[^<>\"]*?)(?:\\'|\")").getMatch(0);
@@ -312,9 +314,28 @@ public class Grab8Com extends PluginForHost {
     }
 
     /** Log into users' account and set login cookie */
+    @SuppressWarnings("unchecked")
     private void login(final boolean force) throws IOException, PluginException {
         synchronized (LOCK) {
             try {
+                // Load cookies
+                br.setCookiesExclusive(true);
+                final Object ret = currAcc.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(currAcc.getUser()).equals(currAcc.getStringProperty("name", Encoding.urlEncode(currAcc.getUser())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(currAcc.getPass()).equals(currAcc.getStringProperty("pass", Encoding.urlEncode(currAcc.getPass())));
+                }
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (currAcc.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            br.setCookie(NICE_HOST, key, value);
+                        }
+                        return;
+                    }
+                }
                 this.getAPISafe("http://grab8.com/member/");
                 postAPISafe("/member/login.php", "action=login&user=" + Encoding.urlEncode(currAcc.getUser()) + "&pass=" + Encoding.urlEncode(currAcc.getPass()));
                 final String pass_cookie = br.getCookie(NICE_HOST, "pass");
@@ -382,6 +403,8 @@ public class Grab8Com extends PluginForHost {
                 statuscode = 2;
             } else if (error.contains("Files not found")) {
                 statuscode = 3;
+            } else if (error.contains("the daily download limit of")) {
+                statuscode = 4;
             } else {
                 statuscode = 666;
             }
@@ -407,6 +430,9 @@ public class Grab8Com extends PluginForHost {
                 }
             case 3:
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            case 4:
+                statusMessage = "Exceeded daily limit of host";
+                tempUnavailableHoster(1 * 60 * 60 * 1000l);
             default:
                 /* Unknown error */
                 statusMessage = "Unknown error";
