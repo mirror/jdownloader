@@ -109,6 +109,13 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
     @DescriptionForConfigEntry("Use original filedate if possible")
     boolean isUseOriginalFileDate();
 
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Restore file permissions if possible")
+    boolean isRestoreFilePermissions();
+
+    void setRestoreFilePermissions(boolean b);
+
     void setAskForUnknownPasswordsEnabled(boolean enabled);
 
     void setBlacklistPatterns(String[] patterns);

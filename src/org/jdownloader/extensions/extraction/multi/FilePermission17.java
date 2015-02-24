@@ -11,7 +11,7 @@ public class FilePermission17 {
 
     public static void setFilePermission(final File file, final FilePermissionSet filePermissionSet) throws IOException {
         if (file != null && file.exists() && filePermissionSet != null) {
-            if (CrossSystem.isLinux()) {
+            if (CrossSystem.isLinux() || CrossSystem.isMac()) {
                 final Set<java.nio.file.attribute.PosixFilePermission> permissions = new HashSet<java.nio.file.attribute.PosixFilePermission>();
                 // add owners permission
                 if (filePermissionSet.isUserRead()) {
@@ -43,7 +43,13 @@ public class FilePermission17 {
                 if (filePermissionSet.isOtherExecute()) {
                     permissions.add(java.nio.file.attribute.PosixFilePermission.OTHERS_EXECUTE);
                 }
-                java.nio.file.Files.setPosixFilePermissions(file.toPath(), permissions);
+                try {
+                    java.nio.file.Files.setPosixFilePermissions(file.toPath(), permissions);
+                } catch (UnsupportedOperationException e) {
+                    if (!file.setExecutable(true, filePermissionSet.isOtherExecute() == false && filePermissionSet.isOtherExecute() == false)) {
+                        throw new IOException("Failed to set " + filePermissionSet + " to " + file);
+                    }
+                }
             } else {
                 if (!file.setExecutable(true, filePermissionSet.isOtherExecute() == false && filePermissionSet.isOtherExecute() == false)) {
                     throw new IOException("Failed to set " + filePermissionSet + " to " + file);
