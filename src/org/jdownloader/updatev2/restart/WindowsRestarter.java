@@ -14,35 +14,29 @@ public class WindowsRestarter extends Restarter {
 
     @Override
     protected List<String> getApplicationStartCommands(File root) {
-        ArrayList<String> lst = new ArrayList<String>();
-        File restartBinary = new File(root, "JDownloader.exe");
-        if (!restartBinary.exists() || !restartBinary.isFile()) {
-            restartBinary = new File(root, "JDownloader2.exe");
-        }
-        if (!restartBinary.exists() || !restartBinary.isFile()) {
-            restartBinary = new File(root, "JDownloader 2.exe");
-        }
-        if (restartBinary.exists() && restartBinary.isFile()) {
-            getLogger().info("Found binary: " + restartBinary + " for restart");
-            try {
-                String binaryHash = Hash.getMD5(restartBinary);
-                if ("a08b3424355c839138f326c06a964b9e".equals(binaryHash)) {
-                    getLogger().info("Workaround: found locking binary " + binaryHash + "! Will use JavaBinary as workaround!");
-                    restartBinary = null;
+        final String[] binaryPaths = new String[] { "JDownloader2.exe", "JDownloader 2.exe", "JDownloader.exe" };
+        for (final String binaryPath : binaryPaths) {
+            final File restartBinary = new File(root, binaryPath);
+            if (restartBinary.exists() && restartBinary.isFile()) {
+                getLogger().info("Found binary: " + restartBinary + " for restart");
+                try {
+                    final String binaryHash = Hash.getMD5(restartBinary);
+                    if ("a08b3424355c839138f326c06a964b9e".equals(binaryHash)) {
+                        getLogger().info("Workaround: found locking binary " + binaryHash);
+                        continue;
+                    }
+                } catch (final Throwable e) {
+                    getLogger().log(e);
                 }
-            } catch (final Throwable e) {
-                getLogger().log(e);
+                final ArrayList<String> ret = new ArrayList<String>();
+                ret.add(restartBinary.getAbsolutePath());
+                return ret;
             }
-        } else {
-            restartBinary = null;
         }
-        if (restartBinary != null) {
-            lst.add(restartBinary.getAbsolutePath());
-        } else {
-            getLogger().info("No binary found! Will use JavaBinary!");
-            lst.addAll(getJVMApplicationStartCommands(root));
-        }
-        return lst;
+        getLogger().info("No binary found! Will use JavaBinary!");
+        final ArrayList<String> ret = new ArrayList<String>();
+        ret.addAll(getJVMApplicationStartCommands(root));
+        return ret;
     }
 
     @Override
