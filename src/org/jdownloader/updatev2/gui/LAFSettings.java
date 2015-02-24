@@ -391,6 +391,7 @@ public interface LAFSettings extends ConfigInterface {
     @DescriptionForConfigEntry("Customized Color for the Linkgrabber Dupe Highlight in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @HexColorString
+    @RequiresRestart("A JDownloader Restart is Required")
     @DefaultStringValue("33FF0000")
     public String getColorForLinkgrabberDupeHighlighter();
 
@@ -399,6 +400,7 @@ public interface LAFSettings extends ConfigInterface {
     @DescriptionForConfigEntry("Customized Color for the Description text in the config panels in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @HexColorString
+    @RequiresRestart("A JDownloader Restart is Required")
     @DefaultStringValue("FF808080")
     public String getColorForConfigPanelDescriptionText();
 
@@ -406,10 +408,29 @@ public interface LAFSettings extends ConfigInterface {
 
     @DescriptionForConfigEntry("Customized Color for the Header text in the config panels in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
     @DefaultStringValue("FF202020")
     public String getColorForConfigHeaderTextColor();
 
     public void setColorForConfigHeaderTextColor(String color);
+
+    @DescriptionForConfigEntry("Customized Color for the Config Panel Label text(enabled) in the config panels in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @HexColorString
+    @DefaultStringValue("FF202020")
+    public String getConfigLabelEnabledTextColor();
+
+    @DescriptionForConfigEntry("Customized Color for the Config Panel Label text(disable) in the config panels in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @HexColorString
+    @DefaultStringValue("FFA0A0A0")
+    public String getConfigLabelDisabledTextColor();
+
+    public void setConfigLabelEnabledTextColor(String str);
+
+    public void setConfigLabelDisabledTextColor(String str);
 
 }

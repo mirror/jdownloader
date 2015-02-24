@@ -269,7 +269,33 @@ public abstract class AbstractConfigPanel extends SwitchPanel implements DirectF
     }
 
     protected JLabel createLabel(String name) {
-        return new JLabel(name);
+        JLabel lbl = new JLabel(name) {
+            {
+                LAFOptions.getInstance().applyConfigLabelEnabledTextColor(this);
+            }
+
+            @Override
+            public void setEnabled(boolean paramBoolean) {
+
+                if (paramBoolean) {
+                    if (!LAFOptions.getInstance().applyConfigLabelEnabledTextColor(this)) {
+                        super.setEnabled(true);
+                    } else {
+                        super.setEnabled(true);
+                    }
+                } else {
+                    if (!LAFOptions.getInstance().applyConfigLabelDisabledTextColor(this)) {
+                        super.setEnabled(false);
+                    } else {
+                        super.setEnabled(true);
+                    }
+                }
+
+            }
+
+        };
+
+        return lbl;
 
     }
 

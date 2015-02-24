@@ -119,6 +119,25 @@ public class LAFOptions {
 
     }
 
+    public boolean applyConfigLabelEnabledTextColor(JLabel lbl) {
+        Color c = createColor(cfg.getConfigLabelEnabledTextColor());
+        if (c != null) {
+            lbl.setForeground(c);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean applyConfigLabelDisabledTextColor(JLabel lbl) {
+
+        Color c = createColor(cfg.getConfigLabelDisabledTextColor());
+        if (c != null) {
+            lbl.setForeground(c);
+            return true;
+        }
+        return false;
+    }
+
     public void applyConfigHeaderTextColor(JLabel lbl) {
 
         Color c = createColor(cfg.getColorForConfigHeaderTextColor());

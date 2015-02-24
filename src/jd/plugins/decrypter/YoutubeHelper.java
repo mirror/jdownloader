@@ -663,12 +663,12 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     /**
      * *
-     *
+     * 
      * @param html5PlayerJs
      *            TODO
      * @param br
      * @param s
-     *
+     * 
      * @return
      * @throws IOException
      * @throws PluginException
@@ -907,7 +907,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         // </form>
         String vc = ibr.getRegex("\"([^\"]+verify_controversy\\?next_url[^\"]+)\"").getMatch(0);
         if (vc != null) {
-            vc = vc.replaceAll("\\\\/", "/");
+            vc = JSonStorage.restoreFromString("\"" + vc + "\"", TypeRef.STRING);
             ibr.getPage(vc);
         }
 
@@ -975,60 +975,56 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         }
         String unavailableReason = this.br.getRegex("<div id=\"player-unavailable\" class=\"[^\"]*\">.*?<h. id=\"unavailable-message\"[^>]*?>([^<]+)").getMatch(0);
 
-        boolean hass = br.containsHTML("\"dashmpd\": \"https");
+        vid.ageCheck = br.containsHTML("age-gate");
+        this.handleContentWarning(br);
+        Browser apiBrowser = null;
 
-        boolean latestWorkaround = this.br.getRegex("\"url_encoded_fmt_stream_map\": (\".*?\")").getMatch(0) == null;
-        if (latestWorkaround) {
-            // need to extract off the standard browser url! current work around will fkup data scan points. -raztoki 20150128
-            this.extractData(vid);
-        }
+        boolean apiRequired = br.getRegex("\"url_encoded_fmt_stream_map\"\\s*:\\s*(\".*?\")").getMatch(0) == null;
 
-        // this work around before private video, as it also shares the same regex as content warning/age-gate
-        boolean getVideoInfoWorkaroundUsed = false;
-        if (this.br.containsHTML("age-gate|verify_controversy\\?next_url=") || latestWorkaround) {
-            vid.ageCheck = true;
-            Browser cw = this.br.cloneBrowser();
-            this.handleContentWarning(cw);
+        if (apiRequired) {
+            apiBrowser = this.br.cloneBrowser();
+            apiBrowser.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&hl=en&gl=US&el=detailpage&ps=default&eurl=&gl=US&hl=en");
+            if (!apiBrowser.containsHTML("url_encoded_fmt_stream_map")) {
+                // example https://www.youtube.com/v/p7S_u5TzI-I
+                // age protected
+                apiBrowser.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&hl=en&gl=US&el=embedded&ps=default&eurl=&gl=US&hl=en");
+            }
 
-            if (cw.containsHTML("age-gate") || latestWorkaround) {
+            if (apiBrowser.containsHTML("requires_purchase=1")) {
+                logger.warning("Download not possible: You have to pay to watch this video");
+                throw new Exception("Paid Video");
+            }
+            final String errorcode = apiBrowser.getRegex("errorcode=(\\d+)").getMatch(0);
+            final String reason = apiBrowser.getRegex("reason=([^\\&]+)").getMatch(0);
+            if ("150".equals(errorcode)) {
+                // http://www.youtube.com/watch?v=xxWHMmiOTVM
+                // reason=This video contains content from WMG. It is restricted from playback on certain sites.<br/><u><a
+                // href='...>Watch on YouTube</a>
 
-                // try to bypass
-                getVideoInfoWorkaroundUsed = true;
+                // the next error handling below will catch from the original browser and give correct feedback!
 
-                cw.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&hl=en&gl=US&el=detailpage&ps=default&eurl=&gl=US&hl=en");
-                if (cw.containsHTML("requires_purchase=1")) {
-                    logger.warning("Download not possible: You have to pay to watch this video");
-                    throw new Exception("Paid Video");
-                }
-                final String errorcode = cw.getRegex("errorcode=(\\d+)").getMatch(0);
-                if ("150".equals(errorcode)) {
-                    // http://www.youtube.com/watch?v=xxWHMmiOTVM
-                    // reason=This video contains content from WMG. It is restricted from playback on certain sites.<br/><u><a
-                    // href='...>Watch on YouTube</a>
+                logger.warning(" failed due to been restricted content. " + reason);
 
-                    // the next error handling below will catch from the original browser and give correct feedback!
-                    logger.warning("getVideoInfoWorkaroundUsed has failed due to been restricted content.");
-                    getVideoInfoWorkaroundUsed = false;
-                } else {
-                    this.br = cw.cloneBrowser();
-                }
-            } else {
-                this.br = cw.cloneBrowser();
+            }
+            if (reason != null) {
+                vid.error = Encoding.urlDecode(reason, false);
             }
         }
+
         if (unavailableReason != null) {
             final String copyrightClaim = "This video is no longer available due to a copyright claim";
             unavailableReason = Encoding.htmlDecode(unavailableReason.replaceAll("\\+", " ").trim());
             /*
              * If you consider using !unavailableReason.contains("this video is unavailable), you need to also ignore content warning
              */
-            if (unavailableReason.contains("This video is private") && !getVideoInfoWorkaroundUsed) {
+            if (br.containsHTML("This video is private")) {
                 // check if video is private
                 String subError = br.getRegex("<div id=\"unavailable-submessage\" class=\"[^\"]*\">(.*?)</div>").getMatch(0);
                 if (subError != null && !subError.matches("\\s*")) {
                     subError = subError.trim();
+                    logger.warning("Private Video");
                     logger.warning(unavailableReason + " :: " + subError);
-                    vid.error = unavailableReason;
+                    vid.error = "This Video is Private";
                     return null;
                 }
             } else if (unavailableReason.startsWith("This video has been removed")) {
@@ -1075,33 +1071,30 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         String html5_fmt_map;
         String dashFmt;
         String dashmpd;
-        if (getVideoInfoWorkaroundUsed) {
+        if (apiRequired) {
             // age check bypass active
 
-            html5_fmt_map = this.br.getRegex("url_encoded_fmt_stream_map=(.*?)(&|$)").getMatch(0);
+            html5_fmt_map = apiBrowser.getRegex("url_encoded_fmt_stream_map\\s*=\\s*(.*?)(&|$)").getMatch(0);
             html5_fmt_map = Encoding.htmlDecode(html5_fmt_map);
 
-            dashFmt = this.br.getRegex("adaptive_fmts=(.*?)(&|$)").getMatch(0);
+            dashFmt = apiBrowser.getRegex("adaptive_fmts\\s*=\\s*(.*?)(&|$)").getMatch(0);
             dashFmt = Encoding.htmlDecode(dashFmt);
 
             // just guessing
-            dashmpd = this.br.getRegex("dashmpd=(.*?)(&|$)").getMatch(0);
+            dashmpd = apiBrowser.getRegex("dashmpd\\s*=\\s*(.*?)(&|$)").getMatch(0);
             dashmpd = Encoding.htmlDecode(dashmpd);
 
         } else {
             // regular url testlink: http://www.youtube.com/watch?v=4om1rQKPijI
 
-            html5_fmt_map = this.br.getRegex("\"url_encoded_fmt_stream_map\": (\".*?\")").getMatch(0);
+            html5_fmt_map = this.br.getRegex("\"url_encoded_fmt_stream_map\"\\s*:\\s*(\".*?\")").getMatch(0);
 
-            html5_fmt_map = JSonStorage.restoreFromString(html5_fmt_map, new TypeRef<String>() {
-            });
+            html5_fmt_map = JSonStorage.restoreFromString(html5_fmt_map, TypeRef.STRING);
 
-            dashFmt = this.br.getRegex("\"adaptive_fmts\": (\".*?\")").getMatch(0);
-            dashFmt = JSonStorage.restoreFromString(dashFmt, new TypeRef<String>() {
-            });
-            dashmpd = this.br.getRegex("\"dashmpd\": (\".*?\")").getMatch(0);
-            dashmpd = JSonStorage.restoreFromString(dashmpd, new TypeRef<String>() {
-            });
+            dashFmt = this.br.getRegex("\"adaptive_fmts\"\\s*:\\s*(\".*?\")").getMatch(0);
+            dashFmt = JSonStorage.restoreFromString(dashFmt, TypeRef.STRING);
+            dashmpd = this.br.getRegex("\"dashmpd\"\\s*:\\s*(\".*?\")").getMatch(0);
+            dashmpd = JSonStorage.restoreFromString(dashmpd, TypeRef.STRING);
         }
         if (html5_fmt_map != null) {
             for (final String line : html5_fmt_map.split("\\,")) {
@@ -1793,8 +1786,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         HashMap<String, YoutubeSubtitleInfo> urls = new HashMap<String, YoutubeSubtitleInfo>();
         String ttsUrl = br.getRegex("\"ttsurl\": (\"http.*?\")").getMatch(0);
         if (ttsUrl != null) {
-            ttsUrl = JSonStorage.restoreFromString(ttsUrl, new TypeRef<String>() {
-            });
+            ttsUrl = JSonStorage.restoreFromString(ttsUrl, TypeRef.STRING);
         } else {
             ttsUrl = br.getRegex("\\&ttsurl=([^\\&]+)").getMatch(0);
             if (ttsUrl != null) {
