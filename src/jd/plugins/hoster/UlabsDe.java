@@ -235,7 +235,7 @@ public class UlabsDe extends PluginForHost {
         account.setMaxSimultanDownloads(-1);
         account.setConcurrentUsePossible(true);
         ac.setMultiHostSupport(this, supportedHosts);
-        ac.setStatus("Free User");
+        ac.setStatus("Registered (free) account");
         return ac;
     }
 
@@ -288,6 +288,7 @@ public class UlabsDe extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private String site_get_dllink(final DownloadLink link, final Account acc) throws Exception {
         String dllink;
         String hoster;
