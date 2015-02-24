@@ -851,6 +851,7 @@ public class OffCloudCom extends PluginForHost {
                                                       put("ACCOUNT_TYPE", "Account type:");
                                                       put("ACCOUNT_SIMULTANDLS", "Max. simultaneous downloads:");
                                                       put("ACCOUNT_CHUNKS", "Max number of chunks per file:");
+                                                      put("ACCOUNT_CHUNKS_VALUE", "Depends on the host, see: offcloud.com/api/sites/chunks");
                                                       put("ACCOUNT_RESUME", "Resume of stopped downloads:");
                                                       put("ACCOUNT_YES", "Yes");
                                                       put("ACCOUNT_NO", "No");
@@ -869,6 +870,7 @@ public class OffCloudCom extends PluginForHost {
                                                       put("ACCOUNT_TYPE", "Account Typ:");
                                                       put("ACCOUNT_SIMULTANDLS", "Max. Anzahl gleichzeitiger Downloads:");
                                                       put("ACCOUNT_CHUNKS", "Max. Anzahl Verbindungen pro Datei (Chunks):");
+                                                      put("ACCOUNT_CHUNKS_VALUE", "Kommt auf den Hoster an, siehe: offcloud.com/api/sites/chunks");
                                                       put("ACCOUNT_RESUME", "Abgebrochene Downloads fortsetzbar:");
                                                       put("ACCOUNT_YES", "Ja");
                                                       put("ACCOUNT_NO", "Nein");
@@ -894,6 +896,7 @@ public class OffCloudCom extends PluginForHost {
         return "Translation not found!";
     }
 
+    @SuppressWarnings("unused")
     private String getUserDisplayChunks() {
         String userchunks;
         if (ACCOUNT_PREMIUM_MAXCHUNKS == 1) {
@@ -939,7 +942,7 @@ public class OffCloudCom extends PluginForHost {
             panelGenerator.addCategory("Download");
             panelGenerator.addEntry(getPhrase("ACCOUNT_LINKSLEFT"), linksleft);
             panelGenerator.addEntry(getPhrase("ACCOUNT_SIMULTANDLS"), Integer.toString(ACCOUNT_PREMIUM_MAXDOWNLOADS));
-            panelGenerator.addEntry(getPhrase("ACCOUNT_CHUNKS"), getUserDisplayChunks());
+            panelGenerator.addEntry(getPhrase("ACCOUNT_CHUNKS"), getPhrase("ACCOUNT_CHUNKS_VALUE"));
             panelGenerator.addEntry(getPhrase("ACCOUNT_RESUME"), getPhrase("ACCOUNT_YES"));
 
             panelGenerator.addEntry("Plugin Revision:", revision);
