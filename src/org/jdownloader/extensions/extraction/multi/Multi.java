@@ -900,13 +900,13 @@ public class Multi extends IExtraction {
     public boolean prepare() throws ExtractionException {
         final Archive archive = getArchive();
         try {
-            final String[] entries = config.getBlacklistPatterns();
-            if (entries != null) {
-                filter.clear();
-                for (final String entry : entries) {
+            final String[] patternStrings = config.getBlacklistPatterns();
+            filter.clear();
+            if (patternStrings != null && patternStrings.length > 0) {
+                for (final String patternString : patternStrings) {
                     try {
-                        if (StringUtils.isNotEmpty(entry) && !entry.startsWith("##")) {
-                            filter.add(Pattern.compile(entry));
+                        if (StringUtils.isNotEmpty(patternString) && !patternString.startsWith("##")) {
+                            filter.add(Pattern.compile(patternString));
                         }
                     } catch (final Throwable e) {
                         getLogger().log(e);

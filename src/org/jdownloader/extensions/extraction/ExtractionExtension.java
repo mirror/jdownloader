@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.regex.Pattern;
 
 import jd.SecondLevelLaunch;
 import jd.config.SubConfiguration;
@@ -157,7 +158,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     /**
      * Adds an extraction plugin to the framework.
-     * 
+     *
      * @param extractor
      *            The extractor.
      */
@@ -168,7 +169,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     /**
      * Checks if there is supported extractor.
-     * 
+     *
      * @param file
      *            Path of the packed file
      * @return True if a extractor was found
@@ -195,10 +196,10 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     /**
      * CReates and returns an id for the archive filenames belongs to.
-     * 
+     *
      * @param factory
      *            TODO
-     * 
+     *
      * @return
      */
     public String createArchiveID(ArchiveFactory factory) {
@@ -287,7 +288,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     /**
      * Builds an archive for an {@link DownloadLink}.
-     * 
+     *
      * @param link
      * @return
      * @throws ArchiveException
@@ -332,7 +333,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     /**
      * Returns the extractor for the {@link DownloadLink}.
-     * 
+     *
      * @param link
      * @return
      */
@@ -368,7 +369,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     /**
      * Finishes the extraction process.
-     * 
+     *
      * @param controller
      */
     void onFinished(ExtractionController controller) {
@@ -378,7 +379,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     /**
      * Removes an {@link Archive} from the list.
-     * 
+     *
      * @param archive
      */
     void removeArchive(Archive archive) {
@@ -682,7 +683,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     /**
      * Cancels a job
-     * 
+     *
      * @param activeValue
      */
     public boolean cancel(ExtractionController activeValue) {
@@ -732,57 +733,83 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                         addToQueue(archive, false);
                     }
                 }
-            } else if (caller instanceof ExtractionController) {
+            } else if (caller instanceof ExtractionController && fileList != null && fileList.length > 0) {
                 if (getSettings().isDeepExtractionEnabled()) {
-                    ExtractionController con = (ExtractionController) caller;
-                    final ArrayList<String> knownPasswords = new ArrayList<String>();
-                    final String usedPassword = con.getArchiv().getFinalPassword();
-                    if (StringUtils.isNotEmpty(usedPassword)) {
-                        knownPasswords.add(usedPassword);
-                    }
-                    final List<String> archiveSettingsPasswords = con.getArchiv().getSettings().getPasswords();
-                    if (archiveSettingsPasswords != null) {
-                        knownPasswords.addAll(archiveSettingsPasswords);
-                    }
-                    try {
-                        Archive previousArchive = con.getArchiv();
-                        while (previousArchive != null) {
-                            if (previousArchive instanceof DownloadLinkArchive) {
-                                break;
+                    final String[] patternStrings = getSettings().getDeepExtractionBlacklistPatterns();
+                    if (patternStrings != null && patternStrings.length > 0) {
+                        final ArrayList<Pattern> patterns = new ArrayList<Pattern>();
+                        for (final String patternString : patternStrings) {
+                            try {
+                                if (StringUtils.isNotEmpty(patternString) && !patternString.startsWith("##")) {
+                                    patterns.add(Pattern.compile(patternString));
+                                }
+                            } catch (final Throwable e) {
+                                getLogger().log(e);
                             }
-                            previousArchive = previousArchive.getPreviousArchive();
                         }
-                        if (!(previousArchive instanceof DownloadLinkArchive)) {
-                            previousArchive = null;
+                        if (patterns.size() > 0) {
+                            for (File file : fileList) {
+                                for (Pattern pattern : patterns) {
+                                    final String path = file.getAbsolutePath();
+                                    if (pattern.matcher(path).matches()) {
+                                        logger.info("Skip deep extraction: " + pattern.toString() + " matches file " + path);
+                                        return;
+                                    }
+                                }
+                            }
                         }
-                        for (File archiveStartFile : fileList) {
-                            FileArchiveFactory fac = new FileArchiveFactory(archiveStartFile, previousArchive);
-                            if (isLinkSupported(fac)) {
-                                Archive archive = buildArchive(fac);
-                                if (onNewFile(archive)) {
-                                    archive.getSettings().setExtractPath(archiveStartFile.getParent());
-                                    archive.getSettings().setPasswords(knownPasswords);
-                                    addToQueue(archive, false);
+                        ExtractionController con = (ExtractionController) caller;
+                        final ArrayList<String> knownPasswords = new ArrayList<String>();
+                        final String usedPassword = con.getArchiv().getFinalPassword();
+                        if (StringUtils.isNotEmpty(usedPassword)) {
+                            knownPasswords.add(usedPassword);
+                        }
+                        final List<String> archiveSettingsPasswords = con.getArchiv().getSettings().getPasswords();
+                        if (archiveSettingsPasswords != null) {
+                            knownPasswords.addAll(archiveSettingsPasswords);
+                        }
+                        try {
+                            Archive previousArchive = con.getArchiv();
+                            while (previousArchive != null) {
+                                if (previousArchive instanceof DownloadLinkArchive) {
+                                    break;
+                                }
+                                previousArchive = previousArchive.getPreviousArchive();
+                            }
+                            if (!(previousArchive instanceof DownloadLinkArchive)) {
+                                previousArchive = null;
+                            }
+                            for (File archiveStartFile : fileList) {
+                                FileArchiveFactory fac = new FileArchiveFactory(archiveStartFile, previousArchive);
+                                if (isLinkSupported(fac)) {
+                                    Archive archive = buildArchive(fac);
+                                    if (onNewFile(archive)) {
+                                        archive.getSettings().setExtractPath(archiveStartFile.getParent());
+                                        archive.getSettings().setPasswords(knownPasswords);
+                                        addToQueue(archive, false);
+                                    }
+                                }
+                            }
+                        } catch (Exception e) {
+                            logger.log(e);
+                        }
+                    }
+                } else {
+                    try {
+                        if (fileList != null) {
+                            for (File archiveStartFile : fileList) {
+                                FileArchiveFactory fac = new FileArchiveFactory(archiveStartFile);
+                                if (isLinkSupported(fac)) {
+                                    Archive archive = buildArchive(fac);
+                                    if (onNewFile(archive)) {
+                                        addToQueue(archive, false);
+                                    }
                                 }
                             }
                         }
                     } catch (Exception e) {
                         logger.log(e);
                     }
-                }
-            } else {
-                try {
-                    for (File archiveStartFile : fileList) {
-                        FileArchiveFactory fac = new FileArchiveFactory(archiveStartFile);
-                        if (isLinkSupported(fac)) {
-                            Archive archive = buildArchive(fac);
-                            if (onNewFile(archive)) {
-                                addToQueue(archive, false);
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    logger.log(e);
                 }
             }
         } catch (Exception e) {
