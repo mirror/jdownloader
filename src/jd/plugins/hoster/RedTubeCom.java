@@ -3,6 +3,7 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.http.Browser.BrowserException;
 import jd.http.RandomUserAgent;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -47,7 +48,10 @@ public class RedTubeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Offline link
-        if (br.containsHTML("is no longer available") || br.containsHTML(">404 Not Found<")) {
+        if (br.containsHTML("is no longer available") || br.containsHTML(">404 Not Found<") || br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML("class=\"video-deleted-info\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Invalid link
@@ -71,9 +75,15 @@ public class RedTubeCom extends PluginForHost {
         if (fileName != null || ext != null) {
             link.setName(fileName.trim() + ext);
         }
+        URLConnectionAdapter con = null;
         try {
             try {
-                if (!br.openGetConnection(dlink).getContentType().contains("html")) {
+                if (isJDStable()) {
+                    con = br.openGetConnection(dlink);
+                } else {
+                    con = br.openHeadConnection(dlink);
+                }
+                if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(br.getHttpConnection().getLongContentLength());
                     return AvailableStatus.TRUE;
                 }
@@ -103,6 +113,10 @@ public class RedTubeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dl.startDownload();
+    }
+
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
