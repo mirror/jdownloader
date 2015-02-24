@@ -15,9 +15,17 @@ import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.settings.IfFileExistsAction;
 
 public interface ExtractionConfig extends ExtensionConfigInterface {
-    @DefaultStringArrayValue(value = { "##Lines with XX are comments\r\n##Example to skip extraction of JPEG files\r\n##.*\\.jpe?g" })
+
+    @DefaultStringArrayValue(value = { "##Lines with XX are comments", "##Skip deep extraction of archives that contain exe files", ".*\\.exe" })
     @AboutConfig
-    @DescriptionForConfigEntry("A Blacklist is a list of regular expressions. Use a blacklist to avoid extracting certain filetypes.")
+    @DescriptionForConfigEntry("A list of regular expressions. Use to avoid deep extracting.")
+    String[] getDeepExtractionBlacklistPatterns();
+
+    void setDeepExtractionBlacklistPatterns(String[] patterns);
+
+    @DefaultStringArrayValue(value = { "##Lines with XX are comments", "##Example to skip extraction of JPEG files", "##.*\\.jpe?g" })
+    @AboutConfig
+    @DescriptionForConfigEntry("A list of regular expressions. Use to avoid extracting certain filetypes.")
     String[] getBlacklistPatterns();
 
     @DefaultEnumValue("HIGH")
