@@ -63,7 +63,6 @@ public class Grab8Com extends PluginForHost {
 
     private int                                            statuscode                     = 0;
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap             = new HashMap<Account, HashMap<String, Long>>();
-    private static HashMap<String, Integer>                hostMaxchunksMap               = new HashMap<String, Integer>();
     private Account                                        currAcc                        = null;
     private DownloadLink                                   currDownloadLink               = null;
     private static Object                                  LOCK                           = new Object();
@@ -142,7 +141,6 @@ public class Grab8Com extends PluginForHost {
         this.login(false);
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
-            /* Sometimes we have to send this form to finally start the transfer. */
             br.setFollowRedirects(true);
             br.getPage("http://grab8.com/member/index.php");
             final String premiumPage = br.getRegex("<b>Your Premium Page is at: </b><a href=(?:\\'|\")(http://[a-z0-9\\-\\.]+\\.grab8\\.com[^<>\"]*?)(?:\\'|\")").getMatch(0);
@@ -157,6 +155,7 @@ public class Grab8Com extends PluginForHost {
             br.setFollowRedirects(true);
             this.postAPISafe(br.getBaseURL() + "index.php", "referer=&yt_fmt=highest&tor_user=&tor_pass=&mu_cookie=&cookie=&email=&method=tc&partSize=10&proxy=&proxyuser=&proxypass=&premium_acc=on&premium_user=&premium_pass=&path=%2Fhome%2Fgrab8%2Fpublic_html%2F2%2Ffiles&link=" + Encoding.urlEncode(link.getDownloadURL()));
             if (br.containsHTML("Transloading in progress<")) {
+                /* We have to send this form to finally start the transfer */
                 final Form continueForm = br.getForm(0);
                 if (continueForm == null) {
                     handleErrorRetries("continueformnull", 10, 2 * 60 * 1000l);
@@ -187,7 +186,7 @@ public class Grab8Com extends PluginForHost {
             }
             if (dllink == null) {
                 /* Should never happen */
-                handleErrorRetries("dllinknull", 50, 2 * 60 * 1000l);
+                handleErrorRetries("dllinknull", 10, 2 * 60 * 1000l);
             }
             dllink = br.getBaseURL() + dllink;
         }
@@ -355,7 +354,6 @@ public class Grab8Com extends PluginForHost {
         return ai;
     }
 
-    /** Log into users' account and set login cookie */
     @SuppressWarnings("unchecked")
     private void login(final boolean force) throws IOException, PluginException {
         synchronized (LOCK) {
@@ -433,8 +431,7 @@ public class Grab8Com extends PluginForHost {
     }
 
     /**
-     * 0 = everything ok, 1-99 = "error"-errors, 100-199 = "not_available"-errors, 200-299 = Other (html) [download] errors, sometimes mixed
-     * with the API errors.
+     * 0 = everything ok, 1-99 = "htmlerror"-errors
      */
     private void updatestatuscode() {
         final String error = br.getRegex("class=\"htmlerror\"><b>(.*?)</b></span>").getMatch(0);
