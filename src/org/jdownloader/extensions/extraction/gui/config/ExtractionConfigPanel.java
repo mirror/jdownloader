@@ -242,7 +242,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
 
         toggleDeleteArchiveDownloadLinks = this.addPair(T._.settings_remove_after_extract_downloadlink(), null, new Checkbox());
         toggleOverwriteExisting = this.addPair(T._.settings_if_file_exists(), null, new ComboBox<IfFileExistsAction>(IfFileExistsAction.values()));
-        cpupriority = this.addPair(T._.settings_cpupriority(), null, new ComboBox<String>(T._.settings_cpupriority_high(), T._.settings_cpupriority_middle(), T._.settings_cpupriority_low()));
+        cpupriority = this.addPair(T._.settings_cpupriority_v2(), null, new ComboBox<String>(T._.settings_cpupriority_high(), T._.settings_cpupriority_middle(), T._.settings_cpupriority_low()));
 
         this.addHeader(T._.settings_multi(), NewTheme.I().getIcon("settings", 32));
         toggleUseOriginalFileDate = this.addPair(T._.settings_multi_use_original_file_date(), null, new Checkbox());
