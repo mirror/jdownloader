@@ -193,7 +193,7 @@ public abstract class AbstractConfigPanel extends SwitchPanel implements DirectF
         }
         JLabel txt = new JLabel();
         SwingUtils.setOpaque(txt, false);
-        txt.setEnabled(false);
+        // txt.setEnabled(false);
         LAFOptions.getInstance().applyConfigDescriptionTextColor(txt);
 
         txt.setText(description);
