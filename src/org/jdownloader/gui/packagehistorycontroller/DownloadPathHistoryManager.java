@@ -2,6 +2,7 @@ package org.jdownloader.gui.packagehistorycontroller;
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -16,7 +17,7 @@ public class DownloadPathHistoryManager extends HistoryManager<DownloadPath> imp
 
     /**
      * get the only existing instance of PackageHistoryManager. This is a singleton
-     * 
+     *
      * @return
      */
     public static DownloadPathHistoryManager getInstance() {
@@ -29,7 +30,6 @@ public class DownloadPathHistoryManager extends HistoryManager<DownloadPath> imp
      */
     private DownloadPathHistoryManager() {
         super(CFG_LINKGRABBER.CFG.getDownloadDestinationHistory(), CFG_GENERAL.CFG.getDownloadDestinationHistoryLength());
-
         CFG_LINKGRABBER.DOWNLOAD_DESTINATION_HISTORY.getEventSender().addListener(this);
     }
 
@@ -39,9 +39,16 @@ public class DownloadPathHistoryManager extends HistoryManager<DownloadPath> imp
         super.add(packageName);
     }
 
+    private final AtomicInteger saveEvent = new AtomicInteger(0);
+
     @Override
     protected void save(List<DownloadPath> list) {
-        CFG_LINKGRABBER.CFG.setDownloadDestinationHistory(list);
+        saveEvent.incrementAndGet();
+        try {
+            CFG_LINKGRABBER.CFG.setDownloadDestinationHistory(list);
+        } finally {
+            saveEvent.decrementAndGet();
+        }
     }
 
     @Override
@@ -84,7 +91,7 @@ public class DownloadPathHistoryManager extends HistoryManager<DownloadPath> imp
 
     @Override
     public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
-        if (!isShutdown()) {
+        if (saveEvent.get() == 0) {
             if (newValue == null) {
                 clear();
             } else if (newValue instanceof List) {
@@ -95,7 +102,7 @@ public class DownloadPathHistoryManager extends HistoryManager<DownloadPath> imp
                     synchronized (this) {
                         clear();
                         for (int i = list.size() - 1; i >= 0; i--) {
-                            Object item = list.get(i);
+                            final Object item = list.get(i);
                             if (item != null && item instanceof DownloadPath) {
                                 add(((DownloadPath) item).getName());
                             }

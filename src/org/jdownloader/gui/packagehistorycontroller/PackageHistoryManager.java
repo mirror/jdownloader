@@ -2,6 +2,7 @@ package org.jdownloader.gui.packagehistorycontroller;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -13,7 +14,7 @@ public class PackageHistoryManager extends HistoryManager<PackageHistoryEntry> i
 
     /**
      * get the only existing instance of PackageHistoryManager. This is a singleton
-     * 
+     *
      * @return
      */
     public static PackageHistoryManager getInstance() {
@@ -30,10 +31,16 @@ public class PackageHistoryManager extends HistoryManager<PackageHistoryEntry> i
 
     }
 
+    private final AtomicInteger saveEvent = new AtomicInteger(0);
+
     @Override
     protected void save(List<PackageHistoryEntry> list) {
-        CFG_LINKGRABBER.CFG.setPackageNameHistory(list);
-
+        saveEvent.incrementAndGet();
+        try {
+            CFG_LINKGRABBER.CFG.setPackageNameHistory(list);
+        } finally {
+            saveEvent.decrementAndGet();
+        }
     }
 
     @Override
@@ -50,13 +57,12 @@ public class PackageHistoryManager extends HistoryManager<PackageHistoryEntry> i
                 ret.add(phe);
             }
         }
-
         return ret;
     }
 
     @Override
     public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
-        if (!isShutdown()) {
+        if (saveEvent.get() == 0) {
             if (newValue == null) {
                 clear();
             } else if (newValue instanceof List) {
@@ -67,7 +73,7 @@ public class PackageHistoryManager extends HistoryManager<PackageHistoryEntry> i
                     synchronized (this) {
                         clear();
                         for (int i = list.size() - 1; i >= 0; i--) {
-                            Object item = list.get(i);
+                            final Object item = list.get(i);
                             if (item != null && item instanceof PackageHistoryEntry) {
                                 add(((PackageHistoryEntry) item).getName());
                             }
