@@ -44,6 +44,7 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
     public static final String                         DELETE_FAILED             = "deleteFailed";
     public static final String                         DELETE_FINISHED           = "deleteFinished";
     public static final String                         DELETE_OFFLINE            = "deleteOffline";
+    public static final String                         DELETE_MODE               = "deleteMode";
     /**
      * 
      */
@@ -354,6 +355,17 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
                 first = false;
                 sb.append(_GUI._.lit_offline());
             }
+
+        }
+        switch (getDeleteMode()) {
+        case REMOVE_LINKS_AND_DELETE_FILES:
+            sb.append(_GUI._.deleteaction_and_delete_files());
+            break;
+        case REMOVE_LINKS_AND_RECYCLE_FILES:
+            sb.append(_GUI._.deleteaction_and_recycle_files());
+            break;
+        case REMOVE_LINKS_ONLY:
+            break;
         }
         return sb.toString();
     }

@@ -54,6 +54,7 @@ import org.jdownloader.gui.views.linkgrabber.bottombar.IncludedSelectionSetup;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.AddContainerContextMenuAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.AddLinksContextMenuAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SortAction;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.DeleteFileOptions;
 
 public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePackage, DownloadLink> {
 
@@ -61,7 +62,7 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
 
     /**
      * get the only existing instance of DownloadListContextMenuManager. This is a singleton
-     *
+     * 
      * @return
      */
     public static MenuManagerDownloadTableContext getInstance() {
@@ -131,6 +132,12 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
         delete.add(setIconKey(new ActionData(GenericDeleteFromDownloadlistContextAction.class).putSetup(GenericDeleteFromDownloadlistAction.DELETE_FINISHED, true), IconKey.ICON_REMOVE_OK));
         delete.add(setIconKey(new ActionData(GenericDeleteFromDownloadlistContextAction.class).putSetup(GenericDeleteFromDownloadlistAction.DELETE_OFFLINE, true), IconKey.ICON_REMOVE_OFFLINE));
         delete.add(setIconKey(new ActionData(GenericDeleteFromDownloadlistContextAction.class).putSetup(GenericDeleteFromDownloadlistContextAction.DELETE_ALL, true).putSetup(IncludedSelectionSetup.INCLUDE_UNSELECTED_LINKS, true).putSetup(IncludedSelectionSetup.INCLUDE_SELECTED_LINKS, false), IconKey.ICON_OK));
+
+        delete.add(setIconKey(new ActionData(GenericDeleteFromDownloadlistContextAction.class).putSetup(GenericDeleteFromDownloadlistContextAction.DELETE_ALL, true).putSetup(GenericDeleteFromDownloadlistAction.DELETE_MODE, DeleteFileOptions.REMOVE_LINKS_AND_RECYCLE_FILES.name()), IconKey.ICON_DELETE));
+
+        // mr.add(setAccelerator(new MenuItemData(setName(setIconKey(new
+        // ActionData(GenericDeleteFromDownloadlistContextAction.class).putSetup(GenericDeleteFromDownloadlistAction.DELETE_ALL, true),
+        // IconKey.ICON_DELETE), _GUI._.DeleteQuickAction_DeleteQuickAction_object_())), CrossSystem.getDeleteShortcut()));
 
         return delete;
     }
