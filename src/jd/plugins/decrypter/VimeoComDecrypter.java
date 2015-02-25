@@ -445,6 +445,11 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         return ((jd.plugins.hoster.VimeoCom) vimeo_hostPlugin).getQualities(ibr, ID);
     }
 
+    private String getXsrft(final Browser br) throws Exception {
+        pluginLoaded();
+        return ((jd.plugins.hoster.VimeoCom) vimeo_hostPlugin).getXsrft(br);
+    }
+
     private String getFormattedFilename(DownloadLink link) throws Exception {
         pluginLoaded();
         return ((jd.plugins.hoster.VimeoCom) vimeo_hostPlugin).getFormattedFilename(link);
@@ -459,25 +464,14 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         }
     }
 
-    private String xsrft() throws PluginException {
-        final String xsrft = br.getRegex("xsrft: '(.*?)'").getMatch(0);
-        if (xsrft != null) {
-            br.setCookie(br.getHost(), "xsrft", xsrft);
-        } else {
-            // is this a problem?
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        return xsrft;
-    }
-
     private void handlePW(CryptedLink param, Browser br) throws Exception {
         // check for a password. Store latest password in DB
         Form pwForm = br.getFormbyProperty("id", "pw_form");
         if (pwForm != null) {
             password = getPluginConfig().getStringProperty("lastusedpass", null);
             if (password != null) {
-                pwForm.put("token", xsrft());
-                pwForm.put("password", password);
+                pwForm.put("token", getXsrft(br));
+                pwForm.put("password", Encoding.urlEncode(password));
                 try {
                     br.submitForm(pwForm);
                 } catch (Throwable e) {
@@ -495,13 +489,13 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 if (pwForm == null) {
                     break;
                 }
-                pwForm.put("token", xsrft());
+                pwForm.put("token", getXsrft(br));
                 password = Plugin.getUserInput("Password for link: " + param.toString() + " ?", param);
                 if (password == null || "".equals(password)) {
                     // empty pass?? not good...
                     throw new DecrypterException(DecrypterException.PASSWORD);
                 }
-                pwForm.put("password", password);
+                pwForm.put("password", Encoding.urlEncode(password));
                 try {
                     br.submitForm(pwForm);
                 } catch (Throwable e) {
