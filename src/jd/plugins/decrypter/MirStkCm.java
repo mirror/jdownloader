@@ -66,7 +66,7 @@ public class MirStkCm extends PluginForDecrypt {
     // Tags: Multi file upload, mirror, mirrorstack, GeneralMultiuploadDecrypter
 
     // Single link format eg. http://sitedomain/xx_uid. xx = hoster abbreviation
-    private final String regexSingleLink = "(https?://[^/]+/[a-z0-9]{2}_[a-z0-9]{12})";
+    private final String regexSingleLink = "(https?://[^/]+/[a-z0-9]{1,2}_[a-z0-9]{12})";
     // Normal link format eg. http://sitedomain/uid
     private final String regexNormalLink = "(https?://[^/]+/[a-z0-9]{12})";
 
@@ -77,8 +77,12 @@ public class MirStkCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br = new Browser();
         // Easier to set redirects on and off than to define every provider. It also creates less maintenance if provider changes things up.
         br.setFollowRedirects(true);
+        // br.getHeaders().put("User-Agent",
+        // "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.115 Safari/537.36");
+        // br.getHeaders().put("Accept-Language", "en-AU,en;q=0.8");
         try {
             br.getPage(parameter);
         } catch (final UnknownHostException e) {
@@ -97,7 +101,7 @@ public class MirStkCm extends PluginForDecrypt {
         }
         // Normal links, find all singleLinks
         else {
-            singleLinks = br.getRegex("<a href=\\'" + regexSingleLink + "\\'").getColumn(0);
+            singleLinks = br.getRegex("<a href='" + regexSingleLink + "'").getColumn(0);
             if (singleLinks == null || singleLinks.length == 0) {
                 singleLinks = br.getRegex(regexSingleLink).getColumn(0);
             }
@@ -118,6 +122,7 @@ public class MirStkCm extends PluginForDecrypt {
             }
         } else {
             // Process links found. Each provider has a slightly different requirement and outcome
+
             for (String singleLink : singleLinks) {
                 String finallink = null;
                 if (!singleLink.matches(regexSingleLink)) {
@@ -125,7 +130,10 @@ public class MirStkCm extends PluginForDecrypt {
                 }
                 final Browser brc = br.cloneBrowser();
                 if (finallink == null) {
-                    brc.getPage(singleLink);
+                    // if parameter == singlelink, no need for another page get
+                    if (!parameter.matches(regexSingleLink)) {
+                        brc.getPage(singleLink);
+                    }
                     finallink = brc.getRedirectLocation();
                     if (finallink == null) {
                         String referer = null;
@@ -133,8 +141,8 @@ public class MirStkCm extends PluginForDecrypt {
                         Integer wait = 0;
                         if (parameter.matches(".+(multiupload\\.biz)/.+")) {
                             add_char = "?";
-                            referer = new Regex(br.getURL(), "(https?://[^/]+)/").getMatch(0).replace("http://", "https://") + "/r_counter";
-                            wait = 20;
+                            referer = new Regex(br.getURL(), "(https?://[^/]+)/").getMatch(0) + "/r_counter";
+                            wait = 10;
                         } else {
                             referer = new Regex(br.getURL(), "(https?://[^/]+)/").getMatch(0) + "/r_counter";
                         }
@@ -170,7 +178,7 @@ public class MirStkCm extends PluginForDecrypt {
     @SuppressWarnings("unused")
     private void notused(String parameter, String[] singleLinks) throws IOException {
         // all links still found on main page
-        singleLinks = br.getRegex("<a href=\\'" + regexSingleLink + "\\'").getColumn(0);
+        singleLinks = br.getRegex("<a href='" + regexSingleLink + "'").getColumn(0);
         if (singleLinks == null || singleLinks.length == 0) {
             singleLinks = br.getRegex(regexSingleLink).getColumn(0);
         }
@@ -179,8 +187,10 @@ public class MirStkCm extends PluginForDecrypt {
             String fstat = br.getRegex("(http://mirrorstack\\.com/update_fstat/\\d+/)").getMatch(0);
             if (fstat != null) {
                 String referer = br.getURL();
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.getPage(fstat + Math.random() * 10000);
+                Browser br2 = br.cloneBrowser();
+                br2.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br2.getPage(fstat + Math.random() * 10000);
                 br.getHeaders().put("X-Requested-With", null);
                 br.getHeaders().put("Referer", referer);
                 singleLinks = br.getRegex(regexSingleLink).getColumn(0);
