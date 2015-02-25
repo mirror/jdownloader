@@ -99,37 +99,39 @@ public class JobRunnable<T> implements Runnable {
                     if (s != solver) {
                         int waitForThisSolver = solver.getService().getWaitForByID(s.getService().getID());
                         waitForThisSolver -= (System.currentTimeMillis() - startedWaiting);
-                        ArrayList<SolverService> waitLoop = AbstractSolverService.validateWaittimeQueue(solver.getService(), s.getService());
-                        if (waitLoop == null) {
-                            if (waitForThisSolver > 1000) {
-                                long t = System.currentTimeMillis();
-                                job.getLogger().info(solver + " now waits up to " + TimeFormatter.formatMilliSeconds(waitForThisSolver, 0) + " for " + s);
-                                job.waitFor(waitForThisSolver, s);
-                                job.getLogger().info(solver + " actually waited " + TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - t, 0) + " for " + s);
-                            }
-                        } else {
-                            job.getLogger().info(solver + " wait VALIDATION FAILED!" + TimeFormatter.formatMilliSeconds(waitForThisSolver, 0) + " for " + s);
-                            job.getLogger().info("Wait Loop- >" + waitLoop + "");
-                            try {
-                                SolverService lastService = null;
-                                for (SolverService le : waitLoop) {
-                                    if (lastService != null) {
-                                        job.getLogger().info("Wait Loop- " + le.getName() + " waits " + le.getWaitForByID(lastService.getID()) + " for " + lastService.getName() + "");
-
-                                    }
-                                    lastService = le;
+                        if (waitForThisSolver > 0) {
+                            ArrayList<SolverService> waitLoop = AbstractSolverService.validateWaittimeQueue(solver.getService(), s.getService());
+                            if (waitLoop == null) {
+                                if (waitForThisSolver > 1000) {
+                                    long t = System.currentTimeMillis();
+                                    job.getLogger().info(solver + " now waits up to " + TimeFormatter.formatMilliSeconds(waitForThisSolver, 0) + " for " + s);
+                                    job.waitFor(waitForThisSolver, s);
+                                    job.getLogger().info(solver + " actually waited " + TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - t, 0) + " for " + s);
                                 }
-                                HashSet<Object> service = new HashSet<Object>();
-                                for (ChallengeSolver<?> ss : job.getSolverList()) {
-                                    if (service.add(ss.getService())) {
-                                        job.getLogger().info("Debug " + ss.getService().getName());
+                            } else {
+                                job.getLogger().info(solver + " wait VALIDATION FAILED!" + TimeFormatter.formatMilliSeconds(waitForThisSolver, 0) + " for " + s);
+                                job.getLogger().info("Wait Loop- >" + waitLoop + "");
+                                try {
+                                    SolverService lastService = null;
+                                    for (SolverService le : waitLoop) {
+                                        if (lastService != null) {
+                                            job.getLogger().info("Wait Loop- " + le.getName() + " waits " + le.getWaitForByID(lastService.getID()) + " for " + lastService.getName() + "");
 
-                                        job.getLogger().info(ss.getService().getConfig() + "");
-                                        job.getLogger().info(JSonStorage.serializeToJson(ss.getService().getWaitForMapCopy()));
+                                        }
+                                        lastService = le;
                                     }
+                                    HashSet<Object> service = new HashSet<Object>();
+                                    for (ChallengeSolver<?> ss : job.getSolverList()) {
+                                        if (service.add(ss.getService())) {
+                                            job.getLogger().info("Debug " + ss.getService().getName());
+
+                                            job.getLogger().info(ss.getService().getConfig() + "");
+                                            job.getLogger().info(JSonStorage.serializeToJson(ss.getService().getWaitForMapCopy()));
+                                        }
+                                    }
+                                } catch (Throwable e) {
+                                    job.getLogger().log(e);
                                 }
-                            } catch (Throwable e) {
-                                job.getLogger().log(e);
                             }
                         }
                     }
