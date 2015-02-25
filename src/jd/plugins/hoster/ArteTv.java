@@ -38,6 +38,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv" }, urls = { "http://www\\.artejd_decrypted_jd\\.tv/\\d+", "http://concert\\.artejd_decrypted_jd\\.tv/\\d+", "http://creative\\.artejd_decrypted_jd\\.tv/\\d+" }, flags = { 32, 32, 32 })
 public class ArteTv extends PluginForHost {
 
@@ -51,6 +53,11 @@ public class ArteTv extends PluginForHost {
     private static final String http_2200                  = "http_2200";
     /* creative.arte.tv extern qualities */
     private static final String http_extern_1000           = "http_extern_1000";
+    private static final String hls_extern_250             = "hls_extern_250";
+    private static final String hls_extern_500             = "hls_extern_500";
+    private static final String hls_extern_1000            = "hls_extern_1000";
+    private static final String hls_extern_2000            = "hls_extern_2000";
+    private static final String hls_extern_4000            = "hls_extern_4000";
     private static final String LOAD_LANGUAGE_URL          = "LOAD_LANGUAGE_URL";
     private static final String LOAD_LANGUAGE_GERMAN       = "LOAD_LANGUAGE_GERMAN";
     private static final String LOAD_LANGUAGE_FRENCH       = "LOAD_LANGUAGE_FRENCH";
@@ -61,7 +68,7 @@ public class ArteTv extends PluginForHost {
     private static final String TYPE_CONCERT               = "http://(www\\.)?concert\\.arte\\.tv/.+";
 
     private String              dllink                     = null;
-    private String              flashplayer                = null;
+    private String              quality_intern             = null;
 
     @SuppressWarnings("deprecation")
     public ArteTv(PluginWrapper wrapper) {
@@ -83,6 +90,7 @@ public class ArteTv extends PluginForHost {
     /** Important information: RTMP player: http://www.arte.tv/player/v2//jwplayer6/mediaplayer.6.3.3242.swf */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        quality_intern = downloadLink.getStringProperty("quality_intern", null);
         br.setFollowRedirects(true);
         if (downloadLink.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -100,7 +108,6 @@ public class ArteTv extends PluginForHost {
         expiredAfter = downloadLink.getStringProperty("VRU", null);
         fileName = downloadLink.getStringProperty("directName", null);
         dllink = downloadLink.getStringProperty("directURL", null);
-        flashplayer = downloadLink.getStringProperty("flashplayer", null);
 
         if (expiredBefore != null && expiredAfter != null) {
             status = getExpireMessage(lang, expiredBefore, expiredAfter);
@@ -124,7 +131,8 @@ public class ArteTv extends PluginForHost {
             ext = ext == null ? ".flv" : "." + ext;
         }
 
-        if (dllink.startsWith("http")) {
+        /* We can only check the filesizes of http urls */
+        if (quality_intern.contains("_http_")) {
             URLConnectionAdapter con = null;
             final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
@@ -204,15 +212,19 @@ public class ArteTv extends PluginForHost {
     }
 
     private void download(final DownloadLink downloadLink) throws Exception {
-        if (dllink.startsWith("rtmp")) {
+        if (quality_intern.contains("_rtmp_")) {
             downloadRTMP(downloadLink);
-        } else if (dllink.startsWith("http")) {
+        } else if (quality_intern.contains("_http_")) {
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            dl.startDownload();
+        } else if (quality_intern.contains("_hls_")) {
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            dl = new HLSDownloader(downloadLink, br, dllink);
             dl.startDownload();
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -322,10 +334,20 @@ public class ArteTv extends PluginForHost {
     }
 
     private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Auswahl der Qualitätsstufen für externe creative.arte.tv Videos:"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Auswahl der immer verfügbaren http Qualitätsstufen:"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), http_extern_1000, JDL.L("plugins.hoster.arte.http_extern_1000", "1000kBit/s 504x284")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Auswahl der immer verfügbaren hls Qualitätsstufen für spezielle externe creative.arte.tv Videos:"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), hls_extern_250, JDL.L("plugins.hoster.arte.hls_extern_250", "250kBit/s 200x112")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), hls_extern_500, JDL.L("plugins.hoster.arte.hls_extern_500", "500kBit/s 320x180")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), hls_extern_1000, JDL.L("plugins.hoster.arte.hls_extern_1000", "1000kBit/s 504x284")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), hls_extern_2000, JDL.L("plugins.hoster.arte.hls_extern_2000", "2000kBit/s 804x452")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), hls_extern_4000, JDL.L("plugins.hoster.arte.hls_extern_4000", "4000kBit/s 1280x720")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Auswahl der Qualitätsstufen für normale creative.arte.tv/concert.arte.tv/arte.tv Videos:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Auswahl der manchmal verfügbaren Qualitätsstufen:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), http_300, JDL.L("plugins.hoster.arte.http_300", "300kBit/s 384x216")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Auswahl der manchmal verfügbaren Qualitätsstufen für spezielle externe creative.arte.tv Videos:"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), http_extern_1000, JDL.L("plugins.hoster.arte.http_extern_1000", "1000kBit/s 504x284")).setDefaultValue(true));
+
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Auswahl der immer verfügbaren Qualitätsstufen:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), http_800, JDL.L("plugins.hoster.arte.http_800", "800kBit/s 720x406")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), http_1500, JDL.L("plugins.hoster.arte.http_1500", "1500kBit/s 720x406")).setDefaultValue(true));

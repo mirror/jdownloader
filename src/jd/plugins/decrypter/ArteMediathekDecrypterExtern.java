@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,28 +41,39 @@ import jd.utils.JDUtilities;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "creative.arte.tv_extern" }, urls = { "http://creative\\.arte\\.tv/(de|fr)/scald_dmcloud_json/\\d+" }, flags = { 0 })
 public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
 
-    private static final String EXCEPTION_LINKOFFLINE      = "EXCEPTION_LINKOFFLINE";
+    private static final String           EXCEPTION_LINKOFFLINE      = "EXCEPTION_LINKOFFLINE";
 
-    private static final String TYPE_CREATIVE              = "http://creative\\.arte\\.tv/(de|fr)/scald_dmcloud_json/\\d+";
+    private static final String           TYPE_CREATIVE              = "http://creative\\.arte\\.tv/(de|fr)/scald_dmcloud_json/\\d+";
 
-    private static final String V_NORMAL                   = "V_NORMAL";
-    private static final String V_SUBTITLED                = "V_SUBTITLED";
-    private static final String V_SUBTITLE_DISABLED_PEOPLE = "V_SUBTITLE_DISABLED_PEOPLE";
-    private static final String V_AUDIO_DESCRIPTION        = "V_AUDIO_DESCRIPTION";
-    // private static final String http_300 = "http_300";
-    // private static final String http_800 = "http_800";
-    // private static final String http_1500 = "http_1500";
-    private static final String http_extern_1000           = "http_extern_1000";
-    private static final String LOAD_LANGUAGE_URL          = "LOAD_LANGUAGE_URL";
-    private static final String LOAD_LANGUAGE_GERMAN       = "LOAD_LANGUAGE_GERMAN";
-    private static final String LOAD_LANGUAGE_FRENCH       = "LOAD_LANGUAGE_FRENCH";
-    private static final String THUMBNAIL                  = "THUMBNAIL";
-    private static final String FAST_LINKCHECK             = "FAST_LINKCHECK";
+    private static final String           V_NORMAL                   = "V_NORMAL";
+    private static final String           V_SUBTITLED                = "V_SUBTITLED";
+    private static final String           V_SUBTITLE_DISABLED_PEOPLE = "V_SUBTITLE_DISABLED_PEOPLE";
+    private static final String           V_AUDIO_DESCRIPTION        = "V_AUDIO_DESCRIPTION";
+    private static final String           http_extern_1000           = "http_extern_1000";
+    private static final String           hls_extern_250             = "hls_extern_250";
+    private static final String           hls_extern_500             = "hls_extern_500";
+    private static final String           hls_extern_1000            = "hls_extern_1000";
+    private static final String           hls_extern_2000            = "hls_extern_2000";
+    private static final String           hls_extern_4000            = "hls_extern_4000";
+    private static final String           LOAD_LANGUAGE_URL          = "LOAD_LANGUAGE_URL";
+    private static final String           LOAD_LANGUAGE_GERMAN       = "LOAD_LANGUAGE_GERMAN";
+    private static final String           LOAD_LANGUAGE_FRENCH       = "LOAD_LANGUAGE_FRENCH";
+    private static final String           THUMBNAIL                  = "THUMBNAIL";
+    private static final String           FAST_LINKCHECK             = "FAST_LINKCHECK";
 
-    final String[]              formats                    = { http_extern_1000 };
+    final String[]                        formats                    = { http_extern_1000, hls_extern_250, hls_extern_500, hls_extern_1000, hls_extern_2000, hls_extern_4000 };
 
-    private int                 languageVersion            = 1;
-    private String              parameter;
+    private HashMap<String, DownloadLink> bestMap                    = new HashMap<String, DownloadLink>();
+    private String                        parameter;
+    private String                        plain_domain_decrypter     = null;
+    private String                        title                      = null;
+    private String                        apiurl;
+    private String                        sourceURL;
+    private String                        fid;
+    private String                        description;
+    private int                           languageVersion            = 1;
+    private boolean                       fastLinkcheck              = false;
+    private FilePackage                   fp                         = FilePackage.getInstance();
 
     public ArteMediathekDecrypterExtern(final PluginWrapper wrapper) {
         super(wrapper);
@@ -80,16 +92,14 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
         parameter = param.toString();
         ArrayList<String> selectedFormats = new ArrayList<String>();
         ArrayList<String> selectedLanguages = new ArrayList<String>();
-        HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
-        String title = getUrlFilename();
-        String fid;
+        title = getUrlFilename();
         String thumbnailUrl = null;
         final String plain_domain = new Regex(parameter, "([a-z]+\\.arte\\.tv)").getMatch(0);
-        final String plain_domain_decrypter = plain_domain.replace("arte.tv", "artejd_decrypted_jd.tv");
+        plain_domain_decrypter = plain_domain.replace("arte.tv", "artejd_decrypted_jd.tv");
         final SubConfiguration cfg = SubConfiguration.getConfig("arte.tv");
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String hybridAPIUrl = null;
-        final boolean fastLinkcheck = cfg.getBooleanProperty(FAST_LINKCHECK, false);
+        fastLinkcheck = cfg.getBooleanProperty(FAST_LINKCHECK, false);
 
         setBrowserExclusive();
         br.setFollowRedirects(false);
@@ -118,7 +128,7 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
             /* Finally, grab all we can get (in the selected language(s)) */
             for (final String selectedLanguage : selectedLanguages) {
                 setSelectedLang_format_code(selectedLanguage);
-                final String apiurl = this.getAPIUrl(hybridAPIUrl, selectedLanguage, fid);
+                apiurl = this.getAPIUrl(hybridAPIUrl, selectedLanguage, fid);
                 br.getPage(apiurl);
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     /* In most cases this simply means that one of the selected languages is not available so let's go on. */
@@ -127,9 +137,9 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
                 }
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
                 final LinkedHashMap<String, Object> videoJsonPlayer = (LinkedHashMap<String, Object>) entries.get("videoJsonPlayer");
-                final String sourceURL = (String) videoJsonPlayer.get("VTR");
+                sourceURL = (String) videoJsonPlayer.get("VTR");
                 title = encodeUnicode((String) videoJsonPlayer.get("VTI"));
-                final String description = (String) videoJsonPlayer.get("VDE");
+                description = (String) videoJsonPlayer.get("VDE");
                 final String errormessage = (String) entries.get("msg");
                 if (errormessage != null) {
                     final DownloadLink offline = createofflineDownloadLink(parameter);
@@ -145,99 +155,29 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
                 if (thumbnailUrl == null) {
                     thumbnailUrl = (String) videoJsonPlayer.get("programImage");
                 }
-                final String vru = (String) videoJsonPlayer.get("VRU");
-                final String vra = (String) videoJsonPlayer.get("VRA");
-                if (vru != null && vra != null) {
-                    /*
-                     * In this case the video is not yet released and there usually is a value "VDB" which contains the release-date of the
-                     * video --> But we don't need that - right now, such videos are simply offline and will be added as offline.
-                     */
-                    final String expired_message = jd.plugins.hoster.ArteTv.getExpireMessage(selectedLanguage, convertDateFormat(vra), convertDateFormat(vru));
-                    if (expired_message != null) {
-                        final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
-                        try {
-                            link.setComment(description);
-                        } catch (final Throwable e) {
-                            /* Not available in 0.9.581 Stable */
-                        }
-                        link.setProperty("offline", true);
-                        link.setFinalFileName(expired_message + "_" + title);
-                        decryptedLinks.add(link);
-                        return decryptedLinks;
-                    }
-                }
                 final Collection<Object> vsr_quals = ((LinkedHashMap<String, Object>) videoJsonPlayer.get("VSR")).values();
                 /* One packagename for every language */
-                final FilePackage fp = FilePackage.getInstance();
+                fp = FilePackage.getInstance();
                 fp.setName(title);
 
                 for (final Object o : vsr_quals) {
                     final LinkedHashMap<String, Object> qualitymap = (LinkedHashMap<String, Object>) o;
-                    final String protocol = "http_extern";
-                    final String quality = (String) qualitymap.get("quality");
-                    int videoBitrate;
-                    int width;
-                    int height;
-                    final String url = (String) qualitymap.get("url");
-                    if (quality.equals("High quality")) {
-                        videoBitrate = 1000;
-                        width = 504;
-                        height = 284;
-                    } else {
-                        /* This should never happen */
-                        videoBitrate = 0;
-                        width = 0;
-                        height = 0;
-                    }
                     final String short_lang_current = get_short_lang_from_format_code(this.languageVersion);
-                    final String quality_intern = selectedLanguage + "_" + get_intern_format_code_from_format_code(this.languageVersion) + "_" + protocol + "_" + videoBitrate;
-                    final String linkid = fid + "_" + quality_intern;
-                    final String filename = title + "_" + getLongLanguage(selectedLanguage) + "_" + get_user_format_from_format_code(this.languageVersion) + "_" + width + "x" + height + "_" + videoBitrate + ".mp4";
-                    /* Ignore HLS/RTMP versions */
-                    if (!url.startsWith("http") || url.contains(".m3u8") || url.contains("/hls/")) {
-                        logger.info("Skipping " + filename + " because it is not a supported streaming format");
-                        continue;
-                    }
+                    final String quality = (String) qualitymap.get("quality");
+                    final String url = (String) qualitymap.get("url");
                     if (!short_lang_current.equals(selectedLanguage)) {
-                        logger.info("Skipping " + filename + " because it is not the selected language");
+                        logger.info("Skipping " + quality + " because it is not the selected language");
                         continue;
                     }
-                    final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
+                    if (url.contains(".m3u8") || url.contains("/hls/")) {
+                        getHLSQualities(qualitymap, selectedLanguage);
+                    } else if (url.startsWith("http")) {
+                        getHTTPQuality(qualitymap, selectedLanguage);
+                    } else {
+                        /* Ignore others/rtmp versions */
+                        continue;
+                    }
 
-                    link.setFinalFileName(filename);
-                    try {
-                        /* JD2 only */
-                        link.setContentUrl(parameter);
-                    } catch (Throwable e) {
-                        /* Stable */
-                        link.setBrowserUrl(parameter);
-                    }
-                    link._setFilePackage(fp);
-                    link.setProperty("directURL", url);
-                    link.setProperty("directName", filename);
-                    link.setProperty("apiurl", apiurl);
-                    link.setProperty("VRA", convertDateFormat(vra));
-                    link.setProperty("VRU", convertDateFormat(vru));
-                    link.setProperty("quality_intern", quality_intern);
-                    link.setProperty("langShort", selectedLanguage);
-                    link.setProperty("mainlink", sourceURL);
-                    try {
-                        try {
-                            link.setComment(description);
-                        } catch (final Throwable e) {
-                            /* Not available in 0.9.581 Stable */
-                        }
-                        link.setContentUrl(sourceURL);
-                        link.setLinkID(linkid);
-                    } catch (final Throwable e) {
-                        /* Not available in old 0.9.581 Stable */
-                        link.setBrowserUrl(sourceURL);
-                        link.setProperty("LINKDUPEID", linkid);
-                    }
-                    if (fastLinkcheck) {
-                        link.setAvailable(true);
-                    }
-                    bestMap.put(quality_intern, link);
                 }
 
                 /* Build a list of selected formats */
@@ -301,6 +241,128 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
             return null;
         }
         return decryptedLinks;
+    }
+
+    @SuppressWarnings("deprecation")
+    private void getHLSQualities(final LinkedHashMap<String, Object> qualitymap, final String selectedLanguage) throws DecrypterException, IOException {
+        final String protocol = "hls_extern";
+        int videoBitrate;
+        String filename;
+        String linkid;
+        String quality_intern;
+        final String url = (String) qualitymap.get("url");
+        br.setFollowRedirects(true);
+        br.getPage(url);
+        final String[] hls_medias = br.getRegex("#EXT-X-STREAM-INF:(.*?\\.m3u8.*?)\n").getColumn(-1);
+        if (hls_medias == null) {
+            throw new DecrypterException("Decrypter broken");
+        }
+        final String hls_base = new Regex(br.getURL(), "(http://[^<>\"]*?\\.ism/)abs").getMatch(0);
+        for (final String hls_media : hls_medias) {
+            final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
+            final String hls_directlink = hls_base + new Regex(hls_media, "(abs\\-audio.+)").getMatch(0).trim();
+            final String resolution = new Regex(hls_media, "RESOLUTION=(\\d+x\\d+)").getMatch(0);
+            if (resolution == null) {
+                /* Skip audio-only */
+                continue;
+            }
+            videoBitrate = hlsBitrates.get(resolution);
+            quality_intern = selectedLanguage + "_" + get_intern_format_code_from_format_code(this.languageVersion) + "_" + protocol + "_" + videoBitrate;
+            linkid = fid + "_" + quality_intern;
+            filename = title + "_" + getLongLanguage(selectedLanguage) + "_" + get_user_format_from_format_code(this.languageVersion) + "_" + resolution + "_" + videoBitrate + ".mp4";
+            link.setFinalFileName(filename);
+            try {
+                /* JD2 only */
+                link.setContentUrl(parameter);
+            } catch (Throwable e) {
+                /* Stable */
+                link.setBrowserUrl(parameter);
+            }
+            link._setFilePackage(fp);
+            link.setProperty("directURL", hls_directlink);
+            link.setProperty("directName", filename);
+            link.setProperty("quality_intern", quality_intern);
+            link.setProperty("langShort", selectedLanguage);
+            link.setProperty("mainlink", parameter);
+            link.setProperty("apiurl", apiurl);
+            try {
+                try {
+                    link.setComment(description);
+                } catch (final Throwable e) {
+                    /* Not available in 0.9.581 Stable */
+                }
+                link.setContentUrl(sourceURL);
+                link.setLinkID(linkid);
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+                link.setBrowserUrl(sourceURL);
+                link.setProperty("LINKDUPEID", linkid);
+            }
+            if (fastLinkcheck) {
+                link.setAvailable(true);
+            }
+            bestMap.put(quality_intern, link);
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private void getHTTPQuality(final LinkedHashMap<String, Object> qualitymap, final String selectedLanguage) throws DecrypterException {
+        final String protocol;
+        final String quality = (String) qualitymap.get("quality");
+        final String url = (String) qualitymap.get("url");
+        int videoBitrate;
+        int width;
+        int height;
+        String filename;
+        String linkid;
+        String quality_intern;
+        protocol = "http_extern";
+        final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
+        if (quality.equals("High quality")) {
+            videoBitrate = 1000;
+            width = 504;
+            height = 284;
+        } else {
+            /* This should never happen */
+            videoBitrate = 0;
+            width = 0;
+            height = 0;
+        }
+        quality_intern = selectedLanguage + "_" + get_intern_format_code_from_format_code(this.languageVersion) + "_" + protocol + "_" + videoBitrate;
+        linkid = fid + "_" + quality_intern;
+        filename = title + "_" + getLongLanguage(selectedLanguage) + "_" + get_user_format_from_format_code(this.languageVersion) + "_" + width + "x" + height + "_" + videoBitrate + ".mp4";
+        link.setFinalFileName(filename);
+        try {
+            /* JD2 only */
+            link.setContentUrl(parameter);
+        } catch (Throwable e) {
+            /* Stable */
+            link.setBrowserUrl(parameter);
+        }
+        link._setFilePackage(fp);
+        link.setProperty("directURL", url);
+        link.setProperty("directName", filename);
+        link.setProperty("quality_intern", quality_intern);
+        link.setProperty("langShort", selectedLanguage);
+        link.setProperty("mainlink", parameter);
+        link.setProperty("apiurl", apiurl);
+        try {
+            try {
+                link.setComment(description);
+            } catch (final Throwable e) {
+                /* Not available in 0.9.581 Stable */
+            }
+            link.setContentUrl(sourceURL);
+            link.setLinkID(linkid);
+        } catch (final Throwable e) {
+            /* Not available in old 0.9.581 Stable */
+            link.setBrowserUrl(sourceURL);
+            link.setProperty("LINKDUPEID", linkid);
+        }
+        if (fastLinkcheck) {
+            link.setAvailable(true);
+        }
+        bestMap.put(quality_intern, link);
     }
 
     /* Non-subtitled versions, 3 = Subtitled versions, 4 = Subtitled versions for disabled people, 5 = Audio descriptions */
@@ -487,6 +549,16 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
         output = output.replace("\"", "'");
         return output;
     }
+
+    private HashMap<String, Integer> hlsBitrates = new HashMap<String, Integer>() {
+        {
+            put("200x112", 250);
+            put("320x180", 500);
+            put("504x284", 1000);
+            put("804x452", 2000);
+            put("1280x720", 4000);
+        }
+    };
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
