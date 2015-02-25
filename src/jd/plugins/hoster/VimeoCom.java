@@ -36,6 +36,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -282,7 +283,7 @@ public class VimeoCom extends PluginForHost {
                 account.setValid(false);
                 return ai;
             }
-            br.getPage("http://vimeo.com/settings");
+            br.getPage("/settings");
             String type = br.getRegex("acct_status\">.*?>(.*?)<").getMatch(0);
             if (type == null) {
                 type = br.getRegex("user_type', '(.*?)'").getMatch(0);
@@ -323,19 +324,17 @@ public class VimeoCom extends PluginForHost {
                     }
                 }
                 br.getPage("https://vimeo.com/log_in");
-                final String xsrft = br.getRegex("xsrft: \\'(.*?)\\'").getMatch(0);
-                if (xsrft == null) {
-                    account.setProperty("cookies", null);
-                    logger.warning("Login is broken!");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                final String xsrft = br.getRegex("vimeo\\.xsrft\\s*=\\s*('|\"|)([a-f0-9\\.]{32,})\\1").getMatch(1);
+                // static post are bad idea, always use form.
+                final Form login = br.getFormbyProperty("id", "login_form");
+                if (login == null || xsrft == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                /* important, else we get a 401 */
-                br.setCookie(MAINPAGE, "xsrft", xsrft);
-                if (!new Regex(account.getUser(), ".*?@.*?\\..+").matches()) {
-                    account.setProperty("cookies", null);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                br.postPage("https://vimeo.com/log_in", "action=login&service=vimeo&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&token=" + Encoding.urlEncode(xsrft));
+                br.setCookie("vimeo.com", "xsrft", xsrft);
+                login.put("token", Encoding.urlEncode(xsrft));
+                login.put("email", Encoding.urlEncode(account.getUser()));
+                login.put("password", Encoding.urlEncode(account.getPass()));
+                br.submitForm(login);
                 if (br.getCookie(MAINPAGE, "vimeo") == null) {
                     account.setProperty("cookies", null);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
