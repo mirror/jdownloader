@@ -172,6 +172,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || "This video does not exist\\.".equals(getJson("message"))) {
                     final DownloadLink link = getOffline(parameter);
                     link.setFinalFileName(ID);
+                    decryptedLinks.add(link);
                     return decryptedLinks;
                 }
                 final String owner_json = br.getRegex("\"owner\":\\{(.*?)\\}").getMatch(0);
@@ -193,6 +194,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 if (br.getHttpConnection().getResponseCode() == 410 || br.containsHTML("Page not found|This video does not exist|>We couldn't find that page|>Sorry, there is no video here\\.<|>Either it was deleted or it never existed in the first place")) {
                     final DownloadLink link = getOffline(parameter);
                     link.setFinalFileName(ID);
+                    decryptedLinks.add(link);
                     return decryptedLinks;
                 }
 
@@ -203,6 +205,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                         logger.info("User entered too many wrong passwords --> Cannot decrypt link: " + parameter);
                         final DownloadLink link = getOffline(parameter);
                         link.setFinalFileName(ID);
+                        decryptedLinks.add(link);
                         return decryptedLinks;
                     }
                 }
@@ -210,6 +213,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 if (br.containsHTML(">There was a problem loading this video")) {
                     final DownloadLink link = getOffline(parameter);
                     link.setFinalFileName(ID);
+                    decryptedLinks.add(link);
                     return decryptedLinks;
                 }
                 // document.cookie = 'vuid=' + encodeURIComponent('35533916.335958829')
