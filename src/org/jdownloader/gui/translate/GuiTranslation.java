@@ -5800,4 +5800,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Are you sure that you want to reset all timing setups. \r\nThis will reset the order your captcha solvers run." })
     String AntiCaptchaConfigPanel_AntiCaptchaConfigPanel_reset_lit_are_you_sure();
 
+    @Default(lngs = { "en" }, values = { " & delete files from disk" })
+    String deleteaction_and_delete_files();
+
+    @Default(lngs = { "en" }, values = { " & move files to trash" })
+    String deleteaction_and_recycle_files();
+
 }

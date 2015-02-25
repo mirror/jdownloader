@@ -80,6 +80,7 @@ public class DownloadTabActionUtils {
 
                     }
                 } else {
+
                     switch (mode) {
                     case REMOVE_LINKS_ONLY:
 
