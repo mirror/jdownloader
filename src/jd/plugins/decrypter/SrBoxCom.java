@@ -71,7 +71,8 @@ public class SrBoxCom extends PluginForDecrypt {
         // want to create a subfolder with the name of the package because
         // the folder is immediately created because it will download the cover
         // in it
-        String[] TabImage = br.getRegex("<img src=\"(http://[\\w\\.]*?israbox\\.com)*?/uploads(.*?)\"").getColumn(1);
+        String[] TabImage1 = br.getRegex("<img src=\"(http://[\\w\\.]*?israbox\\.com)*?/uploads(.*?)\"").getColumn(1);
+        String[] TabImage2 = br.getRegex("<img src=\"(http://[\\w\\.]*?lectro\\.ws)*?/uploads/posts/(.*?)\"").getColumn(1);
 
         // Creation of the array of link that is supported by all plug-in
         String[] links = br.getRegex("<a href=\"(.*?)\"").getColumn(0);
@@ -80,7 +81,15 @@ public class SrBoxCom extends PluginForDecrypt {
         }
 
         // Number of picture
-        int iImage = TabImage == null ? 0 : TabImage.length;
+        int iImage = TabImage1 == null ? 0 : TabImage1.length;
+        iImage += TabImage2 == null ? 0 : TabImage2.length;
+        if (TabImage2 != null) {
+            for (String strImageLink : TabImage2) {
+                if (strImageLink.contains("/thumbs/")) {
+                    iImage++;
+                }
+            }
+        }
 
         // Some link can be crypted in this site, see if it is the case
         String[] linksCrypted = br.getRegex("\"(http://www\\.israbox\\.com/engine/go\\.php\\?url=.*?)\"").getColumn(0);
@@ -105,9 +114,9 @@ public class SrBoxCom extends PluginForDecrypt {
         // Added Image
         DownloadLink[] TabImageLink = new DownloadLink[iImage];
         int iImageFinal = 0;
-        if (TabImage != null) {
-            int iImageIndex = 0;
-            for (String strImageLink : TabImage) {
+        int iImageIndex = 0;
+        if (TabImage1 != null) {
+            for (String strImageLink : TabImage1) {
                 if (!strImageLink.toLowerCase().contains("foto")) {
                     strImageLink = "http://www.israbox.com/uploads" + strImageLink;
 
@@ -120,8 +129,30 @@ public class SrBoxCom extends PluginForDecrypt {
             }
         }
 
+        if (TabImage2 != null) {
+            for (String strImageLink : TabImage2) {
+                strImageLink = "http://www.lectro.ws/uploads/posts/" + strImageLink;
+
+                if (strImageLink.contains("/thumbs/")) {
+                    DownloadLink DLLink = createDownloadlink(strImageLink, false);
+                    if (DLLink != null) {
+                        TabImageLink[iImageIndex++] = DLLink;
+                        iImageFinal++;
+                    }
+                    strImageLink = strImageLink.replace("thumbs/", "");
+                }
+
+                DownloadLink DLLink = createDownloadlink(strImageLink, false);
+                if (DLLink != null) {
+                    TabImageLink[iImageIndex++] = DLLink;
+                    iImageFinal++;
+
+                }
+            }
+        }
+
         if (TabImageLink != null) {
-            int iImageIndex = 1;
+            iImageIndex = 1;
             for (DownloadLink DLLink : TabImageLink) {
                 if (DLLink != null) {
                     String strExtension = "";
