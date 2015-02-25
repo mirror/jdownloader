@@ -417,6 +417,9 @@ public class EightTracksCom extends PluginForHost {
     private String checkDirectLink(final DownloadLink downloadLink, final String property) throws Exception {
         final Browser br2 = br.cloneBrowser();
         String dllink = downloadLink.getStringProperty(property);
+        if (dllink == null) {
+            return null;
+        }
         br2.getPage(dllink);
         dllink = getFinalDirectlink(br2.toString());
         if (dllink != null) {
