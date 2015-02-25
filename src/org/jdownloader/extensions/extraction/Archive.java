@@ -24,12 +24,13 @@ import org.appwork.utils.Application;
 import org.jdownloader.extensions.extraction.content.ContentView;
 import org.jdownloader.extensions.extraction.content.PackedFile;
 import org.jdownloader.extensions.extraction.multi.ArchiveType;
+import org.jdownloader.extensions.extraction.split.SplitType;
 
 /**
  * Contains information about the archivefile.
- * 
+ *
  * @author botzi
- * 
+ *
  */
 public class Archive {
 
@@ -40,7 +41,7 @@ public class Archive {
 
     /**
      * returns null or the correct password
-     * 
+     *
      * @return
      */
     public String getFinalPassword() {
@@ -50,7 +51,7 @@ public class Archive {
     /**
      * do not use this setter. if you feel like setting a password outside the extracting internals, use getSettings().setPasswords.. this
      * setter is used to set the CORRECT password in the password finding algorithm only
-     * 
+     *
      * @param password
      */
     public void setFinalPassword(String password) {
@@ -60,27 +61,37 @@ public class Archive {
     /**
      * ArchiveFiles of the archive.
      */
-    private List<ArchiveFile>       archives;
+    private List<ArchiveFile> archives;
 
     /**
      * First part of the archives.
      */
-    private ArchiveFile             firstArchiveFile = null;
+    private ArchiveFile       firstArchiveFile = null;
 
     /**
      * Exitcode of the extrraction.
      */
-    private int                     exitCode         = -1;
+    private int               exitCode         = -1;
 
     /**
      * Is extraction process active.
      */
-    private boolean                 active           = false;
+    private boolean           active           = false;
 
     /**
      * Type of the archive.
      */
-    private ArchiveType             type             = null;
+    private ArchiveType       archiveType      = null;
+
+    private SplitType         splitType        = null;
+
+    public SplitType getSplitType() {
+        return splitType;
+    }
+
+    public void setSplitType(SplitType splitType) {
+        this.splitType = splitType;
+    }
 
     /**
      * ArchiveFiles CRC error.
@@ -176,12 +187,12 @@ public class Archive {
         return active;
     }
 
-    public void setType(ArchiveType singleFile) {
-        this.type = singleFile;
+    public void setArchiveType(ArchiveType singleFile) {
+        this.archiveType = singleFile;
     }
 
-    public ArchiveType getType() {
-        return type;
+    public ArchiveType getArchiveType() {
+        return archiveType;
     }
 
     public void addCrcError(ArchiveFile crc) {

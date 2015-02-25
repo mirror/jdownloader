@@ -1101,7 +1101,7 @@ public enum ArchiveType {
                     final String[] fileNameParts = archiveType.getMatches(link.getName());
                     final Archive archive = link.createArchive();
                     archive.setName(fileNameParts[0]);
-                    archive.setType(archiveType);
+                    archive.setArchiveType(archiveType);
                     final ArrayList<ArchiveFile> sortedArchiveFiles = new ArrayList<ArchiveFile>();
                     final int minimumParts = Math.max(archiveType.getMinimumNeededPartIndex(), highestPartNumber);
                     ArchiveFile firstArchiveFile = null;

@@ -58,19 +58,20 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Links entschlüsseln können
- * 
+ *
  * @author astaldo
  */
 public abstract class PluginForDecrypt extends Plugin {
 
-    private LinkCrawlerDistributer distributer   = null;
+    private LinkCrawlerDistributer          distributer             = null;
 
-    private LazyCrawlerPlugin      lazyC         = null;
-    private CrawledLink            currentLink   = null;
-    private LinkCrawlerAbort       linkCrawlerAbort;
+    private LazyCrawlerPlugin               lazyC                   = null;
+    private CrawledLink                     currentLink             = null;
+    private LinkCrawlerAbort                linkCrawlerAbort;
 
-    private LinkCrawler            crawler;
-    private transient SolverJob<?> lastSolverJob = null;
+    private LinkCrawler                     crawler;
+    private transient SolverJob<?>          lastSolverJob           = null;
+    private final static ProgressController dummyProgressController = new ProgressController();
 
     /**
      * @return the distributer
@@ -141,7 +142,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * return how many Instances of this PluginForDecrypt may crawl concurrently
-     * 
+     *
      * @return
      */
     public int getMaxConcurrentProcessingInstances() {
@@ -150,7 +151,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * Diese Methode entschlüsselt Links.
-     * 
+     *
      * @param cryptedLinks
      *            Ein Vector, mit jeweils einem verschlüsseltem Link. Die einzelnen verschlüsselten Links werden aufgrund des Patterns
      *            {@link jd.plugins.Plugin#getSupportedLinks() getSupportedLinks()} herausgefiltert
@@ -162,7 +163,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * creates a offline link.
-     * 
+     *
      * @param link
      * @return
      * @since JD2
@@ -174,7 +175,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * creates a offline link, with logger and comment message.
-     * 
+     *
      * @param link
      * @param message
      * @return
@@ -187,7 +188,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * creates a offline link, with filename, with logger and comment message.
-     * 
+     *
      * @param link
      * @param filename
      * @param message
@@ -235,10 +236,10 @@ public abstract class PluginForDecrypt extends Plugin {
     /**
      * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden durchlaufen. Der letzte step muss als parameter einen
      * Vector<String> mit den decoded Links setzen
-     * 
+     *
      * @param cryptedLink
      *            Ein einzelner verschlüsselter Link
-     * 
+     *
      * @return Ein Vector mit Klartext-links
      */
     public ArrayList<DownloadLink> decryptLink(CrawledLink source) {
@@ -247,8 +248,7 @@ public abstract class PluginForDecrypt extends Plugin {
             return null;
         }
         ArrayList<DownloadLink> tmpLinks = null;
-        boolean showException = true;
-        Throwable exception = null;
+        Throwable throwable = null;
         try {
             lastSolverJob = null;
             this.currentLink = source;
@@ -259,35 +259,25 @@ public abstract class PluginForDecrypt extends Plugin {
             br.setVerbose(true);
             br.setDebug(true);
             /* now we let the decrypter do its magic */
-            tmpLinks = decryptIt(cryptLink, new ProgressController());
+            tmpLinks = decryptIt(cryptLink, dummyProgressController);
             validateLastChallengeResponse();
-        } catch (InterruptedException e) {
-            /* plugin got interrupted, clear log and note what happened */
-            if (logger instanceof LogSource) {
+        } catch (final Throwable e) {
+            throwable = e;
+            if (isAbort()) {
+                throwable = null;
+            } else if (processCaptchaException(e)) {
+                throwable = null;
+            } else if (DecrypterException.PASSWORD.equals(e.getMessage())) {
+                throwable = null;
+            } else if (DecrypterException.ACCOUNT.equals(e.getMessage())) {
+                throwable = null;
+            } else if (e instanceof DecrypterException || e.getCause() instanceof DecrypterException) {
+                throwable = null;
+            }
+            if (throwable == null && logger instanceof LogSource) {
                 /* make sure we use the right logger */
                 ((LogSource) logger).clear();
                 ((LogSource) logger).log(e);
-            } else {
-                LogSource.exception(logger, e);
-            }
-        } catch (Throwable e) {
-            if (processCaptchaException(e)) {
-                showException = false;
-            } else if (DecrypterException.PASSWORD.equals(e.getMessage())) {
-                showException = false;
-            } else if (DecrypterException.ACCOUNT.equals(e.getMessage())) {
-                showException = false;
-            } else if (e instanceof DecrypterException || e.getCause() instanceof DecrypterException) {
-                showException = false;
-            } else {
-                /*
-                 * damn, something must have gone really really bad, lets keep the log
-                 */
-                exception = e;
-            }
-            if (showException == false && logger instanceof LogSource) {
-                /* make sure we use the right logger */
-                ((LogSource) logger).clear();
             }
             LogSource.exception(logger, e);
         } finally {
@@ -295,11 +285,11 @@ public abstract class PluginForDecrypt extends Plugin {
             lastSolverJob = null;
             this.currentLink = null;
         }
-        if (tmpLinks == null && showException) {
+        if (tmpLinks == null && throwable != null || isAbort() == false) {
             /*
              * null as return value? something must have happened, do not clear log
              */
-            errLog(exception, br, source);
+            errLog(throwable, br, source);
             logger.severe("CrawlerPlugin out of date: " + this + " :" + getVersion());
             logger.severe("URL was: " + source.getURL());
 
@@ -335,9 +325,9 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * use this to process decrypted links while the decrypter itself is still running
-     * 
+     *
      * NOTE: if you use this, please put it in try{}catch(Throwable) as this function is ONLY available in>09581
-     * 
+     *
      * @param links
      */
     public void distribute(DownloadLink... links) {
@@ -426,7 +416,7 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     /**
-     * 
+     *
      * @param method
      *            Method name (name of the captcha method)
      * @param file
@@ -561,7 +551,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * Can be overridden to show the current status for example in captcha dialog
-     * 
+     *
      * @return
      */
     public String getCrawlerStatusString() {
@@ -574,7 +564,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * DO not use in Plugins for old 09581 Stable or try/catch
-     * 
+     *
      * @return
      */
     public boolean isAbort() {

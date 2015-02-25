@@ -317,7 +317,7 @@ public class Multi extends IExtraction {
     @Override
     public DummyArchive checkComplete(Archive archive) throws CheckException {
         try {
-            final DummyArchive ret = new DummyArchive(archive, archive.getType().name());
+            final DummyArchive ret = new DummyArchive(archive, archive.getArchiveType().name());
             boolean hasMissingArchiveFiles = false;
             for (ArchiveFile archiveFile : archive.getArchiveFiles()) {
                 if (archiveFile instanceof MissingArchiveFile) {
@@ -326,7 +326,7 @@ public class Multi extends IExtraction {
                 ret.add(new DummyArchiveFile(archiveFile));
             }
             if (hasMissingArchiveFiles == false) {
-                final ArchiveType archiveType = archive.getType();
+                final ArchiveType archiveType = archive.getArchiveType();
                 final String firstArchiveFile = archive.getFirstArchiveFile().getFilePath();
                 final String partNumberOfFirstArchiveFile = archiveType.getPartNumberString(firstArchiveFile);
                 if (archiveType.getFirstPartIndex() != archiveType.getPartNumber(partNumberOfFirstArchiveFile)) {
@@ -345,7 +345,7 @@ public class Multi extends IExtraction {
     public void close() {
         final Archive archive = getArchive();
         try {
-            if (archive.getExitCode() == ExtractionControllerConstants.EXIT_CODE_SUCCESS && ArchiveType.RAR_MULTI.equals(archive.getType())) {
+            if (archive.getExitCode() == ExtractionControllerConstants.EXIT_CODE_SUCCESS && ArchiveType.RAR_MULTI.equals(archive.getArchiveType())) {
                 // Deleteing rar recovery volumes
                 final HashSet<String> done = new HashSet<String>();
                 for (ArchiveFile link : archive.getArchiveFiles()) {
@@ -382,7 +382,7 @@ public class Multi extends IExtraction {
     @Override
     public void extract(final ExtractionController ctrl) {
         final Archive archive = getArchive();
-        final ArchiveFormat format = archive.getType().getArchiveFormat();
+        final ArchiveFormat format = archive.getArchiveType().getArchiveFormat();
         try {
             ctrl.setCompleteBytes(archive.getContentView().getTotalSize());
             ctrl.setProcessedBytes(0);
@@ -570,7 +570,7 @@ public class Multi extends IExtraction {
             } else {
                 path = "UnknownExtractionFilename";
             }
-            if (ArchiveType.TGZ_SINGLE.equals(ctrl.getArchiv().getType()) && !StringUtils.endsWithCaseInsensitive(path, ".tar")) {
+            if (ArchiveType.TGZ_SINGLE.equals(ctrl.getArchiv().getArchiveType()) && !StringUtils.endsWithCaseInsensitive(path, ".tar")) {
                 path = path + ".tar";
             }
         }
@@ -709,7 +709,7 @@ public class Multi extends IExtraction {
     @Override
     public boolean findPassword(final ExtractionController ctl, String password, boolean optimized) throws ExtractionException {
         final Archive archive = getArchive();
-        final ArchiveFormat format = archive.getType().getArchiveFormat();
+        final ArchiveFormat format = archive.getArchiveType().getArchiveFormat();
         crack++;
         if (StringUtils.isEmpty(password)) {
             /* This should never happen */
@@ -735,7 +735,7 @@ public class Multi extends IExtraction {
                 callBack = new DummyOpener(password);
                 inStream = new RandomAccessFileInStream(raf);
             } else {
-                switch (archive.getType()) {
+                switch (archive.getArchiveType()) {
                 case RAR_MULTI:
                     final RarOpener rarOpener = new RarOpener(archive, password, logger);
                     closable = rarOpener;
@@ -757,7 +757,7 @@ public class Multi extends IExtraction {
                 }
             }
             if (inStream != null && closable != null) {
-                inArchive = SevenZip.openInArchive(archive.getType().getArchiveFormat(), inStream, callBack);
+                inArchive = SevenZip.openInArchive(format, inStream, callBack);
             } else {
                 return false;
             }
@@ -913,7 +913,7 @@ public class Multi extends IExtraction {
                     }
                 }
             }
-            final ArchiveFormat format = archive.getType().getArchiveFormat();
+            final ArchiveFormat format = archive.getArchiveType().getArchiveFormat();
             try {
                 final String sig = FileSignatures.readFileSignature(new File(archive.getFirstArchiveFile().getFilePath()));
                 final Signature signature = new FileSignatures().getSignature(sig);
@@ -947,7 +947,7 @@ public class Multi extends IExtraction {
                 callBack = new DummyOpener();
                 inStream = new RandomAccessFileInStream(raf);
             } else {
-                switch (archive.getType()) {
+                switch (archive.getArchiveType()) {
                 case RAR_MULTI:
                     final RarOpener rarOpener = new RarOpener(archive, logger);
                     closable = rarOpener;

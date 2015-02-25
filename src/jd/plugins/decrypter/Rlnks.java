@@ -218,7 +218,6 @@ public class Rlnks extends PluginForDecrypt {
         final String[] matches = br.getRegex("getFile\\('(cid=\\w*?&lid=\\d*?)'\\)").getColumn(0);
         try {
             Browser brc = null;
-            PROGRESS.addToMax(matches.length);
             for (final String match : matches) {
                 Thread.sleep(2333);
                 handleCaptchaAndPassword("http://www.relink.us/frame.php?" + match, param);
