@@ -140,6 +140,8 @@ public abstract class AbstractSolverService implements SolverService {
         System.out.println("Added " + check.getName() + "/" + check.getID());
         arrayList.add(check);
         if (!dupe.add(check)) {
+
+            System.out.println("Dupe found " + check.getName() + "/" + check.getID());
             return arrayList;
         }
         System.out.println(JSonStorage.serializeToJson(check.getWaitForMapCopy()));
