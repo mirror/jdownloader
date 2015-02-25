@@ -418,7 +418,7 @@ public enum SplitType {
                 final List<ArchiveFile> ret = new ArrayList<ArchiveFile>();
                 /**
                  * some archives start at 0 (0...x-1)
-                 * 
+                 *
                  * some archives start at 1 (1....x)
                  */
                 final int minimumParts = Math.max(splitType.getMinimumNeededPartIndex(), numberOfParts) - (1 - splitType.getFirstPartIndex());
@@ -475,6 +475,7 @@ public enum SplitType {
                 final String[] fileNameParts = splitType.getMatches(link.getName());
                 final Archive archive = link.createArchive();
                 archive.setName(fileNameParts[0]);
+                archive.setSplitType(splitType);
                 final ArrayList<ArchiveFile> sortedArchiveFiles = new ArrayList<ArchiveFile>();
                 final int minimumParts = Math.max(splitType.getMinimumNeededPartIndex(), highestPartNumber);
                 ArchiveFile firstArchiveFile = null;

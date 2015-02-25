@@ -23,24 +23,7 @@ public class ProgressController {
     }
 
     @Deprecated
-    public void addToMax(long length) {
-    }
-
-    @Deprecated
-    public void decrease(long i) {
-    }
-
-    @Deprecated
     public void doFinalize() {
-    }
-
-    @Deprecated
-    public void doFinalize(final long waittimer) {
-    }
-
-    @Deprecated
-    public long getMax() {
-        return 0;
     }
 
     @Deprecated

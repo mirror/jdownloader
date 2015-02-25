@@ -61,9 +61,9 @@ import org.jdownloader.images.NewTheme;
 
 /**
  * Updates the Extractionprogess for archives in the downloadlist
- * 
+ *
  * @author botzi
- * 
+ *
  */
 public class ExtractionListenerList implements ExtractionListener {
     public static final class ExtractPasswordDialog extends InputDialog implements ExtractPasswordDialogInterface {
@@ -363,7 +363,7 @@ public class ExtractionListenerList implements ExtractionListener {
                         final ArrayList<File> files = new ArrayList<File>(archive.getExtractedFiles());
                         files.addAll(archive.getSkippedFiles());
                         FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(controller, FileCreationEvent.Type.NEW_FILES, files.toArray(new File[files.size()])));
-                        if (ex.getSettings().isDeleteInfoFilesAfterExtraction() && ArchiveFormat.RAR.equals(archive.getType().getArchiveFormat())) {
+                        if (ex.getSettings().isDeleteInfoFilesAfterExtraction() && ArchiveFormat.RAR.equals(archive.getArchiveType().getArchiveFormat())) {
                             final File fileOutput = new File(archive.getFirstArchiveFile().getFilePath());
                             final File infoFiles = new File(fileOutput.getParentFile(), fileOutput.getName().replaceFirst("(?i)(\\.pa?r?t?\\.?[0-9]+\\.rar|\\.rar)$", "") + ".info");
                             if (infoFiles.exists() && infoFiles.delete()) {
