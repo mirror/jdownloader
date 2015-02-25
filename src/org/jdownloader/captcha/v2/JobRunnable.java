@@ -7,6 +7,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import jd.controlling.captcha.SkipException;
 
 import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.storage.JSonStorage;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.solver.service.AbstractSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
@@ -124,6 +125,7 @@ public class JobRunnable<T> implements Runnable {
                                         job.getLogger().info("Debug " + ss.getService().getName());
 
                                         job.getLogger().info(ss.getService().getConfig() + "");
+                                        job.getLogger().info(JSonStorage.serializeToJson(ss.getService().getWaitForMapCopy()));
                                     }
                                 }
                             } catch (Throwable e) {
