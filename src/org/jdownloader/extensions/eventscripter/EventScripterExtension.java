@@ -60,15 +60,19 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.extensions.eventscripter.sandboxobjects.ArchiveSandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.CrawlerJobSandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.DownloadLinkSandBox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.EventSandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.FilePackageSandBox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.PackagizerLinkSandbox;
+import org.jdownloader.extensions.extraction.ExtractionEvent;
+import org.jdownloader.extensions.extraction.ExtractionExtension;
+import org.jdownloader.extensions.extraction.ExtractionListener;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 
-public class EventScripterExtension extends AbstractExtension<EventScripterConfig, EventScripterTranslation> implements MenuExtenderHandler, DownloadWatchdogListener, GenericConfigEventListener<Object>, RemoteAPIInternalEventListener, FileCreationListener, LinkCollectorListener, PackagizerControllerListener {
+public class EventScripterExtension extends AbstractExtension<EventScripterConfig, EventScripterTranslation> implements MenuExtenderHandler, DownloadWatchdogListener, GenericConfigEventListener<Object>, RemoteAPIInternalEventListener, FileCreationListener, LinkCollectorListener, PackagizerControllerListener, ExtractionListener {
 
     private Object                   lock = new Object();
     private EventScripterConfigPanel configPanel;
@@ -101,6 +105,14 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         CFG_EVENT_CALLER.SCRIPTS.getEventSender().removeListener(this);
         FileCreationManager.getInstance().getEventSender().removeListener(this);
         LinkCollector.getInstance().getEventsender().removeListener(this);
+
+        SecondLevelLaunch.EXTENSIONS_LOADED.executeWhenReached(new Runnable() {
+
+            @Override
+            public void run() {
+                ExtractionExtension.getInstance().getEventSender().removeListener(EventScripterExtension.this);
+            }
+        });
     }
 
     @Override
@@ -110,6 +122,14 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         FileCreationManager.getInstance().getEventSender().addListener(this);
         DownloadWatchDog.getInstance().getEventSender().addListener(this);
         RemoteAPIController.getInstance().getEventSender().addListener(this);
+
+        SecondLevelLaunch.EXTENSIONS_LOADED.executeWhenReached(new Runnable() {
+
+            @Override
+            public void run() {
+                ExtractionExtension.getInstance().getEventSender().addListener(EventScripterExtension.this);
+            }
+        });
         CFG_EVENT_CALLER.SCRIPTS.getEventSender().addListener(this);
         entries = getSettings().getScripts();
         if (!Application.isHeadless()) {
@@ -222,12 +242,21 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
             return;
         }
         for (ScriptEntry script : entries) {
-            if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_DOWNLOAD_CONTROLLER_STOPPED == script.getEventTrigger()) {
-                HashMap<String, Object> props = new HashMap<String, Object>();
-                props.put("link", new DownloadLinkSandBox(downloadController.getDownloadLink()));
-                props.put("package", new FilePackageSandBox(downloadController.getDownloadLink().getParentNode()));
-                runScript(script, props);
+            if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript())) {
+                if (EventTrigger.ON_DOWNLOAD_CONTROLLER_STOPPED == script.getEventTrigger()) {
+                    HashMap<String, Object> props = new HashMap<String, Object>();
+                    props.put("link", new DownloadLinkSandBox(downloadController.getDownloadLink()));
+                    props.put("package", new FilePackageSandBox(downloadController.getDownloadLink().getParentNode()));
+                    runScript(script, props);
 
+                }
+                FilePackageSandBox pkg = null;
+                if (EventTrigger.ON_PACKAGE_FINISHED == script.getEventTrigger() && (pkg = new FilePackageSandBox(downloadController.getDownloadLink().getParentNode())).isFinished()) {
+                    HashMap<String, Object> props = new HashMap<String, Object>();
+                    props.put("link", new DownloadLinkSandBox(downloadController.getDownloadLink()));
+                    props.put("package", pkg);
+                    runScript(script, props);
+                }
             }
         }
 
@@ -451,6 +480,55 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
                 runScript(script, props);
 
             }
+        }
+    }
+
+    @Override
+    public void onExtractionEvent(ExtractionEvent event) {
+        //
+
+        for (ScriptEntry script : entries) {
+            if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_GENERIC_EXTRACTION == script.getEventTrigger()) {
+                HashMap<String, Object> props = new HashMap<String, Object>();
+                props.put("archive", new ArchiveSandbox(event.getCaller().getArchiv()));
+                props.put("event", event.getType().name());
+
+                runScript(script, props);
+
+            }
+        }
+        switch (event.getType()) {
+        case FINISHED:
+            for (ScriptEntry script : entries) {
+                if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_ARCHIVE_EXTRACTED == script.getEventTrigger()) {
+                    HashMap<String, Object> props = new HashMap<String, Object>();
+                    props.put("archive", new ArchiveSandbox(event.getCaller().getArchiv()));
+                    props.put("event", event.getType().name());
+
+                    runScript(script, props);
+
+                }
+            }
+
+            break;
+
+        case ACTIVE_ITEM:
+        case CLEANUP:
+        case EXTRACTING:
+        case EXTRACTION_FAILED:
+        case EXTRACTION_FAILED_CRC:
+        case FILE_NOT_FOUND:
+
+        case NOT_ENOUGH_SPACE:
+        case OPEN_ARCHIVE_SUCCESS:
+        case PASSWORD_FOUND:
+        case PASSWORD_NEEDED_TO_CONTINUE:
+        case PASSWORT_CRACKING:
+        case QUEUED:
+        case START:
+        case START_CRACK_PASSWORD:
+        case START_EXTRACTION:
+
         }
     }
 }

@@ -203,7 +203,7 @@ public class ScriptEnvironment {
     @ScriptAPI(description = "Show a Message Box", parameters = { "myObject1", "MyObject2", "..." }, example = "alert(JD_HOME);")
     public static void alert(Object... objects) {
         final ScriptThread env = getScriptThread();
-        if (objects.length == 1) {
+        if (objects != null && objects.length == 1) {
             if (Clazz.isPrimitiveWrapper(objects[0].getClass()) || Clazz.isString(objects[0].getClass())) {
                 showMessageDialog(objects[0] + "");
                 return;

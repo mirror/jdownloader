@@ -108,4 +108,13 @@ public interface EventScripterTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Packagizer Hook" })
     String ON_PACKAGIZER();
 
+    @Default(lngs = { "en" }, values = { "Package finished" })
+    String ON_PACKAGE_FINISHED();
+
+    @Default(lngs = { "en" }, values = { "Archive extraction finished" })
+    String ON_ARCHIVE_EXTRACTED();
+
+    @Default(lngs = { "en" }, values = { "Any Extraction Event" })
+    String ON_GENERIC_EXTRACTION();
+
 }

@@ -117,10 +117,13 @@ public class ScriptThread extends Thread {
         }
         Collection<Class<?>> clazzes = ScriptEnvironment.getRequiredClasses();
         clazzes.addAll(script.getEventTrigger().getAPIClasses());
+        clazzes.add(Object.class);
         for (Class<?> c : clazzes) {
 
             if (c.isArray()) {
+                // preloadClasses += "load=" + c.getName() + ";\r\n";
                 c = c.getComponentType();
+
             }
             if (!dupes.add(c.getName())) {
                 continue;
