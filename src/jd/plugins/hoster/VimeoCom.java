@@ -324,13 +324,12 @@ public class VimeoCom extends PluginForHost {
                     }
                 }
                 br.getPage("https://vimeo.com/log_in");
-                final String xsrft = br.getRegex("vimeo\\.xsrft\\s*=\\s*('|\"|)([a-f0-9\\.]{32,})\\1").getMatch(1);
+                final String xsrft = getXsrft(br);
                 // static post are bad idea, always use form.
                 final Form login = br.getFormbyProperty("id", "login_form");
-                if (login == null || xsrft == null) {
+                if (login == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                br.setCookie("vimeo.com", "xsrft", xsrft);
                 login.put("token", Encoding.urlEncode(xsrft));
                 login.put("email", Encoding.urlEncode(account.getUser()));
                 login.put("password", Encoding.urlEncode(account.getPass()));
@@ -354,16 +353,20 @@ public class VimeoCom extends PluginForHost {
         }
     }
 
+    public final String getXsrft(Browser br) throws PluginException {
+        final String xsrft = br.getRegex("vimeo\\.xsrft\\s*=\\s*('|\"|)([a-f0-9\\.]{32,})\\1").getMatch(1);
+        if (xsrft == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.setCookie(br.getHost(), "xsrft", xsrft);
+        return xsrft;
+    }
+
     public static final String containsPass = "<title>Private Video on Vimeo</title>|To watch this video, please provide the correct password";
 
     private void handlePW(DownloadLink downloadLink, Browser br, String url) throws PluginException, IOException {
         if (br.containsHTML(containsPass)) {
-            final String xsrft = br.getRegex("xsrft: '(.*?)'").getMatch(0);
-            if (xsrft != null) {
-                br.setCookie(br.getHost(), "xsrft", xsrft);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            final String xsrft = getXsrft(br);
             String passCode = downloadLink.getStringProperty("pass", null);
             if (passCode == null) {
                 passCode = Plugin.getUserInput("Password?", downloadLink);
