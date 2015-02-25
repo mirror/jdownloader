@@ -10,6 +10,7 @@ import java.util.Map.Entry;
 import jd.SecondLevelLaunch;
 import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -18,6 +19,7 @@ import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.SolverService;
 
 public abstract class AbstractSolverService implements SolverService {
+
     public AbstractSolverService() {
 
     }
@@ -131,16 +133,20 @@ public abstract class AbstractSolverService implements SolverService {
             dupe = new HashSet<SolverService>();
         }
         if (arrayList.size() == 0) {
+            System.out.println("Added " + start.getName() + "/" + start.getID());
             arrayList.add(start);
             dupe.add(start);
         }
+        System.out.println("Added " + check.getName() + "/" + check.getID());
         arrayList.add(check);
         if (!dupe.add(check)) {
             return arrayList;
         }
+        System.out.println(JSonStorage.serializeToJson(check.getWaitForMapCopy()));
         for (Entry<String, Integer> es : check.getWaitForMapCopy().entrySet()) {
             final SolverService service = ChallengeResponseController.getInstance().getServiceByID(es.getKey());
             if (service != null && es.getValue() != null && es.getValue().intValue() > 0) {
+                System.out.println(service.getName() + "/" + service.getID() + " " + check.getName() + "/" + check.getID() + " waits for service: " + es.getValue().intValue());
                 final ArrayList<SolverService> ret = validateWaittimeQueue(start, service, new ArrayList<SolverService>(arrayList), new HashSet<SolverService>(dupe));
                 if (ret != null) {
                     return ret;
