@@ -72,7 +72,7 @@ public class CandidateTooltip extends PanelToolTip {
                 Dimension pref = super.getPreferredSize();
                 // pref.width = 1000;
                 // pref.height = 600;
-                // System.out.println(pref);
+                System.out.println(pref);
                 return pref;
             }
         });
