@@ -112,7 +112,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 hybridAPIUrl = "http://concert.arte.tv/%s/player/%s";
             } else if (parameter.matches(TYPE_CREATIVE)) {
                 /* Return external links if existant */
-                final String[] externURLsRegexes = { "data\\-url=\"(http://creative\\.arte\\.tv/(de|fr)/scald_dmcloud_json/\\d+)\"", "src=\"(https?://(?:www\\.)?youtube\\.com/embed/[^<>\"]*?)\"" };
+                final String[] externURLsRegexes = { "data\\-url=\"(http://creative\\.arte\\.tv/(de|fr)/scald_dmcloud_json/\\d+)", "src=\"(https?://(?:www\\.)?youtube\\.com/embed/[^<>\"]*?)\"" };
                 for (final String externURLRegex : externURLsRegexes) {
                     final String[] externURLs = br.getRegex(externURLRegex).getColumn(0);
                     if (externURLs != null && externURLs.length > 0) {
@@ -285,12 +285,14 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     link._setFilePackage(fp);
                     link.setProperty("directURL", url);
                     link.setProperty("directName", filename);
-                    link.setProperty("apiurl", apiurl);
-                    link.setProperty("VRA", convertDateFormat(vra));
-                    link.setProperty("VRU", convertDateFormat(vru));
                     link.setProperty("quality_intern", quality_intern);
                     link.setProperty("langShort", selectedLanguage);
                     link.setProperty("mainlink", parameter);
+                    link.setProperty("apiurl", apiurl);
+                    if (vra != null && vru != null) {
+                        link.setProperty("VRA", convertDateFormat(vra));
+                        link.setProperty("VRU", convertDateFormat(vru));
+                    }
                     try {
                         try {
                             link.setComment(description);
@@ -391,7 +393,8 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             lint = 4;
         } else if (versionCode.equals("VAAUD")) {
             lint = 5;
-        } else if (versionShortLibelle.equals("OmU") || versionShortLibelle.equals("VO")) {
+        } else if (versionShortLibelle.equals("OmU") || versionShortLibelle.equals("VO") || versionShortLibelle.equals("VE") || versionCode.equals("VE")) {
+            /* VE Actually means English but there is no specified selection for this. */
             /* Without language --> So it simply is our current language */
             lint = languageVersion;
         } else if (versionShortLibelle.equals("DE") || versionShortLibelle.equals("VA") || versionCode.equals("VO-STA") || versionShortLibelle.equals("VOSTA")) {

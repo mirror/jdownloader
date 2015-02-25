@@ -74,7 +74,7 @@ public class KeezMoviesCom extends PluginForHost {
         if (downloadLink.getDownloadURL().contains(".com/embed_player.php")) {
             Browser br2 = br.cloneBrowser();
             br2.getPage(downloadLink.getDownloadURL());
-            if (br2.containsHTML("<share>N/A</share>")) {
+            if (br2.containsHTML("<share>N/A</share>") || br2.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String realurl = br2.getRegex("<share>(http://[^<>\"]*?)</share>").getMatch(0);

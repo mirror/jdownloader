@@ -160,7 +160,7 @@ public class UlabsDe extends PluginForHost {
             }
             // New V2 chunk errorhandling
             /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(UlabsDe.NOCHUNKS, false) == false) {
+            if (maxChunks > 1 && e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(UlabsDe.NOCHUNKS, false) == false) {
                 link.setProperty(UlabsDe.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
