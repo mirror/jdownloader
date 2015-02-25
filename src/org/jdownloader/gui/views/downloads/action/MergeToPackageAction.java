@@ -1,12 +1,15 @@
 package org.jdownloader.gui.views.downloads.action;
 
 import java.awt.event.ActionEvent;
+import java.util.HashSet;
 import java.util.List;
 
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -113,8 +116,27 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<File
                     newPackage.setExpanded(isExpandNewPackage());
                     newPackage.setName(name);
                     String f = d.getDownloadFolder();
-
                     newPackage.setDownloadDirectory(PackagizerController.replaceDynamicTags(f, name));
+
+                    final StringBuilder sb = new StringBuilder();
+                    final HashSet<String> commentDups = new HashSet<String>();
+                    for (PackageView<FilePackage, DownloadLink> pv : sel.getPackageViews()) {
+                        final String comment = pv.getPackage().getComment();
+                        if (StringUtils.isNotEmpty(comment)) {
+                            String[] lines = Regex.getLines(comment);
+                            for (String line : lines) {
+                                if (commentDups.add(line)) {
+                                    if (sb.length() > 0) {
+                                        sb.append("\r\n");
+                                    }
+                                    sb.append(comment);
+                                }
+                            }
+                        }
+                    }
+                    if (sb.length() > 0) {
+                        newPackage.setComment(sb.toString());
+                    }
 
                     switch (getLocation()) {
                     case AFTER_SELECTION:
@@ -122,9 +144,7 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<File
                         for (PackageView<FilePackage, DownloadLink> pv : sel.getPackageViews()) {
                             index = Math.max(index, DownloadController.getInstance().indexOf(pv.getPackage()) + 1);
                         }
-
-                        DownloadController.getInstance().moveOrAddAt(newPackage, getSelection().getChildren(), 0, index);
-
+                        DownloadController.getInstance().moveOrAddAt(newPackage, sel.getChildren(), 0, index);
                         return null;
                     case BEFORE_SELECTION:
                         index = Integer.MAX_VALUE;
@@ -134,21 +154,15 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<File
                         if (index == Integer.MAX_VALUE) {
                             index = 0;
                         }
-                        DownloadController.getInstance().moveOrAddAt(newPackage, getSelection().getChildren(), 0, index);
-
+                        DownloadController.getInstance().moveOrAddAt(newPackage, sel.getChildren(), 0, index);
                         return null;
-
                     case END_OF_LIST:
-                        DownloadController.getInstance().moveOrAddAt(newPackage, getSelection().getChildren(), 0, -1);
-
+                        DownloadController.getInstance().moveOrAddAt(newPackage, sel.getChildren(), 0, -1);
                         return null;
-
                     case TOP_OF_LIST:
-                        DownloadController.getInstance().moveOrAddAt(newPackage, getSelection().getChildren(), 0, 0);
-
+                        DownloadController.getInstance().moveOrAddAt(newPackage, sel.getChildren(), 0, 0);
                         return null;
                     }
-
                     return null;
                 }
 
