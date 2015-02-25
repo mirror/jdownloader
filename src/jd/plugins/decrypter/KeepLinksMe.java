@@ -134,13 +134,13 @@ public class KeepLinksMe extends SaveLinksNet {
 
                 switch (getCaptchaTypeNumber()) {
                 case 1:
-                    if (true) {
+                    if (i == 0) {
                         long wait = 0;
                         while (wait < 3000) {
                             wait = 1272 * new Random().nextInt(6);
                         }
                         Thread.sleep(wait);
-                        data += "&solvemedia_response=" + "&adcopy_challenge=null" + "&adcopy_response=";
+                        data += "&captchatype=Simple&used_captcha=SolveMedia&" + "&adcopy_challenge=null" + "&adcopy_response=";
                         break;
                     } else {
                         PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
@@ -148,7 +148,7 @@ public class KeepLinksMe extends SaveLinksNet {
                         File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                         String code = getCaptchaCode(cf, param);
                         String chid = sm.getChallenge(code);
-                        data += "&solvemedia_response=" + code.replace(" ", "+") + "&adcopy_challenge=" + chid + "&adcopy_response=" + code.replace(" ", "+");
+                        data += "&captchatype=Simple&used_captcha=SolveMedia&adcopy_challenge=" + chid + "&adcopy_response=" + code.replace(" ", "+");
                         break;
                     }
                 case 2:
