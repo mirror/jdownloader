@@ -48,10 +48,14 @@ public class PrivateHomeClipsCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">Oops\\! Page not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h2>([^<>\"]*?)</h2>").getMatch(0);
+        if (br.containsHTML(">Oops\\! Page not found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         DLLINK = br.getRegex("video_url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         final String ext = ".mp4";
@@ -62,10 +66,11 @@ public class PrivateHomeClipsCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
