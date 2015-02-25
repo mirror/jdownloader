@@ -129,14 +129,12 @@ public class Multi extends IExtraction {
             try {
                 FilePermissionSet filePermissionSet = null;
                 final Integer attributesInteger = item.getAttributes();
-                if (attributesInteger != null && attributesInteger != 0) {
+                final String hostOS = item.getHostOS();
+                if (attributesInteger != null) {
                     final int attributes = attributesInteger.intValue();
-                    int attributeIndex = 0;
-                    switch (CrossSystem.getOSFamily()) {
-                    case MAC:
-                    case LINUX:
+                    if (StringUtils.equals("Unix", hostOS) && attributes != 0) {
                         filePermissionSet = new FilePermissionSet();
-                        attributeIndex = 16;
+                        int attributeIndex = 16;
                         filePermissionSet.setOtherExecute((attributes & 1 << attributeIndex++) != 0);
                         filePermissionSet.setOtherWrite((attributes & 1 << attributeIndex++) != 0);
                         filePermissionSet.setOtherRead((attributes & 1 << attributeIndex++) != 0);
@@ -146,16 +144,10 @@ public class Multi extends IExtraction {
                         filePermissionSet.setUserExecute((attributes & 1 << attributeIndex++) != 0);
                         filePermissionSet.setUserWrite((attributes & 1 << attributeIndex++) != 0);
                         filePermissionSet.setUserRead((attributes & 1 << attributeIndex++) != 0);
-                        break;
-                    default:
-                        return;
                     }
                 }
                 if (filePermissionSet != null) {
-                    if (Application.getJavaVersion() >= Application.JAVA17 && false) {
-                        /**
-                         * disabled at the moment, because some attributes are != 0 but chmod-> 000
-                         */
+                    if (Application.getJavaVersion() >= Application.JAVA17) {
                         FilePermission17.setFilePermission(extractTo, filePermissionSet);
                     } else {
                         if (filePermissionSet.isUserExecute()) {
