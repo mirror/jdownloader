@@ -1,12 +1,15 @@
 package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
 import java.awt.event.ActionEvent;
+import java.util.HashSet;
 import java.util.List;
 
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -23,7 +26,7 @@ import org.jdownloader.translate._JDT;
 public class MergeToPackageAction extends CustomizableTableContextAppAction<CrawledPackage, CrawledLink> implements ActionContext {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = -4468197802870765463L;
 
@@ -108,19 +111,37 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<Craw
                 @Override
                 protected Void run() throws RuntimeException {
                     CrawledPackage newPackage = new CrawledPackage();
-
                     newPackage.setName(name);
                     newPackage.setExpanded(isExpandNewPackage());
                     String f = d.getDownloadFolder();
                     newPackage.setDownloadFolder(f);
 
+                    final StringBuilder sb = new StringBuilder();
+                    final HashSet<String> commentDups = new HashSet<String>();
+                    for (PackageView<CrawledPackage, CrawledLink> pv : sel.getPackageViews()) {
+                        final String comment = pv.getPackage().getComment();
+                        if (StringUtils.isNotEmpty(comment)) {
+                            String[] lines = Regex.getLines(comment);
+                            for (String line : lines) {
+                                if (commentDups.add(line)) {
+                                    if (sb.length() > 0) {
+                                        sb.append("\r\n");
+                                    }
+                                    sb.append(comment);
+                                }
+                            }
+                        }
+                    }
+                    if (sb.length() > 0) {
+                        newPackage.setComment(sb.toString());
+                    }
                     switch (getLocation()) {
                     case AFTER_SELECTION:
                         int index = -1;
                         for (PackageView<CrawledPackage, CrawledLink> pv : sel.getPackageViews()) {
                             index = Math.max(index, LinkCollector.getInstance().indexOf(pv.getPackage()) + 1);
                         }
-                        LinkCollector.getInstance().moveOrAddAt(newPackage, getSelection().getChildren(), 0, index);
+                        LinkCollector.getInstance().moveOrAddAt(newPackage, sel.getChildren(), 0, index);
                         return null;
                     case BEFORE_SELECTION:
                         index = Integer.MAX_VALUE;
@@ -130,15 +151,15 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<Craw
                         if (index == Integer.MAX_VALUE) {
                             index = 0;
                         }
-                        LinkCollector.getInstance().moveOrAddAt(newPackage, getSelection().getChildren(), 0, index);
+                        LinkCollector.getInstance().moveOrAddAt(newPackage, sel.getChildren(), 0, index);
                         return null;
 
                     case END_OF_LIST:
-                        LinkCollector.getInstance().moveOrAddAt(newPackage, getSelection().getChildren(), 0, -1);
+                        LinkCollector.getInstance().moveOrAddAt(newPackage, sel.getChildren(), 0, -1);
                         return null;
 
                     case TOP_OF_LIST:
-                        LinkCollector.getInstance().moveOrAddAt(newPackage, getSelection().getChildren(), 0, 0);
+                        LinkCollector.getInstance().moveOrAddAt(newPackage, sel.getChildren(), 0, 0);
                         return null;
                     }
 
