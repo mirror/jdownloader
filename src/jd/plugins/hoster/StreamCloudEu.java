@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -54,6 +55,7 @@ public class StreamCloudEu extends PluginForHost {
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private static final String  COOKIE_HOST                  = "http://streamcloud.eu";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
+    private final String         contactOnly                  = "Please contact <a href=\"&#109;a&#105;l&#116;&#111;:&#115;&#117;&#112;&#112;&#111;&#114;&#116;&#64;&#115;&#116;&#114;&#101;&#97;&#109;&#99;&#108;&#111;&#117;&#100;&#46;&#101;&#117;\">support</a>\\.";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
@@ -105,6 +107,8 @@ public class StreamCloudEu extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(No such file|>(404|File) Not Found<|>The file was removed by|Reason (of|for) deletion:\n)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.toString().matches("^" + contactOnly + ".*?")) {
+            return AvailableStatus.UNCHECKABLE;
         }
         String filename = br.getRegex("name=\"fname\" value=\"([^<>\"/]+)\"").getMatch(0);
         if (filename == null) {
@@ -183,7 +187,11 @@ public class StreamCloudEu extends PluginForHost {
                 }
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
+        } catch (final ConnectException ce) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server issues", 30 * 60 * 1000l);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("No File")) {
@@ -367,6 +375,9 @@ public class StreamCloudEu extends PluginForHost {
             if (dllink == null) {
                 br.setFollowRedirects(false);
                 getPage(downloadLink.getDownloadURL());
+                if (br.toString().matches("^" + contactOnly + ".*?")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server issues", 30 * 60 * 1000l);
+                }
                 dllink = getDllink();
                 if (dllink == null) {
                     checkErrors(downloadLink, true, passCode);
@@ -388,7 +399,11 @@ public class StreamCloudEu extends PluginForHost {
             }
 
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
+            try {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
+            } catch (final ConnectException ce) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server issues", 30 * 60 * 1000l);
+            }
             if (dl.getConnection().getContentType().contains("html")) {
                 if (dl.getConnection().getResponseCode() == 503) {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
