@@ -104,20 +104,20 @@ public class CandidateTooltipTable extends BasicJDTable<HistoryEntry> {
     @Override
     public Dimension getPreferredSize() {
         Dimension ret = super.getPreferredSize();
-        // int prefWidth = 0;
-        // for (ExtColumn<HistoryEntry> col : getModel().getColumns()) {
-        // if (col instanceof MaxWidthProvider) {
-        // int pref = ((MaxWidthProvider) col).getMaxPreferredWitdh();
-        // if (pref > 0) {
-        //
-        // prefWidth += pref + 10;
-        // }
-        // }
-        // }
-        //
-        // if (prefWidth != ret.width) {
-        // ret.width = prefWidth;
-        // }
+        int prefWidth = 0;
+        for (ExtColumn<HistoryEntry> col : getModel().getColumns()) {
+            if (col instanceof MaxWidthProvider) {
+                int pref = ((MaxWidthProvider) col).getMaxPreferredWitdh();
+                if (pref > 0) {
+
+                    prefWidth += pref + 14;
+                }
+            }
+        }
+
+        if (prefWidth != ret.width) {
+            ret.width = prefWidth;
+        }
         return ret;
     }
 
