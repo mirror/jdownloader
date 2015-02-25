@@ -307,4 +307,5 @@ system_download_doCRC2_waiting=Väntar på Hashcheck
 system_download_errors_couldnotdelete=Kunde inte ta bort exisiterande del fil
 system_download_errors_couldnotrename=Kunde inte byta namn på filen
 system_download_errors_linkisBlocked=Mirror %s1 laddar
+update_dialog_msg_x_updates_available=Uppdateringar är redo för installation. Vill du köra uppdateringen nu?
 video_description=Videofiler: mp4, avi, mov,...
