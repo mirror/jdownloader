@@ -10,11 +10,12 @@ import jd.controlling.downloadcontroller.DownloadController;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.utils.Application;
 import org.appwork.utils.reflection.Clazz;
-import org.jdownloader.extensions.eventscripter.sandboxobjects.PackagizerLinkSandbox;
+import org.jdownloader.extensions.eventscripter.sandboxobjects.ArchiveSandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.CrawlerJobSandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.DownloadLinkSandBox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.EventSandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.FilePackageSandBox;
+import org.jdownloader.extensions.eventscripter.sandboxobjects.PackagizerLinkSandbox;
 import org.jdownloader.gui.views.ArraySet;
 
 public enum EventTrigger implements LabelInterface {
@@ -50,7 +51,58 @@ public enum EventTrigger implements LabelInterface {
         }
 
     },
+    ON_PACKAGE_FINISHED {
+        @Override
+        public String getLabel() {
+            return T._.ON_PACKAGE_FINISHED();
+        }
 
+        public HashMap<String, Object> getTestProperties() {
+            HashMap<String, Object> ret = new HashMap<String, Object>();
+            ret.put("package", new FilePackageSandBox());
+            return ret;
+        }
+
+        public String getAPIDescription() {
+            return defaultAPIDescription(this);
+        }
+
+    },
+    ON_GENERIC_EXTRACTION {
+        @Override
+        public String getLabel() {
+            return T._.ON_GENERIC_EXTRACTION();
+        }
+
+        public HashMap<String, Object> getTestProperties() {
+            HashMap<String, Object> ret = new HashMap<String, Object>();
+            ret.put("archive", new ArchiveSandbox());
+            ret.put("event", org.jdownloader.extensions.extraction.ExtractionEvent.Type.PASSWORD_FOUND.name());
+            return ret;
+        }
+
+        public String getAPIDescription() {
+            return defaultAPIDescription(this);
+        }
+
+    },
+    ON_ARCHIVE_EXTRACTED {
+        @Override
+        public String getLabel() {
+            return T._.ON_ARCHIVE_EXTRACTED();
+        }
+
+        public HashMap<String, Object> getTestProperties() {
+            HashMap<String, Object> ret = new HashMap<String, Object>();
+            ret.put("archive", new ArchiveSandbox());
+            return ret;
+        }
+
+        public String getAPIDescription() {
+            return defaultAPIDescription(this);
+        }
+
+    },
     ON_JDOWNLOADER_STARTED {
         @Override
         public String getLabel() {
