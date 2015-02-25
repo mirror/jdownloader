@@ -105,7 +105,7 @@ public class Archive {
 
     private final List<File>        skippedFiles;
 
-    private ArchiveFactory          factory;
+    private final ArchiveFactory    factory;
 
     private String                  name;
 
@@ -272,13 +272,18 @@ public class Archive {
         return null;
     }
 
-    public void onControllerAssigned(ExtractionController extractionController) {
+    protected void onControllerAssigned(ExtractionController extractionController) {
     }
 
-    public void onStartExtracting() {
+    protected void onStartExtracting() {
+        crcError.clear();
+        extractedFiles.clear();
+        skippedFiles.clear();
+        exitCode = -1;
+        contents = new ContentView();
     }
 
-    public void onCleanUp() {
+    protected void onCleanUp() {
     }
 
     public void setStatus(ExtractionController controller, ExtractionStatus status) {
