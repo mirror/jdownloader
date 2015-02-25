@@ -133,8 +133,8 @@ public class Multi extends IExtraction {
                     final int attributes = attributesInteger.intValue();
                     int attributeIndex = 0;
                     switch (CrossSystem.getOSFamily()) {
-                    case LINUX:
                     case MAC:
+                    case LINUX:
                         filePermissionSet = new FilePermissionSet();
                         attributeIndex = 16;
                         filePermissionSet.setOtherExecute((attributes & 1 << attributeIndex++) != 0);
@@ -152,7 +152,10 @@ public class Multi extends IExtraction {
                     }
                 }
                 if (filePermissionSet != null) {
-                    if (Application.getJavaVersion() >= Application.JAVA17) {
+                    if (Application.getJavaVersion() >= Application.JAVA17 && false) {
+                        /**
+                         * disabled at the moment, because some attributes are != 0 but chmod-> 000
+                         */
                         FilePermission17.setFilePermission(extractTo, filePermissionSet);
                     } else {
                         if (filePermissionSet.isUserExecute()) {
