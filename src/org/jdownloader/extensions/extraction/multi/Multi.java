@@ -132,7 +132,7 @@ public class Multi extends IExtraction {
                 final String hostOS = item.getHostOS();
                 if (attributesInteger != null) {
                     final int attributes = attributesInteger.intValue();
-                    if (StringUtils.equals("Unix", hostOS) && attributes != 0) {
+                    if (StringUtils.equalsIgnoreCase("Unix", hostOS) && attributes != 0) {
                         filePermissionSet = new FilePermissionSet();
                         int attributeIndex = 16;
                         filePermissionSet.setOtherExecute((attributes & 1 << attributeIndex++) != 0);
