@@ -132,23 +132,25 @@ public abstract class AbstractSolverService implements SolverService {
         if (dupe == null) {
             dupe = new HashSet<SolverService>();
         }
+        System.out.println("Start: " + start.getName());
+        System.out.println("Check: " + check.getName());
         if (arrayList.size() == 0) {
-            System.out.println("Added " + start.getName() + "/" + start.getID());
+            System.out.println("Added " + start.getName());
             arrayList.add(start);
             dupe.add(start);
         }
-        System.out.println("Added " + check.getName() + "/" + check.getID());
+        System.out.println("Added " + check.getName());
         arrayList.add(check);
         if (!dupe.add(check)) {
 
-            System.out.println("Dupe found " + check.getName() + "/" + check.getID());
+            System.out.println("Dupe found " + check.getName());
             return arrayList;
         }
         System.out.println(JSonStorage.serializeToJson(check.getWaitForMapCopy()));
         for (Entry<String, Integer> es : check.getWaitForMapCopy().entrySet()) {
             final SolverService service = ChallengeResponseController.getInstance().getServiceByID(es.getKey());
             if (service != null && es.getValue() != null && es.getValue().intValue() > 0) {
-                System.out.println(service.getName() + "/" + service.getID() + " " + check.getName() + "/" + check.getID() + " waits for service: " + es.getValue().intValue());
+                System.out.println(check.getName() + " waits for " + service.getName() + " : " + es.getValue().intValue());
                 final ArrayList<SolverService> ret = validateWaittimeQueue(start, service, new ArrayList<SolverService>(arrayList), new HashSet<SolverService>(dupe));
                 if (ret != null) {
                     return ret;
