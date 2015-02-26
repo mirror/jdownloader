@@ -2,6 +2,7 @@ package org.jdownloader.gui.views.downloads.properties;
 
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JPopupMenu;
@@ -9,6 +10,8 @@ import javax.swing.JPopupMenu;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.jdgui.MainTabbedPane;
+import jd.gui.swing.jdgui.interfaces.View;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLinkProperty;
 import jd.plugins.FilePackage;
@@ -22,12 +25,17 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.BooleanStatus;
+import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.gui.components.CheckboxMenuItem;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.downloads.action.SetDownloadFolderInDownloadTableAction;
+import org.jdownloader.gui.views.downloads.table.DownloadsTable;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel implements ActionListener, GenericConfigEventListener<Boolean>, DownloadControllerListener {
@@ -102,10 +110,31 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
         return CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_SAVE_TO_VISIBLE.isEnabled();
     }
 
+    private SelectionInfo<?, ?> getSelection() {
+        final View view = MainTabbedPane.getInstance().getSelectedView();
+        if (view instanceof DownloadsView) {
+            return DownloadsTable.getInstance().getSelectionInfo(true, true);
+        } else if (view instanceof LinkGrabberView) {
+            return LinkGrabberTable.getInstance().getSelectionInfo();
+        }
+        return null;
+
+    }
+
     @Override
     protected List<Archive> loadArchives() {
-        return ArchiveValidator.validate(new SelectionInfo<FilePackage, DownloadLink>(currentLink, null, false));
-
+        final List<Archive> validatedArchives = ArchiveValidator.validate(getSelection());
+        final List<Archive> ret = new ArrayList<Archive>();
+        if (validatedArchives != null) {
+            final DownloadLinkArchiveFactory downloadLinkFactory = new DownloadLinkArchiveFactory(currentLink);
+            for (Archive archive : validatedArchives) {
+                if (archive.contains(downloadLinkFactory)) {
+                    ret.add(archive);
+                    break;
+                }
+            }
+        }
+        return ret;
     }
 
     @Override

@@ -81,6 +81,7 @@ import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.linkcrawler.GenericVariants;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.controlling.packagizer.PackagizerController;
+import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.gui.translate._GUI;
@@ -828,12 +829,13 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             final ExtractionExtension lArchiver = archiver;
                             if (lArchiver != null && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.ARCHIVE_PACKAGIZER_ENABLED.getValue()) {
                                 final CrawledLinkFactory clf = new CrawledLinkFactory(link);
-                                if (lArchiver.isMultiPartArchive(clf)) {
+                                final Archive archive = lArchiver.buildArchive(clf);
+                                if (archive != null && archive.getArchiveFiles().size() > 1) {
                                     if (crawledPackageID == null) {
-                                        crawledPackageID = lArchiver.createArchiveID(clf);
+                                        crawledPackageID = archive.getArchiveID();
                                     }
                                     if (crawledPackageName == null) {
-                                        crawledPackageName = _JDT._.LinkCollector_archiv(LinknameCleaner.cleanFileName(lArchiver.getArchiveName(clf), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true));
+                                        crawledPackageName = _JDT._.LinkCollector_archiv(LinknameCleaner.cleanFileName(archive.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true));
                                     }
                                 }
                             }
@@ -1081,9 +1083,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     * 
+     *
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     * 
+     *
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {

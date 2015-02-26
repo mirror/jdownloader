@@ -30,20 +30,34 @@ public class FileSignatures {
     private volatile Signature[] SIGNATURES;
 
     public static String readFileSignature(File f) throws IOException {
+        return readFileSignature(f, 10);
+    }
+
+    public static String readFileSignature(final File f, final int length) throws IOException {
         FileInputStream reader = null;
         try {
-            reader = new FileInputStream(f);
-            StringBuilder sig = new StringBuilder();
-            for (int i = 0; i < 10; i++) {
-                int h = reader.read();
-                String s = Integer.toHexString(h);
-                if (s.length() < 2) sig.append('0');
-                sig.append(s);
+            final StringBuilder sig = new StringBuilder();
+            if (length > 0) {
+                reader = new FileInputStream(f);
+                for (int i = 0; i < length; i++) {
+                    final int h = reader.read();
+                    if (h != -1) {
+                        final String s = Integer.toHexString(h);
+                        if (s.length() < 2) {
+                            sig.append('0');
+                        }
+                        sig.append(s);
+                    } else {
+                        break;
+                    }
+                }
             }
             return sig.toString();
         } finally {
             try {
-                reader.close();
+                if (reader != null) {
+                    reader.close();
+                }
             } catch (final Throwable e) {
             }
         }
@@ -51,13 +65,17 @@ public class FileSignatures {
 
     /**
      * Gibt alle verfügbaren signaturen zurück
-     * 
+     *
      * @return
      */
     private Signature[] getSignatureList() {
-        if (SIGNATURES != null) return SIGNATURES;
+        if (SIGNATURES != null) {
+            return SIGNATURES;
+        }
         synchronized (this) {
-            if (SIGNATURES != null) return SIGNATURES;
+            if (SIGNATURES != null) {
+                return SIGNATURES;
+            }
             String[] m;
             try {
                 m = Regex.getLines(org.appwork.utils.IO.readURLToString(Application.getRessourceURL("org/jdownloader/extensions/extraction/mime.type")));
@@ -84,31 +102,37 @@ public class FileSignatures {
 
     /**
      * GIbt die signatur zu einem signaturstring zurück.
-     * 
+     *
      * @param sig
      * @return
      */
     public Signature getSignature(String sig) {
         Signature[] db = getSignatureList();
         for (Signature entry : db) {
-            if (entry != null && entry.matches(sig)) return entry;
+            if (entry != null && entry.matches(sig)) {
+                return entry;
+            }
         }
         return checkTxt(sig);
     }
 
     /**
      * Prüft ob eine Datei möglicheriwese eine TXT datei ist. Dabei wird geprüft ob die signatur nur aus lesbaren zeichen besteht
-     * 
+     *
      * @param sig
      * @return
      */
     private Signature checkTxt(String sig) {
         for (int i = 0; i < sig.length(); i += 2) {
-            if ((i + 2) > sig.length()) return null;
+            if ((i + 2) > sig.length()) {
+                return null;
+            }
             String b = sig.substring(i, i + 2);
             int ch = Integer.parseInt(b, 16);
 
-            if (ch < 32 || ch > 126) { return null; }
+            if (ch < 32 || ch > 126) {
+                return null;
+            }
 
         }
 

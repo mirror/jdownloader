@@ -39,16 +39,16 @@ import org.jdownloader.extensions.extraction.multi.CheckException;
 
 /**
  * Joins HJSplit files.
- * 
+ *
  * @author botzi
- * 
+ *
  */
 public class HJSplit extends IExtraction {
 
     private final SplitType splitType = SplitType.HJ_SPLIT;
 
-    public Archive buildArchive(ArchiveFactory link) throws ArchiveException {
-        return SplitType.createArchive(link, splitType, false);
+    public Archive buildArchive(ArchiveFactory link, boolean allowDeepInspection) throws ArchiveException {
+        return SplitType.createArchive(link, splitType, allowDeepInspection);
     }
 
     @Override
@@ -91,7 +91,7 @@ public class HJSplit extends IExtraction {
         }
     }
 
-    public boolean checkCommand() {
+    public boolean isAvailable() {
         return true;
     }
 
@@ -103,26 +103,7 @@ public class HJSplit extends IExtraction {
         return true;
     }
 
-    public String getArchiveName(ArchiveFactory factory) {
-        return SplitType.createArchiveName(factory, splitType);
-    }
-
-    public boolean isArchivSupported(ArchiveFactory factory, boolean allowDeepInspection) {
-        try {
-            final Archive archive = SplitType.createArchive(factory, splitType, allowDeepInspection);
-            return archive != null;
-        } catch (ArchiveException e) {
-            getLogger().log(e);
-            return false;
-        }
-    }
-
     public void close() {
-    }
-
-    @Override
-    public String createID(ArchiveFactory factory) {
-        return SplitType.createArchiveID(factory, splitType);
     }
 
     public DummyArchive checkComplete(Archive archive) throws CheckException {
@@ -172,13 +153,17 @@ public class HJSplit extends IExtraction {
     }
 
     @Override
-    public boolean isMultiPartArchive(ArchiveFactory factory) {
-        return true;
-    }
-
-    @Override
-    public boolean isFileSupported(ArchiveFactory factory, boolean allowDeepInspection) {
-        return splitType.matches(factory.getFilePath());
+    public Boolean isSupported(ArchiveFactory factory, boolean allowDeepInspection) {
+        if (allowDeepInspection) {
+            try {
+                return SplitType.createArchive(factory, splitType, allowDeepInspection) != null;
+            } catch (ArchiveException e) {
+                getLogger().log(e);
+                return false;
+            }
+        } else {
+            return splitType.matches(factory.getFilePath());
+        }
     }
 
 }

@@ -90,8 +90,8 @@ public class Multi extends IExtraction {
     }
 
     @Override
-    public Archive buildArchive(ArchiveFactory link) throws ArchiveException {
-        return ArchiveType.createArchive(link, false);
+    public Archive buildArchive(ArchiveFactory link, boolean allowDeepInspection) throws ArchiveException {
+        return ArchiveType.createArchive(link, allowDeepInspection);
     }
 
     public static boolean checkRARSignature(File file) {
@@ -125,40 +125,42 @@ public class Multi extends IExtraction {
     }
 
     public void setPermissions(ISimpleInArchiveItem item, File extractTo) {
-        if (config.isRestoreFilePermissions() && item != null && extractTo != null && extractTo.exists()) {
-            try {
-                FilePermissionSet filePermissionSet = null;
-                final Integer attributesInteger = item.getAttributes();
-                final String hostOS = item.getHostOS();
-                if (attributesInteger != null) {
-                    final int attributes = attributesInteger.intValue();
-                    if (StringUtils.equalsIgnoreCase("Unix", hostOS) && attributes != 0) {
-                        filePermissionSet = new FilePermissionSet();
-                        int attributeIndex = 16;
-                        filePermissionSet.setOtherExecute((attributes & 1 << attributeIndex++) != 0);
-                        filePermissionSet.setOtherWrite((attributes & 1 << attributeIndex++) != 0);
-                        filePermissionSet.setOtherRead((attributes & 1 << attributeIndex++) != 0);
-                        filePermissionSet.setGroupExecute((attributes & 1 << attributeIndex++) != 0);
-                        filePermissionSet.setGroupWrite((attributes & 1 << attributeIndex++) != 0);
-                        filePermissionSet.setGroupRead((attributes & 1 << attributeIndex++) != 0);
-                        filePermissionSet.setUserExecute((attributes & 1 << attributeIndex++) != 0);
-                        filePermissionSet.setUserWrite((attributes & 1 << attributeIndex++) != 0);
-                        filePermissionSet.setUserRead((attributes & 1 << attributeIndex++) != 0);
+        if ((CrossSystem.isLinux() || CrossSystem.isMac())) {
+            if (config.isRestoreFilePermissions() && item != null && extractTo != null && extractTo.exists()) {
+                try {
+                    FilePermissionSet filePermissionSet = null;
+                    final Integer attributesInteger = item.getAttributes();
+                    final String hostOS = item.getHostOS();
+                    if (attributesInteger != null) {
+                        final int attributes = attributesInteger.intValue();
+                        if (StringUtils.equalsIgnoreCase("Unix", hostOS) && attributes != 0) {
+                            filePermissionSet = new FilePermissionSet();
+                            int attributeIndex = 16;
+                            filePermissionSet.setOtherExecute((attributes & 1 << attributeIndex++) != 0);
+                            filePermissionSet.setOtherWrite((attributes & 1 << attributeIndex++) != 0);
+                            filePermissionSet.setOtherRead((attributes & 1 << attributeIndex++) != 0);
+                            filePermissionSet.setGroupExecute((attributes & 1 << attributeIndex++) != 0);
+                            filePermissionSet.setGroupWrite((attributes & 1 << attributeIndex++) != 0);
+                            filePermissionSet.setGroupRead((attributes & 1 << attributeIndex++) != 0);
+                            filePermissionSet.setUserExecute((attributes & 1 << attributeIndex++) != 0);
+                            filePermissionSet.setUserWrite((attributes & 1 << attributeIndex++) != 0);
+                            filePermissionSet.setUserRead((attributes & 1 << attributeIndex++) != 0);
+                        }
                     }
-                }
-                if (filePermissionSet != null) {
-                    if (Application.getJavaVersion() >= Application.JAVA17) {
-                        FilePermission17.setFilePermission(extractTo, filePermissionSet);
-                    } else {
-                        if (filePermissionSet.isUserExecute()) {
-                            if (!extractTo.setExecutable(true, filePermissionSet.isOtherExecute() == false && filePermissionSet.isOtherExecute() == false)) {
-                                throw new IOException("Failed to set " + filePermissionSet + " to " + extractTo);
+                    if (filePermissionSet != null) {
+                        if (Application.getJavaVersion() >= Application.JAVA17) {
+                            FilePermission17.setFilePermission(extractTo, filePermissionSet);
+                        } else {
+                            if (filePermissionSet.isUserExecute()) {
+                                if (!extractTo.setExecutable(true, filePermissionSet.isOtherExecute() == false && filePermissionSet.isOtherExecute() == false)) {
+                                    throw new IOException("Failed to set " + filePermissionSet + " to " + extractTo);
+                                }
                             }
                         }
                     }
+                } catch (final Throwable e) {
+                    logger.log(e);
                 }
-            } catch (final Throwable e) {
-                logger.log(e);
             }
         }
     }
@@ -218,7 +220,7 @@ public class Multi extends IExtraction {
     }
 
     @Override
-    public boolean checkCommand() {
+    public boolean isAvailable() {
         File tmp = null;
         String libID = System.getProperty("sevenzipLibID");
         try {
@@ -367,11 +369,6 @@ public class Multi extends IExtraction {
             }
         }
 
-    }
-
-    @Override
-    public String createID(ArchiveFactory factory) {
-        return ArchiveType.createArchiveID(factory);
     }
 
     @Override
@@ -868,27 +865,8 @@ public class Multi extends IExtraction {
     }
 
     @Override
-    public String getArchiveName(ArchiveFactory factory) {
-        return ArchiveType.createArchiveName(factory);
-    }
-
-    @Override
     public int getCrackProgress() {
         return crack;
-    }
-
-    @Override
-    public boolean isArchivSupported(ArchiveFactory factory, boolean allowDeepInspection) {
-        if (allowDeepInspection) {
-            try {
-                return ArchiveType.createArchive(factory, allowDeepInspection) != null;
-            } catch (ArchiveException e) {
-                getLogger().log(e);
-                return false;
-            }
-        } else {
-            return createID(factory) != null;
-        }
     }
 
     @Override
@@ -1015,17 +993,21 @@ public class Multi extends IExtraction {
     }
 
     @Override
-    public boolean isMultiPartArchive(ArchiveFactory factory) {
-        return ArchiveType.isMultiPartArchive(factory);
-    }
-
-    @Override
-    public boolean isFileSupported(ArchiveFactory factory, boolean allowDeepInspection) {
-        for (ArchiveType archiveType : ArchiveType.values()) {
-            if (archiveType.matches(factory.getFilePath())) {
-                return true;
+    public Boolean isSupported(ArchiveFactory factory, boolean allowDeepInspection) {
+        if (allowDeepInspection) {
+            try {
+                return buildArchive(factory, allowDeepInspection) != null;
+            } catch (ArchiveException e) {
+                getLogger().log(e);
+                return false;
             }
+        } else {
+            for (ArchiveType archiveType : ArchiveType.values()) {
+                if (archiveType.matches(factory.getFilePath())) {
+                    return null;
+                }
+            }
+            return false;
         }
-        return false;
     }
 }
