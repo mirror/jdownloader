@@ -80,28 +80,31 @@ public class UnixSplit extends IExtraction {
     }
 
     public DummyArchive checkComplete(Archive archive) throws CheckException {
-        try {
-            final DummyArchive ret = new DummyArchive(archive, splitType.name());
-            boolean hasMissingArchiveFiles = false;
-            for (ArchiveFile archiveFile : archive.getArchiveFiles()) {
-                if (archiveFile instanceof MissingArchiveFile) {
-                    hasMissingArchiveFiles = true;
+        if (archive.getSplitType() == splitType) {
+            try {
+                final DummyArchive ret = new DummyArchive(archive, splitType.name());
+                boolean hasMissingArchiveFiles = false;
+                for (ArchiveFile archiveFile : archive.getArchiveFiles()) {
+                    if (archiveFile instanceof MissingArchiveFile) {
+                        hasMissingArchiveFiles = true;
+                    }
+                    ret.add(new DummyArchiveFile(archiveFile));
                 }
-                ret.add(new DummyArchiveFile(archiveFile));
-            }
-            if (hasMissingArchiveFiles == false) {
-                final String firstArchiveFile = archive.getFirstArchiveFile().getFilePath();
-                final String partNumberOfFirstArchiveFile = splitType.getPartNumberString(firstArchiveFile);
-                if (splitType.getFirstPartIndex() != splitType.getPartNumber(partNumberOfFirstArchiveFile)) {
-                    throw new CheckException("Wrong firstArchiveFile(" + firstArchiveFile + ") for Archive(" + archive.getName() + ")");
+                if (hasMissingArchiveFiles == false) {
+                    final String firstArchiveFile = archive.getFirstArchiveFile().getFilePath();
+                    final String partNumberOfFirstArchiveFile = splitType.getPartNumberString(firstArchiveFile);
+                    if (splitType.getFirstPartIndex() != splitType.getPartNumber(partNumberOfFirstArchiveFile)) {
+                        throw new CheckException("Wrong firstArchiveFile(" + firstArchiveFile + ") for Archive(" + archive.getName() + ")");
+                    }
                 }
+                return ret;
+            } catch (CheckException e) {
+                throw e;
+            } catch (Throwable e) {
+                throw new CheckException("Cannot check Archive(" + archive.getName() + ")", e);
             }
-            return ret;
-        } catch (CheckException e) {
-            throw e;
-        } catch (Throwable e) {
-            throw new CheckException("Cannot check Archive(" + archive.getName() + ")", e);
         }
+        return null;
     }
 
     @Override

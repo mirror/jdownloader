@@ -379,57 +379,60 @@ public class XtreamSplit extends IExtraction {
     }
 
     public DummyArchive checkComplete(Archive archive) throws CheckException {
-        try {
-            final DummyArchive ret = new DummyArchive(archive, splitType.name());
-            boolean hasMissingArchiveFiles = false;
-            for (ArchiveFile archiveFile : archive.getArchiveFiles()) {
-                if (archiveFile instanceof MissingArchiveFile) {
-                    hasMissingArchiveFiles = true;
+        if (archive.getSplitType() == splitType) {
+            try {
+                final DummyArchive ret = new DummyArchive(archive, splitType.name());
+                boolean hasMissingArchiveFiles = false;
+                for (ArchiveFile archiveFile : archive.getArchiveFiles()) {
+                    if (archiveFile instanceof MissingArchiveFile) {
+                        hasMissingArchiveFiles = true;
+                    }
+                    ret.add(new DummyArchiveFile(archiveFile));
                 }
-                ret.add(new DummyArchiveFile(archiveFile));
-            }
-            if (hasMissingArchiveFiles == false && archive.getFirstArchiveFile().exists()) {
-                final String firstArchiveFile = archive.getFirstArchiveFile().getFilePath();
-                final String partNumberOfFirstArchiveFile = splitType.getPartNumberString(firstArchiveFile);
-                if (splitType.getFirstPartIndex() != splitType.getPartNumber(partNumberOfFirstArchiveFile)) {
-                    throw new CheckException("Wrong firstArchiveFile(" + firstArchiveFile + ") for Archive(" + archive.getName() + ")");
-                }
-                InputStream is = null;
-                try {
-                    is = new FileInputStream(firstArchiveFile);
-                    AWFCUtils awfc = new AWFCUtils(is);
-                    is.skip(40);// Skip useless bytes
-                    byte[] buffer = new byte[awfc.ensureRead()];// original fileName length
-                    awfc.ensureRead(buffer.length, buffer); // original fileName
-                    is.skip(50 - buffer.length);// skip rest
-                    awfc.ensureRead();// md5
-                    buffer = new byte[4];
-                    awfc.ensureRead(4, buffer); // numberOfParts
-                    final int numberOfParts = ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).getInt();
-                    is.close();
-                    final List<ArchiveFile> missingArchiveFiles = SplitType.getMissingArchiveFiles(archive, splitType, numberOfParts);
-                    if (missingArchiveFiles != null) {
-                        for (ArchiveFile missingArchiveFile : missingArchiveFiles) {
-                            ret.add(new DummyArchiveFile(missingArchiveFile));
+                if (hasMissingArchiveFiles == false && archive.getFirstArchiveFile().exists()) {
+                    final String firstArchiveFile = archive.getFirstArchiveFile().getFilePath();
+                    final String partNumberOfFirstArchiveFile = splitType.getPartNumberString(firstArchiveFile);
+                    if (splitType.getFirstPartIndex() != splitType.getPartNumber(partNumberOfFirstArchiveFile)) {
+                        throw new CheckException("Wrong firstArchiveFile(" + firstArchiveFile + ") for Archive(" + archive.getName() + ")");
+                    }
+                    InputStream is = null;
+                    try {
+                        is = new FileInputStream(firstArchiveFile);
+                        AWFCUtils awfc = new AWFCUtils(is);
+                        is.skip(40);// Skip useless bytes
+                        byte[] buffer = new byte[awfc.ensureRead()];// original fileName length
+                        awfc.ensureRead(buffer.length, buffer); // original fileName
+                        is.skip(50 - buffer.length);// skip rest
+                        awfc.ensureRead();// md5
+                        buffer = new byte[4];
+                        awfc.ensureRead(4, buffer); // numberOfParts
+                        final int numberOfParts = ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).getInt();
+                        is.close();
+                        final List<ArchiveFile> missingArchiveFiles = SplitType.getMissingArchiveFiles(archive, splitType, numberOfParts);
+                        if (missingArchiveFiles != null) {
+                            for (ArchiveFile missingArchiveFile : missingArchiveFiles) {
+                                ret.add(new DummyArchiveFile(missingArchiveFile));
+                            }
+                        }
+                        if (ret.getSize() < numberOfParts) {
+                            throw new CheckException("Missing archiveParts(" + numberOfParts + "!=" + ret.getSize() + ") for Archive(" + archive.getName() + ")");
+                        } else if (ret.getSize() > numberOfParts) {
+                            throw new CheckException("Too many archiveParts(" + numberOfParts + "!=" + ret.getSize() + ") for Archive(" + archive.getName() + ")");
+                        }
+                    } finally {
+                        if (is != null) {
+                            is.close();
                         }
                     }
-                    if (ret.getSize() < numberOfParts) {
-                        throw new CheckException("Missing archiveParts(" + numberOfParts + "!=" + ret.getSize() + ") for Archive(" + archive.getName() + ")");
-                    } else if (ret.getSize() > numberOfParts) {
-                        throw new CheckException("Too many archiveParts(" + numberOfParts + "!=" + ret.getSize() + ") for Archive(" + archive.getName() + ")");
-                    }
-                } finally {
-                    if (is != null) {
-                        is.close();
-                    }
                 }
+                return ret;
+            } catch (CheckException e) {
+                throw e;
+            } catch (Throwable e) {
+                throw new CheckException("Cannot check Archive(" + archive.getName() + ")", e);
             }
-            return ret;
-        } catch (CheckException e) {
-            throw e;
-        } catch (Throwable e) {
-            throw new CheckException("Cannot check Archive(" + archive.getName() + ")", e);
         }
+        return null;
     }
 
     @Override

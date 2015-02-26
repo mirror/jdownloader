@@ -246,7 +246,11 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             for (IExtraction extractor : extractors) {
                 try {
                     if (!Boolean.FALSE.equals(extractor.isSupported(factory, deepInspection))) {
-                        return extractor.buildArchive(factory, deepInspection);
+                        final Archive archive = extractor.buildArchive(factory, deepInspection);
+                        if (archive != null) {
+                            factory.onArchiveFinished(archive);
+                            return archive;
+                        }
                     }
                 } catch (final Throwable e) {
                     logger.log(e);
@@ -262,7 +266,10 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         for (IExtraction extractor : extractors) {
             try {
                 if (!Boolean.FALSE.equals(extractor.isSupported(factory, deepInspection))) {
-                    return extractor.checkComplete(archive);
+                    final DummyArchive dummyArchive = extractor.checkComplete(archive);
+                    if (dummyArchive != null) {
+                        return dummyArchive;
+                    }
                 }
             } catch (final Throwable e) {
                 logger.log(e);
@@ -290,7 +297,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     private IExtraction getExtractorInstanceByFactory(final ArchiveFactory factory) {
         for (IExtraction extractor : extractors) {
             try {
-                if (!Boolean.FALSE.equals(extractor.isSupported(factory, true))) {
+                if (Boolean.TRUE.equals(extractor.isSupported(factory, true))) {
                     final IExtraction ret = extractor.getClass().newInstance();
                     ret.setLogger(extractor.logger);
                     return ret;

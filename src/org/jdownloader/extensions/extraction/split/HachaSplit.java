@@ -104,42 +104,45 @@ public class HachaSplit extends IExtraction {
     }
 
     public DummyArchive checkComplete(Archive archive) throws CheckException {
-        try {
-            final DummyArchive ret = new DummyArchive(archive, splitType.name());
-            boolean hasMissingArchiveFiles = false;
-            for (ArchiveFile archiveFile : archive.getArchiveFiles()) {
-                if (archiveFile instanceof MissingArchiveFile) {
-                    hasMissingArchiveFiles = true;
+        if (archive.getSplitType() == splitType) {
+            try {
+                final DummyArchive ret = new DummyArchive(archive, splitType.name());
+                boolean hasMissingArchiveFiles = false;
+                for (ArchiveFile archiveFile : archive.getArchiveFiles()) {
+                    if (archiveFile instanceof MissingArchiveFile) {
+                        hasMissingArchiveFiles = true;
+                    }
+                    ret.add(new DummyArchiveFile(archiveFile));
                 }
-                ret.add(new DummyArchiveFile(archiveFile));
-            }
-            if (hasMissingArchiveFiles == false) {
-                final String firstArchiveFile = archive.getFirstArchiveFile().getFilePath();
-                final String partNumberOfFirstArchiveFile = splitType.getPartNumberString(firstArchiveFile);
-                if (splitType.getFirstPartIndex() != splitType.getPartNumber(partNumberOfFirstArchiveFile)) {
-                    throw new CheckException("Wrong firstArchiveFile(" + firstArchiveFile + ") for Archive(" + archive.getName() + ")");
-                }
-                if (archive.getFirstArchiveFile().exists()) {
-                    final HachaHeader hachaHeader = parseHachaHeader(archive.getFirstArchiveFile());
-                    final List<ArchiveFile> missingArchiveFiles = SplitType.getMissingArchiveFiles(archive, splitType, hachaHeader.getNumberOfParts());
-                    if (missingArchiveFiles != null) {
-                        for (ArchiveFile missingArchiveFile : missingArchiveFiles) {
-                            ret.add(new DummyArchiveFile(missingArchiveFile));
+                if (hasMissingArchiveFiles == false) {
+                    final String firstArchiveFile = archive.getFirstArchiveFile().getFilePath();
+                    final String partNumberOfFirstArchiveFile = splitType.getPartNumberString(firstArchiveFile);
+                    if (splitType.getFirstPartIndex() != splitType.getPartNumber(partNumberOfFirstArchiveFile)) {
+                        throw new CheckException("Wrong firstArchiveFile(" + firstArchiveFile + ") for Archive(" + archive.getName() + ")");
+                    }
+                    if (archive.getFirstArchiveFile().exists()) {
+                        final HachaHeader hachaHeader = parseHachaHeader(archive.getFirstArchiveFile());
+                        final List<ArchiveFile> missingArchiveFiles = SplitType.getMissingArchiveFiles(archive, splitType, hachaHeader.getNumberOfParts());
+                        if (missingArchiveFiles != null) {
+                            for (ArchiveFile missingArchiveFile : missingArchiveFiles) {
+                                ret.add(new DummyArchiveFile(missingArchiveFile));
+                            }
+                        }
+                        if (ret.getSize() < hachaHeader.getNumberOfParts()) {
+                            throw new CheckException("Missing archiveParts(" + hachaHeader.getNumberOfParts() + "!=" + ret.getSize() + ") for Archive(" + archive.getName() + ")");
+                        } else if (ret.getSize() > hachaHeader.getNumberOfParts()) {
+                            throw new CheckException("Too many archiveParts(" + hachaHeader.getNumberOfParts() + "!=" + ret.getSize() + ") for Archive(" + archive.getName() + ")");
                         }
                     }
-                    if (ret.getSize() < hachaHeader.getNumberOfParts()) {
-                        throw new CheckException("Missing archiveParts(" + hachaHeader.getNumberOfParts() + "!=" + ret.getSize() + ") for Archive(" + archive.getName() + ")");
-                    } else if (ret.getSize() > hachaHeader.getNumberOfParts()) {
-                        throw new CheckException("Too many archiveParts(" + hachaHeader.getNumberOfParts() + "!=" + ret.getSize() + ") for Archive(" + archive.getName() + ")");
-                    }
                 }
+                return ret;
+            } catch (CheckException e) {
+                throw e;
+            } catch (Throwable e) {
+                throw new CheckException("Cannot check Archive(" + archive.getName() + ")", e);
             }
-            return ret;
-        } catch (CheckException e) {
-            throw e;
-        } catch (Throwable e) {
-            throw new CheckException("Cannot check Archive(" + archive.getName() + ")", e);
         }
+        return null;
     }
 
     public static HachaHeader parseHachaHeader(ArchiveFile archiveFile) {
