@@ -107,49 +107,52 @@ public class HJSplit extends IExtraction {
     }
 
     public DummyArchive checkComplete(Archive archive) throws CheckException {
-        try {
-            final DummyArchive ret = new DummyArchive(archive, splitType.name());
-            boolean hasMissingArchiveFiles = false;
-            for (ArchiveFile archiveFile : archive.getArchiveFiles()) {
-                if (archiveFile instanceof MissingArchiveFile) {
-                    hasMissingArchiveFiles = true;
+        if (archive.getSplitType() == splitType) {
+            try {
+                final DummyArchive ret = new DummyArchive(archive, splitType.name());
+                boolean hasMissingArchiveFiles = false;
+                for (ArchiveFile archiveFile : archive.getArchiveFiles()) {
+                    if (archiveFile instanceof MissingArchiveFile) {
+                        hasMissingArchiveFiles = true;
+                    }
+                    ret.add(new DummyArchiveFile(archiveFile));
                 }
-                ret.add(new DummyArchiveFile(archiveFile));
-            }
-            if (hasMissingArchiveFiles == false) {
-                final String firstArchiveFile = archive.getFirstArchiveFile().getFilePath();
-                final String partNumberOfFirstArchiveFile = splitType.getPartNumberString(firstArchiveFile);
-                if (splitType.getFirstPartIndex() != splitType.getPartNumber(partNumberOfFirstArchiveFile)) {
-                    throw new CheckException("Wrong firstArchiveFile(" + firstArchiveFile + ") for Archive(" + archive.getName() + ")");
-                }
-                if (archive.getFirstArchiveFile().exists()) {
-                    final String signature = JDHexUtils.toString(FileSignatures.readFileSignature(new File(firstArchiveFile)));
-                    if (new Regex(signature, "^[\\w]{3}  \\d{3}").matches()) {
-                        /**
-                         * cutkiller header: extension and number of files
-                         */
-                        final String numberOfPartsString = new Regex(signature, "^[\\w]{3}  (\\d{3})").getMatch(0);
-                        final int numberOfParts = Integer.parseInt(numberOfPartsString);
-                        final List<ArchiveFile> missingArchiveFiles = SplitType.getMissingArchiveFiles(archive, splitType, numberOfParts);
-                        if (missingArchiveFiles != null) {
-                            for (ArchiveFile missingArchiveFile : missingArchiveFiles) {
-                                ret.add(new DummyArchiveFile(missingArchiveFile));
+                if (hasMissingArchiveFiles == false) {
+                    final String firstArchiveFile = archive.getFirstArchiveFile().getFilePath();
+                    final String partNumberOfFirstArchiveFile = splitType.getPartNumberString(firstArchiveFile);
+                    if (splitType.getFirstPartIndex() != splitType.getPartNumber(partNumberOfFirstArchiveFile)) {
+                        throw new CheckException("Wrong firstArchiveFile(" + firstArchiveFile + ") for Archive(" + archive.getName() + ")");
+                    }
+                    if (archive.getFirstArchiveFile().exists()) {
+                        final String signature = JDHexUtils.toString(FileSignatures.readFileSignature(new File(firstArchiveFile)));
+                        if (new Regex(signature, "^[\\w]{3}  \\d{3}").matches()) {
+                            /**
+                             * cutkiller header: extension and number of files
+                             */
+                            final String numberOfPartsString = new Regex(signature, "^[\\w]{3}  (\\d{3})").getMatch(0);
+                            final int numberOfParts = Integer.parseInt(numberOfPartsString);
+                            final List<ArchiveFile> missingArchiveFiles = SplitType.getMissingArchiveFiles(archive, splitType, numberOfParts);
+                            if (missingArchiveFiles != null) {
+                                for (ArchiveFile missingArchiveFile : missingArchiveFiles) {
+                                    ret.add(new DummyArchiveFile(missingArchiveFile));
+                                }
                             }
-                        }
-                        if (ret.getSize() < numberOfParts) {
-                            throw new CheckException("Missing archiveParts(" + numberOfParts + "!=" + ret.getSize() + ") for Archive(" + archive.getName() + ")");
-                        } else if (ret.getSize() > numberOfParts) {
-                            throw new CheckException("Too many archiveParts(" + numberOfParts + "!=" + ret.getSize() + ") for Archive(" + archive.getName() + ")");
+                            if (ret.getSize() < numberOfParts) {
+                                throw new CheckException("Missing archiveParts(" + numberOfParts + "!=" + ret.getSize() + ") for Archive(" + archive.getName() + ")");
+                            } else if (ret.getSize() > numberOfParts) {
+                                throw new CheckException("Too many archiveParts(" + numberOfParts + "!=" + ret.getSize() + ") for Archive(" + archive.getName() + ")");
+                            }
                         }
                     }
                 }
+                return ret;
+            } catch (CheckException e) {
+                throw e;
+            } catch (Throwable e) {
+                throw new CheckException("Cannot check Archive(" + archive.getName() + ")", e);
             }
-            return ret;
-        } catch (CheckException e) {
-            throw e;
-        } catch (Throwable e) {
-            throw new CheckException("Cannot check Archive(" + archive.getName() + ")", e);
         }
+        return null;
     }
 
     @Override

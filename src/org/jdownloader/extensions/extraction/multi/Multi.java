@@ -313,29 +313,32 @@ public class Multi extends IExtraction {
 
     @Override
     public DummyArchive checkComplete(Archive archive) throws CheckException {
-        try {
-            final DummyArchive ret = new DummyArchive(archive, archive.getArchiveType().name());
-            boolean hasMissingArchiveFiles = false;
-            for (ArchiveFile archiveFile : archive.getArchiveFiles()) {
-                if (archiveFile instanceof MissingArchiveFile) {
-                    hasMissingArchiveFiles = true;
+        if (archive.getArchiveType() != null) {
+            try {
+                final DummyArchive ret = new DummyArchive(archive, archive.getArchiveType().name());
+                boolean hasMissingArchiveFiles = false;
+                for (ArchiveFile archiveFile : archive.getArchiveFiles()) {
+                    if (archiveFile instanceof MissingArchiveFile) {
+                        hasMissingArchiveFiles = true;
+                    }
+                    ret.add(new DummyArchiveFile(archiveFile));
                 }
-                ret.add(new DummyArchiveFile(archiveFile));
-            }
-            if (hasMissingArchiveFiles == false) {
-                final ArchiveType archiveType = archive.getArchiveType();
-                final String firstArchiveFile = archive.getFirstArchiveFile().getFilePath();
-                final String partNumberOfFirstArchiveFile = archiveType.getPartNumberString(firstArchiveFile);
-                if (archiveType.getFirstPartIndex() != archiveType.getPartNumber(partNumberOfFirstArchiveFile)) {
-                    throw new CheckException("Wrong firstArchiveFile(" + firstArchiveFile + ") for Archive(" + archive.getName() + ")");
+                if (hasMissingArchiveFiles == false) {
+                    final ArchiveType archiveType = archive.getArchiveType();
+                    final String firstArchiveFile = archive.getFirstArchiveFile().getFilePath();
+                    final String partNumberOfFirstArchiveFile = archiveType.getPartNumberString(firstArchiveFile);
+                    if (archiveType.getFirstPartIndex() != archiveType.getPartNumber(partNumberOfFirstArchiveFile)) {
+                        throw new CheckException("Wrong firstArchiveFile(" + firstArchiveFile + ") for Archive(" + archive.getName() + ")");
+                    }
                 }
+                return ret;
+            } catch (CheckException e) {
+                throw e;
+            } catch (Throwable e) {
+                throw new CheckException("Cannot check Archive(" + archive.getName() + ")", e);
             }
-            return ret;
-        } catch (CheckException e) {
-            throw e;
-        } catch (Throwable e) {
-            throw new CheckException("Cannot check Archive(" + archive.getName() + ")", e);
         }
+        return null;
     }
 
     @Override
