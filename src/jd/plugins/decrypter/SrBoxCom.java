@@ -71,8 +71,11 @@ public class SrBoxCom extends PluginForDecrypt {
         // want to create a subfolder with the name of the package because
         // the folder is immediately created because it will download the cover
         // in it
-        String[] TabImage1 = br.getRegex("<img src=\"(http://[\\w\\.]*?israbox\\.com)*?/uploads(.*?)\"").getColumn(1);
-        String[] TabImage2 = br.getRegex("<img src=\"(http://[\\w\\.]*?lectro\\.ws)*?/uploads/posts/(.*?)\"").getColumn(1);
+        String[] TabImage1 = br.getRegex("<img src=\"(http://[\\w\\.]*?israbox\\.com)/*?/uploads(.*?)\"").getColumn(1);
+        String[] TabImage2 = br.getRegex("<img src=\"(http://[\\w\\.]*?lectro\\.ws)/*?/uploads/posts/(.*?)\"").getColumn(1);
+        if (TabImage1.length == 0 && TabImage2.length == 0) {
+            TabImage1 = br.getRegex("<img src=\"(http://[\\w\\.]*?israbox\\.com)*?/uploads(.*?)\"").getColumn(1);
+        }
 
         // Creation of the array of link that is supported by all plug-in
         String[] links = br.getRegex("<a href=\"(.*?)\"").getColumn(0);
@@ -82,6 +85,13 @@ public class SrBoxCom extends PluginForDecrypt {
 
         // Number of picture
         int iImage = TabImage1 == null ? 0 : TabImage1.length;
+        if (TabImage1 != null) {
+            for (String strImageLink : TabImage1) {
+                if (strImageLink.contains("/thumbs/")) {
+                    iImage++;
+                }
+            }
+        }
         iImage += TabImage2 == null ? 0 : TabImage2.length;
         if (TabImage2 != null) {
             for (String strImageLink : TabImage2) {
@@ -118,7 +128,16 @@ public class SrBoxCom extends PluginForDecrypt {
         if (TabImage1 != null) {
             for (String strImageLink : TabImage1) {
                 if (!strImageLink.toLowerCase().contains("foto")) {
-                    strImageLink = "http://www.israbox.com/uploads" + strImageLink;
+                    strImageLink = "http://www.israbox.com/uploads/" + strImageLink;
+
+                    if (strImageLink.contains("/thumbs/")) {
+                        DownloadLink DLLink = createDownloadlink(strImageLink, false);
+                        if (DLLink != null) {
+                            TabImageLink[iImageIndex++] = DLLink;
+                            iImageFinal++;
+                        }
+                        strImageLink = strImageLink.replace("thumbs/", "");
+                    }
 
                     DownloadLink DLLink = createDownloadlink(strImageLink, false);
                     if (DLLink != null) {
