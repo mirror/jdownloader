@@ -103,6 +103,8 @@ public class CBSolver extends CESChallengeSolver<String> implements ChallengeRes
             job.setStatus(_GUI._.DeathByCaptchaSolver_solveBasicCaptchaChallenge_uploading(), NewTheme.I().getIcon(IconKey.ICON_UPLOAD, 20));
 
             final Browser br = new Browser();
+            br.setDebug(true);
+            br.setVerbose(true);
             String ret = br.postPageRaw(url, data);
             job.setStatus(_GUI._.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_UPLOAD, 20));
 
@@ -149,6 +151,8 @@ public class CBSolver extends CESChallengeSolver<String> implements ChallengeRes
         ret.setSolved(counterSolved.get());
         try {
             Browser br = new Browser();
+            br.setDebug(true);
+            br.setVerbose(true);
             String result = br.postPage("http://www.captchabrotherhood.com/askCredits.aspx?username=" + Encoding.urlEncode(config.getUser()) + "&password=" + Encoding.urlEncode(config.getPass()) + "&version=1.1.8", "");
 
             if (result.startsWith("OK-")) {
@@ -179,6 +183,8 @@ public class CBSolver extends CESChallengeSolver<String> implements ChallengeRes
                 try {
                     String captchaID = ((CaptchaCBHResponse) response).getCaptchaCBHID();
                     Browser br = new Browser();
+                    br.setDebug(true);
+                    br.setVerbose(true);
                     String ret = "";
                     ret = br.getPage(new URL("http://www.captchabrotherhood.com/complainCaptcha.aspx?username=" + Encoding.urlEncode(config.getUser()) + "&password=" + Encoding.urlEncode(config.getPass()) + "&captchaID=" + Encoding.urlEncode(captchaID) + "&version=1.1.8"));
                 } catch (final Throwable e) {
