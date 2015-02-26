@@ -160,7 +160,7 @@ public class Grab8Com extends PluginForHost {
                 if (continueForm == null) {
                     handleErrorRetries("continueformnull", 10, 2 * 60 * 1000l);
                 }
-                br.submitForm(continueForm);
+                submitFormAPISafe(continueForm);
             }
             /*
              * If e.g. the user already transfered the file to the server but this code tries to do it again for whatever reason we will not
@@ -434,6 +434,12 @@ public class Grab8Com extends PluginForHost {
         handleAPIErrors(this.br);
     }
 
+    private void submitFormAPISafe(final Form form) throws Exception {
+        br.submitForm(form);
+        updatestatuscode();
+        handleAPIErrors(this.br);
+    }
+
     /**
      * 0 = everything ok, 1-99 = "htmlerror"-errors
      */
@@ -448,6 +454,8 @@ public class Grab8Com extends PluginForHost {
                 statuscode = 3;
             } else if (error.contains("the daily download limit of")) {
                 statuscode = 4;
+            } else if (error.contains("Get link download error")) {
+                statuscode = 5;
             } else {
                 statuscode = 666;
             }
@@ -476,6 +484,9 @@ public class Grab8Com extends PluginForHost {
             case 4:
                 statusMessage = "Exceeded daily limit of host";
                 tempUnavailableHoster(1 * 60 * 60 * 1000l);
+            case 5:
+                statusMessage = "Exceeded daily limit of host";
+                handleErrorRetries("getlinkerror", 10, 2 * 60 * 1000l);
             default:
                 /* Unknown error */
                 statusMessage = "Unknown error";
