@@ -485,7 +485,7 @@ public class Grab8Com extends PluginForHost {
                 statusMessage = "Exceeded daily limit of host";
                 tempUnavailableHoster(1 * 60 * 60 * 1000l);
             case 5:
-                statusMessage = "Exceeded daily limit of host";
+                statusMessage = "'Get link' error";
                 handleErrorRetries("getlinkerror", 10, 2 * 60 * 1000l);
             default:
                 /* Unknown error */
