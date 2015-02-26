@@ -285,7 +285,7 @@ public abstract class PluginForDecrypt extends Plugin {
             lastSolverJob = null;
             this.currentLink = null;
         }
-        if (tmpLinks == null && throwable != null && isAbort() == false) {
+        if ((tmpLinks == null || throwable != null) && !isAbort()) {
             /*
              * null as return value? something must have happened, do not clear log
              */
