@@ -377,7 +377,7 @@ public enum ArchiveType {
                 if (signatureString.length() >= 8) {
                     if (signatureString.startsWith("52617221")) {
                         if (signatureString.length() >= 22) {
-                            final int flag = Integer.parseInt(Character.toString(signatureString.charAt(22)));
+                            final int flag = Integer.parseInt(Character.toString(signatureString.charAt(21)));
                             return flag > 0 && flag % 2 != 0;
                         }
                     }
