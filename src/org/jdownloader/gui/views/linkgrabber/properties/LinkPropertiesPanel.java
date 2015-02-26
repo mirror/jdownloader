@@ -2,6 +2,7 @@ package org.jdownloader.gui.views.linkgrabber.properties;
 
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JPopupMenu;
@@ -19,6 +20,7 @@ import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.BooleanStatus;
+import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.gui.components.CheckboxMenuItem;
 import org.jdownloader.gui.translate._GUI;
@@ -116,8 +118,18 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
 
     @Override
     protected List<Archive> loadArchives() {
-        return ArchiveValidator.validate(new SelectionInfo<CrawledPackage, CrawledLink>(currentLink, null, false));
-
+        final List<Archive> validatedArchives = ArchiveValidator.validate(getSelection());
+        final List<Archive> ret = new ArrayList<Archive>();
+        if (validatedArchives != null) {
+            final CrawledLinkFactory archiveFactory = new CrawledLinkFactory(currentLink);
+            for (Archive archive : validatedArchives) {
+                if (archive.contains(archiveFactory)) {
+                    ret.add(archive);
+                    break;
+                }
+            }
+        }
+        return ret;
     }
 
     @Override

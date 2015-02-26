@@ -377,16 +377,6 @@ public enum SplitType {
         return true;
     }
 
-    public static String createArchiveID(ArchiveFactory factory, SplitType splitType) {
-        String name = factory.getName();
-        final String[] matches = splitType.getMatches(name);
-        if (matches != null) {
-            name = matches[0];
-            return "^" + Regex.escape(name) + splitType.buildIDPattern(matches).concat("$");
-        }
-        return null;
-    }
-
     public static List<ArchiveFile> getMissingArchiveFiles(Archive archive, SplitType splitType, int numberOfParts) {
         final ArchiveFile link = archive.getFirstArchiveFile();
         if (link != null) {
