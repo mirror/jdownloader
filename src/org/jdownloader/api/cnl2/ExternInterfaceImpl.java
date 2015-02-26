@@ -404,6 +404,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 final String finalPackageName = request.getParameterbyKey("package");
                 String dir = request.getParameterbyKey("dir");
                 System.out.println("FlashgotDir:" + dir);
+                System.out.println("FlashgotPackageName:" + finalPackageName);
                 if (dir != null && dir.matches("^[a-zA-Z]{1}:$")) {
                     /* flashgot seems unable to set x:/ <-> only x: is possible */
                     dir = dir + "/";
