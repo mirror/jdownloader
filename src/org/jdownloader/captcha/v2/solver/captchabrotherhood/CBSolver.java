@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.http.Browser;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 
 import org.appwork.storage.config.JsonConfig;
@@ -93,19 +94,28 @@ public class CBSolver extends CESChallengeSolver<String> implements ChallengeRes
         }
 
         BasicCaptchaChallenge challenge = (BasicCaptchaChallenge) job.getChallenge();
+        String user = config.getUser();
+        String password = config.getPass();
 
         job.showBubble(this);
         checkInterruption();
         try {
             counter.incrementAndGet();
-            String url = "http://www.captchabrotherhood.com/sendNewCaptcha.aspx?username=" + Encoding.urlEncode(config.getUser()) + "&password=" + Encoding.urlEncode(config.getPass()) + "&captchaSource=jdPlugin&captchaSite=999&timeout=80&version=1.1.7";
+            String url = "http://www.captchabrotherhood.com/sendNewCaptcha.aspx?username=" + Encoding.urlEncode(user) + "&password=" + Encoding.urlEncode(password) + "&captchaSource=jdPlugin&captchaSite=-1&timeout=80&version=1.2.1";
             byte[] data = IO.readFile(challenge.getImageFile());
             job.setStatus(_GUI._.DeathByCaptchaSolver_solveBasicCaptchaChallenge_uploading(), NewTheme.I().getIcon(IconKey.ICON_UPLOAD, 20));
 
             final Browser br = new Browser();
+
             br.setDebug(true);
             br.setVerbose(true);
-            String ret = br.postPageRaw(url, data);
+            //
+            final PostRequest request = new PostRequest(url);
+            // server answers with internal server error if we do not use text/html
+            request.setContentType("text/html");
+            request.setPostBytes(data);
+            String ret = br.loadConnection(br.openRequestConnection(request)).getHtmlCode();
+
             job.setStatus(_GUI._.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_UPLOAD, 20));
 
             job.getLogger().info("Send Captcha. Answer: " + ret);
