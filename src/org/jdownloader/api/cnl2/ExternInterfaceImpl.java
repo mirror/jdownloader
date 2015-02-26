@@ -402,7 +402,12 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                  */
                 LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.FLASHGOT, request.getRequestHeaders().getValue("user-agent")), null);
                 final String finalPackageName = request.getParameterbyKey("package");
-                final String finalDestination = request.getParameterbyKey("dir");
+                String dir = request.getParameterbyKey("dir");
+                if (dir != null && dir.matches("^[a-zA-Z]{1}:$")) {
+                    /* flashgot seems unable to set x:/ <-> only x: is possible */
+                    dir = dir + "/";
+                }
+                final String finalDestination = dir;
 
                 final CrawledLinkModifier modifier = new CrawledLinkModifier() {
                     private HashSet<String> pws = null;
