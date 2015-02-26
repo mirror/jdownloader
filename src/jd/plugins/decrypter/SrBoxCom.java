@@ -51,7 +51,7 @@ public class SrBoxCom extends PluginForDecrypt {
             }
             return decryptedLinks;
         }
-        String fpName = br.getRegex("<h1><a href.*>(.*?)</a></h1>").getMatch(0);
+        String fpName = br.getRegex("<h1><a href[^>]+>(.*?)</a></h1>").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
             if (fpName == null) {
@@ -341,6 +341,9 @@ public class SrBoxCom extends PluginForDecrypt {
 
         // Add a space between two parenthesis
         strName = strName.replace(")(", ") (");
+
+        // remove trailing ,
+        strName = strName.replaceFirst(",$", "");
 
         return strName;
     }
