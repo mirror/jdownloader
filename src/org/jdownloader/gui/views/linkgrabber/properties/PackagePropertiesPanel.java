@@ -1,16 +1,20 @@
 package org.jdownloader.gui.views.linkgrabber.properties;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import javax.swing.JPopupMenu;
 
+import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
 import org.appwork.swing.MigPanel;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.extensions.extraction.Archive;
+import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.gui.components.CheckboxMenuItem;
 import org.jdownloader.gui.translate._GUI;
@@ -29,7 +33,21 @@ public class PackagePropertiesPanel extends LinkPropertiesPanel {
 
     @Override
     protected List<Archive> loadArchives() {
-        return ArchiveValidator.validate(new SelectionInfo<CrawledPackage, CrawledLink>(currentPackage, null, false));
+        final List<Archive> validatedArchives = ArchiveValidator.validate(getSelection());
+        final HashSet<Archive> ret = new HashSet<Archive>();
+        if (validatedArchives != null) {
+            final ArrayList<CrawledLink> children = LinkCollector.getInstance().getChildrenCopy(currentPackage);
+            for (CrawledLink child : children) {
+                final CrawledLinkFactory archiveFactory = new CrawledLinkFactory(child);
+                for (Archive archive : validatedArchives) {
+                    if (archive.contains(archiveFactory)) {
+                        ret.add(archive);
+                        break;
+                    }
+                }
+            }
+        }
+        return new ArrayList<Archive>(ret);
     }
 
     public void fillPopup(JPopupMenu pu) {

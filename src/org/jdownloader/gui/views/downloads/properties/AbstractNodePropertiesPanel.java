@@ -31,6 +31,8 @@ import javax.swing.KeyStroke;
 import javax.swing.text.DefaultEditorKit.CopyAction;
 import javax.swing.text.TextAction;
 
+import jd.gui.swing.jdgui.MainTabbedPane;
+import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
 import net.miginfocom.swing.MigLayout;
 
@@ -61,7 +63,12 @@ import org.jdownloader.gui.packagehistorycontroller.PackageHistoryEntry;
 import org.jdownloader.gui.packagehistorycontroller.PackageHistoryManager;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.PseudoCombo;
+import org.jdownloader.gui.views.downloads.DownloadsView;
+import org.jdownloader.gui.views.downloads.table.DownloadsTable;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
@@ -97,6 +104,16 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
     public void setVisible(boolean aFlag) {
         super.setVisible(aFlag);
 
+    }
+
+    protected SelectionInfo<?, ?> getSelection() {
+        final View view = MainTabbedPane.getInstance().getSelectedView();
+        if (view instanceof DownloadsView) {
+            return DownloadsTable.getInstance().getSelectionInfo(true, true);
+        } else if (view instanceof LinkGrabberView) {
+            return LinkGrabberTable.getInstance().getSelectionInfo(true, true);
+        }
+        return null;
     }
 
     public AbstractNodePropertiesPanel() {
