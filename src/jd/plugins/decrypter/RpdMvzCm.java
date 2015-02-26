@@ -63,43 +63,58 @@ public class RpdMvzCm extends PluginForDecrypt {
 
         String fpName = br.getRegex("<h2>(.*?)<br />").getMatch(0);
 
-        String js = br.getRegex("<script[^\r\n]+src=\"(/j/\\d+[^\"]+\\.js)").getMatch(0);
-        if (js == null) {
-            logger.warning("Can not find 'js', Please report this to JDownloader Development Team : " + parameter);
-            return null;
-        }
-
-        br.getHeaders().put("Accept", "*/*");
-        br.getPage(js);
-
-        String filter = br.getRegex("\\(([\\d,]+)\\)").getMatch(0);
-        if (filter == null) {
-            logger.warning("Can not find 'filter', Please report this to JDownloader Development Team : " + parameter);
-            return null;
-        }
-        String[] charset = filter.split(",");
-
-        StringBuilder builder = new StringBuilder(charset.length);
-        for (String chR : charset) {
-            builder.append(Character.toChars(Integer.parseInt(chR)));
-        }
-
-        String[] results = new Regex(builder.toString(), "(txt \\+= 'http.*?txt \\+= \"\\\\n\";)").getColumn(0);
-        if (results != null && results.length != 0) {
-            for (String result : results) {
-                StringBuilder out = new StringBuilder(results.length);
-                String[] data = new Regex(result, "txt \\+= '([^']{1,})'").getColumn(0);
-                if (data == null) {
-                    continue;
+        final String links[] = br.getRegex("<pre class=\"links\"[^>]+>(.*?)</pre>").getColumn(0);
+        if (links != null) {
+            for (final String link : links) {
+                final String[] lin = link.split("\r\n");
+                if (lin != null) {
+                    for (final String li : lin) {
+                        decryptedLinks.add(createDownloadlink(li));
+                    }
                 }
-                for (String res : data) {
-                    out.append(res);
-                }
-                decryptedLinks.add(createDownloadlink(out.toString()));
+
             }
-        } else {
-            logger.warning("Can not find 'results', Please report this to JDownloader Development Team : " + parameter);
-            return null;
+        }
+        if (decryptedLinks.isEmpty()) {
+
+            String js = br.getRegex("<script[^\r\n]+src=\"(/j/\\d+[^\"]+\\.js)").getMatch(0);
+            if (js == null) {
+                logger.warning("Can not find 'js', Please report this to JDownloader Development Team : " + parameter);
+                return null;
+            }
+
+            br.getHeaders().put("Accept", "*/*");
+            br.getPage(js);
+
+            String filter = br.getRegex("\\(([\\d,]+)\\)").getMatch(0);
+            if (filter == null) {
+                logger.warning("Can not find 'filter', Please report this to JDownloader Development Team : " + parameter);
+                return null;
+            }
+            String[] charset = filter.split(",");
+
+            StringBuilder builder = new StringBuilder(charset.length);
+            for (String chR : charset) {
+                builder.append(Character.toChars(Integer.parseInt(chR)));
+            }
+
+            String[] results = new Regex(builder.toString(), "(txt \\+= 'http.*?txt \\+= \"\\\\n\";)").getColumn(0);
+            if (results != null && results.length != 0) {
+                for (String result : results) {
+                    StringBuilder out = new StringBuilder(results.length);
+                    String[] data = new Regex(result, "txt \\+= '([^']{1,})'").getColumn(0);
+                    if (data == null) {
+                        continue;
+                    }
+                    for (String res : data) {
+                        out.append(res);
+                    }
+                    decryptedLinks.add(createDownloadlink(out.toString()));
+                }
+            } else {
+                logger.warning("Can not find 'results', Please report this to JDownloader Development Team : " + parameter);
+                return null;
+            }
         }
 
         if (decryptedLinks.isEmpty()) {
