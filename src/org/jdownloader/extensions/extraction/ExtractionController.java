@@ -192,11 +192,11 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
             extractor.setCrashLog(crashLog);
             logger.info("Start unpacking of " + archive.getFirstArchiveFile().getFilePath());
 
-            for (ArchiveFile l : archive.getArchiveFiles()) {
-                if (!new File(l.getFilePath()).exists()) {
-                    crashLog.write("File missing: " + l.getFilePath());
-                    logger.info("Could not find archive file " + l.getFilePath());
-                    archive.addCrcError(l);
+            for (ArchiveFile archiveFile : archive.getArchiveFiles()) {
+                if (!archiveFile.exists()) {
+                    crashLog.write("File missing: " + archiveFile.getFilePath());
+                    logger.info("Could not find archive file " + archiveFile.getFilePath());
+                    archive.addCrcError(archiveFile);
                 }
             }
             if (archive.getCrcError().size() > 0) {

@@ -17,7 +17,6 @@ import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.FileSignatures;
 import org.jdownloader.extensions.extraction.MissingArchiveFile;
-import org.jdownloader.extensions.extraction.Signature;
 import org.jdownloader.logging.LogController;
 
 public enum ArchiveType {
@@ -46,14 +45,22 @@ public enum ArchiveType {
         }
 
         @Override
-        protected String buildIDPattern(String[] matches) {
-            return "\\." + matches[1] + Regex.escape(matches[2]) + "\\d{" + matches[3].length() + "}" + Regex.escape(matches[4]) + "\\.rar";
+        protected String buildIDPattern(String[] matches, final Boolean isMultiPart) {
+            if (Boolean.FALSE.equals(isMultiPart)) {
+                return null;
+            } else {
+                return "\\." + matches[1] + Regex.escape(matches[2]) + "\\d{" + matches[3].length() + "}" + Regex.escape(matches[4]) + "\\.rar";
+            }
         }
 
         @Override
-        public Pattern buildArchivePattern(String[] matches) {
-            final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches) + "$";
-            return Pattern.compile(pattern);
+        public Pattern buildArchivePattern(String[] matches, final Boolean isMultiPart) {
+            if (Boolean.FALSE.equals(isMultiPart)) {
+                return null;
+            } else {
+                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, isMultiPart) + "$";
+                return Pattern.compile(pattern);
+            }
         }
 
         @Override
@@ -87,13 +94,18 @@ public enum ArchiveType {
             return matches[0] + "." + matches[1] + matches[2] + String.format(Locale.US, "%0" + partStringLength + "d", partIndex) + matches[4] + ".rar";
         }
 
+        @Override
+        protected Boolean isMultiPart(ArchiveFile archiveFile) {
+            return RAR_SINGLE.isMultiPart(archiveFile);
+        }
+
     },
     /**
      * Multipart RAR Archive (.000.rar, .001.rar...)
      */
     RAR_MULTI2 {
 
-        private final Pattern pattern = Pattern.compile("(?i)(.*)\\.(\\d+)\\.rar$");
+        private final Pattern pattern = Pattern.compile("(?i)(.*)\\.(\\d{3})\\.rar$");
 
         @Override
         public ArchiveFormat getArchiveFormat() {
@@ -106,14 +118,22 @@ public enum ArchiveType {
         }
 
         @Override
-        protected String buildIDPattern(String[] matches) {
-            return "\\.\\d{" + matches[1].length() + "}\\.rar";
+        protected String buildIDPattern(String[] matches, final Boolean isMultiPart) {
+            if (Boolean.FALSE.equals(isMultiPart)) {
+                return null;
+            } else {
+                return "\\.\\d{3}\\.rar";
+            }
         }
 
         @Override
-        public Pattern buildArchivePattern(String[] matches) {
-            final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches) + "$";
-            return Pattern.compile(pattern);
+        public Pattern buildArchivePattern(String[] matches, final Boolean isMultiPart) {
+            if (Boolean.FALSE.equals(isMultiPart)) {
+                return null;
+            } else {
+                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, isMultiPart) + "$";
+                return Pattern.compile(pattern);
+            }
         }
 
         @Override
@@ -147,12 +167,17 @@ public enum ArchiveType {
             return matches[0] + "." + String.format(Locale.US, "%0" + partStringLength + "d", partIndex) + ".rar";
         }
 
+        @Override
+        protected Boolean isMultiPart(ArchiveFile archiveFile) {
+            return RAR_SINGLE.isMultiPart(archiveFile);
+        }
+
     },
     /**
-     * SinglePart RAR Archive (.rar) or Multipart RAR Archive (.rar, .r00, .r01...)
+     * Multipart RAR Archive (.rar, .r00, .r01...)
      */
-    RAR_SINGLE_OR_MULTI3 {
-        private final Pattern patternPart  = Pattern.compile("(?i)(.*)\\.r(\\d+)$");
+    RAR_MULTI3 {
+        private final Pattern patternPart  = Pattern.compile("(?i)(.*)\\.r(\\d{2,})$");
 
         private final Pattern patternStart = Pattern.compile("(?i)(.*)\\.rar$");
 
@@ -167,14 +192,22 @@ public enum ArchiveType {
         }
 
         @Override
-        protected String buildIDPattern(String[] matches) {
-            return "\\.(r\\d+|rar)";
+        protected String buildIDPattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.FALSE.equals(isMultiPart)) {
+                return null;
+            } else {
+                return "\\.(r\\d{2,}|rar)";
+            }
         }
 
         @Override
-        public Pattern buildArchivePattern(String[] matches) {
-            final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches) + "$";
-            return Pattern.compile(pattern);
+        public Pattern buildArchivePattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.FALSE.equals(isMultiPart)) {
+                return null;
+            } else {
+                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, isMultiPart) + "$";
+                return Pattern.compile(pattern);
+            }
         }
 
         @Override
@@ -222,6 +255,138 @@ public enum ArchiveType {
                 return matches[0] + ".r" + String.format(Locale.US, "%0" + partStringLength + "d", (partIndex - 1));
             }
         }
+
+        @Override
+        protected Boolean isMultiPart(ArchiveFile archiveFile) {
+            return RAR_SINGLE.isMultiPart(archiveFile);
+        }
+
+    },
+
+    /**
+     * SinglePart RAR Archive (.rar) (.rar)
+     */
+    RAR_SINGLE {
+
+        private final Pattern pattern = Pattern.compile("(?i)(.*)\\.rar$");
+
+        @Override
+        public ArchiveFormat getArchiveFormat() {
+            return ArchiveFormat.RAR;
+        }
+
+        @Override
+        public boolean matches(String filePathOrName) {
+            return filePathOrName != null && pattern.matcher(filePathOrName).matches();
+        }
+
+        @Override
+        protected String buildIDPattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.TRUE.equals(isMultiPart)) {
+                return null;
+            } else {
+                return "\\.rar";
+            }
+        }
+
+        @Override
+        public Pattern buildArchivePattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.TRUE.equals(isMultiPart)) {
+                return null;
+            } else {
+                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, isMultiPart) + "$";
+                return Pattern.compile(pattern);
+            }
+        }
+
+        @Override
+        public String[] getMatches(String filePathOrName) {
+            return filePathOrName != null ? new Regex(filePathOrName, pattern).getRow(0) : null;
+        }
+
+        @Override
+        protected String getPartNumberString(String filePathOrName) {
+            return null;
+        }
+
+        @Override
+        protected int getPartNumber(String partNumberString) {
+            return 0;
+        }
+
+        @Override
+        protected int getFirstPartIndex() {
+            return 0;
+        }
+
+        @Override
+        protected int getMinimumNeededPartIndex() {
+            return 0;
+        }
+
+        @Override
+        protected String buildMissingPart(String[] matches, int partIndex, int partStringLength) {
+            return matches[0] + ".rar";
+        }
+
+        /**
+         * http://www.forensicswiki.org/wiki/RAR
+         *
+         * http://www.rarlab.com/technote.htm#rarsign
+         *
+         * DOES ONLY CHECK VALID RAR FILE, NOT IF ITS A VOLUME FILE if partIndex >0
+         */
+        @Override
+        protected Boolean isValidPart(int partIndex, ArchiveFile archiveFile) {
+            if (archiveFile.exists()) {
+                final String signatureString;
+                try {
+                    signatureString = FileSignatures.readFileSignature(new File(archiveFile.getFilePath()), 4);
+                } catch (IOException e) {
+                    LogController.CL().log(e);
+                    return false;
+                }
+                if (signatureString.length() >= 8) {
+                    return signatureString.startsWith("52617221");
+                }
+            }
+            return null;
+        }
+
+        /**
+         * http://www.forensicswiki.org/wiki/RAR
+         *
+         * http://www.rarlab.com/technote.htm#rarsign
+         *
+         * 0x0001 Volume/Archive
+         *
+         * 0x0010 New Volume naming scheme (.partN.rar)
+         *
+         * 0x0100 First Volume (only in RAR 3.0 and later)
+         */
+        @Override
+        protected Boolean isMultiPart(ArchiveFile archiveFile) {
+            if (archiveFile.exists()) {
+                final String signatureString;
+                try {
+                    signatureString = FileSignatures.readFileSignature(new File(archiveFile.getFilePath()), 12);
+                } catch (IOException e) {
+                    LogController.CL().log(e);
+                    return false;
+                }
+                if (signatureString.length() >= 8) {
+                    if (signatureString.startsWith("52617221")) {
+                        if (signatureString.length() >= 22) {
+                            final int flag = Integer.parseInt(Character.toString(signatureString.charAt(22)));
+                            return flag > 0 && flag % 2 != 0;
+                        }
+                    }
+                    return false;
+                }
+            }
+            return null;
+        }
+
     },
 
     /**
@@ -241,14 +406,22 @@ public enum ArchiveType {
         }
 
         @Override
-        protected String buildIDPattern(String[] matches) {
-            return "\\.7z\\.\\d{" + matches[1].length() + "}";
+        protected String buildIDPattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.FALSE.equals(isMultiPart)) {
+                return null;
+            } else {
+                return "\\.7z\\.\\d{" + matches[1].length() + "}";
+            }
         }
 
         @Override
-        public Pattern buildArchivePattern(String[] matches) {
-            final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches) + "$";
-            return Pattern.compile(pattern);
+        public Pattern buildArchivePattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.FALSE.equals(isMultiPart)) {
+                return null;
+            } else {
+                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, null) + "$";
+                return Pattern.compile(pattern);
+            }
         }
 
         @Override
@@ -300,14 +473,22 @@ public enum ArchiveType {
         }
 
         @Override
-        protected String buildIDPattern(String[] matches) {
-            return "\\.zip\\.\\d{" + matches[1].length() + "}";
+        protected String buildIDPattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.FALSE.equals(isMultiPart)) {
+                return null;
+            } else {
+                return "\\.zip\\.\\d{" + matches[1].length() + "}";
+            }
         }
 
         @Override
-        public Pattern buildArchivePattern(String[] matches) {
-            final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches) + "$";
-            return Pattern.compile(pattern);
+        public Pattern buildArchivePattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.FALSE.equals(isMultiPart)) {
+                return null;
+            } else {
+                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, null) + "$";
+                return Pattern.compile(pattern);
+            }
         }
 
         @Override
@@ -359,14 +540,22 @@ public enum ArchiveType {
         }
 
         @Override
-        protected String buildIDPattern(String[] matches) {
-            return "\\.7z";
+        protected String buildIDPattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.TRUE.equals(isMultiPart)) {
+                return null;
+            } else {
+                return "\\.7z";
+            }
         }
 
         @Override
-        public Pattern buildArchivePattern(String[] matches) {
-            final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches) + "$";
-            return Pattern.compile(pattern);
+        public Pattern buildArchivePattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.TRUE.equals(isMultiPart)) {
+                return null;
+            } else {
+                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, null) + "$";
+                return Pattern.compile(pattern);
+            }
         }
 
         @Override
@@ -418,14 +607,22 @@ public enum ArchiveType {
         }
 
         @Override
-        protected String buildIDPattern(String[] matches) {
-            return "\\.zip";
+        protected String buildIDPattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.TRUE.equals(isMultiPart)) {
+                return null;
+            } else {
+                return "\\.zip";
+            }
         }
 
         @Override
-        public Pattern buildArchivePattern(String[] matches) {
-            final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches) + "$";
-            return Pattern.compile(pattern);
+        public Pattern buildArchivePattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.TRUE.equals(isMultiPart)) {
+                return null;
+            } else {
+                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, null) + "$";
+                return Pattern.compile(pattern);
+            }
         }
 
         @Override
@@ -476,14 +673,22 @@ public enum ArchiveType {
         }
 
         @Override
-        protected String buildIDPattern(String[] matches) {
-            return "\\." + matches[1];
+        protected String buildIDPattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.TRUE.equals(isMultiPart)) {
+                return null;
+            } else {
+                return "\\." + matches[1];
+            }
         }
 
         @Override
-        public Pattern buildArchivePattern(String[] matches) {
-            final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches) + "$";
-            return Pattern.compile(pattern);
+        public Pattern buildArchivePattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.TRUE.equals(isMultiPart)) {
+                return null;
+            } else {
+                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, null) + "$";
+                return Pattern.compile(pattern);
+            }
         }
 
         @Override
@@ -534,14 +739,22 @@ public enum ArchiveType {
         }
 
         @Override
-        protected String buildIDPattern(String[] matches) {
-            return "\\.tar";
+        protected String buildIDPattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.TRUE.equals(isMultiPart)) {
+                return null;
+            } else {
+                return "\\.tar";
+            }
         }
 
         @Override
-        public Pattern buildArchivePattern(String[] matches) {
-            final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches) + "$";
-            return Pattern.compile(pattern);
+        public Pattern buildArchivePattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.TRUE.equals(isMultiPart)) {
+                return null;
+            } else {
+                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, null) + "$";
+                return Pattern.compile(pattern);
+            }
         }
 
         @Override
@@ -592,14 +805,22 @@ public enum ArchiveType {
         }
 
         @Override
-        protected String buildIDPattern(String[] matches) {
-            return "\\.arj";
+        protected String buildIDPattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.TRUE.equals(isMultiPart)) {
+                return null;
+            } else {
+                return "\\.arj";
+            }
         }
 
         @Override
-        public Pattern buildArchivePattern(String[] matches) {
-            final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches) + "$";
-            return Pattern.compile(pattern);
+        public Pattern buildArchivePattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.TRUE.equals(isMultiPart)) {
+                return null;
+            } else {
+                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, null) + "$";
+                return Pattern.compile(pattern);
+            }
         }
 
         @Override
@@ -649,14 +870,22 @@ public enum ArchiveType {
         }
 
         @Override
-        protected String buildIDPattern(String[] matches) {
-            return "\\.cpio";
+        protected String buildIDPattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.TRUE.equals(isMultiPart)) {
+                return null;
+            } else {
+                return "\\.cpio";
+            }
         }
 
         @Override
-        public Pattern buildArchivePattern(String[] matches) {
-            final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches) + "$";
-            return Pattern.compile(pattern);
+        public Pattern buildArchivePattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.TRUE.equals(isMultiPart)) {
+                return null;
+            } else {
+                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, null) + "$";
+                return Pattern.compile(pattern);
+            }
         }
 
         @Override
@@ -706,14 +935,22 @@ public enum ArchiveType {
         }
 
         @Override
-        protected String buildIDPattern(String[] matches) {
-            return "\\.tgz";
+        protected String buildIDPattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.TRUE.equals(isMultiPart)) {
+                return null;
+            } else {
+                return "\\.tgz";
+            }
         }
 
         @Override
-        public Pattern buildArchivePattern(String[] matches) {
-            final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches) + "$";
-            return Pattern.compile(pattern);
+        public Pattern buildArchivePattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.TRUE.equals(isMultiPart)) {
+                return null;
+            } else {
+                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, null) + "$";
+                return Pattern.compile(pattern);
+            }
         }
 
         @Override
@@ -763,14 +1000,22 @@ public enum ArchiveType {
         }
 
         @Override
-        protected String buildIDPattern(String[] matches) {
-            return "\\.gz";
+        protected String buildIDPattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.TRUE.equals(isMultiPart)) {
+                return null;
+            } else {
+                return "\\.gz";
+            }
         }
 
         @Override
-        public Pattern buildArchivePattern(String[] matches) {
-            final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches) + "$";
-            return Pattern.compile(pattern);
+        public Pattern buildArchivePattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.TRUE.equals(isMultiPart)) {
+                return null;
+            } else {
+                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, null) + "$";
+                return Pattern.compile(pattern);
+            }
         }
 
         @Override
@@ -820,14 +1065,22 @@ public enum ArchiveType {
         }
 
         @Override
-        protected String buildIDPattern(String[] matches) {
-            return "\\.bz2";
+        protected String buildIDPattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.TRUE.equals(isMultiPart)) {
+                return null;
+            } else {
+                return "\\.bz2";
+            }
         }
 
         @Override
-        public Pattern buildArchivePattern(String[] matches) {
-            final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches) + "$";
-            return Pattern.compile(pattern);
+        public Pattern buildArchivePattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.TRUE.equals(isMultiPart)) {
+                return null;
+            } else {
+                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, null) + "$";
+                return Pattern.compile(pattern);
+            }
         }
 
         @Override
@@ -873,14 +1126,22 @@ public enum ArchiveType {
         }
 
         @Override
-        protected String buildIDPattern(String[] matches) {
-            return "\\.[0-9]{3}";
+        protected String buildIDPattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.FALSE.equals(isMultiPart)) {
+                return null;
+            } else {
+                return "\\.[0-9]{3}";
+            }
         }
 
         @Override
-        public Pattern buildArchivePattern(String[] matches) {
-            final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches) + "$";
-            return Pattern.compile(pattern);
+        public Pattern buildArchivePattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.FALSE.equals(isMultiPart)) {
+                return null;
+            } else {
+                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, null) + "$";
+                return Pattern.compile(pattern);
+            }
         }
 
         @Override
@@ -930,25 +1191,13 @@ public enum ArchiveType {
         }
 
         @Override
-        protected boolean isValidPart(int partIndex, ArchiveFile archiveFile) {
-            if (archiveFile.exists()) {
-                final String signatureString;
-                try {
-                    signatureString = FileSignatures.readFileSignature(new File(archiveFile.getFilePath()));
-                } catch (IOException e) {
-                    LogController.CL().log(e);
-                    return false;
-                }
-                final Signature signature = new FileSignatures().getSignature(signatureString);
-                return signature != null && "RAR".equalsIgnoreCase(signature.getId());
-            } else {
-                return true;
-            }
+        public ArchiveFormat getArchiveFormat() {
+            return ArchiveFormat.RAR;
         }
 
         @Override
-        public ArchiveFormat getArchiveFormat() {
-            return ArchiveFormat.RAR;
+        protected Boolean isValidPart(int partIndex, ArchiveFile archiveFile) {
+            return RAR_SINGLE.isValidPart(partIndex, archiveFile);
         }
 
     };
@@ -959,9 +1208,9 @@ public enum ArchiveType {
 
     public abstract String[] getMatches(final String filePathOrName);
 
-    public abstract Pattern buildArchivePattern(String[] matches);
+    public abstract Pattern buildArchivePattern(String[] matches, Boolean isMultiPart);
 
-    protected abstract String buildIDPattern(String[] matches);
+    protected abstract String buildIDPattern(String[] matches, Boolean isMultiPart);
 
     protected abstract String getPartNumberString(final String filePathOrName);
 
@@ -977,48 +1226,11 @@ public enum ArchiveType {
         return bitset.size() != 0;
     }
 
-    protected boolean isValidPart(int partIndex, ArchiveFile archiveFile) {
-        return true;
-    }
-
-    public static boolean isMultiPartArchive(ArchiveFactory factory) {
-        final String name = factory.getName();
-        for (ArchiveType archiveType : values()) {
-            if (archiveType.getMinimumNeededPartIndex() - archiveType.getFirstPartIndex() > 0 && archiveType.matches(name)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static String createArchiveName(ArchiveFactory factory) {
-        final String name = factory.getName();
-        for (ArchiveType archiveType : values()) {
-            final String[] matches = archiveType.getMatches(name);
-            if (matches != null) {
-                return matches[0];
-            }
-        }
+    protected Boolean isValidPart(int partIndex, ArchiveFile archiveFile) {
         return null;
     }
 
-    public static String createArchiveID(ArchiveFactory factory) {
-        String name = factory.getName();
-        String idPattern = "$";
-        loop: while (true) {
-            for (ArchiveType archiveType : values()) {
-                final String[] matches = archiveType.getMatches(name);
-                if (matches != null) {
-                    name = matches[0];
-                    idPattern = archiveType.buildIDPattern(matches).concat(idPattern);
-                    continue loop;
-                }
-            }
-            break;
-        }
-        if (idPattern.length() > 1) {
-            return "^" + Regex.escape(name) + idPattern;
-        }
+    protected Boolean isMultiPart(final ArchiveFile archiveFile) {
         return null;
     }
 
@@ -1060,12 +1272,21 @@ public enum ArchiveType {
         return null;
     }
 
-    public static Archive createArchive(ArchiveFactory link, boolean allowDeepInspection) throws ArchiveException {
+    public static Archive createArchive(final ArchiveFactory link, final boolean allowDeepInspection) throws ArchiveException {
         final String linkPath = link.getFilePath();
         archiveTypeLoop: for (final ArchiveType archiveType : values()) {
             final String[] filePathParts = archiveType.getMatches(linkPath);
             if (filePathParts != null) {
-                final Pattern pattern = archiveType.buildArchivePattern(filePathParts);
+                final Boolean isMultiPart;
+                if (allowDeepInspection) {
+                    isMultiPart = archiveType.isMultiPart(link);
+                } else {
+                    isMultiPart = null;
+                }
+                final Pattern pattern = archiveType.buildArchivePattern(filePathParts, isMultiPart);
+                if (pattern == null) {
+                    continue archiveTypeLoop;
+                }
                 final List<ArchiveFile> foundArchiveFiles = link.createPartFileList(linkPath, pattern.pattern());
                 if (foundArchiveFiles == null || foundArchiveFiles.size() == 0) {
                     throw new ArchiveException("Broken archive support: " + link.getFilePath());
@@ -1102,6 +1323,7 @@ public enum ArchiveType {
                     final Archive archive = link.createArchive();
                     archive.setName(fileNameParts[0]);
                     archive.setArchiveType(archiveType);
+                    archive.setArchiveID(archiveType.name() + fileNameParts[0] + archiveType.buildIDPattern(fileNameParts, isMultiPart));
                     final ArrayList<ArchiveFile> sortedArchiveFiles = new ArrayList<ArchiveFile>();
                     final int minimumParts = Math.max(archiveType.getMinimumNeededPartIndex(), highestPartNumber);
                     ArchiveFile firstArchiveFile = null;
@@ -1113,7 +1335,7 @@ public enum ArchiveType {
                             if (firstArchiveFile == null) {
                                 firstArchiveFile = archiveFiles[partIndex];
                             }
-                            if (allowDeepInspection && archiveType.isValidPart(partIndex, archiveFiles[partIndex]) == false) {
+                            if (allowDeepInspection && Boolean.FALSE.equals(archiveType.isValidPart(partIndex, archiveFiles[partIndex]))) {
                                 continue archiveTypeLoop;
                             }
                             sortedArchiveFiles.add(archiveFiles[partIndex]);

@@ -66,13 +66,8 @@ public class XtreamSplit extends IExtraction {
 
     private final SplitType                        splitType   = SplitType.XTREMSPLIT;
 
-    public Archive buildArchive(ArchiveFactory link) throws ArchiveException {
-        return SplitType.createArchive(link, splitType, false);
-    }
-
-    @Override
-    public boolean isMultiPartArchive(ArchiveFactory factory) {
-        return true;
+    public Archive buildArchive(ArchiveFactory link, boolean allowDeepInspection) throws ArchiveException {
+        return SplitType.createArchive(link, splitType, allowDeepInspection);
     }
 
     @Override
@@ -294,7 +289,7 @@ public class XtreamSplit extends IExtraction {
     }
 
     @Override
-    public boolean checkCommand() {
+    public boolean isAvailable() {
         return true;
     }
 
@@ -379,14 +374,6 @@ public class XtreamSplit extends IExtraction {
         }
     }
 
-    public String getArchiveName(ArchiveFactory factory) {
-        return SplitType.createArchiveName(factory, splitType);
-    }
-
-    public boolean isArchivSupported(ArchiveFactory factory, boolean allowDeepInspection) {
-        return createID(factory) != null;
-    }
-
     public void close() {
         hashes.clear();
     }
@@ -446,13 +433,17 @@ public class XtreamSplit extends IExtraction {
     }
 
     @Override
-    public String createID(ArchiveFactory factory) {
-        return SplitType.createArchiveID(factory, splitType);
-    }
-
-    @Override
-    public boolean isFileSupported(ArchiveFactory factory, boolean allowDeepInspection) {
-        return splitType.matches(factory.getFilePath());
+    public Boolean isSupported(ArchiveFactory factory, boolean allowDeepInspection) {
+        if (allowDeepInspection) {
+            try {
+                return SplitType.createArchive(factory, splitType, allowDeepInspection) != null;
+            } catch (ArchiveException e) {
+                getLogger().log(e);
+                return false;
+            }
+        } else {
+            return splitType.matches(factory.getFilePath());
+        }
     }
 
 }

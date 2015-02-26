@@ -86,11 +86,9 @@ public class ArchiveValidator {
                         continue;
                     }
                 }
-                if (extractor.isLinkSupported(af)) {
-                    final Archive archive = extractor.getArchiveByFactory(af);
-                    if (archive != null) {
-                        archives.add(archive);
-                    }
+                final Archive archive = extractor.getArchiveByFactory(af);
+                if (archive != null) {
+                    archives.add(archive);
                 }
             }
         }

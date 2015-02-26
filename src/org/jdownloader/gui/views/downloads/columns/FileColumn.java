@@ -37,6 +37,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.ExtensionController;
+import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
@@ -249,19 +250,17 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
             ((CrawledPackage) object).setName(value);
         } else if (object instanceof CrawledLink) {
             boolean isMultiArchive = false;
-
             try {
                 ExtractionExtension archiver = ((ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension());
                 if (archiver != null) {
-                    CrawledLinkFactory clf = new CrawledLinkFactory(((CrawledLink) object));
-                    isMultiArchive = archiver.isMultiPartArchive(clf);
+                    final CrawledLinkFactory archiveFactory = new CrawledLinkFactory(((CrawledLink) object));
+                    final Archive archive = archiver.buildArchive(archiveFactory);
+                    isMultiArchive = archive != null && archive.getArchiveFiles().size() > 1;
                 }
             } catch (Throwable e) {
                 Log.exception(Level.SEVERE, e);
             }
-
             ((CrawledLink) object).setName(value);
-
             if (isMultiArchive) {
                 String title = _GUI._.FileColumn_setStringValue_title_();
                 String msg = _GUI._.FileColumn_setStringValue_msg_();
@@ -270,18 +269,17 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
             }
         } else if (object instanceof DownloadLink) {
             boolean isMultiArchive = false;
-
             try {
                 ExtractionExtension archiver = ((ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension());
                 if (archiver != null) {
-                    DownloadLinkArchiveFactory clf = new DownloadLinkArchiveFactory(((DownloadLink) object));
-                    isMultiArchive = archiver.isMultiPartArchive(clf);
+                    final DownloadLinkArchiveFactory archiveFactory = new DownloadLinkArchiveFactory(((DownloadLink) object));
+                    final Archive archive = archiver.buildArchive(archiveFactory);
+                    isMultiArchive = archive != null && archive.getArchiveFiles().size() > 1;
                 }
             } catch (Throwable e) {
                 Log.exception(Level.SEVERE, e);
             }
             DownloadWatchDog.getInstance().renameLink(((DownloadLink) object), value);
-
             if (isMultiArchive) {
                 String title = _GUI._.FileColumn_setStringValue_title_();
                 String msg = _GUI._.FileColumn_setStringValue_msg_();

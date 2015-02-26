@@ -112,6 +112,15 @@ public class Archive {
     private ContentView             contents;
 
     private boolean                 passwordRequiredToOpen;
+    private String                  archiveID = null;
+
+    public String getArchiveID() {
+        return archiveID;
+    }
+
+    public void setArchiveID(String archiveID) {
+        this.archiveID = archiveID;
+    }
 
     public ArchiveFactory getFactory() {
         return factory;

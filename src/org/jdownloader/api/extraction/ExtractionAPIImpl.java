@@ -68,7 +68,7 @@ public class ExtractionAPIImpl implements ExtractionAPI {
             if (archives != null && !archives.isEmpty() && extension != null) {
                 for (Archive archive : archives) {
                     final String archiveId = archive.getFactory().getID();
-                    final String archiveName = extension.getArchiveName(archive.getFactory());
+                    final String archiveName = archive.getName();
                     final HashMap<String, ArchiveFileStatus> extractionStates = new HashMap<String, ArchiveFileStatus>();
                     for (ArchiveFile file : archive.getArchiveFiles()) {
                         DummyArchiveFile da = new DummyArchiveFile(file);

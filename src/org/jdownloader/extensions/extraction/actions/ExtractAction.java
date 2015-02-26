@@ -35,7 +35,7 @@ import org.jdownloader.images.AbstractIcon;
 public class ExtractAction extends AbstractExtractionContextAction {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1612595219577059496L;
 
@@ -115,7 +115,7 @@ public class ExtractAction extends AbstractExtractionContextAction {
                         }
 
                         for (IExtraction extractor : _getExtension().getExtractors()) {
-                            if (extractor.isFileSupported(new FileArchiveFactory(pathname), false)) {
+                            if (!Boolean.FALSE.equals(extractor.isSupported(new FileArchiveFactory(pathname), false))) {
                                 /* no deep inspection to speedup the accept method */
                                 return true;
                             }

@@ -377,15 +377,6 @@ public enum SplitType {
         return true;
     }
 
-    public static String createArchiveName(ArchiveFactory factory, SplitType splitType) {
-        final String name = factory.getName();
-        final String[] matches = splitType.getMatches(name);
-        if (matches != null) {
-            return matches[0];
-        }
-        return null;
-    }
-
     public static String createArchiveID(ArchiveFactory factory, SplitType splitType) {
         String name = factory.getName();
         final String[] matches = splitType.getMatches(name);
@@ -476,6 +467,7 @@ public enum SplitType {
                 final Archive archive = link.createArchive();
                 archive.setName(fileNameParts[0]);
                 archive.setSplitType(splitType);
+                archive.setArchiveID(splitType.name() + fileNameParts[0] + splitType.buildIDPattern(fileNameParts));
                 final ArrayList<ArchiveFile> sortedArchiveFiles = new ArrayList<ArchiveFile>();
                 final int minimumParts = Math.max(splitType.getMinimumNeededPartIndex(), highestPartNumber);
                 ArchiveFile firstArchiveFile = null;

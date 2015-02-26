@@ -13,7 +13,6 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
-import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.T;
 import org.jdownloader.extensions.streaming.dlna.Extensions;
@@ -113,19 +112,19 @@ public class PrepareJob extends QueueAction<Void, RuntimeException> {
             if (streamingWithoutAccount || AccountController.getInstance().hasAccounts(dl.getHost()) || isDirect) {
                 String url = dl.getPluginPatternMatcher();
                 String name = dl.getView().getDisplayName();
-                if ("rar".equals(Files.getExtension(name))) {
-                    DownloadLinkArchiveFactory lfa = new DownloadLinkArchiveFactory(dl);
-                    status = T._.open_rar(dl.getView().getDisplayName());
-                    if (extractor.isLinkSupported(lfa)) {
-                        String archiveID = extractor.createArchiveID(lfa);
-                        if (archives.contains(archiveID)) {
-                            continue;
-                        }
-                        Archive archive = extractor.getArchiveByFactory(lfa);
-                        handleArchive(archive);
-                        archives.add(archiveID);
-
-                    }
+                if ("rar".equals(Files.getExtension(name)) && false) {
+                    // DownloadLinkArchiveFactory lfa = new DownloadLinkArchiveFactory(dl);
+                    // status = T._.open_rar(dl.getView().getDisplayName());
+                    // if (extractor.isLinkSupported(lfa)) {
+                    // String archiveID = extractor.createArchiveID(lfa);
+                    // if (archives.contains(archiveID)) {
+                    // continue;
+                    // }
+                    // Archive archive = extractor.getArchiveByFactory(lfa);
+                    // handleArchive(archive);
+                    // archives.add(archiveID);
+                    //
+                    // }
                 } else {
                     status = T._.prepare(dl.getView().getDisplayName());
                     HashSet<ExtensionHandler> handlers = HANDLER.get(Files.getExtension(name));

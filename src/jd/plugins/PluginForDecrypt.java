@@ -275,11 +275,14 @@ public abstract class PluginForDecrypt extends Plugin {
                 throwable = null;
             }
             if (throwable == null && logger instanceof LogSource) {
-                /* make sure we use the right logger */
-                ((LogSource) logger).clear();
-                ((LogSource) logger).log(e);
+                if (logger instanceof LogSource) {
+                    /* make sure we use the right logger */
+                    ((LogSource) logger).clear();
+                    ((LogSource) logger).log(e);
+                } else {
+                    LogSource.exception(logger, e);
+                }
             }
-            LogSource.exception(logger, e);
         } finally {
             clean();
             lastSolverJob = null;

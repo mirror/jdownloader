@@ -25,9 +25,9 @@ import org.jdownloader.extensions.extraction.multi.CheckException;
 
 /**
  * Interface for the individual extraction programs.
- * 
+ *
  * @author botzi
- * 
+ *
  */
 public abstract class IExtraction {
 
@@ -56,7 +56,7 @@ public abstract class IExtraction {
 
     /**
      * Sets the {@link Archive} which should be extracted.
-     * 
+     *
      * @param archive
      *            The {@link Archive}.
      */
@@ -70,7 +70,7 @@ public abstract class IExtraction {
 
     /**
      * Sets the {@link ExtractionController} which controlls the extraction.
-     * 
+     *
      * @param controller
      *            The {@link ExtractionController}.
      */
@@ -80,7 +80,7 @@ public abstract class IExtraction {
 
     /**
      * Sets the pluginconfiguration.
-     * 
+     *
      * @param extractionConfig
      *            The configuration.
      */
@@ -94,7 +94,7 @@ public abstract class IExtraction {
 
     /**
      * The logger for the ouputs.
-     * 
+     *
      * @param logger
      */
     public final void setLogger(LogSource logger) {
@@ -108,22 +108,22 @@ public abstract class IExtraction {
     /**
      * Builds an {@link Archive} with an finished {@link DownloadLink}. If the {@link DownloadLink} contains only a part of an multipart
      * archive, it has not to be to first one (eg. test.part1.rar).
-     * 
+     *
      * @param link
      *            An complete downloaded file.
      * @return An {@link Archive} that contains all {@link Downloadlink}s.
      * @throws ArchiveException
      */
-    public abstract Archive buildArchive(ArchiveFactory link) throws ArchiveException;
+    public abstract Archive buildArchive(ArchiveFactory link, boolean allowDeepInspection) throws ArchiveException;
 
     /**
      * Checks a single password if the archive is encrypted with it.
-     * 
+     *
      * @param password
      *            The password.
      * @param optimized
      *            TODO
-     * 
+     *
      * @return True if the password is correct.
      */
     public abstract boolean findPassword(ExtractionController controller, String password, boolean optimized) throws ExtractionException;
@@ -136,14 +136,14 @@ public abstract class IExtraction {
     /**
      * Checks if the extraction method can be used on the system. If it's not possible the method should try to fix that. If that fails it
      * should return false. The extraction method will not be used anymore in this session for extraction.
-     * 
+     *
      * @return True if all works.
      */
-    public abstract boolean checkCommand();
+    public abstract boolean isAvailable();
 
     /**
      * Returns the percent of the tested passowords.
-     * 
+     *
      * @return The percent of the tested passwords.
      */
     public abstract int getCrackProgress();
@@ -151,31 +151,12 @@ public abstract class IExtraction {
     /**
      * Is used to let the extraction method prepare for the extraction. Will be called after the system started an extraction, but before
      * the {@link crackPassword} and {@link extract}.
-     * 
+     *
      * @return False if we need a password to extract
      */
     public abstract boolean prepare() throws ExtractionException;
 
-    /**
-     * Returns the archivename of an {@link Archive}.
-     * 
-     * @param archive
-     *            The {@link Archive}.
-     * @return The name of the archive.
-     */
-    public abstract String getArchiveName(ArchiveFactory factory);
-
-    /**
-     * Checks if the file is supported.
-     * 
-     * @param factory
-     *            TODO
-     * 
-     * @return
-     */
-    public abstract boolean isArchivSupported(ArchiveFactory factory, boolean allowDeepInspection);
-
-    public abstract boolean isFileSupported(ArchiveFactory factory, boolean allowDeepInspection);
+    public abstract Boolean isSupported(ArchiveFactory archiveFile, boolean allowDeepInspection);
 
     //
     // /**
@@ -194,7 +175,7 @@ public abstract class IExtraction {
 
     /**
      * checks an Archive if any part is missing.
-     * 
+     *
      * @param archive
      *            The archive.
      * @return A list of parts which are missing.
@@ -203,18 +184,8 @@ public abstract class IExtraction {
     public abstract DummyArchive checkComplete(Archive archive) throws CheckException;
 
     /**
-     * tries to create an ID for the archive the given filename belongs to.
-     * 
-     * @param factory
-     * @return
-     */
-    public abstract String createID(ArchiveFactory factory);
-
-    public abstract boolean isMultiPartArchive(ArchiveFactory factory);
-
-    /**
      * Some extrators can set this file information. this helps us to tell the user in which file extraction failed.
-     * 
+     *
      * @return
      */
     public ArchiveFile getLastAccessedArchiveFile() {
