@@ -358,6 +358,8 @@ public enum ArchiveType {
          *
          * http://www.rarlab.com/technote.htm#rarsign
          *
+         * 0x24:23:22:21 indices (because of endianness)
+         *
          * 0x0001 Volume/Archive
          *
          * 0x0010 New Volume naming scheme (.partN.rar)
