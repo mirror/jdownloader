@@ -181,13 +181,13 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
              * Now let's check which languages the user wants. We'll do the quality selection later but we have to access webpages to get
              * the different languages so let's keep the load low by only grabbing what the user selected.
              */
-            if (cfg.getBooleanProperty(LOAD_LANGUAGE_URL, false)) {
+            if (cfg.getBooleanProperty(LOAD_LANGUAGE_URL, true)) {
                 selectedLanguages.add(this.getUrlLang());
             } else {
-                if (cfg.getBooleanProperty(LOAD_LANGUAGE_GERMAN, false)) {
+                if (cfg.getBooleanProperty(LOAD_LANGUAGE_GERMAN, true)) {
                     selectedLanguages.add("de");
                 }
-                if (cfg.getBooleanProperty(LOAD_LANGUAGE_FRENCH, false)) {
+                if (cfg.getBooleanProperty(LOAD_LANGUAGE_FRENCH, true)) {
                     selectedLanguages.add("fr");
                 }
             }
@@ -314,18 +314,18 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
 
                 /* Build a list of selected formats */
                 for (final String format : formats) {
-                    if (cfg.getBooleanProperty(format, false)) {
-                        if (cfg.getBooleanProperty(V_NORMAL, false)) {
+                    if (cfg.getBooleanProperty(format, true)) {
+                        if (cfg.getBooleanProperty(V_NORMAL, true)) {
                             selectedFormats.add(selectedLanguage + "_1_" + format);
                         }
                         /* 1 = German, 2 = French, 3 = Subtitled version, 4 = Subtitled version for disabled people, 5 = Audio description */
-                        if (cfg.getBooleanProperty(V_SUBTITLED, false)) {
+                        if (cfg.getBooleanProperty(V_SUBTITLED, true)) {
                             selectedFormats.add(selectedLanguage + "_3_" + format);
                         }
-                        if (cfg.getBooleanProperty(V_SUBTITLE_DISABLED_PEOPLE, false)) {
+                        if (cfg.getBooleanProperty(V_SUBTITLE_DISABLED_PEOPLE, true)) {
                             selectedFormats.add(selectedLanguage + "_4_" + format);
                         }
-                        if (cfg.getBooleanProperty(V_AUDIO_DESCRIPTION, false)) {
+                        if (cfg.getBooleanProperty(V_AUDIO_DESCRIPTION, true)) {
                             selectedFormats.add(selectedLanguage + "_5_" + format);
                         }
 
@@ -348,7 +348,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             }
 
             /* Check if user wants to download the thumbnail as well. */
-            if (cfg.getBooleanProperty(THUMBNAIL, false) && thumbnailUrl != null) {
+            if (cfg.getBooleanProperty(THUMBNAIL, true) && thumbnailUrl != null) {
                 final DownloadLink link = createDownloadlink("directhttp://" + thumbnailUrl);
                 link.setFinalFileName(title + ".jpg");
                 decryptedLinks.add(link);
