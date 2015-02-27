@@ -65,7 +65,7 @@ public class CloudCornerCom extends PluginForHost {
         dllink = null;
         this.setBrowserExclusive();
         br.getPage("https://api.cloudcorner.com/api/file/" + getFID(link) + "/");
-        /* Offline is usually empty page with 404 response and text/htmp content-type */
+        /* Offline is usually empty page with 404 response and text/http content-type */
         if (br.getHttpConnection().getResponseCode() == 404 || !this.br.getHttpConnection().getContentType().equals("application/json")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
