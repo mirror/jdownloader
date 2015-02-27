@@ -11,6 +11,7 @@ action_setCaptchaService=Activer un service de Captcha
 action_setChunks=Définir le nombre de tronçons par fichier
 action_setConnections=Définir le nombre maximal de téléchargements simultanés
 action_setDownloadspeed=Limiter la vitesse de téléchargement
+action_setSopMark=Définir une marque d’arrêt
 action_startDownload=Démarrer les téléchargements
 action_stopDownload=Arreter les téléchargements
 action_unpauseDownload=Reprendre les téléchargements
