@@ -50,7 +50,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 //Links are coming from a decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(vkontaktedecrypted\\.ru/(picturelink/(\\-)?[\\d\\-]+_[\\d\\-]+(\\?tag=[\\d\\-]+)?|audiolink/[\\d\\-]+_[\\d\\-]+|videolink/[\\d\\-]+)|vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?)|https?://cs[a-z0-9]+\\.(vk\\.com|userapi\\.com|vk\\.me)/u\\d+/audios?/[^<>\"]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(\\-)?[\\d\\-]+_[\\d\\-]+(\\?tag=[\\d\\-]+)?|audiolink/[\\d\\-]+_[\\d\\-]+|videolink/[\\d\\-]+)|https?://vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://cs[a-z0-9]+\\.(vk\\.com|userapi\\.com|vk\\.me)/u\\d+/audios?/[^<>\"]+" }, flags = { 2 })
 public class VKontakteRuHoster extends PluginForHost {
 
     private static final String DOMAIN                      = "http://vk.com";
@@ -60,7 +60,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String TYPE_VIDEOLINK              = "http://vkontaktedecrypted\\.ru/videolink/[\\d\\-]+";
     private static final String TYPE_AUDIO_DIRECT           = "https?://cs[a-z0-9]+\\.(vk\\.com|userapi\\.com|vk\\.me)/u\\d+/audios?/[^<>\"]+";
     private static final String TYPE_PICTURELINK            = "http://vkontaktedecrypted\\.ru/picturelink/(\\-)?[\\d\\-]+_[\\d\\-]+(\\?tag=[\\d\\-]+)?";
-    private static final String TYPE_DOCLINK                = "http://vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?";
+    private static final String TYPE_DOCLINK                = "https?://vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?";
     private int                 MAXCHUNKS                   = 1;
     private static final String TEMPORARILYBLOCKED          = jd.plugins.decrypter.VKontakteRu.TEMPORARILYBLOCKED;
     /* Settings stuff */
@@ -150,7 +150,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
             filename = this.br.getRegex("title>([^<>\"]*?)</title>").getMatch(0);
-            this.finalUrl = this.br.getRegex("var src = \\'(http://[^<>\"]*?)\\';").getMatch(0);
+            this.finalUrl = this.br.getRegex("var src = \\'(https?://[^<>\"]*?)\\';").getMatch(0);
             if (filename == null || this.finalUrl == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
