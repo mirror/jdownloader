@@ -1,18 +1,23 @@
 package jd.controlling.reconnect.pluginsinc.liveheader.recoll;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
-import jd.controlling.reconnect.pluginsinc.liveheader.remotecall.RecollInterface;
 import jd.controlling.reconnect.pluginsinc.liveheader.remotecall.RouterData;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.remotecall.RemoteClient;
 
 public class RecollController {
-    private static final RecollController INSTANCE = new RecollController();
+    private static final RecollController INSTANCE  = new RecollController();
+    protected static final String         HTTP_BASE = "https://payments.appwork.org/test/recoll/";
 
     /**
      * get the only existing instance of RecollController. This is a singleton
@@ -23,9 +28,9 @@ public class RecollController {
         return RecollController.INSTANCE;
     }
 
-    private RecollInterface serverConnector;
-    private LogSource       logger;
-    private Queue           queue;
+    private LogSource logger;
+    private Queue     queue;
+    private Browser   br;
 
     /**
      * Create a new instance of RecollController. This is a singleton class. Access the only existing instance by using
@@ -33,14 +38,8 @@ public class RecollController {
      */
     private RecollController() {
 
-        try {
-            logger = LogController.getInstance().getLogger(getClass().getName());
-            // static String UPDATE3_JDOWNLOADER_ORG_RECOLL = ; // "update3.jdownloader.org/recoll";
-            serverConnector = new RemoteClient("update3.jdownloader.org/recoll").getFactory().newInstance(RecollInterface.class);
-
-        } catch (Throwable e) {
-            logger.log(e);
-        }
+        logger = LogController.getInstance().getLogger(getClass().getName());
+        br = new Browser();
         queue = new Queue("RecollQueue") {
 
         };
@@ -54,7 +53,7 @@ public class RecollController {
             @Override
             protected Void run() throws RuntimeException {
                 try {
-                    serverConnector.incTestStart(scriptID, null);
+                    call("incTestStart", null, scriptID);
 
                 } catch (Exception e) {
                     logger.log(e);
@@ -64,6 +63,23 @@ public class RecollController {
         });
     }
 
+    protected <Typo> Typo call(String command, TypeRef<Typo> type, Object... objects) throws IOException {
+        StringBuilder sb = new StringBuilder();
+
+        if (objects != null) {
+            for (int i = 0; i < objects.length; i++) {
+                sb.append(i == 0 ? "" : "&");
+
+                sb.append(Encoding.urlEncode(JSonStorage.serializeToJson(objects[i])));
+            }
+        }
+        String ret = br.postPageRaw(HTTP_BASE + command, sb.toString());
+        if (type == null) {
+            return null;
+        }
+        return JSonStorage.restoreFromString(ret, type);
+    }
+
     public void trackValidateEnd(final String scriptID) {
 
         queue.addAsynch(new QueueAction<Void, RuntimeException>() {
@@ -71,7 +87,7 @@ public class RecollController {
             @Override
             protected Void run() throws RuntimeException {
                 try {
-                    serverConnector.incTestEnd(scriptID, null);
+                    call("incTestEnd", null, scriptID);
 
                 } catch (Exception e) {
                     logger.log(e);
@@ -87,7 +103,7 @@ public class RecollController {
             @Override
             protected Void run() throws RuntimeException {
                 try {
-                    serverConnector.setWorking(scriptID, null, successDuration, offlineDuration);
+                    call("setWorking", null, scriptID, successDuration, offlineDuration);
 
                 } catch (Exception e) {
                     logger.log(e);
@@ -103,7 +119,7 @@ public class RecollController {
             @Override
             protected Void run() throws RuntimeException {
                 try {
-                    serverConnector.setNotWorking(scriptID, null);
+                    call("setNotWorking", null, scriptID);
 
                 } catch (Exception e) {
                     logger.log(e);
@@ -114,20 +130,48 @@ public class RecollController {
     }
 
     public boolean isAlive() {
-        return serverConnector.isAlive();
+
+        try {
+            return call("isAlive", TypeRef.BOOLEAN);
+        } catch (IOException e) {
+            logger.log(e);
+            ;
+            return false;
+        }
+
     }
 
     public List<RouterData> findRouter(RouterData rd) {
-        return serverConnector.findRouter(rd, null);
+        try {
+            return call("findRouter", new TypeRef<ArrayList<RouterData>>() {
+            }, rd);
+        } catch (IOException e) {
+            logger.log(e);
+            return null;
+        }
+
     }
 
     public String getManufactor(String mac) {
-        return serverConnector.getManufactor(mac);
+        try {
+            return call("getManufactor", TypeRef.STRING);
+        } catch (IOException e) {
+            logger.log(e);
+            ;
+            return null;
+        }
+
     }
 
     public boolean addRouter(RouterData rd) {
+        try {
+            return call("addRouter", TypeRef.BOOLEAN, rd);
+        } catch (IOException e) {
+            logger.log(e);
+            ;
+            return false;
+        }
 
-        return serverConnector.addRouter(rd, null);
     }
 
 }

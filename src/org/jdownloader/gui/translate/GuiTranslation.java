@@ -5806,4 +5806,25 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { " & move files to trash" })
     String deleteaction_and_recycle_files();
 
+    @Default(lngs = { "en" }, values = { "Warning!" })
+    String AutoSetupAction_actionPerformed_warn_title();
+
+    @Default(lngs = { "en" }, values = { "The Reconnect Wizard will compare your network settings with a list of user contributed reconnect scripts. If matching reconnect scripts are found, the Wizard will test them. These tests may disconnect you from the internet several times. In some very unlikly cases, it may happen, that one of these tests fails to re-estabilish the connect after a disconnect. Do not use this Wizard if you do not know how to restore your connection if this happens. The Wizard will show you every script before the test. You will be able to modify or skip it." })
+    String AutoSetupAction_actionPerformed_warn_message();
+
+    @Default(lngs = { "en" }, values = { "Start the Wizard!" })
+    String AutoSetupAction_actionPerformed_warn_message_continue();
+
+    @Default(lngs = { "en" }, values = { "Skip" })
+    String lit_skip();
+
+    @Default(lngs = { "en" }, values = { "Confirm Reconnect Test" })
+    String UPNPRouterPlugin_runDetectionWizard_confirm_title();
+
+    @Default(lngs = { "en" }, values = { "The Wizard will test this UPNP Reconnect method now:\r\nService: %s1\r\nControl point: %s2" })
+    String UPNPRouterPlugin_runDetectionWizard_confirm_msg(String serviceType, String controlURL);
+
+    @Default(lngs = { "en" }, values = { "Confirm all. Do not ask again." })
+    String UPNPRouterPlugin_accept_all();
+
 }

@@ -151,4 +151,11 @@ public interface ReconnectConfig extends ConfigInterface {
 
     boolean isIPCheckUsesProxyEnabled();
 
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("If your router supports UPNP, it might be possible to get your external IP by asking the router instead of doing a query to ipcheck*.jdownloader.org. This information might be incorrect. If the reconnect does not work after choosing this option, disable it.")
+    boolean isIPCheckAllowLocalUpnpIpCheckEnabled();
+
+    void setIPCheckAllowLocalUpnpIpCheckEnabled(boolean b);
+
 }

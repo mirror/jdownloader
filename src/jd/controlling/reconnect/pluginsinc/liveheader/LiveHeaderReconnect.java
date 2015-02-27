@@ -12,6 +12,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
+import jd.controlling.reconnect.ProcessCallBack;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectInvoker;
 import jd.controlling.reconnect.ReconnectPluginController;
@@ -34,7 +35,6 @@ import org.appwork.swing.components.ExtTextField;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.event.ProcessCallBack;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;

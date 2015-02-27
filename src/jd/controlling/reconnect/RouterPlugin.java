@@ -6,7 +6,6 @@ import javax.swing.JComponent;
 import jd.controlling.reconnect.ipcheck.IPCheckProvider;
 
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.event.ProcessCallBack;
 
 public abstract class RouterPlugin {
 

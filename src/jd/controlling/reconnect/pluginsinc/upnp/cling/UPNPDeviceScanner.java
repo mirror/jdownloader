@@ -4,14 +4,16 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jd.controlling.reconnect.pluginsinc.upnp.translate.T;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.logging2.LogSource;
+import org.fourthline.cling.DefaultUpnpServiceConfiguration;
 import org.fourthline.cling.UpnpServiceImpl;
 import org.fourthline.cling.model.meta.Action;
-import org.fourthline.cling.model.meta.Device;
 import org.fourthline.cling.model.meta.LocalDevice;
 import org.fourthline.cling.model.meta.RemoteDevice;
 import org.fourthline.cling.model.meta.RemoteService;
@@ -31,8 +33,25 @@ public class UPNPDeviceScanner {
 
     public List<UpnpRouterDevice> scan() throws InterruptedException {
         logger.info("Starting Cling...");
+        final UDAServiceType serviceType = new UDAServiceType("WANIPConnection", 1);
+        final HashSet<UpnpRouterDevice> ret = new HashSet<UpnpRouterDevice>();
+        final AtomicLong lastreceive = new AtomicLong(System.currentTimeMillis());
+
         // final HashSet<RemoteDevice> devices = new HashSet<UpnpRouterDevice>();
-        final UpnpServiceImpl upnpService = new UpnpServiceImpl(new RegistryListener() {
+        DefaultUpnpServiceConfiguration config = new DefaultUpnpServiceConfiguration() {
+            @Override
+            public Executor getMulticastReceiverExecutor() {
+                return super.getMulticastReceiverExecutor();
+            }
+
+            @Override
+            public Integer getRemoteDeviceMaxAgeSeconds() {
+                return super.getRemoteDeviceMaxAgeSeconds();
+            }
+
+        };
+
+        final UpnpServiceImpl upnpService = new UpnpServiceImpl(config, new RegistryListener() {
 
             public void remoteDeviceDiscoveryStarted(Registry registry, RemoteDevice device) {
                 logger.info("Discovery started: " + device.getDisplayString() + " - " + device.getType());
@@ -45,35 +64,71 @@ public class UPNPDeviceScanner {
 
             public void remoteDeviceAdded(Registry registry, RemoteDevice device) {
                 logger.info("Remote device available: " + device.getDisplayString() + " - " + device.getType());
-                // UpnpRouterDevice d = new UpnpRouterDevice();
-                // DeviceDetails detail = device.getDetails();
-                // // d.setControlURL(device.getDetails().g);
-                // d.setFriendlyname(device.getDetails().getFriendlyName());
-                // d.setHost(device.getIdentity().getDescriptorURL().getHost());
-                // // d.setLocation(location);
-                // d.setManufactor(detail.getManufacturerDetails().getManufacturer());
-                // d.setModelname(detail.getModelDetails().getModelName());
-                // // d.setServiceType(servicyType);
-                // d.setUrlBase(detail.getBaseURL() + "");
-                // // d.setWanservice(wanservice);
-                // devices.add(d);
+                try {
+                    Service service = device.findService(new UDAServiceType("WANIPConnection", 1));
+                    if (service != null && service instanceof RemoteService) {
+                        Action action = service.getAction(ForceTermination.FORCE_TERMINATION);
+
+                        if (action != null) {
+                            UpnpRouterDevice d = new UpnpRouterDevice();
+                            d.setModelname(device.getDisplayString());
+                            d.setWanservice(T._.interaction_UpnpReconnect_wanservice_ip());
+                            URL url = ((RemoteService) service).getDevice().normalizeURI(((RemoteService) service).getControlURI());
+                            d.setControlURL(url + "");
+                            d.setServiceType(((RemoteService) service).getServiceType() + "");
+                            d.setFriendlyname(device.getDetails().getFriendlyName());
+                            d.setManufactor(device.getDetails().getManufacturerDetails().getManufacturer());
+                            logger.info("Found " + JSonStorage.serializeToJson(d));
+                            ret.add(d);
+                            lastreceive.set(System.currentTimeMillis());
+
+                        }
+
+                    }
+
+                    try {
+                        service = device.findService(new UDAServiceType("WANPPPConnection", 1));
+                        if (service != null && service instanceof RemoteService) {
+                            Action action = service.getAction(ForceTermination.FORCE_TERMINATION);
+                            if (action != null) {
+                                UpnpRouterDevice d = new UpnpRouterDevice();
+                                d.setModelname(device.getDisplayString());
+                                d.setWanservice(T._.interaction_UpnpReconnect_wanservice_ppp());
+                                URL url = ((RemoteService) service).getDevice().normalizeURI(((RemoteService) service).getControlURI());
+                                d.setServiceType(((RemoteService) service).getServiceType() + "");
+                                d.setControlURL(url + "");
+                                d.setFriendlyname(device.getDetails().getFriendlyName());
+                                d.setManufactor(device.getDetails().getManufacturerDetails().getManufacturer());
+                                logger.info("Found " + JSonStorage.serializeToJson(d));
+                                ret.add(d);
+                                lastreceive.set(System.currentTimeMillis());
+
+                            }
+                        }
+                    } catch (Exception e) {
+                        logger.log(e);
+                    }
+
+                } catch (Exception e) {
+                    logger.log(e);
+                }
 
             }
 
             public void remoteDeviceUpdated(Registry registry, RemoteDevice device) {
-                logger.info("Remote device updated: " + device.getDisplayString() + " - " + device.getType());
+                // logger.info("Remote device updated: " + device.getDisplayString() + " - " + device.getType());
             }
 
             public void remoteDeviceRemoved(Registry registry, RemoteDevice device) {
-                logger.info("Remote device removed: " + device.getDisplayString());
+                // logger.info("Remote device removed: " + device.getDisplayString());
             }
 
             public void localDeviceAdded(Registry registry, LocalDevice device) {
-                logger.info("Local device added: " + device.getDisplayString());
+                // logger.info("Local device added: " + device.getDisplayString());
             }
 
             public void localDeviceRemoved(Registry registry, LocalDevice device) {
-                logger.info("Local device removed: " + device.getDisplayString());
+                // logger.info("Local device removed: " + device.getDisplayString());
             }
 
             public void beforeShutdown(Registry registry) {
@@ -89,62 +144,12 @@ public class UPNPDeviceScanner {
         upnpService.getControlPoint().search();
         try {
             // Let's wait 10 seconds for them to respond
-            logger.info("Waiting 10 seconds before shutting down...");
+            logger.info("Waiting 15 seconds before shutting down...");
             Thread.sleep(15000);
-            HashSet<UpnpRouterDevice> ret = new HashSet<UpnpRouterDevice>();
-            UDAServiceType serviceType = new UDAServiceType("WANIPConnection", 1);
-            for (Device device : upnpService.getRegistry().getDevices(serviceType)) {
-                try {
-                    final Service service = device.findService(serviceType);
-                    if (service != null && service instanceof RemoteService) {
-                        Action action = service.getAction(ForceTermination.FORCE_TERMINATION);
-
-                        if (action != null) {
-                            UpnpRouterDevice d = new UpnpRouterDevice();
-                            d.setModelname(device.getDisplayString());
-                            d.setWanservice(T._.interaction_UpnpReconnect_wanservice_ip());
-                            URL url = ((RemoteService) service).getDevice().normalizeURI(((RemoteService) service).getControlURI());
-                            d.setControlURL(url + "");
-                            d.setServiceType(((RemoteService) service).getServiceType() + "");
-                            d.setFriendlyname(device.getDetails().getFriendlyName());
-                            d.setManufactor(device.getDetails().getManufacturerDetails().getManufacturer());
-                            logger.info("Found " + JSonStorage.serializeToJson(d));
-                            ret.add(d);
-
-                        }
-
-                    }
-                } catch (Exception e) {
-                    logger.log(e);
-                }
-
+            while (ret.size() == 0 && System.currentTimeMillis() - lastreceive.get() < 30000) {
+                logger.info("Wait another 1 sec");
+                Thread.sleep(1000);
             }
-            serviceType = new UDAServiceType("WANPPPConnection", 1);
-            for (Device device : upnpService.getRegistry().getDevices(serviceType)) {
-                try {
-                    final Service service = device.findService(serviceType);
-                    if (service != null) {
-                        Action action = service.getAction(ForceTermination.FORCE_TERMINATION);
-                        if (action != null) {
-                            UpnpRouterDevice d = new UpnpRouterDevice();
-                            d.setModelname(device.getDisplayString());
-                            d.setWanservice(T._.interaction_UpnpReconnect_wanservice_ppp());
-                            URL url = ((RemoteService) service).getDevice().normalizeURI(((RemoteService) service).getControlURI());
-                            d.setControlURL(url + "");
-                            d.setFriendlyname(device.getDetails().getFriendlyName());
-                            d.setManufactor(device.getDetails().getManufacturerDetails().getManufacturer());
-                            logger.info("Found " + JSonStorage.serializeToJson(d));
-                            ret.add(d);
-
-                        }
-                    }
-                } catch (Exception e) {
-                    logger.log(e);
-                }
-
-            }
-
-            // Release all resources and advertise BYEBYE to other UPnP devices
 
             return new ArrayList<UpnpRouterDevice>(ret);
         } finally {

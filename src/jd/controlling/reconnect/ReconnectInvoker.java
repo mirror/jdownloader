@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import jd.controlling.reconnect.ipcheck.IPController;
 
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.event.ProcessCallBackAdapter;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;

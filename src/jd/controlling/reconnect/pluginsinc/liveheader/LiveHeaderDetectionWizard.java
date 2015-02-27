@@ -17,6 +17,8 @@ import java.util.Map.Entry;
 import javax.imageio.ImageIO;
 
 import jd.controlling.faviconcontroller.FavIcons;
+import jd.controlling.reconnect.ProcessCallBack;
+import jd.controlling.reconnect.ProcessCallBackAdapter;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectPluginController;
@@ -38,8 +40,6 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
-import org.appwork.utils.event.ProcessCallBack;
-import org.appwork.utils.event.ProcessCallBackAdapter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
@@ -53,6 +53,7 @@ import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.translate._JDT;
 
 public class LiveHeaderDetectionWizard {
 
@@ -236,7 +237,9 @@ public class LiveHeaderDetectionWizard {
 
             java.util.List<RouterData> bestMatches = filterBestMatches(tests);
             java.util.List<ReconnectResult> ret = testList(bestMatches, processCallBack);
-            if (ret != null && ret.size() > 0 && JsonConfig.create(LiveHeaderReconnectSettings.class).isAutoSearchBestMatchFilterEnabled()) { return ret; }
+            if (ret != null && ret.size() > 0 && JsonConfig.create(LiveHeaderReconnectSettings.class).isAutoSearchBestMatchFilterEnabled()) {
+                return ret;
+            }
             // test all if best matches did not succeed
             ret = testList(tests, processCallBack);
 
@@ -270,7 +273,9 @@ public class LiveHeaderDetectionWizard {
     }
 
     private String getRegex(final String routerName) {
-        if (routerName == null || routerName.trim().length() == 0) { return null; }
+        if (routerName == null || routerName.trim().length() == 0) {
+            return null;
+        }
         final String ret = routerName.replaceAll("[^a-zA-Z0-9]+", ".*");
 
         // add wildcard between number and non-numbers
@@ -291,11 +296,19 @@ public class LiveHeaderDetectionWizard {
 
     private boolean isTopMatch(RouterData rd, float avg) {
         // many matches with this script
-        if (rd.getPriorityIndicator() > avg * 2) return true;
+        if (rd.getPriorityIndicator() > avg * 2) {
+            return true;
+        }
 
-        if (!matches(firmware, rd.getFirmware())) return false;
-        if (!matches(routerName, rd.getRouterName())) return false;
-        if (!matches(manufactor, rd.getManufactor())) return false;
+        if (!matches(firmware, rd.getFirmware())) {
+            return false;
+        }
+        if (!matches(routerName, rd.getRouterName())) {
+            return false;
+        }
+        if (!matches(manufactor, rd.getManufactor())) {
+            return false;
+        }
 
         return true;
     }
@@ -305,7 +318,9 @@ public class LiveHeaderDetectionWizard {
 
         if (regex != null) {
             //
-            if (database == null) return false;
+            if (database == null) {
+                return false;
+            }
             String m = new Regex(userInput, regex).getMatch(-1);
             return database.equals(m);
         }
@@ -425,7 +440,7 @@ public class LiveHeaderDetectionWizard {
 
             return runTests(list, processCallBack);
         } catch (RemoteCallCommunicationException e) {
-            processCallBack.showDialog(this, T._.LiveHeaderDetectionWizard_runOnlineScan_notavailable_t(), T._.LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm(), NewTheme.I().getIcon("error", 32));
+            UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, T._.LiveHeaderDetectionWizard_runOnlineScan_notavailable_t(), T._.LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm(), NewTheme.I().getIcon("error", 32), null, _JDT._.lit_hide());
 
             throw new InterruptedException(e.getMessage());
         } catch (DialogNoAnswerException e) {
@@ -444,7 +459,9 @@ public class LiveHeaderDetectionWizard {
             try {
                 String status = getBrowser().getPage("http://speedport.ip/top_status.stm");
                 String fw = new Regex(status, "runtime_code_version=\"(.*?)\"").getMatch(0);
-                if (fw != null) firmware = fw;
+                if (fw != null) {
+                    firmware = fw;
+                }
                 String name = new Regex(status, "var prodname=\"(.*?)\"").getMatch(0);
                 if (name != null) {
                     routerName = name.replace("_", " ");
@@ -453,8 +470,10 @@ public class LiveHeaderDetectionWizard {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
-            // speedports
+            if (Thread.currentThread().isInterrupted()) {
+                throw new InterruptedException();
+                // speedports
+            }
 
             // extract name from sourc
 
@@ -465,7 +484,9 @@ public class LiveHeaderDetectionWizard {
                     routerName = name.replace("_", " ");
                 }
                 String fw = new Regex(status, "runtime_code_version=\"(.*?)\"").getMatch(0);
-                if (fw != null) firmware = fw;
+                if (fw != null) {
+                    firmware = fw;
+                }
             } catch (Exception e) {
 
             }
@@ -624,7 +645,9 @@ public class LiveHeaderDetectionWizard {
     }
 
     private String createHtmlFootprint(String sslResponse2) {
-        if (sslResponse2 == null) return null;
+        if (sslResponse2 == null) {
+            return null;
+        }
         String str = Regex.replace(sslResponse2, "<\\!\\-\\-.*?\\-\\->", "");
         str = Regex.replace(str, ">.*?<", "><");
         str = Regex.replace(str, "<(\\w+) .*?>", "<$1>");
@@ -797,7 +820,9 @@ public class LiveHeaderDetectionWizard {
             if (!gatewayAdressHost.equals(gatewayAdressIP)) {
                 routerName = gatewayAdressHost;
                 int i = routerName.lastIndexOf(".");
-                if (i > 0) routerName = routerName.substring(0, i);
+                if (i > 0) {
+                    routerName = routerName.substring(0, i);
+                }
             }
         }
         if (myUpnpDevice != null) {
@@ -823,7 +848,9 @@ public class LiveHeaderDetectionWizard {
 
                 processCallBack.setStatusString(this, _GUI._.LiveHeaderDetectionWizard_sendRouter_havetovalidate());
                 ReconnectResult res = getPlugin().getReconnectInvoker().validate();
-                if (!res.isSuccess()) { throw new ReconnectException("Reconnect Failed"); }
+                if (!res.isSuccess()) {
+                    throw new ReconnectException("Reconnect Failed");
+                }
 
             }
             processCallBack.setStatusString(getPlugin(), T._.LiveHeaderDetectionWizard_runOnlineScan_collect());

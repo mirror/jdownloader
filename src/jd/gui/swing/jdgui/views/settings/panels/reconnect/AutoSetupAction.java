@@ -3,6 +3,7 @@ package jd.gui.swing.jdgui.views.settings.panels.reconnect;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
+import jd.controlling.reconnect.ProcessCallBackAdapter;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.ReconnectResult;
@@ -17,11 +18,14 @@ import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.tooltips.BasicTooltipFactory;
-import org.appwork.utils.event.ProcessCallBackAdapter;
-import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
@@ -42,11 +46,34 @@ public class AutoSetupAction extends BasicAction {
 
     public void actionPerformed(ActionEvent e) {
 
+        final ConfirmDialog confirm = new ConfirmDialog(0, _GUI._.AutoSetupAction_actionPerformed_warn_title(), _GUI._.AutoSetupAction_actionPerformed_warn_message(), new AbstractIcon(IconKey.ICON_WARNING, 32), _GUI._.AutoSetupAction_actionPerformed_warn_message_continue(), null) {
+            @Override
+            protected int getPreferredWidth() {
+                return 750;
+            }
+
+            @Override
+            public boolean isRemoteAPIEnabled() {
+                return false;
+            }
+
+        };
+
+        try {
+
+            UIOManager.I().show(ConfirmDialogInterface.class, confirm).throwCloseExceptions();
+        } catch (Throwable e2) {
+            e2.printStackTrace();
+            return;
+
+        }
         boolean pre = JsonConfig.create(ReconnectConfig.class).isIPCheckGloballyDisabled();
         try {
             if (pre) {
+                if (!UIOManager.I().showConfirmDialog(0, _GUI._.literally_warning(), T._.ipcheck())) {
+                    return;
+                }
 
-                Dialog.getInstance().showConfirmDialog(0, _GUI._.literally_warning(), T._.ipcheck());
                 JsonConfig.create(ReconnectConfig.class).setIPCheckGloballyDisabled(false);
 
             }
@@ -61,8 +88,12 @@ public class AutoSetupAction extends BasicAction {
                     RouterUtils.getAddress(false);
                     setBarText(_GUI._.LiveaheaderDetection_network_setup_check());
 
-                    if (WizardUtils.modemCheck()) return;
-                    if (WizardUtils.vpnCheck()) return;
+                    if (WizardUtils.modemCheck()) {
+                        return;
+                    }
+                    if (WizardUtils.vpnCheck()) {
+                        return;
+                    }
                     final java.util.List<ReconnectResult> scripts = ReconnectPluginController.getInstance().autoFind(new ProcessCallBackAdapter() {
 
                         public void setStatusString(Object caller, String string) {
@@ -99,15 +130,15 @@ public class AutoSetupAction extends BasicAction {
                         scripts.get(0).getInvoker().getPlugin().setSetup(scripts.get(0));
 
                     } else {
-                        Dialog.getInstance().showErrorDialog(T._.AutoDetectAction_run_failed());
+                        UIOManager.I().showErrorMessage(T._.AutoDetectAction_run_failed());
+
                     }
 
                 }
 
             };
 
-            Dialog.getInstance().showDialog(d);
-
+            UIOManager.I().show(null, d).throwCloseExceptions();
         } catch (DialogClosedException e1) {
             e1.printStackTrace();
         } catch (DialogCanceledException e1) {
@@ -116,7 +147,8 @@ public class AutoSetupAction extends BasicAction {
 
             JsonConfig.create(ReconnectConfig.class).setIPCheckGloballyDisabled(pre);
             if (pre) {
-                Dialog.getInstance().showMessageDialog(T._.ipcheckreverted());
+
+                UIOManager.I().showMessageDialog(T._.ipcheckreverted());
             }
         }
     }
