@@ -12,6 +12,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
+import jd.controlling.reconnect.ProcessCallBack;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectInvoker;
@@ -30,18 +31,23 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtTextField;
+import org.appwork.uio.CloseReason;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.event.ProcessCallBack;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
+import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 
 public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
 
@@ -87,6 +93,27 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
                 try {
                     processCallBack.setStatusString(this, T._.try_reconnect(device.getModelname()));
                     logger.info("Try " + device);
+                    if (processCallBack.isMethodConfirmEnabled()) {
+                        ConfirmDialog d = new ConfirmDialog(UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.UPNPRouterPlugin_runDetectionWizard_confirm_title(), _GUI._.UPNPRouterPlugin_runDetectionWizard_confirm_msg(device.getServiceType(), device.getControlURL()), new AbstractIcon("upnp", 32), _GUI._.lit_continue(), _GUI._.lit_skip()) {
+                            @Override
+                            protected String getDontShowAgainLabelText() {
+                                return _GUI._.UPNPRouterPlugin_accept_all();
+                            }
+
+                            @Override
+                            public String getDontShowAgainKey() {
+                                return null;
+                            }
+                        };
+                        ConfirmDialogInterface answer = UIOManager.I().show(ConfirmDialogInterface.class, d);
+                        if (answer.getCloseReason() == CloseReason.OK) {
+                            if (answer.isDontShowAgainSelected()) {
+                                processCallBack.setMethodConfirmEnabled(false);
+                            }
+                        } else {
+                            continue;
+                        }
+                    }
                     res = new UPNPReconnectInvoker(this, device.getServiceType(), device.getControlURL()).validate();
                     logger.info("REsult " + res);
                     if (res != null && res.isSuccess()) {
@@ -228,7 +255,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
     }
 
     public IPCheckProvider getIPCheckProvider() {
-        if (!this.isIPCheckEnabled()) {
+        if (!this.isIPCheckEnabled() || !CFG_RECONNECT.CFG.isIPCheckAllowLocalUpnpIpCheckEnabled()) {
             return null;
         }
         return this;
@@ -305,8 +332,9 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
     public synchronized java.util.List<UpnpRouterDevice> getDevices() throws InterruptedException {
         if (devices == null || devices.size() == 0) {
             // This will create necessary network resources for UPnP right away
-            devices = new UPNPDeviceScanner().scan();
+
         }
+        devices = new UPNPDeviceScanner().scan();
         return devices;
     }
 }

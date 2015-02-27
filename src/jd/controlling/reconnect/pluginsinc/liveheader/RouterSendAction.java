@@ -2,11 +2,11 @@ package jd.controlling.reconnect.pluginsinc.liveheader;
 
 import java.awt.event.ActionEvent;
 
+import jd.controlling.reconnect.ProcessCallBackAdapter;
 import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
 
 import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.tooltips.BasicTooltipFactory;
-import org.appwork.utils.event.ProcessCallBackAdapter;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;

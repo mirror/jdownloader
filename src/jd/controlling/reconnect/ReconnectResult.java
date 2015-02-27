@@ -1,7 +1,5 @@
 package jd.controlling.reconnect;
 
-import org.appwork.utils.event.ProcessCallBackAdapter;
-
 public class ReconnectResult {
     public ReconnectResult() {
 
@@ -52,7 +50,9 @@ public class ReconnectResult {
 
     public long getMaxSuccessDuration() {
         // in case there has not been an optimization
-        if (maxSuccessDuration < 0) return getSuccessDuration() * 10;
+        if (maxSuccessDuration < 0) {
+            return getSuccessDuration() * 10;
+        }
         return maxSuccessDuration;
     }
 
@@ -70,7 +70,9 @@ public class ReconnectResult {
 
     public long getAverageSuccessDuration() {
         // in case there has not been an optimization
-        if (averageSuccessDuration < 0) return getSuccessDuration();
+        if (averageSuccessDuration < 0) {
+            return getSuccessDuration();
+        }
         return averageSuccessDuration;
     }
 
@@ -100,7 +102,9 @@ public class ReconnectResult {
     }
 
     public long getMaxOfflineDuration() {
-        if (maxOfflineDuration < 0) return getOfflineDuration() * 10;
+        if (maxOfflineDuration < 0) {
+            return getOfflineDuration() * 10;
+        }
         return maxOfflineDuration;
     }
 
