@@ -10,6 +10,7 @@ import jd.nutils.encoding.Encoding;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.Application;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
@@ -17,7 +18,12 @@ import org.jdownloader.logging.LogController;
 
 public class RecollController {
     private static final RecollController INSTANCE  = new RecollController();
-    protected static final String         HTTP_BASE = "https://payments.appwork.org/test/recoll/";
+    protected static String               HTTP_BASE = "http://appwork.org";
+    static {
+        if (!Application.isJared(null)) {
+            HTTP_BASE = "https://payments.appwork.org/test/recoll/";
+        }
+    }
 
     /**
      * get the only existing instance of RecollController. This is a singleton
@@ -154,7 +160,7 @@ public class RecollController {
 
     public String getManufactor(String mac) {
         try {
-            return call("getManufactor", TypeRef.STRING);
+            return call("getManufactor", TypeRef.STRING, mac);
         } catch (IOException e) {
             logger.log(e);
             ;
