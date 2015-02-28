@@ -71,9 +71,9 @@ public class SrBoxCom extends PluginForDecrypt {
         // want to create a subfolder with the name of the package because
         // the folder is immediately created because it will download the cover
         // in it
-        String[] TabImage1 = br.getRegex("<img src=\"(http://[\\w\\.]*?israbox\\.com)/*?/uploads(.*?)\"").getColumn(1);
         String[] TabImage2 = br.getRegex("<img src=\"(http://[\\w\\.]*?lectro\\.ws)/*?/uploads/posts/(.*?)\"").getColumn(1);
-        if (TabImage1.length == 0 && TabImage2.length == 0) {
+        String[] TabImage1 = null;
+        if (TabImage2.length == 0) {
             TabImage1 = br.getRegex("<img src=\"(http://[\\w\\.]*?israbox\\.com)*?/uploads(.*?)\"").getColumn(1);
         }
 
@@ -271,7 +271,7 @@ public class SrBoxCom extends PluginForDecrypt {
         strName = strName.replace("Various Artists - ", "");
 
         // Remove the exact words mp3, flac, lossless and ape
-        strName = ReplacePattern(strName, "(?<!\\p{L})mp3(?!\\p{L})|(?<!\\p{L})ape(?!\\p{L})|(?<!\\p{L})flac(?!\\p{L})|(?<!\\p{L})lossless(?!\\p{L})");
+        strName = ReplacePattern(strName, "(?<!\\p{L})mp3(?!\\p{L})|(?<!\\p{L})ape(?!\\p{L})|(?<!\\p{L})flac(?!\\p{L})|(?<!\\p{L})lossless(?!\\p{L})|(?<!\\p{L})lossles(?!\\p{L})");
 
         // Remove the box set information
         strName = ReplacePattern(strName, "- [0-9]+ *CD Box Set");
