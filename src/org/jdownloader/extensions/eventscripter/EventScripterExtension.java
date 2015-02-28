@@ -74,9 +74,8 @@ import org.jdownloader.gui.translate._GUI;
 
 public class EventScripterExtension extends AbstractExtension<EventScripterConfig, EventScripterTranslation> implements MenuExtenderHandler, DownloadWatchdogListener, GenericConfigEventListener<Object>, RemoteAPIInternalEventListener, FileCreationListener, LinkCollectorListener, PackagizerControllerListener, ExtractionListener {
 
-    private Object                   lock = new Object();
-    private EventScripterConfigPanel configPanel;
-    private List<ScriptEntry>        entries;
+    private EventScripterConfigPanel   configPanel = null;
+    private volatile List<ScriptEntry> entries     = new ArrayList<ScriptEntry>();
 
     @Override
     public boolean isHeadlessRunnable() {
@@ -89,7 +88,6 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     public EventScripterExtension() throws StartException {
         setTitle(T._.title());
-
     }
 
     @Override
@@ -131,7 +129,12 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
             }
         });
         CFG_EVENT_CALLER.SCRIPTS.getEventSender().addListener(this);
-        entries = getSettings().getScripts();
+        final List<ScriptEntry> loadedEntries = getSettings().getScripts();
+        if (loadedEntries == null) {
+            this.entries = new ArrayList<ScriptEntry>();
+        } else {
+            this.entries = new ArrayList<ScriptEntry>(loadedEntries);
+        }
         if (!Application.isHeadless()) {
             configPanel = new EventScripterConfigPanel(this);
         }
@@ -139,12 +142,13 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
             @Override
             public void run() {
-                if (entries != null) {
-                    for (ScriptEntry script : entries) {
-                        if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_JDOWNLOADER_STARTED == script.getEventTrigger()) {
+                for (ScriptEntry script : entries) {
+                    if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_JDOWNLOADER_STARTED == script.getEventTrigger()) {
+                        try {
                             HashMap<String, Object> props = new HashMap<String, Object>();
                             runScript(script, props);
-
+                        } catch (Throwable e) {
+                            getLogger().log(e);
                         }
                     }
                 }
@@ -210,24 +214,18 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     @Override
     public void onDownloadControllerStart(SingleDownloadController downloadController, DownloadLinkCandidate candidate) {
-
-        if (entries == null) {
-            return;
-        }
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_DOWNLOAD_CONTROLLER_START == script.getEventTrigger()) {
                 try {
                     HashMap<String, Object> props = new HashMap<String, Object>();
                     props.put("link", new DownloadLinkSandBox(downloadController.getDownloadLink()));
                     props.put("package", new FilePackageSandBox(downloadController.getDownloadLink().getParentNode()));
-
                     runScript(script, props);
                 } catch (Throwable e) {
                     getLogger().log(e);
                 }
             }
         }
-
     }
 
     public void runScript(ScriptEntry script, HashMap<String, Object> props) {
@@ -237,29 +235,31 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     @Override
     public void onDownloadControllerStopped(SingleDownloadController downloadController, DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
-
-        if (entries == null) {
-            return;
-        }
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript())) {
                 if (EventTrigger.ON_DOWNLOAD_CONTROLLER_STOPPED == script.getEventTrigger()) {
-                    HashMap<String, Object> props = new HashMap<String, Object>();
-                    props.put("link", new DownloadLinkSandBox(downloadController.getDownloadLink()));
-                    props.put("package", new FilePackageSandBox(downloadController.getDownloadLink().getParentNode()));
-                    runScript(script, props);
-
+                    try {
+                        HashMap<String, Object> props = new HashMap<String, Object>();
+                        props.put("link", new DownloadLinkSandBox(downloadController.getDownloadLink()));
+                        props.put("package", new FilePackageSandBox(downloadController.getDownloadLink().getParentNode()));
+                        runScript(script, props);
+                    } catch (Throwable e) {
+                        getLogger().log(e);
+                    }
                 }
                 FilePackageSandBox pkg = null;
                 if (EventTrigger.ON_PACKAGE_FINISHED == script.getEventTrigger() && (pkg = new FilePackageSandBox(downloadController.getDownloadLink().getParentNode())).isFinished()) {
-                    HashMap<String, Object> props = new HashMap<String, Object>();
-                    props.put("link", new DownloadLinkSandBox(downloadController.getDownloadLink()));
-                    props.put("package", pkg);
-                    runScript(script, props);
+                    try {
+                        HashMap<String, Object> props = new HashMap<String, Object>();
+                        props.put("link", new DownloadLinkSandBox(downloadController.getDownloadLink()));
+                        props.put("package", pkg);
+                        runScript(script, props);
+                    } catch (Throwable e) {
+                        getLogger().log(e);
+                    }
                 }
             }
         }
-
     }
 
     @Override
@@ -271,8 +271,13 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
     }
 
     @Override
-    public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
-        entries = getSettings().getScripts();
+    public synchronized void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
+        final List<ScriptEntry> entries = getSettings().getScripts();
+        if (entries == null) {
+            this.entries = new ArrayList<ScriptEntry>();
+        } else {
+            this.entries = new ArrayList<ScriptEntry>(entries);
+        }
     }
 
     public void save(final List<ScriptEntry> tableData) {
@@ -320,56 +325,54 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         }
     }
 
-    public void addScriptEntry(ScriptEntry newScript) {
-        ArrayList<ScriptEntry> newEntries = entries == null ? new ArrayList<ScriptEntry>() : new ArrayList<ScriptEntry>(entries);
-        newEntries.add(newScript);
-        save(newEntries);
+    public synchronized void addScriptEntry(ScriptEntry newScript) {
+        if (newScript != null) {
+            final ArrayList<ScriptEntry> newEntries = new ArrayList<ScriptEntry>(entries);
+            newEntries.add(newScript);
+            save(newEntries);
+        }
     }
 
-    public void removeScriptEntries(List<ScriptEntry> entries2) {
-        ArrayList<ScriptEntry> newEntries = entries == null ? new ArrayList<ScriptEntry>() : new ArrayList<ScriptEntry>(entries);
-        newEntries.removeAll(entries2);
-        save(newEntries);
+    public synchronized void removeScriptEntries(List<ScriptEntry> entries2) {
+        if (entries2 != null) {
+            final ArrayList<ScriptEntry> newEntries = new ArrayList<ScriptEntry>(entries);
+            newEntries.removeAll(entries2);
+            save(newEntries);
+        }
     }
 
     @Override
     public void onRemoteAPIEvent(EventObject event) {
-        if (entries == null) {
-            return;
-        }
-
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_OUTGOING_REMOTE_API_EVENT == script.getEventTrigger()) {
-                HashMap<String, Object> props = new HashMap<String, Object>();
-
-                props.put("event", new EventSandbox(event));
-
-                // props.put("package", getPackageInfo(downloadController.getDownloadLink().getParentNode()));
-                runScript(script, props);
-
+                try {
+                    HashMap<String, Object> props = new HashMap<String, Object>();
+                    props.put("event", new EventSandbox(event));
+                    // props.put("package", getPackageInfo(downloadController.getDownloadLink().getParentNode()));
+                    runScript(script, props);
+                } catch (Throwable e) {
+                    getLogger().log(e);
+                }
             }
         }
     }
 
     @Override
     public void onNewFile(Object caller, File[] fileList) {
-
-        if (entries == null) {
-            return;
-        }
-
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_NEW_FILE == script.getEventTrigger()) {
-                HashMap<String, Object> props = new HashMap<String, Object>();
-                String[] pathes = new String[fileList.length];
-                for (int i = 0; i < fileList.length; i++) {
-                    pathes[i] = fileList[i].getAbsolutePath();
+                try {
+                    HashMap<String, Object> props = new HashMap<String, Object>();
+                    String[] pathes = new String[fileList.length];
+                    for (int i = 0; i < fileList.length; i++) {
+                        pathes[i] = fileList[i].getAbsolutePath();
+                    }
+                    props.put("files", pathes);
+                    props.put("caller", caller == null ? null : caller.getClass().getName());
+                    runScript(script, props);
+                } catch (Throwable e) {
+                    getLogger().log(e);
                 }
-                props.put("files", pathes);
-                props.put("caller", caller == null ? null : caller.getClass().getName());
-
-                runScript(script, props);
-
             }
         }
     }
@@ -424,19 +427,15 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     @Override
     public void onLinkCrawlerNewJob(LinkCollectingJob job) {
-
-        if (entries == null) {
-            return;
-        }
-
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_NEW_CRAWLER_JOB == script.getEventTrigger()) {
-                HashMap<String, Object> props = new HashMap<String, Object>();
-
-                props.put("job", new CrawlerJobSandbox(job));
-
-                runScript(script, props);
-
+                try {
+                    HashMap<String, Object> props = new HashMap<String, Object>();
+                    props.put("job", new CrawlerJobSandbox(job));
+                    runScript(script, props);
+                } catch (Throwable e) {
+                    getLogger().log(e);
+                }
             }
         }
     }
@@ -447,71 +446,65 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     @Override
     public void onPackagizerRunBeforeLinkcheck(CrawledLink link) {
-        if (entries == null) {
-            return;
-        }
-
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_PACKAGIZER == script.getEventTrigger()) {
-                HashMap<String, Object> props = new HashMap<String, Object>();
-                props.put("linkcheckDone", false);
-
-                props.put("link", new PackagizerLinkSandbox(link));
-
-                runScript(script, props);
-
+                try {
+                    HashMap<String, Object> props = new HashMap<String, Object>();
+                    props.put("linkcheckDone", false);
+                    props.put("link", new PackagizerLinkSandbox(link));
+                    runScript(script, props);
+                } catch (Throwable e) {
+                    getLogger().log(e);
+                }
             }
         }
     }
 
     @Override
     public void onPackagizerRunAfterLinkcheck(CrawledLink link) {
-        if (entries == null) {
-            return;
-        }
-
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_PACKAGIZER == script.getEventTrigger()) {
-                HashMap<String, Object> props = new HashMap<String, Object>();
-                props.put("linkcheckDone", true);
-
-                props.put("link", new PackagizerLinkSandbox(link));
-
-                runScript(script, props);
-
+                try {
+                    HashMap<String, Object> props = new HashMap<String, Object>();
+                    props.put("linkcheckDone", true);
+                    props.put("link", new PackagizerLinkSandbox(link));
+                    runScript(script, props);
+                } catch (Throwable e) {
+                    getLogger().log(e);
+                }
             }
         }
     }
 
     @Override
     public void onExtractionEvent(ExtractionEvent event) {
-        //
-
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_GENERIC_EXTRACTION == script.getEventTrigger()) {
-                HashMap<String, Object> props = new HashMap<String, Object>();
-                props.put("archive", new ArchiveSandbox(event.getCaller().getArchiv()));
-                props.put("event", event.getType().name());
-
-                runScript(script, props);
-
+                try {
+                    HashMap<String, Object> props = new HashMap<String, Object>();
+                    props.put("archive", new ArchiveSandbox(event.getCaller().getArchiv()));
+                    props.put("event", event.getType().name());
+                    runScript(script, props);
+                } catch (Throwable e) {
+                    getLogger().log(e);
+                }
             }
         }
         switch (event.getType()) {
         case FINISHED:
             for (ScriptEntry script : entries) {
                 if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_ARCHIVE_EXTRACTED == script.getEventTrigger()) {
-                    HashMap<String, Object> props = new HashMap<String, Object>();
-                    props.put("archive", new ArchiveSandbox(event.getCaller().getArchiv()));
-                    props.put("event", event.getType().name());
-
-                    runScript(script, props);
-
+                    try {
+                        HashMap<String, Object> props = new HashMap<String, Object>();
+                        props.put("archive", new ArchiveSandbox(event.getCaller().getArchiv()));
+                        props.put("event", event.getType().name());
+                        runScript(script, props);
+                    } catch (Throwable e) {
+                        getLogger().log(e);
+                    }
                 }
             }
-
             break;
-
         case ACTIVE_ITEM:
         case CLEANUP:
         case EXTRACTING:
@@ -528,7 +521,6 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         case START:
         case START_CRACK_PASSWORD:
         case START_EXTRACTION:
-
         }
     }
 }
