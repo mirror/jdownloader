@@ -35,6 +35,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.uio.UIOManager;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pinterest.com" }, urls = { "https?://(www\\.)?pinterest\\.com/(?!pin/)[^/]+/[^/]+/" }, flags = { 0 })
 public class PinterestComDecrypter extends PluginForDecrypt {
 
@@ -175,6 +177,9 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             } while (nextbookmark != null && !nextbookmark.equals("-end-"));
         } else {
             decryptSite();
+            if (lnumberof_pins > 25) {
+                UIOManager.I().showMessageDialog("Please add your pinterest.com account at Settings->Account manager to find more than 25 images");
+            }
         }
 
         fp.addLinks(decryptedLinks);
