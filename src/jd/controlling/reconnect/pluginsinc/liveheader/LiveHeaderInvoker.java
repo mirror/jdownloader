@@ -20,7 +20,6 @@ import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectInvoker;
 import jd.controlling.reconnect.ReconnectResult;
 import jd.controlling.reconnect.ipcheck.IP;
-import jd.controlling.reconnect.ipcheck.IPController;
 import jd.controlling.reconnect.pluginsinc.liveheader.recoll.RecollController;
 import jd.controlling.reconnect.pluginsinc.liveheader.remotecall.RouterData;
 import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
@@ -65,14 +64,6 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
     public ReconnectResult validate(ReconnectResult r) throws InterruptedException, ReconnectException {
 
         try {
-            if (r instanceof LiveHeaderReconnectResult) {
-                final RouterData rd = ((LiveHeaderReconnectResult) r).getRouterData();
-
-                if (rd != null && rd.getScriptID() != null) {
-
-                    RecollController.getInstance().trackValidateStartAsynch(rd.getScriptID());
-                }
-            }
 
             r = super.validate(r);
 
@@ -100,15 +91,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
             }
             throw e;
         } finally {
-            if (!IPController.getInstance().getIpState().isOffline()) {
-                if (r instanceof LiveHeaderReconnectResult) {
-                    final RouterData rd = ((LiveHeaderReconnectResult) r).getRouterData();
 
-                    if (rd != null && rd.getScriptID() != null) {
-                        RecollController.getInstance().trackValidateEnd(rd.getScriptID());
-                    }
-                }
-            }
         }
 
     }
@@ -484,7 +467,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
 
     /**
      * DO NOT REMOVE THIS OR REPLACE BY Regex.getLines()
-     *
+     * 
      * REGEX ARE COMPLETE DIFFERENT AND DO NOT TRIM
      */
     private static String[] splitLines(final String source) {
@@ -757,6 +740,10 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
     public ReconnectResult validate(RouterData test) throws InterruptedException, ReconnectException {
         this.routerData = test;
         return validate();
+    }
+
+    public void setRouterData(RouterData rd) {
+        this.routerData = rd;
     }
 
 }

@@ -46,8 +46,8 @@ public interface UpnpTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Scanning all network interfaces" })
     String UPNPRouterPlugin_run_mesg();
 
-    @Default(lngs = { "en" }, values = { "Found UPNP Devices, but could not perform a reconnect. \r\nTry Live Header Reconnect instead!" })
-    String AutoDetectAction_run_failed();
+    @Default(lngs = { "en" }, values = { "No working UPNP Reconnect method found.\r\nTry Live Header Reconnect instead!" })
+    String AutoDetectAction_run_failed2();
 
     @Default(lngs = { "en" }, values = { "Tries to find all UPNP Reconnect Devices in your Network.\r\nMost FritzBox Routers can be reonnected this way." })
     String AutoDetectUpnpAction_AutoDetectUpnpAction_();

@@ -111,7 +111,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
     }
 
     public TaskColumn() {
-        super(_GUI._.StatusColumn_StatusColumn());
+        super(_GUI._.StatusColumn_StatusColumn2());
         this.trueIcon = new AbstractIcon("true", 16);
 
         this.infoIcon = new AbstractIcon("info", 16);

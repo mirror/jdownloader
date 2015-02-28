@@ -259,4 +259,76 @@ public interface LiveheaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "We need your help to improve our reconnect database.\r\nPlease contribute to the 'JD Project' and send in our reconnect script.\r\nThis wizard will guide you through all required steps." })
     String RouterSendAction_actionPerformed_msg2();
 
+    @Default(lngs = { "en" }, values = { "Reconnect Script for %s1" })
+    String script(String routerName);
+
+    @Default(lngs = { "en" }, values = { "Please make sure, that the script below does not contain any personal data like password or username" })
+    String script_check();
+
+    @Default(lngs = { "en" }, values = { "JDownloader will test the Reconnect Script below.\r\nIf you do not want to execute this script, please click the [skip] button." })
+    String confirm_script();
+
+    @Default(lngs = { "en" }, values = { "JDownloader will upload the Reconnect Script below.\r\nPlease check all requests and parameters and cancel the process if they contain and private data you do not want to share." })
+    String confirm_upload_script();
+
+    @Default(lngs = { "en" }, values = { "Check or modify the raw reconnect Script below." })
+    String script_check_modify();
+
+    @Default(lngs = { "en" }, values = { "Browser Script Database" })
+    String SearchScriptAction();
+
+    @Default(lngs = { "en" }, values = { "Search in our huge community script database" })
+    String SearchScriptAction_tt();
+
+    @Default(lngs = { "en" }, values = { "Search" })
+    String search();
+
+    @Default(lngs = { "en" }, values = { "Reconnect Script Database" })
+    String SearchScriptDialog();
+
+    @Default(lngs = { "en" }, values = { "Router name" })
+    String routername();
+
+    @Default(lngs = { "en" }, values = { "Manufactor" })
+    String manufactor();
+
+    @Default(lngs = { "en" }, values = { "Internet Provider" })
+    String isp();
+
+    @Default(lngs = { "en" }, values = { "Enter your router's name..." })
+    String routerName_help();
+
+    @Default(lngs = { "en" }, values = { "Enter your router's manufactor..." })
+    String manufactor_help();
+
+    @Default(lngs = { "en" }, values = { "Enter your Internet Provider..." })
+    String isp_help();
+
+    @Default(lngs = { "en" }, values = { "Searching..." })
+    String searching();
+
+    @Default(lngs = { "en" }, values = { "Nothing found. Try to change your search..." })
+    String nothing_found();
+
+    @Default(lngs = { "en" }, values = { "Reconnect Scripts found: %s1" })
+    String found(int size);
+
+    @Default(lngs = { "en" }, values = { "Average Reconnect Duration" })
+    String avg_time();
+
+    @Default(lngs = { "en" }, values = { "Success Rate" })
+    String success_rate();
+
+    @Default(lngs = { "en" }, values = { "Bad Search.\r\nMake sure that the search pattern is not 1 or 2 characters long." })
+    String BadQueryException();
+
+    @Default(lngs = { "en" }, values = { "Use selected Script" })
+    String use();
+
+    @Default(lngs = { "en" }, values = { "Details" })
+    String details();
+
+    @Default(lngs = { "en" }, values = { "This Dialog shows how this Reconnect Script works.\r\nIf you want to see the raw script, or modify it, click the [edit] button below." })
+    String edit_script();
+
 }

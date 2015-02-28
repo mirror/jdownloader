@@ -36,7 +36,6 @@ public class RecollController {
 
     private LogSource logger;
     private Queue     queue;
-    private Browser   br;
 
     /**
      * Create a new instance of RecollController. This is a singleton class. Access the only existing instance by using
@@ -45,28 +44,11 @@ public class RecollController {
     private RecollController() {
 
         logger = LogController.getInstance().getLogger(getClass().getName());
-        br = new Browser();
+
         queue = new Queue("RecollQueue") {
 
         };
 
-    }
-
-    public void trackValidateStartAsynch(final String scriptID) {
-
-        queue.addAsynch(new QueueAction<Void, RuntimeException>() {
-
-            @Override
-            protected Void run() throws RuntimeException {
-                try {
-                    call("incTestStart", null, scriptID);
-
-                } catch (Exception e) {
-                    logger.log(e);
-                }
-                return null;
-            }
-        });
     }
 
     protected <Typo> Typo call(String command, TypeRef<Typo> type, Object... objects) throws IOException {
@@ -79,28 +61,19 @@ public class RecollController {
                 sb.append(Encoding.urlEncode(JSonStorage.serializeToJson(objects[i])));
             }
         }
+        Browser br = new Browser();
+        br.setAllowedResponseCodes(200, 503, 500, 400);
         String ret = br.postPageRaw(HTTP_BASE + command, sb.toString());
+        if (br.getRequest().getHttpConnection().getResponseCode() == 503) {
+            throw new RetryIOException(ret);
+        }
+        if (br.getRequest().getHttpConnection().getResponseCode() == 400) {
+            throw new BadQueryException(ret);
+        }
         if (type == null) {
             return null;
         }
         return JSonStorage.restoreFromString(ret, type);
-    }
-
-    public void trackValidateEnd(final String scriptID) {
-
-        queue.addAsynch(new QueueAction<Void, RuntimeException>() {
-
-            @Override
-            protected Void run() throws RuntimeException {
-                try {
-                    call("incTestEnd", null, scriptID);
-
-                } catch (Exception e) {
-                    logger.log(e);
-                }
-                return null;
-            }
-        });
     }
 
     public void trackWorking(final String scriptID, final long successDuration, final long offlineDuration) {
@@ -147,10 +120,15 @@ public class RecollController {
 
     }
 
-    public List<RouterData> findRouter(RouterData rd) {
+    public List<RouterData> findRouter(RouterData rd) throws InterruptedException {
+
         try {
             return call("findRouter", new TypeRef<ArrayList<RouterData>>() {
             }, rd);
+        } catch (RetryIOException e) {
+            Thread.sleep(2000);
+            return findRouter(rd);
+
         } catch (IOException e) {
             logger.log(e);
             return null;
@@ -178,6 +156,31 @@ public class RecollController {
             return false;
         }
 
+    }
+
+    public String getIsp() {
+        try {
+            return call("getIsp", TypeRef.STRING);
+        } catch (IOException e) {
+            logger.log(e);
+            ;
+            return null;
+        }
+    }
+
+    public List<RouterData> query(String name, String manufactor, String isp) throws InterruptedException, BadQueryException {
+        try {
+            return call("query", new TypeRef<ArrayList<RouterData>>() {
+            }, name, manufactor, isp);
+        } catch (RetryIOException e) {
+            Thread.sleep(2000);
+            return query(name, manufactor, isp);
+        } catch (BadQueryException e) {
+            throw e;
+        } catch (IOException e) {
+            logger.log(e);
+            return null;
+        }
     }
 
 }

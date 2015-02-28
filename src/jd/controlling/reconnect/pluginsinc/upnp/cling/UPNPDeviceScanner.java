@@ -146,18 +146,25 @@ public class UPNPDeviceScanner {
             // Let's wait 10 seconds for them to respond
             logger.info("Waiting 15 seconds before shutting down...");
             Thread.sleep(15000);
-            while (ret.size() == 0 && System.currentTimeMillis() - lastreceive.get() < 30000) {
-                logger.info("Wait another 1 sec");
-                Thread.sleep(1000);
-            }
+            // while (ret.size() == 0 && System.currentTimeMillis() - lastreceive.get() < 30000) {
+            // logger.info("Wait another 1 sec");
+            // Thread.sleep(1000);
+            // }
 
             return new ArrayList<UpnpRouterDevice>(ret);
         } finally {
-            try {
-                logger.info("Stopping Cling...");
-                upnpService.shutdown();
-            } catch (Throwable e) {
-                logger.log(e);
+            for (int i = 0; i < 4; i++) {
+                // SEVERE: Router error on shutdown: org.fourthline.cling.transport.RouterException: Router wasn't available exclusively
+                // after waiting 6000ms, lock failed: WriteLock
+                // org.fourthline.cling.transport.RouterException: Router wasn't available exclusively after waiting 6000ms, lock failed:
+                // WriteLock
+                try {
+                    logger.info("Stopping Cling...");
+                    upnpService.shutdown();
+                    break;
+                } catch (Throwable e) {
+                    logger.log(e);
+                }
             }
 
         }

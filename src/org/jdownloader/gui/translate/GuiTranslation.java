@@ -517,7 +517,7 @@ public interface GuiTranslation extends TranslateInterface {
     String HosterColumn_HosterColumn();
 
     @Default(lngs = { "en" }, values = { "Status" })
-    String StatusColumn_StatusColumn();
+    String StatusColumn_StatusColumn2();
 
     @Default(lngs = { "en" }, values = { "Enabled / Disabled" })
     String EnabledDisabledColumn_EnabledDisabledColumn();
@@ -5239,10 +5239,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Description" })
     String UrlOrderTableModel_type_desc();
 
-    @Default(lngs = { "en" }, values = { "Active Task" })
+    @Default(lngs = { "en" }, values = { "Status" })
     String searchcategory_status();
 
-    @Default(lngs = { "en" }, values = { "Please enter the Active Task status you are looking for..." })
+    @Default(lngs = { "en" }, values = { "Please enter the Status you are looking for..." })
     String searchcategory_status_help();
 
     @Default(lngs = { "en" }, values = { "What about the offline links?" })
@@ -5819,12 +5819,42 @@ public interface GuiTranslation extends TranslateInterface {
     String lit_skip();
 
     @Default(lngs = { "en" }, values = { "Confirm Reconnect Test" })
-    String UPNPRouterPlugin_runDetectionWizard_confirm_title();
+    String runDetectionWizard_confirm_title();
 
     @Default(lngs = { "en" }, values = { "The Wizard will test this UPNP Reconnect method now:\r\nService: %s1\r\nControl point: %s2" })
     String UPNPRouterPlugin_runDetectionWizard_confirm_msg(String serviceType, String controlURL);
 
     @Default(lngs = { "en" }, values = { "Confirm all. Do not ask again." })
     String UPNPRouterPlugin_accept_all();
+
+    @Default(lngs = { "en" }, values = { "Router/Modem name:" })
+    String LiveHeaderScriptConfirmDialog_layoutDialogContent_routername();
+
+    @Default(lngs = { "en" }, values = { "Router/Modem LAN IP:" })
+    String LiveHeaderScriptConfirmDialog_layoutDialogContent_routerip();
+
+    @Default(lngs = { "en" }, values = { "How this method works:" })
+    String LiveHeaderScriptConfirmDialog_layoutDialogContent_script_overview();
+
+    @Default(lngs = { "en" }, values = { "Invalid Script" })
+    String LiveHeaderScriptConfirmDialog_layoutDialogContent_invalidscript();
+
+    @Default(lngs = { "en" }, values = { "Edit Script" })
+    String LiveHeaderScriptConfirmDialog_LiveHeaderScriptConfirmDialog_edit();
+
+    @Default(lngs = { "en" }, values = { "Manufactor:" })
+    String LiveHeaderScriptConfirmDialog_layoutDialogContent_Manufactor();
+
+    @Default(lngs = { "en" }, values = { "Estimated time to reconnect:" })
+    String LiveHeaderScriptConfirmDialog_layoutDialogContent_time();
+
+    @Default(lngs = { "en" }, values = { "This service is not available right now.\r\nPlease try again later." })
+    String LiveHeaderDetectionWizard_sendRouter_na();
+
+    @Default(lngs = { "en" }, values = { "Show Raw Script" })
+    String LiveHeaderScriptConfirmUploadDialog_show_script();
+
+    @Default(lngs = { "en" }, values = { "Please wait..." })
+    String lit_please_wait();
 
 }
