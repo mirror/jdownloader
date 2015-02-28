@@ -35,6 +35,7 @@ import org.appwork.swing.components.ExtTextField;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
@@ -223,7 +224,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
         p.add(new JLabel(T._.literally_password()), "");
         p.add(this.txtPassword, "spanx");
         //
-
+        p.add(createButton(new SearchScriptAction(this)), "sg buttons,aligny top,newline");
         // p.add(new JLabel("Control URL"), "newline,skip");
         // p.add(this.controlURLTxt);
         // p.add(Box.createGlue(), "pushy,growy");
@@ -431,7 +432,14 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
         final String user = settings.getUserName();
         final String pass = settings.getPassword();
         final String ip = settings.getRouterIP();
-        return new LiveHeaderInvoker(this, script, user, pass, ip, settings.getRouterData().getRouterName());
+        RouterData rd = settings.getRouterData();
+        LiveHeaderInvoker ret = new LiveHeaderInvoker(this, script, user, pass, ip, settings.getRouterData().getRouterName());
+        if (rd != null) {
+            if (StringUtils.equals(rd.getScript(), script)) {
+                ret.setRouterData(rd);
+            }
+        }
+        return ret;
 
     }
 }

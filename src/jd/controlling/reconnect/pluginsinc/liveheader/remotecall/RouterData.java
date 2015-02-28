@@ -55,7 +55,9 @@ public class RouterData implements Storable {
     private long avgOfDDev;
 
     public String getScriptID() {
-        if (scriptID != null && scriptID.length() == 32) return scriptID;
+        if (scriptID != null && scriptID.length() == 32) {
+            return scriptID;
+        }
 
         final StringBuilder sb = new StringBuilder();
 
@@ -148,25 +150,6 @@ public class RouterData implements Storable {
         this.failed = failed;
     }
 
-    private int testStart;
-
-    public int getTestStart() {
-        return testStart;
-    }
-
-    public void setTestStart(int testStart) {
-        this.testStart = testStart;
-    }
-
-    public int getTestEnd() {
-        return testEnd;
-    }
-
-    public void setTestEnd(int testEnd) {
-        this.testEnd = testEnd;
-    }
-
-    private int                     testEnd;
     private int                     success;
     private int                     failed;
     private String                  firmware;
@@ -331,7 +314,9 @@ public class RouterData implements Storable {
     }
 
     private String replace(String str) {
-        if (str == null) return null;
+        if (str == null) {
+            return null;
+        }
         return str.replace("&nbsp;", " ");
     }
 

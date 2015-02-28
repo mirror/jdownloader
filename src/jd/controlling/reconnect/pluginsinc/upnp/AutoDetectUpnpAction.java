@@ -178,7 +178,7 @@ public class AutoDetectUpnpAction extends BasicAction {
                     scripts.get(0).getInvoker().getPlugin().setSetup(scripts.get(0));
 
                 } else {
-                    UIOManager.I().showErrorMessage(T._.AutoDetectAction_run_failed());
+                    UIOManager.I().showErrorMessage(T._.AutoDetectAction_run_failed2());
 
                 }
 

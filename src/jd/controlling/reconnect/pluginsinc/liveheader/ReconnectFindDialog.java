@@ -179,10 +179,16 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
     }
 
     @Override
+    protected void initFocus(JComponent focus) {
+        super.initFocus(cancelButton);
+    }
+
+    @Override
     protected void packed() {
         super.packed();
         okButton.setEnabled(false);
-
+        okButton.repaint();
+        cancelButton.requestFocus();
         okButton.setToolTipText(_GUI._.ReconnectFindDialog_packed_no_found_script_tooltip());
     }
 

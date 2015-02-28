@@ -151,7 +151,7 @@ public class EnabledDisabledColumn extends ExtIconColumn<AbstractNode> {
                 // defaultProxy
                 setHorizontalAlignment(CENTER);
                 setText(null);
-                setToolTipText(_GUI._.StatusColumn_StatusColumn());
+                setToolTipText(_GUI._.StatusColumn_StatusColumn2());
                 return this;
             }
         };

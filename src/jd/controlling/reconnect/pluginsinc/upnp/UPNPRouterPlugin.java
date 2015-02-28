@@ -51,13 +51,13 @@ import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 
 public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
 
-    public static final String                 ID = "SIMPLEUPNP";
+    public static final String                 ID      = "SIMPLEUPNP";
 
     private ExtTextField                       serviceTypeTxt;
     private ExtTextField                       controlURLTxt;
     private JLabel                             wanType;
 
-    protected java.util.List<UpnpRouterDevice> devices;
+    protected java.util.List<UpnpRouterDevice> devices = null;
 
     private Icon                               icon;
 
@@ -94,7 +94,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
                     processCallBack.setStatusString(this, T._.try_reconnect(device.getModelname()));
                     logger.info("Try " + device);
                     if (processCallBack.isMethodConfirmEnabled()) {
-                        ConfirmDialog d = new ConfirmDialog(UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.UPNPRouterPlugin_runDetectionWizard_confirm_title(), _GUI._.UPNPRouterPlugin_runDetectionWizard_confirm_msg(device.getServiceType(), device.getControlURL()), new AbstractIcon("upnp", 32), _GUI._.lit_continue(), _GUI._.lit_skip()) {
+                        ConfirmDialog d = new ConfirmDialog(UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.runDetectionWizard_confirm_title(), _GUI._.UPNPRouterPlugin_runDetectionWizard_confirm_msg(device.getServiceType(), device.getControlURL()), new AbstractIcon("upnp", 32), _GUI._.lit_continue(), _GUI._.lit_skip()) {
                             @Override
                             protected String getDontShowAgainLabelText() {
                                 return _GUI._.UPNPRouterPlugin_accept_all();
@@ -329,11 +329,13 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
         return new UPNPReconnectInvoker(this, settings.getServiceType(), settings.getControlURL());
     }
 
-    public synchronized java.util.List<UpnpRouterDevice> getDevices() throws InterruptedException {
-        if (devices == null || devices.size() == 0) {
-            // This will create necessary network resources for UPnP right away
+    public synchronized java.util.List<UpnpRouterDevice> getCachedDevices() throws InterruptedException {
 
-        }
+        return devices;
+    }
+
+    public synchronized java.util.List<UpnpRouterDevice> getDevices() throws InterruptedException {
+
         devices = new UPNPDeviceScanner().scan();
         return devices;
     }
