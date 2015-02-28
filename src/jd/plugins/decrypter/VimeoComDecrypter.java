@@ -162,7 +162,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             final String cleanVimeoURL = "http://vimeo.com/" + ID;
             /*
              * We used to simply change the vimeo.com/player/XXX links to normal vimeo.com/XXX links but in some cases, videos can only be
-             * accessed via their 'player'-link with a specified Referer.
+             * accessed via their 'player'-link with a specified Referer - if the referer is not given in such a case the site will say that
+             * our video would be a private video.
              */
             if (parameter.matches(type_player_private) && new_way_allowed) {
                 if (vimeo_forced_referer != null) {
@@ -222,8 +223,11 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     br.setCookie(br.getURL(), "vuid", vuid);
                 }
 
-                date = br.getRegex("itemprop=\"dateCreated\" content=\"(\\d{4}\\-\\d{2}\\-\\d{2}T\\d{2}:\\d{2}:\\d{2})").getMatch(0);
-                channelName = br.getRegex("itemtype=\"http://schema\\.org/Person\">[\t\n\r ]+<meta itemprop=\"name\" content=\"([^<>\"]+)\"").getMatch(0);
+                date = br.getRegex("datetime=\"(\\d{4}\\-\\d{2}\\-\\d{2}T\\d{2}:\\d{2}:\\d{2})").getMatch(0);
+                channelName = br.getRegex("\"Person\",\"name\":\"([^<>\"]*?)\"").getMatch(0);
+                if (channelName == null) {
+                    channelName = br.getRegex("rel=\"author\" href=\"/[^<>\"]+\">([^<>\"]*?)</a>").getMatch(0);
+                }
             }
             title = getTitle(br);
             if (channelName != null) {

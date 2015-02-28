@@ -404,8 +404,12 @@ public class FilePlanetaCom extends PluginForHost {
                 // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
                 download1 = cleanForm(download1);
                 // end of backward compatibility
+                /* Remove unneeded values */
                 download1.remove("method_free");
                 download1.remove("method_free");
+                download1.remove("method_free");
+                download1.remove("method_premium");
+                download1.remove("method_premium");
                 download1.remove("method_premium");
                 download1.put("method_free", "Free+Download");
                 sendForm(download1);

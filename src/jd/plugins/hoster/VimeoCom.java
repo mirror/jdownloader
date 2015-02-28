@@ -265,6 +265,7 @@ public class VimeoCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         synchronized (LOCK) {
@@ -385,7 +386,7 @@ public class VimeoCom extends PluginForHost {
 
     public static final int quality_info_length = 7;
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "unused" })
     public String[][] getQualities(final Browser ibr, final String ID) throws Exception {
         /*
          * little pause needed so the next call does not return trash
@@ -719,8 +720,8 @@ public class VimeoCom extends PluginForHost {
         sb.append("*videoname* = name of the video without extension\r\n");
         sb.append("*quality* = mobile or sd or hd\r\n");
         sb.append("*videoid* = id of the video\r\n");
-        sb.append("*videoFrameSize* = size of video eg. 640x480 (not always available)");
-        sb.append("*videoBitrate* = bitrate of video eg. xxxkbits (not always available)");
+        sb.append("*videoFrameSize* = size of video eg. 640x480 (not always available)\r\n");
+        sb.append("*videoBitrate* = bitrate of video eg. xxxkbits (not always available)\r\n");
         sb.append("*ext* = the extension of the file, in this case usually '.mp4'");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
     }
