@@ -1,5 +1,6 @@
 package jd.controlling.reconnect.pluginsinc.liveheader;
 
+import java.awt.Dialog.ModalityType;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -145,13 +146,28 @@ public class RouterDataResultTableModel extends ExtTableModel<RouterData> {
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         if (editing != null) {
-                            LiveHeaderScriptConfirmDialog d = new LiveHeaderScriptConfirmDialog(Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_CANCEL, T._.script(editing.getRouterName()), new AbstractIcon("reconnect", 32), _GUI._.lit_close(), null, editing, null, editing.getRouterName()) {
+                            setSelectedObject(editing);
+                            final LiveHeaderScriptConfirmDialog d = new LiveHeaderScriptConfirmDialog(Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_CANCEL, T._.script(editing.getRouterName()), new AbstractIcon("reconnect", 32), _GUI._.lit_close(), null, editing, null, editing.getRouterName()) {
                                 @Override
                                 public String getMessage() {
                                     return T._.edit_script();
                                 }
+
+                                @Override
+                                public ModalityType getModalityType() {
+                                    return ModalityType.MODELESS;
+                                }
                             };
-                            UIOManager.I().show(null, d);
+                            new Thread() {
+                                {
+                                    setDaemon(true);
+                                }
+
+                                @Override
+                                public void run() {
+                                    UIOManager.I().show(null, d);
+                                }
+                            }.start();
 
                         }
                     }

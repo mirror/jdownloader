@@ -5,11 +5,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.controlling.reconnect.pluginsinc.liveheader.remotecall.RouterData;
+import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.QueueAction;
@@ -179,6 +181,7 @@ public class RecollController {
             throw e;
         } catch (IOException e) {
             logger.log(e);
+            UIOManager.I().showErrorMessage(T._.LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm());
             return null;
         }
     }
