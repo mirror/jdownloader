@@ -64,7 +64,11 @@ public class SharedSx extends PluginForHost {
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setName(Encoding.htmlDecode(filename).trim());
+        filename = encodeUnicode(Encoding.htmlDecode(filename.trim()));
+        if (filename.endsWith(" (...)")) {
+            filename = filename.replace(" (...)", ".mp4");
+        }
+        link.setFinalFileName(filename);
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -126,6 +130,22 @@ public class SharedSx extends PluginForHost {
             }
         }
         return dllink;
+    }
+
+    /* Avoid chars which are not allowed in filenames under certain OS' */
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     @Override

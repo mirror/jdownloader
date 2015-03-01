@@ -48,6 +48,7 @@ public class VivoSx extends PluginForHost {
     /* Similar: shared.sx, vivo.sx */
     private static final String domain = "shared.sx";
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -64,7 +65,11 @@ public class VivoSx extends PluginForHost {
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setFinalFileName(encodeUnicode(Encoding.htmlDecode(filename.trim())));
+        filename = encodeUnicode(Encoding.htmlDecode(filename.trim()));
+        if (filename.endsWith(" (...)")) {
+            filename = filename.replace(" (...)", ".mp4");
+        }
+        link.setFinalFileName(filename);
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
