@@ -58,6 +58,8 @@ public class MyMailRu extends PluginForHost {
     private static final String TYPE_VIDEO_1   = "http://my\\.mail\\.ru/[^<>\"]*?video/top#video=/[a-z0-9\\-_]+/[a-z0-9\\-_]+/[a-z0-9\\-_]+/\\d+";
     private static final String TYPE_VIDEO_2   = "http://my\\.mail\\.ru/[^<>\"]*?video/[a-z0-9\\-_]+/[a-z0-9\\-_]+/[a-z0-9\\-_]+/\\d+\\.html";
 
+    private static final String html_private   = ">Access to video denied<";
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -73,17 +75,19 @@ public class MyMailRu extends PluginForHost {
             br.setFollowRedirects(false);
             br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
             final String videoID = new Regex(link.getDownloadURL(), "(\\d+)\\.html$").getMatch(0);
-            final String videourlpart = new Regex(link.getDownloadURL(), "my\\.mail\\.ru/([^<>\"]*?)/video/").getMatch(0);
+            final String videourlpart = new Regex(br.getURL(), "my\\.mail\\.ru/([^<>\"]*?)/video/").getMatch(0);
+            if (videourlpart == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             br.getPage("http://my.mail.ru/" + videourlpart + "/ajax?ajax_call=1&func_name=video.get_item&mna=&mnb=&arg_id=" + videoID + "&_=" + System.currentTimeMillis());
+            br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
+            if (br.containsHTML(html_private)) {
+                link.getLinkStatus().setStatusText("Private video");
+                return AvailableStatus.TRUE;
+            }
             if (br.containsHTML("b\\-video__layer\\-error")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-            /* TODO: Fix handling for private videos */
-            // if (br.containsHTML("class=\"unauthorised\\-user")) {
-            // link.getLinkStatus().setStatusText("Private video");
-            // return AvailableStatus.TRUE;
-            // }
             final String signvideourl = getJson("signVideoUrl");
             final String filename = getJson("videoTitle");
             if (signvideourl == null || filename == null) {
@@ -156,12 +160,13 @@ public class MyMailRu extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         int maxChunks = 1;
         requestFileInformation(downloadLink);
         if (downloadLink.getDownloadURL().matches(TYPE_VIDEO_ALL)) {
-            if (br.containsHTML("class=\"unauthorised\\-user window\\-loading\"")) {
+            if (br.containsHTML(html_private)) {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
@@ -169,7 +174,7 @@ public class MyMailRu extends PluginForHost {
                         throw (PluginException) e;
                     }
                 }
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Private video!downloaded by premium users");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Private video! This can only be downloaded by authorized users and the owner.");
             }
             maxChunks = 0;
         }

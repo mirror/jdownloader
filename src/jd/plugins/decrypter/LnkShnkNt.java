@@ -50,6 +50,11 @@ public class LnkShnkNt extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) {
             logger.warning("Invalid Link!");
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
         }
         if (br.containsHTML("api\\.solvemedia\\.com/papi")) {
             /* This part was coded blindly! */
