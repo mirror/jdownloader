@@ -38,8 +38,9 @@ public class Linx2DDLLink extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("The ID was not found")) {
+        if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("The ID was not found")) {
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
             offline.setAvailable(false);
