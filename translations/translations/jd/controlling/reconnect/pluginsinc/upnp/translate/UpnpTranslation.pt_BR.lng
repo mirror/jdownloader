@@ -1,4 +1,4 @@
-AutoDetectAction_run_failed=Dispositivos UPNP Encontrados, mas não foi possível realizar uma reconexão. \r\nTente a Reconexão Live Header em vez disso!
+AutoDetectAction_run_failed2=Nenhum método de reconexão UPNP funcional encontrado. Como alternativa, tente a reconexão LIve Header!\n
 AutoDetectUpnpAction_AutoDetectUpnpAction_=Tenta localizar todos os Dispositivos de Reconexão UPNP em sua Rede.\r\nA maioria dos Roteadores FritzBox podem ser reconectados desta maneira.
 UPNPReconnectInvoker_getName_=Reconexão de Roteador UPNP
 UPNPRouterPlugin_run_error=Não foi possível localizar nenhum Dispositivo UPNP. Tente a Reconexão Live Header em vez disso!

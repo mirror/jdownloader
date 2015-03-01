@@ -1,0 +1,37 @@
+NONE=Nenhum
+ON_ARCHIVE_EXTRACTED=Extração de arquivo concluída
+ON_DOWNLOAD_CONTROLLER_START=Download iniciado
+ON_DOWNLOAD_CONTROLLER_STOPPED=Download parado
+ON_GENERIC_EXTRACTION=Qualquer evento de extração
+ON_JDOWNLOADER_STARTED=JDownloader iniciado
+ON_NEW_CRAWLER_JOB=Novo trabalho de captura
+ON_NEW_FILE=O novo arquivo foi criado
+ON_OUTGOING_REMOTE_API_EVENT=Evento API remoto disparado
+ON_PACKAGE_FINISHED=Pacote concluído
+ON_PACKAGIZER=Gancho do Criador de Pacotes
+allow=permitir
+classes=/* ===== Classes ===== */
+deny=negar
+description=Escuta eventos internos do JDownloader, e permite executar scripts relevantes (JavaScript)
+downloadLink=// Link de Download
+edit_script=Editar script
+editor_autoformat=Formato automárico
+editor_showhelp=Exibir/ocultar ajuda
+editor_testcompile=Testar Compilar
+editor_testrun=Testar Executar
+emptyScript=// Adicione seu script aqui. Sinta-se a vontade para usar as propriedades e métodos API disponíveis
+event_trigger=Disparador
+example_script_name=Exemplo
+filepackage=// Pacote de arquivo
+loading_editor_title=Carregando editor...
+none_trigger=// Este evento nunca será disparado.
+permission_msg=O script de evento '%s1' necessita permissão do disparador '%s2'.\r\nO script está tentando\r\n%s3\r.\nDeseja permitir isto? Se não tiver certeza, verifique seu script!
+permission_title=Permissões do Criador de Script de Evento necessárias!
+properties_for_eventtrigger=// ========= Propriedades do Disparador de Evento '%s1'  =========
+script_editor_title=Editor de script: %s1
+securityLoading=Você está tentando carregar e executar JavaScript de %s1. Por favor, tenha em mente que este script possui acesso total às Propriedades e Funções do Ambiente atual. Somente carregue código de confiança! Recomendamos carregar somente arquivos JavaScript locais confiáveis.
+securityLoading_title=Alerta de Segurança!
+showMessageDialog_title=Mensagem de alerta de %s1@%s2
+sure_delete_entries=Deseja realmente excluir %s1 script(s)?
+syntax_error=Erro de sintaxe JavaScript
+title=Criador de Script de Evento
