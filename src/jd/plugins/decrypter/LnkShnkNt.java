@@ -37,18 +37,20 @@ import jd.utils.JDUtilities;
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "linkshrink.net" }, urls = { "https?://(www\\.)?linkshrink\\.net/[A-Za-z0-9]{6}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkshrink.net" }, urls = { "https?://(www\\.)?linkshrink\\.net/[A-Za-z0-9]{6}" }, flags = { 0 })
 public class LnkShnkNt extends PluginForDecrypt {
 
     public LnkShnkNt(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String type_invalid = "https?://(www\\.)?linkshrink\\.net/(report|login)";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404 || br.getURL().matches(type_invalid)) {
             logger.warning("Invalid Link!");
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setAvailable(false);

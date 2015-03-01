@@ -249,6 +249,7 @@ public abstract class PluginForDecrypt extends Plugin {
         }
         ArrayList<DownloadLink> tmpLinks = null;
         Throwable throwable = null;
+        boolean pwfailed = false;
         try {
             lastSolverJob = null;
             this.currentLink = source;
@@ -269,6 +270,7 @@ public abstract class PluginForDecrypt extends Plugin {
                 throwable = null;
             } else if (DecrypterException.PASSWORD.equals(e.getMessage())) {
                 throwable = null;
+                pwfailed = true;
             } else if (DecrypterException.ACCOUNT.equals(e.getMessage())) {
                 throwable = null;
             } else if (e instanceof DecrypterException || e.getCause() instanceof DecrypterException) {
@@ -288,7 +290,7 @@ public abstract class PluginForDecrypt extends Plugin {
             lastSolverJob = null;
             this.currentLink = null;
         }
-        if ((tmpLinks == null || throwable != null) && !isAbort()) {
+        if ((tmpLinks == null || throwable != null) && !isAbort() && !pwfailed) {
             /*
              * null as return value? something must have happened, do not clear log
              */
