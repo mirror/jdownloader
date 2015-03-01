@@ -1575,21 +1575,15 @@ public abstract class PluginForHost extends Plugin {
         downloadLink.setVariant(variant);
         if (variant instanceof GenericVariants) {
             GenericVariants v = (GenericVariants) variant;
-
             switch (v) {
             case ORIGINAL:
-
                 downloadLink.setCustomExtension(null);
                 break;
             default:
-
                 downloadLink.setCustomExtension(v.getExtension());
                 break;
-
             }
         }
-        // modifiyNameByVariant(downloadLink);
-
     }
 
     public LinkVariant getActiveVariantByLink(DownloadLink downloadLink) {
@@ -1598,7 +1592,6 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public List<? extends LinkVariant> getVariantsByLink(DownloadLink downloadLink) {
-
         return downloadLink.getVariants(GenericVariants.class);
     }
 
@@ -1607,7 +1600,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public boolean hasVariantToChooseFrom(DownloadLink downloadLink) {
-        List<? extends LinkVariant> variants = getVariantsByLink(downloadLink);
+        final List<? extends LinkVariant> variants = getVariantsByLink(downloadLink);
         return variants != null && variants.size() > 0;
     }
 

@@ -1027,7 +1027,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /*
      * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
      * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
-     * 
+     *
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
     public boolean isAvailabilityStatusChecked() {
@@ -2101,61 +2101,57 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void setVariants(List<? extends LinkVariant> list) {
-
-        String variantsString = JSonStorage.serializeToJson(list);
-        if (StringUtils.equals(variantsString, getStringProperty("VARIANTS"))) {
-            return;
-        }
-        this.setProperty("VARIANTS", variantsString);
-        getTempProperties().setProperty("VARIANTS", null);
-
-        if (hasNotificationListener()) {
-            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.VARIANTS, list));
+        final String variantsString = JSonStorage.serializeToJson(list);
+        if (!StringUtils.equals(variantsString, getStringProperty("VARIANTS"))) {
+            this.setProperty("VARIANTS", variantsString);
+            getTempProperties().removeProperty("VARIANTS");
+            if (hasNotificationListener()) {
+                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.VARIANTS, list));
+            }
         }
     }
 
     public void setVariant(LinkVariant variant) {
-        if (StringUtils.equals(getStringProperty("VARIANT"), variant._getUniqueId())) {
-            return;
-        }
-        String orgLinkID = getStringProperty("ORG_LINKID");
-        if (orgLinkID == null) {
-            String linkID = getLinkID();
-            setProperty("ORG_LINKID", linkID);
-        }
-        this.setProperty("VARIANT", variant._getUniqueId());
-        setVariantSupport(true);
-        LinkVariant tmp = (LinkVariant) getTempProperties().getProperty("VARIANT");
-        if (tmp != null && !variant._getUniqueId().equals(tmp._getUniqueId())) {
-            getTempProperties().setProperty("VARIANT", null);
-        }
-        setLinkID(getStringProperty("ORG_LINKID") + "_" + variant._getUniqueId());
-
-        if (hasNotificationListener()) {
-            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.VARIANT, variant));
+        if (!StringUtils.equals(getStringProperty("VARIANT"), variant._getUniqueId())) {
+            final String orgLinkID = getStringProperty("ORG_LINKID");
+            if (orgLinkID == null) {
+                final String linkID = getLinkID();
+                setProperty("ORG_LINKID", linkID);
+            }
+            this.setProperty("VARIANT", variant._getUniqueId());
+            setVariantSupport(true);
+            final LinkVariant existingVariant = (LinkVariant) getTempProperties().getProperty("VARIANT");
+            if (existingVariant != null && !variant._getUniqueId().equals(existingVariant._getUniqueId())) {
+                getTempProperties().setProperty("VARIANT", null);
+            }
+            setLinkID(getStringProperty("ORG_LINKID") + "_" + variant._getUniqueId());
+            if (hasNotificationListener()) {
+                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.VARIANT, variant));
+            }
         }
     }
 
     public <T extends LinkVariant> T getVariant(Class<T> type) {
-
         try {
-            T cache = (T) getTempProperties().getProperty("VARIANT");
-            if (cache != null) {
-                return cache;
+            final Object variant = getTempProperties().getProperty("VARIANT");
+            if (variant != null && variant.getClass().isAssignableFrom(type)) {
+                return (T) variant;
             }
         } catch (Throwable e) {
-
+            e.printStackTrace();
         }
-        String var = getStringProperty("VARIANT");
-        if (var != null) {
+        final String variantID = getStringProperty("VARIANT");
+        if (variantID != null) {
             try {
-                for (T v : getVariants(type)) {
-                    if (v._getUniqueId().equals(var)) {
-                        getTempProperties().setProperty("VARIANT", v);
-                        return v;
+                final List<T> variants = getVariants(type);
+                if (variants != null) {
+                    for (final LinkVariant variant : variants) {
+                        if (variant._getUniqueId().equals(variantID) && variant.getClass().isAssignableFrom(type)) {
+                            getTempProperties().setProperty("VARIANT", variant);
+                            return (T) variant;
+                        }
                     }
                 }
-
             } catch (Throwable e) {
                 e.printStackTrace();
             }
@@ -2166,25 +2162,25 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public <T extends LinkVariant> List<T> getVariants(final Class<T> type) {
         try {
-            final List<T> cache = (List<T>) getTempProperties().getProperty("VARIANTS");
-
-            if (cache != null && false) {
-                T castTest = cache.get(0);
-                return cache;
+            final List<LinkVariant> variants = (List<LinkVariant>) getTempProperties().getProperty("VARIANTS");
+            if (variants != null && false) {
+                final LinkVariant castTest = variants.get(0);
+                if (castTest.getClass().isAssignableFrom(type)) {
+                    return (List<T>) variants;
+                }
             }
         } catch (Throwable e) {
             e.printStackTrace();
         }
-        String var = getStringProperty("VARIANTS");
-        if (var != null) {
+        final String variantsID = getStringProperty("VARIANTS");
+        if (variantsID != null) {
             try {
                 final ArrayList<T> ret = new ArrayList<T>();
                 final TypeRef<ArrayList<T>> tref = new TypeRef<ArrayList<T>>() {
                 };
                 final ParameterizedType t = (ParameterizedType) tref.getType();
                 final Type actual = t.getActualTypeArguments()[0];
-
-                final ArrayList<Object> basic = JSonStorage.restoreFromString(var, new TypeRef<ArrayList<Object>>() {
+                final ArrayList<Object> basic = JSonStorage.restoreFromString(variantsID, new TypeRef<ArrayList<Object>>() {
                 });
                 for (Object o : basic) {
 
