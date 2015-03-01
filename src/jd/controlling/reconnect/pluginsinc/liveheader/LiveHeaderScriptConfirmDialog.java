@@ -378,6 +378,11 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                         throw new ReconnectException("A RESPONSE Node needs a Keys Attribute: " + toDo);
                     }
                     final String[] keys = attributes.getNamedItem("keys").getNodeValue().split("\\;");
+
+                    for (String s : keys) {
+                        append(sb, "\t-> Search Variable in HTML Response:  " + s);
+
+                    }
                     // this.parseVariables(feedback, toDo.getChildNodes().item(0).getNodeValue().trim(), keys, br);
                 }
                 if (StringUtils.equalsIgnoreCase(toDo.getNodeName(), "WAIT")) {
@@ -389,8 +394,8 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                     }
                     final int seconds = Formatter.filterInt(item.getNodeValue());
                     if (seconds > 0) {
-                        logger.finer("Wait " + seconds + " seconds");
-                        Thread.sleep(seconds * 1000);
+                        append(sb, "Wait " + TimeFormatter.formatMilliSeconds(seconds * 1000, 0));
+
                     }
                 }
                 if (StringUtils.equalsIgnoreCase(toDo.getNodeName(), "TIMEOUT")) {
@@ -401,10 +406,10 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                         throw new ReconnectException("A valid timeout must be set: e.g.: <TIMEOUT seconds=\"15\"/>");
                     }
                     final int seconds = Formatter.filterInt(item.getNodeValue());
-                    if (seconds > 0 && br != null) {
+                    if (seconds > 0) {
                         logger.finer("Timeout set to " + seconds + " seconds");
-                        br.setReadTimeout(seconds * 1000);
-                        br.setConnectTimeout(seconds * 1000);
+                        append(sb, "Set HTTP Timeout to " + TimeFormatter.formatMilliSeconds(seconds * 1000, 0));
+
                     }
                 }
             }
