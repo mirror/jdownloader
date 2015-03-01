@@ -549,12 +549,12 @@ public class SexCom extends PluginForDecrypt {
             return;
 
         }
-        final String continuelink = br.getRegex("\"(/video/embed\\?id=\\d+\\&pinId=\\d+[^<>\"]*?)\"").getMatch(0);
+        final String continuelink = br.getRegex("\"(/video/embed[^<>\"]*?)\"").getMatch(0);
         if (continuelink == null) {
             logger.warning("Decrypter broken for link: " + PARAMETER);
             throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
         }
-        br.getPage("http://www.sex.com" + continuelink);
+        br.getPage(continuelink);
         externID = br.getRegex("file: \"(http://[^<>\"]*?)\"").getMatch(0);
         if (externID == null) {
             logger.warning("Decrypter broken for link: " + PARAMETER);
