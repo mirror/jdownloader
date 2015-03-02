@@ -1,4 +1,4 @@
-AutoDetectAction_run_failed=Hittade UPNP enheter, men kunde inte genomföra en återuppkoppling. \n\nProva Live Header Återuppkoppling instället!
+AutoDetectAction_run_failed2=Ingen fungerande UPNP Återuppkopplingsmetod hittades.\nFörsök med Live Header Återuppkoppling istället!
 AutoDetectUpnpAction_AutoDetectUpnpAction_=Försöker att hitta alla UPNP Reconnect enheter i ditt nätverk. \n\nDe flesta FritzBox Routers kan återuppkopplas på detta sätt.
 UPNPReconnectInvoker_getName_=UPNP Router återuppkoppling
 UPNPRouterPlugin_run_error=Hittande inga UPNP enheter. Försök med Live Header återuppkoppling istället!
