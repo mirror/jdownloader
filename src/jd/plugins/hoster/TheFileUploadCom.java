@@ -589,6 +589,9 @@ public class TheFileUploadCom extends PluginForHost {
         if (ttt == null) {
             ttt = new Regex(correctedBR, ">Wait <span id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
         }
+        if (ttt == null) {
+            ttt = new Regex(correctedBR, "id=\"countdown_str\"><[^>]*?> Wait <span id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
+        }
         if (ttt != null) {
             int wait = Integer.parseInt(ttt);
             wait -= passedTime;

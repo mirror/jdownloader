@@ -54,7 +54,7 @@ public class VivoSx extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">The file you have requested does not exist")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("addthis:title=\"(Watch|Listen to) (\\&#34;)?([^<>\"]*?)(\\&#34;)? on shared\\.sx\"").getMatch(2);

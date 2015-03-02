@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 
 //rghost.ru by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rghost.ru" }, urls = { "http://(www\\.)?(((tr|pl)\\.)?rghost\\.net|rghost\\.ru|phonon\\.rghost\\.ru)/([0-9]+/private/[a-z0-9]+|download/[0-9]+|users/[A-Za-z0-9\\-_]+/releases/[A-Za-z0-9\\-_]+/files/\\d+|[0-9]+(\\?key=[a-z0-9]+)?)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rghost.ru" }, urls = { "http://(www\\.)?(((tr|pl)\\.)?rghost\\.net|rghost\\.ru|phonon\\.rghost\\.ru)/([A-Za-z0-9]+/private/[A-Za-z0-9]+|download/[0-9]+|users/[A-Za-z0-9\\-_]+/releases/[A-Za-z0-9\\-_]+/files/\\d+|[A-Za-z0-9]+(\\?key=[a-z0-9]+)?)" }, flags = { 0 })
 public class RGhostRu extends PluginForHost {
 
     private static final String PWTEXT = "Password: <input id=\"password\" name=\"password\" type=\"password\"";
@@ -132,7 +132,7 @@ public class RGhostRu extends PluginForHost {
             throw e;
         }
         // error clause for offline links
-        if (br.containsHTML(">[\r\n]+File is deleted\\.[\r\n]+<")) {
+        if (br.containsHTML(">[\r\n]+File is deleted\\.[\r\n]+<") || !br.containsHTML("id=\"actions\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("rel=\"alternate\" title=\"Comments for the file ([^<>\"]*?)\"").getMatch(0);

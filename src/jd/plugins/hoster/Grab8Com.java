@@ -519,9 +519,7 @@ public class Grab8Com extends PluginForHost {
         } else {
             this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
             logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
-            // tempUnavailableHoster(disableTime);
-            /** TODO: Remove this once the plugin is in a stable state */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            tempUnavailableHoster(disableTime);
         }
     }
 

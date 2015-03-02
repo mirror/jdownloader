@@ -48,7 +48,16 @@ public class LnkShnkNt extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final String parameter = param.toString();
+        if (parameter.matches(parameter)) {
+            logger.warning("Invalid Link!");
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
+        }
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404 || br.getURL().matches(type_invalid)) {
             logger.warning("Invalid Link!");

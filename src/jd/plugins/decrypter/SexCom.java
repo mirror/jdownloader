@@ -118,6 +118,12 @@ public class SexCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return;
         }
+        // xvideos.com 2
+        externID = br.getRegex("\"(http://(www\\.)?xvideos\\.com/video\\d+/)").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return;
+        }
         externID = br.getRegex("madthumbs\\.com%2Fvideos%2Fembed_config%3Fid%3D(\\d+)").getMatch(0);
         if (externID != null) {
             DownloadLink dl = createDownloadlink("http://www.madthumbs.com/videos/amateur/" + new Random().nextInt(100000) + "/" + externID);

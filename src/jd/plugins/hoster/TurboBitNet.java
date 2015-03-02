@@ -179,9 +179,17 @@ public class TurboBitNet extends PluginForHost {
         return sb + "";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
+        if (!account.getUser().matches(".+@.+\\..+")) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
         try {
             login(account, true);
         } catch (final PluginException e) {
@@ -994,6 +1002,8 @@ public class TurboBitNet extends PluginForHost {
         }
     }
 
+    /* TODO: Make an unique login function which works for turbobit.net AND hitfile.net (same system) */
+    @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             // Load cookies
@@ -1055,12 +1065,17 @@ public class TurboBitNet extends PluginForHost {
                         br.postPage("/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&user%5Bcaptcha_type%5D=recaptcha&user%5Bcaptcha_subtype%5D=&user%5Bmemory%5D=on&user%5Bsubmit%5D=Sign+in");
                     }
                 }
+                universalLoginErrorhandling(this.br);
+                if (!"1".equals(br.getCookie(MAINPAGE, "user_isloggedin"))) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.\r\n3. Gehe auf folgende Seite und deaktiviere, den Login Captcha Schutz deines Accounts und versuche es erneut: turbobit.net/user/settings", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.\r\n3. Access the following site and disable the login captcha protection of your account and try again: turbobit.net/user/settings", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 // valid premium (currently no traffic)|valid premium (traffic available)
                 if (!br.containsHTML("<notsure....>|<span class='glyphicon glyphicon-ok yesturbo'>")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid account type (Not premium account)!\r\nUngültiger Accounttyp (kein Premium Account)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                if (br.getCookie(MAINPAGE + "/", "sid") == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 // cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -1076,6 +1091,16 @@ public class TurboBitNet extends PluginForHost {
                 account.setProperty("UA", Property.NULL);
                 account.setProperty("cookies", Property.NULL);
                 throw e;
+            }
+        }
+    }
+
+    public static void universalLoginErrorhandling(final Browser br) throws PluginException {
+        if (br.containsHTML(">Limit of login attempts exceeded for your account")) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nMaximale Anzahl von Loginversuchen überschritten - dein Account wurde temporär gesperrt!\r\nBestätige deinen Account per E-Mail um ihn zu entsperren.\r\nFalls du keine E-Mail bekommen hast, gib deine E-Mail Adresse auf folgender Seite ein und lasse dir erneut eine zuschicken: " + br.getHost() + "/restoreaccess", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLimit of login attempts exceeded for your account - your account is locked!\r\nConfirm your account via e-mail to unlock it.\r\nIf you haven't received an e-mail, enter your e-mail address on the following site so the service can send you a new confirmation mail: " + br.getHost() + "/restoreaccess", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
     }
