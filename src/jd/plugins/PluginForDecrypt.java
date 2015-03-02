@@ -250,6 +250,7 @@ public abstract class PluginForDecrypt extends Plugin {
         ArrayList<DownloadLink> tmpLinks = null;
         Throwable throwable = null;
         boolean pwfailed = false;
+        boolean captchafailed = false;
         try {
             lastSolverJob = null;
             this.currentLink = source;
@@ -267,8 +268,11 @@ public abstract class PluginForDecrypt extends Plugin {
             if (isAbort()) {
                 throwable = null;
             } else if (processCaptchaException(e)) {
+                /* User entered wrong captcha (too many times) */
                 throwable = null;
+                captchafailed = true;
             } else if (DecrypterException.PASSWORD.equals(e.getMessage())) {
+                /* User entered password captcha (too many times) */
                 throwable = null;
                 pwfailed = true;
             } else if (DecrypterException.ACCOUNT.equals(e.getMessage())) {
@@ -290,7 +294,7 @@ public abstract class PluginForDecrypt extends Plugin {
             lastSolverJob = null;
             this.currentLink = null;
         }
-        if ((tmpLinks == null || throwable != null) && !isAbort() && !pwfailed) {
+        if ((tmpLinks == null || throwable != null) && !isAbort() && !pwfailed && !captchafailed) {
             /*
              * null as return value? something must have happened, do not clear log
              */

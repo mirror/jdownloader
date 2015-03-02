@@ -411,7 +411,7 @@ public class AnyfilesOrg extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.getPage(this.getProtocol() + "www." + this.getHost() + "/login." + type);
                 final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
-                final boolean oldLogin = true;
+                final boolean oldLogin = false;
                 final String lang = System.getProperty("user.language");
                 if (oldLogin) {
                     br.postPage("/login.html", "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));

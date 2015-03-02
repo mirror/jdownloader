@@ -48,9 +48,20 @@ public class MultihostersCom extends PluginForHost {
     }
 
     /* Important - all of these belong together: zevera.com, multihosters.com, putdrive.com(?!) */
+    private static final String NICE_HOST         = "multihosters.com";
+    private static final String NICE_HOSTproperty = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private Account             currAcc           = null;
+    private DownloadLink        currDownloadLink  = null;
 
+    private void setConstants(final Account acc, final DownloadLink dl) {
+        this.currAcc = acc;
+        this.currDownloadLink = dl;
+    }
+
+    @SuppressWarnings("deprecation")
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        setConstants(account, null);
         logger.info("Multihosters: Accountinfo called");
         AccountInfo ac = new AccountInfo();
         ac.setProperty("multiHostSupport", Property.NULL);
@@ -135,12 +146,10 @@ public class MultihostersCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
-    private void showMessage(DownloadLink link, String message) {
-        link.getLinkStatus().setStatusText(message);
-    }
-
     /** no override to keep plugin compatible to old stable */
+    @SuppressWarnings("deprecation")
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
+        setConstants(acc, link);
         final String user = Encoding.urlEncode(acc.getUser());
         final String pw = Encoding.urlEncode(acc.getPass());
         final String url = Encoding.urlEncode(link.getDownloadURL());
@@ -163,7 +172,7 @@ public class MultihostersCom extends PluginForHost {
         /* temp disabled the host */
         if (br.containsHTML("No trafic")) {
             // account has no traffic, disable hoster for 1h
-            tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l);
+            tempUnavailableHoster(1 * 60 * 60 * 1000l);
         } else if (br.containsHTML(">You have exceeded the maximum amount of fair usage of our service")) {
             /*
              * Free account limits reached and an additional download-try failed or account cookie is invalid -> permanently disable account
@@ -176,34 +185,37 @@ public class MultihostersCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else if (br.containsHTML("Error")) {
-            // stupid error msg
-            /*
-             * after x retries we disable this host and retry with normal plugin
-             */
-            if (link.getLinkStatus().getRetryCount() >= 2) {
-                /* reset retrycounter */
-                link.getLinkStatus().setRetryCount(0);
-                tempUnavailableHoster(acc, link, 10 * 60 * 1000l);
-            }
-            String msg = "(" + (link.getLinkStatus().getRetryCount() + 1) + "/" + 2 + ")";
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 15 * 1000l);
+            handleErrorRetries("stpd_error", 5, 10 * 60 * 1000);
         } else {
-            // sth else, unknown error
-            /*
-             * after x retries we disable this host and retry with normal plugin
-             */
-            if (link.getLinkStatus().getRetryCount() >= 2) {
-                /* reset retrycounter */
-                link.getLinkStatus().setRetryCount(0);
-                tempUnavailableHoster(acc, link, 10 * 60 * 1000l);
-            }
-            String msg = "(" + (link.getLinkStatus().getRetryCount() + 1) + "/" + 2 + ")";
-
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 15 * 1000l);
+            handleErrorRetries("unknown_error", 5, 10 * 60 * 1000);
         }
 
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
+    }
+
+    /**
+     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
+     * from the host list.
+     *
+     * @param error
+     *            : The name of the error
+     * @param maxRetries
+     *            : Max retries before out of date error is thrown
+     */
+    private void handleErrorRetries(final String error, final int maxRetries, final long disableTime) throws PluginException {
+        int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
+        this.currDownloadLink.getLinkStatus().setRetryCount(0);
+        if (timesFailed <= maxRetries) {
+            logger.info(NICE_HOST + ": " + error + " -> Retrying");
+            timesFailed++;
+            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
+            throw new PluginException(LinkStatus.ERROR_RETRY, error);
+        } else {
+            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
+            logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
+            tempUnavailableHoster(disableTime);
+        }
     }
 
     @Override
@@ -211,18 +223,18 @@ public class MultihostersCom extends PluginForHost {
         return AvailableStatus.UNCHECKABLE;
     }
 
-    private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) {
+    private void tempUnavailableHoster(final long timeout) throws PluginException {
+        if (this.currDownloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         }
         synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(this.currAcc);
             if (unavailableMap == null) {
                 unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(account, unavailableMap);
+                hostUnavailableMap.put(this.currAcc, unavailableMap);
             }
-            /* wait to retry this host */
-            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
+            /* wait 30 mins to retry this host */
+            unavailableMap.put(this.currDownloadLink.getHost(), (System.currentTimeMillis() + timeout));
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
