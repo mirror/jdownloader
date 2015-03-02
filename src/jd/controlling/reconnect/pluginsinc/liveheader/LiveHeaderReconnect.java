@@ -1,5 +1,6 @@
 package jd.controlling.reconnect.pluginsinc.liveheader;
 
+import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
@@ -44,6 +45,8 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.InputDialog;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
@@ -84,6 +87,36 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
 
         final InputDialog dialog = new InputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON, "Script Editor", "Please enter a Liveheader script below.", settings.getScript(), NewTheme.I().getIcon("edit", 18), T._.jd_controlling_reconnect_plugins_liveheader_LiveHeaderReconnect_actionPerformed_save(), null);
         dialog.setPreferredSize(new Dimension(700, 400));
+
+        RouterData editing = settings.getRouterData();
+        if (editing == null) {
+            editing = new RouterData();
+
+        }
+        editing.setScript(settings.getScript());
+        editing.setRouterIP(settings.getRouterIP());
+        final LiveHeaderScriptConfirmDialog d = new LiveHeaderScriptConfirmDialog(Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_CANCEL, T._.script(editing.getRouterName()), new AbstractIcon("reconnect", 32), _GUI._.lit_close(), null, editing, null, editing.getRouterName()) {
+            @Override
+            public String getMessage() {
+                return T._.edit_script();
+            }
+
+            @Override
+            public ModalityType getModalityType() {
+                return ModalityType.MODELESS;
+            }
+        };
+        new Thread() {
+            {
+                setDaemon(true);
+            }
+
+            @Override
+            public void run() {
+                UIOManager.I().show(null, d);
+            }
+        }.start();
+
         // CLR Import
         // dialog.setLeftActions(new AbstractAction("Browser Scripts") {
         //
@@ -144,22 +177,22 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
         // }
 
         // );
-        String newScript;
-        try {
-            newScript = Dialog.getInstance().showDialog(dialog);
-            if (newScript != null) {
-
-                // changed script.reset router sender state
-                if (settings.getScript() == null || newScript.equals(settings.getScript())) {
-                    settings.setAlreadySendToCollectServer2(false);
-                }
-                settings.setScript(newScript);
-            }
-        } catch (DialogClosedException e1) {
-            e1.printStackTrace();
-        } catch (DialogCanceledException e1) {
-            e1.printStackTrace();
-        }
+        // String newScript;
+        // try {
+        // newScript = Dialog.getInstance().showDialog(dialog);
+        // if (newScript != null) {
+        //
+        // // changed script.reset router sender state
+        // if (settings.getScript() == null || newScript.equals(settings.getScript())) {
+        // settings.setAlreadySendToCollectServer2(false);
+        // }
+        // settings.setScript(newScript);
+        // }
+        // } catch (DialogClosedException e1) {
+        // e1.printStackTrace();
+        // } catch (DialogCanceledException e1) {
+        // e1.printStackTrace();
+        // }
 
     }
 
@@ -373,6 +406,11 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
                 settings.setAlreadySendToCollectServer2(false);
             }
         } else {
+            // disabled
+            RouterSendAction action = new RouterSendAction(this);
+            if (!action.isEnabled()) {
+                return;
+            }
             LogController.CL().info("Successful reonnects in a row: " + JsonConfig.create(ReconnectConfig.class).getSuccessCounter());
             synchronized (this) {
 
@@ -386,7 +424,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
 
                         }).getCloseReason()) {
 
-                            new RouterSendAction(this).actionPerformed(null);
+                            action.actionPerformed(null);
 
                         }
                         settings.setAlreadySendToCollectServer2(true);

@@ -48,7 +48,7 @@ public class RouterDataResultTableModel extends ExtTableModel<RouterData> {
 
             @Override
             public String getStringValue(RouterData value) {
-                return value.getIsp().replaceAll("^\\w+\\d+ ", "");
+                return value.getIsp() == null ? "<Unknown>" : value.getIsp().replaceAll("^\\w+\\d+ ", "");
             }
         });
 

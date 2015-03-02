@@ -154,7 +154,7 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
 
         addMessage(p);
         p.add(getLabel(_GUI._.LiveHeaderScriptConfirmDialog_layoutDialogContent_routername()));
-        p.add(new JLabel(name));
+        p.add(new JLabel(StringUtils.isEmpty(name) ? T._.unknown() : name));
         if (StringUtils.isNotEmpty(routerData.getManufactor())) {
             p.add(getLabel(_GUI._.LiveHeaderScriptConfirmDialog_layoutDialogContent_Manufactor()));
             p.add(new JLabel(routerData.getManufactor()));
@@ -261,7 +261,6 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
         }
 
         StringBuilder sb = new StringBuilder();
-        Browser br = new Browser();
 
         final Document xmlScript = JDUtilities.parseXmlString(script, false);
         if (xmlScript == null) {
@@ -294,37 +293,25 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                     for (int attribute = 0; attribute < attributes.getLength(); attribute++) {
                         final String key = attributes.item(attribute).getNodeName();
                         String value = attributes.item(attribute).getNodeValue();
-                        final String[] tmp = value.split("\\%\\%\\%(.*?)\\%\\%\\%");
-                        final String[] params = new Regex(value, "%%%(.*?)%%%").getColumn(-1);
+                        final String[] tmp = value.split("\\%\\%\\%(.*?)\\%\\%\\%", -1);
+                        final String[] params = new Regex(value, "%%%(.*?)%%%").getColumn(0);
                         if (params.length > 0) {
                             final StringBuilder newValue;
-                            if (value.startsWith(params[0])) {
-                                newValue = new StringBuilder();
 
-                                final int tmpLength = tmp.length;
-                                for (int i = 0; i <= tmpLength; i++) {
-                                    logger.finer("Replace variable: ********(" + params[i - 1] + ")");
+                            newValue = new StringBuilder(tmp[0]);
 
-                                    newValue.append(this.getModifiedVariable(params[i - 1]));
-                                    if (i < tmpLength) {
-                                        newValue.append(tmp[i]);
-                                    }
+                            final int tmpLength = tmp.length;
+                            for (int i = 1; i <= tmpLength; i++) {
+                                if (i > params.length) {
+                                    continue;
                                 }
-                            } else {
-                                newValue = new StringBuilder(tmp[0]);
-
-                                final int tmpLength = tmp.length;
-                                for (int i = 1; i <= tmpLength; i++) {
-                                    if (i > params.length) {
-                                        continue;
-                                    }
-                                    logger.finer("Replace variable: *********(" + params[i - 1] + ")");
-                                    newValue.append(this.getModifiedVariable(params[i - 1]));
-                                    if (i < tmpLength) {
-                                        newValue.append(tmp[i]);
-                                    }
+                                logger.finer("Replace variable: *********(" + params[i - 1] + ")");
+                                newValue.append(this.getModifiedVariable(params[i - 1]));
+                                if (i < tmpLength) {
+                                    newValue.append(tmp[i]);
                                 }
                             }
+                            // }
                             value = newValue.toString();
                         }
                         append(sb, "Define Variable " + key + "\t=\t" + value);

@@ -182,7 +182,7 @@ public class SearchScriptDialog extends AbstractDialog<Object> {
         if (routerData != null) {
             routerName.setText(routerData.getRouterName());
             manufactor.setText(routerData.getManufactor());
-            isp.setText(routerData.getIsp().replaceAll("^\\w+\\d+ ", ""));
+            isp.setText(routerData.getIsp() == null ? "" : routerData.getIsp().replaceAll("^\\w+\\d+ ", ""));
         }
 
         p.add(searchButton = new ExtButton(new AppAction() {

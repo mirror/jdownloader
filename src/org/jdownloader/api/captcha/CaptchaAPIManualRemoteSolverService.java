@@ -21,7 +21,6 @@ import org.jdownloader.captcha.v2.solver.imagetyperz.ImageTyperzSolverService;
 import org.jdownloader.captcha.v2.solver.jac.JacSolverService;
 import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolverService;
 import org.jdownloader.captcha.v2.solver.service.AbstractSolverService;
-import org.jdownloader.captcha.v2.solver.service.DialogSolverService;
 import org.jdownloader.captcha.v2.solver.solver9kw.NineKwSolverService;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -30,10 +29,10 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
 public class CaptchaAPIManualRemoteSolverService extends AbstractSolverService {
-    private CaptchaMyJDownloaderRemoteSolverConfig config;
+    private CaptchaMyJDownloaderRemoteSolverSettings config;
 
     public CaptchaAPIManualRemoteSolverService() {
-        config = JsonConfig.create(CaptchaMyJDownloaderRemoteSolverConfig.class);
+        config = JsonConfig.create(CaptchaMyJDownloaderRemoteSolverSettings.class);
         AdvancedConfigManager.getInstance().register(config);
     }
 
@@ -130,10 +129,6 @@ public class CaptchaAPIManualRemoteSolverService extends AbstractSolverService {
     @Override
     public Map<String, Integer> getWaitForOthersDefaultMap() {
         HashMap<String, Integer> ret = new HashMap<String, Integer>();
-        ret.put(DialogSolverService.ID, 60000);
-        // ret.put(DialogClickCaptchaSolver.ID, 0);
-        // ret.put(DialogBasicCaptchaSolver.ID, 0);
-        // ret.put(CaptchaAPISolver.ID, 0);
         ret.put(JacSolverService.ID, 30000);
         ret.put(NineKwSolverService.ID, 120000);
         ret.put(CaptchaMyJDSolverService.ID, 60000);

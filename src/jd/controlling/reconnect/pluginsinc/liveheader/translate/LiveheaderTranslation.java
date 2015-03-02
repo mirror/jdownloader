@@ -331,4 +331,7 @@ public interface LiveheaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "This Dialog shows how this Reconnect Script works.\r\nIf you want to see the raw script, or modify it, click the [edit] button below." })
     String edit_script();
 
+    @Default(lngs = { "en" }, values = { "<Unknown>" })
+    String unknown();
+
 }
