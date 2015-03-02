@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -39,26 +41,29 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent\\d*\\.premium\\.to/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage\\.premium\\.to/file/[A-Z0-9]+" }, flags = { 2 })
 public class PremiumTo extends PluginForHost {
 
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static HashMap<String, Integer>                connectionLimits   = new HashMap<String, Integer>();
-    private static AtomicBoolean                           shareOnlineLocked  = new AtomicBoolean(false);
-    private final String                                   noChunks           = "noChunks";
-    private static Object                                  LOCK               = new Object();
-    private final String                                   lang               = System.getProperty("user.language");
-    private final String                                   normalTraffic      = "normalTraffic";
-    private final String                                   specialTraffic     = "specialTraffic";
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap             = new HashMap<Account, HashMap<String, Long>>();
+    private static HashMap<String, Integer>                connectionLimits               = new HashMap<String, Integer>();
+    private static AtomicBoolean                           shareOnlineLocked              = new AtomicBoolean(false);
+    private final String                                   noChunks                       = "noChunks";
+    private static Object                                  LOCK                           = new Object();
+    private final String                                   normalTraffic                  = "normalTraffic";
+    private final String                                   specialTraffic                 = "specialTraffic";
 
-    private static final String                            type_storage       = "https?://storage\\.premium\\.to/file/[A-Z0-9]+";
-    private static final String                            type_torrent       = "https?://torrent\\d*\\.premium\\.to/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*";
+    private static final String                            lang                           = System.getProperty("user.language");
+    private static final String                            CLEAR_DOWNLOAD_HISTORY_STORAGE = "CLEAR_DOWNLOAD_HISTORY";
+    private static final String                            type_storage                   = "https?://storage\\.premium\\.to/file/[A-Z0-9]+";
+    private static final String                            type_torrent                   = "https?://torrent\\d*\\.premium\\.to/.+";
 
     public PremiumTo(PluginWrapper wrapper) {
         super(wrapper);
         setStartIntervall(2 * 1000L);
         this.enablePremium("http://premium.to/");
+        setConfigElements();
         /* limit connections for share-online to one */
         connectionLimits.put("share-online.biz", 1);
         /* limit connections for keep2share to one */
@@ -148,6 +153,15 @@ public class PremiumTo extends PluginForHost {
         String url = link.getDownloadURL();
         // allow resume and up to 10 chunks
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, -10);
+        if (dl.getConnection().getResponseCode() == 403) {
+            /*
+             * This e.g. happens if the user deletes a file via the premium.to site and then tries to download the previously added link via
+             * JDownloader.
+             */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403 (file offline?)", 30 * 60 * 1000l);
+        } else if (dl.getConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+        }
         dl.startDownload();
     }
 
@@ -297,7 +311,25 @@ public class PremiumTo extends PluginForHost {
             }
             showMessage(link, "Phase 3/3: Download...");
             try {
-                dl.startDownload();
+                /* Check if the download is successful && user wants JD to delete the file in his premium.to account afterwards. */
+                if (dl.startDownload() && this.getPluginConfig().getBooleanProperty(CLEAR_DOWNLOAD_HISTORY_STORAGE, default_clear_download_history_storage) && link.getDownloadURL().matches(type_storage)) {
+                    boolean success = false;
+                    try {
+                        /*
+                         * TODO: Check if there is a way to determine if the deletion was successful and add loggers for
+                         * successful/unsuccessful cases!
+                         */
+                        br.getPage("https://storage.premium.to/removeFile.php?f=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+                        success = true;
+                    } catch (final Throwable e) {
+                        /* Don't fail here */
+                    }
+                    if (success) {
+                        logger.info("Deletion of downloaded file seems to be successful");
+                    } else {
+                        logger.warning("Deletion of downloaded file seems have failed");
+                    }
+                }
             } catch (final PluginException ex) {
                 /* unknown error, we disable multiple chunks */
                 if (link.getBooleanProperty(noChunks, false) == false) {
@@ -328,7 +360,7 @@ public class PremiumTo extends PluginForHost {
         long fileSize = -1;
         ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
 
-        if (accs.size() == 0) {
+        if (accs == null || accs.size() == 0) {
             if (link.getDownloadURL().matches(type_storage)) {
                 /* This linktype can only be downloaded/checked via account */
                 link.getLinkStatus().setStatusText("Only downlodable via account!");
@@ -463,6 +495,17 @@ public class PremiumTo extends PluginForHost {
             }
             return false;
         }
+    }
+
+    private final boolean default_clear_download_history_storage = false;
+
+    /*
+     * TODO: There is no easy way to add this setting for their torrent links as well because users can e.g. download specified files inside
+     * archives so we do not know if the user is currently downloading a complete single torrent or single files of it. To determine if
+     * there is any way to do this we'd have to compare the finallinks of complete torrent downloads and files inside them first.
+     */
+    public void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEAR_DOWNLOAD_HISTORY_STORAGE, JDL.L("plugins.hoster.premiumto.clear_serverside_download_history_storage", "Delete storage.premium.to file(s) in your account after each successful download?")).setDefaultValue(default_clear_download_history_storage));
     }
 
     @Override
