@@ -90,7 +90,7 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
         int cph = config.gethour();
         int cpm = config.getminute();
         int priothing = config.getprio();
-        long timeoutthing = config.getDefaultTimeout();
+        long timeoutthing = (config.getDefaultTimeout() / 1000);
         boolean selfsolve = config.isSelfsolve();
         boolean confirm = config.ismouseconfirm();
 
