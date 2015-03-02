@@ -3,17 +3,20 @@ package jd.controlling.reconnect.pluginsinc.liveheader.remotecall;
 import java.util.HashMap;
 
 import org.appwork.storage.Storable;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.Hash;
 
 public class RouterData implements Storable {
 
-    private String routerIP;
-    private String script;
+    public static final TypeRef<RouterData> TYPE_REF = new TypeRef<RouterData>() {
+                                                     };
+    private String                          routerIP;
+    private String                          script;
 
-    private String routerName;
-    private int    priorityIndicator;
-    private String mac;
-    private long   avgOfD;
+    private String                          routerName;
+    private int                             priorityIndicator;
+    private String                          mac;
+    private long                            avgOfD;
 
     public long getAvgOfD() {
         return avgOfD;
