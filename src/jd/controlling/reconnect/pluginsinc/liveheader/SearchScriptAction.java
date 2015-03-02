@@ -29,7 +29,7 @@ public class SearchScriptAction extends BasicAction {
         putValue(SMALL_ICON, new AbstractIcon(IconKey.ICON_SEARCH, 18));
 
         setTooltipFactory(new BasicTooltipFactory(getName(), T._.SearchScriptAction_tt(), new AbstractIcon("edit", 32)));
-
+        setEnabled(false);
     }
 
     public void actionPerformed(ActionEvent e) {

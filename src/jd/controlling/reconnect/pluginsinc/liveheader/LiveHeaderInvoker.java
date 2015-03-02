@@ -219,31 +219,17 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                             final String[] params = new Regex(value, "%%%(.*?)%%%").getColumn(-1);
                             if (params.length > 0) {
                                 final StringBuilder newValue;
-                                if (value.startsWith(params[0])) {
-                                    newValue = new StringBuilder();
-                                    showParsedVariables();
-                                    final int tmpLength = tmp.length;
-                                    for (int i = 0; i <= tmpLength; i++) {
-                                        logger.finer("Replace variable: ********(" + params[i - 1] + ")");
+                                newValue = new StringBuilder(tmp[0]);
 
-                                        newValue.append(this.getModifiedVariable(params[i - 1]));
-                                        if (i < tmpLength) {
-                                            newValue.append(tmp[i]);
-                                        }
+                                final int tmpLength = tmp.length;
+                                for (int i = 1; i <= tmpLength; i++) {
+                                    if (i > params.length) {
+                                        continue;
                                     }
-                                } else {
-                                    newValue = new StringBuilder(tmp[0]);
-                                    showParsedVariables();
-                                    final int tmpLength = tmp.length;
-                                    for (int i = 1; i <= tmpLength; i++) {
-                                        if (i > params.length) {
-                                            continue;
-                                        }
-                                        logger.finer("Replace variable: *********(" + params[i - 1] + ")");
-                                        newValue.append(this.getModifiedVariable(params[i - 1]));
-                                        if (i < tmpLength) {
-                                            newValue.append(tmp[i]);
-                                        }
+                                    logger.finer("Replace variable: *********(" + params[i - 1] + ")");
+                                    newValue.append(this.getModifiedVariable(params[i - 1]));
+                                    if (i < tmpLength) {
+                                        newValue.append(tmp[i]);
                                     }
                                 }
                                 value = newValue.toString();

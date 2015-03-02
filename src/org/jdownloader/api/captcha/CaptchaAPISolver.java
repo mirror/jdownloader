@@ -53,7 +53,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
     }
 
     private CaptchaAPIEventPublisher               eventPublisher;
-    private CaptchaMyJDownloaderRemoteSolverConfig config;
+    private CaptchaMyJDownloaderRemoteSolverSettings config;
 
     @Override
     public boolean canHandle(Challenge<?> c) {
@@ -77,7 +77,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
     public CaptchaAPISolver() {
         // 0: no threadpool
         super(new CaptchaAPIManualRemoteSolverService(), 0);
-        config = JsonConfig.create(CaptchaMyJDownloaderRemoteSolverConfig.class);
+        config = JsonConfig.create(CaptchaMyJDownloaderRemoteSolverSettings.class);
 
         eventPublisher = new CaptchaAPIEventPublisher();
         ChallengeResponseController.getInstance().getEventSender().addListener(this);
