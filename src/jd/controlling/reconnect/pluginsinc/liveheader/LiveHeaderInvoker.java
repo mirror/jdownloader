@@ -215,7 +215,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                         for (int attribute = 0; attribute < attributes.getLength(); attribute++) {
                             final String key = attributes.item(attribute).getNodeName();
                             String value = attributes.item(attribute).getNodeValue();
-                            final String[] tmp = value.split("\\%\\%\\%(.*?)\\%\\%\\%");
+                            final String[] tmp = value.split("\\%\\%\\%(.*?)\\%\\%\\%", -1);
                             final String[] params = new Regex(value, "%%%(.*?)%%%").getColumn(-1);
                             if (params.length > 0) {
                                 final StringBuilder newValue;
