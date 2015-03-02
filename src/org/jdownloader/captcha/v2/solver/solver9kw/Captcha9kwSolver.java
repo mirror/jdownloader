@@ -95,7 +95,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
         int cph = config.gethour();
         int cpm = config.getminute();
         int priothing = config.getprio();
-        long timeoutthing = config.getDefaultTimeout();
+        long timeoutthing = (config.getDefaultTimeout() / 1000);
         boolean selfsolve = config.isSelfsolve();
         boolean confirm = config.isconfirm();
 
