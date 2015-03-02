@@ -40,7 +40,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://(?:torrent|storage)\\d*\\.premium\\.to/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent\\d*\\.premium\\.to/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|http://storage\\.premium\\.to/file/[A-Z0-9]+" }, flags = { 2 })
 public class PremiumTo extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
@@ -316,23 +316,24 @@ public class PremiumTo extends PluginForHost {
         return false;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-
-        String dlink = Encoding.urlDecode(link.getDownloadURL(), true);
-
+        final String dlink = Encoding.urlDecode(link.getDownloadURL(), true);
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         long fileSize = -1;
-
         ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
+
         if (accs.size() == 0) {
             /* try without login (only possible for links with token) */
             try {
                 con = br.openGetConnection(dlink);
                 if (!con.getContentType().contains("html")) {
                     fileSize = con.getLongContentLength();
-                    if (fileSize == -1) {
+                    if (fileSize == 0) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else if (fileSize == -1) {
                         link.getLinkStatus().setStatusText("Only downlodable via account!");
                         return AvailableStatus.UNCHECKABLE;
                     }
