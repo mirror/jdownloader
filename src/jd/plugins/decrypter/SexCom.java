@@ -108,8 +108,11 @@ public class SexCom extends PluginForDecrypt {
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)-  Pin #\\d+ \\| Sex\\.com\"").getMatch(0);
         // xvideos.com 1
         String externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("name=\"flashvars\" value=\"id_video=(\\d+)\" /><embed src=\"http://static\\.xvideos\\.com").getMatch(0);
+        }
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));
+            decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID + "/"));
             return;
         }
         // xvideos.com 2
@@ -401,6 +404,11 @@ public class SexCom extends PluginForDecrypt {
             return;
         }
         externID = br.getRegex("\"(http://(www\\.)?proporn\\.com/embed/\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return;
+        }
+        externID = br.getRegex("\"(http://beeg\\.com/\\d+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
             return;
