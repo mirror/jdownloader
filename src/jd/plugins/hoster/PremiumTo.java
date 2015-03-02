@@ -40,7 +40,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent\\d*\\.premium\\.to/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|http://storage\\.premium\\.to/file/[A-Z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent\\d*\\.premium\\.to/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage\\.premium\\.to/file/[A-Z0-9]+" }, flags = { 2 })
 public class PremiumTo extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
@@ -51,6 +51,9 @@ public class PremiumTo extends PluginForHost {
     private final String                                   lang               = System.getProperty("user.language");
     private final String                                   normalTraffic      = "normalTraffic";
     private final String                                   specialTraffic     = "specialTraffic";
+
+    private static final String                            type_storage       = "https?://storage\\.premium\\.to/file/[A-Z0-9]+";
+    private static final String                            type_torrent       = "https?://torrent\\d*\\.premium\\.to/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*";
 
     public PremiumTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -326,6 +329,11 @@ public class PremiumTo extends PluginForHost {
         ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
 
         if (accs.size() == 0) {
+            if (link.getDownloadURL().matches(type_storage)) {
+                /* This linktype can only be downloaded/checked via account */
+                link.getLinkStatus().setStatusText("Only downlodable via account!");
+                return AvailableStatus.UNCHECKABLE;
+            }
             /* try without login (only possible for links with token) */
             try {
                 con = br.openGetConnection(dlink);
@@ -367,22 +375,22 @@ public class PremiumTo extends PluginForHost {
                     con = br.openGetConnection(dlink);
                     if (!con.getContentType().contains("html")) {
                         fileSize = con.getLongContentLength();
-
-                        if (fileSize > -1) {
-                            link.setDownloadSize(fileSize);
-                            String name = con.getHeaderField("Content-Disposition");
-
-                            if (name != null) {
-                                // filter the filename from content disposition and decode it...
-                                name = new Regex(name, "filename.=UTF-8\'\'([^\"]+)").getMatch(0);
-                                name = Encoding.UTF8Decode(name).replaceAll("%20", " ");
-                                name = Encoding.htmlDecode(name);
-                                if (name != null) {
-                                    link.setFinalFileName(name);
-                                }
-                            }
-                            return AvailableStatus.TRUE;
+                        if (fileSize <= 0) {
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         }
+                        link.setDownloadSize(fileSize);
+                        String name = con.getHeaderField("Content-Disposition");
+
+                        if (name != null) {
+                            // filter the filename from content disposition and decode it...
+                            name = new Regex(name, "filename.=UTF-8\'\'([^\"]+)").getMatch(0);
+                            name = Encoding.UTF8Decode(name).replaceAll("%20", " ");
+                            name = Encoding.htmlDecode(name);
+                            if (name != null) {
+                                link.setFinalFileName(name);
+                            }
+                        }
+                        return AvailableStatus.TRUE;
                     }
                 } finally {
                     try {
