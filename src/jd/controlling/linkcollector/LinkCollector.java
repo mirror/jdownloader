@@ -788,19 +788,26 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         UniqueAlltimeID uID = null;
                         String crawledPackageName = null;
                         String crawledPackageID = null;
-                        String downloadFolder = null;
                         boolean ignoreSpecialPackages = dpi != null && (dpi.isPackagizerRuleMatched() || Boolean.TRUE.equals(dpi.isIgnoreVarious()));
+                        final String downloadFolder;
                         if (dpi != null) {
                             crawledPackageName = dpi.getName();
                             downloadFolder = dpi.getDestinationFolder();
-                            if (downloadFolder != null) {
-                                downloadFolder = downloadFolder.replaceFirst("/$", "");
-                                String defaultFolder = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
-                                if (defaultFolder != null) {
-                                    defaultFolder = defaultFolder.replaceFirst("/$", "");
+                            if (downloadFolder != null && ignoreSpecialPackages == false) {
+                                /** this regex cuts of trailing / and \ for equals check **/
+                                final String compareCustom = downloadFolder.replaceAll("(.+?)(/|\\\\)+$", "$1");
+                                String compareDefault = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
+                                if (compareDefault != null) {
+                                    compareDefault = compareDefault.replaceAll("(.+?)(/|\\\\)+$", "$1");
                                 }
-                                if (!downloadFolder.equals(defaultFolder)) {
-                                    /* we have a custom downloadFolder, so let's not use various package */
+                                /* check for custom downloadFolder. let's not use various package then */
+                                // if (CrossSystem.isWindows() ||
+                                // JsonConfig.create(GeneralSettings.class).isForceMirrorDetectionCaseInsensitive()) {
+                                if (CrossSystem.isWindows()) {
+                                    if (!compareCustom.equalsIgnoreCase(compareDefault)) {
+                                        ignoreSpecialPackages = true;
+                                    }
+                                } else if (!compareCustom.equals(compareDefault)) {
                                     ignoreSpecialPackages = true;
                                 }
                             }
@@ -810,6 +817,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                     crawledPackageID = null;
                                 }
                             }
+                        } else {
+                            downloadFolder = null;
                         }
                         if (crawledPackageName == null) {
                             final DownloadLink dlLink = link.getDownloadLink();
