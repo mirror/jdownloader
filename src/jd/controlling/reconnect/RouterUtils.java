@@ -60,7 +60,7 @@ public class RouterUtils {
     /**
      * Runs throw a predefined Host Table (multithreaded) and checks if there is a service on port 80. returns the ip if there is a
      * webservice on any adress. See {@link #updateHostTable()}
-     * 
+     *
      * @return
      */
     private static InetAddress     ASYNCH_RETURN;
@@ -129,7 +129,7 @@ public class RouterUtils {
 
     /**
      * checks if there is a open port at host. e.gh. test if there is a webserverr unning on this port
-     * 
+     *
      * @param host
      * @return
      */
@@ -154,16 +154,22 @@ public class RouterUtils {
             br.setFollowRedirects(false);
             for (int i = 0; i < 3; i++) {
                 try {
+                    try {
+                        if (con != null) {
+                            con.disconnect();
+                        }
+                    } catch (Throwable e) {
+                    }
                     if (port == 443) {
                         /* 443 is https */
-                        con = br.openGetConnection("https://" + host + ":443");
+                        con = br.openGetConnection("https://" + host);
                     } else {
-                        String portS = "";
-                        if (port != 80) {
-                            portS = ":" + port;
-                        }
                         /* fallback to normal http */
-                        con = br.openGetConnection("http://" + host + portS);
+                        if (port != 80) {
+                            con = br.openGetConnection("http://" + host + ":" + port);
+                        } else {
+                            con = br.openGetConnection("http://" + host);
+                        }
                     }
                     break;
                 } catch (BrowserException e) {
@@ -196,7 +202,9 @@ public class RouterUtils {
         } finally {
             logger.close();
             try {
-                con.disconnect();
+                if (con != null) {
+                    con.disconnect();
+                }
             } catch (Throwable e) {
             }
         }
@@ -205,10 +213,10 @@ public class RouterUtils {
 
     /**
      * Tries to find the router's ip adress and returns it.
-     * 
+     *
      * @param force
      *            if false, jd uses a cached value if available
-     * 
+     *
      * @return
      * @throws InterruptedException
      */
@@ -239,7 +247,7 @@ public class RouterUtils {
 
     /**
      * Chekcs a Host table
-     * 
+     *
      * @return
      * @throws InterruptedException
      */
@@ -286,8 +294,8 @@ public class RouterUtils {
 
     /**
      * Calls netstat -nt to find the router's ip. returns null if nothing found and the ip if found something;
-     * 
-     * 
+     *
+     *
      * @throws InterruptedException
      * @throws IOException
      * @throws UnsupportedEncodingException
@@ -327,7 +335,7 @@ public class RouterUtils {
 
     /**
      * Uses the /sbin/route command to determine the router's ip. works on linux and mac.
-     * 
+     *
      * @return
      */
     public static InetAddress getIPFromRouteCommand() {
@@ -429,7 +437,7 @@ public class RouterUtils {
 
     /**
      * Returns the MAC adress behind the ip
-     * 
+     *
      * @param ip
      * @return
      * @throws UnknownHostException
@@ -447,7 +455,7 @@ public class RouterUtils {
 
     /**
      * USes windows tracert command to find the gateway
-     * 
+     *
      * @return
      */
     public static InetAddress getWindowsGateway() {
@@ -501,7 +509,7 @@ public class RouterUtils {
 
     /**
      * This function tries to return of the internet connection is through a direct modem connection.Works only for windows. tested on win 7
-     * 
+     *
      * @return
      */
     public static boolean isWindowsModemConnection() {
