@@ -44,10 +44,10 @@ public interface InternetConnectionSettings extends ConfigInterface {
     int getRouterIPCheckConnectTimeout();
 
     @AboutConfig
-    void setRouterIPCheckReadTimeout(int timeout);
+    void setRouterIPCheckReadTimeout2(int timeout);
 
-    @DefaultIntValue(5000)
-    int getRouterIPCheckReadTimeout();
+    @DefaultIntValue(10000)
+    int getRouterIPCheckReadTimeout2();
 
     void setLatestProfile(String absolutePath);
 

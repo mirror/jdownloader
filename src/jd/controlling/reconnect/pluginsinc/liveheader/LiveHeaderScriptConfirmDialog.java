@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 
@@ -16,10 +17,18 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyleContext;
+import javax.swing.text.TabSet;
+import javax.swing.text.TabStop;
 
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.pluginsinc.liveheader.remotecall.RouterData;
 import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
+import jd.controlling.reconnect.pluginsinc.liveheader.validate.RetryWithReplacedScript;
+import jd.controlling.reconnect.pluginsinc.liveheader.validate.Scriptvalidator;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.nutils.Formatter;
@@ -27,7 +36,9 @@ import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.utils.JDUtilities;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
+import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.ExceptionDialogInterface;
 import org.appwork.uio.InputDialogInterface;
 import org.appwork.uio.UIOManager;
@@ -41,12 +52,14 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpserver.HttpConnection;
 import org.appwork.utils.net.httpserver.requests.KeyValuePair;
 import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ExceptionDialog;
 import org.appwork.utils.swing.dialog.InputDialog;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
@@ -108,6 +121,7 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
     /**
      * 
      */
+    private HashSet<String> confirmed = new HashSet<String>();
 
     public void addEditAction() {
         setLeftActions(new AppAction() {
@@ -128,12 +142,118 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
 
                 dialog.setPreferredSize(new Dimension(700, 400));
                 InputDialogInterface d = UIOManager.I().show(InputDialogInterface.class, dialog);
+                routerData.setScript(d.getText());
+                routerData.setScriptID(null);
                 try {
                     d.throwCloseExceptions();
 
-                    routerData.setScript(d.getText());
-                    routerData.setScriptID(null);
+                    try {
+                        final LiveHeaderReconnectSettings settings = JsonConfig.create(LiveHeaderReconnectSettings.class);
+                        final RouterData rd = routerData;
+                        new Scriptvalidator(rd) {
+                            protected void replaceAuthHeader(String authorization, String lUsername, String lPassword) throws jd.controlling.reconnect.pluginsinc.liveheader.validate.RetryWithReplacedScript, Exception {
+                                if (defaultPasswords.contains(lPassword.toLowerCase(Locale.ENGLISH)) && defaultUsernames.contains(lUsername.toLowerCase(Locale.ENGLISH))) {
+                                    return;
+                                }
+                                if (StringUtils.isEmpty(settings.getPassword())) {
+
+                                    settings.setPassword(lPassword);
+                                }
+
+                                if (StringUtils.isEmpty(settings.getUserName())) {
+                                    settings.setUserName(lPassword);
+
+                                }
+                                if (StringUtils.isNotEmpty(settings.getPassword()) && !StringUtils.equals(settings.getPassword(), lPassword)) {
+
+                                    if (UIOManager.I().showConfirmDialog(0, T._.please_check(), T._.please_confirm_password_change(authorization, lPassword), null, _GUI._.lit_yes(), _GUI._.lit_no())) {
+                                        settings.setPassword(lPassword);
+                                    } else {
+                                        return;
+                                    }
+                                }
+
+                                if (StringUtils.isNotEmpty(settings.getUserName()) && !StringUtils.equals(settings.getUserName(), lUsername)) {
+                                    if (UIOManager.I().showConfirmDialog(0, T._.please_check(), T._.please_confirm_username_change(authorization, lUsername), null, _GUI._.lit_yes(), _GUI._.lit_no())) {
+                                        settings.setUserName(lUsername);
+                                    } else {
+                                        return;
+                                    }
+                                }
+
+                                throw new RetryWithReplacedScript(this.rd.getScript(), authorization.substring("Basic ".length()), "%%%basicauth%%%");
+                            };
+
+                            protected void replacePasswordParameter(String key, String value) throws jd.controlling.reconnect.pluginsinc.liveheader.validate.RetryWithReplacedScript, Exception {
+                                if (defaultPasswords.contains(value.toLowerCase(Locale.ENGLISH))) {
+                                    return;
+                                }
+                                if (confirmed.contains(key + "=" + value)) {
+                                    return;
+                                }
+                                if (StringUtils.equals(value, settings.getPassword())) {
+                                    super.replacePasswordParameter(key, value);
+                                } else if (confirm(key, value)) {
+                                    if (StringUtils.isNotEmpty(settings.getPassword()) && !StringUtils.equals(settings.getPassword(), value)) {
+                                        return;
+                                    }
+                                    if (StringUtils.isEmpty(settings.getPassword())) {
+                                        settings.setPassword(value);
+                                    }
+
+                                    super.replacePasswordParameter(key, value);
+                                } else {
+                                    confirmed.add(key + "=" + value);
+                                }
+                            };
+
+                            protected void replaceUsernameParameter(String key, String value) throws jd.controlling.reconnect.pluginsinc.liveheader.validate.RetryWithReplacedScript, Exception {
+                                if (defaultUsernames.contains(value.toLowerCase(Locale.ENGLISH))) {
+                                    return;
+                                }
+                                if (confirmed.contains(key + "=" + value)) {
+                                    return;
+                                }
+                                if (StringUtils.equals(value, settings.getUserName())) {
+
+                                    super.replaceUsernameParameter(key, value);
+                                } else if (confirm(key, value)) {
+                                    if (StringUtils.isNotEmpty(settings.getUserName()) && !StringUtils.equals(settings.getUserName(), value)) {
+                                        return;
+                                    }
+                                    if (StringUtils.isEmpty(settings.getUserName())) {
+                                        settings.setUserName(value);
+                                    }
+                                    super.replaceUsernameParameter(key, value);
+                                } else {
+                                    confirmed.add(key + "=" + value);
+                                }
+                            }
+
+                            protected boolean confirm(String key, String value) {
+                                ConfirmDialog d = new ConfirmDialog(0, T._.please_check(), T._.please_check_sensitive_data_after_edit(key + "=" + value), new AbstractIcon(IconKey.ICON_QUESTION, 32), T._.yes_replace(), T._.no_keep());
+                                d.setPreferredWidth(500);
+
+                                try {
+                                    UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
+                                    return true;
+                                } catch (DialogClosedException e) {
+                                    e.printStackTrace();
+                                } catch (DialogCanceledException e) {
+                                    e.printStackTrace();
+                                }
+                                return false;
+
+                            };
+                        }.run();
+                    } catch (Exception e1) {
+
+                        UIOManager.I().show(ConfirmDialogInterface.class, new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.lit_warning(), _GUI._.LiveHeaderReconnect_validateAndSet_object_(), null, null, null));
+
+                    }
+
                     updateScriptInfo();
+
                 } catch (DialogClosedException e1) {
                     e1.printStackTrace();
                 } catch (DialogCanceledException e1) {
@@ -483,7 +603,7 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                 li--;
                 continue;
             }
-            requestProperties.put(p[0].trim(), requestLines[li].substring(p[0].length() + 1).trim());
+            requestProperties.put(p[0].trim().toLowerCase(Locale.ENGLISH), requestLines[li].substring(p[0].length() + 1).trim());
             if (p[0].trim().equalsIgnoreCase("HOST")) {
                 host = requestLines[li].substring(p[0].length() + 1).trim();
             }
@@ -504,18 +624,18 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
 
                 URL url = new URL(protocoll + host + path);
 
-                append(sb, "HTTP Request " + requestType + " " + protocoll + host + url.getPath());
-                String cookie = requestProperties.get("Cookie");
+                append(sb, "\r\nHTTP Request " + requestType + " " + protocoll + host + url.getPath());
+                String cookie = requestProperties.get("cookie");
                 if (StringUtils.isNotEmpty(cookie)) {
-                    append(sb, "\tCookie:\t\t" + cookie);
+                    append(sb, "\tCookie:\t" + decode(cookie));
                 }
-                String authorization = requestProperties.get("Authorization");
+                String authorization = requestProperties.get("authorization");
                 if (StringUtils.isNotEmpty(authorization)) {
-                    append(sb, "\tAuthorization:\t\t" + authorization);
+                    append(sb, "\tAuthorization:\t" + decode(authorization));
                 }
                 int i = 1;
                 for (KeyValuePair pa : HttpConnection.parseParameterList(url.getQuery())) {
-                    append(sb, "\tParameter #" + (i++) + ": \t" + pa.key + "\t=\t" + pa.value);
+                    append(sb, "\tParameter #" + (i++) + ": \t" + decode(pa.key) + "\t=\t" + decode(pa.value));
                 }
                 // sb.getPage(protocoll + host + path);
             } else if (StringUtils.equalsIgnoreCase(requestType, "POST")) {
@@ -523,21 +643,21 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
 
                 URL url = new URL(protocoll + host + path);
 
-                append(sb, "HTTP Request " + requestType + " " + protocoll + host + path);
-                String cookie = requestProperties.get("Cookie");
+                append(sb, "\r\nHTTP Request " + requestType + " " + protocoll + host + path);
+                String cookie = requestProperties.get("cookie");
                 if (StringUtils.isNotEmpty(cookie)) {
-                    append(sb, "\tCookie:\t\t" + cookie);
+                    append(sb, "\tCookie:\t" + decode(cookie));
                 }
-                String authorization = requestProperties.get("Authorization");
+                String authorization = requestProperties.get("authorization");
                 if (StringUtils.isNotEmpty(authorization)) {
-                    append(sb, "\tAuthorization:\t\t" + authorization);
+                    append(sb, "\tAuthorization:\t" + decode(authorization));
                 }
                 int i = 1;
                 for (KeyValuePair pa : HttpConnection.parseParameterList(url.getQuery())) {
-                    append(sb, "\tParameter #" + (i++) + ": \t" + pa.key + "\t=\t" + pa.value);
+                    append(sb, "\tParameter #" + (i++) + ": \t" + decode(pa.key) + "\t=\t" + decode(pa.value));
                 }
                 for (KeyValuePair pa : HttpConnection.parseParameterList(poster)) {
-                    append(sb, "\tParameter #" + (i++) + ": \t" + pa.key + "\t=\t" + pa.value);
+                    append(sb, "\tParameter #" + (i++) + ": \t" + decode(pa.key) + "\t=\t" + decode(pa.value));
                 }
                 // sb.postPageRaw(protocoll + host + path, poster);
             } else {
@@ -549,10 +669,20 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
 
     }
 
+    private String decode(String key) {
+        try {
+            key = Encoding.htmlDecode(key);
+        } catch (Throwable e) {
+
+        }
+        return key;
+    }
+
     private void append(StringBuilder sb, String string) {
         if (sb.length() > 0) {
             sb.append("\r\n");
         }
+
         sb.append(string);
     }
 
@@ -672,7 +802,16 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
         textField.setOpaque(false);
         textField.putClientProperty("Synthetica.opaque", Boolean.FALSE);
         textField.setCaretPosition(0);
+        TabStop[] tabs = new TabStop[4];
+        tabs[0] = new TabStop(20, TabStop.ALIGN_LEFT, TabStop.LEAD_NONE);
+        tabs[1] = new TabStop(120, TabStop.ALIGN_LEFT, TabStop.LEAD_NONE);
+        tabs[2] = new TabStop(300, TabStop.ALIGN_LEFT, TabStop.LEAD_NONE);
+        tabs[3] = new TabStop(320, TabStop.ALIGN_LEFT, TabStop.LEAD_NONE);
+        TabSet tabset = new TabSet(tabs);
 
+        StyleContext sc = StyleContext.getDefaultStyleContext();
+        AttributeSet aset = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.TabSet, tabset);
+        textField.setParagraphAttributes(aset, false);
         return textField;
 
     }

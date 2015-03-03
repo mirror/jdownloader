@@ -22,7 +22,7 @@ public class EditScriptAction extends BasicAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        liveHeaderReconnect.editScript();
+        liveHeaderReconnect.editScript(true);
     }
 
 }

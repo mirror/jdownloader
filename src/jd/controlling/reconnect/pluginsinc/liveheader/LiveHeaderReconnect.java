@@ -1,7 +1,6 @@
 package jd.controlling.reconnect.pluginsinc.liveheader;
 
 import java.awt.Dialog.ModalityType;
-import java.awt.Dimension;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 
@@ -44,7 +43,7 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.appwork.utils.swing.dialog.InputDialog;
+import org.appwork.utils.swing.dialog.OKCancelCloseUserIODefinition;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
@@ -83,19 +82,22 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
 
     }
 
-    void editScript() {
+    void editScript(final boolean wait) {
 
-        final InputDialog dialog = new InputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON, "Script Editor", "Please enter a Liveheader script below.", settings.getScript(), NewTheme.I().getIcon("edit", 18), T._.jd_controlling_reconnect_plugins_liveheader_LiveHeaderReconnect_actionPerformed_save(), null);
-        dialog.setPreferredSize(new Dimension(700, 400));
+        // final InputDialog dialog = new InputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON, "Script Editor",
+        // "Please enter a Liveheader script below.", settings.getScript(), NewTheme.I().getIcon("edit", 18),
+        // T._.jd_controlling_reconnect_plugins_liveheader_LiveHeaderReconnect_actionPerformed_save(), null);
+        // dialog.setPreferredSize(new Dimension(700, 400));
 
         RouterData editing = settings.getRouterData();
         if (editing == null) {
             editing = new RouterData();
 
         }
+        final RouterData rd = editing;
         editing.setScript(settings.getScript());
         editing.setRouterIP(settings.getRouterIP());
-        final LiveHeaderScriptConfirmDialog d = new LiveHeaderScriptConfirmDialog(Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_CANCEL, T._.script(editing.getRouterName()), new AbstractIcon("reconnect", 32), _GUI._.lit_close(), null, editing, null, editing.getRouterName()) {
+        final LiveHeaderScriptConfirmDialog d = new LiveHeaderScriptConfirmDialog(Dialog.STYLE_HIDE_ICON, T._.script(getRouterName(editing.getRouterName())), new AbstractIcon("reconnect", 32), _GUI._.lit_save(), _GUI._.lit_close(), editing, null, editing.getRouterName()) {
             @Override
             public String getMessage() {
                 return T._.edit_script();
@@ -103,7 +105,11 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
 
             @Override
             public ModalityType getModalityType() {
-                return ModalityType.MODELESS;
+                if (wait) {
+                    return super.getModalityType();
+                } else {
+                    return ModalityType.MODELESS;
+                }
             }
         };
         new Thread() {
@@ -113,7 +119,17 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
 
             @Override
             public void run() {
-                UIOManager.I().show(null, d);
+                try {
+                    UIOManager.I().show(OKCancelCloseUserIODefinition.class, d).throwCloseExceptions();
+
+                    validateAndSet(rd);
+                    // settings.setScript(rd.getScript());
+
+                } catch (DialogClosedException e) {
+                    e.printStackTrace();
+                } catch (DialogCanceledException e) {
+                    e.printStackTrace();
+                }
             }
         }.start();
 
@@ -194,6 +210,23 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
         // e1.printStackTrace();
         // }
 
+    }
+
+    private String getRouterName(String routerName) {
+
+        if (StringUtils.isEmpty(routerName)) {
+            return "<Unknown Router>";
+        }
+        return routerName;
+    }
+
+    protected void validateAndSet(RouterData rd) {
+
+        if (!StringUtils.equals(settings.getScript(), rd.getScript())) {
+            settings.setScript(rd.getScript());
+            rd.setScriptID(null);
+            settings.setRouterData(rd);
+        }
     }
 
     @Override
@@ -291,7 +324,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
                 @Override
                 public void run() {
                     final String text = LiveHeaderReconnect.this.txtIP.getText().toString();
-                    if (text == null || !IP.isValidRouterIP(text)) {
+                    if (StringUtils.isEmpty(text) || !IP.isValidRouterIP(text)) {
                         new GetIPAction(LiveHeaderReconnect.this).actionPerformed(null);
                     }
 
@@ -302,7 +335,8 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
 
                             final Gui jd = new Gui(settings.getRouterIP());
                             try {
-                                Dialog.getInstance().showDialog(jd);
+                                UIOManager.I().show(null, jd).throwCloseExceptions();
+
                                 if (jd.saved) {
                                     settings.setRouterIP(jd.ip);
 
@@ -354,8 +388,8 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
             protected void runInEDT() {
                 try {
                     String str = "";
-                    if (settings.getRouterData().getRouterName() != null) {
-                        str += settings.getRouterData().getRouterName();
+                    if (getRouterName() != null) {
+                        str += getRouterName();
                     }
                     str = str.trim();
 
@@ -471,7 +505,8 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
         final String pass = settings.getPassword();
         final String ip = settings.getRouterIP();
         RouterData rd = settings.getRouterData();
-        LiveHeaderInvoker ret = new LiveHeaderInvoker(this, script, user, pass, ip, settings.getRouterData().getRouterName());
+        //
+        LiveHeaderInvoker ret = new LiveHeaderInvoker(this, script, user, pass, ip, getRouterName());
         if (rd != null) {
             if (StringUtils.equals(rd.getScript(), script)) {
                 ret.setRouterData(rd);
@@ -479,5 +514,13 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
         }
         return ret;
 
+    }
+
+    protected String getRouterName() {
+        String ret = "<unknown router>";
+        if (settings.getRouterData() != null && StringUtils.isNotEmpty(settings.getRouterData().getRouterName())) {
+            ret = settings.getRouterData().getRouterName();
+        }
+        return ret;
     }
 }

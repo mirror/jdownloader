@@ -64,12 +64,11 @@ public class RouterSendAction extends BasicAction {
             }
         };
         try {
-            Dialog.I().showDialog(new ProgressDialog(pg, 0, T._.RouterSendAction_actionPerformed_title(), T._.RouterSendAction_actionPerformed_msg2(), NewTheme.I().getIcon("upload", 32), null, null));
+            Dialog.I().showDialog(new ProgressDialog(pg, 0, T._.RouterSendAction_actionPerformed_title(), T._.RouterSendAction_actionPerformed_msg2(), NewTheme.I().getIcon("upload", 32), null, null).setPreferredWidth(500));
         } catch (DialogClosedException e1) {
             e1.printStackTrace();
         } catch (DialogCanceledException e1) {
             e1.printStackTrace();
         }
     }
-
 }

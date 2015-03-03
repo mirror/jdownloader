@@ -210,7 +210,7 @@ public class Gui extends AbstractDialog<Object> {
     private static long       RECONNECT_DURATION = 0;
 
     public Gui(final String ip) {
-        super(UserIO.NO_COUNTDOWN | UserIO.NO_ICON, T._.gui_config_jdrr_title(), null, T._.gui_btn_start(), T._.gui_btn_cancel());
+        super(UserIO.NO_ICON, T._.gui_config_jdrr_title(), null, T._.gui_btn_start(), T._.gui_btn_cancel());
         this.ip = ip;
 
     }

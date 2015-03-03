@@ -3,6 +3,8 @@ package jd.controlling.reconnect.pluginsinc.liveheader;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 
+import javax.swing.JComponent;
+
 import jd.controlling.reconnect.pluginsinc.liveheader.remotecall.RouterData;
 import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
 
@@ -35,8 +37,12 @@ public class LiveHeaderScriptConfirmUploadDialog extends LiveHeaderScriptConfirm
             public void actionPerformed(ActionEvent e) {
 
                 final InputDialog dialog = new InputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_CANCEL, T._.script(routerData.getRouterName()), T._.script_check(), routerData.getScript(), null, _GUI._.lit_close(), null) {
-                    {
+
+                    @Override
+                    public JComponent layoutDialogContent() {
+                        JComponent ret = super.layoutDialogContent();
                         bigInput.setEditable(false);
+                        return ret;
                     }
 
                     @Override

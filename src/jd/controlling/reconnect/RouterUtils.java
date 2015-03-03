@@ -18,7 +18,9 @@ package jd.controlling.reconnect;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -29,6 +31,7 @@ import java.util.regex.Pattern;
 
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.DynByteBuffer;
 import jd.nutils.Executer;
@@ -36,7 +39,10 @@ import jd.nutils.ProcessListener;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyUtils;
@@ -47,9 +53,9 @@ import org.jdownloader.updatev2.InternetConnectionSettings;
 
 public class RouterUtils {
 
-    private static final String PATTERN_WIN_ARP = "..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?";
-
-    private static InetAddress  ADDRESS_CACHE;
+    private static final String    PATTERN_WIN_ARP = "..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?";
+    private static final LogSource LOGGER          = LogController.getInstance().getLogger("RouterUtils");
+    private static InetAddress     ADDRESS_CACHE;
 
     /**
      * Runs throw a predefined Host Table (multithreaded) and checks if there is a service on port 80. returns the ip if there is a
@@ -57,7 +63,7 @@ public class RouterUtils {
      * 
      * @return
      */
-    private static InetAddress  ASYNCH_RETURN;
+    private static InetAddress     ASYNCH_RETURN;
 
     private static String callArpTool(final String ipAddress) throws IOException, InterruptedException {
         if (CrossSystem.isWindows()) {
@@ -143,19 +149,33 @@ public class RouterUtils {
             br.setVerbose(true);
             br.setProxy(HTTPProxy.NONE);
             InternetConnectionSettings config = JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class);
-            br.setConnectTimeout(Math.max(10, config.getRouterIPCheckConnectTimeout()));
-            br.setReadTimeout(Math.max(10, config.getRouterIPCheckReadTimeout()));
+            br.setConnectTimeout(Math.max(1000, config.getRouterIPCheckConnectTimeout()));
+            br.setReadTimeout(Math.max(1000, config.getRouterIPCheckReadTimeout2()));
             br.setFollowRedirects(false);
-            if (port == 443) {
-                /* 443 is https */
-                con = br.openGetConnection("https://" + host + ":443");
-            } else {
-                String portS = "";
-                if (port != 80) {
-                    portS = ":" + port;
+            for (int i = 0; i < 3; i++) {
+                try {
+                    if (port == 443) {
+                        /* 443 is https */
+                        con = br.openGetConnection("https://" + host + ":443");
+                    } else {
+                        String portS = "";
+                        if (port != 80) {
+                            portS = ":" + port;
+                        }
+                        /* fallback to normal http */
+                        con = br.openGetConnection("http://" + host + portS);
+                    }
+                    break;
+                } catch (BrowserException e) {
+                    e.printStackTrace();
+                    SocketTimeoutException timeout = Exceptions.getInstanceof(e, SocketTimeoutException.class);
+                    if (timeout != null && StringUtils.equalsIgnoreCase(timeout.getMessage(), "Read timed out")) {
+                        // some router webinterfaces are kind of slow e.g. .::Willkommen bei zyxel VMG1312-B30A::.
+                        Thread.sleep(500);
+                        continue;
+                    }
+                    throw e;
                 }
-                /* fallback to normal http */
-                con = br.openGetConnection("http://" + host + portS);
             }
 
             String redirect = br.getRedirectLocation();
@@ -200,8 +220,8 @@ public class RouterUtils {
         try {
             try {
                 address = RouterUtils.getIPFormNetStat();
-            } catch (UnknownHostException e) {
-                e.printStackTrace();
+            } catch (Exception e) {
+                LOGGER.log(e);
             }
             if (address != null) {
                 return address;
@@ -268,26 +288,33 @@ public class RouterUtils {
      * Calls netstat -nt to find the router's ip. returns null if nothing found and the ip if found something;
      * 
      * 
-     * @throws UnknownHostException
      * @throws InterruptedException
+     * @throws IOException
+     * @throws UnsupportedEncodingException
      */
-    public static InetAddress getIPFormNetStat() throws UnknownHostException, InterruptedException {
+    public static InetAddress getIPFormNetStat() throws InterruptedException, UnsupportedEncodingException, IOException {
 
         final Pattern pat = Pattern.compile("^\\s*(?:0\\.0\\.0\\.0\\s*){1,2}((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)).*");
-        final Executer exec = new Executer("netstat");
-        exec.addParameter("-rn");
-        exec.setWaitTimeout(5);
-        System.out.println(0);
-        exec.start();
-        exec.waitTimeout();
+        ProcessBuilder pb = ProcessBuilderFactory.create("netstat", "-rn");
+        pb.redirectErrorStream(true);
+        Process p = pb.start();
+        String result = IO.readInputStreamToString(p.getInputStream());
+        // final Executer exec = new Executer("netstat");
+        // exec.addParameter("-rn");
+        // exec.setWaitTimeout(5);
+        // System.out.println(0);
+        // exec.start();
+        // exec.waitTimeout();
 
-        final String[] out = Regex.getLines(exec.getOutputStream());
+        final String[] out = Regex.getLines(result);
         for (final String string : out) {
+            System.out.println("NetStat: " + string);
             if (Thread.currentThread().isInterrupted()) {
                 throw new InterruptedException();
             }
             final String m = new Regex(string, pat).getMatch(0);
             if (m != null && !"0.0.0.0".equals(m)) {
+                System.out.println("NetStat: check " + m);
                 if (checkPort(m)) {
                     return InetAddress.getByName(m);
                 }

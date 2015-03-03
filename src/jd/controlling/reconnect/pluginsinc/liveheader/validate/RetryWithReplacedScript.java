@@ -36,9 +36,9 @@ public class RetryWithReplacedScript extends Exception {
     }
 
     private static String replace(String script, String key, String value, String replace) throws Exception {
-        if (script.contains(replace) && key != null && !"\"%%%routerip%%%\"".equals(replace)) {
-            throw new Exception("Multiple Fields detected: " + replace);
-        }
+        // if (script.contains(replace) && key != null && !"\"%%%routerip%%%\"".equals(replace)) {
+        // throw new Exception("Multiple Fields detected: " + replace);
+        // }
         String newS = script;
         String s = null;
         if (key != null) {

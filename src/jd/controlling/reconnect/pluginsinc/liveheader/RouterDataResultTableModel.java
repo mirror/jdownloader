@@ -19,6 +19,7 @@ import org.appwork.swing.exttable.columns.ExtComponentColumn;
 import org.appwork.swing.exttable.columns.ExtSpinnerColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.renderer.RenderLabel;
@@ -147,7 +148,7 @@ public class RouterDataResultTableModel extends ExtTableModel<RouterData> {
                     public void actionPerformed(ActionEvent e) {
                         if (editing != null) {
                             setSelectedObject(editing);
-                            final LiveHeaderScriptConfirmDialog d = new LiveHeaderScriptConfirmDialog(Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_CANCEL, T._.script(editing.getRouterName()), new AbstractIcon("reconnect", 32), _GUI._.lit_close(), null, editing, null, editing.getRouterName()) {
+                            final LiveHeaderScriptConfirmDialog d = new LiveHeaderScriptConfirmDialog(Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_CANCEL, T._.script(getRouterName(editing.getRouterName())), new AbstractIcon("reconnect", 32), _GUI._.lit_close(), null, editing, null, editing.getRouterName()) {
                                 @Override
                                 public String getMessage() {
                                     return T._.edit_script();
@@ -171,6 +172,14 @@ public class RouterDataResultTableModel extends ExtTableModel<RouterData> {
 
                         }
                     }
+
+                    private String getRouterName(String routerName) {
+                        if (StringUtils.isEmpty(routerName)) {
+                            return "<Unknown Router>";
+                        }
+                        return routerName;
+                    }
+
                 });
                 label = new RenderLabel();
                 rendererBtn = new JButton("");

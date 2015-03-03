@@ -24,8 +24,10 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpserver.HttpConnection;
 import org.appwork.utils.net.httpserver.requests.KeyValuePair;
+import org.jdownloader.logging.LogController;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -35,11 +37,14 @@ import org.xml.sax.SAXException;
 
 public class Scriptvalidator {
 
-    private RouterData rd;
+    protected RouterData rd;
+
+    private LogSource    logger;
 
     public Scriptvalidator(RouterData rd) {
         this.rd = rd;
-
+        logger = LogController.getInstance().getLogger("Scriptvalidator");
+        logger.info("Validate:\r\n" + JSonStorage.serializeToJson(rd));
     }
 
     private static String[] splitLines(final String source) {
@@ -326,6 +331,10 @@ public class Scriptvalidator {
                 continue;
             }
             requestProperties.put(p[0].trim(), requestLines[li].substring(p[0].length() + 1).trim());
+
+            if (StringUtils.equalsIgnoreCase(p[0].trim(), "Referer") || StringUtils.equalsIgnoreCase(p[0].trim(), "Referrer")) {
+                onHost(new URL(requestProperties.get(p[0].trim())).getHost());
+            }
             if (p[0].trim().equalsIgnoreCase("HOST")) {
                 host = requestLines[li].substring(p[0].length() + 1).trim();
             }
@@ -417,7 +426,7 @@ public class Scriptvalidator {
 
     }
 
-    private HashSet<String>   exceptionsParameterKeys  = new HashSet<String>();
+    protected HashSet<String> exceptionsParameterKeys  = new HashSet<String>();
     {
         exceptionsParameterKeys.add("var:pagename");
         exceptionsParameterKeys.add("var:errorpagename");
@@ -434,7 +443,7 @@ public class Scriptvalidator {
         exceptionsParameterKeys.add("EmWeb_ns:vim:4.ImServices.ipwan0.1:webcontrol");
         exceptionsParameterKeys.add("mbg_webname");
     }
-    private HashSet<String>   defaultPasswords         = new HashSet<String>();
+    protected HashSet<String> defaultPasswords         = new HashSet<String>();
     {
         defaultPasswords.add("administrator");
         defaultPasswords.add("admin");
@@ -445,17 +454,20 @@ public class Scriptvalidator {
         defaultPasswords.add("password");
         defaultPasswords.add("pass");
     }
-    private HashSet<String>   defaultUsernames         = new HashSet<String>();
+    protected HashSet<String> defaultUsernames         = new HashSet<String>();
     {
         defaultUsernames.add("admin");
         defaultUsernames.add("user");
         defaultUsernames.add("name");
         defaultUsernames.add("username");
         defaultUsernames.add("root");
+        defaultUsernames.add("0000");
+        defaultUsernames.add("123456");
+        defaultUsernames.add("1234");
         defaultUsernames.add("administrator");
 
     }
-    private HashSet<String>   whitelistValues          = new HashSet<String>();
+    protected HashSet<String> whitelistValues          = new HashSet<String>();
     {
         whitelistValues.add("true");
         whitelistValues.add("false");
@@ -479,6 +491,7 @@ public class Scriptvalidator {
     }
     protected HashSet<String> replacedDefaultPasswords = new HashSet<String>();
     protected HashSet<String> replacedDefaultUsernames = new HashSet<String>();
+    protected HashSet<String> replacedDefaulAuth       = new HashSet<String>();
 
     private void onParameter(String key, String value) throws Exception {
         if (exceptionsParameterKeys.contains(key)) {
@@ -504,21 +517,35 @@ public class Scriptvalidator {
         }
         if (isPasswordParameter(key, value)) {
             System.out.println(key + "=" + value);
-            if (defaultPasswords.contains(value.toLowerCase(Locale.ENGLISH))) {
-                replacedDefaultPasswords.add(value);
-            }
-            throw new RetryWithReplacedScript(rd.getScript(), key, value, "%%%password%%%");
+
+            replacePasswordParameter(key, value);
 
         }
 
         if (isUsernameParameter(key, value)) {
-            System.out.println(key + "=" + value);
-            if (defaultUsernames.contains(value.toLowerCase(Locale.ENGLISH))) {
-                replacedDefaultUsernames.add(value);
-            }
+            replaceUsernameParameter(key, value);
 
-            throw new RetryWithReplacedScript(rd.getScript(), key, value, "%%%username%%%");
         }
+
+    }
+
+    protected void replaceUsernameParameter(String key, String value) throws RetryWithReplacedScript, Exception {
+        System.out.println(key + "=" + value);
+        // if (!UIOManager.I().showConfirmDialog(0, T._.please_check(), T._.please_check_sensitive_data_before_share(key + "=" + value), new
+        // AbstractIcon(IconKey.ICON_QUESTION, 32), _GUI._.lit_yes(), _GUI._.lit_no())) {
+
+        if (defaultUsernames.contains(value.toLowerCase(Locale.ENGLISH))) {
+            replacedDefaultUsernames.add(value);
+        }
+        throw new RetryWithReplacedScript(rd.getScript(), key, value, "%%%username%%%");
+        // }
+    }
+
+    protected void replacePasswordParameter(String key, String value) throws RetryWithReplacedScript, Exception {
+        if (defaultPasswords.contains(value.toLowerCase(Locale.ENGLISH))) {
+            replacedDefaultPasswords.add(value);
+        }
+        throw new RetryWithReplacedScript(rd.getScript(), key, value, "%%%password%%%");
 
     }
 
@@ -555,7 +582,7 @@ public class Scriptvalidator {
         return false;
     }
 
-    private void onAuth(String authorization) {
+    private void onAuth(String authorization) throws RetryWithReplacedScript, Exception {
 
         if (!"Basic <Variable:basicauth>".equals(authorization)) {
 
@@ -564,22 +591,18 @@ public class Scriptvalidator {
                 int first = dec.indexOf(":");
                 String username = dec.substring(0, first);
                 String password = dec.substring(first + 1);
-                onUsername(username);
-                onPassword(password);
-                return;
+                replaceAuthHeader(authorization, username, password);
             }
             System.out.println(authorization);
         }
 
     }
 
-    private void onPassword(String password) {
-        if ("admin".equalsIgnoreCase(password)) {
-
+    protected void replaceAuthHeader(String authorization, String username, String password) throws RetryWithReplacedScript, Exception {
+        if (defaultPasswords.contains(password.toLowerCase(Locale.ENGLISH)) && defaultUsernames.contains(username.toLowerCase(Locale.ENGLISH))) {
+            replacedDefaulAuth.add(authorization.substring("Basic ".length()));
         }
-    }
-
-    private void onUsername(String username) {
+        throw new RetryWithReplacedScript(rd.getScript(), authorization.substring("Basic ".length()), "%%%basicauth%%%");
     }
 
     private void onCookie(String cookie) throws RetryWithReplacedScript, Exception {
@@ -680,20 +703,22 @@ public class Scriptvalidator {
 
     public void run() throws Exception {
         String oldScriptID = rd.getScriptID();
+        String oldScript = rd.getScript();
         while (true) {
             try {
                 toOverView(rd.getScript());
                 if (changes.size() == 0) {
-
+                    // setStatus(oldScriptID, ScriptStatus.VALIDATED);
                     return;
                 } else {
                     rd.setScriptID(null);
                     String newScriptID;
                     setScript(oldScriptID);
+                    // setStatus(rd.getScriptID(), ScriptStatus.VALIDATED);
                     setChanges(rd.getScriptID());
 
                 }
-                if (replacedDefaultPasswords.size() > 0 || replacedDefaultUsernames.size() > 0) {
+                if (replacedDefaultPasswords.size() > 0 || replacedDefaultUsernames.size() > 0 || replacedDefaulAuth.size() > 0) {
                     String s = rd.getScript();
                     for (String e : replacedDefaultPasswords) {
                         s = s.replace("%%%password%%%", e);
@@ -701,10 +726,13 @@ public class Scriptvalidator {
                     for (String e : replacedDefaultUsernames) {
                         s = s.replace("%%%username%%%", e);
                     }
+                    for (String e : replacedDefaulAuth) {
+                        s = s.replace("%%%basicauth%%%", e);
+                    }
                     RouterData copy = JSonStorage.restoreFromString(JSonStorage.serializeToJson(rd), RouterData.TYPE_REF);
                     copy.setScript(s);
                     copy.setScriptID(null);
-
+                    // copy.setStatus(ScriptStatus.VALIDATED_DEFAULT);
                     String id = copy.getScriptID();
                     addCopy(copy);
                 }
@@ -712,8 +740,8 @@ public class Scriptvalidator {
             } catch (RetryWithReplacedScript e) {
                 if (rd.getScript().equals(e.getNewScript())) {
 
-                    throw new Exception("Cannot replace all variables");
-
+                    // setStatus(oldScriptID, ScriptStatus.EXCEPTION);
+                    return;
                 } else {
                     changes.add(e);
                     rd.setScript(e.getNewScript());
@@ -724,15 +752,43 @@ public class Scriptvalidator {
     }
 
     protected void addCopy(RouterData copy) throws IllegalArgumentException, IllegalAccessException, InvocationTargetException, InternalApiException {
-
+        // try {
+        // if (db.addEntry(copy)) {
+        // for (Exception e : changes) {
+        // db.appendChanges(copy.getScriptID(), e.toString());
+        // }
+        // db.appendChanges(copy.getScriptID(), "Kept Default Data " + replacedDefaultPasswords + " - " + replacedDefaultUsernames + " - " +
+        // replacedDefaulAuth);
+        // }
+        // } catch (Throwable e) {
+        // e.printStackTrace();
+        // }
     }
 
     protected void setChanges(String scriptID) throws InternalApiException {
-
+        // for (Exception e : changes) {
+        // db.appendChanges(rd.getScriptID(), e.toString());
+        // }
     }
 
     protected void setScript(String oldScriptID) throws InternalApiException {
-
+        // try {
+        // String newScriptID;
+        // db.setScript(oldScriptID, newScriptID = rd.getScriptID(), rd.getScript());
+        // } catch (InternalApiException e) {
+        // if (Exceptions.containsInstanceOf(e, DuplicateKey.class)) {
+        // db.remove(oldScriptID);
+        // } else {
+        // e.printStackTrace();
+        // }
+        //
+        // } catch (Exception e) {
+        // e.printStackTrace();
+        // }
     }
+
+    // protected void setStatus(String oldScriptID, ScriptStatus validated) throws InternalApiException {
+    // db.setStatus(oldScriptID, validated);
+    // }
 
 }

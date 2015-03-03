@@ -614,7 +614,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
         if (key != null) {
             final String lowerKey = key.toLowerCase(Locale.ENGLISH);
             if (internalVariables.containsKey(lowerKey)) {
-                throw new ReconnectFailedException("Cannot change internal varbiable:" + lowerKey);
+                throw new ReconnectFailedException(T._.failure_variable_overwrite_variable(lowerKey));
             } else {
                 if (value == null) {
                     logger.info("Remove Variable:" + lowerKey + "=" + parsedVariables.remove(lowerKey));
@@ -690,7 +690,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
             public void onBasicRemoteAPIExceptionOccured(IOException e, Request request) throws ReconnectFailedException {
                 failedRequests++;
                 if (failedRequests > successRequests) {
-                    throw new ReconnectFailedException("Request Failed");
+                    throw new ReconnectFailedException(T._.failure_variable_request_exception(e.getMessage(), request.getClass().getSimpleName(), request.getUrl()));
                 }
             }
 
@@ -698,13 +698,13 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
             }
 
             public void onVariableParserFailed(String pattern, Request request) throws ReconnectFailedException {
-                throw new ReconnectFailedException("Variable Parser Failed");
+                throw new ReconnectFailedException(T._.failure_variable_parser(pattern));
             }
 
             public void onRequesterror(Request request) throws ReconnectFailedException {
                 failedRequests++;
                 if (failedRequests > successRequests) {
-                    throw new ReconnectFailedException("Request Failed");
+                    throw new ReconnectFailedException(T._.failure_variable_request(request.getClass().getSimpleName(), request.getUrl()));
                 }
             }
 
