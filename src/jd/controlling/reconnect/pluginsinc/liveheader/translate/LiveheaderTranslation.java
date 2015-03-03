@@ -334,4 +334,49 @@ public interface LiveheaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "<Unknown>" })
     String unknown();
 
+    @Default(lngs = { "en" }, values = { "Please confirm..." })
+    String please_check();
+
+    @Default(lngs = { "en" }, values = { "Before sharing your Reconnect Script with others, we have to ensure, that it does not contain any sensitive data. \r\n\r\nDoes this parameter contain your router's username or password?\r\n--> %s1 <--\r\nNote: If you choose [yes] even though the parameter does not contain your username or password, the resulting script will not work. Please answer these questions correctly! " })
+    String please_check_sensitive_data_before_share(String string);
+
+    @Default(lngs = { "en" }, values = { "Please ensure, that it does not contain any sensitive data.\r\n\r\nDoes this parameter contain your router's username or password?\r\n--> %s1 <--\r\nNote: If you choose [yes] even though the parameter does not contain your username or password, the resulting script will not work. Please answer these questions correctly!" })
+    String please_check_sensitive_data_after_edit(String string);
+
+    @Default(lngs = { "en" }, values = { "Cannot share Script..." })
+    String share_invalid_title();
+
+    @Default(lngs = { "en" }, values = { "You cannot share your Reconnect Script.\r\nThere has been a problem during evaluation.\r\nThe Script may contain sensitive data and this will not be shared." })
+    String share_invalid_msg();
+
+    @Default(lngs = { "en" }, values = { "Your Reconnect Script contains the Authorization Token '%s1'. This does not match your currently set router password.\r\nDo you want to use '%s2' as new router password from now on?" })
+    String please_confirm_password_change(String authorization, String password);
+
+    @Default(lngs = { "en" }, values = { "Your Reconnect Script contains the Authorization Token '%s1'. This does not match your currently set router username.\r\nDo you want to use '%s2' as new router username from now on?" })
+    String please_confirm_username_change(String authorization, String username);
+
+    @Default(lngs = { "en" }, values = { "Reconnect failed: Could not find a variable: %s1" })
+    String failure_variable_parser(String pattern);
+
+    @Default(lngs = { "en" }, values = { "Reconnect failed: A request failed several times:\r\n%s1 - %s2" })
+    String failure_variable_request(String simpleName, String url);
+
+    @Default(lngs = { "en" }, values = { "Reconnect failed: A request failed several times:\r\n%s2 - %s3\r\nError: %s1" })
+    String failure_variable_request_exception(String message, String simpleName, String url);
+
+    @Default(lngs = { "en" }, values = { "Reconnect failed: Error while updating variable: %s1" })
+    String failure_variable_overwrite_variable(String lowerKey);
+
+    @Default(lngs = { "en" }, values = { "Yes - replace it" })
+    String yes_replace();
+
+    @Default(lngs = { "en" }, values = { "No - keep it" })
+    String no_keep();
+
+    @Default(lngs = { "en" }, values = { "Your Reconnect Script contains the password value '%s1'. This does not match your currently set router password.\r\nDo you want to use '%s1' as new router password from now on?" })
+    String please_confirm_password_change_parameter(String value);
+
+    @Default(lngs = { "en" }, values = { "Your Reconnect Script contains the username value '%s1'. This does not match your currently set router username.\r\nDo you want to use '%s1' as new router username from now on?" })
+    String please_confirm_username_change_parameter(String value);
+
 }

@@ -16,6 +16,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
+import org.appwork.utils.swing.dialog.ProgressInterface;
 import org.jdownloader.images.NewTheme;
 
 public class GetIPAction extends BasicAction {
@@ -75,6 +76,7 @@ public class GetIPAction extends BasicAction {
 
         ProgressDialog d = new ProgressDialog(pg, UIOManager.BUTTONS_HIDE_OK, T._.GetIPAction_actionPerformed_d_title(), T._.GetIPAction_actionPerformed_d_msg(), NewTheme.I().getIcon("defaultProxy", 32), null, null);
         try {
+            UIOManager.I().show(ProgressInterface.class, d).throwCloseExceptions();
             Dialog.getInstance().showDialog(d);
         } catch (DialogClosedException e1) {
             e1.printStackTrace();
