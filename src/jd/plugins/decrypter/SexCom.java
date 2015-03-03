@@ -222,6 +222,12 @@ public class SexCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return;
         }
+        // pornhub handling number 3
+        externID = br.getRegex("\"(http://(www\\.)?pornhub\\.com/view_video\\.php\\?viewkey=[a-z0-9]+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return;
+        }
         // myxvids.com 1
         externID = br.getRegex("\"(http://(www\\.)?myxvids\\.com/embed/\\d+)\"").getMatch(0);
         if (externID != null) {
@@ -409,6 +415,16 @@ public class SexCom extends PluginForDecrypt {
             return;
         }
         externID = br.getRegex("\"(http://beeg\\.com/\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return;
+        }
+        externID = br.getRegex("\"(http://(www\\.)?cliphunter\\.com/w/\\d+/[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return;
+        }
+        externID = br.getRegex("\"(http://(www\\.)?fapdu\\.com/[a-z0-9\\-]+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
             return;
