@@ -64,6 +64,9 @@ public class EasyBytezComFolder extends PluginForDecrypt {
         if (((jd.plugins.hoster.EasyBytezCom) plugin).cbr.containsHTML(">\\s*No such user exist\\s*<")) {
             logger.info("Invalid URL! " + parameter);
             return decryptedLinks;
+        } else if (((jd.plugins.hoster.EasyBytezCom) plugin).cbr.containsHTML(">The access to this folder is currently not possible<")) {
+            logger.info("Not Available! " + parameter);
+            return decryptedLinks;
         }
         if (((jd.plugins.hoster.EasyBytezCom) plugin).cbr.containsHTML(">\\s*Guest access not possible!\\s*<")) {
             // we only login when required!
