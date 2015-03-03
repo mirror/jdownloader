@@ -7,8 +7,6 @@ import jd.parser.Regex;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.Storable;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.host.PluginFinder;
 
 public class FilterList implements Storable {
     public enum Type {
@@ -16,10 +14,9 @@ public class FilterList implements Storable {
         BLACKLIST;
     }
 
-    private Type      type            = Type.BLACKLIST;
-    private Pattern[] domainPatterns  = new Pattern[0];
-    private int       size            = 0;
-    private Pattern[] accountPatterns = new Pattern[0];
+    private Type                 type     = Type.BLACKLIST;
+    private volatile Pattern[][] patterns = new Pattern[2][0];
+    private int                  size     = 0;
 
     public FilterList(/* Storable */) {
     }
@@ -46,17 +43,16 @@ public class FilterList implements Storable {
         return entries;
     }
 
-    public synchronized void setEntries(String[] entries) {
+    public void setEntries(String[] entries) {
         this.size = 0;
         if (entries == null) {
             this.entries = new String[0];
-            this.domainPatterns = new Pattern[0];
-            this.accountPatterns = new Pattern[0];
+            this.patterns = new Pattern[2][0];
         } else {
-            final PluginFinder pluginFinder = new PluginFinder();
             this.entries = entries;
-            this.domainPatterns = new Pattern[entries.length];
-            this.accountPatterns = new Pattern[entries.length];
+            final Pattern[][] lPatterns = new Pattern[2][entries.length];
+            final Pattern[] accountPatterns = lPatterns[0];
+            final Pattern[] domainPatterns = lPatterns[1];
             for (int i = 0; i < entries.length; i++) {
                 final String entry = entries[i] == null ? "" : entries[i].trim();
                 if (entry.length() == 0 || entry.startsWith("//") || entry.startsWith("#")) {
@@ -67,50 +63,40 @@ public class FilterList implements Storable {
                     accountPatterns[i] = null;
                 } else {
                     size++;
-                    final int index = entry.indexOf("@");
-                    if (index >= 0) {
+                    final int index = entry.lastIndexOf("@");
+                    if (index >= 0 && index + 1 < entry.length() && entry.matches("^[a-zA-Z0-9.-_@]+$")) {
                         final String username = entry.substring(0, index);
                         final String host = entry.substring(index + 1);
-                        String assignedHost = pluginFinder.assignHost(host);
-                        if (assignedHost == null) {
-                            assignedHost = host;
-                        }
                         try {
                             accountPatterns[i] = Pattern.compile(username, Pattern.CASE_INSENSITIVE);
                         } catch (Throwable e) {
                             accountPatterns[i] = Pattern.compile(".*" + Pattern.quote(username) + ".*", Pattern.CASE_INSENSITIVE);
                         }
                         try {
-                            domainPatterns[i] = Pattern.compile(assignedHost, Pattern.CASE_INSENSITIVE);
+                            domainPatterns[i] = Pattern.compile(host, Pattern.CASE_INSENSITIVE);
                         } catch (Throwable e) {
-                            domainPatterns[i] = Pattern.compile(".*" + Pattern.quote(assignedHost) + ".*", Pattern.CASE_INSENSITIVE);
-                        }
-                        if (!StringUtils.equals(host, assignedHost)) {
-                            entries[i] = username.concat("@").concat(assignedHost);
+                            domainPatterns[i] = Pattern.compile(".*" + Pattern.quote(host) + ".*", Pattern.CASE_INSENSITIVE);
                         }
                     } else {
                         accountPatterns[i] = null;
-                        String assignedHost = pluginFinder.assignHost(entry);
-                        if (assignedHost == null) {
-                            assignedHost = entry;
-                        }
                         try {
-                            domainPatterns[i] = Pattern.compile(assignedHost, Pattern.CASE_INSENSITIVE);
+                            domainPatterns[i] = Pattern.compile(entry, Pattern.CASE_INSENSITIVE);
                         } catch (Throwable e) {
-                            domainPatterns[i] = Pattern.compile(".*" + Pattern.quote(assignedHost) + ".*", Pattern.CASE_INSENSITIVE);
-                        }
-                        if (!StringUtils.equals(entry, assignedHost)) {
-                            entries[i] = assignedHost;
+                            domainPatterns[i] = Pattern.compile(".*" + Pattern.quote(entry) + ".*", Pattern.CASE_INSENSITIVE);
                         }
                     }
                 }
             }
+            this.patterns = lPatterns;
         }
     }
 
-    private String[] entries;
+    private volatile String[] entries;
 
-    public synchronized boolean validate(String host, String accUser) {
+    public boolean validate(String host, String accUser) {
+        final Pattern[][] lPatterns = patterns;
+        final Pattern[] accountPatterns = lPatterns[0];
+        final Pattern[] domainPatterns = lPatterns[1];
         switch (type) {
         case BLACKLIST:
             for (int i = 0; i < domainPatterns.length; i++) {
