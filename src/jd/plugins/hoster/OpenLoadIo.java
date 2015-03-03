@@ -24,7 +24,6 @@ import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -32,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "openload.io" }, urls = { "https?://(www\\.)?openload\\.io/(f|embed)/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "openload.io" }, urls = { "https?://(www\\.)?openload\\.io/(f|embed)/[A-Za-z0-9_\\-]+" }, flags = { 0 })
 public class OpenLoadIo extends PluginForHost {
 
     public OpenLoadIo(PluginWrapper wrapper) {
@@ -76,7 +75,7 @@ public class OpenLoadIo extends PluginForHost {
 
     /*
      * Using API: http://docs.ol1.apiary.io/
-     *
+     * 
      * TODO: Check if we can use the mass linkchecker with this API. Add account support, get an API key and use that as well.
      */
     @SuppressWarnings({ "unchecked" })
@@ -215,7 +214,7 @@ public class OpenLoadIo extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     private String getFID(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+        return dl.getDownloadURL().substring(dl.getDownloadURL().lastIndexOf("/") + 1);
     }
 
     @Override
