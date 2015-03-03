@@ -43,6 +43,8 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.ConfigEvent;
+import org.appwork.storage.config.events.ConfigEventSender;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Application;
@@ -50,6 +52,7 @@ import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.event.DefaultEventSender;
+import org.appwork.utils.event.EventSuppressor;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
@@ -64,6 +67,7 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.ProxyDialog;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.FilterList;
 import org.jdownloader.updatev2.InternetConnectionSettings;
@@ -92,7 +96,7 @@ public class ProxyController implements ProxySelectorInterface {
         return ProxyController.INSTANCE;
     }
 
-    private volatile CopyOnWriteArrayList<AbstractProxySelectorImpl>        list   = new CopyOnWriteArrayList<AbstractProxySelectorImpl>();
+    private volatile CopyOnWriteArrayList<AbstractProxySelectorImpl>        list            = new CopyOnWriteArrayList<AbstractProxySelectorImpl>();
 
     private final DefaultEventSender<ProxyEvent<AbstractProxySelectorImpl>> eventSender;
 
@@ -100,7 +104,7 @@ public class ProxyController implements ProxySelectorInterface {
 
     private final LogSource                                                 logger;
 
-    private final Queue                                                     QUEUE  = new Queue(getClass().getName()) {
+    private final Queue                                                     QUEUE           = new Queue(getClass().getName()) {
 
         @Override
         public void killQueue() {
@@ -112,7 +116,14 @@ public class ProxyController implements ProxySelectorInterface {
 
     };
 
-    private boolean                                                         saving = false;
+    private final ConfigEventSender<Object>                                 customProxyListEventSender;
+    private final EventSuppressor<ConfigEvent>                              eventSuppressor = new EventSuppressor<ConfigEvent>() {
+
+        @Override
+        public boolean suppressEvent(ConfigEvent eventType) {
+            return true;
+        }
+    };
 
     public Queue getQUEUE() {
         return QUEUE;
@@ -139,6 +150,34 @@ public class ProxyController implements ProxySelectorInterface {
         }
 
         list = new CopyOnWriteArrayList<AbstractProxySelectorImpl>(loadProxySettings(true));
+        final GenericConfigEventListener<Object> updateListener = new GenericConfigEventListener<Object>() {
+
+            @Override
+            public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
+                setList(loadProxySettings(true));
+            }
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
+            }
+        };
+        customProxyListEventSender = config._getStorageHandler().getKeyHandler("CustomProxyList").getEventSender();
+        customProxyListEventSender.addListener(updateListener);
+
+        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+
+            @Override
+            public void onShutdown(final ShutdownRequest shutdownRequest) {
+                // avoid that the controller gets reinitialized during shutdown
+                customProxyListEventSender.removeListener(updateListener);
+                ProxyController.this.saveProxySettings();
+            }
+
+            @Override
+            public String toString() {
+                return "ProxyController: save config";
+            }
+        });
         getEventSender().addListener(new DefaultEventListener<ProxyEvent<AbstractProxySelectorImpl>>() {
             final DelayedRunnable asyncSaving = new DelayedRunnable(5000l, 60000l) {
                 @Override
@@ -157,34 +196,60 @@ public class ProxyController implements ProxySelectorInterface {
                 asyncSaving.resetAndStart();
             }
         });
-        final GenericConfigEventListener<Object> updateListener = new GenericConfigEventListener<Object>() {
+        updateProxyFilterList();
+    }
 
+    public void updateProxyFilterList() {
+        QUEUE.add(new QueueAction<Void, RuntimeException>() {
             @Override
-            public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
-                if (!saving) {
-                    setList(new CopyOnWriteArrayList<AbstractProxySelectorImpl>(loadProxySettings(true)));
+            protected Void run() throws RuntimeException {
+                final PluginFinder pluginFinder = new PluginFinder(logger);
+                for (AbstractProxySelectorImpl proxySelector : _getList()) {
+                    if (proxySelector.getFilter() != null && proxySelector.getFilter().size() > 0) {
+                        updateProxyFilterList(proxySelector, pluginFinder);
+                    }
                 }
-            }
-
-            @Override
-            public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
-            }
-        };
-        config._getStorageHandler().getKeyHandler("CustomProxyList").getEventSender().addListener(updateListener);
-        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-
-            @Override
-            public void onShutdown(final ShutdownRequest shutdownRequest) {
-                // avoid that the controller gets reinitialized during shutdown
-                config._getStorageHandler().getKeyHandler("CustomProxyList").getEventSender().removeListener(updateListener);
-                ProxyController.this.saveProxySettings();
-            }
-
-            @Override
-            public String toString() {
-                return "ProxyController: save config";
+                return null;
             }
         });
+    }
+
+    private void updateProxyFilterList(final AbstractProxySelectorImpl proxy, PluginFinder pluginFinder) {
+        final FilterList filter = proxy.getFilter();
+        if (filter != null && pluginFinder != null) {
+            final String[] entries = filter.getEntries();
+            for (int i = 0; i < entries.length; i++) {
+                final String entry = entries[i] == null ? "" : entries[i].trim();
+                if (entry.length() == 0 || entry.startsWith("//") || entry.startsWith("#")) {
+                    /**
+                     * empty/comment lines
+                     */
+                    continue;
+                } else {
+                    final int index = entry.lastIndexOf("@");
+                    if (index != -1) {
+                        if (index + 1 < entry.length()) {
+                            final String host = entry.substring(index + 1);
+                            if (host.matches("^[a-zA-Z0-9.-_]+$") && host.contains(".") && host.length() >= 3) {
+                                final String username = entry.substring(0, index);
+                                final String assignedHost = pluginFinder.assignHost(host);
+                                if (assignedHost != null && !StringUtils.equals(host, assignedHost)) {
+                                    entries[i] = username.concat("@").concat(assignedHost);
+                                }
+                            }
+                        }
+                    } else {
+                        if (entry.matches("^[a-zA-Z0-9.-_]+$") && entry.contains(".") && entry.length() >= 3) {
+                            final String assignedHost = pluginFinder.assignHost(entry);
+                            if (assignedHost != null && !StringUtils.equals(entry, assignedHost)) {
+                                entries[i] = assignedHost;
+                            }
+                        }
+                    }
+                }
+            }
+            filter.setEntries(entries);
+        }
     }
 
     public void addProxy(final AbstractProxySelectorImpl proxy) {
@@ -199,6 +264,9 @@ public class ProxyController implements ProxySelectorInterface {
                     case SOCKS5:
                     case DIRECT:
                     case PAC:
+                        if (proxy.getFilter() != null && proxy.getFilter().size() > 0) {
+                            updateProxyFilterList(proxy, new PluginFinder(logger));
+                        }
                         CopyOnWriteArrayList<AbstractProxySelectorImpl> list = _getList();
                         if (list.addIfAbsent(proxy)) {
                             eventSender.fireEvent(new ProxyEvent<AbstractProxySelectorImpl>(ProxyController.this, ProxyEvent.Types.ADDED, proxy));
@@ -225,6 +293,9 @@ public class ProxyController implements ProxySelectorInterface {
                     case SOCKS5:
                     case DIRECT:
                     case PAC:
+                        if (proxy.getFilter() != null && proxy.getFilter().size() > 0) {
+                            updateProxyFilterList(proxy, new PluginFinder(logger));
+                        }
                         CopyOnWriteArrayList<AbstractProxySelectorImpl> list = _getList();
                         if (list.addIfAbsent(proxy)) {
                             AbstractProxySelectorImpl none = getNone();
@@ -249,22 +320,23 @@ public class ProxyController implements ProxySelectorInterface {
             QUEUE.add(new QueueAction<Void, RuntimeException>() {
                 @Override
                 protected Void run() throws RuntimeException {
-                    final List<AbstractProxySelectorImpl> list = _getList();
+                    final List<AbstractProxySelectorImpl> currentList = _getList();
                     int dropRowIndex = dropRow;
                     if (dropRowIndex < 0) {
                         dropRowIndex = 0;
-                    } else if (dropRowIndex > list.size()) {
-                        dropRowIndex = list.size();
+                    } else if (dropRowIndex > currentList.size()) {
+                        dropRowIndex = currentList.size();
                     }
                     final List<AbstractProxySelectorImpl> newList = new ArrayList<AbstractProxySelectorImpl>();
-                    final List<AbstractProxySelectorImpl> before = new ArrayList<AbstractProxySelectorImpl>(list.subList(0, dropRowIndex));
-                    final List<AbstractProxySelectorImpl> after = new ArrayList<AbstractProxySelectorImpl>(list.subList(dropRowIndex, list.size()));
+                    final List<AbstractProxySelectorImpl> before = new ArrayList<AbstractProxySelectorImpl>(currentList.subList(0, dropRowIndex));
+                    final List<AbstractProxySelectorImpl> after = new ArrayList<AbstractProxySelectorImpl>(currentList.subList(dropRowIndex, currentList.size()));
                     before.removeAll(transferData);
                     after.removeAll(transferData);
                     newList.addAll(before);
                     newList.addAll(transferData);
                     newList.addAll(after);
-                    setList(newList);
+                    list = new CopyOnWriteArrayList<AbstractProxySelectorImpl>(newList);
+                    eventSender.fireEvent(new ProxyEvent<AbstractProxySelectorImpl>(ProxyController.this, ProxyEvent.Types.REFRESH, null));
                     return null;
                 }
             });
@@ -275,6 +347,12 @@ public class ProxyController implements ProxySelectorInterface {
         QUEUE.add(new QueueAction<Void, RuntimeException>() {
             @Override
             protected Void run() throws RuntimeException {
+                final PluginFinder pluginFinder = new PluginFinder(logger);
+                for (AbstractProxySelectorImpl proxySelector : newList) {
+                    if (proxySelector.getFilter() != null && proxySelector.getFilter().size() > 0) {
+                        updateProxyFilterList(proxySelector, pluginFinder);
+                    }
+                }
                 list = new CopyOnWriteArrayList<AbstractProxySelectorImpl>(newList);
                 eventSender.fireEvent(new ProxyEvent<AbstractProxySelectorImpl>(ProxyController.this, ProxyEvent.Types.REFRESH, null));
                 return null;
@@ -369,12 +447,14 @@ public class ProxyController implements ProxySelectorInterface {
     }
 
     public void setFilter(final AbstractProxySelectorImpl proxySelector, final FilterList filterList) {
-
         QUEUE.add(new QueueAction<Void, RuntimeException>() {
 
             @Override
             protected Void run() throws RuntimeException {
                 proxySelector.setFilter(filterList);
+                if (proxySelector.getFilter() != null && proxySelector.getFilter().size() > 0) {
+                    updateProxyFilterList(proxySelector, new PluginFinder(logger));
+                }
                 if (_getList().contains(proxySelector)) {
                     eventSender.fireEvent(new ProxyEvent<AbstractProxySelectorImpl>(ProxyController.this, ProxyEvent.Types.REFRESH, proxySelector));
                 }
@@ -441,7 +521,7 @@ public class ProxyController implements ProxySelectorInterface {
             @Override
             protected Void run() throws RuntimeException {
                 config.setLatestProfile(selected.getAbsolutePath());
-                config.setCustomProxyList(restore.getCustomProxyList());
+                saveProxySettings(restore.getCustomProxyList());
                 setList(loadProxySettings(false));
                 return null;
             }
@@ -760,19 +840,25 @@ public class ProxyController implements ProxySelectorInterface {
     }
 
     private void saveProxySettings() {
-        List<AbstractProxySelectorImpl> list = getList();
+        final List<AbstractProxySelectorImpl> list = getList();
         if (list.size() > 0) {
             final ArrayList<ProxyData> ret = new ArrayList<ProxyData>();
             for (final AbstractProxySelectorImpl proxy : list) {
                 final ProxyData pd = proxy.toProxyData();
                 ret.add(pd);
             }
-            saving = true;
+            saveProxySettings(ret);
+        }
+    }
+
+    private void saveProxySettings(final ArrayList<ProxyData> list) {
+        if (list != null && list.size() > 0) {
             try {
-                this.config.setCustomProxyList(ret);
+                customProxyListEventSender.addEventSuppressor(eventSuppressor);
+                this.config.setCustomProxyList(list);
                 this.config._getStorageHandler().write();
             } finally {
-                saving = false;
+                customProxyListEventSender.removeEventSuppressor(eventSuppressor);
             }
         }
     }
@@ -1112,7 +1198,7 @@ public class ProxyController implements ProxySelectorInterface {
 
     @Override
     public boolean updateProxy(final Request request, final int retryCounter) {
-        SelectedProxy selectedProxy = getSelectedProxy(request.getProxy());
+        final SelectedProxy selectedProxy = getSelectedProxy(request.getProxy());
         return selectedProxy != null && updateProxy(selectedProxy.getSelector(), request, retryCounter);
     }
 
