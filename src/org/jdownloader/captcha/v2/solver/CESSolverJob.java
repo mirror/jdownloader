@@ -16,66 +16,76 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 public class CESSolverJob<T> {
-    
+
     private final SolverJob<T>    job;
     private volatile SolverStatus status;
     private CESBubble             bubble;
     private volatile boolean      answered;
-    
+
     public SolverJob<T> getJob() {
         return job;
     }
-    
+
     public CESSolverJob(SolverJob<T> job) {
         this.job = job;
     }
-    
+
     public Challenge<T> getChallenge() {
         return job.getChallenge();
     }
-    
+
     public void waitFor(int timeout, ChallengeSolver<?>... instances) throws InterruptedException {
         job.waitFor(timeout, instances);
     }
-    
+
     public LogSource getLogger() {
         return job.getLogger();
     }
-    
+
     public void setStatus(SolverStatus solverStatus) {
         this.status = solverStatus;
-        
+
     }
-    
+
     public SolverStatus getStatus() {
         return status;
     }
-    
+
     public void setStatus(String label, Icon icon) {
         setStatus(new SolverStatus(label, icon));
-        if (bubble != null) bubble.update();
+        if (bubble != null) {
+            bubble.update();
+        }
     }
-    
+
     public void showBubble(CESChallengeSolver<T> cbSolver) throws InterruptedException {
-        showBubble(cbSolver, CFG_CAPTCHA.CFG.getCaptchaExchangeChanceToSkipBubbleTimeout());
+        if (!org.appwork.utils.Application.isHeadless()) {
+            showBubble(cbSolver, CFG_CAPTCHA.CFG.getCaptchaExchangeChanceToSkipBubbleTimeout());
+        }
     }
-    
+
     public void showBubble(CESChallengeSolver<T> cbSolver, int timeout) throws InterruptedException {
-        bubble = CESBubbleSupport.getInstance().show(cbSolver, this, timeout);
+        if (!org.appwork.utils.Application.isHeadless()) {
+            bubble = CESBubbleSupport.getInstance().show(cbSolver, this, timeout);
+        }
     }
-    
+
     public void setAnswer(AbstractResponse<T> abstractResponse) {
         answered = true;
         job.addAnswer(abstractResponse);
         setStatus(_GUI._.DeathByCaptchaSolver_solveBasicCaptchaChallenge_answer(abstractResponse.getValue() + ""), NewTheme.I().getIcon(IconKey.ICON_OK, 20));
     }
-    
+
     public void hideBubble() {
         if (!answered) {
             setStatus(SolverStatus.UNSOLVED);
-            if (bubble != null) bubble.update();
+            if (bubble != null) {
+                bubble.update();
+            }
         }
-        if (bubble != null) bubble.hideBubble(5000);
+        if (bubble != null) {
+            bubble.hideBubble(5000);
+        }
     }
-    
+
 }
