@@ -79,7 +79,6 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
         settings = JsonConfig.create(LiveHeaderReconnectSettings.class);
         settings._getStorageHandler().getEventSender().addListener(this);
         AdvancedConfigManager.getInstance().register(JsonConfig.create(LiveHeaderReconnectSettings.class));
-
     }
 
     void editScript(final boolean wait) {
@@ -132,88 +131,9 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
                 }
             }
         }.start();
-
-        // CLR Import
-        // dialog.setLeftActions(new AbstractAction("Browser Scripts") {
-        //
-        // private static final long serialVersionUID = 1L;
-        //
-        // public void actionPerformed(final ActionEvent e) {
-        //
-        // final ImportRouterDialog importDialog = new
-        // ImportRouterDialog(LiveHeaderReconnect.getLHScripts());
-        // try {
-        // Dialog.getInstance().showDialog(importDialog);
-        // final String[] data = importDialog.getResult();
-        //
-        // if (data != null) {
-        //
-        // if (data[2].toLowerCase().indexOf("curl") >= 0) {
-        // UserIO.getInstance().requestMessageDialog(T._.gui_config_liveHeader_warning_noCURLConvert());
-        // }
-        //
-        // dialog.setDefaultMessage(data[2]);
-        // settings.setRouterName(data[0] + " - " + data[1]);
-        //
-        // }
-        // } catch (DialogClosedException e1) {
-        // e1.printStackTrace();
-        // } catch (DialogCanceledException e1) {
-        // e1.printStackTrace();
-        // }
-        //
-        // }
-        // }
-        // , new AbstractAction("Import CLR Script") {
-        //
-        // private static final long serialVersionUID = 1L;
-        //
-        // public void actionPerformed(final ActionEvent e) {
-        //
-        // final InputDialog clrDialog = new InputDialog(Dialog.STYLE_LARGE |
-        // Dialog.STYLE_HIDE_ICON, "CLR Import",
-        // "Please enter a Liveheader script below.", "", null, null, null);
-        // clrDialog.setPreferredSize(new Dimension(500, 400));
-        // try {
-        // final String clr = Dialog.getInstance().showDialog(clrDialog);
-        // if (clr == null) { return; }
-        //
-        // final String[] ret = CLRConverter.createLiveHeader(clr);
-        // if (ret != null) {
-        // settings.setRouterName(ret[0]);
-        // dialog.setDefaultMessage(ret[1]);
-        // }
-        // } catch (DialogClosedException e1) {
-        // e1.printStackTrace();
-        // } catch (DialogCanceledException e1) {
-        // e1.printStackTrace();
-        // }
-        //
-        // }
-        // }
-
-        // );
-        // String newScript;
-        // try {
-        // newScript = Dialog.getInstance().showDialog(dialog);
-        // if (newScript != null) {
-        //
-        // // changed script.reset router sender state
-        // if (settings.getScript() == null || newScript.equals(settings.getScript())) {
-        // settings.setAlreadySendToCollectServer2(false);
-        // }
-        // settings.setScript(newScript);
-        // }
-        // } catch (DialogClosedException e1) {
-        // e1.printStackTrace();
-        // } catch (DialogCanceledException e1) {
-        // e1.printStackTrace();
-        // }
-
     }
 
     private String getRouterName(String routerName) {
-
         if (StringUtils.isEmpty(routerName)) {
             return "<Unknown Router>";
         }
@@ -221,7 +141,6 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
     }
 
     protected void validateAndSet(RouterData rd) {
-
         if (!StringUtils.equals(settings.getScript(), rd.getScript())) {
             settings.setScript(rd.getScript());
             rd.setScriptID(null);
@@ -387,11 +306,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
         new EDTRunner() {
             protected void runInEDT() {
                 try {
-                    String str = "";
-                    if (getRouterName() != null) {
-                        str += getRouterName();
-                    }
-                    str = str.trim();
+                    String str = getRouterName();
 
                     if (settings.getRouterData().getManufactor() != null && settings.getRouterData().getManufactor().length() > 0) {
                         if (str.length() > 0) {
@@ -517,10 +432,13 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
     }
 
     protected String getRouterName() {
-        String ret = "<unknown router>";
-        if (settings.getRouterData() != null && StringUtils.isNotEmpty(settings.getRouterData().getRouterName())) {
-            ret = settings.getRouterData().getRouterName();
+        final RouterData routerData = settings.getRouterData();
+        if (routerData != null) {
+            final String ret = routerData.getRouterName();
+            if (StringUtils.isNotEmpty(ret)) {
+                return ret;
+            }
         }
-        return ret;
+        return "<unknown router>";
     }
 }
