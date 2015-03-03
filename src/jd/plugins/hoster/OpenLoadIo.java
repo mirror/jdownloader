@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "openload.io" }, urls = { "https?://(www\\.)?openload\\.io/f/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "openload.io" }, urls = { "https?://(www\\.)?openload\\.io/(f|embed)/[A-Za-z0-9]+" }, flags = { 0 })
 public class OpenLoadIo extends PluginForHost {
 
     public OpenLoadIo(PluginWrapper wrapper) {
@@ -70,8 +70,8 @@ public class OpenLoadIo extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        /* Forced https */
-        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
+        /* Force https & correct embedded urls */
+        link.setUrlDownload("https://openload.io/f" + link.getDownloadURL().substring(link.getDownloadURL().lastIndexOf("/")));
     }
 
     /*

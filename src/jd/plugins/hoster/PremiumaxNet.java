@@ -36,13 +36,12 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumax.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
-public class PremiumaxNet extends PluginForHost {
+public class PremiumaxNet extends antiDDoSForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            NOCHUNKS           = "NOCHUNKS";
@@ -78,7 +77,7 @@ public class PremiumaxNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or wrong login captcha input!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        br.getPage("http://www.premiumax.net/profile/");
+        getPage("http://www.premiumax.net/profile/");
         boolean is_freeaccount = false;
         final String expire = br.getRegex("<span>Premium until: </span><strong>([^<>\"]*?)</strong>").getMatch(0);
         if (expire != null) {
@@ -96,7 +95,7 @@ public class PremiumaxNet extends PluginForHost {
         // now let's get a list of all supported hosts:
         final ArrayList<String> supportedHosts = new ArrayList<String>();
 
-        br.getPage("http://www.premiumax.net/hosts.html");
+        getPage("http://www.premiumax.net/hosts.html");
         /* Apply supported hosts depending on account type */
         for (final String[] filehost : HOSTS) {
             final String crippledHost = filehost[0];
@@ -125,7 +124,7 @@ public class PremiumaxNet extends PluginForHost {
         if (dllink == null) {
             br.getHeaders().put("Accept", "*/*");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage("http://www.premiumax.net/direct_link.html?rand=0." + System.currentTimeMillis(), "captcha=&key=indexKEY&urllist=" + Encoding.urlEncode(link.getDownloadURL()));
+            postPage("http://www.premiumax.net/direct_link.html?rand=0." + System.currentTimeMillis(), "captcha=&key=indexKEY&urllist=" + Encoding.urlEncode(link.getDownloadURL()));
             if (br.containsHTML("temporary problem")) {
                 logger.info("Current hoster is temporarily not available via premiumax.net -> Disabling it");
                 tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
@@ -299,7 +298,7 @@ public class PremiumaxNet extends PluginForHost {
                         }
                         /* Avoids unnerving login captchas */
                         if (force) {
-                            br.getPage("http://www.premiumax.net/");
+                            getPage("http://www.premiumax.net/");
                             if (br.containsHTML(">Sign out</a>")) {
                                 return true;
                             } else {
@@ -314,7 +313,7 @@ public class PremiumaxNet extends PluginForHost {
                         }
                     }
                 }
-                br.getPage("http://www.premiumax.net/");
+                getPage("http://www.premiumax.net/");
                 final String stayin = br.getRegex("type=\"hidden\" name=\"stayloggedin\" value=\"([^<>\"]*?)\"").getMatch(0);
                 if (stayin == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -325,7 +324,7 @@ public class PremiumaxNet extends PluginForHost {
                 }
                 final DownloadLink dummyLink = new DownloadLink(this, "Account", "premiumax.net", "http://premiumax.net", true);
                 final String code = getCaptchaCode("http://www.premiumax.net/veriword.php", dummyLink);
-                br.postPage("http://www.premiumax.net/", "serviceButtonValue=login&service=login&stayloggedin=" + stayin + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&formcode=" + code);
+                postPage("http://www.premiumax.net/", "serviceButtonValue=login&service=login&stayloggedin=" + stayin + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&formcode=" + code);
                 if (br.getCookie(MAINPAGE, "WebLoginPE") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);

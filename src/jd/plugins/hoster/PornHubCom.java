@@ -28,7 +28,8 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhub.com" }, urls = { "http://(www\\.)?([a-z]{2}\\.)?pornhub\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+)" }, flags = { 0 })
 public class PornHubCom extends PluginForHost {
 
-    private String dlUrl = null;
+    private static final String html_privatevideo = "id=\"iconLocked\"";
+    private String              dlUrl             = null;
 
     public PornHubCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -50,8 +51,36 @@ public class PornHubCom extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        /* Offline links should also have nice filenames */
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9\\-_]+)$").getMatch(0));
+        requestVideo(downloadLink);
+        setBrowserExclusive();
+        br.setFollowRedirects(true);
+        /* E.g. for private videos, we do not get a downloadlink here. */
+        if (dlUrl != null) {
+            try {
+                if (!br.openGetConnection(dlUrl).getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(br.getHttpConnection().getLongContentLength());
+                    br.getHttpConnection().disconnect();
+                    return AvailableStatus.TRUE;
+                }
+            } finally {
+                if (br.getHttpConnection() != null) {
+                    br.getHttpConnection().disconnect();
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestVideo(link);
+        if (br.containsHTML(html_privatevideo)) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "You're not authorized to watch/download this private video");
+        }
         if (dlUrl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -63,27 +92,7 @@ public class PornHubCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        /* Offline links should also have nice filenames */
-        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9\\-_]+)$").getMatch(0));
-        requestVideo(downloadLink);
-        setBrowserExclusive();
-        br.setFollowRedirects(true);
-        try {
-            if (!br.openGetConnection(dlUrl).getContentType().contains("html")) {
-                downloadLink.setDownloadSize(br.getHttpConnection().getLongContentLength());
-                br.getHttpConnection().disconnect();
-                return AvailableStatus.TRUE;
-            }
-        } finally {
-            if (br.getHttpConnection() != null) {
-                br.getHttpConnection().disconnect();
-            }
-        }
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-    }
-
+    @SuppressWarnings("deprecation")
     private AvailableStatus requestVideo(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         br.setCookie("http://pornhub.com/", "age_verified", "1");
@@ -116,13 +125,23 @@ public class PornHubCom extends PluginForHost {
         if (file_name == null) {
             file_name = br.getRegex("\"section_title overflow\\-title overflow\\-title\\-width\">([^<>]*?)</h1>").getMatch(0);
         }
+        if (file_name == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        file_name = file_name.replace("\"", "'") + ".mp4";
+
+        if (br.containsHTML(html_privatevideo)) {
+            downloadLink.getLinkStatus().setStatusText("You're not authorized to watch/download this private video");
+            downloadLink.setName(file_name);
+            return AvailableStatus.TRUE;
+        }
 
         getVideoLink(downloadLink.getDownloadURL());
 
-        if (file_name == null || dlUrl == null) {
+        if (dlUrl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setFinalFileName(file_name.replace("\"", "'") + ".mp4");
+        downloadLink.setFinalFileName(file_name);
         return AvailableStatus.TRUE;
     }
 
@@ -186,7 +205,7 @@ public class PornHubCom extends PluginForHost {
 
     /**
      * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in JavaScript by Chris Veness
-     * 
+     *
      * @see <a
      *      href="http://csrc.nist.gov/publications/nistpubs/800-38a/sp800-38a.pdf">"Recommendation for Block Cipher Modes of Operation - Methods and Techniques"</a>
      */

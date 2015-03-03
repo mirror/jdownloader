@@ -47,6 +47,7 @@ public class PornStarNetworkCom extends PluginForHost {
         return "http://www.pornstarnetwork.com/terms.html";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -63,9 +64,9 @@ public class PornStarNetworkCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } else {
-            filename = br.getRegex("<div id=\"viewTitle\"><h1>Video \\- ([^<>\"]*?) \\&nbsp;</h1></div>").getMatch(0);
+            filename = br.getRegex("<div id=\"viewTitle\"><h1>Video \\- ([^<>]*?) \\&nbsp;</h1></div>").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+                filename = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
             }
             br.getPage("http://www.pornstarnetwork.com/streaming/getVideosZ/cntid/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0) + "/quality/sd/" + new Random().nextInt(1000));
             DLLINK = br.getRegex("swfUrl=(http[^<>\"]*?)\\&").getMatch(0);
@@ -78,7 +79,8 @@ public class PornStarNetworkCom extends PluginForHost {
             }
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
-        filename = filename.trim();
+        filename = Encoding.htmlDecode(filename).trim();
+        filename = encodeUnicode(filename);
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if ((ext == null || ext.length() > 5) && ext.contains(".mp4")) {
             ext = ".mp4";
@@ -117,6 +119,22 @@ public class PornStarNetworkCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    /** Avoid chars which are not allowed in filenames under certain OS' */
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     @Override

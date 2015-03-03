@@ -237,6 +237,7 @@ public class AllDebridCom extends PluginForHost {
         // here we can get a 503 error page, which causes an exception
         String genlink = br.getPage("https://www.alldebrid.com/service.php?pseudo=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&link=" + Encoding.urlEncode(link.getDownloadURL()) + "&view=1");
 
+        /* Possible html, unhandled: 1,;,https://tusfiles.net/xxxxxxxxxxxx : <span style='color:#a00;'>Invalid link</span>,;,0 */
         if (genlink == null || !genlink.matches("https?://.+")) {
             int retry = link.getIntegerProperty("retryCount", 0);
             logger.severe("Error: " + genlink);
