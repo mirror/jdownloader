@@ -1371,9 +1371,7 @@ public abstract class K2SApi extends PluginForHost {
         if (!prepBrSet) {
             prepBrowser(ibr);
         }
-        final boolean follows_redirects = ibr.isFollowingRedirects();
         URLConnectionAdapter con = null;
-        ibr.setFollowRedirects(true);
         try {
             con = ibr.openGetConnection(page);
             readConnection(con, ibr);
@@ -1383,7 +1381,6 @@ public abstract class K2SApi extends PluginForHost {
                 con.disconnect();
             } catch (Throwable e) {
             }
-            ibr.setFollowRedirects(follows_redirects);
         }
     }
 
@@ -1602,6 +1599,10 @@ public abstract class K2SApi extends PluginForHost {
                     if (ibr.getFormbyProperty("id", "ChallengeForm") != null || ibr.getFormbyProperty("id", "challenge-form") != null) {
                         logger.warning("Possible plugin error within cloudflare handling");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    // if it works, there should be a redirect.
+                    if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
+                        ibr.getPage(ibr.getRedirectLocation());
                     }
                 } else if (responseCode == 520 || responseCode == 522) {
                     // HTTP/1.1 520 Origin Error
