@@ -792,13 +792,13 @@ public class LetitBitNet extends PluginForHost {
             try {
                 key = ipf.get("id");
             } catch (Throwable e) {
-                key = ipf.getProperty("id", null) != null ? ipf.getProperty("id", null).toString() : null;
+                key = ipf.getProperty("id", null);
             }
             if (key == null) {
                 try {
                     key = ipf.get("ID");
                 } catch (Throwable e) {
-                    key = ipf.getProperty("ID", null) != null ? ipf.getProperty("ID", null).toString() : null;
+                    key = ipf.getProperty("ID", null);
                 }
             }
             if (key == null) {

@@ -565,7 +565,7 @@ public class Keep2ShareCc extends K2SApi {
                 after = login(account, false, null);
                 fresh = before != after;
             }
-            getPage(MAINPAGE + "/site/profile.html");
+            getPage("/site/profile.html");
             if (br.getURL().contains("login.html")) {
                 logger.info("Redirected to login page, seems cookies are no longer valid!");
                 synchronized (ACCLOCK) {
