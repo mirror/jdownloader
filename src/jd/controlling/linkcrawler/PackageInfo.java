@@ -1,7 +1,5 @@
 package jd.controlling.linkcrawler;
 
-import jd.controlling.linkcollector.LinknameCleaner;
-
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.UniqueAlltimeID;
 
@@ -81,30 +79,6 @@ public class PackageInfo {
             sb.append(getName());
         }
         return sb.length() == 0 ? null : sb.toString();
-    }
-
-    public static CrawledPackage createCrawledPackage(CrawledLink link) {
-        PackageInfo dpi = link.getDesiredPackageInfo();
-        if (dpi == null) {
-            return null;
-        }
-        CrawledPackage ret = new CrawledPackage();
-        /* fetch desired Packagename from info */
-        String pkgName = dpi.getName();
-        if (StringUtils.isEmpty(pkgName)) {
-            /* no info available, so lets cleanup filename */
-            pkgName = LinknameCleaner.cleanFileName(link.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
-            ret.setName(pkgName);
-        } else {
-            ret.setName(pkgName);
-        }
-        ret.setCreated(link.getCreated());
-        ret.setComment(dpi.getComment());
-
-        if (!StringUtils.isEmpty(dpi.getDestinationFolder())) {
-            ret.setDownloadFolder(dpi.getDestinationFolder());
-        }
-        return ret;
     }
 
     /**
