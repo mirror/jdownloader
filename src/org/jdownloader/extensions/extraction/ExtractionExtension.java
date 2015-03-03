@@ -336,27 +336,28 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         MenuManagerLinkgrabberTableContext.getInstance().unregisterExtender(this);
         DownloadController.getInstance().removeVetoListener(this);
         FileCreationManager.getInstance().getEventSender().removeListener(this);
-        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        if (!org.appwork.utils.Application.isHeadless()) {
+            SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
-            public void run() {
-                new EDTRunner() {
+                public void run() {
+                    new EDTRunner() {
 
-                    @Override
-                    protected void runInEDT() {
+                        @Override
+                        protected void runInEDT() {
 
-                        if (statusbarListener != null) {
-                            statusbarListener.cleanup();
-                            eventSender.removeListener(statusbarListener);
+                            if (statusbarListener != null) {
+                                statusbarListener.cleanup();
+                                eventSender.removeListener(statusbarListener);
+                            }
+                            if (bubbleSupport != null) {
+                                eventSender.removeListener(bubbleSupport);
+                                BubbleNotify.getInstance().unregisterTypes(bubbleSupport);
+                            }
                         }
-                        if (bubbleSupport != null) {
-                            eventSender.removeListener(bubbleSupport);
-                            BubbleNotify.getInstance().unregisterTypes(bubbleSupport);
-                        }
-                    }
-                };
-            }
-        });
-
+                    };
+                }
+            });
+        }
     }
 
     public void addPassword(String pw) {
