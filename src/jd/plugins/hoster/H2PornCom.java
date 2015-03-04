@@ -93,8 +93,10 @@ public class H2PornCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        DLLINK = null;
         setBrowserExclusive();
         br.setFollowRedirects(true);
         try {
@@ -106,9 +108,9 @@ public class H2PornCom extends PluginForHost {
         if (br.containsHTML("(<title>Page Not Found|>Channels</h1>)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<div class=\"video_view\">[\t\n\r ]+<h1 class=\"block_header\">(.*?)\\&nbsp;<g:plusone").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]*?)sex clip, watch online for free</title>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>(.*?) @ H2Porn</title>").getMatch(0);
+            filename = br.getRegex("<section class=\"heading\">[\t\n\r ]+<h2>([^<>\"]*?)</h2>").getMatch(0);
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

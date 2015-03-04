@@ -42,25 +42,29 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nicovideo.jp" }, urls = { "http://(www\\.)?nicovideo\\.jp/watch/(sm|so|nm)?\\d+" }, flags = { 2 })
 public class NicoVideoJp extends PluginForHost {
 
-    private static final String  MAINPAGE                     = "http://www.nicovideo.jp/";
+    private static final String  MAINPAGE                             = "http://www.nicovideo.jp/";
 
-    private static final String  ONLYREGISTEREDUSERTEXT       = "Only downloadable for registered users";
-    private static final String  CUSTOM_DATE                  = "CUSTOM_DATE";
-    private static final String  CUSTOM_FILENAME              = "CUSTOM_FILENAME";
-    private static final String  TYPE_SO                      = "http://(www\\.)?nicovideo\\.jp/watch/so\\d+";
-    private static final String  TYPE_WATCH                   = "http://(www\\.)?nicovideo\\.jp/watch/\\d+";
-    private static final String  default_extension            = ".flv";
-    private static final String  privatevid                   = "account.nicovideo.jp";
+    private static final String  ONLYREGISTEREDUSERTEXT               = "Only downloadable for registered users";
+    private static final String  CUSTOM_DATE                          = "CUSTOM_DATE";
+    private static final String  CUSTOM_FILENAME                      = "CUSTOM_FILENAME";
+    private static final String  TYPE_SO                              = "http://(www\\.)?nicovideo\\.jp/watch/so\\d+";
+    private static final String  TYPE_WATCH                           = "http://(www\\.)?nicovideo\\.jp/watch/\\d+";
+    private static final String  default_extension                    = ".flv";
+    private static final String  privatevid                           = "account.nicovideo.jp";
 
-    private static final String  NOCHUNKS                     = "NOCHUNKS";
-    private static final String  AVOID_ECONOMY_MODE           = "AVOID_ECONOMY_MODE";
+    private static final String  NOCHUNKS                             = "NOCHUNKS";
+    private static final String  AVOID_ECONOMY_MODE                   = "AVOID_ECONOMY_MODE";
 
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 2;
-    private static final int     economy_active_wait_minutes  = 30;
+    private static final int     FREE_MAXDOWNLOADS                    = 2;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS            = 2;
+    private static final int     economy_active_wait_minutes          = 30;
+    private static final String  html_account_needed                  = "account\\.nicovideo\\.jp/register\\?from=watch\\&mode=landing\\&sec=not_login_watch";
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(ACCOUNT_FREE_MAXDOWNLOADS);
+    private static AtomicInteger totalMaxSimultanFreeDownload         = new AtomicInteger(FREE_MAXDOWNLOADS);
+    private static AtomicInteger totalMaxSimultanFree_AccountDownload = new AtomicInteger(ACCOUNT_FREE_MAXDOWNLOADS);
     /* don't touch the following! */
-    private static AtomicInteger maxPremium                   = new AtomicInteger(1);
+    private static AtomicInteger maxPremium                           = new AtomicInteger(1);
+    private static AtomicInteger maxFree                              = new AtomicInteger(1);
 
     public NicoVideoJp(PluginWrapper wrapper) {
         super(wrapper);
@@ -114,7 +118,9 @@ public class NicoVideoJp extends PluginForHost {
 
         filename = getFormattedFilename(link);
         link.setName(filename);
-        link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.nicovideojp.only4registered", ONLYREGISTEREDUSERTEXT));
+        if (br.containsHTML(html_account_needed)) {
+            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.nicovideojp.only4registered", ONLYREGISTEREDUSERTEXT));
+        }
 
         return AvailableStatus.TRUE;
     }
@@ -156,7 +162,8 @@ public class NicoVideoJp extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        /* workaround for free/premium issue on stable 09581 */
+        return maxFree.get();
     }
 
     @Override
@@ -166,16 +173,95 @@ public class NicoVideoJp extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        try {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        String accessPOST = null;
+        final String linkid_url = new Regex(br.getURL(), "(\\d+)$").getMatch(0);
+        /* Most of the times an account is needed to watch/download videos. */
+        if (br.containsHTML(html_account_needed)) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
             }
+            throw new PluginException(LinkStatus.ERROR_FATAL, ONLYREGISTEREDUSERTEXT);
         }
-        throw new PluginException(LinkStatus.ERROR_FATAL, ONLYREGISTEREDUSERTEXT);
+        br.getPage("http://ext.nicovideo.jp/api/getthreadkey?language_id=1&thread=" + linkid_url);
+        br.getPage("http://ext.nicovideo.jp/thumb_watch/" + linkid_url + "?&w=644&h=408&nli=1");
+        final String playkey = br.getRegex("thumbPlayKey\\': \\'([^<>\"]*?)\\'").getMatch(0);
+        final String accessFromHash = br.getRegex("accessFromHash\\': \\'([^<>\"]*?)\\'").getMatch(0);
+        if (playkey == null || accessFromHash == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        accessPOST = "k=" + Encoding.urlEncode(playkey) + "&v=" + linkid_url + "&as3=1&accessFromDomain=&accessFromHash=" + Encoding.urlEncode(accessFromHash) + "&accessFromCount=0";
+        br.postPage("http://ext.nicovideo.jp/thumb_watch", accessPOST);
+        String dllink = new Regex(Encoding.htmlDecode(br.toString()), "\\&url=(http://.*?)\\&").getMatch(0);
+        if (dllink == null) {
+            dllink = new Regex(Encoding.htmlDecode(br.toString()), "(http://smile-com\\d+\\.nicovideo\\.jp/smile\\?v=[0-9\\.]+)").getMatch(0);
+        }
+        if (dllink == null) {
+            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+
+        int maxChunks = 0;
+        if (link.getBooleanProperty(NOCHUNKS, false)) {
+            maxChunks = 1;
+        }
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        preDownloadHandling(link);
+        try {
+            /* add a download slot */
+            controlFree(+1);
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (link.getBooleanProperty(NicoVideoJp.NOCHUNKS, false) == false) {
+                    link.setProperty(NicoVideoJp.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        } catch (final PluginException e) {
+            // New V2 errorhandling
+            /* unknown error, we disable multiple chunks */
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(NicoVideoJp.NOCHUNKS, false) == false) {
+                link.setProperty(NicoVideoJp.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            throw e;
+        } finally {
+            /* remove download slot */
+            controlFree(-1);
+        }
+    }
+
+    private void preDownloadHandling(final DownloadLink link) throws ParseException, PluginException {
+        final String contenttype = dl.getConnection().getContentType();
+        if (contenttype.equals("video/mp4")) {
+            link.setProperty("extension", ".mp4");
+        } else {
+            /* Check if the user allows lower quality .flv files. */
+            if (this.getPluginConfig().getBooleanProperty(AVOID_ECONOMY_MODE, false)) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Site is currently in economy mode", economy_active_wait_minutes * 60 * 1000l);
+            }
+            link.setProperty("extension", ".flv");
+        }
+        /* Now that we got the final extension of the file we can set the final filename. */
+        final String final_filename = getFormattedFilename(link);
+        link.setFinalFileName(final_filename);
     }
 
     @SuppressWarnings("deprecation")
@@ -221,19 +307,7 @@ public class NicoVideoJp extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String contenttype = dl.getConnection().getContentType();
-        if (contenttype.equals("video/mp4")) {
-            link.setProperty("extension", ".mp4");
-        } else {
-            /* Check if the user allows lower quality .flv files. */
-            if (this.getPluginConfig().getBooleanProperty(AVOID_ECONOMY_MODE, false)) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Site is currently in economy mode", economy_active_wait_minutes * 60 * 1000l);
-            }
-            link.setProperty("extension", ".flv");
-        }
-        /* Now that we got the final extension of the file we can set the final filename. */
-        final String final_filename = getFormattedFilename(link);
-        link.setFinalFileName(final_filename);
+        preDownloadHandling(link);
         try {
             /* add a download slot */
             controlPremium(+1);
@@ -349,9 +423,15 @@ public class NicoVideoJp extends PluginForHost {
      *            (+1|-1)
      */
     public synchronized void controlPremium(final int num) {
-        logger.info("maxFree was = " + maxPremium.get());
-        maxPremium.set(Math.min(Math.max(1, maxPremium.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
-        logger.info("maxFree now = " + maxPremium.get());
+        logger.info("maxPremium was = " + maxPremium.get());
+        maxPremium.set(Math.min(Math.max(1, maxPremium.addAndGet(num)), totalMaxSimultanFree_AccountDownload.get()));
+        logger.info("maxPremium now = " + maxPremium.get());
+    }
+
+    public synchronized void controlFree(final int num) {
+        logger.info("maxFree was = " + maxFree.get());
+        maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
+        logger.info("maxFree now = " + maxFree.get());
     }
 
     @Override

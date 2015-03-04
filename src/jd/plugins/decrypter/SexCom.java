@@ -106,6 +106,9 @@ public class SexCom extends PluginForDecrypt {
 
     private void findLink() throws DecrypterException, IOException {
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)-  Pin #\\d+ \\| Sex\\.com\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?)\\| Sex\\.com</title>").getMatch(0);
+        }
         // xvideos.com 1
         String externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
         if (externID == null) {
@@ -223,7 +226,7 @@ public class SexCom extends PluginForDecrypt {
             return;
         }
         // pornhub handling number 3
-        externID = br.getRegex("\"(http://(www\\.)?pornhub\\.com/view_video\\.php\\?viewkey=[a-z0-9]+)\"").getMatch(0);
+        externID = br.getRegex("\"(https?://(www\\.)?pornhub\\.com/view_video\\.php\\?viewkey=[a-z0-9]+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
             return;
@@ -425,6 +428,11 @@ public class SexCom extends PluginForDecrypt {
             return;
         }
         externID = br.getRegex("\"(http://(www\\.)?fapdu\\.com/[a-z0-9\\-]+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return;
+        }
+        externID = br.getRegex("\"(http://(www\\.)?youtube\\.com/watch\\?v=[A-Za-z0-9\\-_]+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
             return;
