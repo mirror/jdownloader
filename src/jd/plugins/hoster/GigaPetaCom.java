@@ -128,7 +128,7 @@ public class GigaPetaCom extends PluginForHost {
             } else {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "dd.MM.yyyy HH:mm", null));
             }
-            ai.setStatus("Premium User");
+            ai.setStatus("Premium Account");
         } else {
             ai.setStatus("Registered (free) User");
         }
@@ -196,7 +196,11 @@ public class GigaPetaCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie("http://gigapeta.com", "lang", "us");
         br.setDebug(true);
-        br.getPage("http://gigapeta.com/");
+        /*
+         * Workaround for a serverside 502 error (date: 04.03.15). Accessing the wrong ('/dl/') link next line in the code will return a 404
+         * error but we can login and download fine then.
+         */
+        br.getPage("http://gigapeta.com/dl/");
         final String auth_token = br.getRegex("name=\"auth_token\" value=\"([a-z0-9]+)\"").getMatch(0);
         final String lang = System.getProperty("user.language");
         if (auth_token == null) {
@@ -206,7 +210,7 @@ public class GigaPetaCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        br.postPage("http://gigapeta.com/", "auth_login=" + Encoding.urlEncode(account.getUser()) + "&auth_passwd=" + Encoding.urlEncode(account.getPass()) + "&auth_token=" + auth_token);
+        br.postPage(br.getURL(), "auth_login=" + Encoding.urlEncode(account.getUser()) + "&auth_passwd=" + Encoding.urlEncode(account.getPass()) + "&auth_token=" + auth_token);
         if (br.getCookie("http://gigapeta.com/", "adv_sess") == null) {
             if ("de".equalsIgnoreCase(lang)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
