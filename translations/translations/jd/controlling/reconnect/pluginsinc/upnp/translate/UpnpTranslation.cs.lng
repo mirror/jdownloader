@@ -1,4 +1,4 @@
-AutoDetectAction_run_failed=Byla nalezena UPnP zařízení, ale nešlo provést znovupřipojení.\nZkuste místo toho Live Header znovupřipojení!
+AutoDetectAction_run_failed2=Nenalezena žádná funkční metoda UPnP znovupřipojení.\nZkuste místo toho Live Header znovupřipojení!
 AutoDetectUpnpAction_AutoDetectUpnpAction_=Pokusí se najít všechna UPnP znovupřipojitelná zařízení ve vaší síti.\nVětšina routerů FritzBox může být tímto způsobem znovupřipojena.
 UPNPReconnectInvoker_getName_=Znovupřipojení UPnP routeru
 UPNPRouterPlugin_run_error=Nelze nalézt žádná UPnP zařízení. Zkuste místo toho Live Header znovupřipojení!
