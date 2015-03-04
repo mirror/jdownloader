@@ -1,7 +1,7 @@
 ABSTRACTDIALOG_BUTTON_CANCEL=Zrušit
 ABSTRACTDIALOG_BUTTON_OK=OK
 ABSTRACTDIALOG_STYLE_SHOW_DO_NOT_DISPLAY_AGAIN=Toto již znovu nezobrazovat
-AccountNew_AccountNew_message=Zadejte svoje přihlašovací údaje sem
+AccountNew_AccountNew_message=Zadejte sem své přihlašovací údaje
 AccountNew_AccountNew_title=Zadejte přihlašovací údaje
 AccountNew_layoutDialogContent_accountname=Uživatelské jméno
 AccountNew_layoutDialogContent_password=Heslo
@@ -91,7 +91,7 @@ Statusbar_Statusbar_visiturl_tooltip=Navštívit naši domovskou stránku
 TIMERDIALOG_TOOLTIP_TIMERLABEL=Tento dialog má odpočet a zavře se za několik sekund. Klikněte pro zrušení odpočtu.
 active=Povoleno
 connecting=Připojování...
-crossSystem_open_url_failed_msg=Otevřete tento odkaz ve vašem prohlížeči:
+crossSystem_open_url_failed_msg=Otevřete tento odkaz ve svém prohlížeči:
 download_msg=Stahování souboru
 download_title=Stahování
 extdatecolumn_dateandtimeformat=dd.MM.yy HH:mm
