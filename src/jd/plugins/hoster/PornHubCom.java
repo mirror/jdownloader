@@ -25,7 +25,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhub.com" }, urls = { "http://(www\\.)?([a-z]{2}\\.)?pornhub\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhub.com" }, urls = { "https?://(www\\.)?([a-z]{2}\\.)?pornhub\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+)" }, flags = { 0 })
 public class PornHubCom extends PluginForHost {
 
     private static final String html_privatevideo = "id=\"iconLocked\"";
@@ -35,7 +35,9 @@ public class PornHubCom extends PluginForHost {
         super(wrapper);
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("https://", "http://"));
         link.setUrlDownload(link.getDownloadURL().replaceAll("://(www\\.)?([a-z]{2}\\.)?", "://"));
         link.setUrlDownload(link.getDownloadURL().replaceAll("/embed/", "/view_video.php?viewkey="));
     }

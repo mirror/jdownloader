@@ -56,7 +56,7 @@ public class FilePileEu extends PluginForHost {
     }
 
     // For sites which use this script: http://www.yetishare.com/
-    // YetiShareBasic Version 0.5.0-psp
+    // YetiShareBasic Version 0.5.1-psp
     // mods:
     // limit-info: untested, finallinks timed out --> Set default limits
     // protocol: no https
@@ -422,10 +422,11 @@ public class FilePileEu extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
+                br.getPage(this.getProtocol() + this.getHost() + "/");
                 final String lang = System.getProperty("user.language");
                 final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
                 if (useOldLoginMethod) {
-                    br.postPage("http://" + this.getProtocol() + "/login." + type, "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
+                    br.postPage(this.getProtocol() + this.getHost() + "/login." + type, "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
                     if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout\\.html\">logout \\(")) {
                         if ("de".equalsIgnoreCase(lang)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);

@@ -803,9 +803,13 @@ public class FileparadoxIn extends PluginForHost {
         String availabletraffic = cbr.getRegex("Traffic available.*?:</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
         if (!inValidate(availabletraffic) && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic = availabletraffic.trim();
-            // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
-            if (!availabletraffic.startsWith("-")) {
-                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            /*
+             * Special handling (04.03.15) - according to this user, as long as there is traffic on the account you can download files with
+             * any filesize: https://board.jdownloader.org/showthread.php?t=62600
+             */
+            final long trafficLeftLong = SizeFormatter.getSize(availabletraffic);
+            if (trafficLeftLong > 0) {
+                ai.setUnlimitedTraffic();
             } else {
                 ai.setTrafficLeft(0);
             }
