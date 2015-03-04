@@ -158,7 +158,12 @@ public class FreeDiscPl extends PluginForHost {
                             throw (PluginException) e;
                         }
                     }
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+                    final String lang = System.getProperty("user.language");
+                    if ("pl".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Pobieranie wybranego pliku dozwolone jedynie dla użytkowników Premium");
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+                    }
                 }
                 dllink = "http://freedisc.pl/download/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
             }
@@ -245,9 +250,12 @@ public class FreeDiscPl extends PluginForHost {
                 br.setFollowRedirects(false);
                 br.getPage("http://freedisc.pl/start");
                 br.postPageRaw("http://freedisc.pl/account/signin_set", "{\"email_login\":\"" + account.getUser() + "\",\"password_login\":\"" + account.getPass() + "\",\"remember_login\":1,\"provider_login\":\"\"}");
-                if (br.getCookie(MAINPAGE, "login_remember") == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                if (br.getCookie(MAINPAGE, "login_remember") == null && br.getCookie(MAINPAGE, "cookie_login_remember") == null) {
+                    final String lang = System.getProperty("user.language");
+                    if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else if ("pl".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłędna nazwa użytkownika/hasło lub nie obsługiwany typ konta!\r\nSzybka pomoc:\r\nJesteś pewien, że poprawnie wprowadziłeś użytkownika/hasło?\r\nJeśli twoje hasło zawiera niektóre specjalne znaki - proszę zmień je (usuń) i wprowadź dane ponownie!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
@@ -297,6 +305,8 @@ public class FreeDiscPl extends PluginForHost {
                 final String lang = System.getProperty("user.language");
                 if ("de".equalsIgnoreCase(lang)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else if ("pl".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłędna nazwa użytkownika/hasło lub nie obsługiwany typ konta!\r\nSzybka pomoc:\r\nJesteś pewien, że poprawnie wprowadziłeś użytkownika/hasło?\r\nJeśli twoje hasło zawiera niektóre specjalne znaki - proszę zmień je (usuń) i wprowadź dane ponownie!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
