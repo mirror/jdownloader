@@ -692,6 +692,8 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         }
         if (fileName != null) {
             try {
+                System.out.println(type);
+                System.out.println(content);
                 File tmp = Application.getTempResource(fileName);
                 byte[] write = IO.readStream(-1, new Base64InputStream(new ByteArrayInputStream(content.substring(13).getBytes("UTF-8"))));
                 IO.writeToFile(tmp, write);
