@@ -1,6 +1,5 @@
 package org.jdownloader.api.linkcollector;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,7 +23,7 @@ import org.appwork.remoteapi.APIQuery;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.Base64InputStream;
+import org.jdownloader.api.linkcollector.v2.LinkCollectorAPIImplV2;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
@@ -577,7 +576,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
         if (fileName != null) {
             try {
                 File tmp = Application.getTempResource(fileName);
-                byte[] write = IO.readStream(-1, new Base64InputStream(new ByteArrayInputStream(content.substring(13).getBytes("UTF-8"))));
+                byte[] write = IO.readStream(-1, LinkCollectorAPIImplV2.getInputStream(content));
                 IO.writeToFile(tmp, write);
                 LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MYJD), "file://" + tmp.getAbsolutePath()));
             } catch (IOException e) {

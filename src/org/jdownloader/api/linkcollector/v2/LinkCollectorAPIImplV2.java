@@ -3,6 +3,7 @@ package org.jdownloader.api.linkcollector.v2;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -680,6 +681,14 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
 
     }
 
+    public static InputStream getInputStream(String dataURL) throws IOException {
+        final int base64Index = dataURL.indexOf(";base64,");
+        if (base64Index == -1 || base64Index + 8 >= dataURL.length()) {
+            throw new IOException("Invalid DataURL: " + dataURL);
+        }
+        return new Base64InputStream(new ByteArrayInputStream(dataURL.substring(base64Index + 8).getBytes("UTF-8")));
+    }
+
     @Override
     public void addContainer(String type, String content) {
         String fileName = null;
@@ -692,10 +701,8 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         }
         if (fileName != null) {
             try {
-                System.out.println(type);
-                System.out.println(content);
                 File tmp = Application.getTempResource(fileName);
-                byte[] write = IO.readStream(-1, new Base64InputStream(new ByteArrayInputStream(content.substring(13).getBytes("UTF-8"))));
+                byte[] write = IO.readStream(-1, getInputStream(content));
                 IO.writeToFile(tmp, write);
                 LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MYJD), "file://" + tmp.getAbsolutePath()));
             } catch (IOException e) {
