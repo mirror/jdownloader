@@ -47,7 +47,10 @@ public class NicoVideoJp extends PluginForHost {
     private static final String  ONLYREGISTEREDUSERTEXT               = "Only downloadable for registered users";
     private static final String  CUSTOM_DATE                          = "CUSTOM_DATE";
     private static final String  CUSTOM_FILENAME                      = "CUSTOM_FILENAME";
+    private static final String  TYPE_NM                              = "http://(www\\.)?nicovideo\\.jp/watch/nm\\d+";
+    private static final String  TYPE_SM                              = "http://(www\\.)?nicovideo\\.jp/watch/sm\\d+";
     private static final String  TYPE_SO                              = "http://(www\\.)?nicovideo\\.jp/watch/so\\d+";
+    /* Other types may redirect to this type. This is the only type which is also downloadable without account (sometimes?). */
     private static final String  TYPE_WATCH                           = "http://(www\\.)?nicovideo\\.jp/watch/\\d+";
     private static final String  default_extension                    = ".flv";
     private static final String  privatevid                           = "account.nicovideo.jp";
@@ -178,7 +181,7 @@ public class NicoVideoJp extends PluginForHost {
         String accessPOST = null;
         final String linkid_url = new Regex(br.getURL(), "(\\d+)$").getMatch(0);
         /* Most of the times an account is needed to watch/download videos. */
-        if (br.containsHTML(html_account_needed)) {
+        if (br.containsHTML(html_account_needed) || !br.getURL().matches(TYPE_WATCH)) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
@@ -267,6 +270,7 @@ public class NicoVideoJp extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        String dllink = null;
         final String linkid_url = getLID(link);
         requestFileInformation(link);
         login(account);
@@ -281,16 +285,22 @@ public class NicoVideoJp extends PluginForHost {
         } else if (br.containsHTML(">This is a private video and not available")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Now downloadable: This is a private video");
         }
-        if (link.getDownloadURL().matches(TYPE_SO) || link.getDownloadURL().matches(TYPE_WATCH)) {
+        if (br.getURL().matches(TYPE_WATCH)) {
+            /* We already got the finallink in our html code but it is double-htmlencoded. */
+            String flashvars = br.getRegex("id=\"watchAPIDataContainer\" style=\"display:none\">(.*?)</div>").getMatch(0);
+            if (flashvars == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            flashvars = Encoding.htmlDecode(flashvars);
+            flashvars = Encoding.htmlDecode(flashvars);
+            br.getRequest().setHtmlCode(flashvars);
+        } else if (br.getURL().matches(TYPE_SO)) {
             br.postPage("http://flapi.nicovideo.jp/api/getflv", "v=" + linkid_url);
-        } else {
+        } else if (br.getURL().matches(TYPE_NM) || link.getDownloadURL().matches(TYPE_SM)) {
             final String vid = new Regex(br.getURL(), "((sm|nm)\\d+)$").getMatch(0);
             br.postPage("http://flapi.nicovideo.jp/api/getflv", "v=" + vid);
         }
-        String dllink = new Regex(Encoding.htmlDecode(br.toString()), "\\&url=(http://.*?)\\&").getMatch(0);
-        if (dllink == null) {
-            dllink = new Regex(Encoding.htmlDecode(br.toString()), "(http://smile-com\\d+\\.nicovideo\\.jp/smile\\?v=[0-9\\.]+)").getMatch(0);
-        }
+        dllink = getDllink_account();
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -336,6 +346,14 @@ public class NicoVideoJp extends PluginForHost {
             /* remove download slot */
             controlPremium(-1);
         }
+    }
+
+    private String getDllink_account() {
+        String dllink = new Regex(Encoding.htmlDecode(br.toString()), "\\&url=(http://.*?)\\&").getMatch(0);
+        if (dllink == null) {
+            dllink = new Regex(Encoding.htmlDecode(br.toString()), "(http://smile\\-[a-z]+\\d+\\.nicovideo\\.jp/smile\\?(?:v|m)=[0-9\\.]+)").getMatch(0);
+        }
+        return dllink;
     }
 
     private void login(final Account account) throws Exception {
