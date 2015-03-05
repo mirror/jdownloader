@@ -223,10 +223,9 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
             sb.append("socks5://");
             break;
         case DIRECT:
-            if (proxy.getLocalIP() != null) {
+            if (proxy.getLocal() != null) {
                 sb.append("direct://");
-                final String ip = proxy.getLocalIP().getHostAddress();
-                sb.append(ip);
+                sb.append(proxy.getLocal());
                 return sb.toString();
             }
             return null;

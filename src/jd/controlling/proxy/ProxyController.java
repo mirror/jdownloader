@@ -556,7 +556,7 @@ public class ProxyController implements ProxySelectorInterface {
             case NONE:
                 return new NoProxySelector(proxy);
             case DIRECT:
-                if (proxy.getLocalIP() == null) {
+                if (proxy.getLocal() == null) {
                     return new NoProxySelector(proxy);
                 } else {
                     return new SingleDirectGatewaySelector(proxy);
