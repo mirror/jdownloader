@@ -150,15 +150,15 @@ public class OneFichierCom extends PluginForHost {
                 for (final DownloadLink dllink : links) {
                     // final String addedLink = dllink.getDownloadURL();
                     final String addedlink_id = this.getFID(dllink);
-                    if (br.containsHTML(addedlink_id + ";;;(NOT FOUND|BAD LINK)")) {
+                    if (br.containsHTML(addedlink_id + "[^;]*;;;(NOT FOUND|BAD LINK)")) {
                         dllink.setAvailable(false);
                         dllink.setName(addedlink_id);
-                    } else if (br.containsHTML(addedlink_id + ";;;PRIVATE")) {
+                    } else if (br.containsHTML(addedlink_id + "[^;]*;;;PRIVATE")) {
                         dllink.setProperty("privatelink", true);
                         dllink.setAvailable(true);
                         dllink.setName(addedlink_id);
                     } else {
-                        final String[] linkInfo = br.getRegex(addedlink_id + ";([^;]+);(\\d+)").getRow(0);
+                        final String[] linkInfo = br.getRegex(addedlink_id + "[^;]*;([^;]+);(\\d+)").getRow(0);
                         if (linkInfo.length != 2) {
                             logger.warning("Linkchecker for 1fichier.com is broken!");
                             return false;
