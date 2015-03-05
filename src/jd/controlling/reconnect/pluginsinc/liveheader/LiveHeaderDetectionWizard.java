@@ -64,6 +64,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
 
 public class LiveHeaderDetectionWizard {
@@ -887,6 +888,7 @@ public class LiveHeaderDetectionWizard {
 
     public void sendRouter(ProcessCallBackAdapter processCallBack) throws UnknownHostException, InterruptedException {
         try {
+
             LiveHeaderReconnectSettings settings = JsonConfig.create(LiveHeaderReconnectSettings.class);
             String script = settings.getScript();
             // wait until we are online
@@ -897,7 +899,7 @@ public class LiveHeaderDetectionWizard {
                 UIOManager.I().showErrorMessage(_GUI._.LiveHeaderDetectionWizard_sendRouter_na());
                 return;
             }
-
+            StatsManager.I().track("shareReconnectScript/start");
             // if (JsonConfig.create(ReconnectConfig.class).getSuccessCounter() < 3 && false) {
             // // we have to validate the script first
             //
@@ -912,7 +914,7 @@ public class LiveHeaderDetectionWizard {
             processCallBack.setStatusString(getPlugin(), T._.LiveHeaderDetectionWizard_runOnlineScan_collect());
             collectInfo();
             specialCollectInfo();
-
+            StatsManager.I().track("shareReconnectScript/collect1");
             while (true) {
                 try {
                     while (true) {
@@ -998,9 +1000,10 @@ public class LiveHeaderDetectionWizard {
                     }
                 }
             }
+            StatsManager.I().track("shareReconnectScript/validated");
             scanRemoteInfo();
             specials();
-
+            StatsManager.I().track("shareReconnectScript/upload");
             uploadData(script);
         } catch (DialogNoAnswerException e) {
             throw new InterruptedException();

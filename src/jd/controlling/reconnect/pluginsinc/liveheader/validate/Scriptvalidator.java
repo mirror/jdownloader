@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,6 +24,7 @@ import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpserver.HttpConnection;
@@ -272,7 +274,7 @@ public class Scriptvalidator {
                     final String key = params[i - 1];
                     final String modifiedVariable = this.getModifiedVariable(key);
                     // logger.finer("Replace variable: " + modifiedVariable + "(" + key + ")");
-                    req.append(modifiedVariable);
+                    req.append(URLEncode.encodeRFC2396(modifiedVariable));
                     if (i < tmpLength) {
                         req.append(tmp[i]);
                     }
@@ -288,7 +290,7 @@ public class Scriptvalidator {
                     final String key = params[i - 1];
                     final String modifiedVariable = this.getModifiedVariable(key);
                     // logger.finer("Replace variable: " + modifiedVariable + "(" + key + ")");
-                    req.append(modifiedVariable);
+                    req.append(URLEncode.encodeRFC2396(modifiedVariable));
                     if (i < tmpLength) {
                         req.append(tmp[i]);
                     }
@@ -330,7 +332,7 @@ public class Scriptvalidator {
                 li--;
                 continue;
             }
-            requestProperties.put(p[0].trim(), requestLines[li].substring(p[0].length() + 1).trim());
+            requestProperties.put(p[0].trim(), URLDecoder.decode(requestLines[li].substring(p[0].length() + 1).trim(), "ASCII"));
 
             if (StringUtils.equalsIgnoreCase(p[0].trim(), "Referer") || StringUtils.equalsIgnoreCase(p[0].trim(), "Referrer")) {
                 onHost(new URL(requestProperties.get(p[0].trim())).getHost());
@@ -371,7 +373,7 @@ public class Scriptvalidator {
                 try {
                     for (KeyValuePair pa : HttpConnection.parseParameterList(url.getQuery())) {
 
-                        append(sb, "\tParameter #" + (i++) + ": \t" + pa.key + "\t=\t" + pa.value);
+                        append(sb, "\tParameter #" + (i++) + ": \t" + pa.key + "\t=\t" + URLDecoder.decode(pa.value, "ASCII"));
                         onParameter(pa.key, pa.value);
                     }
                 } catch (Exception e) {
@@ -397,11 +399,11 @@ public class Scriptvalidator {
                 int i = 1;
                 try {
                     for (KeyValuePair pa : HttpConnection.parseParameterList(url.getQuery())) {
-                        append(sb, "\tParameter #" + (i++) + ": \t" + pa.key + "\t=\t" + pa.value);
+                        append(sb, "\tParameter #" + (i++) + ": \t" + pa.key + "\t=\t" + URLDecoder.decode(pa.value, "ASCII"));
                         onParameter(pa.key, pa.value);
                     }
                     for (KeyValuePair pa : HttpConnection.parseParameterList(poster)) {
-                        append(sb, "\tParameter #" + (i++) + ": \t" + pa.key + "\t=\t" + pa.value);
+                        append(sb, "\tParameter #" + (i++) + ": \t" + pa.key + "\t=\t" + URLDecoder.decode(pa.value, "ASCII"));
                         onParameter(pa.key, pa.value);
                     }
                 } catch (Exception e) {
