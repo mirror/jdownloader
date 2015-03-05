@@ -238,18 +238,20 @@ public abstract class K2SApi extends PluginForHost {
      * @param downloadLink
      * @throws PluginException
      */
-    private void setFUID(final DownloadLink downloadLink) throws PluginException {
-        String linkID = getFUID(downloadLink);
-        if (linkID != null) {
-            linkID = getDomain() + "://" + linkID;
-            try {
-                downloadLink.setLinkID(linkID);
-            } catch (Throwable e) {
-                // not in stable
-                downloadLink.setProperty("LINKDUPEID", linkID);
+    protected void setFUID(final DownloadLink downloadLink) throws PluginException {
+        if (downloadLink.getSetLinkID() == null) {
+            String linkID = getFUID(downloadLink);
+            if (linkID != null) {
+                linkID = getDomain() + "://" + linkID;
+                try {
+                    downloadLink.setLinkID(linkID);
+                } catch (Throwable e) {
+                    // not in stable
+                    downloadLink.setProperty("LINKDUPEID", linkID);
+                }
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 

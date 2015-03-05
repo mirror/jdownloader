@@ -130,6 +130,12 @@ public class Keep2ShareCc extends K2SApi {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         // link cleanup, but respect users protocol choosing.
+        if (link.getSetLinkID() == null) {
+            try {
+                setFUID(link);
+            } catch (PluginException e) {
+            }
+        }
         link.setUrlDownload(link.getDownloadURL().replaceFirst("^https?://", getProtocol()));
         link.setUrlDownload(link.getDownloadURL().replace("keep2sharedecrypted.cc/", "k2s.cc/"));
         link.setUrlDownload(link.getDownloadURL().replace("keep2share.cc/", "k2s.cc/"));
