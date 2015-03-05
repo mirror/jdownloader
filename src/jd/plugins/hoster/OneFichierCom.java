@@ -53,9 +53,9 @@ import org.appwork.utils.formatter.SizeFormatter;
 public class OneFichierCom extends PluginForHost {
 
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
-    private final String         PASSWORDTEXT                 = "(Accessing this file is protected by password|Please put it on the box bellow|Veuillez le saisir dans la case ci-dessous)";
+    private final String         HTML_PASSWORDPROTECTED       = "(This file is Password Protected|Ce fichier est protégé par mot de passe)";
 
-    private final String         FREELINK                     = "freeLink";
+    private final String         PROPERTY_FREELINK            = "freeLink";
     private final String         PROPERTY_PREMLINK            = "premLink";
     private final String         PREFER_RECONNECT             = "PREFER_RECONNECT";
     private final String         PREFER_SSL                   = "PREFER_SSL";
@@ -165,6 +165,7 @@ public class OneFichierCom extends PluginForHost {
                         }
                         dllink.setProperty("privatelink", false);
                         dllink.setAvailable(true);
+                        /* Trust API information. */
                         dllink.setFinalFileName(Encoding.htmlDecode(linkInfo[0]));
                         dllink.setDownloadSize(SizeFormatter.getSize(linkInfo[1]));
                     }
@@ -179,68 +180,21 @@ public class OneFichierCom extends PluginForHost {
         return true;
     }
 
-    @SuppressWarnings("deprecation")
+    /* Old linkcheck removed AFTER revision 29396 */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        correctDownloadLink(link);
-        pwProtected = false;
         this.setBrowserExclusive();
+        /* Offline links should also get nice filenames. */
+        link.setName(this.getFID(link));
+        correctDownloadLink(link);
         prepareBrowser(br);
         br.setFollowRedirects(false);
-        br.setCustomCharset("utf-8");
-        br.postPage(correctProtocol("http://1fichier.com/check_links.pl"), "links[]=" + Encoding.urlEncode(link.getDownloadURL()));
-        if (br.containsHTML(";;;NOT FOUND|;;;BAD LINK")) {
+        checkLinks(new DownloadLink[] { link });
+        if (!link.isAvailabilityStatusChecked()) {
+            return AvailableStatus.UNCHECKED;
+        }
+        if (link.isAvailabilityStatusChecked() && !link.isAvailable()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (br.containsHTML(">Software error:<")) {
-            link.getLinkStatus().setStatusText("Cannot check availibility because of a server error!");
-            return AvailableStatus.UNCHECKABLE;
-        }
-        if (br.toString().equals("wait")) {
-            br.getPage(link.getDownloadURL());
-            final String siteFilename = br.getRegex(">Nom du fichier :</th><td>([^<>\"]*?)</td>").getMatch(0);
-            String siteFilesize = br.getRegex("<th>Taille :</th><td>([^<>\"]*?)</td>").getMatch(0);
-            if (siteFilename == null || siteFilesize == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            link.setName(Encoding.htmlDecode(siteFilename));
-            siteFilesize = siteFilesize.replace("ko", "kb");
-            siteFilesize = siteFilesize.replace("Mo", "MB");
-            siteFilesize = siteFilesize.replace("Go", "GB");
-            link.setDownloadSize(SizeFormatter.getSize(siteFilesize));
-            return AvailableStatus.TRUE;
-        }
-        if (br.containsHTML("password")) {
-            pwProtected = true;
-            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.onefichiercom.passwordprotected", "This link is password protected"));
-            return AvailableStatus.UNCHECKABLE;
-        }
-        final String[] linkInfo = br.getRegex("https?://[^;]+;([^;]+);(\\d+)").getRow(0);
-        if (linkInfo == null || linkInfo.length == 0) {
-            logger.warning("Available Status broken for link: " + link.getDownloadURL());
-            return null;
-        }
-        String filename = linkInfo[0];
-        if (filename == null) {
-            filename = br.getRegex(">File name :</th><td>([^<>\"]*?)</td>").getMatch(0);
-        }
-        String filesize = linkInfo[1];
-        if (filesize == null) {
-            filesize = br.getRegex(">File size :</th><td>([^<>\"]*?)</td></tr>").getMatch(0);
-        }
-        if (filename != null) {
-            link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        }
-        if (filesize != null) {
-            long size = 0;
-            link.setDownloadSize(size = SizeFormatter.getSize(filesize));
-            if (size > 0) {
-                link.setProperty("VERIFIEDFILESIZE", size);
-            }
-        }
-
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return AvailableStatus.TRUE;
     }
@@ -254,52 +208,32 @@ public class OneFichierCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        AvailableStatus availableStatus = requestFileInformation(downloadLink);
-        if (availableStatus != null) {
-            switch (availableStatus) {
-            case FALSE:
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            case UNCHECKABLE:
-            case UNCHECKED:
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporarily not available", 15 * 60 * 1000l);
-            case TRUE:
-                doFree(downloadLink);
-            }
-        } else {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporarily not available", 15 * 60 * 1000l);
-        }
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        doFree(downloadLink);
     }
 
-    /** Makes sure that we're allowed to download a link. */
-    private void checkDownloadable(final DownloadLink dl) throws PluginException {
-        if (dl.getBooleanProperty("privatelink", false)) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This link is private! You're not authozized to download it.");
-        }
-    }
-
-    @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        checkDownloadable(downloadLink);
+        this.setConstants(null, downloadLink);
+        checkDownloadable();
         // to prevent wasteful requests.
         int i = 0;
         // 20140920 - stable needs this, as it seems to behave differently! raztoki
-        // String dllink = downloadLink.getStringProperty(FREELINK, downloadLink.getDownloadURL() + "/en/index.html");
-        String dllink = downloadLink.getStringProperty(FREELINK, downloadLink.getDownloadURL());
+        /* The following code will cover saved directlinks and hotlinked-links. */
+        String dllink = downloadLink.getStringProperty(PROPERTY_FREELINK, this.getDownloadlinkNEW(downloadLink));
         br.setFollowRedirects(true);
         // at times the second chunk creates 404 errors!
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxchunks_free);
         if (dl.getConnection().getContentType().contains("html")) {
             /* could not resume, fetch new link */
             br.followConnection();
-            downloadLink.setProperty(FREELINK, Property.NULL);
+            downloadLink.setProperty(PROPERTY_FREELINK, Property.NULL);
             dllink = null;
             br.setFollowRedirects(false);
-            br.setCustomCharset("utf-8");
         } else {
             /* resume download */
             dl.startDownload();
-            downloadLink.setProperty(FREELINK, dllink);
+            downloadLink.setProperty(PROPERTY_FREELINK, dllink);
             return;
         }
         // use the English page, less support required
@@ -308,15 +242,22 @@ public class OneFichierCom extends PluginForHost {
             i++;
             br.setFollowRedirects(true);
             // redirect log 2414663166931
-            if (i != 1) {
+            if (i > 1) {
                 // no need to do this link twice as it's been done above.
-                br.getPage(downloadLink.getDownloadURL() + "/en/index.html");
+                br.getPage(this.getDownloadlinkNEW(downloadLink));
             }
             br.setFollowRedirects(false);
 
             errorHandling(downloadLink, br, true);
-            if (br.containsHTML(PASSWORDTEXT) || pwProtected) {
-                handlePassword(downloadLink);
+            if (pwProtected) {
+                handlePassword();
+                dllink = br.getRedirectLocation();
+                if (dllink == null) {
+                    logger.warning("Failed to find final downloadlink after password handling success");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                logger.info("Successfully went through the password handling");
+                break;
             } else {
                 // base > submit:Free Download > submit:Show the download link + t:35140198 == link
                 final Browser br2 = br.cloneBrowser();
@@ -371,7 +312,7 @@ public class OneFichierCom extends PluginForHost {
             errorHandling(downloadLink, this.br, true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty(FREELINK, dllink);
+        downloadLink.setProperty(PROPERTY_FREELINK, dllink);
         dl.startDownload();
     }
 
@@ -592,19 +533,21 @@ public class OneFichierCom extends PluginForHost {
         return maxPrem.get();
     }
 
-    private String handlePassword(final DownloadLink downloadLink) throws IOException, PluginException {
+    private String handlePassword() throws IOException, PluginException {
         logger.info("This link seems to be password protected, continuing...");
-        String passCode = downloadLink.getStringProperty("pass", null);
+        String passCode = this.currDownloadLink.getStringProperty("pass", null);
         if (passCode == null) {
-            passCode = Plugin.getUserInput("Password?", downloadLink);
+            passCode = Plugin.getUserInput("Password?", this.currDownloadLink);
         }
-        br.postPage(br.getURL(), "pass=" + passCode);
-        if (br.containsHTML(PASSWORDTEXT)) {
-            downloadLink.setProperty("pass", Property.NULL);
+        String postData = "pass=" + Encoding.urlEncode(passCode) + "&";
+        postData += getSSLFormValue();
+        br.postPage(br.getURL(), postData);
+        if (br.containsHTML(HTML_PASSWORDPROTECTED)) {
+            this.currDownloadLink.setProperty("pass", Property.NULL);
             throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.onefichiercom.wrongpassword", "Password wrong!"));
         }
         // set after regex checks
-        downloadLink.setProperty("pass", passCode);
+        this.currDownloadLink.setProperty("pass", passCode);
         return passCode;
     }
 
@@ -613,7 +556,7 @@ public class OneFichierCom extends PluginForHost {
         String dllink;
         setConstants(account, link);
         requestFileInformation(link);
-        checkDownloadable(link);
+        checkDownloadable();
         br = new Browser();
         if (account.getBooleanProperty("free", false) && account.getBooleanProperty("freeAPIdisabled")) {
             /**
@@ -624,12 +567,11 @@ public class OneFichierCom extends PluginForHost {
             doFree(link);
         } else {
             dllink = checkDirectLink(link, PROPERTY_PREMLINK);
-            dllink = null;
             if (dllink == null) {
                 br.setFollowRedirects(true);
                 sleep(2 * 1000l, link);
                 /* TODO: This acts based in the users' setting 'Force download menu'. We're in touch with the admin to get this solved. */
-                final String url = "https://" + getFID(link) + ".1fichier.com/" + "?u=" + Encoding.urlEncode(account.getUser()) + "&p=" + JDHash.getMD5(account.getPass());
+                final String url = getDownloadlinkOLD(link) + "?u=" + Encoding.urlEncode(account.getUser()) + "&p=" + JDHash.getMD5(account.getPass());
                 URLConnectionAdapter con = br.openGetConnection(url);
                 if (con.getResponseCode() == 401) {
                     try {
@@ -644,14 +586,22 @@ public class OneFichierCom extends PluginForHost {
                 } else {
                     // for some silly reason we have reverted from api to webmethod, so we need cookies!. 20150201
                     br = new Browser();
-                    login(true);
+                    login(false);
                     ensureSiteLogin();
                     br.setFollowRedirects(false);
-                    br.getPage("https://" + getFID(link) + ".1fichier.com/");
+                    br.getPage(getDownloadlinkOLD(link));
                     dllink = br.getRedirectLocation();
-                    if (pwProtected || br.containsHTML("password")) {
-                        handlePassword(link);
+                    if (pwProtected) {
+                        handlePassword();
+                        /*
+                         * The users' 'direct download' setting has no effect on the password handling so we should always get a redirect to
+                         * the final downloadlink after having entered the correct downloadpassword (for premium users).
+                         */
                         dllink = br.getRedirectLocation();
+                        if (dllink == null) {
+                            logger.warning("After successful password handling: Final downloadlink 'dllink' is null");
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                     }
                     try {
                         errorIpBlockedHandling(br);
@@ -661,15 +611,9 @@ public class OneFichierCom extends PluginForHost {
                 }
                 if (dllink == null) {
                     /* The link is always SSL - based on user setting it will redirect to either https or http. */
-                    final String postLink = "https://1fichier.com/?" + getFID(link);
+                    final String postLink = getDownloadlinkNEW(link);
                     String postData = "did=0&";
-                    if (this.getPluginConfig().getBooleanProperty(PREFER_SSL, false)) {
-                        logger.info("User prefers download with SSL");
-                        postData += "dlssl=SSL+Download";
-                    } else {
-                        logger.info("User prefers download without SSL");
-                        postData += "dl=Download";
-                    }
+                    postData += getSSLFormValue();
                     br.postPage(postLink, postData);
                     dllink = br.getRedirectLocation();
                     if (dllink == null) {
@@ -709,6 +653,54 @@ public class OneFichierCom extends PluginForHost {
                 link.setProperty(PROPERTY_PREMLINK, dllink);
                 dl.startDownload();
                 return;
+            }
+        }
+    }
+
+    /* Returns postPage key + data based on the users' SSL preference. */
+    private String getSSLFormValue() {
+        String formdata;
+        if (this.getPluginConfig().getBooleanProperty(PREFER_SSL, false)) {
+            logger.info("User prefers download with SSL");
+            formdata = "dlssl=SSL+Download";
+        } else {
+            logger.info("User prefers download without SSL");
+            formdata = "dl=Download";
+        }
+        return formdata;
+    }
+
+    /** Returns an accessable downloadlink in the VERY OLD format. */
+    @SuppressWarnings("unused")
+    private String getDownloadlinkVERY_OLD(final DownloadLink dl) {
+        return "https://" + getFID(dl) + ".1fichier.com/en/index.html";
+    }
+
+    /** Returns an accessable downloadlink in the OLD format. */
+    private String getDownloadlinkOLD(final DownloadLink dl) {
+        return "https://" + getFID(dl) + ".1fichier.com/";
+    }
+
+    /** Returns an accessable downloadlink in the NEW format. */
+    private String getDownloadlinkNEW(final DownloadLink dl) {
+        return "https://1fichier.com/?" + getFID(dl);
+    }
+
+    /**
+     * Makes sure that we're allowed to download a link. This function will also find out of a link is password protected.
+     *
+     * @throws IOException
+     */
+    private void checkDownloadable() throws PluginException, IOException {
+        if (this.currDownloadLink.getBooleanProperty("privatelink", false)) {
+            logger.info("Link is PRIVATE --> Checking whether it really is PRIVATE or just password protected");
+            br.getPage(this.getDownloadlinkNEW(this.currDownloadLink));
+            if (br.containsHTML(this.HTML_PASSWORDPROTECTED)) {
+                logger.info("Link is password protected");
+                this.pwProtected = true;
+            } else {
+                logger.info("Link is PRIVATE");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This link is private. You're not authorized to download it!");
             }
         }
     }
@@ -763,6 +755,8 @@ public class OneFichierCom extends PluginForHost {
         return true;
     }
 
+    /** Returns the file/link-ID of any given downloadLink. */
+    @SuppressWarnings("deprecation")
     private String getFID(final DownloadLink dl) {
         String test = new Regex(dl.getDownloadURL(), "/\\?([a-z0-9]+)$").getMatch(0);
         if (test == null) {
@@ -774,12 +768,22 @@ public class OneFichierCom extends PluginForHost {
         return test;
     }
 
+    /** Returns the file/link-ID of the current downloadLink. */
+    private String getFID() {
+        return getFID(this.currDownloadLink);
+    }
+
     private boolean default_prefer_reconnect = false;
     private boolean default_prefer_ssl       = true;
 
     private void setConfigElements() {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), PREFER_RECONNECT, JDL.L("plugins.hoster.onefichiercom.com.preferreconnect", "Reconnect, even if the wait time is only short (1-6 minutes)")).setDefaultValue(default_prefer_reconnect));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), PREFER_SSL, JDL.L("plugins.hoster.onefichiercom.com.preferreconnect", "Premium download: Prefer SSL?")).setDefaultValue(default_prefer_ssl));
+        /*
+         * The site mainly works via SSL so this is not necessarily needed. At the moment this setting only has an influence if either the
+         * user downloads a password protected link (premium + free) or the user downloads via premium and has the 'direct downloads'
+         * setting disabled.
+         */
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), PREFER_SSL, JDL.L("plugins.hoster.onefichiercom.com.preferSSL", "Prefer SSL?")).setDefaultValue(default_prefer_ssl));
     }
 
     private void prepareBrowser(final Browser br) {
@@ -794,6 +798,7 @@ public class OneFichierCom extends PluginForHost {
             br.getHeaders().put("Accept-Language", "en-us,en;q=0.5");
             br.getHeaders().put("Pragma", null);
             br.getHeaders().put("Cache-Control", null);
+            br.setCustomCharset("utf-8");
             // we want ENGLISH!
             br.setCookie(this.getHost(), "LG", "en");
         } catch (Throwable e) {
