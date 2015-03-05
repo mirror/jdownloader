@@ -38,15 +38,21 @@ import org.jdownloader.logging.LogController;
 
 public class ReconnectDialog extends AbstractDialog<Object> implements IPControllListener {
 
-    private CircledProgressBar progress;
-    private JLabel             duration;
-    private JLabel             old;
-    private JLabel             newIP;
-    private JLabel             header;
-    private Thread             recThread;
-    private Timer              updateTimer;
-    private long               startTime;
-    private JLabel             state;
+    private CircledProgressBar   progress;
+    private JLabel               duration;
+    private JLabel               old;
+    private JLabel               newIP;
+    private JLabel               header;
+    private Thread               recThread;
+    private Timer                updateTimer;
+    private long                 startTime;
+    private JLabel               state;
+    private ReconnectResult      result;
+    protected ReconnectException exception;
+
+    public ReconnectException getException() {
+        return exception;
+    }
 
     public ReconnectDialog() {
         super(UIOManager.BUTTONS_HIDE_OK, _GUI._.ReconnectDialog_ReconnectDialog_(), null, null, _GUI._.literally_close());
@@ -144,15 +150,13 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
                     } else {
                         progress.setValue(100);
                     }
+                    onFinished();
                 } catch (InterruptedException e) {
                     logger.log(e);
                 } catch (ReconnectException e) {
+                    exception = e;
                     logger.log(e);
-                    if (!StringUtils.isEmpty(e.getMessage())) {
-                        Dialog.getInstance().showErrorDialog(e.getMessage());
-                    } else {
-                        Dialog.getInstance().showErrorDialog(_GUI._.ReconnectDialog_layoutDialogContent_error());
-                    }
+                    reportException(e);
                     new EDTRunner() {
 
                         @Override
@@ -189,6 +193,9 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
         updateTimer.start();
         recThread.start();
         return p;
+    }
+
+    protected void onFinished() {
     }
 
     @Override
@@ -258,8 +265,10 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
     }
 
     protected boolean startReconnectAndWait(LogSource logger) throws ReconnectException, InterruptedException {
-        ReconnectInvoker plg = ReconnectPluginController.getInstance().getActivePlugin().getReconnectInvoker();
-        if (plg == null) throw new ReconnectException(_GUI._.ReconnectDialog_run_failed_not_setup_());
+        ReconnectInvoker plg = getInvoker();
+        if (plg == null) {
+            throw new ReconnectException(_GUI._.ReconnectDialog_run_failed_not_setup_());
+        }
         plg.setLogger(logger);
 
         // if (IPController.getInstance().getIpState().isOffline()) {
@@ -276,8 +285,22 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
         // };
         // return;
         // }
-        ReconnectResult result = plg.validate();
+        result = plg.validate();
         return result.isSuccess();
+    }
+
+    public ReconnectResult getResult() {
+        return result;
+    }
+
+    private ReconnectInvoker invoker = null;
+
+    public void setInvoker(ReconnectInvoker invoker) {
+        this.invoker = invoker;
+    }
+
+    protected ReconnectInvoker getInvoker() {
+        return invoker == null ? ReconnectPluginController.getInstance().getActivePlugin().getReconnectInvoker() : invoker;
     }
 
     protected void update() {
@@ -290,5 +313,13 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
 
         // updateTimer.stop();
         // }
+    }
+
+    protected void reportException(ReconnectException e) {
+        if (!StringUtils.isEmpty(e.getMessage())) {
+            Dialog.getInstance().showErrorDialog(e.getMessage());
+        } else {
+            Dialog.getInstance().showErrorDialog(_GUI._.ReconnectDialog_layoutDialogContent_error());
+        }
     }
 }

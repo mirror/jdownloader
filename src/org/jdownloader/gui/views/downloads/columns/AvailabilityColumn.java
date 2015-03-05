@@ -11,13 +11,17 @@ import jd.controlling.packagecontroller.ChildrenView;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
+public class AvailabilityColumn extends ExtTextColumn<AbstractNode> implements GenericConfigEventListener<Boolean> {
 
     private class ColumnHelper {
         private Icon   icon   = null;
@@ -34,6 +38,7 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
     private Icon              offline;
     private Icon              mixed;
     private ColumnHelper      columnHelper     = new ColumnHelper();
+    private boolean           textVisible;
 
     public JPopupMenu createHeaderPopup() {
 
@@ -48,6 +53,8 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
         mixed = NewTheme.I().getIcon("true-orange", 16);
         offline = NewTheme.I().getIcon("error", 16);
 
+        CFG_GUI.AVAILABLE_COLUMN_TEXT_VISIBLE.getEventSender().addListener(this, true);
+        textVisible = CFG_GUI.CFG.isAvailableColumnTextVisible();
         this.setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
 
             @Override
@@ -69,7 +76,7 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
                         return o1i > o2i ? -1 : 1;
                     }
                 } else {
-                    return 0;
+                    return o1s.compareTo(o2s);
                 }
 
             }
@@ -89,6 +96,9 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
             AvailableStatus status = ((DownloadLink) value).getAvailableStatus();
             if (status == null) {
                 status = AvailableStatus.UNCHECKED;
+            }
+            if (textVisible) {
+                columnHelper.string = status.getExplanation();
             }
             switch (status) {
             case TRUE:
@@ -125,6 +135,9 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
                 AvailableStatus status = dl.getAvailableStatus();
                 if (status == null) {
                     status = AvailableStatus.UNCHECKED;
+                }
+                if (textVisible) {
+                    columnHelper.string = status.getExplanation();
                 }
                 switch (status) {
                 case TRUE:
@@ -200,6 +213,15 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
     @Override
     public String getStringValue(AbstractNode value) {
         return columnHelper.string;
+    }
+
+    @Override
+    public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+    }
+
+    @Override
+    public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+        textVisible = CFG_GUI.CFG.isAvailableColumnTextVisible();
     }
 
 }

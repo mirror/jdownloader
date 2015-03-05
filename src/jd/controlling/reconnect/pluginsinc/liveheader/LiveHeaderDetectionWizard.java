@@ -34,6 +34,7 @@ import jd.controlling.reconnect.pluginsinc.liveheader.validate.ScriptValidationE
 import jd.controlling.reconnect.pluginsinc.liveheader.validate.Scriptvalidator;
 import jd.controlling.reconnect.pluginsinc.upnp.UPNPRouterPlugin;
 import jd.controlling.reconnect.pluginsinc.upnp.cling.UpnpRouterDevice;
+import jd.gui.swing.jdgui.views.settings.panels.reconnect.ReconnectDialog;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 
@@ -46,9 +47,11 @@ import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.locale._AWU;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -373,7 +376,7 @@ public class LiveHeaderDetectionWizard {
             try {
 
                 if (processCallBack.isMethodConfirmEnabled()) {
-                    LiveHeaderScriptConfirmDialog d = new LiveHeaderScriptConfirmDialog(test, gatewayAdressHost, routerName != null && routerName.trim().length() > 0 ? routerName : test.getRouterName()) {
+                    LiveHeaderScriptConfirmDialog d = new LiveHeaderScriptConfirmDialog(test, gatewayAdressHost, test.getRouterName()) {
                         // @Override
                         protected String getDontShowAgainLabelText() {
                             return _GUI._.UPNPRouterPlugin_accept_all();
@@ -884,8 +887,8 @@ public class LiveHeaderDetectionWizard {
 
     public void sendRouter(ProcessCallBackAdapter processCallBack) throws UnknownHostException, InterruptedException {
         try {
-
-            String script = JsonConfig.create(LiveHeaderReconnectSettings.class).getScript();
+            LiveHeaderReconnectSettings settings = JsonConfig.create(LiveHeaderReconnectSettings.class);
+            String script = settings.getScript();
             // wait until we are online
             processCallBack.setProgress(this, -1);
             processCallBack.setStatusString(this, _GUI._.LiveaheaderDetection_wait_for_online());
@@ -911,67 +914,139 @@ public class LiveHeaderDetectionWizard {
             specialCollectInfo();
 
             while (true) {
-                while (true) {
+                try {
+                    while (true) {
+                        while (true) {
 
-                    DataCompareDialog dcd = new DataCompareDialog(gatewayAdressHost, firmware, manufactor, routerName, JsonConfig.create(LiveHeaderReconnectSettings.class).getUserName(), JsonConfig.create(LiveHeaderReconnectSettings.class).getPassword());
-                    dcd.setLoginsText(T._.LiveHeaderDetectionWizard_userConfirm_loginstext());
-                    DataCompareDialog impl = UIOManager.I().show(null, dcd);
-                    dcd.throwCloseExceptions();
-                    username = impl.getUsername();
+                            DataCompareDialog dcd = new DataCompareDialog(gatewayAdressHost, firmware, manufactor, routerName, JsonConfig.create(LiveHeaderReconnectSettings.class).getUserName(), JsonConfig.create(LiveHeaderReconnectSettings.class).getPassword());
+                            dcd.setLoginsText(T._.LiveHeaderDetectionWizard_userConfirm_loginstext());
+                            DataCompareDialog impl = UIOManager.I().show(null, dcd);
+                            dcd.throwCloseExceptions();
+                            username = impl.getUsername();
 
-                    password = impl.getPassword();
-                    manufactor = impl.getManufactor();
-                    routerName = impl.getRouterName();
-                    firmware = impl.getFirmware();
-                    try {
-                        gatewayAdress = InetAddress.getByName(impl.getHostName());
-                        gatewayAdressIP = gatewayAdress.getHostAddress();
-                        gatewayAdressHost = gatewayAdress.getHostName();
+                            password = impl.getPassword();
+                            manufactor = impl.getManufactor();
+                            routerName = impl.getRouterName();
+                            firmware = impl.getFirmware();
+                            try {
+                                gatewayAdress = InetAddress.getByName(impl.getHostName());
+                                gatewayAdressIP = gatewayAdress.getHostAddress();
+                                gatewayAdressHost = gatewayAdress.getHostName();
 
-                        break;
-                    } catch (IOException e) {
+                                break;
+                            } catch (IOException e) {
 
-                        if (UIOManager.I().showConfirmDialog(0, _GUI._.literall_error(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badhost(dcd.getHostName()), NewTheme.I().getIcon("error", 32), _GUI._.literally_edit(), null)) {
-                            continue;
-                        } else {
-                            return;
+                                if (UIOManager.I().showConfirmDialog(0, _GUI._.literall_error(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badhost(dcd.getHostName()), NewTheme.I().getIcon("error", 32), _GUI._.literally_edit(), null)) {
+                                    continue;
+                                } else {
+                                    return;
+                                }
+
+                            }
+
                         }
 
+                        if (!IP.isValidRouterIP(gatewayAdressIP)) {
+
+                            if (!UIOManager.I().showConfirmDialog(0, _GUI._.literally_warning(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badip(gatewayAdressHost), NewTheme.I().getIcon("warning", 32), _GUI._.literally_yes(), _GUI._.literally_edit())) {
+                                continue;
+                            }
+
+                        }
+                        break;
+
                     }
 
-                }
-
-                if (!IP.isValidRouterIP(gatewayAdressIP)) {
-
-                    if (!UIOManager.I().showConfirmDialog(0, _GUI._.literally_warning(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badip(gatewayAdressHost), NewTheme.I().getIcon("warning", 32), _GUI._.literally_yes(), _GUI._.literally_edit())) {
-                        continue;
+                    script = validate(script);
+                    RouterData rd = getRouterData();
+                    rd.setScript(script);
+                    LiveHeaderScriptConfirmUploadDialog confirm = new LiveHeaderScriptConfirmUploadDialog(rd, rd.getRouterIP(), rd.getRouterName());
+                    UIOManager.I().show(null, confirm).throwCloseExceptions();
+                    script = rd.getScript();
+                    test(processCallBack, script);
+                    if (StringUtils.isNotEmpty(password)) {
+                        settings.setPassword(password);
                     }
+                    if (StringUtils.isNotEmpty(username)) {
+                        settings.setUserName(username);
+                    }
+                    settings.setScript(script);
+                    settings.setRouterData(rd);
 
+                    break;
+                } catch (ScriptValidationExeption e) {
+                    logger.log(e);
+
+                    if (StringUtils.isNotEmpty(e.getMessage())) {
+                        ConfirmDialog d = new ConfirmDialog(0, _AWU.T.DIALOG_ERROR_TITLE(), T._.LiveHeaderDetectionWizard_share_reconnectFailed2(e.getMessage()), new AbstractIcon(IconKey.ICON_WARNING_RED, 32), T._.try_again(), null);
+                        UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
+                    } else {
+                        ConfirmDialog d = new ConfirmDialog(0, _AWU.T.DIALOG_ERROR_TITLE(), T._.LiveHeaderDetectionWizard_share_reconnectFailed(), new AbstractIcon(IconKey.ICON_WARNING_RED, 32), T._.try_again(), null);
+                        UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
+
+                    }
+                } catch (ReconnectException e) {
+                    logger.log(e);
+
+                    if (StringUtils.isNotEmpty(e.getMessage())) {
+                        ConfirmDialog d = new ConfirmDialog(0, _AWU.T.DIALOG_ERROR_TITLE(), T._.LiveHeaderDetectionWizard_share_reconnectFailed2(e.getMessage()), new AbstractIcon(IconKey.ICON_WARNING_RED, 32), T._.try_again(), null);
+                        UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
+                    } else {
+                        ConfirmDialog d = new ConfirmDialog(0, _AWU.T.DIALOG_ERROR_TITLE(), T._.LiveHeaderDetectionWizard_share_reconnectFailed(), new AbstractIcon(IconKey.ICON_WARNING_RED, 32), T._.try_again(), null);
+                        UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
+
+                    }
                 }
-                break;
-
             }
-            script = validate(script);
             scanRemoteInfo();
             specials();
-            test(script);
+
             uploadData(script);
         } catch (DialogNoAnswerException e) {
             throw new InterruptedException();
         } catch (InterruptedException e) {
             logger.log(e);
             throw e;
-            // } catch (ReconnectException e) {
-            // logger.log(e);
-            // UIOManager.I().showErrorMessage(T._.LiveHeaderDetectionWizard_sendRouter_reconnectFailed());
-            // Dialog.I().showExceptionDialog(_GUI._.lit_error_occured(), e.getMessage(), e);
         } catch (Exception e) {
             logger.log(e);
             Dialog.I().showExceptionDialog(_GUI._.lit_error_occured(), e.getMessage(), e);
         }
     }
 
-    private void test(String script) {
+    private void test(ProcessCallBackAdapter processCallBack, String script) throws ReconnectException, InterruptedException, DialogClosedException, DialogCanceledException {
+        ConfirmDialog d = new ConfirmDialog(0, T._.test_required(), T._.test_required_msg(), null, _GUI._.lit_continue(), null);
+        UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
+
+        processCallBack.setStatusString(this, _GUI._.LiveHeaderDetectionWizard_sendRouter_havetovalidate());
+        LiveHeaderInvoker ret = new LiveHeaderInvoker(getPlugin(), script, this.username, this.password, StringUtils.isEmpty(this.gatewayAdressHost) ? gatewayAdressIP : gatewayAdressHost, routerName);
+        ReconnectDialog reconnect = new ReconnectDialog() {
+            @Override
+            protected void reportException(ReconnectException e) {
+                // super.reportException(e);
+            }
+
+            protected void onFinished() {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        dispose();
+                    }
+                };
+            }
+        };
+        reconnect.setInvoker(ret);
+        UIOManager.I().show(null, reconnect);
+        if (reconnect.getException() != null) {
+            throw reconnect.getException();
+        }
+        if (reconnect.getResult() == null || !reconnect.getResult().isSuccess()) {
+            throw new ReconnectException("Reconnect Failed");
+        }
+
+        ConfirmDialog confirm = new ConfirmDialog(0, T._.confirm_success_title(), T._.confirm_success_message(), new AbstractIcon(IconKey.ICON_QUESTION, 32), _GUI._.lit_yes(), _GUI._.lit_no());
+        confirm.setPreferredWidth(500);
+        UIOManager.I().show(ConfirmDialogInterface.class, confirm).throwCloseExceptions();
     }
 
     private String validate(String script) throws ScriptValidationExeption {
@@ -1097,18 +1172,10 @@ public class LiveHeaderDetectionWizard {
         RouterData rd = getRouterData();
         rd.setScript(script);
 
-        LiveHeaderScriptConfirmUploadDialog confirm = new LiveHeaderScriptConfirmUploadDialog(rd, rd.getRouterIP(), rd.getRouterName());
-        try {
-            UIOManager.I().show(null, confirm).throwCloseExceptions();
-            if (RecollController.getInstance().addRouter(rd)) {
-                UIOManager.I().showMessageDialog(T._.LiveHeaderDetectionWizard_uploadData_sent_ok());
-            } else {
-                UIOManager.I().showMessageDialog(T._.LiveHeaderDetectionWizard_uploadData_sent_failed());
-            }
-        } catch (DialogClosedException e) {
-            e.printStackTrace();
-        } catch (DialogCanceledException e) {
-            e.printStackTrace();
+        if (RecollController.getInstance().addRouter(rd)) {
+            UIOManager.I().showMessageDialog(T._.LiveHeaderDetectionWizard_uploadData_sent_ok());
+        } else {
+            UIOManager.I().showMessageDialog(T._.LiveHeaderDetectionWizard_uploadData_sent_failed());
         }
 
     }

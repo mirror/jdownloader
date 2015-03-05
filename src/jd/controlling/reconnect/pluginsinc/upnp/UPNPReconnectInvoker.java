@@ -49,12 +49,17 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
         if ("GetExternalIPAddress".equalsIgnoreCase(command)) {
             con.setReadTimeout(2000);
         }
+
+        con.setAllowedResponseCodes(new int[] { -1 });
         con.setRequestMethod(RequestMethod.POST);
         con.setRequestProperty("Content-Type", "text/xml; charset=\"utf-8\"");
         con.setRequestProperty("SOAPAction", serviceType + "#" + command);
         byte datas[] = data.getBytes("UTF-8");
         con.setRequestProperty("Content-Length", datas.length + "");
         BufferedReader rd = null;
+        if (logger != null) {
+            logger.info(con + "");
+        }
         try {
             con.connect();
             con.getOutputStream().write(datas);
@@ -81,8 +86,16 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
                     throw e;
                 }
             }
+            if (logger != null) {
+                logger.info(con + "");
+                logger.info(xmlstr);
+            }
             return xmlstr;
         } finally {
+            if (logger != null) {
+                logger.info(con + "");
+
+            }
             try {
                 rd.close();
             } catch (final Throwable e) {

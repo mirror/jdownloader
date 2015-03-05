@@ -14,6 +14,7 @@ import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Plugin;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
@@ -41,12 +42,19 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
     private boolean                                 nativeProxy      = false;
 
     public PacProxySelectorImpl(String url, String user, String pass) {
+        if (!JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class).isProxyVoleAutodetectionEnabled()) {
+            throw new WTFException("Proxy Vole is Disabled");
+        }
         this.pacUrl = url;
         this.user = user;
         this.password = pass;
     }
 
     public PacProxySelectorImpl(ProxyData proxyData) {
+        if (!JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class).isProxyVoleAutodetectionEnabled()) {
+            throw new WTFException("Proxy Vole is Disabled");
+        }
+
         this.pacUrl = proxyData.getProxy().getAddress();
         this.user = proxyData.getProxy().getUsername();
         this.password = proxyData.getProxy().getPassword();

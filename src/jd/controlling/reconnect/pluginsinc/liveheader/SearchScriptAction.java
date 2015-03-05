@@ -29,7 +29,7 @@ public class SearchScriptAction extends BasicAction {
         putValue(SMALL_ICON, new AbstractIcon(IconKey.ICON_SEARCH, 18));
 
         setTooltipFactory(new BasicTooltipFactory(getName(), T._.SearchScriptAction_tt(), new AbstractIcon("edit", 32)));
-        setEnabled(false);
+        setEnabled(true);
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -63,7 +63,7 @@ public class SearchScriptAction extends BasicAction {
 
                             // changed script.reset router sender state
                             if (d.getRouterData().getScript() != null && d.getRouterData().getScript().equals(config.getScript())) {
-                                config.setAlreadySendToCollectServer2(false);
+                                config.setAlreadySendToCollectServer3(false);
                             }
 
                             config.setScript(d.getRouterData().getScript());

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
@@ -58,4 +59,11 @@ public interface InternetConnectionSettings extends ConfigInterface {
 
     String getLocalPacScript();
 
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @RequiresRestart("A JDownloader Restart is Required")
+    @DescriptionForConfigEntry("Proxy Vole is used to autodetect your proxy settings. If you know how to setup your proxy, you can disable this.")
+    boolean isProxyVoleAutodetectionEnabled();
+
+    void setProxyVoleAutodetectionEnabled(boolean b);
 }

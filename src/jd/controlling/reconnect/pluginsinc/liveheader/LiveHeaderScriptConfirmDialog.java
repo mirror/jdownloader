@@ -142,11 +142,11 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
 
                 dialog.setPreferredSize(new Dimension(700, 400));
                 InputDialogInterface d = UIOManager.I().show(InputDialogInterface.class, dialog);
-                routerData.setScript(d.getText());
-                routerData.setScriptID(null);
+
                 try {
                     d.throwCloseExceptions();
-
+                    routerData.setScript(d.getText());
+                    routerData.setScriptID(null);
                     try {
                         final LiveHeaderReconnectSettings settings = JsonConfig.create(LiveHeaderReconnectSettings.class);
                         final RouterData rd = routerData;

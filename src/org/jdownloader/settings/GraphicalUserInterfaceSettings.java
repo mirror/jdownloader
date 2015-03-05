@@ -1255,4 +1255,10 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isCaptchaDialogBorderAroundImageEnabled();
 
     void setCaptchaDialogBorderAroundImageEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    boolean isAvailableColumnTextVisible();
+
+    void setAvailableColumnTextVisible(boolean b);
 }

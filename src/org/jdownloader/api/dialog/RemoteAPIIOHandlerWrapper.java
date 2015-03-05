@@ -13,6 +13,7 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.resources.AWUTheme;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.ExceptionDialogInterface;
 import org.appwork.uio.MessageDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.uio.UserIODefinition;
@@ -25,6 +26,7 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.ExceptionDialog;
 import org.appwork.utils.swing.dialog.MessageDialogImpl;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.SilentModeSettings.DialogDuringSilentModeAction;
@@ -323,6 +325,12 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
 
     public DialogApiImpl getRemoteHandler() {
         return remoteHandler;
+    }
+
+    @Override
+    public void showException(String message, Throwable e) {
+        final ExceptionDialog dialog = new ExceptionDialog(UIOManager.LOGIC_DONT_SHOW_AGAIN_DELETE_ON_EXIT | UIOManager.BUTTONS_HIDE_CANCEL, _AWU.T.DIALOG_ERROR_TITLE(), message, e, null, null);
+        show(ExceptionDialogInterface.class, dialog);
     }
 
 }

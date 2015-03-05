@@ -17,6 +17,7 @@ import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.SingleBasicProxySelectorImpl;
 import jd.controlling.proxy.SingleDirectGatewaySelector;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
@@ -26,6 +27,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.MessageDialogImpl;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.updatev2.InternetConnectionSettings;
 
 import com.btr.proxy.search.ProxySearchStrategy;
 import com.btr.proxy.search.browser.firefox.FirefoxProxySearchStrategy;
@@ -44,6 +46,7 @@ public class ProxyAutoAction extends AppAction {
         super();
         setName(_GUI._.ProxyAutoAction_actionPerformed_d_title());
         setIconKey("plugin");
+        setEnabled(JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class).isProxyVoleAutodetectionEnabled());
     }
 
     /**

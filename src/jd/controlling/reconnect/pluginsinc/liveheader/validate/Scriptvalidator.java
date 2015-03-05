@@ -428,20 +428,22 @@ public class Scriptvalidator {
 
     protected HashSet<String> exceptionsParameterKeys  = new HashSet<String>();
     {
-        exceptionsParameterKeys.add("var:pagename");
-        exceptionsParameterKeys.add("var:errorpagename");
-        exceptionsParameterKeys.add("pppName");
-        exceptionsParameterKeys.add("serviceName");
-        exceptionsParameterKeys.add("wanName");
-        exceptionsParameterKeys.add("ifname");
-        exceptionsParameterKeys.add("device_name");
-        exceptionsParameterKeys.add("logger:settings/facility/user");
-        exceptionsParameterKeys.add("EmWeb_ns:vim:3.passthrough");
-        exceptionsParameterKeys.add("wan_login");
-        exceptionsParameterKeys.add("hostName");
-        exceptionsParameterKeys.add("encaps0:pppoa:settings/auth_type");
-        exceptionsParameterKeys.add("EmWeb_ns:vim:4.ImServices.ipwan0.1:webcontrol");
-        exceptionsParameterKeys.add("mbg_webname");
+        exceptionsParameterKeys.add("var:pagename".toLowerCase(Locale.ENGLISH));
+        exceptionsParameterKeys.add("var:errorpagename".toLowerCase(Locale.ENGLISH));
+        exceptionsParameterKeys.add("pppName".toLowerCase(Locale.ENGLISH));
+        exceptionsParameterKeys.add("serviceName".toLowerCase(Locale.ENGLISH));
+        exceptionsParameterKeys.add("wanName".toLowerCase(Locale.ENGLISH));
+        exceptionsParameterKeys.add("ifname".toLowerCase(Locale.ENGLISH));
+        exceptionsParameterKeys.add("device_name".toLowerCase(Locale.ENGLISH));
+        exceptionsParameterKeys.add("logger:settings/facility/user".toLowerCase(Locale.ENGLISH));
+        exceptionsParameterKeys.add("EmWeb_ns:vim:3.passthrough".toLowerCase(Locale.ENGLISH));
+        exceptionsParameterKeys.add("wan_login".toLowerCase(Locale.ENGLISH));
+        exceptionsParameterKeys.add("hostName".toLowerCase(Locale.ENGLISH));
+        exceptionsParameterKeys.add("encaps0:pppoa:settings/auth_type".toLowerCase(Locale.ENGLISH));
+        exceptionsParameterKeys.add("EmWeb_ns:vim:4.ImServices.ipwan0.1:webcontrol".toLowerCase(Locale.ENGLISH));
+        exceptionsParameterKeys.add("mbg_webname".toLowerCase(Locale.ENGLISH));
+        exceptionsParameterKeys.add("intfName".toLowerCase(Locale.ENGLISH));
+
     }
     protected HashSet<String> defaultPasswords         = new HashSet<String>();
     {
@@ -494,17 +496,17 @@ public class Scriptvalidator {
     protected HashSet<String> replacedDefaulAuth       = new HashSet<String>();
 
     private void onParameter(String key, String value) throws Exception {
-        if (exceptionsParameterKeys.contains(key)) {
+        if (key == null || value == null) {
+
+            return;
+        }
+        if (exceptionsParameterKeys.contains(key.toLowerCase(Locale.ENGLISH))) {
             return;
         }
         if (whitelistValues.contains(value.toLowerCase(Locale.ENGLISH))) {
             return;
         }
 
-        if (key == null) {
-
-            return;
-        }
         if (StringUtils.isEmpty(value) || value.length() < 3) {
             return;
         }
