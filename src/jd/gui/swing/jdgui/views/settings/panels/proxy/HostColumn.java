@@ -1,8 +1,5 @@
 package jd.gui.swing.jdgui.views.settings.panels.proxy;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
 import javax.swing.Icon;
 
 import jd.controlling.proxy.AbstractProxySelectorImpl;
@@ -23,7 +20,7 @@ public class HostColumn extends ExtTextColumn<AbstractProxySelectorImpl> {
     }
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
 
@@ -44,13 +41,7 @@ public class HostColumn extends ExtTextColumn<AbstractProxySelectorImpl> {
             java.awt.Toolkit.getDefaultToolkit().beep();
             return;
         } else if (object instanceof SingleDirectGatewaySelector) {
-
-            try {
-                ((SingleDirectGatewaySelector) object).getProxy().setLocalIP(InetAddress.getByName(value));
-            } catch (UnknownHostException e) {
-                java.awt.Toolkit.getDefaultToolkit().beep();
-                return;
-            }
+            ((SingleDirectGatewaySelector) object).getProxy().setLocal(value);
             return;
         } else if (object instanceof SingleBasicProxySelectorImpl) {
             ((SingleBasicProxySelectorImpl) object).setHost(value);
@@ -69,7 +60,7 @@ public class HostColumn extends ExtTextColumn<AbstractProxySelectorImpl> {
             if (value instanceof NoProxySelector) {
                 return "";
             } else if (value instanceof SingleDirectGatewaySelector) {
-                return ((SingleDirectGatewaySelector) value).getProxy().getLocalIP().getHostAddress();
+                return ((SingleDirectGatewaySelector) value).getProxy().getLocal();
             } else if (value instanceof SingleBasicProxySelectorImpl) {
                 return ((SingleBasicProxySelectorImpl) value).getProxy().getHost();
             } else if (value instanceof PacProxySelectorImpl) {

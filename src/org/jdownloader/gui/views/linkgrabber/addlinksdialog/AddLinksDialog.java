@@ -623,7 +623,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         if (input == null) {
             return;
         }
-        final String[] links = jd.parser.html.HTMLParser.getHttpLinks(input.getText());
+        final String[] links = jd.parser.html.HTMLParser.getHttpLinks(input.getText(), null);
         new EDTRunner() {
 
             @Override
