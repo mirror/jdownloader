@@ -807,7 +807,7 @@ public class FileparadoxIn extends PluginForHost {
              * Special handling (04.03.15) - according to this user, as long as there is traffic on the account you can download files with
              * any filesize: https://board.jdownloader.org/showthread.php?t=62600
              */
-            final long trafficLeftLong = SizeFormatter.getSize(availabletraffic);
+            final long trafficLeftLong = SizeFormatter.getSize(availabletraffic, true, true);
             if (trafficLeftLong > 0) {
                 ai.setUnlimitedTraffic();
             } else {
