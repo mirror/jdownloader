@@ -5863,4 +5863,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "It seems that your Reconnect Script is invalid or contains sensitive data like username or password of you router.You should try to replace them with %%%username%%% and %%%password%%% variables if possible. " })
     String LiveHeaderReconnect_validateAndSet_object_();
 
+    @Default(lngs = { "en" }, values = { "<Unknown Router>" })
+    String unknown_router_name();
+
 }

@@ -20,7 +20,7 @@ public class RouterSendAction extends BasicAction {
         super(T._.RouterSendAction_RouterSendAction_());
         putValue(SMALL_ICON, NewTheme.I().getIcon("upload", 18));
         setTooltipFactory(new BasicTooltipFactory(getName(), T._.RouterSendAction_RouterSendAction_tt(), NewTheme.I().getIcon("upload", 32)));
-        setEnabled(false);
+        setEnabled(true);
     }
 
     public void actionPerformed(ActionEvent e) {

@@ -175,7 +175,7 @@ public class RouterDataResultTableModel extends ExtTableModel<RouterData> {
 
                     private String getRouterName(String routerName) {
                         if (StringUtils.isEmpty(routerName)) {
-                            return "<Unknown Router>";
+                            return _GUI._.unknown_router_name();
                         }
                         return routerName;
                     }

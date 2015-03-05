@@ -47,8 +47,8 @@ public interface LiveHeaderReconnectSettings extends ConfigInterface {
     @AboutConfig
     @org.appwork.storage.config.annotations.DescriptionForConfigEntry("If False, we already tried to send this script to the colect server. Will be resetted each time we change reconnect settings.")
     @DefaultBooleanValue(false)
-    boolean isAlreadySendToCollectServer2();
+    boolean isAlreadySendToCollectServer3();
 
-    void setAlreadySendToCollectServer2(boolean b);
+    void setAlreadySendToCollectServer3(boolean b);
 
 }

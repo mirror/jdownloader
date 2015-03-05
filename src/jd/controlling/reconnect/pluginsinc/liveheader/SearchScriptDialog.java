@@ -116,6 +116,9 @@ public class SearchScriptDialog extends AbstractDialog<Object> {
                     updateList(list);
                 } catch (BadQueryException e) {
                     UIOManager.I().showErrorMessage(T._.BadQueryException());
+                } catch (Throwable e) {
+                    UIOManager.I().showException(e.getMessage(), e);
+
                 }
             }
 

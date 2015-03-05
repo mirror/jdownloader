@@ -232,8 +232,11 @@ public interface LiveheaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Thank you!\r\nWe added your script to our router reconnect database." })
     String LiveHeaderDetectionWizard_uploadData_sent_ok();
 
-    @Default(lngs = { "en" }, values = { "Reconnect failed. You can only share working reconnect settings." })
-    String LiveHeaderDetectionWizard_sendRouter_reconnectFailed();
+    @Default(lngs = { "en" }, values = { "The Reconnect validation failed. You can only share working reconnect settings.\r\nChoose [Try again] to fix the Script, and retry the test." })
+    String LiveHeaderDetectionWizard_share_reconnectFailed();
+
+    @Default(lngs = { "en" }, values = { "The Reconnect validation failed. You can only share working reconnect settings.\r\nReason:\r\n%s1\r\nChoose [Try again] to fix the Script, and retry the test." })
+    String LiveHeaderDetectionWizard_share_reconnectFailed2(String s);
 
     @Default(lngs = { "en" }, values = { "Share Reconnect Settings." })
     String LiveHeaderReconnect_onConfigValueModified_ask_title();
@@ -378,5 +381,20 @@ public interface LiveheaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Your Reconnect Script contains the username value '%s1'. This does not match your currently set router username.\r\nDo you want to use '%s1' as new router username from now on?" })
     String please_confirm_username_change_parameter(String value);
+
+    @Default(lngs = { "en" }, values = { "Test the Script" })
+    String test_required();
+
+    @Default(lngs = { "en" }, values = { "Before sharing the Script, we have to validate if it actually works. This validation will try to perform a reconnect now." })
+    String test_required_msg();
+
+    @Default(lngs = { "en" }, values = { "Try again" })
+    String try_again();
+
+    @Default(lngs = { "en" }, values = { "Did it work?" })
+    String confirm_success_title();
+
+    @Default(lngs = { "en" }, values = { "Your IP changed. For JDownloader, it looks like everything worked fine. Did this work 100% automatically, or did you have to do anything manually (Like resetting the router or anything like this)?\r\nOnly click [Yes] if everything worked fine without you doing anything but waiting..." })
+    String confirm_success_message();
 
 }
