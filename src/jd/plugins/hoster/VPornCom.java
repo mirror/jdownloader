@@ -54,25 +54,43 @@ public class VPornCom extends PluginForHost {
 
     private static final String NOCHUNKS     = "NOCHUNKS";
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        if (downloadLink.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (downloadLink.getDownloadURL().matches(INVALIDLINKS)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.vporn.com/") || br.containsHTML("This video is deleted\\.|This video has been deleted due to Copyright Infringement")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h1 class=\"video_title\">([^<>\"]*?)</h1>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) \\- V Porn Video</title>").getMatch(0);
+        if (br.getURL().equals("http://www.vporn.com/") || br.containsHTML("This video is deleted\\.|This video has been deleted due to Copyright Infringement")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("videoname = \\'([^<>\"]*?)\\';").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?) \\- Vporn Video</title>").getMatch(0);
+        }
         // Prefer high quality
-        DLLINK = br.getRegex("flashvars\\.videoUrlMedium  = \"(http://[^<>\"]*?)\"").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("flashvars\\.videoUrlLow  = \"(http://[^<>\"]*?)\"").getMatch(0);
+        final String[] quals = { "videoUrlMedium2", "videoUrlLow2", "videoUrlMedium", "videoUrlLow" };
+        for (final String qual : quals) {
+            DLLINK = br.getRegex("flashvars\\." + qual + "[\r\n\t ]*?=[\r\n\t ]*?\"(http://[^<>\"]*?)\"").getMatch(0);
+            if (DLLINK != null) {
+                break;
+            }
+        }
         /* Try to get download-link */
-        if (DLLINK == null) DLLINK = br.getRegex("initDownload\\(\\'\\', \\'(http://[^<>\"]*?)\\'\\)\"").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("initDownload\\(\\'\\', \\'(http://[^<>\"]*?)\\'\\)\"").getMatch(0);
+        }
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".mp4";
+        if (ext == null || ext.length() > 5) {
+            ext = ".mp4";
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -80,10 +98,11 @@ public class VPornCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -98,7 +117,9 @@ public class VPornCom extends PluginForHost {
         requestFileInformation(downloadLink);
 
         int maxChunks = 0;
-        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
+            maxChunks = 1;
+        }
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -113,7 +134,9 @@ public class VPornCom extends PluginForHost {
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
