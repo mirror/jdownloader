@@ -17,9 +17,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.logging.Level;
 import java.util.regex.Pattern;
 
+import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
@@ -110,36 +110,51 @@ public class RemixShareCom extends PluginForHost {
     }
 
     private String execJS() throws Exception {
-        String fun = br.getRegex("/>Your Download has been started\\.[\t\n\r ]+</div>[\t\n\r ]+<script type=\"text/javascript\" language=\"Javascript\">(.*?)</script>").getMatch(0);
+        String fun = br.getRegex("=\\s*\"http[^\r\n]+/downloadstart/[^\r\n]+").getMatch(-1);
         if (fun == null) {
-            String[] allJs = br.getRegex("<script type=\"text/javascript\">(.*?)</script>").getColumn(0);
-            for (String s : allJs) {
-                if (!s.contains("downloadfinal")) {
-                    continue;
-                }
-                fun = s;
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in 15 minutes", 15 * 60 * 1000l);
+        }
+        fun = "var url" + fun;
+        // fun = "function url() { return url; }";
+        Object result = null;
+        // prevent infinate loop
+        int t = -1;
+        while (t++ < 15 && true) {
+            final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+            final ScriptEngine engine = manager.getEngineByName("javascript");
+            final Invocable inv = (Invocable) engine;
+            try {
+                engine.eval(fun);
+                engine.eval("function result(){return url}");
+                result = inv.invokeFunction("result", fun);
                 break;
+            } catch (final Throwable e) {
+                if (e.getMessage() != null) {
+                    // do not use language components of the error message. Only static identifies, otherwise other languages will
+                    // fail!
+                    // -raztoki
+                    final String ee = new Regex(e.getMessage(), "\"([\\$\\w]+)\" .+").getMatch(0);
+                    // should only be needed on the first entry, then on after 'cache' should get result the first time!
+                    if (ee != null) {
+                        // lets look for missing reference
+                        final String ref = new Regex(br, "var\\s+" + Pattern.quote(ee) + "\\s*=\\s*.*?;").getMatch(-1);
+                        if (ref != null) {
+                            fun = ref + "\r\n" + fun;
+                            continue;
+                        } else {
+                            logger.warning("Could not find missing var/function");
+                        }
+                    } else {
+                        logger.warning("Could not find reference Error");
+                    }
+                    // getLogger().log(e);
+                    // prevent infinate loop
+                    break;
+                }
             }
         }
-        if (fun == null) {
-            return null;
-        }
-        fun = "var game = \"\";" + fun;
-        String ah = new Regex(fun, "(document\\.getElementById\\((.*?)\\)\\.(innerHTML|href))").getMatch(0);
-        if (ah != null) {
-            fun = fun.replace(ah, "game");
-        }
-        Object result = new Object();
-        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
-        final ScriptEngine engine = manager.getEngineByName("javascript");
-        try {
-            result = engine.eval(fun);
-        } catch (final Exception e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            return null;
-        }
         if (result == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in 15 minutes", 15 * 60 * 1000l);
         }
         return result.toString();
     }
