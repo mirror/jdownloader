@@ -333,13 +333,14 @@ public class PremiumizeMe extends PluginForHost {
         if (status == null) {
             status = "Unknown Account Type";
         }
-        ai.setStatus(status);
         String expire = br.getRegex("\"expires\":(\\d+)").getMatch(0);
         if (expire != null) {
             ai.setValidUntil((Long.parseLong(expire)) * 1000);
         }
-        String fairUse = br.getRegex("fairuse_left\":([\\d\\.]+)").getMatch(0);
+        final String fairUse = br.getRegex("fairuse_left\":([\\d\\.]+)").getMatch(0);
         if (fairUse != null) {
+            final double d = Double.parseDouble(fairUse);
+            status = status + ": FairUsage " + (100 - ((int) (d * 100.0))) + "%";
             // 7 day rolling average
             // AVERAGE = way to display percentage value. prevent controlling
             // from using figure. Just a GUI display for the user.
@@ -347,6 +348,7 @@ public class PremiumizeMe extends PluginForHost {
             // ai.setTrafficLeft(AVERAGE(Integer.parseInt(fairUse.trim()) *
             // 100));
         }
+        ai.setStatus(status);
         String trafficleft_bytes = br.getRegex("trafficleft_bytes\":(-?[\\d\\.]+)").getMatch(0);
         if (trafficleft_bytes != null) {
             if (trafficleft_bytes.contains(".")) {
