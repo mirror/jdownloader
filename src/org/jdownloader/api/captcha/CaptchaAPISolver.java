@@ -80,13 +80,11 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
             try {
                 while (!isJobDone(job)) {
                     Thread.sleep(250);
-
                 }
             } finally {
                 job.getLogger().info("Wait Done");
             }
         }
-
     }
 
     public CaptchaAPISolver() {
