@@ -74,7 +74,7 @@ public class FreeMoviesTv extends PluginForHost {
         }
         DLLINK = checkDirectLink(downloadLink, "directlink");
         if (DLLINK == null) {
-            DLLINK = br.getRegex("url: \\'(http://[^<>\"\\']*?\\.flv)\\'").getMatch(0);
+            DLLINK = br.getRegex("url: \\'(http://[^<>\"\\']*?\\.(flv|mp4))\\'").getMatch(0);
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
