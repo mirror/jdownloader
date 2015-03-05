@@ -33,7 +33,6 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements 
     private static final DeathByCaptchaSolver INSTANCE   = new DeathByCaptchaSolver();
     private ThreadPoolExecutor                threadPool = new ThreadPoolExecutor(0, 1, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), Executors.defaultThreadFactory());
     private LogSource                         logger;
-    private SocketClient                      client;
 
     public static DeathByCaptchaSolver getInstance() {
         return INSTANCE;
@@ -74,9 +73,8 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements 
 
         job.showBubble(this);
         checkInterruption();
+        final Client client = getClient();
         try {
-
-            Client client = getClient();
             Captcha captcha = null;
 
             // Put your CAPTCHA image file, file object, input stream,
@@ -108,17 +106,15 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements 
 
         } catch (Exception e) {
             job.getLogger().log(e);
+        } finally {
+            client.close();
         }
 
     }
 
     private synchronized Client getClient() {
-        if (client != null) {
-            return client;
-        }
-        client = new SocketClient(config.getUserName(), config.getPassword());
+        Client client = new SocketClient(config.getUserName(), config.getPassword());
         client.isVerbose = true;
-
         return client;
 
     }
@@ -155,16 +151,19 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements 
                         // incorrectly solved, or else you might get banned as
                         // abuser.
                         Client client = getClient();
-                        Challenge<?> challenge = response.getChallenge();
-                        if (challenge instanceof BasicCaptchaChallenge) {
-                            if (client.report(captcha)) {
-                                logger.info("CAPTCHA " + challenge + " reported as incorrectly solved");
-                            } else {
-                                logger.info("Failed reporting incorrectly solved CAPTCHA. Disabled Feedback");
-                                config.setFeedBackSendingEnabled(false);
+                        try {
+                            Challenge<?> challenge = response.getChallenge();
+                            if (challenge instanceof BasicCaptchaChallenge) {
+                                if (client.report(captcha)) {
+                                    logger.info("CAPTCHA " + challenge + " reported as incorrectly solved");
+                                } else {
+                                    logger.info("Failed reporting incorrectly solved CAPTCHA. Disabled Feedback");
+                                    config.setFeedBackSendingEnabled(false);
+                                }
                             }
+                        } finally {
+                            client.close();
                         }
-
                     } catch (final Throwable e) {
                         logger.log(e);
                     }
@@ -176,8 +175,8 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements 
     public DBCAccount loadAccount() {
 
         DBCAccount ret = new DBCAccount();
+        Client c = getClient();
         try {
-            Client c = getClient();
             User user = c.getUser();
             ret.setBalance(user.getBalance());
             ret.setBanned(user.isBanned());
@@ -186,6 +185,8 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements 
         } catch (Exception e) {
             logger.log(e);
             ret.setError(e.getMessage());
+        } finally {
+            c.close();
         }
         return ret;
 
