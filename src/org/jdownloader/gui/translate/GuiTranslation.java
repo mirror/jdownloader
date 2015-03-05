@@ -4952,8 +4952,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Auto Proxy.pac" })
     String jd_gui_swing_dialog_ProxyDialog_pac();
 
-    @Default(lngs = { "en" }, values = { "Local IP" })
-    String jd_gui_swing_dialog_ProxyDialog_host();
+    @Default(lngs = { "en" }, values = { "IP/Networkinterface" })
+    String jd_gui_swing_dialog_ProxyDialog_local();
 
     @Default(lngs = { "en" }, values = { "Proxy.pac url" })
     String jd_gui_swing_dialog_ProxyDialog_pac_url();

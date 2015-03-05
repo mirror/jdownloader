@@ -233,7 +233,7 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
                 lblUser.setVisible(false);
                 txtUser.setVisible(false);
                 lblPort.setVisible(false);
-                lblHost.setText(_GUI._.jd_gui_swing_dialog_ProxyDialog_host());
+                lblHost.setText(_GUI._.jd_gui_swing_dialog_ProxyDialog_local());
                 break;
 
             case 4:
