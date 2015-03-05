@@ -38,6 +38,7 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.gui.DialogClickCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
+import org.jdownloader.captcha.v2.solver.service.DialogSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 
 public class CaptchaAPISolver extends ChallengeSolver<Object> implements CaptchaAPI, ChallengeResponseListener {
@@ -52,7 +53,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         return 120000;
     }
 
-    private CaptchaAPIEventPublisher               eventPublisher;
+    private CaptchaAPIEventPublisher                 eventPublisher;
     private CaptchaMyJDownloaderRemoteSolverSettings config;
 
     @Override
@@ -70,8 +71,22 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         //
         //
         // }
+        job.getLogger().info("Fire MyJDownloader Captcha Event");
         MyJDownloaderController.getInstance().pushCaptchaFlag(true);
         eventPublisher.fireNewJobEvent(job);
+        if (Application.isHeadless() || !DialogSolverService.getInstance().isEnabled()) {
+            // in headless mode, we should wait, because we have no gui dialog
+            job.getLogger().info("Wait for Answer");
+            try {
+                while (!isJobDone(job)) {
+                    Thread.sleep(250);
+
+                }
+            } finally {
+                job.getLogger().info("Wait Done");
+            }
+        }
+
     }
 
     public CaptchaAPISolver() {
