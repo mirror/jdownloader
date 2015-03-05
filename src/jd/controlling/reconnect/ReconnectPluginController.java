@@ -37,6 +37,7 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.statistics.StatsManager;
 
 public class ReconnectPluginController {
     private static final String                    JD_CONTROLLING_RECONNECT_PLUGINS = "jd/controlling/reconnect/plugins/";
@@ -69,6 +70,7 @@ public class ReconnectPluginController {
 
     public java.util.List<ReconnectResult> autoFind(final ProcessCallBack feedback) throws InterruptedException {
 
+        StatsManager.I().track("reconnectAutoFind/start");
         final java.util.List<ReconnectResult> scripts = new ArrayList<ReconnectResult>();
 
         for (final RouterPlugin plg : ReconnectPluginController.this.plugins) {
@@ -78,9 +80,14 @@ public class ReconnectPluginController {
             try {
 
                 feedback.setStatus(plg, null);
+                StatsManager.I().track("reconnectAutoFind/" + plg.getID() + "/start");
                 java.util.List<ReconnectResult> founds = plg.runDetectionWizard(feedback);
+
                 if (founds != null) {
+                    StatsManager.I().track("reconnectAutoFind/" + plg.getID() + "/found/" + scripts.size());
                     scripts.addAll(founds);
+                } else {
+                    StatsManager.I().track("reconnectAutoFind/" + plg.getID() + "/found/0");
                 }
                 if (scripts.size() > 0) {
                     break;
@@ -92,7 +99,11 @@ public class ReconnectPluginController {
             }
 
         }
-
+        if (scripts.size() > 1) {
+            StatsManager.I().track("reconnectAutoFind/success");
+        } else {
+            StatsManager.I().track("reconnectAutoFind/failed");
+        }
         if (JsonConfig.create(ReconnectConfig.class).getOptimizationRounds() > 1 && scripts.size() > 0) {
             int i = 1;
             long bestTime = Long.MAX_VALUE;

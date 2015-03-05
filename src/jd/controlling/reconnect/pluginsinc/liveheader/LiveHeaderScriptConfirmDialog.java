@@ -32,7 +32,6 @@ import jd.controlling.reconnect.pluginsinc.liveheader.validate.Scriptvalidator;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.nutils.Formatter;
-import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.utils.JDUtilities;
 
@@ -43,7 +42,6 @@ import org.appwork.uio.ExceptionDialogInterface;
 import org.appwork.uio.InputDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
-import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
@@ -545,7 +543,7 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                     final String key = params[i - 1];
                     final String modifiedVariable = this.getModifiedVariable(key);
                     logger.finer("Replace variable: " + modifiedVariable + "(" + key + ")");
-                    req.append(modifiedVariable);
+                    req.append(URLEncode.encodeRFC2396(modifiedVariable));
                     if (i < tmpLength) {
                         req.append(tmp[i]);
                     }
@@ -561,7 +559,7 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                     final String key = params[i - 1];
                     final String modifiedVariable = this.getModifiedVariable(key);
                     logger.finer("Replace variable: " + modifiedVariable + "(" + key + ")");
-                    req.append(modifiedVariable);
+                    req.append(URLEncode.encodeRFC2396(modifiedVariable));
                     if (i < tmpLength) {
                         req.append(tmp[i]);
                     }
@@ -670,10 +668,17 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
     }
 
     private String decode(String key) {
-        try {
-            key = Encoding.htmlDecode(key);
-        } catch (Throwable e) {
-
+        while (true) {
+            try {
+                String newKey = Encoding.htmlDecode(key);
+                if (StringUtils.isNotEmpty(newKey) && !StringUtils.equals(newKey, key)) {
+                    key = newKey;
+                } else {
+                    break;
+                }
+            } catch (Throwable e) {
+                break;
+            }
         }
         return key;
     }
@@ -758,24 +763,26 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                 final String method = key.substring(0, index);
                 key = key.substring(index + 3);
                 if (StringUtils.equalsIgnoreCase(method, "URLENCODE")) {
-                    value = Encoding.urlEncode(value);
+                    value = "<Variable: " + "UrlEncode(\"" + key + "\")" + ">";
                 } else if (StringUtils.equalsIgnoreCase(method, "URLDECODE")) {
-                    value = Encoding.htmlDecode(value);
+                    value = "<Variable: " + "UrlDecode(\"" + key + "\")" + ">";
                 } else if (StringUtils.equalsIgnoreCase(method, "UTF8DECODE")) {
-                    value = Encoding.UTF8Decode(value);
+                    value = "<Variable: " + "UTF8Decode(\"" + key + "\")" + ">";
                 } else if (StringUtils.equalsIgnoreCase(method, "UTF8ENCODE")) {
-                    value = Encoding.UTF8Encode(value);
+                    value = "<Variable: " + "UTF8Encode(\"" + key + "\")" + ">";
                 } else if (StringUtils.equalsIgnoreCase(method, "MD5")) {
-                    value = JDHash.getMD5(value);
+                    value = "<Variable: " + "MD5(\"" + key + "\")" + ">";
                 } else if (StringUtils.equalsIgnoreCase(method, "SHA256")) {
-                    value = Hash.getSHA256(value);
+                    value = "<Variable: " + "SHA256(\"" + key + "\")" + ">";
                     // required by a huwai router that uses base64(sha256(pass))
                 } else if (StringUtils.equalsIgnoreCase(method, "BASE64_SHA256")) {
-                    value = Encoding.Base64Encode(Hash.getSHA256(value));
+                    value = "<Variable: " + "Base64(SHA256(\"" + key + "\"))" + ">";
+
                 } else if (StringUtils.equalsIgnoreCase(method, "BASE64")) {
-                    value = Encoding.Base64Encode(value);
+                    value = "<Variable: " + "Base64(\"" + key + "\")" + ">";
                 } else {
-                    logger.info("Unknown/Unsupported method:" + method);
+                    throw new ReconnectException("Unsupported Type: " + method);
+
                 }
             }
             return value;
