@@ -1756,19 +1756,25 @@ public class VidToMe extends PluginForHost {
      *            Account that's been used, can be null
      * @param x
      *            Integer positive or negative. Positive adds slots. Negative integer removes slots.
+     * @throws PluginException
      * */
-    private synchronized void setHashedHashKeyValue(final Account account, final Integer x) {
+    private synchronized void setHashedHashKeyValue(final Account account, final Integer x) throws PluginException {
         if (usedHost == null || x == null) {
             return;
         }
         HashMap<String, Integer> holder = new HashMap<String, Integer>();
-        if (!hostMap.isEmpty()) {
-            // load hostMap within holder if not empty
-            holder = hostMap.get(account);
-            // remove old hashMap reference, prevents creating duplicate entry of 'account' when returning result.
-            if (holder.containsKey(account)) {
-                hostMap.remove(account);
+        try {
+            if (!hostMap.isEmpty()) {
+                // load hostMap within holder if not empty
+                holder = hostMap.get(account);
+                // remove old hashMap reference, prevents creating duplicate entry of 'account' when returning result.
+                if (holder.containsKey(account)) {
+                    hostMap.remove(account);
+                }
             }
+        } catch (final NullPointerException e) {
+            /* Bad workaround for old XFS3 bug. */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many concurrent connectons. We will try again when next possible.", 10 * 1000);
         }
         String currentKey = getHashedHashedKey(account);
         Integer currentValue = getHashedHashedValue(account);
