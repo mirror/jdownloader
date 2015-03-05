@@ -1,4 +1,4 @@
-AutoDetectAction_run_failed=Βρέθηκαν συσκευές UPNP, αλλά δεν ήταν δυνατή η Επανασύνδεση.\r\nΔοκιμάστε καλύτερα την Live Header Επανασύνδεση!
+AutoDetectAction_run_failed2=Δεν βρέθηκε UPNP μέθοδος επανασύνδεσης που να λειτουργεί.\nΔοκιμάστε την Live Header Επανασύνδεση!
 AutoDetectUpnpAction_AutoDetectUpnpAction_=Προσπαθεί να βρει όλες τις UPNP συσκευές Επανασύνδεσης στο δίκτυό σας.\r\nΟι περισσότεροι δρομολογητές Fritzbox μπορούν να επανασυνδεθούν με αυτό τον τρόπο.
 UPNPReconnectInvoker_getName_=Επανασύνδεση UPNP Δρομολογητή
 UPNPRouterPlugin_run_error=Δεν ήταν δυνατή η εύρεση συσκευών UPNP. Δοκιμάστε την LiveHeader Επανασύνδεση!
