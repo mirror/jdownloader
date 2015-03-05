@@ -77,25 +77,27 @@ public class ReconnectPluginController {
             if (Thread.currentThread().isInterrupted()) {
                 throw new InterruptedException();
             }
-            try {
+            if (plg instanceof UPNPRouterPlugin || plg instanceof LiveHeaderReconnect) {
+                try {
 
-                feedback.setStatus(plg, null);
-                StatsManager.I().track("reconnectAutoFind/" + plg.getID() + "/start");
-                java.util.List<ReconnectResult> founds = plg.runDetectionWizard(feedback);
+                    feedback.setStatus(plg, null);
+                    StatsManager.I().track("reconnectAutoFind/" + plg.getID() + "/start");
+                    java.util.List<ReconnectResult> founds = plg.runDetectionWizard(feedback);
 
-                if (founds != null) {
-                    StatsManager.I().track("reconnectAutoFind/" + plg.getID() + "/found/" + scripts.size());
-                    scripts.addAll(founds);
-                } else {
-                    StatsManager.I().track("reconnectAutoFind/" + plg.getID() + "/found/0");
+                    if (founds != null) {
+                        StatsManager.I().track("reconnectAutoFind/" + plg.getID() + "/found/" + scripts.size());
+                        scripts.addAll(founds);
+                    } else {
+                        StatsManager.I().track("reconnectAutoFind/" + plg.getID() + "/found/0");
+                    }
+                    if (scripts.size() > 0) {
+                        break;
+                    }
+                } catch (InterruptedException e) {
+                    throw e;
+                } catch (Exception e) {
+
                 }
-                if (scripts.size() > 0) {
-                    break;
-                }
-            } catch (InterruptedException e) {
-                throw e;
-            } catch (Exception e) {
-
             }
 
         }
