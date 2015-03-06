@@ -23,7 +23,7 @@ import org.jdownloader.statistics.StatsManager;
 public class DonateAction extends CustomizableAppAction {
     public static String SERVER = "https://payments.appwork.org/";
     static {
-        if (!Application.isJared(null) && false) {
+        if (!Application.isJared(null)) {
             SERVER = "https://payments.appwork.org/test/";
         }
     }

@@ -10,6 +10,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -35,6 +36,8 @@ import org.appwork.utils.Exceptions;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.images.IconIO;
+import org.appwork.utils.images.Interpolation;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
@@ -49,13 +52,14 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.mainmenu.DonateAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class DonationDialog extends AbstractDialog<Object> {
 
-    private LogSource         logger;
+    private LogSource                                   logger;
     // private String symbol;
     // private String currencyCode;
     // private JFormattedTextField input;
@@ -65,13 +69,14 @@ public class DonationDialog extends AbstractDialog<Object> {
     // private PseudoMultiCombo<CategoryPriority> catSel;
     // private ExtTextArea note;
     // protected long prioritySum;
-    protected DonationDetails details;
-    private Browser           br;
-    protected String          transactionID;
-    private JTabbedPane       tabbed;
-    protected ProviderPanel   currentPanel;
-    private JLabel            more;
-    private MigPanel          p;
+    protected DonationDetails                           details;
+    private Browser                                     br;
+    protected String                                    transactionID;
+    private JTabbedPane                                 tabbed;
+    protected ProviderPanel                             currentPanel;
+    private JLabel                                      more;
+    private MigPanel                                    p;
+    private HashMap<String, ArrayList<PaymentProvider>> currencyMap;
 
     public DonationDialog(DonationDetails details2) {
         super(0, _GUI._.DonationDialog_DonationDialog_title_(), null, _GUI._.DonationDialog_ok(), null);
@@ -280,26 +285,36 @@ public class DonationDialog extends AbstractDialog<Object> {
         p.add(top, "spanx,pushx,growx");
         tabbed = new JTabbedPane();
 
+        currencyMap = new HashMap<String, ArrayList<PaymentProvider>>();
         for (PaymentProvider provider : details.getPaymentProvider()) {
+            ArrayList<PaymentProvider> list = currencyMap.get(provider.getId());
+            if (list == null) {
+                currencyMap.put(provider.getId(), list = new ArrayList<PaymentProvider>());
+            }
+            list.add(provider);
+        }
+        int selectTab = 0;
+        PaymentProvider defaultProvider = details.getPaymentProvider()[details.getDefaultProvider()];
+        for (Entry<String, ArrayList<PaymentProvider>> provider : currencyMap.entrySet()) {
             Icon icon = null;
-            if ("paypal.com".equalsIgnoreCase(provider.getId())) {
-                icon = new AbstractIcon("paypal", 20);
-            } else if ("coinbase.com".equalsIgnoreCase(provider.getId())) {
-                icon = new AbstractIcon("bitcoin", 20);
-            }
             StringBuilder label = new StringBuilder();
-            if ("EUR".equalsIgnoreCase(provider.getcCode())) {
-                label.append("Euro (").append(provider.getcSymbol() + ") via " + provider.getId());
-            } else if ("USD".equalsIgnoreCase(provider.getcCode())) {
-                label.append("US Dollar (").append(provider.getcSymbol() + ") via " + provider.getId());
-            } else if ("XBT".equalsIgnoreCase(provider.getcCode())) {
-                label.append("Bitcoin via " + provider.getId());
+            if ("paypal.com".equalsIgnoreCase(provider.getKey())) {
+                icon = NewTheme.I().getIcon("logo/paypal_large", -1);
+                icon = IconIO.getScaledInstance(icon, (icon.getIconWidth() * 20) / icon.getIconHeight(), 20, Interpolation.BICUBIC);
+                icon = new AbstractIcon("logo/paypal_large", -1);
+            } else if ("coinbase.com".equalsIgnoreCase(provider.getKey())) {
+                icon = new AbstractIcon("logo/bitcoin_large", -1);
+            } else if ("paysafecard.com".equalsIgnoreCase(provider.getKey())) {
+                icon = new AbstractIcon("logo/paysafecard_large", -1);
+                // icon = NewTheme.I().getIcon("logo/paysafecard_large", -1);
+                // icon = IconIO.getScaledInstance(icon, (icon.getIconWidth() * 18) / icon.getIconHeight(), 18, Interpolation.BILINEAR);
             } else {
-
-                label.append(provider.getcCode() + " (").append(provider.getcSymbol() + ") via " + provider.getId());
-
+                label.append(provider.getKey());
             }
-            tabbed.addTab(label.toString(), icon, new ProviderPanel(details, provider));
+            if (provider.getValue().contains(defaultProvider)) {
+                selectTab = tabbed.getTabCount();
+            }
+            tabbed.addTab(label.toString(), icon, new ProviderPanel(details, provider.getValue()));
         }
         tabbed.addTab(_GUI._.DonationDialog_layoutDialogContent_more(), new AbstractIcon(IconKey.ICON_ADD, 20), more = new JLabel());
         p.add(tabbed, "pushx,growx,spanx,pushy,growy,spany");
@@ -326,7 +341,7 @@ public class DonationDialog extends AbstractDialog<Object> {
                 currentPanel = newPanel;
             }
         });
-        tabbed.setSelectedIndex(details.getDefaultProvider());
+        tabbed.setSelectedIndex(selectTab);
 
         return p;
     }
