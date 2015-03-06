@@ -23,7 +23,7 @@ import jd.gui.swing.jdgui.interfaces.View;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.swing.MigPanel;
-import org.appwork.uio.CloseReason;
+import org.appwork.uio.ComboBoxDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.event.queue.QueueAction;
@@ -278,16 +278,15 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                             if (doAction == ConfirmIncompleteArchiveAction.ASK) {
 
                                 ConfirmIncompleteArchiveAction[] options = new ConfirmIncompleteArchiveAction[] { ConfirmIncompleteArchiveAction.DELETE, ConfirmIncompleteArchiveAction.KEEP_IN_LINKGRABBER, ConfirmIncompleteArchiveAction.MOVE_TO_DOWNLOADLIST };
-                                ComboBoxDialog d = new ComboBoxDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ConfirmAction_run_incomplete_archive_title_(a.getName()), _GUI._.ConfirmAction_run_incomplete_archive_msg(), options, 1, NewTheme.I().getIcon("stop", 32), _GUI._.lit_continue(), null, null) {
-                                    protected javax.swing.JComboBox getComboBox(Object[] options2) {
-                                        ConfirmIncompleteArchiveAction s = CFG_LINKGRABBER.CFG.getHandleIncompleteArchiveOnConfirmLatestSelection();
-                                        JComboBox ret = super.getComboBox(options2);
-                                        if (s != null) {
-                                            ret.setSelectedItem(s);
-                                        }
-                                        return ret;
-
-                                    };
+                                int def = 0;
+                                ConfirmIncompleteArchiveAction s = CFG_LINKGRABBER.CFG.getHandleIncompleteArchiveOnConfirmLatestSelection();
+                                for (int i = 0; i < options.length; i++) {
+                                    if (s == options[i]) {
+                                        def = i;
+                                        break;
+                                    }
+                                }
+                                ComboBoxDialog guiDialog = new ComboBoxDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ConfirmAction_run_incomplete_archive_title_(a.getName()), _GUI._.ConfirmAction_run_incomplete_archive_msg(), options, def, NewTheme.I().getIcon("stop", 32), _GUI._.lit_continue(), null, null) {
 
                                     public String getDontShowAgainKey() {
                                         return null;
@@ -362,16 +361,13 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                                     }
 
                                 };
-                                UIOManager.I().show(null, d);
-                                d.throwCloseExceptions();
+                                ComboBoxDialogInterface response = UIOManager.I().show(ComboBoxDialogInterface.class, guiDialog);
+                                response.throwCloseExceptions();
 
-                                if (d.getCloseReason() != CloseReason.OK) {
-                                    return;
-                                }
-                                doActionForTheCurrentArchive = options[d.getSelectedIndex()];
+                                doActionForTheCurrentArchive = options[response.getSelectedIndex()];
 
                                 CFG_LINKGRABBER.CFG.setHandleIncompleteArchiveOnConfirmLatestSelection(doActionForTheCurrentArchive);
-                                if (d.isDontShowAgainSelected()) {
+                                if (response.isDontShowAgainSelected()) {
                                     doAction = doActionForTheCurrentArchive;
                                 }
                             }
