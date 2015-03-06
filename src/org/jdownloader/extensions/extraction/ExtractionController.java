@@ -53,13 +53,13 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     private List<String>                     passwordList;
     private Exception                        exception;
     private FileCreationManager.DeleteOption removeAfterExtractionAction;
-    private Archive                          archive;
-    private IExtraction                      extractor;
+    private final Archive                    archive;
+    private final IExtraction                extractor;
     private ScheduledFuture<?>               timer;
     private Type                             latestEvent;
 
-    private AtomicLong                       completeBytes  = new AtomicLong(0);
-    private AtomicLong                       processedBytes = new AtomicLong(0);
+    private final AtomicLong                 completeBytes  = new AtomicLong(0);
+    private final AtomicLong                 processedBytes = new AtomicLong(0);
 
     public long getCompleteBytes() {
         return completeBytes.get();
@@ -81,18 +81,18 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         return this.processedBytes.addAndGet(Math.max(0, processedBytes));
     }
 
-    private boolean                  removeDownloadLinksAfterExtraction;
-    private ExtractionExtension      extension;
-    private final LogSource          logger;
-    private FileSignatures           fileSignatures        = null;
-    private IfFileExistsAction       ifFileExistsAction;
-    private File                     extractToFolder;
-    private boolean                  successful            = false;
-    private ExtractLogFileWriter     crashLog;
-    private boolean                  askForUnknownPassword = false;
-    private Item                     currentActiveItem;
-    private final ExtractionProgress extractionProgress;
-    protected final FileBytesCache   fileBytesCache;
+    private boolean                   removeDownloadLinksAfterExtraction;
+    private final ExtractionExtension extension;
+    private final LogSource           logger;
+    private FileSignatures            fileSignatures        = null;
+    private IfFileExistsAction        ifFileExistsAction;
+    private File                      extractToFolder;
+    private boolean                   successful            = false;
+    private ExtractLogFileWriter      crashLog;
+    private boolean                   askForUnknownPassword = false;
+    private Item                      currentActiveItem;
+    private final ExtractionProgress  extractionProgress;
+    protected final FileBytesCache    fileBytesCache;
 
     public FileBytesCache getFileBytesCache() {
         return fileBytesCache;
@@ -117,6 +117,20 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         return extractionProgress;
     }
 
+    protected void postRun() {
+        synchronized (extension) {
+            final List<ExtractionController> removeList = new ArrayList<ExtractionController>();
+            for (ExtractionController ec : getExtractionQueue().getJobs()) {
+                if (ec.getArchiv() == archive || StringUtils.equals(ec.getArchiv().getArchiveID(), archive.getArchiveID())) {
+                    removeList.add(ec);
+                }
+            }
+            for (ExtractionController ec : removeList) {
+                getExtractionQueue().remove(ec);
+            }
+        }
+    };
+
     ExtractionController(ExtractionExtension extractionExtension, Archive archiv, IExtraction extractor) {
         this.archive = archiv;
         logger = LogController.CL(false);
@@ -138,9 +152,11 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     }
 
     public void kill() {
-        logger.info("abort extraction");
-        logger.flush();
-        super.kill();
+        if (gotStarted()) {
+            logger.info("abort extraction");
+            logger.flush();
+            super.kill();
+        }
     }
 
     public LogSource getLogger() {
@@ -457,7 +473,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
             } finally {
                 logger.close();
             }
-
         }
         return null;
     }

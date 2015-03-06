@@ -399,7 +399,6 @@ public class ExtractionListenerList implements ExtractionListener {
             } finally {
                 controller.getArchiv().setActive(false);
                 controller.getArchiv().getFirstArchiveFile().removePluginProgress(controller);
-                ex.removeArchive(controller.getArchiv());
                 for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
                     if (link != null) {
                         link.removePluginProgress(controller);

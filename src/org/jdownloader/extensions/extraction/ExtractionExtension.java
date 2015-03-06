@@ -24,7 +24,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.regex.Pattern;
 
@@ -43,6 +42,7 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
+import org.appwork.uio.ExceptionDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -117,18 +117,16 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         return eventSender;
     }
 
-    private final Set<IExtraction>             extractors        = new CopyOnWriteArraySet<IExtraction>();
+    private final Set<IExtraction>     extractors        = new CopyOnWriteArraySet<IExtraction>();
 
-    private final WeakHashMap<Archive, Object> archives          = new WeakHashMap<Archive, Object>();
+    private ExtractionConfigPanel      configPanel;
 
-    private ExtractionConfigPanel              configPanel;
+    private static ExtractionExtension INSTANCE;
 
-    private static ExtractionExtension         INSTANCE;
-
-    private ExtractionListenerIcon             statusbarListener = null;
-    private ShutdownVetoListener               listener          = null;
-    private boolean                            lazyInitOnStart   = false;
-    private final Object                       PWLOCK            = new Object();
+    private ExtractionListenerIcon     statusbarListener = null;
+    private ShutdownVetoListener       listener          = null;
+    private boolean                    lazyInitOnStart   = false;
+    private final Object               PWLOCK            = new Object();
 
     public ExtractionExtension() throws StartException {
         super();
@@ -175,9 +173,13 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     public synchronized ExtractionController addToQueue(final Archive archive, boolean forceAskForUnknownPassword) {
         // check if we have this archive already in queue.
         for (ExtractionController ec : extractionQueue.getJobs()) {
-            if (ec.getArchiv() == archive) {
+            if (ec.getArchiv() == archive || StringUtils.equals(ec.getArchiv().getArchiveID(), archive.getArchiveID())) {
                 return ec;
             }
+        }
+        final ExtractionController currentController = extractionQueue.getCurrentQueueEntry();
+        if (currentController != null && currentController.getArchiv() == archive || StringUtils.equals(currentController.getArchiv().getArchiveID(), archive.getArchiveID())) {
+            return currentController;
         }
         if (archive.getFirstArchiveFile() == null || !archive.getFirstArchiveFile().isComplete()) {
             logger.info("Archive is not complete: " + archive.getName());
@@ -187,7 +189,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         if (extractor == null) {
             return null;
         }
-        archives.put(archive, this);
         archive.getFactory().fireArchiveAddedToQueue(archive);
         final ExtractionController controller = new ExtractionController(this, archive, extractor);
         controller.setAskForUnknownPassword(forceAskForUnknownPassword);
@@ -315,17 +316,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
      * @param controller
      */
     void onFinished(ExtractionController controller) {
-    }
-
-    /**
-     * Removes an {@link Archive} from the list.
-     *
-     * @param archive
-     */
-    protected synchronized void removeArchive(Archive archive) {
-        if (archive != null) {
-            archives.remove(archive);
-        }
     }
 
     @Override
@@ -476,12 +466,15 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                                 getLogger().info(latestLog);
                             }
                         }
-                        if (StringUtils.isNotEmpty(latestLog)) {
-                            ExceptionDialog ed = new ExceptionDialog(0, T._.crash_title(), T._.crash_message(), null, null, null);
-                            ed.setMore(latestLog);
-                            Dialog.getInstance().showDialog(ed);
-                            LogAction la = new LogAction();
-                            la.actionPerformed(null);
+                        if (!org.appwork.utils.Application.isHeadless()) {
+                            /* currently disabled as headless does not support log upload */
+                            if (StringUtils.isNotEmpty(latestLog)) {
+                                ExceptionDialog ed = new ExceptionDialog(0, T._.crash_title(), T._.crash_message(), null, null, null);
+                                ed.setMore(latestLog);
+                                UIOManager.I().show(ExceptionDialogInterface.class, ed);
+                                LogAction la = new LogAction();
+                                la.actionPerformed(null);
+                            }
                         }
                     }
                 } catch (Throwable e) {
@@ -659,8 +652,16 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     }
 
     private synchronized Archive getExistingArchive(final ArchiveFactory archiveFactory) {
-        for (final Archive archive : archives.keySet()) {
-            if (archive != null && archive.contains(archiveFactory)) {
+        for (ExtractionController ec : extractionQueue.getJobs()) {
+            final Archive archive = ec.getArchiv();
+            if (archive.contains(archiveFactory)) {
+                return archive;
+            }
+        }
+        final ExtractionController currentController = extractionQueue.getCurrentQueueEntry();
+        if (currentController != null) {
+            final Archive archive = currentController.getArchiv();
+            if (archive.contains(archiveFactory)) {
                 return archive;
             }
         }
