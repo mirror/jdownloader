@@ -941,11 +941,11 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
     protected void updateArchiveInEDT(final Archive archive, boolean newData) {
         currentArchive = archive;
         if (password.getParent() != null && (newData || !password.hasFocus())) {
-            final String finalPassword = currentArchive.getFinalPassword();
+            final String finalPassword = archive.getFinalPassword();
             if (StringUtils.isNotEmpty(finalPassword)) {
                 password.setText(finalPassword);
             } else {
-                final List<String> passwords = currentArchive.getSettings().getPasswords();
+                final List<String> passwords = archive.getSettings().getPasswords();
                 if (passwords == null || passwords.size() == 0) {
                     password.setText(null);
                 } else if (passwords.size() == 1) {
@@ -956,7 +956,7 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
             }
         }
         if (autoExtract.getParent() != null) {
-            autoExtract.setSelectedItem(currentArchive.getSettings().getAutoExtract());
+            autoExtract.setSelectedItem(archive.getSettings().getAutoExtract());
         }
     }
 

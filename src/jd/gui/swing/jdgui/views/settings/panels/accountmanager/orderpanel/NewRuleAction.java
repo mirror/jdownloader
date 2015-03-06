@@ -25,7 +25,7 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class NewRuleAction extends AbstractAddAction {
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
 
@@ -42,10 +42,12 @@ public class NewRuleAction extends AbstractAddAction {
         ChooseHosterDialog d = new ChooseHosterDialog(_GUI._.NewRuleAction_actionPerformed_choose_hoster_message(), list.toArray(new DomainInfo[] {}));
         try {
             Dialog.getInstance().showDialog(d);
-            DomainInfo di = d.getSelectedItem();
-            AccountUsageRule rule = new AccountUsageRule(di.getTld());
-            rule.setEnabled(true);
-            HosterRuleController.getInstance().add(rule);
+            final DomainInfo di = d.getSelectedItem();
+            if (di != null) {
+                final AccountUsageRule rule = new AccountUsageRule(di.getTld());
+                rule.setEnabled(true);
+                HosterRuleController.getInstance().add(rule);
+            }
         } catch (DialogClosedException e1) {
             e1.printStackTrace();
         } catch (DialogCanceledException e1) {
