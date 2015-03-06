@@ -4,21 +4,26 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
+import java.util.Currency;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 
 import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
+import javax.swing.ListCellRenderer;
 import javax.swing.border.Border;
 import javax.swing.text.MaskFormatter;
 
@@ -26,6 +31,7 @@ import org.appwork.swing.MigPanel;
 import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtTextArea;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
@@ -44,11 +50,18 @@ public class ProviderPanel extends MigPanel {
     private PseudoMultiCombo<CategoryPriority> catSel;
     private long                               prioritySum;
     private ExtTextArea                        note;
+    private ArrayList<PaymentProvider>         providerList;
+    private PaymentProvider                    defaultProvider;
+    private JComboBox<PaymentProvider>         curCombo;
 
-    public ProviderPanel(DonationDetails details, PaymentProvider provider) {
+    public ProviderPanel(DonationDetails details, ArrayList<PaymentProvider> list) {
         super("ins 5", "[grow,fill]15[]0", "[]");
+        defaultProvider = details.getPaymentProvider()[details.getDefaultProvider()];
+        ;
         this.details = details;
-        this.provider = provider;
+        this.providerList = list;
+
+        provider = providerList.contains(defaultProvider) ? defaultProvider : providerList.get(0);
         init();
     }
 
@@ -151,7 +164,36 @@ public class ProviderPanel extends MigPanel {
         defaultBorder = input.getBorder();
         // input.setColumns(20);
 
-        left.add(new JLabel(provider.getcSymbol()), "alignx right");
+        curCombo = new JComboBox<PaymentProvider>(providerList.toArray(new PaymentProvider[] {}));
+        final ListCellRenderer org = curCombo.getRenderer();
+        curCombo.setRenderer(new ListCellRenderer<PaymentProvider>() {
+
+            @Override
+            public Component getListCellRendererComponent(JList<? extends PaymentProvider> list, PaymentProvider value, int index, boolean isSelected, boolean cellHasFocus) {
+                try {
+                    if (StringUtils.equals(value.getcSymbol(), "BTC")) {
+                        return org.getListCellRendererComponent(list, "Bitcoin" + " (" + value.getcSymbol() + ")", index, isSelected, cellHasFocus);
+                    }
+                    return org.getListCellRendererComponent(list, Currency.getInstance(value.getcCode()).getDisplayName() + " (" + value.getcSymbol() + ")", index, isSelected, cellHasFocus);
+                } catch (Throwable e) {
+                    return org.getListCellRendererComponent(list, value.getcSymbol(), index, isSelected, cellHasFocus);
+                }
+            }
+        });
+        curCombo.setSelectedItem(provider);
+        curCombo.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                setProvider((PaymentProvider) curCombo.getSelectedItem());
+            }
+        });
+        left.add(curCombo, "growx");
+        if (providerList.size() <= 1) {
+            curCombo.setEditable(false);
+            curCombo.setEnabled(false);
+        }
+
         left.add(input, "pushx,growx");
         input.addFocusListener(new FocusListener() {
 
@@ -235,6 +277,20 @@ public class ProviderPanel extends MigPanel {
         recurring.setVisible(provider.isRecurring());
         recurring.setSelected(false);
 
+    }
+
+    protected void setProvider(PaymentProvider selectedItem) {
+        String[] cats = getSelectedCategories();
+        String amt = getAmount() == provider.getAmt() ? null : input.getText();
+        String noteText = note.getText();
+        this.removeAll();
+        this.provider = selectedItem;
+        init();
+        setSelectedCategories(cats);
+        if (amt != null) {
+            input.setText(amt);
+        }
+        note.setText(noteText);
     }
 
     public void setSelectedCategories(String[] selectedCategories) {
