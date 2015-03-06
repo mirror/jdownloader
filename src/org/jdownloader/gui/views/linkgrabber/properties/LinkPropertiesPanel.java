@@ -125,7 +125,7 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
             for (Archive archive : validatedArchives) {
                 if (archive.contains(archiveFactory)) {
                     ret.add(archive);
-                    break;
+                    return ret;
                 }
             }
         }
@@ -195,8 +195,7 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
     }
 
     @Override
-    public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
-        //
+    public void onLinkCollectorDataRefresh(LinkCollectorEvent event) { //
         if (event.getParameter() == currentPackage || event.getParameter() == currentLink) {
             refresh();
         } else if (event.getParameter() instanceof CrawledLink && ((CrawledLink) event.getParameter()).getParentNode() == currentPackage) {
@@ -240,18 +239,16 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
 
     @Override
     protected void saveArchivePasswords(List<String> hashSet) {
-        if (currentArchive == null) {
-            return;
+        if (currentArchive != null) {
+            currentArchive.getSettings().setPasswords(hashSet);
         }
-        currentArchive.getSettings().setPasswords(hashSet);
     }
 
     @Override
     protected void saveAutoExtract(BooleanStatus selectedItem) {
-        if (currentArchive == null) {
-            return;
+        if (currentArchive != null) {
+            currentArchive.getSettings().setAutoExtract(selectedItem);
         }
-        currentArchive.getSettings().setAutoExtract(selectedItem);
     }
 
     @Override
@@ -294,7 +291,7 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
 
             @Override
             protected void runInEDT() {
-                boolean changesDetected = currentLink != link || (link != null && currentPackage != link.getParentNode());
+                final boolean changesDetected = currentLink != link || (link != null && currentPackage != link.getParentNode());
                 currentLink = link;
                 if (link == null) {
                     currentPackage = null;
@@ -311,7 +308,7 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
 
             @Override
             protected void runInEDT() {
-                boolean changesDetected = currentPackage != pkg;
+                final boolean changesDetected = currentPackage != pkg;
                 currentLink = null;
                 currentPackage = pkg;
                 refresh(changesDetected);
@@ -322,23 +319,25 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
 
     @Override
     protected void onHidden() {
-        super.onHidden();
-        LinkCollector.getInstance().getEventsender().removeListener(this);
-
+        try {
+            super.onHidden();
+        } finally {
+            LinkCollector.getInstance().getEventsender().removeListener(this);
+        }
     }
 
     @Override
     protected void onShowing() {
-        super.onShowing();
-        // remove Listeners to avoid dupes
-
-        LinkCollector.getInstance().getEventsender().addListener(this, true);
-
+        try {
+            super.onShowing();
+        } finally {
+            LinkCollector.getInstance().getEventsender().addListener(this, true);
+        }
     }
 
     @Override
     protected boolean isAbstractNodeSelected() {
-        return currentLink != null || currentPackage != null;
+        return currentLink != null;
     }
 
     @Override

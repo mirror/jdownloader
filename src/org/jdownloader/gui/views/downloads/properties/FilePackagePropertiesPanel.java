@@ -91,6 +91,11 @@ public class FilePackagePropertiesPanel extends DownloadLinkPropertiesPanel {
     }
 
     @Override
+    protected boolean isAbstractNodeSelected() {
+        return currentPackage != null;
+    }
+
+    @Override
     protected String loadComment() {
         return currentPackage.getComment();
     }

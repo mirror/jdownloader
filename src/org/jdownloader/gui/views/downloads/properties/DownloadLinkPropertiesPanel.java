@@ -113,7 +113,7 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
             for (Archive archive : validatedArchives) {
                 if (archive.contains(archiveFactory)) {
                     ret.add(archive);
-                    break;
+                    return ret;
                 }
             }
         }
@@ -132,7 +132,6 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
             dlLink = "*******************************";
         }
         return dlLink;
-
     }
 
     @Override
@@ -211,20 +210,21 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
 
     @Override
     public void onDownloadControllerUpdatedData(FilePackage pkg) {
-        if (currentPackage == pkg) {
+        if (pkg == currentPackage) {
             refresh();
         }
     }
 
     @Override
     public void onDownloadControllerUpdatedData(FilePackage pkg, FilePackageProperty property) {
-        if (currentPackage == pkg) {
+        if (pkg == currentPackage) {
             refresh();
         }
     }
 
     protected void refreshOnLinkUpdate(DownloadLink downloadlink) {
-        if (downloadlink != null && currentLink != null && (currentLink == downloadlink || downloadlink.getFilePackage() == currentLink.getFilePackage())) {
+        final DownloadLink lCurrentLink = currentLink;
+        if (downloadlink != null && lCurrentLink != null && (lCurrentLink == downloadlink || downloadlink.getFilePackage() == lCurrentLink.getFilePackage())) {
             refresh();
         } else if (downloadlink != null && downloadlink.getParentNode() == currentPackage) {
             // example:package is selected,and we change the archive password. this fires events on the packages links
@@ -234,33 +234,25 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
 
     @Override
     protected void saveArchivePasswords(List<String> hashSet) {
-        if (currentArchive == null) {
-            return;
+        if (currentArchive != null) {
+            currentArchive.getSettings().setPasswords(hashSet);
         }
-        currentArchive.getSettings().setPasswords(hashSet);
     }
 
     @Override
     protected void saveAutoExtract(BooleanStatus selectedItem) {
-        if (currentArchive == null) {
-            return;
+        if (currentArchive != null) {
+            currentArchive.getSettings().setAutoExtract(selectedItem);
         }
-        currentArchive.getSettings().setAutoExtract(selectedItem);
     }
 
     @Override
     protected void saveComment(String text) {
-        if (currentArchive == null) {
-            return;
-        }
         currentLink.getDownloadLink().setComment(text);
     }
 
     @Override
     protected void saveDownloadPassword(String text) {
-        if (currentArchive == null) {
-            return;
-        }
         currentLink.getDownloadLink().setDownloadPassword(text);
     }
 
@@ -306,7 +298,7 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
 
             @Override
             protected void runInEDT() {
-                boolean changesDetected = currentLink != link || (link != null && currentPackage != link.getParentNode());
+                final boolean changesDetected = currentLink != link || (link != null && currentPackage != link.getParentNode());
                 currentLink = link;
                 if (link == null) {
                     currentPackage = null;
@@ -323,7 +315,7 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
 
             @Override
             protected void runInEDT() {
-                boolean changesDetected = currentPackage != pkg;
+                final boolean changesDetected = currentPackage != pkg;
                 currentLink = null;
                 currentPackage = pkg;
                 refresh(changesDetected);
@@ -347,18 +339,24 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
 
     @Override
     protected void onHidden() {
-        super.onHidden();
-        DownloadController.getInstance().getEventSender().removeListener(this);
+        try {
+            super.onHidden();
+        } finally {
+            DownloadController.getInstance().getEventSender().removeListener(this);
+        }
     }
 
     @Override
     protected void onShowing() {
-        super.onShowing();
-        DownloadController.getInstance().getEventSender().addListener(this, true);
+        try {
+            super.onShowing();
+        } finally {
+            DownloadController.getInstance().getEventSender().addListener(this, true);
+        }
     }
 
     @Override
     protected boolean isAbstractNodeSelected() {
-        return currentLink != null || currentPackage != null;
+        return currentLink != null;
     }
 }
