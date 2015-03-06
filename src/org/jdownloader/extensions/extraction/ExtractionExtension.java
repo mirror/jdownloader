@@ -178,8 +178,10 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             }
         }
         final ExtractionController currentController = extractionQueue.getCurrentQueueEntry();
-        if (currentController != null && currentController.getArchiv() == archive || StringUtils.equals(currentController.getArchiv().getArchiveID(), archive.getArchiveID())) {
-            return currentController;
+        if (currentController != null) {
+            if (currentController.getArchiv() == archive || StringUtils.equals(currentController.getArchiv().getArchiveID(), archive.getArchiveID())) {
+                return currentController;
+            }
         }
         if (archive.getFirstArchiveFile() == null || !archive.getFirstArchiveFile().isComplete()) {
             logger.info("Archive is not complete: " + archive.getName());
