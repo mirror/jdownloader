@@ -129,6 +129,14 @@ public class OneFichierCom extends PluginForHost {
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             int index = 0;
             while (true) {
+                try {
+                    if (this.isAbort()) {
+                        logger.info("User stopped downloads --> Stepping out of loop");
+                        throw new PluginException(LinkStatus.ERROR_RETRY, "User aborted download");
+                    }
+                } catch (final Throwable e) {
+                    /* Not available in old 0.9.581 Stable */
+                }
                 links.clear();
                 while (true) {
                     /* we test 100 links at once */
@@ -456,6 +464,7 @@ public class OneFichierCom extends PluginForHost {
             account.setValid(true);
             ai.setStatus("Premium Account");
             ai.setValidUntil(Long.parseLong(timeStamp) * 1000l + (24 * 60 * 60 * 1000l));
+            /* Premiumusers have no (daily) trafficlimits */
             ai.setUnlimitedTraffic();
             try {
                 account.setType(AccountType.PREMIUM);
@@ -472,6 +481,9 @@ public class OneFichierCom extends PluginForHost {
 
     @SuppressWarnings("unchecked")
     private void login(final boolean force) throws Exception {
+        /* Basic auth doesn't work */
+        // br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(this.currAcc.getUser() + ":" +
+        // this.currAcc.getPass()));
         synchronized (LOCK) {
             try {
                 /* Load cookies */
@@ -533,24 +545,6 @@ public class OneFichierCom extends PluginForHost {
         return maxPrem.get();
     }
 
-    private String handlePassword() throws IOException, PluginException {
-        logger.info("This link seems to be password protected, continuing...");
-        String passCode = this.currDownloadLink.getStringProperty("pass", null);
-        if (passCode == null) {
-            passCode = Plugin.getUserInput("Password?", this.currDownloadLink);
-        }
-        String postData = "pass=" + Encoding.urlEncode(passCode) + "&";
-        postData += getSSLFormValue();
-        br.postPage(br.getURL(), postData);
-        if (br.containsHTML(HTML_PASSWORDPROTECTED)) {
-            this.currDownloadLink.setProperty("pass", Property.NULL);
-            throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.onefichiercom.wrongpassword", "Password wrong!"));
-        }
-        // set after regex checks
-        this.currDownloadLink.setProperty("pass", passCode);
-        return passCode;
-    }
-
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         String dllink;
@@ -570,18 +564,25 @@ public class OneFichierCom extends PluginForHost {
             if (dllink == null) {
                 br.setFollowRedirects(true);
                 sleep(2 * 1000l, link);
-                /* TODO: This acts based in the users' setting 'Force download menu'. We're in touch with the admin to get this solved. */
+                /*
+                 * TODO: This acts based in the users' setting 'Force download menu'. We're in touch with the admin to get this solved.
+                 * Notes: e=1 = return API html with final downloadlink.
+                 */
                 final String url = getDownloadlinkOLD(link) + "?u=" + Encoding.urlEncode(account.getUser()) + "&p=" + JDHash.getMD5(account.getPass());
-                URLConnectionAdapter con = br.openGetConnection(url);
-                if (con.getResponseCode() == 401) {
+                URLConnectionAdapter con = null;
+                try {
+                    con = openConnection(this.br, url);
+                } catch (final Throwable e) {
+                } finally {
                     try {
                         con.disconnect();
                     } catch (final Throwable e) {
                     }
+                }
+                if (con.getResponseCode() == 401) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 if (con.isContentDisposition()) {
-                    con.disconnect();
                     dllink = br.getURL();
                 } else {
                     // for some silly reason we have reverted from api to webmethod, so we need cookies!. 20150201
@@ -657,6 +658,24 @@ public class OneFichierCom extends PluginForHost {
         }
     }
 
+    private String handlePassword() throws IOException, PluginException {
+        logger.info("This link seems to be password protected, continuing...");
+        String passCode = this.currDownloadLink.getStringProperty("pass", null);
+        if (passCode == null) {
+            passCode = Plugin.getUserInput("Password?", this.currDownloadLink);
+        }
+        String postData = "pass=" + Encoding.urlEncode(passCode) + "&";
+        postData += getSSLFormValue();
+        br.postPage(br.getURL(), postData);
+        if (br.containsHTML(HTML_PASSWORDPROTECTED)) {
+            this.currDownloadLink.setProperty("pass", Property.NULL);
+            throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.onefichiercom.wrongpassword", "Password wrong!"));
+        }
+        // set after regex checks
+        this.currDownloadLink.setProperty("pass", passCode);
+        return passCode;
+    }
+
     /* Returns postPage key + data based on the users' SSL preference. */
     private String getSSLFormValue() {
         String formdata;
@@ -711,11 +730,7 @@ public class OneFichierCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                if (isJDStable()) {
-                    con = br2.openGetConnection(dllink);
-                } else {
-                    con = br2.openHeadConnection(dllink);
-                }
+                con = openConnection(br2, dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -731,6 +746,16 @@ public class OneFichierCom extends PluginForHost {
             }
         }
         return dllink;
+    }
+
+    private URLConnectionAdapter openConnection(final Browser br, final String link) throws IOException {
+        URLConnectionAdapter con = null;
+        if (isJDStable()) {
+            con = br.openGetConnection(link);
+        } else {
+            con = br.openHeadConnection(link);
+        }
+        return con;
     }
 
     private boolean isJDStable() {
@@ -777,13 +802,13 @@ public class OneFichierCom extends PluginForHost {
     private boolean default_prefer_ssl       = true;
 
     private void setConfigElements() {
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), PREFER_RECONNECT, JDL.L("plugins.hoster.onefichiercom.com.preferreconnect", "Reconnect, even if the wait time is only short (1-6 minutes)")).setDefaultValue(default_prefer_reconnect));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), PREFER_RECONNECT, JDL.L("plugins.hoster.onefichiercom.preferreconnect", "Reconnect, even if the wait time is only short (1-6 minutes)")).setDefaultValue(default_prefer_reconnect));
         /*
          * The site mainly works via SSL so this is not necessarily needed. At the moment this setting only has an influence if either the
          * user downloads a password protected link (premium + free) or the user downloads via premium and has the 'direct downloads'
          * setting disabled.
          */
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), PREFER_SSL, JDL.L("plugins.hoster.onefichiercom.com.preferSSL", "Prefer SSL?")).setDefaultValue(default_prefer_ssl));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), PREFER_SSL, JDL.L("plugins.hoster.onefichiercom.preferSSL", "Prefer SSL?")).setDefaultValue(default_prefer_ssl));
     }
 
     private void prepareBrowser(final Browser br) {

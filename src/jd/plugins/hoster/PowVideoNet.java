@@ -562,7 +562,7 @@ public class PowVideoNet extends PluginForHost {
             }
         }
         final String pic_server = cbr.getRegex("\\'vplayer\\'><img src=\"(http://[0-9\\.:]+)/i/").getMatch(0);
-        final String hFUvalue = cbr.getRegex("\\|flv\\|([a-z0-9]+)\\|").getMatch(0);
+        final String hFUvalue = cbr.getRegex("\\|(?:flv|mp4)\\|([a-z0-9]+)\\|").getMatch(0);
         if (pic_server != null && hFUvalue != null) {
             dllink = pic_server + "/" + hFUvalue + "/v.flv";
         }

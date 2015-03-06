@@ -54,8 +54,8 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
         final String username = new Regex(parameter, "freedisc\\.pl/([A-Za-z0-9\\-_]+),d\\-\\d+").getMatch(0);
         final String fpName = br.getRegex("<title>([^<>\"]*?)\\-  Freedisc\\.pl</title>").getMatch(0);
         // style='float: left; overflow: auto;'><a href="
-        final String[] links = br.getRegex("<div style=\\'float: left; overflow: auto;\\'>([\t\n\r ]+)?<a  href=\"(/[^<>\"]*?)\"").getColumn(1);
-        final String[] folders = br.getRegex("class=\"CssTreeValue\"><a href=\"(/[A-Za-z0-9\\-_]+,d\\-\\d+[^<>\"]*?)\"").getColumn(0);
+        final String[] links = br.getRegex("class=\\'name\\'><a href=\"(/[^<>\"]*?,f\\-[^<>\"]*?)\"").getColumn(0);
+        final String[] folders = br.getRegex("class=\\'name\\'><a href=\"([A-Za-z0-9\\-_]+,d\\-\\d+[^<>\"]*?)\"").getColumn(0);
         if ((links == null || links.length == 0) && (folders == null || folders.length == 0) && br.containsHTML("class=\"directoryText previousDirLinkFS\"")) {
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setAvailable(false);
@@ -64,8 +64,12 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
             return decryptedLinks;
         }
         if (links != null && links.length > 0) {
-            for (final String singleLink : links) {
-                decryptedLinks.add(createDownloadlink("http://freedisc.pl" + singleLink));
+            for (String singleLink : links) {
+                if (!singleLink.startsWith("/")) {
+                    singleLink = "/" + singleLink;
+                }
+                singleLink = "http://freedisc.pl" + singleLink;
+                decryptedLinks.add(createDownloadlink(singleLink));
             }
         }
         if (folders != null && folders.length > 0) {
