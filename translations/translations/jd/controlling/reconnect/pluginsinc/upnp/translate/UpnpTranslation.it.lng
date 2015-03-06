@@ -1,4 +1,3 @@
-AutoDetectAction_run_failed=Rilevati dispostivi UPNP, ma impossibile effettuare una riconnessione.\nProva invece riconnessione live header.
 AutoDetectUpnpAction_AutoDetectUpnpAction_=Prova a cercare nella tua rete tutti i dispositivi UPNP di riconnessione.\nLa maggior parte dei router FritzBox possono essere riconnessi in questo modo.
 UPNPReconnectInvoker_getName_=Riconnessione router UPNP
 UPNPRouterPlugin_run_error=Non trovo nessun dispositivo UPNP. Prova con Riconnessione Live Header!
