@@ -65,16 +65,16 @@ public class YunFileCom extends PluginForHost {
     }
 
     private Browser prepBrowser(final Browser prepBr) {
-        // define custom browser headers and language settings.
-        if (agent.get() == null) {
-            /* we first have to load the plugin, before we can reference it */
-            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
-        }
-        prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:35.0) Gecko/20100101 Firefox/35.0");
-        prepBr.getHeaders().put("Accept-Language", "de,en-us;q=0.7,en;q=0.3");
-        prepBr.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        // // define custom browser headers and language settings.
+        // if (agent.get() == null) {
+        // /* we first have to load the plugin, before we can reference it */
+        // agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+        // }
+        prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.111 Safari/537.36");
+        prepBr.getHeaders().put("Accept-Language", "en-AU,en;q=0.8");
+        prepBr.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
         prepBr.getHeaders().put("Accept-Charset", null);
-        prepBr.setCookie(MAINPAGE, "language", "en_us");
+        prepBr.setCookie(MAINPAGE, "language", "en_au");
         prepBr.setReadTimeout(3 * 60 * 1000);
         prepBr.setConnectTimeout(3 * 60 * 1000);
         return prepBr;
@@ -82,7 +82,7 @@ public class YunFileCom extends PluginForHost {
 
     private void checkErrors() throws NumberFormatException, PluginException {
         if (br.containsHTML(">You reached your hourly traffic limit")) {
-            final String waitMins = br.getRegex("style=\" color: green; font-size: 28px; \">(\\d+)</span> minutes</span>").getMatch(0);
+            final String waitMins = br.getRegex("You can wait download for[^\r\n]+(\\d+)</span>\\s*-?minutes</span>").getMatch(0);
             if (waitMins != null) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waitMins) * 60 * 1001l);
             }
@@ -112,6 +112,7 @@ public class YunFileCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        br = new Browser();
         // this.setBrowserExclusive();
         prepBrowser(br);
         br.setFollowRedirects(true);
@@ -121,7 +122,7 @@ public class YunFileCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.followConnection();
-        if (br.containsHTML("<title> \\- Yunfile\\.com \\- Free File Hosting and Sharing, Permanently Save </title>")) {
+        if (br.containsHTML("<title> - Yunfile\\.com - Free File Hosting and Sharing, Permanently Save </title>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Access denied
@@ -138,18 +139,18 @@ public class YunFileCom extends PluginForHost {
         }
         String filename = null, filesize = null;
         // if (br.getURL().matches("http://page\\d+\\.yunfile.com/fs/[a-z0-9]+/")) ;
-        filename = br.getRegex("Downloading:\\&nbsp;<a></a>\\&nbsp;([^<>]*) - [^<>]+<").getMatch(0);
+        filename = br.getRegex("Downloading:&nbsp;<a></a>&nbsp;([^<>]*) - [^<>]+<").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?) \\- Yunfile\\.com \\- Free File Hosting and Sharing, Permanently Save </title>").getMatch(0);
+            filename = br.getRegex("<title>([^<>\"]*?) - Yunfile\\.com - Free File Hosting and Sharing, Permanently Save </title>").getMatch(0);
         }
         if (filename == null) {
-            filename = br.getRegex("<h2 class=\"title\">文件下载\\&nbsp;\\&nbsp;([^<>\"]*?)</h2>").getMatch(0);
+            filename = br.getRegex("<h2 class=\"title\">文件下载&nbsp;&nbsp;([^<>\"]*?)</h2>").getMatch(0);
         }
         filesize = br.getRegex("文件大小: <b>([^<>\"]*?)</b>").getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex("File Size: <b>([^<>\"]*?)</b>").getMatch(0);
             if (filesize == null) {
-                filesize = br.getRegex("Downloading:\\&nbsp;<a></a>\\&nbsp;[^<>]+ \\- (\\d*(\\.\\d*)? (K|M|G)?B)[\t\n\r ]*?<").getMatch(0);
+                filesize = br.getRegex("Downloading:&nbsp;<a></a>&nbsp;[^<>]+ - (\\d*(\\.\\d*)? (K|M|G)?B)[\t\n\r ]*?<").getMatch(0);
             }
         }
         if (filename == null) {
@@ -175,16 +176,24 @@ public class YunFileCom extends PluginForHost {
         String action = null;
         String userid = null;
         String fileid = null;
-        requestFileInformation(downloadLink);
-        br.setCookie("http://yunfile.com/", "validCodeUrl", "\"http://page1.yunfile.com:8880/view?module=service&action=queryValidCode\"");
-        br.setCookie("http://p1.yunfile.com/", "JSESSIONID", br.getCookie("http://yunfile.com/", "JSESSIONID"));
-        br.cloneBrowser().openGetConnection("http://img.yfdisk.com/templates/yunfile/user/skyblue/css/skyblue.css?version=20150128");
-        br.cloneBrowser().openGetConnection("http://img.yfdisk.com/templates/yunfile/js/jquery.js?version=20150128");
-        br.cloneBrowser().openGetConnection("http://img.yfdisk.com/templates/yunfile/user/skyblue/js/skyblue.js?version=20150128");
-        // br.openGetConnection("");
-        // br.openGetConnection("");
-        /* Try multiple times - it will also fail in browser, most times on first attempt because wrong domain is used. */
-        for (int i = 1; i <= 3; i++) {
+        // br.setCookie("http://yunfile.com/", "validCodeUrl",
+        // "\"http://page1.yunfile.com:8880/view?module=service&action=queryValidCode\"");
+        // br.setCookie("http://p1.yunfile.com/", "JSESSIONID", br.getCookie("http://yunfile.com/", "JSESSIONID"));
+        // final String cssSkyBlue = "http://img.yfdisk.com/templates/yunfile/user/skyblue/css/skyblue.css?version=20150128";
+        // this.simulateBrowser(cssSkyBlue);
+        // this.simulateBrowser("http://img.yfdisk.com/templates/yunfile/js/jquery.js?version=20150128");
+        // this.simulateBrowser("http://img.yfdisk.com/templates/yunfile/user/skyblue/js/skyblue.js?version=20150128");
+        // // images, not sure
+        // this.simulateBrowser("http://img.yunfile.com/templates/yunfile/images/blank.gif");
+        // this.simulateBrowser("http://img.yfdisk.com/templates/default/images/social_skype2.png");
+        // this.simulateBrowser("http://img.yunfile.com/images/no_icon.gif");
+        // this.simulateBrowser("http://img.yunfile.com/images/yes_icon.gif");
+        // this.simulateBrowser("http://img.yfdisk.com/templates/yunfile/images/pay_way03.jpg");
+        // this.simulateBrowser("http://img.yfdisk.com/images/logo1.jpg");
+        // this.simulateBrowser("http://img.yfdisk.com/templates/yunfile/user/skyblue/images/lang_list2.png");
+
+        final int retry = 5;
+        for (int i = 0; i <= retry; i++) {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 br.getPage(downloadLink.getDownloadURL());
             }
@@ -192,13 +201,13 @@ public class YunFileCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 1 * 60 * 1001l);
             }
             checkErrors();
-            final Regex siteInfo = br.getRegex("<span style=\"font\\-weight:bold;\">\\&nbsp;\\&nbsp;<a href=\"(http://[a-z0-9]+\\.yunfile.com)/ls/([A-Za-z0-9\\-_]+)/\"");
+            final Regex siteInfo = br.getRegex("<span style=\"font-weight:bold;\">&nbsp;&nbsp;<a href=\"(http://[a-z0-9]+\\.yunfile.com)/ls/([A-Za-z0-9\\-_]+)/\"");
             userid = siteInfo.getMatch(1);
             if (userid == null) {
                 userid = new Regex(downloadLink.getDownloadURL(), "yunfile\\.com/file/(.*?)/").getMatch(0);
             }
             if (fileid == null) {
-                fileid = br.getRegex("\\&fileId=([A-Za-z0-9]+)\\&").getMatch(0);
+                fileid = br.getRegex("&fileId=([A-Za-z0-9]+)&").getMatch(0);
             }
             if (userid == null || fileid == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -207,11 +216,11 @@ public class YunFileCom extends PluginForHost {
             if (domain == null) {
                 domain = new Regex(br.getURL(), "(http://.*?\\.?yunfile\\.com)").getMatch(0);
             }
-            if (!br.getURL().contains(domain)) {
-                logger.info("Domain mismatch, retrying...");
-                br.getPage(domain + "/file/" + userid + "/" + fileid + "/");
-                continue;
-            }
+            // if (!br.getURL().contains(domain)) {
+            // logger.info("Domain mismatch, retrying...");
+            // br.getPage(domain + "/file/" + userid + "/" + fileid + "/");
+            // continue;
+            // }
             String freelink = domain + "/file/down/" + userid + "/" + fileid + ".html";
             // Check if captcha needed
             if (br.containsHTML(CAPTCHAPART)) {
@@ -223,29 +232,51 @@ public class YunFileCom extends PluginForHost {
                 captchalink = captchalink.replace("\"", "");
                 captchalink = captchalink.replace("+", "");
                 final String code = getCaptchaCode(domain + captchalink, downloadLink);
+                if ("".equals(code)) {
+                    if (i + 1 > retry) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    } else {
+                        // black images... needs another page get
+                        br.getPage(br.getURL());
+                        continue;
+                    }
+                }
                 freelink = freelink.replace(".html", "/" + Encoding.urlEncode(code) + ".html");
             }
-            try {
-                // br.cloneBrowser().getPage("http://www.yunfile.com/ckcounter.jsp?userId=" + userid);
-                br.cloneBrowser().getPage("http://www.yunfile.com//counter.jsp?userId=" + userid + "&fileId=" + fileid + "&dr=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
-            } catch (final Throwable e) {
-            }
+            // this has to be new browser! as shared cookies.... fks dl... //not needed
+            // Browser n = prepBrowser(new Browser());
+            // n.getHeaders().put("Referer", br.getURL());
+            // n.setCookie("www.yunfile.com", "lastViewTime", br.getCookie("p1.yunfile.com", "lastViewTime"));
+            // this.simulateBrowser(n, "http://www.yunfile.com//counter.jsp?userId=" + userid + "&fileId=" + fileid + "&dr=" + (i > 0 ?
+            // Encoding.urlEncode(downloadLink.getDownloadURL()) : ""), null);
+            //
+            // this.simulateBrowser("http://img.yfdisk.com/templates/default/images/foot_social.png");
+            // this.simulateBrowser(br, "http://img.yfdisk.com/templates/yunfile/user/skyblue/images/mastercard.png", cssSkyBlue);
+            // this.simulateBrowser(br, "http://img.yfdisk.com/templates/yunfile/user/skyblue/images/visa.png", cssSkyBlue);
+            // this.simulateBrowser("http://img.yunfile.com/templates/default/images/redbutton.jpg");
+
             int wait = 30;
             String shortWaittime = br.getRegex("\">(\\d+)</span> seconds</span> or").getMatch(0);
             if (shortWaittime != null) {
                 wait = Integer.parseInt(shortWaittime);
             }
-            sleep(wait * 1001l, downloadLink);
+            sleep((wait * 1000l) + 10, downloadLink);
+            //
+            // br.setCookie(br.getURL(), "arp_scroll_position", "100"); // not needed
             br.getPage(freelink);
+            // loose arp_scroll position cookie
+            // br.getRequest().getCookies().remove("arp_scroll_position");
             if (br.containsHTML(CAPTCHAPART)) {
+                if (i + 1 > retry) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
                 continue;
             }
             break;
         }
-
         /* Check here if the plugin is broken */
         final String savecdnurl = br.getRegex("saveCdnUrl=\"(http[^<>\"]*?)\"").getMatch(0);
-        final String finalurl_pt2 = br.getRegex("form\\.setAttribute\\(\"action\",saveCdnUrl\\+\"(view[^<>\"]*?)\");").getMatch(0);
+        final String finalurl_pt2 = br.getRegex("form\\.setAttribute\\(\"action\",saveCdnUrl\\+\"(view[^<>\"]*?)\"\\);").getMatch(0);
         final String vid1 = br.getRegex("name=\"vid1\" value=\"([a-z0-9]+)\"").getMatch(0);
         final String vid = br.getRegex("var vericode = \"([a-z0-9]+)\";").getMatch(0);
         final String md5 = br.getRegex("name=\"md5\" value=\"([a-z0-9]{32})\"").getMatch(0);
@@ -354,7 +385,7 @@ public class YunFileCom extends PluginForHost {
             ai.setStatus("Registered (free) user");
             account.setProperty("freeacc", true);
         } else {
-            final String expire = br.getRegex("Expire:(\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+            final String expire = br.getRegex("Expire:(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
             if (expire != null) {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH));
             }
@@ -425,6 +456,37 @@ public class YunFileCom extends PluginForHost {
             account.setProperty("name", account.getUser());
             account.setProperty("pass", account.getPass());
             account.setProperty("cookies", cookies);
+        }
+    }
+
+    private void simulateBrowser(final String url) {
+        this.simulateBrowser(br, url, null);
+    }
+
+    private void simulateBrowser(final Browser br, final String url, final String referer) {
+        if (br == null || url == null) {
+            return;
+        }
+        Browser rb = br.cloneBrowser();
+        // javascript
+        if (url.contains(".js?") || url.contains(".jsp?")) {
+            rb.getHeaders().put("Accept", "*/*");
+        } else if (url.contains(".css?")) {
+            rb.getHeaders().put("Accept", "*text/css,*/*;q=0.1");
+        }
+        if (referer != null) {
+            rb.getHeaders().put("Referer", referer);
+        }
+
+        URLConnectionAdapter con = null;
+        try {
+            con = rb.openGetConnection(url);
+        } catch (final Throwable e) {
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Exception e) {
+            }
         }
     }
 
