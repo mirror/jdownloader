@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,10 +26,12 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
+/**
+ * Note: using cloudflare
+ */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bc.vc" }, urls = { "http://(www\\.)?bc\\.vc/(?!advertising)[A-Za-z0-9\\-]+" }, flags = { 0 })
-public class BcVc extends PluginForDecrypt {
+public class BcVc extends antiDDoSForDecrypt {
 
     public BcVc(PluginWrapper wrapper) {
         super(wrapper);
@@ -44,7 +44,7 @@ public class BcVc extends PluginForDecrypt {
         ajax.getHeaders().put("Accept", "*/*");
         ajax.getHeaders().put("Connection-Type", "application/x-www-form-urlencoded");
         ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        ajax.postPage(url, param);
+        postPage(ajax, url, param);
     }
 
     /**
@@ -56,7 +56,7 @@ public class BcVc extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(false);
-        br.getPage(parameter);
+        getPage(parameter);
 
         /* Check for direct redirect */
         String redirect = br.getRedirectLocation();
@@ -111,20 +111,11 @@ public class BcVc extends PluginForDecrypt {
             ajaxPostPage("/fly/ajax.fly.php", data);
             url = ajax.getRegex("\"url\"\\:\"(.*)\"").getMatch(0);
         }
-
-        url = url.replace("\\", "");
-        decryptedLinks.add(createDownloadlink(url));
-        return decryptedLinks;
-    }
-
-    private String decodeUnicode(final String s) {
-        final Pattern p = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
-        String res = s;
-        final Matcher m = p.matcher(res);
-        while (m.find()) {
-            res = res.replaceAll("\\" + m.group(0), Character.toString((char) Integer.parseInt(m.group(1), 16)));
+        if (url != null) {
+            url = url.replace("\\", "");
+            decryptedLinks.add(createDownloadlink(url));
         }
-        return res;
+        return decryptedLinks;
     }
 
     /* NO OVERRIDE!! */

@@ -32,8 +32,6 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tny.cz" }, urls = { "http://(www\\.)?(tinypaste\\.com|tny\\.cz)/(?!tools|terms|api|contact|login|register|press)([0-9a-z]+|.*?id=[0-9a-z]+)" }, flags = { 0 })
 public class Tnypst extends PluginForDecrypt {
 
-    private DownloadLink dl = null;
-
     public Tnypst(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -44,39 +42,56 @@ public class Tnypst extends PluginForDecrypt {
         br.setFollowRedirects(true);
         String link = parameter.toString().replace("tinypaste.com/", "tny.cz/");
         br.getPage(link);
-        if (br.containsHTML(">404 \\- URL not found<|>The content has either been deleted|>Paste deleted<|>There does not seem to be anything here")) {
+        if (br.containsHTML(">404 - URL not found<|>The content has either been deleted|>Paste deleted<|>There does not seem to be anything here")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
         if (br.containsHTML("(Enter the correct password|has been password protected)")) {
             for (int i = 0; i <= 3; i++) {
                 String id = new Regex(link, "tny\\.cz/.*?id=([0-9a-z]+)").getMatch(0);
-                if (id == null) id = new Regex(link, "tny\\.cz/([0-9a-z]+)").getMatch(0);
+                if (id == null) {
+                    id = new Regex(link, "tny\\.cz/([0-9a-z]+)").getMatch(0);
+                }
                 Form pwform = br.getForm(0);
-                if (pwform == null || id == null) return null;
+                if (pwform == null || id == null) {
+                    return null;
+                }
                 String pw = getUserInput(null, parameter);
                 pwform.put("password_" + id, pw);
                 br.submitForm(pwform);
-                if (br.containsHTML("(Enter the correct password|has been password protected)")) continue;
+                if (br.containsHTML("(Enter the correct password|has been password protected)")) {
+                    continue;
+                }
                 break;
             }
-            if (br.containsHTML("(Enter the correct password|has been password protected)")) throw new DecrypterException(DecrypterException.PASSWORD);
+            if (br.containsHTML("(Enter the correct password|has been password protected)")) {
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
         }
-        String pasteFrame = br.getRegex("frameborder=\\'0\\' id=\\'pasteFrame\\' src=\"(http://tny\\.cz/.*?)\"").getMatch(0);
-        if (pasteFrame == null) pasteFrame = br.getRegex("\"(http://tny\\.cz/[a-z0-9]+/fullscreen\\.php\\?hash=[a-z0-9]+\\&linenum=(false|true))\"").getMatch(0);
+        String pasteFrame = br.getRegex("frameborder='0' id='pasteFrame' src=\"(http://tny\\.cz/.*?)\"").getMatch(0);
+        if (pasteFrame == null) {
+            pasteFrame = br.getRegex("\"(http://tny\\.cz/[a-z0-9]+/fullscreen\\.php\\?hash=[a-z0-9]+\\&linenum=(false|true))\"").getMatch(0);
+        }
         if (pasteFrame == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         br.getPage(pasteFrame.trim());
         String[] links = HTMLParser.getHttpLinks(br.toString(), null);
-        if (links == null || links.length == 0) return decryptedLinks;
+        if (links == null || links.length == 0) {
+            return decryptedLinks;
+        }
         ArrayList<String> pws = HTMLParser.findPasswords(br.toString());
         for (String element : links) {
             /* prevent recursion */
-            if (element.contains("tny.cz")) continue;
-            decryptedLinks.add(dl = createDownloadlink(element));
-            if (pws != null && pws.size() > 0) dl.setSourcePluginPasswordList(pws);
+            if (element.contains("tny.cz")) {
+                continue;
+            }
+            final DownloadLink dl = createDownloadlink(element);
+            if (pws != null && pws.size() > 0) {
+                dl.setSourcePluginPasswordList(pws);
+            }
+            decryptedLinks.add(dl);
         }
         return decryptedLinks;
     }

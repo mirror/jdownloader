@@ -9,6 +9,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -171,8 +172,45 @@ public abstract class antiDDoSForHost extends PluginForHost {
      * @author raztoki
      *
      * */
-    protected void postPage(String page, final String postData) throws Exception {
+    protected void postPage(final String page, final String postData) throws Exception {
         postPage(br, page, postData);
+    }
+
+    protected void postPage(final Browser ibr, String page, final LinkedHashMap<String, String> param) throws Exception {
+        if (page == null || param == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        // virgin browser will have no protocol, we will be able to get from page. existing page request might be with relative paths, we
+        // use existing browser session to determine host
+        final String host = ibr.getURL() != null ? Browser.getHost(ibr.getURL()) : Browser.getHost(page);
+        prepBrowser(ibr, host);
+        // stable sucks
+        if (isJava7nJDStable() && page.startsWith("https")) {
+            page = page.replaceFirst("^https://", "http://");
+        }
+        ibr.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+        URLConnectionAdapter con = null;
+        try {
+            con = ibr.openPostConnection(page, param);
+            readConnection(con, ibr);
+            antiDDoS(ibr);
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+            ibr.getHeaders().put("Content-Type", null);
+        }
+    }
+
+    /**
+     * Wrapper into postPage(importBrowser, page, param), where browser == this.br;
+     *
+     * @author raztoki
+     *
+     * */
+    protected void postPage(final String page, final LinkedHashMap<String, String> param) throws Exception {
+        postPage(br, page, param);
     }
 
     protected void sendForm(final Browser ibr, final Form form) throws Exception {
@@ -182,8 +220,8 @@ public abstract class antiDDoSForHost extends PluginForHost {
         // virgin browser will have no protocol, we will be able to get from page. existing page request might be with relative paths, we
         // use existing browser session to determine host
         final String host = ibr.getURL() != null ? Browser.getHost(ibr.getURL()) : Browser.getHost(form.getAction());
-        prepBrowser(ibr, host); // stable sucks && lame to the max, lets try and send a form outside of desired protocol. (works with
-        // oteupload)
+        prepBrowser(ibr, host);
+        // stable sucks && lame to the max, lets try and send a form outside of desired protocol. (works with oteupload)
         if (Form.MethodType.POST.equals(form.getMethod())) {
             // if the form doesn't contain an action lets set one based on current br.getURL().
             if (form.getAction() == null || form.getAction().equals("")) {
