@@ -57,6 +57,7 @@ public class PornTubeCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
@@ -65,10 +66,7 @@ public class PornTubeCom extends PluginForHost {
         if (br.containsHTML("(page-not-found\\.jpg\"|<title>Error 404 \\- Page not Found \\| PornTube\\.com</title>|alt=\"Page not Found\"|>This video is no longer available<)") || br.getURL().contains("error=")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<>\"]*?) \\| PornTube ®</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex(">Videos</a> \\&gt; </strong>([^<>\"]*?)</h2>").getMatch(0);
-        }
+        String filename = br.getRegex("itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
         final Regex info = br.getRegex("\\.ready\\(function\\(\\) \\{embedPlayer\\((\\d+), \\d+, \\[(.*?)\\],");
         String mediaID = info.getMatch(0);
         if (mediaID == null) {

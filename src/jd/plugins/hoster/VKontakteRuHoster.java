@@ -99,6 +99,7 @@ public class VKontakteRuHoster extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        int checkstatus = 0;
         String filename = null;
         /* Check if offline was set via decrypter */
         if (link.getBooleanProperty("offline", false)) {
@@ -161,7 +162,8 @@ public class VKontakteRuHoster extends PluginForHost {
             } else {
                 filename = Encoding.htmlDecode(filename.trim());
             }
-            if (!this.linkOk(link, filename)) {
+            checkstatus = this.linkOk(link, filename);
+            if (checkstatus != 1) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } else {
@@ -182,12 +184,19 @@ public class VKontakteRuHoster extends PluginForHost {
                     finalFilename = link.getName();
                 }
                 this.finalUrl = link.getStringProperty("directlink", null);
-                if (!this.linkOk(link, finalFilename)) {
+                checkstatus = this.linkOk(link, finalFilename);
+                if (checkstatus != 1) {
                     this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     final String postID = link.getStringProperty("postID", null);
                     final String fromId = link.getStringProperty("fromId", null);
                     /** TODO: Make sure that these IDs do always exist! */
                     if (postID == null || fromId == null) {
+                        logger.info("Cannot refresh offline audiolink");
+                        if (checkstatus == 404) {
+                            logger.info("audiolink is definitly offline");
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        }
+                        logger.warning("Unhandled status of audiolink");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     String post = "act=get_wall_playlist&al=1&local_id=" + postID + "&oid=" + fromId + "&wall_type=own";
@@ -200,8 +209,8 @@ public class VKontakteRuHoster extends PluginForHost {
                         this.logger.info("vk.com: FINALLINK is null in availablecheck --> Probably file is offline");
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-
-                    if (!this.linkOk(link, finalFilename)) {
+                    checkstatus = this.linkOk(link, finalFilename);
+                    if (checkstatus != 1) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                     link.setProperty("directlink", this.finalUrl);
@@ -211,7 +220,8 @@ public class VKontakteRuHoster extends PluginForHost {
                 this.br.setFollowRedirects(true);
                 this.finalUrl = link.getStringProperty("directlink", null);
                 // Check if directlink is expired
-                if (!this.linkOk(link, link.getFinalFileName())) {
+                checkstatus = this.linkOk(link, link.getFinalFileName());
+                if (checkstatus != 1) {
                     final String oid = link.getStringProperty("userid", null);
                     final String id = link.getStringProperty("videoid", null);
                     final String embedhash = link.getStringProperty("embedhash", null);
@@ -230,7 +240,8 @@ public class VKontakteRuHoster extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
-                if (!this.linkOk(link, link.getStringProperty("directfilename", null))) {
+                checkstatus = this.linkOk(link, link.getStringProperty("directfilename", null));
+                if (checkstatus != 1) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             } else {
@@ -452,10 +463,10 @@ public class VKontakteRuHoster extends PluginForHost {
      * Checks a given directlink for content. Sets finalfilename as final filename if finalfilename != null - else sets server filename as
      * final filename.
      *
-     * @return <b>true</b>: Link is valid and can be downloaded <b>false</b>: Link leads to HTML, times out or other problems occured - link
-     *         is not downloadable!
+     * @return <b>1</b>: Link is valid and can be downloaded, <b>0</b>: Link leads to HTML, times out or other problems occured, <b>404</b>:
+     *         Server 404 response
      */
-    private boolean linkOk(final DownloadLink downloadLink, final String finalfilename) throws IOException {
+    private int linkOk(final DownloadLink downloadLink, final String finalfilename) throws IOException {
         final Browser br2 = this.br.cloneBrowser();
         /* In case the link redirects to the finallink */
         br2.setFollowRedirects(true);
@@ -468,7 +479,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 /* This happens e.g. for temporarily unavailable videos. */
                 throw ebr;
             } catch (final Throwable e) {
-                return false;
+                return 0;
             }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
@@ -478,9 +489,12 @@ public class VKontakteRuHoster extends PluginForHost {
                     downloadLink.setFinalFileName(finalfilename);
                 }
             } else {
-                return false;
+                if (con.getResponseCode() == 404) {
+                    return 404;
+                }
+                return 0;
             }
-            return true;
+            return 1;
         } finally {
             try {
                 con.disconnect();
