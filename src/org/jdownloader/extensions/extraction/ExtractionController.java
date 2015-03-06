@@ -155,8 +155,10 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         if (gotStarted()) {
             logger.info("abort extraction");
             logger.flush();
-            super.kill();
+        } else {
+            logger.close();
         }
+        super.kill();
     }
 
     public LogSource getLogger() {
