@@ -80,10 +80,10 @@ public class ArchiveValidator {
         final ExtractionExtension extractor = EXTENSION;
         final ArrayList<Archive> archives = new ArrayList<Archive>();
         if (extractor != null && archiveFactories != null) {
-            for (ArchiveFactory af : archiveFactories) {
+            archiveFactoryLoop: for (ArchiveFactory af : archiveFactories) {
                 for (Archive archive : archives) {
                     if (archive.contains(af)) {
-                        continue;
+                        continue archiveFactoryLoop;
                     }
                 }
                 final Archive archive = extractor.getArchiveByFactory(af);
