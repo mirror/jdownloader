@@ -1871,7 +1871,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Checksum" })
     String checksumcolumnmd5();
 
-    @Default(lngs = { "en" }, values = { "If there ever has been any warrenty for anything, it ends here!" })
+    @Default(lngs = { "en" }, values = { "If there ever has been any warranty for anything, it ends here!" })
     String AdvancedSettings_onShow_title_();
 
     @Default(lngs = { "en" }, values = { "These advanced settings should not be modified unless you know what you are doing. \r\nChanging them may affect stability, security and performance of JDownloader.\r\nYou have been warned." })
