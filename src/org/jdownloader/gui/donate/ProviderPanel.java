@@ -60,8 +60,34 @@ public class ProviderPanel extends MigPanel {
         ;
         this.details = details;
         this.providerList = list;
+        if (providerList.contains(defaultProvider)) {
+            provider = defaultProvider;
+        } else {
+            for (PaymentProvider p : providerList) {
+                if (StringUtils.equals(p.getcCode(), defaultProvider.getcCode())) {
+                    provider = p;
+                    break;
+                }
+            }
+        }
 
-        provider = providerList.contains(defaultProvider) ? defaultProvider : providerList.get(0);
+        if (provider == null) {
+            try {
+                String loc = Currency.getInstance(Locale.getDefault()).getCurrencyCode();
+                for (PaymentProvider p : providerList) {
+                    if (StringUtils.equals(p.getcCode(), loc)) {
+                        provider = p;
+                        break;
+                    }
+                }
+            } catch (Throwable e) {
+            }
+            ;
+
+        }
+        if (provider == null) {
+            provider = providerList.get(0);
+        }
         init();
     }
 

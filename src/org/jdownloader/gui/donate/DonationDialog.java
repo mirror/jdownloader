@@ -10,7 +10,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Map.Entry;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -59,7 +58,7 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class DonationDialog extends AbstractDialog<Object> {
 
-    private LogSource                                   logger;
+    private LogSource                             logger;
     // private String symbol;
     // private String currencyCode;
     // private JFormattedTextField input;
@@ -69,14 +68,14 @@ public class DonationDialog extends AbstractDialog<Object> {
     // private PseudoMultiCombo<CategoryPriority> catSel;
     // private ExtTextArea note;
     // protected long prioritySum;
-    protected DonationDetails                           details;
-    private Browser                                     br;
-    protected String                                    transactionID;
-    private JTabbedPane                                 tabbed;
-    protected ProviderPanel                             currentPanel;
-    private JLabel                                      more;
-    private MigPanel                                    p;
-    private HashMap<String, ArrayList<PaymentProvider>> currencyMap;
+    protected DonationDetails                     details;
+    private Browser                               br;
+    protected String                              transactionID;
+    private JTabbedPane                           tabbed;
+    protected ProviderPanel                       currentPanel;
+    private JLabel                                more;
+    private MigPanel                              p;
+    private ArrayList<ArrayList<PaymentProvider>> mergedList;
 
     public DonationDialog(DonationDetails details2) {
         super(0, _GUI._.DonationDialog_DonationDialog_title_(), null, _GUI._.DonationDialog_ok(), null);
@@ -285,36 +284,38 @@ public class DonationDialog extends AbstractDialog<Object> {
         p.add(top, "spanx,pushx,growx");
         tabbed = new JTabbedPane();
 
-        currencyMap = new HashMap<String, ArrayList<PaymentProvider>>();
+        HashMap<String, ArrayList<PaymentProvider>> currencyMap = new HashMap<String, ArrayList<PaymentProvider>>();
+        mergedList = new ArrayList<ArrayList<PaymentProvider>>();
         for (PaymentProvider provider : details.getPaymentProvider()) {
             ArrayList<PaymentProvider> list = currencyMap.get(provider.getId());
             if (list == null) {
                 currencyMap.put(provider.getId(), list = new ArrayList<PaymentProvider>());
+                mergedList.add(list);
             }
             list.add(provider);
         }
         int selectTab = 0;
         PaymentProvider defaultProvider = details.getPaymentProvider()[details.getDefaultProvider()];
-        for (Entry<String, ArrayList<PaymentProvider>> provider : currencyMap.entrySet()) {
+        for (ArrayList<PaymentProvider> provider : mergedList) {
             Icon icon = null;
             StringBuilder label = new StringBuilder();
-            if ("paypal.com".equalsIgnoreCase(provider.getKey())) {
+            if ("paypal.com".equalsIgnoreCase(provider.get(0).getId())) {
                 icon = NewTheme.I().getIcon("logo/paypal_large", -1);
                 icon = IconIO.getScaledInstance(icon, (icon.getIconWidth() * 20) / icon.getIconHeight(), 20, Interpolation.BICUBIC);
                 icon = new AbstractIcon("logo/paypal_large", -1);
-            } else if ("coinbase.com".equalsIgnoreCase(provider.getKey())) {
+            } else if ("coinbase.com".equalsIgnoreCase(provider.get(0).getId())) {
                 icon = new AbstractIcon("logo/bitcoin_large", -1);
-            } else if ("paysafecard.com".equalsIgnoreCase(provider.getKey())) {
+            } else if ("paysafecard.com".equalsIgnoreCase(provider.get(0).getId())) {
                 icon = new AbstractIcon("logo/paysafecard_large", -1);
                 // icon = NewTheme.I().getIcon("logo/paysafecard_large", -1);
                 // icon = IconIO.getScaledInstance(icon, (icon.getIconWidth() * 18) / icon.getIconHeight(), 18, Interpolation.BILINEAR);
             } else {
-                label.append(provider.getKey());
+                label.append(provider.get(0).getId());
             }
-            if (provider.getValue().contains(defaultProvider)) {
+            if (provider.contains(defaultProvider)) {
                 selectTab = tabbed.getTabCount();
             }
-            tabbed.addTab(label.toString(), icon, new ProviderPanel(details, provider.getValue()));
+            tabbed.addTab(label.toString(), icon, new ProviderPanel(details, provider));
         }
         tabbed.addTab(_GUI._.DonationDialog_layoutDialogContent_more(), new AbstractIcon(IconKey.ICON_ADD, 20), more = new JLabel());
         p.add(tabbed, "pushx,growx,spanx,pushy,growy,spany");

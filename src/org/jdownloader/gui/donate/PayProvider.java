@@ -58,6 +58,10 @@ public enum PayProvider implements LabelInterface {
             return _GUI._.DonationDialog_popup_giropay();
         }
     };
+
+    public String getID() {
+        return null;
+    }
     // OTHER() {
     // @Override
     // public String getLabel() {
