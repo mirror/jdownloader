@@ -60,24 +60,26 @@ import org.jdownloader.DomainInfo;
 public class OffCloudCom extends PluginForHost {
 
     /** Using API: https://github.com/offcloud/offcloud-api */
-    private static final String                            CLEAR_DOWNLOAD_HISTORY       = "CLEAR_DOWNLOAD_HISTORY";
-    private static final String                            CLEAR_ALLOWED_IP_ADDRESSES   = "CLEAR_ALLOWED_IP_ADDRESSES";
-    private static final String                            DOMAIN                       = "https://offcloud.com/api/";
-    private static final String                            NICE_HOST                    = "offcloud.com";
-    private static final String                            NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
-    private static final String                            NOCHUNKS                     = NICE_HOSTproperty + "NOCHUNKS";
-    private static final String                            NORESUME                     = NICE_HOSTproperty + "NORESUME";
+    private static final String                            CLEAR_DOWNLOAD_HISTORY_SINGLE_LINK        = "CLEAR_DOWNLOAD_HISTORY_SINGLE_LINK";
+    private static final String                            CLEAR_DOWNLOAD_HISTORY_COMPLETE           = "CLEAR_DOWNLOAD_HISTORY_COMPLETE";
+    private static final String                            CLEAR_ALLOWED_IP_ADDRESSES                = "CLEAR_ALLOWED_IP_ADDRESSES";
+    private static final String                            DOMAIN                                    = "https://offcloud.com/api/";
+    private static final String                            NICE_HOST                                 = "offcloud.com";
+    private static final String                            NICE_HOSTproperty                         = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private static final String                            NOCHUNKS                                  = NICE_HOSTproperty + "NOCHUNKS";
+    private static final String                            NORESUME                                  = NICE_HOSTproperty + "NORESUME";
 
     /* Connection limits */
-    private static final boolean                           ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int                               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final boolean                           ACCOUNT_PREMIUM_RESUME                    = true;
+    private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS                 = 0;
+    private static final int                               ACCOUNT_PREMIUM_MAXDOWNLOADS              = 20;
+    private static final long                              DELETE_COMPLETE_DOWNLOAD_HISTORY_INTERVAL = 1 * 60 * 60 * 1000l;
 
-    private int                                            statuscode                   = 0;
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap           = new HashMap<Account, HashMap<String, Long>>();
-    private static HashMap<String, Integer>                hostMaxchunksMap             = new HashMap<String, Integer>();
-    private Account                                        currAcc                      = null;
-    private DownloadLink                                   currDownloadLink             = null;
+    private int                                            statuscode                                = 0;
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap                        = new HashMap<Account, HashMap<String, Long>>();
+    private static HashMap<String, Integer>                hostMaxchunksMap                          = new HashMap<String, Integer>();
+    private Account                                        currAcc                                   = null;
+    private DownloadLink                                   currDownloadLink                          = null;
 
     public OffCloudCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -240,25 +242,9 @@ public class OffCloudCom extends PluginForHost {
                         link.setProperty(NICE_HOSTproperty + OffCloudCom.NOCHUNKS, Boolean.valueOf(true));
                         throw new PluginException(LinkStatus.ERROR_RETRY);
                     }
-                } else if (this.getPluginConfig().getBooleanProperty(CLEAR_DOWNLOAD_HISTORY, default_clear_download_history)) {
-                    try {
-                        boolean success = false;
-                        try {
-                            logger.info("Trying to delete downloaded link from history");
-                            br.getPage("https://offcloud.com/instant/remove/" + requestID);
-                            if (getJson("success").equals("true")) {
-                                success = true;
-                            }
-                        } catch (final Throwable e) {
-                            success = false;
-                        }
-                        if (success) {
-                            logger.info("Succeeded to clear download history");
-                        } else {
-                            logger.warning("Failed to clear download history");
-                        }
-                    } catch (final Throwable ex) {
-                    }
+                } else if (this.getPluginConfig().getBooleanProperty(CLEAR_DOWNLOAD_HISTORY_SINGLE_LINK, default_clear_download_history_single_link)) {
+                    /* Delete downloadhistory entry of downloaded file from history */
+                    deleteSingleDownloadHistoryEntry(requestID);
                 }
             } catch (final PluginException e) {
                 e.printStackTrace();
@@ -303,6 +289,7 @@ public class OffCloudCom extends PluginForHost {
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final long last_full_login_time_ago = System.currentTimeMillis() - account.getLongProperty("last_full_login", System.currentTimeMillis());
         setConstants(account, null);
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
@@ -391,67 +378,17 @@ public class OffCloudCom extends PluginForHost {
             }
         }
         ai.setMultiHostSupport(this, supportedHosts);
-        /*
-         * Set chunklimits if possible. Do NOT yet use this list as supported host array as it maybe also contains dead hosts - we want to
-         * try to only add the ones which they say are working at the moment.
-         */
-        try {
-            this.getAPISafe("https://offcloud.com/api/sites/chunks");
-            final ArrayList<Object> ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            for (final Object o : ressourcelist) {
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) o;
-                final String host = (String) entries.get("host");
-                int maxchunks = ((Number) entries.get("maxChunks")).intValue();
-                if (maxchunks > 20) {
-                    maxchunks = 0;
-                } else if (maxchunks > 1) {
-                    maxchunks = -maxchunks;
-                }
-                hostMaxchunksMap.put(host, maxchunks);
-                /* Small workaround for uploaded */
-                if (host.equals("uploaded.net")) {
-                    hostMaxchunksMap.put("uploaded.to", maxchunks);
-                }
-            }
-        } catch (final Throwable e) {
-            /* Don't let the login fail because of this */
-        }
+        getAndSetChunklimits();
 
+        /* Let's handle some settings stuff. */
         if (this.getPluginConfig().getBooleanProperty(CLEAR_ALLOWED_IP_ADDRESSES, default_clear_allowed_ip_addresses)) {
-            try {
-                logger.info("Remove IP handling active: Removing all registered IPs but the current one");
-                postAPISafe("https://www.offcloud.com/account/registered-ips", "");
-                String[] ipdata = null;
-                final String jsoniparray = br.getRegex("\"data\": \\[(.*?)\\]").getMatch(0);
-                if (jsoniparray != null) {
-                    ipdata = jsoniparray.split("\\},[\n ]+\\{");
-                }
-                if (ipdata != null && ipdata.length > 1) {
-                    final int ipcount = ipdata.length;
-                    logger.info("Found " + ipcount + " active IPs");
-                    /* Delete all allowed IPs except the one the user has at the moment (first in list). */
-                    for (int i = 1; i <= ipdata.length - 1; i++) {
-                        final String singleipdata = ipdata[i];
-                        final String ip = getJson(singleipdata, "ip");
-                        if (ip == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        /* Set these headers before every request else it will fail! */
-                        br.getHeaders().put("Accept", "Accept   application/json, text/plain, */*");
-                        br.getHeaders().put("Content-Type", "application/json;charset=utf-8");
-                        br.postPageRaw("https://www.offcloud.com/account/ip/remove/", "{\"ip\":\"" + ip + "\"}");
-                        if ("true".equals(getJson("result"))) {
-                            logger.info("Successfully removed IP: " + ip);
-                        } else {
-                            logger.warning("Failed to remove IP: " + ip);
-                        }
-                    }
-                }
-            } catch (final Throwable e) {
-                logger.warning("FATAL error occured in IP-remove handling!");
-            }
+            this.clearAllowedIPAddresses();
+        }
+        if (this.getPluginConfig().getBooleanProperty(CLEAR_DOWNLOAD_HISTORY_COMPLETE, default_clear_download_history_complete) && last_full_login_time_ago >= DELETE_COMPLETE_DOWNLOAD_HISTORY_INTERVAL) {
+            this.deleteCompleteDownloadHistory();
         }
 
+        account.setProperty("last_full_login", System.currentTimeMillis());
         return ai;
     }
 
@@ -481,8 +418,147 @@ public class OffCloudCom extends PluginForHost {
         }
     }
 
+    /**
+     * Set chunklimits if possible. Do NOT yet use this list as supported host array as it maybe also contains dead hosts - we want to try
+     * to only add the ones which they say are working at the moment.
+     */
+    private void getAndSetChunklimits() {
+        try {
+            this.getAPISafe("https://offcloud.com/api/sites/chunks");
+            final ArrayList<Object> ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            for (final Object o : ressourcelist) {
+                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) o;
+                final String host = (String) entries.get("host");
+                int maxchunks = ((Number) entries.get("maxChunks")).intValue();
+                if (maxchunks > 20) {
+                    maxchunks = 0;
+                } else if (maxchunks > 1) {
+                    maxchunks = -maxchunks;
+                }
+                hostMaxchunksMap.put(host, maxchunks);
+                /* Small workaround for uploaded */
+                if (host.equals("uploaded.net")) {
+                    hostMaxchunksMap.put("uploaded.to", maxchunks);
+                }
+            }
+        } catch (final Throwable e) {
+            /* Don't let the login fail because of this */
+        }
+    }
+
+    /**
+     * This simply accesses the table of allowed IP addresses in the account and removes all IPs but the current one --> Avoids unnerving
+     * "confirm your IP address" e-mails.
+     */
+    private void clearAllowedIPAddresses() {
+        try {
+            logger.info("Remove IP handling active: Removing all registered IPs but the current one");
+            postAPISafe("https://www.offcloud.com/account/registered-ips", "");
+            String[] ipdata = null;
+            final String jsoniparray = br.getRegex("\"data\": \\[(.*?)\\]").getMatch(0);
+            if (jsoniparray != null) {
+                ipdata = jsoniparray.split("\\},[\n ]+\\{");
+            }
+            if (ipdata != null && ipdata.length > 1) {
+                final int ipcount = ipdata.length;
+                logger.info("Found " + ipcount + " active IPs");
+                /* Delete all allowed IPs except the one the user has at the moment (first in list). */
+                for (int i = 1; i <= ipdata.length - 1; i++) {
+                    final String singleipdata = ipdata[i];
+                    final String ip = getJson(singleipdata, "ip");
+                    if (ip == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    postRawAPISafe("https://www.offcloud.com/account/ip/remove/", "{\"ip\":\"" + ip + "\"}");
+                    if ("true".equals(getJson("result"))) {
+                        logger.info("Successfully removed IP: " + ip);
+                    } else {
+                        logger.warning("Failed to remove IP: " + ip);
+                    }
+                }
+            }
+        } catch (final Throwable e) {
+            logger.warning("FATAL error occured in IP-remove handling!");
+            e.printStackTrace();
+        }
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private void deleteCompleteDownloadHistory() throws Exception {
+        try {
+            final ArrayList<String> requestIDs = new ArrayList<String>();
+            boolean isEnd = false;
+            int page = 0;
+            do {
+                logger.info("Decrypting requestIDs of page: " + page);
+                this.postRawAPISafe("https://offcloud.com/instant/history", "{\"page\":" + page + "}");
+                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                final ArrayList<Object> history = (ArrayList) entries.get("history");
+                for (final Object historyentry_object : history) {
+                    final LinkedHashMap<String, Object> historyentry = (LinkedHashMap<String, Object>) historyentry_object;
+                    final String requestId = (String) historyentry.get("requestId");
+                    if (requestId == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "WTF");
+                    }
+                    requestIDs.add(requestId);
+                }
+                isEnd = ((Boolean) entries.get("isEnd")).booleanValue();
+                page++;
+            } while (!isEnd);
+
+            final int req_ids_size = requestIDs.size();
+
+            logger.info("Found " + req_ids_size + " requestIDs to delete");
+            int counter = 0;
+            int counter_success = 0;
+            for (final String requestID : requestIDs) {
+                logger.info("Deleting requestID: " + counter + " of " + requestIDs.size());
+                if (deleteSingleDownloadHistoryEntry(requestID)) {
+                    counter_success++;
+                }
+                counter++;
+            }
+            if (counter_success == req_ids_size) {
+                logger.info("Successfully deleted all requestIDs: " + req_ids_size);
+            } else {
+                logger.info("Failed to delete some requestIDs. Successfully deleted " + counter_success + " of " + requestIDs.size() + " requestIDs");
+            }
+        } catch (final Throwable e) {
+            logger.warning("Failed to clear complete download history");
+            e.printStackTrace();
+        }
+    }
+
+    private boolean deleteSingleDownloadHistoryEntry(final String requestID) {
+        boolean success = false;
+        try {
+            try {
+                logger.info("Trying to delete requestID from history: " + requestID);
+                br.getPage("https://offcloud.com/instant/remove/" + requestID);
+                if (getJson("success").equals("true")) {
+                    success = true;
+                }
+            } catch (final Throwable e) {
+                success = false;
+            }
+            if (success) {
+                logger.info("Succeeded to clear download history");
+            } else {
+                logger.warning("Failed to clear download history");
+            }
+        } catch (final Throwable ex) {
+        }
+        return success;
+    }
+
     private String getLoginCookie() {
         return currAcc.getStringProperty("offcloudlogincookie", null);
+    }
+
+    private void prepareBrForJsonRequest() {
+        /* Set these headers before every request else json (ajax) requests will fail! */
+        br.getHeaders().put("Accept", "Accept   application/json, text/plain, */*");
+        br.getHeaders().put("Content-Type", "application/json;charset=utf-8");
     }
 
     /**
@@ -580,6 +656,13 @@ public class OffCloudCom extends PluginForHost {
 
     private void postAPISafe(final String accesslink, final String postdata) throws IOException, PluginException {
         br.postPage(accesslink, postdata);
+        updatestatuscode();
+        handleAPIErrors(this.br);
+    }
+
+    private void postRawAPISafe(final String accesslink, final String postdata) throws IOException, PluginException {
+        prepareBrForJsonRequest();
+        br.postPageRaw(accesslink, postdata);
         updatestatuscode();
         handleAPIErrors(this.br);
     }
@@ -828,11 +911,13 @@ public class OffCloudCom extends PluginForHost {
         }
     }
 
-    private final boolean default_clear_download_history     = false;
-    private final boolean default_clear_allowed_ip_addresses = false;
+    private final boolean default_clear_download_history_single_link = false;
+    private final boolean default_clear_download_history_complete    = false;
+    private final boolean default_clear_allowed_ip_addresses         = false;
 
     public void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEAR_DOWNLOAD_HISTORY, JDL.L("plugins.hoster.offcloudcom.clear_serverside_download_history", getPhrase("SETTING_CLEAR_DOWNLOAD_HISTORY"))).setDefaultValue(default_clear_download_history));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEAR_DOWNLOAD_HISTORY_SINGLE_LINK, JDL.L("plugins.hoster.offcloudcom.clear_serverside_download_history_entry_of_current_successfully_downloaded_link", getPhrase("SETTING_CLEAR_DOWNLOAD_HISTORY"))).setDefaultValue(default_clear_download_history_single_link));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEAR_DOWNLOAD_HISTORY_COMPLETE, JDL.L("plugins.hoster.offcloudcom.clear_serverside_download_history", getPhrase("SETTING_CLEAR_DOWNLOAD_HISTORY_COMPLETE"))).setDefaultValue(default_clear_download_history_complete));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEAR_ALLOWED_IP_ADDRESSES, JDL.L("plugins.hoster.offcloudcom.clear_allowed_ip_addresses", getPhrase("SETTING_CLEAR_ALLOWED_IP_ADDRESSES"))).setDefaultValue(default_clear_allowed_ip_addresses));
     }
@@ -843,42 +928,44 @@ public class OffCloudCom extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Delete downloaded links from the offcloud download history after successful download?");
-                                                      put("SETTING_CLEAR_ALLOWED_IP_ADDRESSES", "Activate 'Confirm IP' workaround?\r\nIn case you often get E-Mails from offcloud to confirm your current IP address, this setting may help.\r\nThis will always delete all of your allowed IPs except your current IP from your offcloud account.\r\n<html><p style=\"color:#F62817\">WARNING: Do NOT use this function in case you\r\n-Use multiple internet connections (IPs) at the same time\r\n-Share your offcloud account with friends\r\n-Use one or more proxies (or VPNs)</p></html>");
-                                                      put("ACCOUNT_USERNAME", "Username:");
-                                                      put("ACCOUNT_LINKSLEFT", "Instant download inputs left:");
-                                                      put("ACCOUNT_TYPE", "Account type:");
-                                                      put("ACCOUNT_SIMULTANDLS", "Max. simultaneous downloads:");
-                                                      put("ACCOUNT_CHUNKS", "Max number of chunks per file:");
-                                                      put("ACCOUNT_CHUNKS_VALUE", "Depends on the host, see: offcloud.com/api/sites/chunks");
-                                                      put("ACCOUNT_RESUME", "Resume of stopped downloads:");
-                                                      put("ACCOUNT_YES", "Yes");
-                                                      put("ACCOUNT_NO", "No");
-                                                      put("DETAILS_TITEL", "Account information");
-                                                      put("LANG_GENERAL_UNLIMITED", "Unlimited");
-                                                      put("LANG_GENERAL_CLOSE", "Close");
-                                                  }
-                                              };
+        {
+            put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Delete downloaded link from the offcloud download history after successful download?\r\n<html><b>Note that this does NOT delete the complete download history but only the entry of the SUCCESSFULLY downloaded link!</b></hml>");
+            put("SETTING_CLEAR_DOWNLOAD_HISTORY_COMPLETE", "Delete complete download history each 60 minutes when?\r\n<html><p style=\"color:#F62817\">Note that this process happens during the account check.\r\nEspecially if you have a lot of links, the first time can take over 10 minutes!</p></html>");
+            put("SETTING_CLEAR_ALLOWED_IP_ADDRESSES", "Activate 'Confirm IP' workaround?\r\nIn case you often get E-Mails from offcloud to confirm your current IP address, this setting may help.\r\nThis will always delete all of your allowed IPs except your current IP from your offcloud account.\r\n<html><p style=\"color:#F62817\">WARNING: Do NOT use this function in case you\r\n-Use multiple internet connections (IPs) at the same time\r\n-Share your offcloud account with friends\r\n-Use one or more proxies (or VPNs)</p></html>");
+            put("ACCOUNT_USERNAME", "Username:");
+            put("ACCOUNT_LINKSLEFT", "Instant download inputs left:");
+            put("ACCOUNT_TYPE", "Account type:");
+            put("ACCOUNT_SIMULTANDLS", "Max. simultaneous downloads:");
+            put("ACCOUNT_CHUNKS", "Max number of chunks per file:");
+            put("ACCOUNT_CHUNKS_VALUE", "Depends on the host, see: offcloud.com/api/sites/chunks");
+            put("ACCOUNT_RESUME", "Resume of stopped downloads:");
+            put("ACCOUNT_YES", "Yes");
+            put("ACCOUNT_NO", "No");
+            put("DETAILS_TITEL", "Account information");
+            put("LANG_GENERAL_UNLIMITED", "Unlimited");
+            put("LANG_GENERAL_CLOSE", "Close");
+        }
+    };
 
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-                                                  {
-                                                      put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Lösche heruntergeladene links nach jedem erfolgreichen Download aus der offcloud Download-Historie?");
-                                                      put("SETTING_CLEAR_ALLOWED_IP_ADDRESSES", "Aktiviere 'IP-bestätigen' Workaround?\r\nFalls du oft E-Mails von offcloud bekommst mit der Aufforderung, deine aktuelle IP-Adresse zu bestätigen, könnte diese Einstellung helfen.\r\nSie wird immer alle erlaubten IPs außer deine aktuelle in deinem offcloud Konto löschen.\r\n<html><p style=\"color:#F62817\">WARNUNG: Benutze diese Einstellungsmöglichkeit NICHT, falls du\r\n-Mehrere Internetverbindungen (IPs) gleichzeitig nutzt\r\n-Deinen offcloud Account mit Freunden teilst\r\n-Einen oder mehrere Proxys (oder VPNs) nutzt</p></html>");
-                                                      put("ACCOUNT_USERNAME", "Account Name:");
-                                                      put("ACCOUNT_LINKSLEFT", "Verbleibende Anzahl von Instant-Download Links:");
-                                                      put("ACCOUNT_TYPE", "Account Typ:");
-                                                      put("ACCOUNT_SIMULTANDLS", "Max. Anzahl gleichzeitiger Downloads:");
-                                                      put("ACCOUNT_CHUNKS", "Max. Anzahl Verbindungen pro Datei (Chunks):");
-                                                      put("ACCOUNT_CHUNKS_VALUE", "Kommt auf den Hoster an, siehe: offcloud.com/api/sites/chunks");
-                                                      put("ACCOUNT_RESUME", "Abgebrochene Downloads fortsetzbar:");
-                                                      put("ACCOUNT_YES", "Ja");
-                                                      put("ACCOUNT_NO", "Nein");
-                                                      put("DETAILS_TITEL", "Additional account information");
-                                                      put("LANG_GENERAL_UNLIMITED", "Unlimitiert");
-                                                      put("LANG_GENERAL_CLOSE", "Schließen");
-                                                  }
-                                              };
+        {
+            put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Lösche heruntergeladenen Link nach jedem erfolgreichen Download aus der offcloud Download-Historie?\r\n<html><b>Bedenke, dass dies NICHT die komplette Historie löscht sondern nur jeweils den Eintrag des ERFOLGREICH heruntergeladenen Links!</b></hml>");
+            put("SETTING_CLEAR_DOWNLOAD_HISTORY_COMPLETE", "Lösche die komplette Download Historie alle 60 Minuten?\r\n<html><p style=\"color:#F62817\">Bedenke, dass diese Aktion während der Accountüberprüfung ausgeführt wird.\r\nDie erste Ausführung kann je nach Anzahl der History Einträge länger als 10 Minuten in Anspruch nehmen, weswegen es eventuell so aussieht, als würde die Accountüberprüfung hängen.</p></html>");
+            put("SETTING_CLEAR_ALLOWED_IP_ADDRESSES", "Aktiviere 'IP-bestätigen' Workaround?\r\nFalls du oft E-Mails von offcloud bekommst mit der Aufforderung, deine aktuelle IP-Adresse zu bestätigen, könnte diese Einstellung helfen.\r\nSie wird immer alle erlaubten IPs außer deine aktuelle in deinem offcloud Konto löschen.\r\n<html><p style=\"color:#F62817\">WARNUNG: Benutze diese Einstellungsmöglichkeit NICHT, falls du\r\n-Mehrere Internetverbindungen (IPs) gleichzeitig nutzt\r\n-Deinen offcloud Account mit Freunden teilst\r\n-Einen oder mehrere Proxys (oder VPNs) nutzt</p></html>");
+            put("ACCOUNT_USERNAME", "Account Name:");
+            put("ACCOUNT_LINKSLEFT", "Verbleibende Anzahl von Instant-Download Links:");
+            put("ACCOUNT_TYPE", "Account Typ:");
+            put("ACCOUNT_SIMULTANDLS", "Max. Anzahl gleichzeitiger Downloads:");
+            put("ACCOUNT_CHUNKS", "Max. Anzahl Verbindungen pro Datei (Chunks):");
+            put("ACCOUNT_CHUNKS_VALUE", "Kommt auf den Hoster an, siehe: offcloud.com/api/sites/chunks");
+            put("ACCOUNT_RESUME", "Abgebrochene Downloads fortsetzbar:");
+            put("ACCOUNT_YES", "Ja");
+            put("ACCOUNT_NO", "Nein");
+            put("DETAILS_TITEL", "Additional account information");
+            put("LANG_GENERAL_UNLIMITED", "Unlimitiert");
+            put("LANG_GENERAL_CLOSE", "Schließen");
+        }
+    };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
