@@ -2500,16 +2500,18 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             @Override
                             protected Void run() throws RuntimeException {
                                 for (DownloadLink cleanupLink : cleanupLinks) {
-                                    String name = cleanupLink.getView().getDisplayName();
-                                    logger.info("Remove Link " + name + " because " + cleanupLink.getFinalLinkState() + " and CleanupImmediately!");
-                                    java.util.List<DownloadLink> remove = new ArrayList<DownloadLink>();
-                                    remove.add(cleanupLink);
-                                    if (DownloadController.getInstance().askForRemoveVetos(remove)) {
-                                        DownloadController.getInstance().removeChildren(remove);
-                                    } else {
-                                        logger.info("Remove Link " + name + " failed because of removeVetos!");
+                                    if (DownloadController.getInstance() == cleanupLink.getFilePackage().getControlledBy()) {
+                                        String name = cleanupLink.getView().getDisplayName();
+                                        logger.info("Remove Link " + name + " because " + cleanupLink.getFinalLinkState() + " and CleanupImmediately!");
+                                        List<DownloadLink> remove = new ArrayList<DownloadLink>();
+                                        remove.add(cleanupLink);
+                                        remove = DownloadController.getInstance().askForRemoveVetos(singleDownloadController, remove);
+                                        if (remove.size() > 0) {
+                                            DownloadController.getInstance().removeChildren(remove);
+                                        } else {
+                                            logger.info("Remove Link " + name + " failed because of removeVetos!");
+                                        }
                                     }
-
                                 }
                                 return null;
                             }
@@ -2520,7 +2522,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 case CLEANUP_AFTER_PACKAGE_HAS_FINISHED:
                     if (cleanupPackages.size() > 0) {
                         for (FilePackage filePackage : cleanupPackages) {
-                            DownloadController.removePackageIfFinished(logger, filePackage);
+                            DownloadController.removePackageIfFinished(singleDownloadController, logger, filePackage);
                         }
                     }
                     break;

@@ -71,20 +71,20 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
     protected final Queue QUEUE = new Queue(getClass().getName()) {
 
-                                    @Override
-                                    public void killQueue() {
-                                        Log.exception(new Throwable("YOU CANNOT KILL ME!"));
-                                        /*
-                                         * this queue can't be killed
-                                         */
-                                    }
+        @Override
+        public void killQueue() {
+            Log.exception(new Throwable("YOU CANNOT KILL ME!"));
+            /*
+             * this queue can't be killed
+             */
+        }
 
-                                };
+    };
 
     /**
      * add a Package at given position position in this PackageController. in case the Package is already controlled by this
      * PackageController this function does move it to the given position
-     * 
+     *
      * @param pkg
      * @param index
      */
@@ -119,7 +119,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
     /**
      * Returns how many children the controller holds.
-     * 
+     *
      * @return
      * @TODO: Needs optimization!
      */
@@ -297,23 +297,36 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         vetoListener.add(list);
     }
 
-    public boolean askForRemoveVetos(PackageType pkg) {
+    public List<ChildType> askForRemoveVetos(Object asker, PackageType pkg) {
+        final ArrayList<ChildType> noVetos = getChildrenCopy(pkg);
         for (PackageControllerModifyVetoListener<PackageType, ChildType> listener : vetoListener) {
-            if (!listener.onAskToRemovePackage(pkg)) {
-                //
-                return false;
+            final List<ChildType> response = listener.onAskToRemovePackage(asker, pkg, noVetos);
+            if (response != null) {
+                noVetos.retainAll(response);
+            } else if (response == null) {
+                noVetos.clear();
+            }
+            if (noVetos.size() == 0) {
+                return noVetos;
             }
         }
-        return true;
+        return noVetos;
     }
 
-    public boolean askForRemoveVetos(List<ChildType> children) {
+    public List<ChildType> askForRemoveVetos(Object asker, List<ChildType> children) {
+        final ArrayList<ChildType> noVetos = new ArrayList<ChildType>(children);
         for (PackageControllerModifyVetoListener<PackageType, ChildType> listener : vetoListener) {
-            if (!listener.onAskToRemoveChildren(children)) {
-                return false;
+            final List<ChildType> response = listener.onAskToRemoveChildren(asker, noVetos);
+            if (response != null) {
+                noVetos.retainAll(response);
+            } else if (response == null) {
+                noVetos.clear();
+            }
+            if (noVetos.size() == 0) {
+                return noVetos;
             }
         }
-        return true;
+        return noVetos;
     }
 
     /* remove the Package from this PackageController */
@@ -425,7 +438,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
     /**
      * Returns all children. if filter!=null not all children are returned, but only the accepted ones
-     * 
+     *
      * @param filter
      * @return
      */
@@ -552,7 +565,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
             QUEUE.add(new QueueAction<Void, RuntimeException>() {
                 /**
                  * Kinf of binarysearch to add new links in a sorted list
-                 * 
+                 *
                  * @param pkgchildren
                  * @param elementsToMove
                  * @param sorter
@@ -705,7 +718,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     /**
      * remove the given children from the package. also removes the package from this PackageController in case it is empty after removal of
      * the children
-     * 
+     *
      * @param pkg
      * @param children
      */

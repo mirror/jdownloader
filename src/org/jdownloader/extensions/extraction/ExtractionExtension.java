@@ -653,7 +653,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         }
     }
 
-    private synchronized Archive getExistingArchive(final ArchiveFactory archiveFactory) {
+    private synchronized Archive getExistingArchive(final Object archiveFactory) {
         for (ExtractionController ec : extractionQueue.getJobs()) {
             final Archive archive = ec.getArchiv();
             if (archive.contains(archiveFactory)) {
@@ -703,61 +703,64 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             try {
                 if (caller instanceof SingleDownloadController) {
                     final DownloadLink link = ((SingleDownloadController) caller).getDownloadLink();
-                    final DownloadLinkArchiveFactory dlFactory = new DownloadLinkArchiveFactory(link);
-                    if (getExistingArchive(dlFactory) == null) {
-                        final Archive archive = buildArchive(dlFactory);
+                    if (getExistingArchive(link) == null) {
+                        final Archive archive = buildArchive(new DownloadLinkArchiveFactory(link));
                         if (onNewArchive(caller, archive)) {
                             addToQueue(archive, false);
                         }
                     }
                 } else if (caller instanceof ExtractionController) {
                     if (getSettings().isDeepExtractionEnabled() && matchesDeepExtractionBlacklist(fileList) == false) {
-                        final ExtractionController con = (ExtractionController) caller;
-                        final ArrayList<String> knownPasswords = new ArrayList<String>();
-                        final String usedPassword = con.getArchiv().getFinalPassword();
-                        if (StringUtils.isNotEmpty(usedPassword)) {
-                            knownPasswords.add(usedPassword);
-                        }
-                        final List<String> archiveSettingsPasswords = con.getArchiv().getSettings().getPasswords();
-                        if (archiveSettingsPasswords != null) {
-                            knownPasswords.addAll(archiveSettingsPasswords);
-                        }
-                        DownloadLinkArchive previousDownloadLinkArchive = null;
-                        Archive previousArchive = con.getArchiv();
-                        while (previousArchive != null) {
-                            if (con.getArchiv() instanceof DownloadLinkArchive) {
-                                previousDownloadLinkArchive = (DownloadLinkArchive) con.getArchiv();
-                            }
-                            previousArchive = previousArchive.getPreviousArchive();
-                        }
-                        final List<ArchiveFactory> archiveFactories = new ArrayList<ArchiveFactory>();
-                        for (File archiveStartFile : fileList) {
-                            final FileArchiveFactory af = new FileArchiveFactory(archiveStartFile, previousDownloadLinkArchive);
-                            if (getExistingArchive(af) == null) {
-                                archiveFactories.add(af);
+                        final List<File> files = new ArrayList<File>(fileList.length);
+                        for (File file : fileList) {
+                            if (getExistingArchive(file) == null) {
+                                files.add(file);
                             }
                         }
-                        final List<Archive> newArchives = ArchiveValidator.getArchivesFromArchiveFactories(archiveFactories);
-                        for (Archive newArchive : newArchives) {
-                            if (onNewArchive(caller, newArchive)) {
-                                final ArchiveFile firstArchiveFile = newArchive.getFirstArchiveFile();
-                                if (firstArchiveFile instanceof FileArchiveFile) {
-                                    newArchive.getSettings().setExtractPath(((FileArchiveFile) firstArchiveFile).getFile().getParent());
+                        if (files.size() > 0) {
+                            final ExtractionController con = (ExtractionController) caller;
+                            final ArrayList<String> knownPasswords = new ArrayList<String>();
+                            final String usedPassword = con.getArchiv().getFinalPassword();
+                            if (StringUtils.isNotEmpty(usedPassword)) {
+                                knownPasswords.add(usedPassword);
+                            }
+                            final List<String> archiveSettingsPasswords = con.getArchiv().getSettings().getPasswords();
+                            if (archiveSettingsPasswords != null) {
+                                knownPasswords.addAll(archiveSettingsPasswords);
+                            }
+                            DownloadLinkArchive previousDownloadLinkArchive = null;
+                            Archive previousArchive = con.getArchiv();
+                            while (previousArchive != null) {
+                                if (con.getArchiv() instanceof DownloadLinkArchive) {
+                                    previousDownloadLinkArchive = (DownloadLinkArchive) con.getArchiv();
                                 }
-                                newArchive.getSettings().setPasswords(knownPasswords);
-                                addToQueue(newArchive, false);
+                                previousArchive = previousArchive.getPreviousArchive();
+                            }
+                            final List<ArchiveFactory> archiveFactories = new ArrayList<ArchiveFactory>(files.size());
+                            for (File archiveStartFile : files) {
+                                archiveFactories.add(new FileArchiveFactory(archiveStartFile, previousDownloadLinkArchive));
+                            }
+                            final List<Archive> newArchives = ArchiveValidator.getArchivesFromPackageChildren(archiveFactories);
+                            for (Archive newArchive : newArchives) {
+                                if (onNewArchive(caller, newArchive)) {
+                                    final ArchiveFile firstArchiveFile = newArchive.getFirstArchiveFile();
+                                    if (firstArchiveFile instanceof FileArchiveFile) {
+                                        newArchive.getSettings().setExtractPath(((FileArchiveFile) firstArchiveFile).getFile().getParent());
+                                    }
+                                    newArchive.getSettings().setPasswords(knownPasswords);
+                                    addToQueue(newArchive, false);
+                                }
                             }
                         }
                     }
                 } else {
-                    final List<ArchiveFactory> archiveFactories = new ArrayList<ArchiveFactory>();
-                    for (File archiveStartFile : fileList) {
-                        final FileArchiveFactory af = new FileArchiveFactory(archiveStartFile);
-                        if (getExistingArchive(af) == null) {
-                            archiveFactories.add(af);
+                    final List<File> files = new ArrayList<File>(fileList.length);
+                    for (File file : fileList) {
+                        if (getExistingArchive(file) == null) {
+                            files.add(file);
                         }
                     }
-                    final List<Archive> newArchives = ArchiveValidator.getArchivesFromArchiveFactories(archiveFactories);
+                    final List<Archive> newArchives = ArchiveValidator.getArchivesFromPackageChildren(files);
                     for (Archive newArchive : newArchives) {
                         if (onNewArchive(caller, newArchive)) {
                             addToQueue(newArchive, false);
@@ -949,29 +952,29 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     }
 
     @Override
-    public boolean onAskToRemovePackage(FilePackage pkg) {
-        boolean readL = pkg.getModifyLock().readLock();
-        List<DownloadLink> copy = null;
-        try {
-            copy = new ArrayList<DownloadLink>(pkg.getChildren());
-        } finally {
-            pkg.getModifyLock().readUnlock(readL);
-        }
-        return onAskToRemoveChildren(copy);
-
+    public List<DownloadLink> onAskToRemovePackage(Object asker, FilePackage pkg, List<DownloadLink> children) {
+        return onAskToRemoveChildren(asker, children);
     }
 
     @Override
-    public boolean onAskToRemoveChildren(final List<DownloadLink> children) {
-        for (DownloadLink dlink : children) {
-            final DownloadLinkArchiveFactory factory = new DownloadLinkArchiveFactory(dlink);
-            final Archive archive = getExistingArchive(factory);
+    public List<DownloadLink> onAskToRemoveChildren(final Object asker, final List<DownloadLink> children) {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>(children.size());
+        for (final DownloadLink dlink : children) {
+            final Archive archive = getExistingArchive(dlink);
             if (archive != null) {
+                if (asker instanceof ExtractionController) {
+                    ExtractionController ec = (ExtractionController) asker;
+                    if (ec.getArchiv() == archive || StringUtils.equals(ec.getArchiv().getArchiveID(), archive.getArchiveID())) {
+                        ret.add(dlink);
+                        continue;
+                    }
+                }
                 logger.info("Link is in active Archive do not remove: " + archive);
-                return false;
+            } else {
+                ret.add(dlink);
             }
         }
-        return true;
+        return ret;
     }
 
 }

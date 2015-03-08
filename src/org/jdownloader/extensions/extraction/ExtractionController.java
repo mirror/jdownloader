@@ -126,7 +126,9 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 }
             }
             for (ExtractionController ec : removeList) {
-                getExtractionQueue().remove(ec);
+                if (ec != this) {
+                    getExtractionQueue().remove(ec);
+                }
             }
         }
     };
@@ -483,10 +485,9 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
      * Deletes the archive files.
      */
     void removeArchiveFiles() {
-        for (ArchiveFile link : archive.getArchiveFiles()) {
-            link.deleteFile(removeAfterExtractionAction);
-            if (isRemoveDownloadLinksAfterExtraction()) {
-                link.deleteLink();
+        if (isRemoveDownloadLinksAfterExtraction()) {
+            for (ArchiveFile link : archive.getArchiveFiles()) {
+                link.deleteFile(removeAfterExtractionAction);
             }
         }
     }

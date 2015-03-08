@@ -1,11 +1,11 @@
 package org.jdownloader.extensions.extraction.contextmenu.downloadlist;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.WeakHashMap;
 
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.plugins.DownloadLink;
 
 import org.jdownloader.extensions.extraction.Archive;
@@ -13,6 +13,7 @@ import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
+import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFactory;
 import org.jdownloader.gui.views.SelectionInfo;
 
 public class ArchiveValidator {
@@ -63,28 +64,30 @@ public class ArchiveValidator {
     }
 
     public static List<Archive> getArchives(SelectionInfo<?, ?> si) {
-        final ExtractionExtension extractor = EXTENSION;
-        if (extractor != null) {
-            final List<AbstractPackageChildrenNode> children = new ArrayList<AbstractPackageChildrenNode>();
-            for (Object l : si.getChildren()) {
-                if (l instanceof AbstractPackageChildrenNode) {
-                    children.add((AbstractPackageChildrenNode) l);
-                }
-            }
-            return getArchivesFromPackageChildren(children);
-        }
-        return new ArrayList<Archive>();
+        return getArchivesFromPackageChildren(si.getChildren());
     }
 
-    public static List<Archive> getArchivesFromArchiveFactories(List<ArchiveFactory> archiveFactories) {
+    public static List<Archive> getArchivesFromPackageChildren(List<? extends Object> nodes) {
         final ExtractionExtension extractor = EXTENSION;
         final ArrayList<Archive> archives = new ArrayList<Archive>();
-        if (extractor != null && archiveFactories != null) {
-            archiveFactoryLoop: for (ArchiveFactory af : archiveFactories) {
+        if (extractor != null) {
+            buildLoop: for (Object child : nodes) {
                 for (Archive archive : archives) {
-                    if (archive.contains(af)) {
-                        continue archiveFactoryLoop;
+                    if (archive.contains(child)) {
+                        continue buildLoop;
                     }
+                }
+                final ArchiveFactory af;
+                if (child instanceof CrawledLink) {
+                    af = new CrawledLinkFactory(((CrawledLink) child));
+                } else if (child instanceof DownloadLink) {
+                    af = new DownloadLinkArchiveFactory(((DownloadLink) child));
+                } else if (child instanceof File) {
+                    af = new FileArchiveFactory(((File) child));
+                } else if (child instanceof ArchiveFactory) {
+                    af = (ArchiveFactory) child;
+                } else {
+                    continue buildLoop;
                 }
                 final Archive archive = extractor.getArchiveByFactory(af);
                 if (archive != null) {
@@ -95,21 +98,4 @@ public class ArchiveValidator {
         return archives;
     }
 
-    public static List<Archive> getArchivesFromPackageChildren(List<AbstractPackageChildrenNode> childrenNodes) {
-        final ExtractionExtension extractor = EXTENSION;
-        if (extractor != null && childrenNodes != null) {
-            final List<ArchiveFactory> archiveFactories = new ArrayList<ArchiveFactory>();
-            for (AbstractPackageChildrenNode l : childrenNodes) {
-                if (l instanceof CrawledLink) {
-                    archiveFactories.add(new CrawledLinkFactory(((CrawledLink) l)));
-                } else if (l instanceof DownloadLink) {
-                    archiveFactories.add(new DownloadLinkArchiveFactory(((DownloadLink) l)));
-                } else {
-                    continue;
-                }
-            }
-            return getArchivesFromArchiveFactories(archiveFactories);
-        }
-        return new ArrayList<Archive>();
-    }
 }

@@ -112,7 +112,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
                 public void aggregate() {
                 }
 
-                                                               @Override
+                @Override
                 public void setItems(List<DownloadLink> updatedItems) {
                 }
 
@@ -156,6 +156,10 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
 
                 @Override
                 public String getMessage(Object requestor) {
+                    return null;
+                }
+
+                public PackageController<FilePackage, DownloadLink> getControlledby() {
                     return null;
                 }
 
