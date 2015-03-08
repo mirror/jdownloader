@@ -31,18 +31,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "porntubevidz.com" }, urls = { "http://(www\\.)?porntubevidz\\.com/videos/\\d+/[a-z0-9\\-_]+/" }, flags = { 0 })
-public class PorntubevidzCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vikiporn.com" }, urls = { "http://(www\\.)?vikiporn\\.com/videos/\\d+/[a-z0-9\\-]+/" }, flags = { 0 })
+public class VikiPornCom extends PluginForHost {
 
-    public PorntubevidzCom(PluginWrapper wrapper) {
+    public VikiPornCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
-    // Porn_get_file_/videos/_basic Version 0.1
+    // Porn_get_file_/videos/_basic Version 0.2
     // Tags: Script, template
     // mods: filename RegEx
-    // limit-info:
     // protocol: no https
     // other:
 
@@ -57,28 +56,32 @@ public class PorntubevidzCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.porntubevidz.com/sharing.php";
+        return "http://www.vikiporn.com/sharing.php";
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("/404.php") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h2>([^<>\"]*?)</h2>").getMatch(0);
+        String filename = br.getRegex("<div id=\"main\">[\t\n\r ]+<h2>([^<>]*?)</h2>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>Porn Tube Vidz \\- ([^<>\"]*?)</title>").getMatch(0);
+            filename = br.getRegex("<title>VikiPorn \\- ([^<>]*?)</title>").getMatch(0);
         }
-        DLLINK = checkDirectLink(downloadLink, "directlink");
+        DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
         if (DLLINK == null) {
-            DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\')").getMatch(0);
+            DLLINK = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
         }
         if (DLLINK == null) {
-            DLLINK = br.getRegex("video_url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
+            DLLINK = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
+        }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -102,7 +105,13 @@ public class PorntubevidzCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openGetConnection(DLLINK);
+                try {
+                    /* @since JD2 */
+                    con = br.openHeadConnection(DLLINK);
+                } catch (final Throwable t) {
+                    /* Not supported in old 0.9.581 Stable */
+                    con = br.openGetConnection(DLLINK);
+                }
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -143,7 +152,11 @@ public class PorntubevidzCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                con = br2.openGetConnection(dllink);
+                if (isJDStable()) {
+                    con = br2.openGetConnection(dllink);
+                } else {
+                    con = br2.openHeadConnection(dllink);
+                }
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -168,8 +181,8 @@ public class PorntubevidzCom extends PluginForHost {
         output = output.replace("|", "¦");
         output = output.replace("<", "[");
         output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
+        output = output.replace("/", "/");
+        output = output.replace("\\", "");
         output = output.replace("*", "#");
         output = output.replace("?", "¿");
         output = output.replace("!", "¡");
@@ -180,6 +193,10 @@ public class PorntubevidzCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
+    }
+
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override

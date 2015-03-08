@@ -48,6 +48,7 @@ public class VideoOnlineUa extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("video.online.uadecrypted/", "video.online.ua/"));
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -56,14 +57,22 @@ public class VideoOnlineUa extends PluginForHost {
         br.setCookie("http://video.online.ua/", "online_18", "1");
         br.getPage(downloadLink.getDownloadURL());
         String externLink = br.getRegex("\"(http://(www\\.)?novy\\.tv/embed/\\d+)\"").getMatch(0);
-        if (externLink == null) externLink = br.getRegex("\"(http://(www\\.)?rutube\\.ru/video/embed/\\d+)\"").getMatch(0);
+        if (externLink == null) {
+            externLink = br.getRegex("\"(http://(www\\.)?rutube\\.ru/video/embed/\\d+)\"").getMatch(0);
+        }
         // External sites - not supported
-        if (externLink != null || br.containsHTML("ictv\\.ua/public/swfobject/zl_player\\.swf\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (externLink != null || br.containsHTML("ictv\\.ua/public/swfobject/zl_player\\.swf\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         br.getPage("http://video.online.ua/embed/" + fid);
-        if (br.containsHTML(">Страница по данному адресу отсутствует<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Страница по данному адресу отсутствует<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // External sites - their videos don't even play via browser
-        if (br.containsHTML("stb\\.ua/embed/|m1\\.tv/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("stb\\.ua/embed/|m1\\.tv/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
 
         String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         final String hash = br.getRegex("\"hash\":\"([^<>\"]*?)\"").getMatch(0);
@@ -72,15 +81,23 @@ public class VideoOnlineUa extends PluginForHost {
         } else {
             DLLINK = br.getRegex("file: \\'(http://video\\.online\\.ua/playlist/\\d+\\.xml[^<>\"]*?)\\'").getMatch(0);
         }
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getPage(Encoding.htmlDecode(DLLINK));
-        if (br.containsHTML(">Страница по данному адресу отсутствует<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Страница по данному адресу отсутствует<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         DLLINK = br.getRegex("<location>(http://[^<>\"]*?)</location>").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".mp4";
+        if (ext == null || ext.length() > 5) {
+            ext = ".mp4";
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -88,10 +105,11 @@ public class VideoOnlineUa extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

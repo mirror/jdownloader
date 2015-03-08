@@ -52,17 +52,26 @@ public class SourceForgeNet extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(br.getURL()));
                 return decryptedLinks;
             }
-            if (br.containsHTML("(Error 404|The page you were looking for cannot be found|could not be found or is not available)")) {
+            if (br.containsHTML("(Error 404|The page you were looking for cannot be found|could not be found or is not available)") || br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
                 logger.info("Link offline: " + parameter);
+                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+                offline.setAvailable(false);
+                offline.setProperty("offline", true);
+                decryptedLinks.add(offline);
                 return decryptedLinks;
             }
             final String altDlink = br.getRegex("<b>Download</b>[\t\n\r ]+<small title=\"(/[^<>\"]*?)\"").getMatch(0);
             String link = null;
-            if (parameter.contains("/files/extras/") || parameter.contains("prdownloads.sourceforge.net") || parameter.contains("/download")) {
+            if (br.getURL().contains("/files/extras/") || br.getURL().contains("prdownloads.sourceforge.net") || br.getURL().contains("/download")) {
                 link = br.getRegex("Please use this([\n\t\r ]+)?<a href=\"(.*?)\"").getMatch(1);
-                if (link == null) link = br.getRegex("\"(http://downloads\\.sourceforge\\.net/project/.*?/extras/.*?/.*?use_mirror=.*?)\"").getMatch(0);
+                if (link == null) {
+                    link = br.getRegex("\"(http://downloads\\.sourceforge\\.net/project/.*?/extras/.*?/.*?use_mirror=.*?)\"").getMatch(0);
+                }
             } else {
-                final String project = new Regex(parameter, "sourceforge\\.net/projects/(.*?)/").getMatch(0);
+                String project = new Regex(parameter, "sourceforge\\.net/projects/(.*?)/").getMatch(0);
+                if (project == null) {
+                    project = new Regex(br.getURL(), "sourceforge\\.net/projects/(.*?)/").getMatch(0);
+                }
                 if (altDlink != null) {
                     // Avoid ad-installers, see here: http://userscripts.org/scripts/show/174951
                     link = "http://master.dl.sourceforge.net/project/" + project + altDlink;
@@ -105,7 +114,9 @@ public class SourceForgeNet extends PluginForDecrypt {
                 if (getPage) {
                     br.getPage(link);
                     finallink = br.getRedirectLocation();
-                    if (finallink == null) return null;
+                    if (finallink == null) {
+                        return null;
+                    }
                 } else {
                     finallink = link;
                 }
@@ -117,7 +128,9 @@ public class SourceForgeNet extends PluginForDecrypt {
                 failed = false;
                 break;
             }
-            if (failed) logger.warning("The finallink is no file!!");
+            if (failed) {
+                logger.warning("The finallink is no file!!");
+            }
             decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
             con.disconnect();
         } else {

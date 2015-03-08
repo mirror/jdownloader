@@ -42,18 +42,26 @@ public class SexSeeVideoNet extends PluginForHost {
 
     private String FILENAME = null;
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.getURL().contains("/user/signup/")) {
             FILENAME = new Regex(link.getDownloadURL(), "sexseevideo\\.net/\\d+/([a-z0-9\\-]+)").getMatch(0);
-            if (FILENAME == null) FILENAME = getFUID(link);
+            if (FILENAME == null) {
+                FILENAME = getFUID(link);
+            }
         } else {
             FILENAME = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         }
-        if (FILENAME == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (FILENAME == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(Encoding.htmlDecode(FILENAME.trim()) + ".flv");
         return AvailableStatus.TRUE;
     }
@@ -65,7 +73,9 @@ public class SexSeeVideoNet extends PluginForHost {
         // br.getPage("http://www.sexseevideo.net/modules/video/player/config.php?id=" + getFUID(downloadLink));
         br.getPage("http://www.sexseevideo.net/modules/video/player/config_iframe.php?id=" + getFUID(downloadLink));
         String dllink = br.getRegex("\\'url\\': \\'(http://[^<>\"]*?)\\'").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, Encoding.htmlDecode(dllink), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
