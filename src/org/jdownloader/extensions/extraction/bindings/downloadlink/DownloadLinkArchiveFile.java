@@ -209,14 +209,16 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
                     @Override
                     protected Void run() throws RuntimeException {
-                        controller.getLogger().info("Remove Link " + downloadLink.getView().getDisplayName() + " because Finished and CleanupImmediately and Extrating finished!");
-                        List<DownloadLink> remove = new ArrayList<DownloadLink>();
-                        remove.add(downloadLink);
-                        remove = DownloadController.getInstance().askForRemoveVetos(remove);
-                        if (remove.size() > 0) {
-                            DownloadController.getInstance().removeChildren(remove);
-                        } else {
-                            controller.getLogger().info("Remove Link " + downloadLink.getView().getDisplayName() + " failed because of removeVetos!");
+                        if (DownloadController.getInstance() == downloadLink.getFilePackage().getControlledBy()) {
+                            controller.getLogger().info("Remove Link " + downloadLink.getView().getDisplayName() + " because Finished and CleanupImmediately and Extrating finished!");
+                            List<DownloadLink> remove = new ArrayList<DownloadLink>();
+                            remove.add(downloadLink);
+                            remove = DownloadController.getInstance().askForRemoveVetos(controller, remove);
+                            if (remove.size() > 0) {
+                                DownloadController.getInstance().removeChildren(remove);
+                            } else {
+                                controller.getLogger().info("Remove Link " + downloadLink.getView().getDisplayName() + " failed because of removeVetos!");
+                            }
                         }
                         return null;
                     }
@@ -230,7 +232,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
                         controller.getLogger().info("Remove Package " + downloadLink.getView().getDisplayName() + " because Finished and CleanupImmediately and Extrating finished!");
                         FilePackage fp = downloadLink.getFilePackage();
                         if (fp.getControlledBy() != null) {
-                            DownloadController.removePackageIfFinished(controller.getLogger(), fp);
+                            DownloadController.removePackageIfFinished(controller, controller.getLogger(), fp);
                         } else {
                             controller.getLogger().info("Cannot remove. Package has no controller");
                         }

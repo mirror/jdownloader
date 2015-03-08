@@ -20,7 +20,6 @@ import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.BooleanStatus;
-import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.gui.components.CheckboxMenuItem;
 import org.jdownloader.gui.translate._GUI;
@@ -118,18 +117,9 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
 
     @Override
     protected List<Archive> loadArchives() {
-        final List<Archive> validatedArchives = ArchiveValidator.validate(getSelection());
-        final List<Archive> ret = new ArrayList<Archive>();
-        if (validatedArchives != null) {
-            final CrawledLinkFactory archiveFactory = new CrawledLinkFactory(currentLink);
-            for (Archive archive : validatedArchives) {
-                if (archive.contains(archiveFactory)) {
-                    ret.add(archive);
-                    return ret;
-                }
-            }
-        }
-        return ret;
+        final ArrayList<CrawledLink> children = new ArrayList<CrawledLink>();
+        children.add(currentLink);
+        return ArchiveValidator.getArchivesFromPackageChildren(children);
     }
 
     @Override

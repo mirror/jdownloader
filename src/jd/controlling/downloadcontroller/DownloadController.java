@@ -314,7 +314,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     /**
      * add all given FilePackages to this DownloadController at the beginning
-     * 
+     *
      * @param fps
      */
     public void addAll(final java.util.List<FilePackage> fps) {
@@ -323,7 +323,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     /**
      * add/move all given FilePackages at given Position
-     * 
+     *
      * @param fp
      * @param index
      * @param repos
@@ -385,7 +385,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     /**
      * checks if this DownloadController contains a DownloadLink with given url
-     * 
+     *
      * @param url
      * @return
      */
@@ -694,7 +694,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     /**
      * load FilePackages and DownloadLinks from database
-     * 
+     *
      * @return
      * @throws Exception
      */
@@ -863,7 +863,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     /**
      * saves List of FilePackages to given File as ZippedJSon
-     * 
+     *
      * @param packages
      * @param file
      */
@@ -1076,18 +1076,14 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     /**
      * @param fp
      */
-    public static void removePackageIfFinished(final LogSource logger, final FilePackage fp) {
+    public static void removePackageIfFinished(final Object asker, final LogSource logger, final FilePackage fp) {
         getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
             @Override
             protected Void run() throws RuntimeException {
                 if (new DownloadLinkAggregator(fp).isFinished()) {
-                    if (DownloadController.getInstance().askForRemoveVetos(fp)) {
-                        logger.info("Remove Package " + fp.getName() + " because Finished and CleanupPackageFinished!");
-                        DownloadController.getInstance().removePackage(fp);
-                    } else {
-                        logger.info("Package cannot be removed. got veto");
-                    }
+                    final List<DownloadLink> noVetos = DownloadController.getInstance().askForRemoveVetos(asker, fp);
+                    DownloadController.getInstance().removeChildren(noVetos);
                 } else {
                     logger.info("Package is not finised");
                 }

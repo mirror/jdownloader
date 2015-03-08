@@ -2,7 +2,6 @@ package org.jdownloader.gui.views.downloads.properties;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 
 import javax.swing.JPopupMenu;
@@ -14,7 +13,6 @@ import jd.plugins.FilePackage;
 import org.appwork.swing.MigPanel;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.extensions.extraction.Archive;
-import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.gui.components.CheckboxMenuItem;
 import org.jdownloader.gui.translate._GUI;
@@ -34,21 +32,8 @@ public class FilePackagePropertiesPanel extends DownloadLinkPropertiesPanel {
 
     @Override
     protected List<Archive> loadArchives() {
-        final List<Archive> validatedArchives = ArchiveValidator.validate(getSelection());
-        final HashSet<Archive> ret = new HashSet<Archive>();
-        if (validatedArchives != null) {
-            final ArrayList<DownloadLink> children = DownloadController.getInstance().getChildrenCopy(currentPackage);
-            for (DownloadLink child : children) {
-                final DownloadLinkArchiveFactory archiveFactory = new DownloadLinkArchiveFactory(child);
-                for (Archive archive : validatedArchives) {
-                    if (archive.contains(archiveFactory)) {
-                        ret.add(archive);
-                        break;
-                    }
-                }
-            }
-        }
-        return new ArrayList<Archive>(ret);
+        final ArrayList<DownloadLink> children = DownloadController.getInstance().getChildrenCopy(currentPackage);
+        return ArchiveValidator.getArchivesFromPackageChildren(children);
     }
 
     public void fillPopup(JPopupMenu pu) {
