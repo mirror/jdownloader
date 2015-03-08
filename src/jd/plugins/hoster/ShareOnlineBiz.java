@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,7 +25,6 @@ import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
@@ -43,7 +41,6 @@ import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -64,7 +61,7 @@ import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "https?://(www\\.)?(share\\-online\\.biz|egoshare\\.com)/(download\\.php\\?id\\=|dl/)[\\w]+" }, flags = { 2 })
-public class ShareOnlineBiz extends PluginForHost {
+public class ShareOnlineBiz extends antiDDoSForHost {
 
     private static final String                                     COOKIE_HOST                          = "http://share-online.biz";
     private static WeakHashMap<Account, HashMap<String, String>>    ACCOUNTINFOS                         = new WeakHashMap<Account, HashMap<String, String>>();
@@ -85,7 +82,6 @@ public class ShareOnlineBiz extends PluginForHost {
     private static final int                                        account_premium_maxdownloads         = 10;
     private static final int                                        account_premium_penalty_maxdownloads = 2;
 
-    private static AtomicReference<String>                          UA                                   = new AtomicReference<String>(RandomUserAgent.generate());
     private boolean                                                 hideID                               = true;
     private static AtomicInteger                                    maxChunksnew                         = new AtomicInteger(-2);
     private char[]                                                  FILENAMEREPLACES                     = new char[] { '_', '&', 'ü' };
@@ -108,6 +104,7 @@ public class ShareOnlineBiz extends PluginForHost {
         }
         try {
             Browser br = new Browser();
+            loadAPIWorkAround(br);
             br.setCookiesExclusive(true);
             br.setFollowRedirects(true);
             /* api does not support keep-alive */
@@ -136,6 +133,8 @@ public class ShareOnlineBiz extends PluginForHost {
                     c++;
                 }
                 br.setKeepResponseContentBytes(true);
+                // because Request.setHTML(String) it nullifies byte array it will cause NPE here. .. do not call antiddos methods and hope
+                // it will work.
                 br.postPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=checklinks&md5=1", sb.toString());
                 final byte[] responseBytes = br.getRequest().getResponseBytes();
                 final String infosUTF8[][] = new Regex(new String(responseBytes, "UTF-8"), Pattern.compile("(.*?);\\s*?(OK)\\s*?;(.*?)\\s*?;(\\d+);([0-9a-fA-F]{32})")).getMatches();
@@ -200,6 +199,17 @@ public class ShareOnlineBiz extends PluginForHost {
         return true;
     }
 
+    private void loadAPIWorkAround(final Browser ibr) throws Exception {
+        // need to manually do this as we are not calling cloudflare getPage/postPage/etc, we need cloudflare cookie loaded.
+        super.prepBrowser(ibr, "share-online.biz");
+        // we want to get page to get possible antiddos stops/checks and save cookie.
+        if (ibr.getCookies("share-online.biz") == null || ibr.getCookies("share-online.biz").isEmpty()) {
+            getPage(ibr, userProtocol() + "://share-online.biz/");
+            // this should prevent any bleed over
+            ibr.getHeaders().put("Referer", null);
+        }
+    }
+
     private String userProtocol() {
         if (userPrefersHttps()) {
             return "https";
@@ -255,10 +265,10 @@ public class ShareOnlineBiz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable3", "No free Free-User Slots! Get PremiumAccount or wait!"), waitNoFreeSlot);
         }
         /* Max chunks/overall connections to the server reached (second condition if if-statement is just failover) */
-        if (br.getURL().contains("failure/threads") || br.containsHTML(">Kein weiterer Download\\-Thread möglich")) {
+        if (br.getURL().contains("failure/threads") || br.containsHTML(">Kein weiterer Download-Thread möglich")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.toomanyConnections", "Wait before starting new downloads"), 1 * 60 * 1000l);
         }
-        if (br.containsHTML(">Share-Online \\- Server Maintenance<|>MAINTENANCE</h1>") || br.containsHTML("<title>Share\\-Online \\- Not available</title>")) {
+        if (br.containsHTML(">Share-Online - Server Maintenance<|>MAINTENANCE</h1>") || br.containsHTML("<title>Share-Online - Not available</title>")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.maintenance", "Server maintenance"), 30 * 60 * 1000l);
         }
         // shared IP error
@@ -348,7 +358,7 @@ public class ShareOnlineBiz extends PluginForHost {
             try {
                 final Browser br2 = new Browser();
                 final String id = this.getID(downloadLink);
-                br2.getPage(userProtocol() + "://api.share-online.biz/api/account.php?act=fileError&fid=" + id);
+                getPage(br2, userProtocol() + "://api.share-online.biz/api/account.php?act=fileError&fid=" + id);
             } catch (Throwable e) {
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -510,11 +520,10 @@ public class ShareOnlineBiz extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                prepBrSite();
-                br.getPage("http://www.share-online.biz/");
-                br.postPage("https://www.share-online.biz/user/login", "l_rememberme=1&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                getPage("http://www.share-online.biz/");
+                postPage("https://www.share-online.biz/user/login", "l_rememberme=1&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
                 /* English language is needed for free download! */
-                br.getPage("http://www.share-online.biz/lang/set/english");
+                getPage("http://www.share-online.biz/lang/set/english");
                 if (br.getCookie(COOKIE_HOST, "storage") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -696,12 +705,10 @@ public class ShareOnlineBiz extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         checkShowFreeDialog();
         requestFileInformation(downloadLink);
-        prepBrSite();
         doFree(downloadLink);
     }
 
     private void doFree(final DownloadLink downloadLink) throws Exception {
-        br.setFollowRedirects(true);
         if (server != -1) {
             synchronized (noFreeSlot) {
                 Long ret = noFreeSlot.get(server);
@@ -736,9 +743,12 @@ public class ShareOnlineBiz extends PluginForHost {
                 }
             }
         }
+        // new browser will allow for new prepBrowser to load cookies
+        br = new Browser();
         // redirects!
+        br.setFollowRedirects(true);
         try {
-            br.getPage(downloadLink.getDownloadURL().replace("https://", "http://"));
+            getPage(downloadLink.getDownloadURL().replace("https://", "http://"));
         } catch (final BrowserException e) {
             if (br.getRequest().getHttpConnection().getResponseCode() == 502) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.maintenance", "Server maintenance"), 30 * 60 * 1000l);
@@ -753,7 +763,7 @@ public class ShareOnlineBiz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String ID = getID(downloadLink);
-        br.postPage("/dl/" + ID + "/free/", "dl_free=1&choice=free");
+        postPage("/dl/" + ID + "/free/", "dl_free=1&choice=free");
         errorHandling(br, downloadLink, null, null);
         String wait = br.getRegex("var wait=(\\d+)").getMatch(0);
         boolean captcha = br.containsHTML("RECAPTCHA active");
@@ -783,7 +793,7 @@ public class ShareOnlineBiz extends PluginForHost {
                     this.sleep(gotWait, downloadLink);
                 }
             }
-            br.postPage("/dl/" + ID + "/free/captcha/" + System.currentTimeMillis(), "dl_free=1&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_challenge_field=" + rc.getChallenge());
+            postPage("/dl/" + ID + "/free/captcha/" + System.currentTimeMillis(), "dl_free=1&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_challenge_field=" + rc.getChallenge());
             url = br.getRegex("([a-zA-Z0-9/=]+)").getMatch(0);
             if ("0".equals(url)) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -801,7 +811,7 @@ public class ShareOnlineBiz extends PluginForHost {
         if (url != null && url.trim().length() == 0) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 5 * 60 * 1000l);
         }
-        if (br.containsHTML(">Proxy\\-Download not supported for free access")) {
+        if (br.containsHTML(">Proxy-Download not supported for free access")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Proxy download not supported for free access", 5 * 60 * 1000l);
         }
         if (url == null || !url.startsWith("http")) {
@@ -836,13 +846,20 @@ public class ShareOnlineBiz extends PluginForHost {
         }
     }
 
-    private void prepBrSite() {
-        br.getHeaders().put("User-Agent", UA.get());
-        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        br.getHeaders().put("Accept-Language", "en-us,de;q=0.7,en;q=0.3");
-        br.getHeaders().put("Pragma", null);
-        br.getHeaders().put("Cache-Control", null);
-        br.setCookie("http://www.share-online.biz", "page_language", "english");
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
+
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        super.prepBrowser(prepBr, host);
+        prepBr.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        prepBr.getHeaders().put("Accept-Language", "en-us,de;q=0.7,en;q=0.3");
+        prepBr.getHeaders().put("Pragma", null);
+        prepBr.getHeaders().put("Cache-Control", null);
+        prepBr.setCookie("share-online.biz", "page_language", "english");
+        return prepBr;
     }
 
     @Override
@@ -871,6 +888,7 @@ public class ShareOnlineBiz extends PluginForHost {
                     br.setCookie("http://www.share-online.biz", "a", a);
                 }
             }
+            loadAPIWorkAround(br);
             br.setFollowRedirects(true);
             br.setKeepResponseContentBytes(true);
             br.getPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=linkdata&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&lid=" + linkID);
@@ -891,10 +909,10 @@ public class ShareOnlineBiz extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             // These are NO API errors
-            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Share\\-Online \\- Page not found \\- #404<|The desired content is not available")) {
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Share-Online - Page not found - #404<|The desired content is not available")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler 404, bitte warten...", 30 * 1000l);
             }
-            if (br.getHttpConnection().getResponseCode() == 502 || br.containsHTML("<title>Share\\-Online \\- The page is temporarily unavailable</title>")) {
+            if (br.getHttpConnection().getResponseCode() == 502 || br.containsHTML("<title>Share-Online - The page is temporarily unavailable</title>")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler 502, bitte warten...", 30 * 1000l);
             }
             final HashMap<String, String> dlInfos = getInfos(responseUTF8, ": ");
@@ -1052,7 +1070,8 @@ public class ShareOnlineBiz extends PluginForHost {
     }
 
     /* Used for API request - also handles (server) errors */
-    private String apiGetPage(final String link) throws IOException, PluginException {
+    private String apiGetPage(final String link) throws Exception {
+        loadAPIWorkAround(br);
         br.getPage(link);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
@@ -1081,14 +1100,17 @@ public class ShareOnlineBiz extends PluginForHost {
         return result == null ? null : result.toString();
     }
 
+    /**
+     * this is API!
+     */
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         // revert
         hideID = false;
         correctDownloadLink(downloadLink);
         server = -1;
+        loadAPIWorkAround(br);
         br.setCookie("http://www.share-online.biz", "king_mylang", "en");
-        br.setAcceptLanguage("en, en-gb;q=0.8");
         String id = getID(downloadLink);
         br.setDebug(true);
         br.setFollowRedirects(true);
