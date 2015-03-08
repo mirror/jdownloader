@@ -190,7 +190,6 @@ public class VKontakteRuHoster extends PluginForHost {
                 }
                 this.finalUrl = link.getStringProperty("directlink", null);
                 checkstatus = this.linkOk(link, finalFilename);
-                checkstatus = 0;
                 if (checkstatus != 1) {
                     String url = null;
                     this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -212,7 +211,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         *
+                         * 
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         this.postPageSafe(aa, link, "https://vk.com/audio", getAudioAlbumPostString(this.mainlink, this.ownerID));
