@@ -429,7 +429,7 @@ public class VKontakteRu extends PluginForDecrypt {
      */
     @SuppressWarnings("deprecation")
     private void decryptAudioAlbum() throws Exception {
-        final String owner_ID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "((\\-)?\\d+)$").getMatch(0);
+        final String owner_ID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "((?:\\-)?\\d+)$").getMatch(0);
         this.getPageSafe(this.CRYPTEDLINK_FUNCTIONAL);
         String fpName = null;
         if (cfg.getBooleanProperty(VKAUDIOS_USEIDASPACKAGENAME, false)) {
@@ -443,19 +443,9 @@ public class VKontakteRu extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        String postData = null;
-        if (new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/audio\\?id=\\-\\d+").matches()) {
-            postData = "act=load_audios_silent&al=1&edit=0&id=0&gid=" + new Regex(this.CRYPTEDLINK_FUNCTIONAL, "((?:\\-)?\\d+)$").getMatch(0);
-        } else {
-            postData = "act=load_audios_silent&al=1&edit=0&gid=0&id=" + owner_ID + "&please_dont_ddos=2";
-        }
+        final String postData = jd.plugins.hoster.VKontakteRuHoster.getAudioAlbumPostString(this.CRYPTEDLINK_FUNCTIONAL, owner_ID);
         br.postPage("http://vk.com/audio", postData);
-        final String completeData = br.getRegex("\\{\"all\":\\[(\\[.*?\\])\\]\\}").getMatch(0);
-        if (completeData == null) {
-            decryptedLinks = null;
-            return;
-        }
-        final String[] audioData = completeData.split(",\\[");
+        final String[] audioData = jd.plugins.hoster.VKontakteRuHoster.getAudioDataArray(this.br);
         if (audioData == null || audioData.length == 0) {
             decryptedLinks = null;
             return;
@@ -464,17 +454,25 @@ public class VKontakteRu extends PluginForDecrypt {
             final String[] singleAudioDataAsArray = new Regex(singleAudioData, "\\'(.*?)\\'").getColumn(0);
             final String owner_id = singleAudioDataAsArray[0];
             final String content_id = singleAudioDataAsArray[1];
+            final String directlink = singleAudioDataAsArray[2];
+            final String artist = singleAudioDataAsArray[5];
+            final String title = singleAudioDataAsArray[6];
+            if (owner_id == null || content_id == null || directlink == null || artist == null || title == null) {
+                decryptedLinks = null;
+                return;
+            }
             final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/audiolink/" + owner_id.replace("-", "") + "_" + content_id);
             try {
-                dl.setContentUrl(CRYPTEDLINK_FUNCTIONAL);
+                dl.setContentUrl(this.CRYPTEDLINK_FUNCTIONAL);
             } catch (final Throwable e) {
                 /* Not available in old 0.9.581 Stable */
             }
-            dl.setBrowserUrl(CRYPTEDLINK_FUNCTIONAL);
-            dl.setProperty("directlink", Encoding.htmlDecode(singleAudioDataAsArray[2]));
+            dl.setBrowserUrl(this.CRYPTEDLINK_FUNCTIONAL);
+            dl.setProperty("mainlink", this.CRYPTEDLINK_FUNCTIONAL);
+            dl.setProperty("directlink", Encoding.htmlDecode(directlink));
             dl.setProperty("content_id", content_id);
             dl.setProperty("owner_id", owner_id);
-            dl.setFinalFileName(Encoding.htmlDecode(singleAudioDataAsArray[5].trim()) + " - " + Encoding.htmlDecode(singleAudioDataAsArray[6].trim()) + ".mp3");
+            dl.setFinalFileName(Encoding.htmlDecode(artist.trim()) + " - " + Encoding.htmlDecode(title.trim()) + ".mp3");
             if (fastcheck_audio) {
                 dl.setAvailable(true);
             }
@@ -516,6 +514,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 return;
             }
             final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/audiolink/" + owner_id + "_" + content_id);
+            dl.setProperty("mainlink", this.CRYPTEDLINK_FUNCTIONAL);
             // Set filename so we have nice filenames here ;)
             dl.setFinalFileName(Encoding.htmlDecode(artist) + " - " + Encoding.htmlDecode(title) + ".mp3");
             if (fastcheck_audio) {
@@ -541,7 +540,6 @@ public class VKontakteRu extends PluginForDecrypt {
             logger.info("Decrypted link number " + df.format(overallCounter) + " :" + finallink);
             overallCounter++;
         }
-
     }
 
     /** NOT using API audio pages and audio playlists are similar, TODO: Return host-plugin links here to improve the overall stability. */
@@ -573,7 +571,8 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             finallink = "directhttp://" + finallink;
             final DownloadLink dl = createDownloadlink(finallink);
-            // Set filename so we have nice filenames here ;)
+            dl.setProperty("mainlink", this.CRYPTEDLINK_FUNCTIONAL);
+            /* Set filename so we have nice filenames for our directhttp links */
             dl.setFinalFileName(Encoding.htmlDecode(audioInfo[3].trim()) + " - " + Encoding.htmlDecode(audioInfo[2].trim()) + ".mp3");
             if (fastcheck_audio) {
                 dl.setAvailable(true);
@@ -624,7 +623,8 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             finallink = "directhttp://" + finallink;
             final DownloadLink dl = createDownloadlink(finallink);
-            // Set filename so we have nice filenames here ;)
+            dl.setProperty("mainlink", this.CRYPTEDLINK_FUNCTIONAL);
+            /* Set filename so we have nice filenames for our directhttp links */
             dl.setFinalFileName(Encoding.htmlDecode(audioInfo[2].trim()) + " - " + Encoding.htmlDecode(audioInfo[3].trim()) + ".mp3");
             if (fastcheck_audio) {
                 dl.setAvailable(true);
@@ -724,6 +724,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 final String finallink = foundQualities.get(selectedQualityValue);
                 if (finallink != null) {
                     final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/videolink/" + System.currentTimeMillis() + new Random().nextInt(1000000));
+                    dl.setProperty("mainlink", this.CRYPTEDLINK_FUNCTIONAL);
 
                     try {
                         /* JD2 only */
@@ -840,6 +841,7 @@ public class VKontakteRu extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     private DownloadLink getSinglePhotoDownloadLink(final String photoID) throws IOException {
         final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/picturelink/" + photoID);
+        dl.setProperty("mainlink", this.CRYPTEDLINK_FUNCTIONAL);
         if (fastcheck_photo) {
             dl.setAvailable(true);
         }
@@ -1298,7 +1300,7 @@ public class VKontakteRu extends PluginForDecrypt {
                         continue;
                     }
                     final DownloadLink dl = createDownloadlink(url);
-
+                    dl.setProperty("mainlink", this.CRYPTEDLINK_FUNCTIONAL);
                     dl.setDownloadSize(((Number) typeObject.get("size")).longValue());
                     dl.setName(title);
                     dl.setAvailable(true);
@@ -1312,6 +1314,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     final long content_id = ((Number) typeObject.get("aid")).longValue();
 
                     final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/audiolink/" + owner_id + "_" + content_id);
+                    dl.setProperty("mainlink", this.CRYPTEDLINK_FUNCTIONAL);
                     /*
                      * Audiolinks have their directlinks and IDs but no "nice" links so let's simply use the link to the source wall post
                      * here so the user can easily find the title when opening it in browser.
@@ -1621,7 +1624,6 @@ public class VKontakteRu extends PluginForDecrypt {
      * @throws Exception
      */
     private String resolveScreenNameAPI(final String screenname) throws Exception {
-
         getPage(br, "https://api.vk.com/method/resolveScreenName?screen_name=" + screenname);
         String ownerID = br.getRegex("\"object_id\":(\\d+)").getMatch(0);
 
@@ -1856,7 +1858,6 @@ public class VKontakteRu extends PluginForDecrypt {
         if (ajaxBR.containsHTML("missing digits")) {
             ajaxBR.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             String phone = null;
-            ;
             final PluginForHost hostPlugin = JDUtilities.getPluginForHost("vkontakte.ru");
             final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
             if (aa != null) {

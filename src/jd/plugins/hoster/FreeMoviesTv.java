@@ -132,18 +132,24 @@ public class FreeMoviesTv extends PluginForHost {
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
+            logger.info("Found existing directlink - checking it");
             try {
                 final Browser br2 = br.cloneBrowser();
                 URLConnectionAdapter con = br2.openGetConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
+                    logger.info("Existing directlink is invalid");
                 }
                 con.disconnect();
+                logger.info("Existing directlink is still valid");
             } catch (final Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
+                logger.info("Existing directlink is invalid");
             }
+        } else {
+            logger.info("Did not find existing directlink");
         }
         return dllink;
     }
