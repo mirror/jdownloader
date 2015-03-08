@@ -73,6 +73,10 @@ public class OffCloudCom extends PluginForHost {
     private static final boolean                           ACCOUNT_PREMIUM_RESUME                    = true;
     private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS                 = 0;
     private static final int                               ACCOUNT_PREMIUM_MAXDOWNLOADS              = 20;
+    /*
+     * This is the interval in which the complete download history will be deleted from the account (if etting is checked by the user && JD
+     * does check the account)
+     */
     private static final long                              DELETE_COMPLETE_DOWNLOAD_HISTORY_INTERVAL = 1 * 60 * 60 * 1000l;
 
     private int                                            statuscode                                = 0;
@@ -544,9 +548,9 @@ public class OffCloudCom extends PluginForHost {
                 success = false;
             }
             if (success) {
-                logger.info("Succeeded to clear download history");
+                logger.info("Succeeded to delete requestID from download history: " + requestID);
             } else {
-                logger.warning("Failed to clear download history");
+                logger.warning("Failed to delete requestID from download history: " + requestID);
             }
         } catch (final Throwable ex) {
         }
