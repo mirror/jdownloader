@@ -281,7 +281,7 @@ public class CatShareNet extends PluginForHost {
         final String dailyLimitLeft = br.getRegex("<li><a href=\"/premium\">([^<>\"\\']+)</a></li>").getMatch(0);
         if (dailyLimitLeft != null) {
             ai.setTrafficMax(SizeFormatter.getSize("20 GB"));
-            ai.setTrafficLeft(SizeFormatter.getSize(dailyLimitLeft));
+            ai.setTrafficLeft(SizeFormatter.getSize(dailyLimitLeft, true, true));
         } else {
             ai.setUnlimitedTraffic();
         }
