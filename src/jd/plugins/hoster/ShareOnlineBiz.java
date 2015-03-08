@@ -870,7 +870,6 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             requestFileInformation(link);
             doFree(link);
         } else {
-            // linkcheck otherwise users get banned ip sending linkdata with user:pass jdlog://3063296763241/
             requestFileInformation(link);
             final boolean preferHttps = userPrefersHttps() && !StringUtils.equalsIgnoreCase(account.getStringProperty("group", null), "VIP");
             final String linkID = getID(link);
