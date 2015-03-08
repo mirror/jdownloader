@@ -43,21 +43,32 @@ public class SexyAndFunnyCom extends PluginForHost {
         return "http://forums.sexyandfunny.com/register.php?do=showrules";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("<title> \\- Sexy and Funny \\- SexyAndFunny\\.com</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<title> \\- Sexy and Funny \\- SexyAndFunny\\.com</title>") || br.containsHTML(">Invalid video") || br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<div class=\"content_title_main\" >([^<>\"]*?)</div>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)\\- Sexy Videos \\- SexyAndFunny\\.com</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?)\\- Sexy Videos \\- SexyAndFunny\\.com</title>").getMatch(0);
+        }
         DLLINK = br.getRegex("\"flv\", \"(http://[^<>\"]*?)\"\\)").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\"(http://files\\.sexyandfunny\\.com/usr_[a-z0-9]+\\.flv)\"").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\"(http://files\\.sexyandfunny\\.com/usr_[a-z0-9]+\\.flv)\"").getMatch(0);
+        }
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".flv";
+        if (ext == null || ext.length() > 5) {
+            ext = ".flv";
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -65,10 +76,11 @@ public class SexyAndFunnyCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

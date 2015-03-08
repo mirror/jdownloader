@@ -230,12 +230,18 @@ public class AllDebridCom extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
+    @SuppressWarnings("deprecation")
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
         prepBrowser(br);
         showMessage(link, "Phase 1/2: Generating link");
 
+        String host_downloadlink = link.getDownloadURL();
+        /* Workaround for serverside debriditalia bug. */
+        if (link.getHost().equals("share-online.biz") && host_downloadlink.contains("https://")) {
+            host_downloadlink = host_downloadlink.replace("https://", "http://");
+        }
         // here we can get a 503 error page, which causes an exception
-        String genlink = br.getPage("https://www.alldebrid.com/service.php?pseudo=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&link=" + Encoding.urlEncode(link.getDownloadURL()) + "&view=1");
+        String genlink = br.getPage("https://www.alldebrid.com/service.php?pseudo=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&link=" + Encoding.urlEncode(host_downloadlink) + "&view=1");
 
         /* Possible html, unhandled: 1,;,https://tusfiles.net/xxxxxxxxxxxx : <span style='color:#a00;'>Invalid link</span>,;,0 */
         if (genlink == null || !genlink.matches("https?://.+")) {
@@ -251,6 +257,9 @@ public class AllDebridCom extends PluginForHost {
             } else if (genlink.contains("\"error\":\"Ip not allowed.\"")) {
                 // dedicated server/colo ip range, not allowed!
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDedicated server detected, account disabled", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if (genlink.contains(">Invalid link<")) {
+                // disable host for 4h
+                tempUnavailableHoster(acc, link, 4 * 60 * 60 * 1000l);
             }
             /*
              * after x retries we disable this host and retry with normal plugin
