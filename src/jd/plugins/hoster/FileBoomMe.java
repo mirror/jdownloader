@@ -67,6 +67,14 @@ public class FileBoomMe extends K2SApi {
         link.setUrlDownload(link.getDownloadURL().replace("fileboom.me/", "fboom.me/"));
     }
 
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null || "fileboom.me".equals(host) || "fboom.me".equals(host)) {
+            return "fileboom.me";
+        }
+        return super.rewriteHost(host);
+    }
+
     /* K2SApi setters */
 
     /**
