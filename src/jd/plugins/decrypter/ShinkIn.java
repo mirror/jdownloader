@@ -25,10 +25,20 @@ import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shink.in" }, urls = { "http://(www\\.)?shink\\.in/[A-Za-z0-9\\-_]+" }, flags = { 0 })
-public class ShinkIn extends PluginForDecrypt {
+/**
+ * NOTE: <br />
+ * - regex pattern seems to be case sensitive, our url listener is case insensitive by default... so we need to ENFORCE case sensitivity.
+ * -raztoki 20150308 <br />
+ * - uid seems to be fixed to 5 chars (at this time) -raztoki 20150308 <br />
+ * - uses cloudflare -raztoki 20150308 <br />
+ *
+ * @author psp
+ * @author raztoki
+ *
+ */
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shink.in" }, urls = { "http://(www\\.)?shink\\.in/(?-i)[A-Z0-9]{5}" }, flags = { 0 })
+public class ShinkIn extends antiDDoSForDecrypt {
 
     public ShinkIn(PluginWrapper wrapper) {
         super(wrapper);
@@ -38,7 +48,7 @@ public class ShinkIn extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(false);
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
@@ -52,7 +62,7 @@ public class ShinkIn extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        br.submitForm(dform);
+        submitForm(dform);
         final String finallink = br.getRedirectLocation();
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
