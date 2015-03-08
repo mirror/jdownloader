@@ -54,13 +54,17 @@ public class FileArchiveFile implements ArchiveFile {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof FileArchiveFile)) {
-            return false;
-        }
         if (obj == this) {
             return true;
         }
-        return getFile().equals(((FileArchiveFile) obj).getFile());
+        if (obj != null) {
+            if (obj instanceof FileArchiveFile) {
+                return getFile().equals(((FileArchiveFile) obj).getFile());
+            } else if (obj instanceof File) {
+                return getFile().equals((obj));
+            }
+        }
+        return false;
     }
 
     public void deleteFile(FileCreationManager.DeleteOption option) {

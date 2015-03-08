@@ -228,7 +228,7 @@ public class Archive {
         this.skippedFiles.add(file);
     }
 
-    public boolean contains(ArchiveFile link) {
+    public boolean contains(Object link) {
         return getArchiveFiles().contains(link);
     }
 

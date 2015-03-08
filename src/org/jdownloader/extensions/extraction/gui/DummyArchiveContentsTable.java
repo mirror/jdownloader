@@ -15,7 +15,6 @@ public class DummyArchiveContentsTable extends BasicJDTable<DummyArchiveFile> {
 
     public DummyArchiveContentsTable(DummyArchive da) {
         super(new DummyArchiveContentsTableModel(da));
-
         boolean linkgrabber = false;
         for (DummyArchiveFile daf : da.getList()) {
             if (daf.getArchiveFile() != null && daf.getArchiveFile() instanceof CrawledLinkArchiveFile) {

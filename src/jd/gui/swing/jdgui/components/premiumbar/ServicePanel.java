@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JComponent;
@@ -39,7 +38,6 @@ import jd.SecondLevelLaunch;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
-import jd.controlling.accountchecker.AccountChecker;
 import jd.gui.swing.dialog.AddAccountDialog;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
@@ -68,7 +66,6 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-import org.jdownloader.settings.AccountSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.PremiumStatusBarDisplay;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -162,22 +159,6 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
 
                     @Override
                     public void run() {
-                        scheduler.scheduleWithFixedDelay(new Runnable() {
-
-                            public void run() {
-                                if (JsonConfig.create(AccountSettings.class).isAutoAccountRefreshEnabled()) {
-                                    /*
-                                     * this scheduleritem checks all enabled accounts every 5 mins
-                                     */
-                                    try {
-                                        refreshAccountStats();
-                                    } catch (Throwable e) {
-                                        Log.exception(e);
-                                    }
-                                }
-                            }
-
-                        }, 1, 5, TimeUnit.MINUTES);
                         redrawTimer.run();
                         AccountController.getInstance().getBroadcaster().addListener(new AccountControllerListener() {
 
@@ -192,17 +173,6 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
                 }.start();
             }
         });
-    }
-
-    private void refreshAccountStats() {
-        for (Account acc : AccountController.getInstance().list()) {
-            if (acc.isEnabled() && acc.isValid() && acc.refreshTimeoutReached()) {
-                /*
-                 * we do not force update here, the internal timeout will make sure accounts get fresh checked from time to time
-                 */
-                AccountChecker.getInstance().check(acc, false);
-            }
-        }
     }
 
     public void redraw() {
