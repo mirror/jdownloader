@@ -54,8 +54,6 @@ import jd.utils.locale.JDL;
 public class VKontakteRuHoster extends PluginForHost {
 
     private static final String DOMAIN                      = "http://vk.com";
-    private static Object       LOCK                        = new Object();
-    private String              finalUrl                    = null;
     private static final String TYPE_AUDIOLINK              = "http://vkontaktedecrypted\\.ru/audiolink/[\\d\\-]+_[\\d\\-]+";
     private static final String TYPE_VIDEOLINK              = "http://vkontaktedecrypted\\.ru/videolink/[\\d\\-]+";
     private static final String TYPE_AUDIO_DIRECT           = "https?://cs[a-z0-9]+\\.(vk\\.com|userapi\\.com|vk\\.me)/u\\d+/audios?/[^<>\"]+";
@@ -84,6 +82,13 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String VKPHOTO_CORRECT_FINAL_LINKS = "VKPHOTO_CORRECT_FINAL_LINKS";
     public static final String  VKADVANCED_USER_AGENT       = "VKADVANCED_USER_AGENT";
 
+    private static Object       LOCK                        = new Object();
+    private String              finalUrl                    = null;
+
+    private String              ownerID                     = null;
+    private String              contentID                   = null;
+    private String              mainlink                    = null;
+
     public VKontakteRuHoster(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
@@ -99,6 +104,7 @@ public class VKontakteRuHoster extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        setConstants(link);
         int checkstatus = 0;
         String filename = null;
         /* Check if offline was set via decrypter */
@@ -178,39 +184,61 @@ public class VKontakteRuHoster extends PluginForHost {
                 this.login(this.br, aa, false);
             }
             if (link.getDownloadURL().matches(VKontakteRuHoster.TYPE_AUDIOLINK)) {
-                // final String audioID = link.getStringProperty("owner_id", null) + "_" + link.getStringProperty("content_id", null) + "1";
                 String finalFilename = link.getFinalFileName();
                 if (finalFilename == null) {
                     finalFilename = link.getName();
                 }
                 this.finalUrl = link.getStringProperty("directlink", null);
                 checkstatus = this.linkOk(link, finalFilename);
+                checkstatus = 0;
                 if (checkstatus != 1) {
+                    String url = null;
                     this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     final String postID = link.getStringProperty("postID", null);
                     final String fromId = link.getStringProperty("fromId", null);
-                    /** TODO: Make sure that these IDs do always exist! */
-                    if (postID == null || fromId == null) {
-                        logger.info("Cannot refresh offline audiolink");
-                        if (checkstatus == 404) {
-                            logger.info("audiolink is definitly offline");
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    if (postID != null && fromId != null) {
+                        logger.info("Trying to refresh audiolink dsirectlink via wall-handling");
+                        /* We got the info we need to access our single mp3 relatively directly as it initially came from a 'wall'. */
+                        final String post = "act=get_wall_playlist&al=1&local_id=" + postID + "&oid=" + fromId + "&wall_type=own";
+                        br.postPage("https://vk.com/audio", post);
+                        url = br.getRegex("\"0\"\\:\"" + Pattern.quote(this.ownerID) + "\"\\,\"1\"\\:\"" + Pattern.quote(this.contentID) + "\"\\,\"2\"\\:(\"[^\"]+\")").getMatch(0);
+                        if (url == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        logger.warning("Unhandled status of audiolink");
+                        /* Decodes the json string */
+                        url = (String) DummyScriptEnginePlugin.jsonToJavaObject(url);
+                    } else {
+                        logger.info("Trying to refresh audiolink directlink via album-handling");
+                        /*
+                         * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
+                         * our ID.
+                         *
+                         * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
+                         */
+                        this.postPageSafe(aa, link, "https://vk.com/audio", getAudioAlbumPostString(this.mainlink, this.ownerID));
+                        final String[] audioData = getAudioDataArray(this.br);
+                        for (final String singleAudioData : audioData) {
+                            final String[] singleAudioDataAsArray = new Regex(singleAudioData, "\\'(.*?)\\'").getColumn(0);
+                            final String content_id = singleAudioDataAsArray[1];
+                            final String directlink = singleAudioDataAsArray[2];
+                            if (content_id == null || directlink == null) {
+                                logger.warning("FATAL error in audiolink refresh directlink handling");
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                            if (content_id.equals(this.contentID)) {
+                                url = Encoding.htmlDecode(directlink);
+                                break;
+                            }
+                        }
+                    }
+                    if (url == null) {
+                        logger.warning("Failed to refresh audiolink directlink");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    String post = "act=get_wall_playlist&al=1&local_id=" + postID + "&oid=" + fromId + "&wall_type=own";
-                    br.postPage("https://vk.com/audio", post);
-                    String url = br.getRegex("\"0\"\\:\"" + Pattern.quote(link.getProperty("owner_id") + "") + "\"\\,\"1\"\\:\"" + Pattern.quote(link.getProperty("content_id") + "") + "\"\\,\"2\"\\:(\"[^\"]+\")").getMatch(0);
-                    // Decodes the json String
-                    url = (String) DummyScriptEnginePlugin.jsonToJavaObject(url);
                     this.finalUrl = url;
-                    if (this.finalUrl == null) {
-                        this.logger.info("vk.com: FINALLINK is null in availablecheck --> Probably file is offline");
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
                     checkstatus = this.linkOk(link, finalFilename);
                     if (checkstatus != 1) {
+                        logger.info("Refreshed audiolink directlink seems not to work --> Link is probably offline");
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                     link.setProperty("directlink", this.finalUrl);
@@ -224,7 +252,6 @@ public class VKontakteRuHoster extends PluginForHost {
                 if (checkstatus != 1) {
                     final String oid = link.getStringProperty("userid", null);
                     final String id = link.getStringProperty("videoid", null);
-                    final String embedhash = link.getStringProperty("embedhash", null);
                     this.br.getPage("http://vk.com/video.php?act=a_flash_vars&vid=" + oid + "_" + id);
                     if (br.containsHTML("This video has been removed from public access")) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -320,10 +347,6 @@ public class VKontakteRuHoster extends PluginForHost {
             this.br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-    }
-
-    private String getPhotoID(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?[\\d\\-]+_[\\d\\-]+)").getMatch(0);
     }
 
     @Override
@@ -794,6 +817,43 @@ public class VKontakteRuHoster extends PluginForHost {
                 }
             }
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    private String getPhotoID(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?[\\d\\-]+_[\\d\\-]+)").getMatch(0);
+    }
+
+    private void setConstants(final DownloadLink dl) {
+        this.ownerID = getOwnerID(dl);
+        this.contentID = getContentID(dl);
+        this.mainlink = dl.getStringProperty("mainlink", null);
+    }
+
+    public static String getAudioAlbumPostString(final String source_url, final String ownerID) {
+        String postData;
+        if (new Regex(source_url, ".+vk\\.com/audio\\?id=\\-\\d+").matches()) {
+            postData = "act=load_audios_silent&al=1&edit=0&id=0&gid=" + ownerID;
+        } else {
+            postData = "act=load_audios_silent&al=1&edit=0&gid=0&id=" + ownerID + "&please_dont_ddos=2";
+        }
+        return postData;
+    }
+
+    public static String[] getAudioDataArray(final Browser br) {
+        final String completeData = br.getRegex("\\{\"all\":\\[(\\[.*?\\])\\]\\}").getMatch(0);
+        if (completeData == null) {
+            return null;
+        }
+        return completeData.split(",\\[");
+    }
+
+    private String getOwnerID(final DownloadLink dl) {
+        return dl.getStringProperty("owner_id", null);
+    }
+
+    private String getContentID(final DownloadLink dl) {
+        return dl.getStringProperty("content_id", null);
     }
 
     private boolean isJDStable() {
