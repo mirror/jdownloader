@@ -112,7 +112,7 @@ public class RemixShareCom extends PluginForHost {
     private String execJS() throws Exception {
         String fun = br.getRegex("=\\s*\"http[^\r\n]+/(downloadstart|startdownload)/[^\r\n]+").getMatch(-1);
         if (fun == null) {
-            fun = br.getRegex("document.getElementById\\('get-button'\\)\\.href (=\\s*\"http[^\r\n]+)").getMatch(0);
+            fun = br.getRegex("document\\.getElementById\\('get-button'\\)\\.href\\s*(=\\s*\"http[^\r\n]+)").getMatch(0);
         }
         if (fun == null) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in 15 minutes", 15 * 60 * 1000l);

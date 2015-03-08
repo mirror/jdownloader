@@ -56,9 +56,8 @@ import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "netload.in" }, urls = { "https?://[\\w\\.]*?netload\\.in/[^(http://)].+" }, flags = { 2 })
 public class Netloadin extends PluginForHost {
-    static private final String AGB_LINK  = "http://netload.in/index.php?id=13";
 
-    static public Object        LOGINLOCK = new Object();
+    static public Object LOGINLOCK = new Object();
 
     private static String getID(String link) {
         String id = new Regex(link, "\\/datei([a-zA-Z0-9]+)").getMatch(0);
@@ -269,7 +268,7 @@ public class Netloadin extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return AGB_LINK;
+        return "http://netload.in/index.php?id=13";
     }
 
     @Override

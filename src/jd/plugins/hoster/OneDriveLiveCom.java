@@ -21,7 +21,6 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -30,6 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -57,7 +57,8 @@ public class OneDriveLiveCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.setBrowserExclusive();
-        prepBR();
+        JDUtilities.getPluginForDecrypt("onedrive.live.com");
+        jd.plugins.decrypter.OneDriveLiveCom.prepBrAPI(br);
         final String cid = link.getStringProperty("plain_cid", null);
         final String id = link.getStringProperty("plain_id", null);
         final String authkey = link.getStringProperty("plain_authkey", null);
@@ -70,7 +71,7 @@ public class OneDriveLiveCom extends PluginForHost {
             /* Case is not yet present */
         } else {
             try {
-                accessItems_API(this.br, original_link, cid, id, additional_data);
+                jd.plugins.decrypter.OneDriveLiveCom.accessItems_API(br, original_link, cid, id, additional_data);
             } catch (final BrowserException e) {
                 if (br.getRequest().getHttpConnection().getResponseCode() == 500) {
                     link.getLinkStatus().setStatusText("Server error 500");
@@ -95,7 +96,7 @@ public class OneDriveLiveCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (downloadLink.getBooleanProperty("account_only", false)) {
+        if (downloadLink.getBooleanProperty("account_only", false) && false) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
@@ -133,10 +134,6 @@ public class OneDriveLiveCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private void accessItems_API(final Browser br, final String original_link, final String cid, final String id, final String additional) throws IOException {
-        jd.plugins.decrypter.OneDriveLiveCom.accessItems_API(br, original_link, cid, id, additional);
-    }
-
     private String getdllink(final DownloadLink dl) throws PluginException {
         String dllink = null;
         if (isCompleteFolder(dl)) {
@@ -151,10 +148,6 @@ public class OneDriveLiveCom extends PluginForHost {
 
     private boolean isCompleteFolder(final DownloadLink dl) {
         return dl.getBooleanProperty("complete_folder", false);
-    }
-
-    private void prepBR() {
-        jd.plugins.decrypter.OneDriveLiveCom.prepBrAPI(this.br);
     }
 
     private void setConfigElements() {

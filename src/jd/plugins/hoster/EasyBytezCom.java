@@ -823,14 +823,14 @@ public class EasyBytezCom extends PluginForHost {
             if (!ai.isExpired()) {
                 isFree = false;
                 account.setProperty("free", false);
-                ai.setStatus("Premium User");
+                ai.setStatus("Premium Account");
                 account.setProperty("totalMaxSim", 20);
             }
         }
         if (isFree) {
             ai.setValidUntil(-1);
             account.setProperty("free", true);
-            ai.setStatus("Registered (free) User");
+            ai.setStatus("Free Account");
             account.setProperty("totalMaxSim", 20);
         }
 
@@ -1774,15 +1774,13 @@ public class EasyBytezCom extends PluginForHost {
                     if (usedSlots == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    synchronized (CTRLLOCK) {
-                        if (!usedSlots.equals(simHost)) {
-                            final int x = incrementAndGetHashedHashKeyValue(account);
-                            logger.info("controlHost = " + user + " -> " + usedHost + " :: " + x + " simulatious connection(s)");
-                        } else {
-                            logger.info("controlHost = " + user + " -> " + usedHost + " :: Too many concurrent connectons. We will try again when next possible.");
-                            controlSlot(-1, accHolder);
-                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many concurrent connectons. We will try again when next possible.", 10 * 1000);
-                        }
+                    if (!usedSlots.equals(simHost)) {
+                        final int x = incrementAndGetHashedHashKeyValue(account);
+                        logger.info("controlHost = " + user + " -> " + usedHost + " :: " + x + " simulatious connection(s)");
+                    } else {
+                        logger.info("controlHost = " + user + " -> " + usedHost + " :: Too many concurrent connectons. We will try again when next possible.");
+                        controlSlot(-1, accHolder);
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many concurrent connectons. We will try again when next possible.", 10 * 1000);
                     }
                 } else {
                     // virgin download for given usedHost.

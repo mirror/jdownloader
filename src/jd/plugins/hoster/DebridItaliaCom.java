@@ -150,7 +150,6 @@ public class DebridItaliaCom extends PluginForHost {
             /* Either server error or the host is broken (we have to find out by retrying) */
             if (br.containsHTML("ERROR: not_available")) {
                 int timesFailed = link.getIntegerProperty("timesfaileddebriditalia_not_available", 0);
-                link.getLinkStatus().setRetryCount(0);
                 if (timesFailed <= MAXRETRIES_timesfaileddebriditalia_not_available) {
                     timesFailed++;
                     link.setProperty("timesfaileddebriditalia_not_available", timesFailed);
@@ -168,7 +167,6 @@ public class DebridItaliaCom extends PluginForHost {
             if (dllink == null) {
                 logger.info("debriditalia.com: Unknown error - final downloadlink is missing");
                 int timesFailed = link.getIntegerProperty("timesfaileddebriditalia_unknownerror_dllink_missing", 0);
-                link.getLinkStatus().setRetryCount(0);
                 if (timesFailed <= 20) {
                     timesFailed++;
                     link.setProperty("timesfaileddebriditalia_unknownerror_dllink_missing", timesFailed);

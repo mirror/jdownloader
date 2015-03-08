@@ -53,39 +53,39 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String     EXCEPTION_LINKOFFLINE         = "EXCEPTION_LINKOFFLINE";
+    private static final String     EXCEPTION_LINKOFFLINE   = "EXCEPTION_LINKOFFLINE";
 
-    private static final String     TYPE_INVALID                  = "https?://(www\\.)?soundcloud\\.com/(you/|tour|signup|logout|login|premium|messages|settings|imprint|community\\-guidelines|videos|terms\\-of\\-use|sounds|jobs|press|mobile|#?search|upload|people|dashboard|#/).*?";
-    private static final String     TYPE_API_PLAYLIST             = "https?://(www\\.|m\\.)?api\\.soundcloud\\.com/playlists/\\d+\\?secret_token=[A-Za-z0-9\\-_]+";
-    private static final String     TYPE_API_TRACK                = "https?://(www\\.|m\\.)?api\\.soundcloud\\.com/tracks/\\d+(\\?secret_token=[A-Za-z0-9\\-_]+)?";
-    private static final String     TYPE_SINGLE_SET               = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/sets/[A-Za-z0-9\\-_]+";
-    private static final String     TYPE_USER_SETS                = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/sets";
-    private static final String     TYPE_USER_IN_PLAYLIST         = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/sets";
-    private static final String     TYPE_USER_LIKES               = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/likes";
-    private static final String     TYPE_GROUPS                   = "https?://(www\\.)?soundcloud\\.com/groups/[A-Za-z0-9\\-_]+";
+    private static final String     TYPE_INVALID            = "https?://(www\\.)?soundcloud\\.com/(you/|tour|signup|logout|login|premium|messages|settings|imprint|community\\-guidelines|videos|terms\\-of\\-use|sounds|jobs|press|mobile|#?search|upload|people|dashboard|#/).*?";
+    private static final String     TYPE_API_PLAYLIST       = "https?://(www\\.|m\\.)?api\\.soundcloud\\.com/playlists/\\d+\\?secret_token=[A-Za-z0-9\\-_]+";
+    private static final String     TYPE_API_TRACK          = "https?://(www\\.|m\\.)?api\\.soundcloud\\.com/tracks/\\d+(\\?secret_token=[A-Za-z0-9\\-_]+)?";
+    private static final String     TYPE_SINGLE_SET         = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/sets/[A-Za-z0-9\\-_]+";
+    private static final String     TYPE_USER_SETS          = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/sets";
+    private static final String     TYPE_USER_IN_PLAYLIST   = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/sets";
+    private static final String     TYPE_USER_LIKES         = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/likes";
+    private static final String     TYPE_GROUPS             = "https?://(www\\.)?soundcloud\\.com/groups/[A-Za-z0-9\\-_]+";
 
     /* Single soundcloud tracks, posted via smartphone/app. */
     private static final String     subtype_mobile_facebook_share = "https?://(m\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+\\?fb_action_ids=.+";
 
-    private static final String     TYPE_SHORT                    = "https?://snd\\.sc/[A-Za-z0-9]+";
+    private static final String     TYPE_SHORT              = "https?://snd\\.sc/[A-Za-z0-9]+";
 
-    private static int              max_entries_per_request       = 100;
+    private static int              max_entries_per_request = 100;
 
-    private static final String     GRAB500THUMB                  = "GRAB500THUMB";
-    private static final String     GRABORIGINALTHUMB             = "GRABORIGINALTHUMB";
-    private static final String     CUSTOM_PACKAGENAME            = "CUSTOM_PACKAGENAME";
-    private static final String     CUSTOM_DATE                   = "CUSTOM_DATE";
+    private static final String     GRAB500THUMB            = "GRAB500THUMB";
+    private static final String     GRABORIGINALTHUMB       = "GRABORIGINALTHUMB";
+    private static final String     CUSTOM_PACKAGENAME      = "CUSTOM_PACKAGENAME";
+    private static final String     CUSTOM_DATE             = "CUSTOM_DATE";
 
-    private PluginForHost           HOSTPLUGIN                    = null;
-    private SubConfiguration        CFG                           = null;
-    private String                  ORIGINAL_LINK                 = null;
-    private String                  parameter                     = null;
-    private ArrayList<DownloadLink> decryptedLinks                = null;
-    private boolean                 decrypt500Thumb               = false;
-    private boolean                 decryptOriginalThumb          = false;
-    private String                  username                      = null;
-    private String                  playlistname                  = null;
-    private String                  url_username                  = null;
+    private PluginForHost           hostPlugin              = null;
+    private SubConfiguration        CFG                     = null;
+    private String                  originalLink           = null;
+    private String                  parameter               = null;
+    private ArrayList<DownloadLink> decryptedLinks          = null;
+    private boolean                 decrypt500Thumb         = false;
+    private boolean                 decryptOriginalThumb    = false;
+    private String                  username                = null;
+    private String                  playlistname            = null;
+    private String                  url_username            = null;
 
     /**
      * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
@@ -116,9 +116,9 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             }
         };
         CFG = SubConfiguration.getConfig("soundcloud.com");
-        ORIGINAL_LINK = Encoding.htmlDecode(param.toString());
-        if (ORIGINAL_LINK.contains("#")) {
-            ORIGINAL_LINK = ORIGINAL_LINK.substring(0, ORIGINAL_LINK.indexOf("#"));
+        originalLink = Encoding.htmlDecode(param.toString());
+        if (originalLink.contains("#")) {
+            originalLink = originalLink.substring(0, originalLink.indexOf("#"));
         }
         decrypt500Thumb = CFG.getBooleanProperty(GRAB500THUMB, false);
         decryptOriginalThumb = CFG.getBooleanProperty(GRABORIGINALTHUMB, false);
@@ -133,11 +133,11 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             // Not available in old 0.9.581 Stable
         }
         // Login if possible, helps to get links which need the user to be logged in
-        HOSTPLUGIN = JDUtilities.getPluginForHost("soundcloud.com");
-        final Account aa = AccountController.getInstance().getValidAccount(HOSTPLUGIN);
+        hostPlugin = JDUtilities.getPluginForHost("soundcloud.com");
+        final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
         if (aa != null) {
             try {
-                ((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).login(this.br, aa, false);
+                ((jd.plugins.hoster.SoundcloudCom) hostPlugin).login(this.br, aa, false);
             } catch (final PluginException e) {
             }
         }
@@ -228,7 +228,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     }
 
     private void correctInputLinks() throws IOException, DecrypterException {
-        parameter = ORIGINAL_LINK.replace("http://", "https://").replaceAll("(/download|\\\\)", "").replaceFirst("://(www|m)\\.", "://");
+        parameter = originalLink.replace("http://", "https://").replaceAll("(/download|\\\\)", "").replaceFirst("://(www|m)\\.", "://");
         if (parameter.matches(TYPE_INVALID)) {
             logger.info("Invalid link: " + parameter);
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
@@ -236,7 +236,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         if (parameter.matches(TYPE_SHORT)) {
             br.setFollowRedirects(false);
             /* Use ORIGINAL_LINK because https is not available for short links */
-            br.getPage(ORIGINAL_LINK);
+            br.getPage(originalLink);
             final String newparameter = br.getRedirectLocation();
             if (newparameter == null) {
                 logger.warning("Decrypter failed on redirect link: " + parameter);
@@ -245,7 +245,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             parameter = newparameter;
         } else if (parameter.matches(TYPE_API_TRACK)) {
             String get_data = "?format=json&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID;
-            final String secret_token = new Regex(ORIGINAL_LINK, "secret_token=([A-Za-z0-9\\-_]+)").getMatch(0);
+            final String secret_token = new Regex(originalLink, "secret_token=([A-Za-z0-9\\-_]+)").getMatch(0);
             if (secret_token != null) {
                 get_data += "&secret_token=" + secret_token;
             }

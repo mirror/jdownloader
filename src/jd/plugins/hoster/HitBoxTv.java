@@ -184,7 +184,7 @@ public class HitBoxTv extends PluginForHost {
                 }
             }
             downloadLink.setProperty("extension", extension);
-            final String filename = userName + " - " + vid + " - " + vidName + "-" + downloadLink.getStringProperty("videoQuality") + "_" + downloadLink.getStringProperty("videoCodec") + "-" + downloadLink.getStringProperty("audioBitrate") + "_" + downloadLink.getStringProperty("audioCodec");
+            final String filename = userName + " - " + vid + " - " + vidName + "-" + downloadLink.getStringProperty("videoQuality", "Unknown") + "_" + downloadLink.getStringProperty("videoCodec", "Unknown") + "-" + downloadLink.getStringProperty("audioBitrate", "Unknown") + "_" + downloadLink.getStringProperty("audioCodec", "Unknown");
             downloadLink.setName(filename + extension);
             return AvailableStatus.TRUE;
         }

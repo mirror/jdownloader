@@ -611,7 +611,7 @@ public class PreFilesCom extends PluginForHost {
             ai.setUnlimitedTraffic();
         }
         if (account.getBooleanProperty("nopremium")) {
-            ai.setStatus("Registered (free) User");
+            ai.setStatus("Free Account");
             maxPrem.set(1);
             try {
                 account.setMaxSimultanDownloads(maxPrem.get());
@@ -634,7 +634,7 @@ public class PreFilesCom extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-            ai.setStatus("Premium User");
+            ai.setStatus("Premium Account");
         }
         return ai;
     }

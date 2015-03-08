@@ -74,6 +74,7 @@ public class IvPasteCom extends PluginForDecrypt {
                 sleep(1000l, param);
                 br.getPage("http://ivpaste.com/p/" + ID);
             } else if (br.containsHTML("api\\.recaptcha\\.net") || br.containsHTML("google\\.com/recaptcha/api/")) {
+                // they have recaptcha v2 also, ive seen 'im not a robot' in browser. -raztoki
                 if (i >= 5) {
                     throw new DecrypterException(DecrypterException.CAPTCHA);
                 }

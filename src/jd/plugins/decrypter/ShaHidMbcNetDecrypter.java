@@ -42,7 +42,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDHexUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shahid.mbc.net" }, urls = { "http://(www\\.)?(shahid\\.mbc\\.net/media/video/\\d+(/\\w+)?|bluefishtv\\.com/Store/[_a-zA-Z]+/\\d+/.*)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shahid.mbc.net" }, urls = { "http://(www\\.)?(shahid\\.mbc\\.net/(media/video|ar/episode)/\\d+(/\\w+)?|bluefishtv\\.com/Store/[_a-zA-Z]+/\\d+/.*)" }, flags = { 0 })
 public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
 
     public static enum Quality {
@@ -79,10 +79,6 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private String getProvider() {
-        return br.getHost().contains("mbc.net") ? "shahid.mbc.net" : "bluefishtv.com";
-    }
-
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -91,7 +87,7 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
 
-        PROVIDER = getProvider();
+        PROVIDER = br.getHost().contains("mbc.net") ? "shahid.mbc.net" : "bluefishtv.com";
         FilePackage fp = FilePackage.getInstance();
         String fpName = null;
 
@@ -101,7 +97,9 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
             fpName = br.getRegex("<span class=\"ProductDetails_Title\">(.*?)</span>").getMatch(0);
-            if (fpName == null) fpName = br.getRegex("<div id=\"ProductDetails_Overview\" style=\"position.*?alt=\"[^\"]+").getMatch(0);
+            if (fpName == null) {
+                fpName = br.getRegex("<div id=\"ProductDetails_Overview\" style=\"position.*?alt=\"[^\"]+").getMatch(0);
+            }
         }
 
         if (br.getRedirectLocation() != null) {
@@ -126,8 +124,12 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
 
         String playerForm = br.getRegex("playerForm=(.*?)\\&").getMatch(0);
         String mediaId = br.getRegex("mediaId=(.*?)\\&").getMatch(0);
-        if ("bluefishtv.com".equals(PROVIDER)) mediaId = br.getRegex("mediaId=([^\"]+)").getMatch(0);
-        if (playerForm == null || mediaId == null) return null;
+        if ("bluefishtv.com".equals(PROVIDER)) {
+            mediaId = br.getRegex("mediaId=([^\"]+)").getMatch(0);
+        }
+        if (playerForm == null || mediaId == null) {
+            return null;
+        }
 
         int page = 0;
         String quality;
@@ -142,7 +144,9 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
         boolean completeSeason = false;
         if (cfg.getProperties() != null) {
             shProperties.putAll(cfg.getProperties());
-            if (shProperties.containsKey("COMPLETE_SEASON")) completeSeason = (Boolean) shProperties.get("COMPLETE_SEASON");
+            if (shProperties.containsKey("COMPLETE_SEASON")) {
+                completeSeason = (Boolean) shProperties.get("COMPLETE_SEASON");
+            }
         }
 
         int i = 0;
@@ -268,7 +272,9 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
                                  * Einzellinks. Bei kompletten Staffeln und Qualitätsstufe HD wird auch die Mediumqualität als HD angegeben.
                                  * Scheint ein Tippfehler zu sein ;-). Wird demnächst fixed
                                  */
-                                if (!completeSeason && links != null && links.containsValue(Quality.valueOf(qStr.get(quality)).getName()) && ("3f3f".equals(quality) || "3f20".equals(quality))) quality = "7d3f";
+                                if (!completeSeason && links != null && links.containsValue(Quality.valueOf(qStr.get(quality)).getName()) && ("3f3f".equals(quality) || "3f20".equals(quality))) {
+                                    quality = "7d3f";
+                                }
                                 links.put(new Regex(fC, "(rtmp[\\w:\\/\\.\\-]+)").getMatch(0), Quality.valueOf(qStr.get(quality)).getName());
                             }
                         }
@@ -287,7 +293,9 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
             if (dl.getName() == null) {
                 continue;
             }
-            if ("shahid.mbc.net".equals(PROVIDER)) fpName = new Regex(dl.getName(), "(.*?)(_s\\d+|_?\\-?ep_?\\-?\\d+|_\\d+_vod)").getMatch(0);
+            if ("shahid.mbc.net".equals(PROVIDER)) {
+                fpName = new Regex(dl.getName(), "(.*?)(_s\\d+|_?\\-?ep_?\\-?\\d+|_\\d+_vod)").getMatch(0);
+            }
             fpName = fpName == null ? dl.getName() : fpName;
             fp.setName(fpName);
             fp.add(dl);
@@ -304,7 +312,9 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
         }
 
-        if (decryptedLinks == null || decryptedLinks.size() == 0) { return null; }
+        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+            return null;
+        }
         return decryptedLinks;
     }
 
@@ -323,7 +333,9 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
     }
 
     private String safeUrl(String s) {
-        if (s == null) return null;
+        if (s == null) {
+            return null;
+        }
         return s.replace("=", "").replace("+", "-").replace("/", "_");
     }
 

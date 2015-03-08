@@ -323,7 +323,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
             // stable fail over
             is = con.getErrorStream();
         }
-        String t = readInputStream(is);
+        final String t = readInputStream(is, ibr.getRequest().getCustomCharset());
         if (t != null) {
             logger.fine("\r\n" + t);
             ibr.getRequest().setHtmlCode(t);
@@ -338,10 +338,10 @@ public abstract class antiDDoSForHost extends PluginForHost {
      * @throws UnsupportedEncodingException
      * @throws IOException
      */
-    private String readInputStream(final InputStream is) throws UnsupportedEncodingException, IOException {
+    private String readInputStream(final InputStream is, final String encoding) throws UnsupportedEncodingException, IOException {
         BufferedReader f = null;
         try {
-            f = new BufferedReader(new InputStreamReader(is, "UTF8"));
+            f = new BufferedReader(new InputStreamReader(is, encoding == null ? "UTF-8" : encoding));
             String line;
             final StringBuilder ret = new StringBuilder();
             final String sep = System.getProperty("line.separator");

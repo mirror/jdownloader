@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -110,10 +111,18 @@ public class SecureUploadEu extends PluginForHost {
         return true;
     }
 
+    private static final AtomicReference<String> userAgent = new AtomicReference<String>(null);
+
     public void prepBrowser(final Browser br) {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
         br.setCookie(COOKIE_HOST, "lang", "english");
+        if (userAgent.get() == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            userAgent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+        }
+        br.getHeaders().put("User-Agent", userAgent.get());
     }
 
     @Override
@@ -399,7 +408,7 @@ public class SecureUploadEu extends PluginForHost {
         ArrayList<String> someStuff = new ArrayList<String>();
         ArrayList<String> regexStuff = new ArrayList<String>();
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-!*)>");
-        regexStuff.add("(<\\s*(\\w+)\\s+[^>]*style\\s*=\\s*(\"|')(?:(?:[\\w:;\\s#-]*(visibility\\s*:\\s*hidden;|display\\s*:\\s*none;|font-size\\s*:\\s*0;)[\\w:;\\s#-]*)|font-size:0|visibility\\s*:\\s*hidden|display\\s*:\\s*none)\\3[^>]*(>.*?<\\s*/\\2[^>]*>|/\\s*>))");
+        regexStuff.add("(<\\s*(\\w+)\\s+[^>]*style\\s*=\\s*(\"|')(?:(?:[\\w:;\\s#-]*(visibility\\s*:\\s*hidden;|display\\s*:\\s*none;|font-size\\s*:\\s*0;)[\\w:;\\s#-]*)|font-size\\s*:\\s*0|visibility\\s*:\\s*hidden|display\\s*:\\s*none)\\3[^>]*(>.*?<\\s*/\\2[^>]*>|/\\s*>))");
 
         for (String aRegex : regexStuff) {
             String lolz[] = br.getRegex(aRegex).getColumn(0);

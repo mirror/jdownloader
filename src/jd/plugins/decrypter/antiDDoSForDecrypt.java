@@ -217,7 +217,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         postPage(br, page, param);
     }
 
-    protected void sendForm(final Browser ibr, final Form form) throws Exception {
+    protected void submitForm(final Browser ibr, final Form form) throws Exception {
         if (form == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -277,8 +277,8 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      * @author raztoki
      *
      * */
-    protected void sendForm(final Form form) throws Exception {
-        sendForm(br, form);
+    protected void submitForm(final Form form) throws Exception {
+        submitForm(br, form);
     }
 
     protected void sendRequest(final Browser ibr, final Request request) throws Exception {
@@ -327,7 +327,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             // stable fail over
             is = con.getErrorStream();
         }
-        String t = readInputStream(is);
+        final String t = readInputStream(is, ibr.getRequest().getCustomCharset());
         if (t != null) {
             logger.fine("\r\n" + t);
             ibr.getRequest().setHtmlCode(t);
@@ -342,10 +342,10 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      * @throws UnsupportedEncodingException
      * @throws IOException
      */
-    private String readInputStream(final InputStream is) throws UnsupportedEncodingException, IOException {
+    private String readInputStream(final InputStream is, final String encoding) throws UnsupportedEncodingException, IOException {
         BufferedReader f = null;
         try {
-            f = new BufferedReader(new InputStreamReader(is, "UTF8"));
+            f = new BufferedReader(new InputStreamReader(is, encoding == null ? "UTF-8" : encoding));
             String line;
             final StringBuilder ret = new StringBuilder();
             final String sep = System.getProperty("line.separator");
