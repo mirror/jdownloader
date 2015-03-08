@@ -54,6 +54,7 @@ installframe_statusmsg_waitingforapplication=正在等待應用程式！
 installframe_statusmsg_waitingforapplication2=正在等待應用程式！\r\n檢查寫入權限：%s1
 installonexitframe_cancel=取消更新
 installonexitframe_hide=隱藏面板
+installonexitframe_panel_visible=面板可見
 installonexitframe_start=正在安裝更新...
 installonexitframe_title=JDownloader 更新
 installonexitframe_tray_tt=JDownloader 更新
