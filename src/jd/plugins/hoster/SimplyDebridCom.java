@@ -173,12 +173,15 @@ public class SimplyDebridCom extends PluginForHost {
                 tempUnavailableHoster(account, link, 2 * 60 * 60 * 1000l);
             }
         }
-
-        // crazy API
-        if (dllink.contains("Erreur")) {
-            dllink = new Regex(dllink, "(.*?)Erreur").getMatch(0);
+        if (dllink == null) {
+            // prevent NPE, unknown issue, most likely connection issue.
+            throw new PluginException(LinkStatus.ERROR_RETRY);
         }
-        if (!(dllink.startsWith("https://") || dllink.startsWith("http://")) || dllink.endsWith("/Invalid link") || dllink.contains("php_network_getaddresses: getaddrinfo failed: Name or service not known")) {
+        if (!dllink.matches("https?://.+")) {
+            // crazy API
+            if (dllink.contains("Erreur")) {
+                dllink = new Regex(dllink, "(.*?)Erreur").getMatch(0);
+            }
             if (dllink.contains("UNDER MAINTENANCE")) {
                 // disable host for 30min
                 logger.info("simply-debrid.com: 'UNDER MAINTENANCE' error, disabling current host...");

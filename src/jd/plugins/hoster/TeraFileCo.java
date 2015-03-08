@@ -1106,16 +1106,13 @@ public class TeraFileCo extends PluginForHost {
                 dllink = getDllink();
                 if (dllink == null) {
                     Form dlform = br.getFormbyProperty("name", "F1");
-                    if (dlform == null) {
-                        // they have serious platform issues
-                        throw new PluginException(LinkStatus.ERROR_FATAL, "Please enable direct download mode (on hoster website) and resume download!");
-                    }
                     if (dlform != null && new Regex(correctedBR, PASSWORDTEXT).matches()) {
                         passCode = handlePassword(dlform, downloadLink);
                     }
                     checkErrors(downloadLink, true);
                     if (dlform == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        // they have serious platform issues
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Please enable direct download mode (on hoster website) and resume download!");
                     }
                     sendForm(dlform);
                     checkErrors(downloadLink, true);

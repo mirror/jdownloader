@@ -74,7 +74,8 @@ public class DummyCNL extends PluginForDecrypt {
         }
         String decrypted = decrypt(crypted, params.get("jk"), params.get("k"));
         if (decrypted != null) {
-            decrypted.replaceAll(" http:", "\r\nhttp:");
+            // we want to format all protocols not just common ones.. otherwise this will be a pain in the ass to maintain.
+            decrypted.replaceAll(" ((?:[a-z]+)://)", "\r\n$1");
         }
         String source = params.get("source");
         String packageName = params.get("package");

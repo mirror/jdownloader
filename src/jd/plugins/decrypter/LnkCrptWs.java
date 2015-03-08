@@ -95,7 +95,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -113,7 +112,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.seamless.util.io.IO;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkcrypt.ws" }, urls = { "http://[\\w\\.]*?linkcrypt\\.ws/dir/[\\w]+" }, flags = { 0 })
-public class LnkCrptWs extends PluginForDecrypt {
+public class LnkCrptWs extends antiDDoSForDecrypt {
 
     private static ReentrantLock LOCKDIALOG = new ReentrantLock();
 
@@ -867,7 +866,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * Handles a KeyCaptcha by trying to autosolve it first and use a dialog as fallback
-         * 
+         *
          * @param parameter
          *            the keycaptcha parameter as already used for showDialog
          * @param downloadLink
@@ -1382,10 +1381,10 @@ public class LnkCrptWs extends PluginForDecrypt {
                 private Point loc;
 
                 private Timer mArrayTimer = new Timer(1000, new ActionListener() {
-                                              public void actionPerformed(ActionEvent e) {
-                                                  marray(loc);
-                                              }
-                                          });
+                    public void actionPerformed(ActionEvent e) {
+                        marray(loc);
+                    }
+                });
 
                 @Override
                 public void mouseDragged(final MouseEvent e) {
@@ -1856,23 +1855,28 @@ public class LnkCrptWs extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         setBrowserExclusive();
-        prepareBrowser("Mozilla/5.0 (Windows NT 6.1; WOW64; rv:15.0) Gecko/20100101 Firefox/15.0.1");
         final String containerId = new Regex(parameter, "dir/([a-zA-Z0-9]+)").getMatch(0);
         parameter = "http://linkcrypt.ws/dir/" + containerId;
-        URLConnectionAdapter con;
         if (!loadAndSolveCaptcha(param, progress, decryptedLinks, parameter, containerId)) {
             return decryptedLinks;
         }
+
+        return doThis(param, progress, decryptedLinks, parameter, containerId);
+    }
+
+    private ArrayList<DownloadLink> doThis(final CryptedLink param, final ProgressController progress, final ArrayList<DownloadLink> decryptedLinks, final String parameter, final String containerId) throws Exception {
+        URLConnectionAdapter con;
         // check for a password. Store latest password in DB
         Form password = br.getForm(0);
         if (password != null && password.hasInputFieldByName("password")) {
             String latestPassword = getPluginConfig().getStringProperty("PASSWORD");
             if (latestPassword != null) {
                 password.put("password", latestPassword);
-                br.submitForm(password);
+                submitForm(password);
                 //
             }
             // no defaultpassword, or defaultpassword is wrong
@@ -1881,7 +1885,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                 if (password != null && password.hasInputFieldByName("password")) {
                     latestPassword = Plugin.getUserInput(null, param);
                     password.put("password", latestPassword);
-                    br.submitForm(password);
+                    submitForm(password);
                     password = br.getForm(0);
                     if (password != null && password.hasInputFieldByName("password")) {
                         continue;
@@ -1950,8 +1954,8 @@ public class LnkCrptWs extends PluginForDecrypt {
             decryptedJS = map.get("cnl").replaceAll("\\\\", "");
 
             /* Workaround for the stable and parseInputFields method */
-            String jk = new Regex(decryptedJS, "(?i)NAME=\"jk\" VALUE=\"([^\"]+)\">").getMatch(0);
-            decryptedJS = decryptedJS.replaceAll("(?i)NAME=\"jk\" VALUE=\"[^\"]+\">", "NAME=\"jk\" VALUE=\"" + Encoding.urlEncode(jk) + "\">");
+            String jk = new Regex(decryptedJS, "NAME=\"jk\" VALUE=\"([^\"]+)\">").getMatch(0);
+            decryptedJS = decryptedJS.replaceAll("NAME=\"jk\" VALUE=\"[^\"]+\">", "NAME=\"jk\" VALUE=\"" + Encoding.urlEncode(jk) + "\">");
 
             cnlbr.getRequest().setHtmlCode(decryptedJS);
             Form cnlForm = cnlbr.getForm(0);
@@ -1970,16 +1974,12 @@ public class LnkCrptWs extends PluginForDecrypt {
                     infos.put("source", source);
                     String json = JSonStorage.toString(infos);
                     final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
-                    try {
-                        distribute(dl);
-                    } catch (final Throwable e) {
-                        /* does not exist in 09581 */
-                    }
                     decryptedLinks.add(dl);
+                    // first clicknload returns all links and we assume it works!
                     return decryptedLinks;
                 } else {
                     try {
-                        cnlbr.submitForm(cnlForm);
+                        submitForm(cnlbr, cnlForm);
                         if (cnlbr.containsHTML("success")) {
                             return decryptedLinks;
                         }
@@ -2021,7 +2021,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         // Webdecryption
         if (webDecryption) {
             // shouldn't we already be at this url?
-            br.getPage("http://linkcrypt.ws/dir/" + containerId);
+            getPage("http://linkcrypt.ws/dir/" + containerId);
             logger.info("Trying webdecryption...");
             final Form[] forms = br.getForms();
             progress.setRange(forms.length - 8);
@@ -2030,7 +2030,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                 if (form.getInputField("file") != null && form.getInputField("file").getValue() != null && form.getInputField("file").getValue().length() > 0) {
                     progress.increase(1);
                     clone = br.cloneBrowser();
-                    clone.submitForm(form);
+                    submitForm(clone, form);
                     final String[] srcs = clone.getRegex("<frame scrolling.*?src\\s*?=\\s*?\"?([^\"> ]{20,})\"?\\s?").getColumn(0);
                     for (String col : srcs) {
                         if (col.contains("out.pl=head")) {
@@ -2038,7 +2038,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                         }
                         col = Encoding.htmlDecode(col);
                         if (col.contains("out.pl")) {
-                            clone.getPage(col);
+                            getPage(clone, col);
                             // Thread.sleep(600);
                             if (clone.containsHTML("eval")) {
                                 final String[] evals = clone.getRegex("eval(.*?)[\r\n]+").getColumn(0);
@@ -2114,13 +2114,13 @@ public class LnkCrptWs extends PluginForDecrypt {
 
     public boolean loadAndSolveCaptcha(final CryptedLink param, final ProgressController progress, final ArrayList<DownloadLink> decryptedLinks, final String parameter, final String containerId) throws IOException, InterruptedException, Exception, DecrypterException {
         br.clearCookies(parameter);
-        br.getPage(parameter);
+        getPage(parameter);
         for (int i = 0; i < 5; i++) {
             if (br.containsHTML("TextX")) {
                 // since we are currently not able to auto solve TextX Captcha, we try to get another one
                 Thread.sleep(500);
                 br.clearCookies(parameter);
-                br.getPage(parameter);
+                getPage(parameter);
             }
         }
         System.out.println("TextX " + br.containsHTML("TextX"));
@@ -2171,7 +2171,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                     throw new DecrypterException(DecrypterException.CAPTCHA);
                 }
 
-                br.postPage(parameter, "capcode=" + Encoding.urlEncode(result));
+                postPage(parameter, "capcode=" + Encoding.urlEncode(result));
                 if (!br.containsHTML("<\\!\\-\\- KeyCAPTCHA code")) {
                     done = true;
                     break;
@@ -2188,7 +2188,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                     if ("CANCEL".equals(result)) {
                         throw new DecrypterException(DecrypterException.CAPTCHA);
                     }
-                    br.postPage(parameter, "capcode=" + Encoding.urlEncode(result));
+                    postPage(parameter, "capcode=" + Encoding.urlEncode(result));
                     if (!br.containsHTML("<\\!\\-\\- KeyCAPTCHA code")) {
                         break;
                     }
@@ -2233,11 +2233,12 @@ public class LnkCrptWs extends PluginForDecrypt {
                             }
                             captcha.put("x", p.x + "");
                             captcha.put("y", p.y + "");
-                            br.submitForm(captcha);
+                            submitForm(captcha);
                             if (!br.containsHTML("(Our system could not identify you as human beings\\!|Your choice was wrong\\! Please wait some seconds and try it again\\.)")) {
                                 valid = true;
+                                break;
                             } else {
-                                br.getPage("/dir/" + containerId);
+                                getPage("/dir/" + containerId);
                             }
                         }
                     }
@@ -2382,16 +2383,21 @@ public class LnkCrptWs extends PluginForDecrypt {
         return new KeyCaptcha(br);
     }
 
-    private void prepareBrowser(final String userAgent) {
-        br.getHeaders().put("Cache-Control", null);
-        br.getHeaders().put("Accept-Charset", null);
-        br.getHeaders().put("Accept", "*/*");
-        br.getHeaders().put("Accept-Language", "en-EN");
-        br.getHeaders().put("User-Agent", userAgent);
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        super.prepBrowser(prepBr, host);
+        prepBr.setCustomCharset("ISO-8859-1");
+        prepBr.getHeaders().put("Cache-Control", null);
+        prepBr.getHeaders().put("Accept-Charset", null);
+        prepBr.getHeaders().put("Accept", "*/*");
+        prepBr.getHeaders().put("Accept-Language", "en-EN");
+        prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:15.0) Gecko/20100101 Firefox/15.0.1");
         try {
-            br.setCookie("linkcrypt.ws", "language", "en");
+            prepBr.setCookie("linkcrypt.ws", "language", "en");
         } catch (final Throwable e) {
         }
+        prepBr.setKeepResponseContentBytes(true);
+        return prepBr;
     }
 
     /* NO OVERRIDE!! */
@@ -2402,9 +2408,9 @@ public class LnkCrptWs extends PluginForDecrypt {
     // KeyCaptcha stuff
     /**
      * Solves KeyCaptcha for us
-     * 
+     *
      * @author flubshi
-     * 
+     *
      */
     private static class KeyCaptchaSolver {
         // min line length for border detection
@@ -2466,7 +2472,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * Find vertical & horizontal borders within an image
-         * 
+         *
          * @param img
          *            the image to search in
          * @param min
@@ -2550,7 +2556,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * Gets the image and its position with highest possible probability to be correct for this puzzle piece
-         * 
+         *
          * @param keyCaptchaImages
          *            all keycaptcha images (background, sample, pieces)
          * @param borders
@@ -2602,7 +2608,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * Rates probability the puzzle piece fits horizontal to this position
-         * 
+         *
          * @param background
          *            the background image
          * @param piece
@@ -2632,7 +2638,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * Rates probability the puzzle piece fits vertical to this position
-         * 
+         *
          * @param background
          *            the background image
          * @param piece
@@ -2663,9 +2669,9 @@ public class LnkCrptWs extends PluginForDecrypt {
 
     /**
      * Represents a border an the direction of white to 'color'
-     * 
+     *
      * @author flubshi
-     * 
+     *
      */
     private static class DirectedBorder {
         public final Point     p1;
@@ -2689,9 +2695,9 @@ public class LnkCrptWs extends PluginForDecrypt {
 
     /**
      * represents a direction
-     * 
+     *
      * @author flubshi
-     * 
+     *
      */
     private enum Direction {
         TOPDOWN,
@@ -2702,9 +2708,9 @@ public class LnkCrptWs extends PluginForDecrypt {
 
     /**
      * Datastructure to assign a position to an image
-     * 
+     *
      * @author flubshi
-     * 
+     *
      */
     private static class ImageAndPosition {
         public final BufferedImage image;
@@ -2712,7 +2718,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * Assign a position to an image
-         * 
+         *
          * @param image
          *            the image (usually a puzzle piece for KeyCaptcha)
          * @param position
@@ -2726,9 +2732,9 @@ public class LnkCrptWs extends PluginForDecrypt {
 
     /**
      * Represents a KeyCaptcha, which consists of a background image, sample image and a few puzzle pieces
-     * 
+     *
      * @author flubshi
-     * 
+     *
      */
     private static class KeyCaptchaImages {
         public BufferedImage             backgroundImage;
@@ -2737,7 +2743,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * Creates an object
-         * 
+         *
          * @param backgroundImage
          *            The background image of the KeyCaptcha
          * @param sampleImage
@@ -2753,7 +2759,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * Integrates a puzzle piece into the puzzle: removes piece from list of puzzle and draws the piece on background
-         * 
+         *
          * @param image
          *            the puzzle piece image
          * @param position
@@ -2922,23 +2928,23 @@ public class LnkCrptWs extends PluginForDecrypt {
          */
         Comparator<Integer> isElementColor = new Comparator<Integer>() {
 
-                                               public int compare(Integer o1, Integer o2) {
-                                                   int c = o1;
-                                                   int c2 = o2;
-                                                   if (isBackground(o1) || isBackground(o2)) {
-                                                       return 0;
-                                                   }
-                                                   if (c == 0x000000 || c2 == 0x000000) {
-                                                       return c == c2 ? 1 : 0;
-                                                   }
-                                                   int[] hsvC = Colors.rgb2hsv(c);
-                                                   int[] hsvC2 = Colors.rgb2hsv(c2);
-                                                   // TODO The "hsvC[1] / hsvC2[2] == 1" is repeated twice
-                                                   // Is it a typo? Was a different comparison meant in the second place?
-                                                   return ((hsvC[0] == hsvC2[0] && (hsvC[1] == hsvC2[1] || hsvC[2] == hsvC2[2] || hsvC[1] / hsvC2[2] == 1 || hsvC[1] / hsvC2[2] == 1)) && Colors.getRGBColorDifference2(c, c2) < 80) ? 1 : 0;
-                                               }
+            public int compare(Integer o1, Integer o2) {
+                int c = o1;
+                int c2 = o2;
+                if (isBackground(o1) || isBackground(o2)) {
+                    return 0;
+                }
+                if (c == 0x000000 || c2 == 0x000000) {
+                    return c == c2 ? 1 : 0;
+                }
+                int[] hsvC = Colors.rgb2hsv(c);
+                int[] hsvC2 = Colors.rgb2hsv(c2);
+                // TODO The "hsvC[1] / hsvC2[2] == 1" is repeated twice
+                        // Is it a typo? Was a different comparison meant in the second place?
+                                return ((hsvC[0] == hsvC2[0] && (hsvC[1] == hsvC2[1] || hsvC[2] == hsvC2[2] || hsvC[1] / hsvC2[2] == 1 || hsvC[1] / hsvC2[2] == 1)) && Colors.getRGBColorDifference2(c, c2) < 80) ? 1 : 0;
+            }
 
-                                           };
+        };
 
         private boolean equalElements(int c, int c2) {
             return isElementColor.compare(c, c2) == 1;
@@ -3026,7 +3032,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         /**
          * returns the Circles Bounds on the Captcha TODO geht nur bei x entlang sollte noch bei y gemacht werden um bessere ergebnisse zu
          * bekommen
-         * 
+         *
          * @param pixelObject
          * @param captcha
          * @return
@@ -3141,7 +3147,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * returns true if coordinates are out of the bounds of the image
-         * 
+         *
          * @param img
          * @param x
          * @param y
@@ -3165,7 +3171,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * expand the circle by expanding colored pixels to their neighbors
-         * 
+         *
          * @param src
          *            the image
          * @return a copy of the image
@@ -3200,7 +3206,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * returns the detected circles
-         * 
+         *
          * @return
          */
         public java.util.List<PixelObject> getCircles() {
@@ -3215,7 +3221,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * Gets the longest part of a circle which is missing
-         * 
+         *
          * @param img
          *            image containing a circle (with center in center)
          * @param r
@@ -3251,7 +3257,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * returns the open circle
-         * 
+         *
          * @return
          */
         private Letter getOpenCircle() {
@@ -3277,15 +3283,15 @@ public class LnkCrptWs extends PluginForDecrypt {
 
     /**
      * Solves a CaptX captcha (linkcrypt). That are the captcha where you have to click into the open circle
-     * 
+     *
      * @author flubshi
-     * 
+     *
      */
     public static class CaptXSolver {
 
         /**
          * Calculates coordinates of the open circle within the image
-         * 
+         *
          * @param captchaFile
          *            image with open circle drawn on it
          * @return coordinates of the circle
@@ -3313,7 +3319,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * get objects with different color
-         * 
+         *
          * @param grid
          * @return
          */

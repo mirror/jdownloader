@@ -286,7 +286,7 @@ public class MixtureCloudCom extends PluginForHost {
     }
 
     private void checkErrors() throws Exception {
-        if (br.containsHTML(">Not found|Sorry, but the page you were trying to view")) {
+        if (br.containsHTML("Not found\\s*</h2>|Sorry, but the page you were trying to view|>\\s*Sorry, but the page you were trying to view does not exist\\.\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML("In response to a complaint received under the US Digital Millennium Copyright Act, you can't access to this file")) {

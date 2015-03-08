@@ -64,6 +64,7 @@ public class LolaBitsEs extends PluginForHost {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.71 Safari/537.36");
         br.getPage(link.getStringProperty("mainlink", null));
         if (br.containsHTML("class=\"noFile\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -102,7 +103,18 @@ public class LolaBitsEs extends PluginForHost {
             maxChunks = 1;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+
+        final String[] range = new Regex(dl.getConnection().getRequestProperty("Range"), "(\\d+)-(\\d+)").getRow(0);
+        // resume for some reason returns Content-Type: text/html on resume, to circumvent this I'm using... - raztoki
+        if (downloadLink.getDownloadCurrent() > 0 && range != null && dl.getConnection().getContentType().contains("html")) {
+            // long[] rangeRequest = dl.getConnection().getRange();
+            // Long[] rangeResponse = new Long[2];
+            // rangeResponse[0] = Long.parseLong(range[0]);
+            // rangeResponse[1] = Long.parseLong(range[1]);
+            // if (rangeRequest[0] == rangeResponse[0] && rangeRequest[1] == rangeResponse[1]) {
+            // logger.info("BINGO");
+            // }
+        } else if (dl.getConnection().getContentType().contains("html")) {
             /* Whatever happens here, always show server error... */
             if (dl.getConnection().getResponseCode() != 206) {
                 /* range response has text/html content..... */
@@ -193,7 +205,10 @@ public class LolaBitsEs extends PluginForHost {
         br.getPage(link.getStringProperty("mainlink", null));
         final String dllink = get_dllink(link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
+        final String[] range = new Regex(dl.getConnection().getRequestProperty("Range"), "(\\d+)-(\\d+)").getRow(0);
+        if (link.getDownloadCurrent() > 0 && range != null && dl.getConnection().getContentType().contains("html")) {
+            // see handleFree
+        } else if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() != 206) {
                 /* range response has text/html content..... */
                 br.followConnection();
