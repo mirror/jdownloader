@@ -56,16 +56,20 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof DownloadLinkArchiveFile)) {
-            return false;
-        }
         if (obj == this) {
             return true;
         }
-        // this equals is used by the build method of ExtractionExtension. If we have one matching link, the archivefile matches as well
-        for (DownloadLink dl : ((DownloadLinkArchiveFile) obj).getDownloadLinks()) {
-            if (getDownloadLinks().contains(dl)) {
-                return true;
+        if (obj != null) {
+            if (obj instanceof DownloadLinkArchiveFile) {
+                for (DownloadLink dl : ((DownloadLinkArchiveFile) obj).getDownloadLinks()) {
+                    if (getDownloadLinks().contains(dl)) {
+                        return true;
+                    }
+                }
+            } else if (obj instanceof DownloadLink) {
+                if (getDownloadLinks().contains(obj)) {
+                    return true;
+                }
             }
         }
         return false;
@@ -206,9 +210,10 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
                     @Override
                     protected Void run() throws RuntimeException {
                         controller.getLogger().info("Remove Link " + downloadLink.getView().getDisplayName() + " because Finished and CleanupImmediately and Extrating finished!");
-                        java.util.List<DownloadLink> remove = new ArrayList<DownloadLink>();
+                        List<DownloadLink> remove = new ArrayList<DownloadLink>();
                         remove.add(downloadLink);
-                        if (DownloadController.getInstance().askForRemoveVetos(remove)) {
+                        remove = DownloadController.getInstance().askForRemoveVetos(remove);
+                        if (remove.size() > 0) {
                             DownloadController.getInstance().removeChildren(remove);
                         } else {
                             controller.getLogger().info("Remove Link " + downloadLink.getView().getDisplayName() + " failed because of removeVetos!");

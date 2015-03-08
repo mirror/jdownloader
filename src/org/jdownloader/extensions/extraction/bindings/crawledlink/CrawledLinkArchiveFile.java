@@ -45,16 +45,20 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof CrawledLinkArchiveFile)) {
-            return false;
-        }
         if (obj == this) {
             return true;
         }
-        // this equals is used by the build method of ExtractionExtension. If we have one matching link, the archivefile matches as well
-        for (CrawledLink dl : ((CrawledLinkArchiveFile) obj).getLinks()) {
-            if (getLinks().contains(dl)) {
-                return true;
+        if (obj != null) {
+            if (obj instanceof CrawledLinkArchiveFile) {
+                for (CrawledLink dl : ((CrawledLinkArchiveFile) obj).getLinks()) {
+                    if (getLinks().contains(dl)) {
+                        return true;
+                    }
+                }
+            } else if (obj instanceof CrawledLink) {
+                if (getLinks().contains(obj)) {
+                    return true;
+                }
             }
         }
         return false;

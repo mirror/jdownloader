@@ -26,6 +26,7 @@ import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import jd.config.SubConfiguration;
@@ -79,12 +80,12 @@ public class AccountController implements AccountControllerListener, AccountProp
 
     private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster      = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
 
-                                                                                                      @Override
-                                                                                                      protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
-                                                                                                          listener.onAccountControllerEvent(event);
-                                                                                                      }
+        @Override
+        protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
+            listener.onAccountControllerEvent(event);
+        }
 
-                                                                                                  };
+    };
 
     public Eventsender<AccountControllerListener, AccountControllerEvent> getBroadcaster() {
         return broadcaster;
@@ -133,6 +134,21 @@ public class AccountController implements AccountControllerListener, AccountProp
             }
         }
         broadcaster.addListener(this);
+        delayedSaver.getService().scheduleWithFixedDelay(new Runnable() {
+            public void run() {
+                if (JsonConfig.create(AccountSettings.class).isAutoAccountRefreshEnabled()) {
+                    /*
+                     * this scheduleritem checks all enabled accounts every 5 mins
+                     */
+                    try {
+                        refreshAccountStats();
+                    } catch (Throwable e) {
+                        LogController.CL().log(e);
+                    }
+                }
+            }
+
+        }, 1, 5, TimeUnit.MINUTES);
     }
 
     protected void save() {
@@ -380,8 +396,8 @@ public class AccountController implements AccountControllerListener, AccountProp
                     try {
                         onlineCheck.getExternalIP();
                     } catch (final OfflineException e2) { /*
-                                                           * we are offline, so lets just return without any account update
-                                                           */
+                     * we are offline, so lets just return without any account update
+                     */
                         logger.clear();
                         LogController.CL().info("It seems Computer is currently offline, skipped Accountcheck for " + whoAmI);
                         account.setError(AccountError.TEMP_DISABLED, "No Internet Connection");
@@ -519,7 +535,7 @@ public class AccountController implements AccountControllerListener, AccountProp
 
     /**
      * Restores accounts from old database
-     * 
+     *
      * @return
      */
     private HashMap<String, ArrayList<AccountData>> restore() {
@@ -714,6 +730,23 @@ public class AccountController implements AccountControllerListener, AccountProp
             return;
         }
         AccountChecker.getInstance().check(acc, forceRecheck);
+    }
+
+    private void refreshAccountStats() {
+        synchronized (AccountController.this) {
+            for (final List<Account> accounts : ACCOUNTS.values()) {
+                if (accounts != null) {
+                    for (final Account acc : accounts) {
+                        if (acc.getPlugin() != null && acc.isEnabled() && acc.isValid() && acc.refreshTimeoutReached()) {
+                            /*
+                             * we do not force update here, the internal timeout will make sure accounts get fresh checked from time to time
+                             */
+                            AccountChecker.getInstance().check(acc, false);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     @Deprecated
