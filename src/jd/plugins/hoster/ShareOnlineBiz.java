@@ -867,9 +867,11 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         this.setBrowserExclusive();
         final HashMap<String, String> infos = loginAPI(account, false);
         if (isFree(account)) {
-            this.requestFileInformation(link);
+            requestFileInformation(link);
             doFree(link);
         } else {
+            // linkcheck otherwise users get banned ip sending linkdata with user:pass jdlog://3063296763241/
+            requestFileInformation(link);
             final boolean preferHttps = userPrefersHttps() && !StringUtils.equalsIgnoreCase(account.getStringProperty("group", null), "VIP");
             final String linkID = getID(link);
             String dlC = infos.get("dl");
@@ -1117,9 +1119,11 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         br.setKeepResponseContentBytes(true);
         try {
             if (br.postPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=checklinks&md5=1&snr=1", "links=" + id).matches("\\s*")) {
+                // web method failover.
+                br = new Browser();
                 String startURL = downloadLink.getDownloadURL();
                 // workaround to bypass new layout and use old site
-                br.getPage(startURL += startURL.contains("?") ? "&v2=1" : "?v2=1");
+                getPage(startURL += startURL.contains("?") ? "&v2=1" : "?v2=1");
                 // we only use this direct mode if the API failed twice! in this case this is the only way to get the information
                 String js = br.getRegex("var dl=[^\r\n]*").getMatch(-1);
                 js = execJS(js);
