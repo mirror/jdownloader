@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2015  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -27,6 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 /**
+ *
+ * @version raz_Template-pastebin-201503051556
  * @author raztoki
  * */
 @DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 2, names = { "justpaste.it" }, urls = { "https?://(?:www\\.)?(justpaste\\.it/[A-Za-z0-9\\-_]+|jpst\\.it/[A-Za-z0-9]+)" }, flags = { 0 })
@@ -48,18 +50,23 @@ public class JustPasteIt extends PluginForDecrypt {
         }
         final String plaintxt = br.getRegex("<div[^>]+id=\"articleContent\"[^>]*>(.*?)</div>").getMatch(0);
         if (plaintxt == null) {
+            logger.info("Could not find 'plaintxt' : " + parameter);
             return decryptedLinks;
         }
+        final ArrayList<String> pws = HTMLParser.findPasswords(plaintxt);
         final String[] links = HTMLParser.getHttpLinks(plaintxt, "");
         if (links == null || links.length == 0) {
-            logger.info("Found no hosterlinks in plaintext from link " + parameter);
+            logger.info("Found no links[] from 'plaintxt' : " + parameter);
             return decryptedLinks;
         }
         /* avoid recursion */
-        for (int i = 0; i < links.length; i++) {
-            String dlLink = links[i];
-            if (!this.canHandle(dlLink)) {
-                decryptedLinks.add(createDownloadlink(dlLink));
+        for (final String link : links) {
+            if (!this.canHandle(link)) {
+                final DownloadLink dl = createDownloadlink(link);
+                if (pws != null && pws.size() > 0) {
+                    dl.setSourcePluginPasswordList(pws);
+                }
+                decryptedLinks.add(dl);
             }
         }
         return decryptedLinks;

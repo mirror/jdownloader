@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2015  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -27,15 +27,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 /**
- * have password protected pastes, though i couldn't create one to test.
  *
  * @version raz_Template-pastebin-201503051556
  * @author raztoki
  * */
-@DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 2, names = { "pastee.org" }, urls = { "https?://(?:www\\.)?pastee.org/[a-z0-9]{5}" }, flags = { 0 })
-public class PasteeOrg extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 2, names = { "pastebyte.com" }, urls = { "https?://(?:www\\.)?pastebyte\\.com/pastes/(?-i)[A-Z0-9]{8}" }, flags = { 0 })
+public class PasteByteCom extends PluginForDecrypt {
 
-    public PasteeOrg(PluginWrapper wrapper) {
+    public PasteByteCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -49,7 +48,7 @@ public class PasteeOrg extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        final String plaintxt = br.getRegex("<div[^>]+id=\"paste\"[^>]*>(.*?)\\s+</div>\\s+").getMatch(0);
+        final String plaintxt = br.getRegex("<textarea[^>]+id=\"text\"[^>]*>(.*?)\\s+</textarea>\\s+").getMatch(0);
         if (plaintxt == null) {
             logger.info("Could not find 'plaintxt' : " + parameter);
             return decryptedLinks;
