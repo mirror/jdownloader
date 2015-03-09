@@ -1,6 +1,5 @@
 package org.jdownloader.extensions.extraction;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -11,7 +10,7 @@ import org.jdownloader.settings.IfFileExistsAction;
 
 public class ArchiveSettings implements Storable {
     private ArchiveController            archiveController;
-    private ArrayList<ArchiveItem>       archiveItems;
+
     private BooleanStatus                autoExtract                        = BooleanStatus.UNSET;
     private ExtractionInfo               extractionInfo;
     private String                       extractPath;
@@ -33,10 +32,6 @@ public class ArchiveSettings implements Storable {
         needsSaving = false;
     }
 
-    public ArrayList<ArchiveItem> getArchiveItems() {
-        return archiveItems;
-    }
-
     public BooleanStatus getAutoExtract() {
         return autoExtract;
     }
@@ -54,7 +49,9 @@ public class ArchiveSettings implements Storable {
     }
 
     public String getIfFileExistsAction() {
-        if (ifFileExistsAction == null) return null;
+        if (ifFileExistsAction == null) {
+            return null;
+        }
         return ifFileExistsAction.toString();
     }
 
@@ -72,12 +69,6 @@ public class ArchiveSettings implements Storable {
 
     public BooleanStatus getRemoveFilesAfterExtraction() {
         return removeFilesAfterExtraction;
-    }
-
-    public void setArchiveItems(ArrayList<ArchiveItem> files) {
-        this.archiveItems = files;
-        fireUpdate();
-
     }
 
     private void fireUpdate() {
@@ -110,7 +101,9 @@ public class ArchiveSettings implements Storable {
 
     public void setIfFileExistsAction(String overwriteFiles) {
         try {
-            if (overwriteFiles == null) return;
+            if (overwriteFiles == null) {
+                return;
+            }
             _setIfFileExistsAction(IfFileExistsAction.valueOf(overwriteFiles));
         } catch (Exception e) {
         }

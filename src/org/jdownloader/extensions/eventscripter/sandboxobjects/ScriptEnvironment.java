@@ -568,6 +568,15 @@ public class ScriptEnvironment {
         }
     }
 
+    protected static boolean doCollectClass(Class<? extends Object> cl) {
+        Package pkg = cl.getPackage();
+        Package sPkg = ScriptEnvironment.class.getPackage();
+        if (pkg == null || !pkg.getName().startsWith(sPkg.getName())) {
+            return false;
+        }
+        return true;
+    }
+
     public static Collection<Class<?>> getRequiredClasses() {
         ArraySet<Class<?>> clazzes = new ArraySet<Class<?>>();
         collectClasses(ScriptEnvironment.class, clazzes);
@@ -607,8 +616,11 @@ public class ScriptEnvironment {
         });
         sb.append("/* =============== ").append("Classes").append(" =============== */").append("\r\n");
         for (Class<?> cl : clazzes) {
-            sb.append("/* === ").append(Utils.cleanUpClass(cl.getSimpleName())).append(" === */").append("\r\n");
-            getAPIDescriptionForClass(sb, cl);
+            if (doCollectClass(cl)) {
+
+                sb.append("/* === ").append(Utils.cleanUpClass(cl.getSimpleName())).append(" === */").append("\r\n");
+                getAPIDescriptionForClass(sb, cl);
+            }
 
         }
         return sb.toString();
@@ -670,4 +682,5 @@ public class ScriptEnvironment {
         }
 
     }
+
 }

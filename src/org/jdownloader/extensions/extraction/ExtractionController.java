@@ -45,9 +45,9 @@ import org.jdownloader.settings.IfFileExistsAction;
 
 /**
  * Responsible for the correct procedure of the extraction process. Contains one IExtraction instance.
- *
+ * 
  * @author botzi
- *
+ * 
  */
 public class ExtractionController extends QueueAction<Void, RuntimeException> {
     private List<String>                     passwordList;
@@ -217,6 +217,8 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                     crashLog.write("File missing: " + archiveFile.getFilePath());
                     logger.info("Could not find archive file " + archiveFile.getFilePath());
                     archive.addCrcError(archiveFile);
+                } else {
+                    crashLog.write(" (Part)File: " + archiveFile.getFilePath());
                 }
             }
             if (archive.getCrcError().size() > 0) {
@@ -494,7 +496,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
     /**
      * Returns a thrown exception.
-     *
+     * 
      * @return The thrown exception.
      */
     public Exception getException() {
@@ -502,9 +504,9 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     }
 
     /**
-     *
+     * 
      * Returns the current password finding process.
-     *
+     * 
      * @return
      */
     public int getCrackProgress() {
@@ -513,7 +515,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
     /**
      * Gets the passwordlist size
-     *
+     * 
      * @return
      */
     public int getPasswordListSize() {
@@ -522,7 +524,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
     /**
      * Should the archives be deleted after extracting.
-     *
+     * 
      * @param deleteOption
      */
     void setRemoveAfterExtract(FileCreationManager.DeleteOption deleteOption) {
@@ -538,7 +540,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
     /**
      * Returns the {@link Archive}.
-     *
+     * 
      * @return
      */
     public Archive getArchiv() {
@@ -547,7 +549,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
     /**
      * Sets a exception that occurs during unpacking.
-     *
+     * 
      * @param e
      */
     public void setExeption(Exception e) {

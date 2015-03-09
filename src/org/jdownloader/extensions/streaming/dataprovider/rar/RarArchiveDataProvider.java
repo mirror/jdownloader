@@ -40,14 +40,12 @@ import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
-import org.jdownloader.extensions.extraction.ArchiveItem;
 import org.jdownloader.extensions.extraction.ExtractionConfig;
 import org.jdownloader.extensions.extraction.ExtractionException;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.FileSignatures;
 import org.jdownloader.extensions.extraction.Signature;
 import org.jdownloader.extensions.extraction.content.ContentView;
-import org.jdownloader.extensions.extraction.content.PackedFile;
 import org.jdownloader.extensions.streaming.T;
 import org.jdownloader.gui.views.ArraySet;
 import org.jdownloader.logging.LogController;
@@ -63,7 +61,9 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
         this.file = subpath;
         this.dataProviders = dataProviders;
         extractionSettings = (ExtractionConfig) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getSettings();
-        if (password == null) password = "";
+        if (password == null) {
+            password = "";
+        }
 
         map = new HashMap<String, ArchiveFile>();
         logger = LogController.getInstance().getLogger(RarArchiveDataProvider.class.getName());
@@ -144,7 +144,9 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
             logger.info("New RandomAccess: " + (af == null ? filename : af.getFilePath()));
             name = filename;
             ArchiveFile archiveFile = af == null ? archive.getArchiveFileByPath(filename) : af;
-            if (archiveFile == null) return null;
+            if (archiveFile == null) {
+                return null;
+            }
             for (DataProvider dp : dataProviders) {
                 if (dp.canHandle(archiveFile, dataProviders)) {
                     stream = new RarFromDataproviderStream(archiveFile, filename, this, dp);
@@ -207,7 +209,9 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
     }
 
     public FileSignatures getFileSignatures() {
-        if (fileSignatures == null) fileSignatures = new FileSignatures();
+        if (fileSignatures == null) {
+            fileSignatures = new FileSignatures();
+        }
         return fileSignatures;
     }
 
@@ -326,7 +330,9 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
                 }
                 // if (filter(item.getPath())) continue;
             }
-            if (!passwordfound[0]) return false;
+            if (!passwordfound[0]) {
+                return false;
+            }
             archive.setFinalPassword(password);
 
             return true;
@@ -356,7 +362,9 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
     }
 
     protected String askPassword() throws PasswordNotFoundException {
-        if (isSilent()) { throw new PasswordNotFoundException("Silent"); }
+        if (isSilent()) {
+            throw new PasswordNotFoundException("Silent");
+        }
         ArraySet<String> passwords = new ArraySet<String>();
         List<String> settings = archive.getSettings().getPasswords();
         if (settings != null) {
@@ -409,7 +417,9 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
             passwordList.addAll(archive.getFactory().getGuessedPasswordList(archive));
             passwordList.add(archive.getName());
             java.util.List<String> pwList = extractionSettings.getPasswordList();
-            if (pwList == null) pwList = new ArrayList<String>();
+            if (pwList == null) {
+                pwList = new ArrayList<String>();
+            }
             passwordList.addAll(pwList);
 
             logger.info("Start password finding for " + archive);
@@ -417,7 +427,9 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
             String correctPW = null;
 
             for (String password : passwordList) {
-                if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
+                if (Thread.currentThread().isInterrupted()) {
+                    throw new InterruptedException();
+                }
 
                 if (checkIfPasswordIsCorrect(password)) {
                     correctPW = password;
@@ -480,7 +492,9 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
     }
 
     private void throwException(Throwable e) throws ExtractionException {
-        if (e == null) return;
+        if (e == null) {
+            return;
+        }
         throw new ExtractionException(e, getLatestAccessedStream() != null ? getLatestAccessedStream().getArchiveFile() : null);
     }
 
@@ -489,8 +503,10 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
         // password0
 
         String password = archive.getFinalPassword();
-        if (password == null) password = "";
-        // }
+        if (password == null) {
+            password = "";
+            // }
+        }
 
         try {
             IInStream rarStream = getStream(archive.getFirstArchiveFile());
@@ -517,7 +533,9 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
                 }
             }
             updateContentView(rarArchive.getSimpleInterface());
-            if (itemToExtract != null) logger.info("best item: " + itemToExtract.getPath() + " size: " + itemToExtract.getSize());
+            if (itemToExtract != null) {
+                logger.info("best item: " + itemToExtract.getPath() + " size: " + itemToExtract.getSize());
+            }
             return;
         } catch (SevenZipException e) {
             logger.log(e);
@@ -538,28 +556,30 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
     }
 
     private void updateContentView(ISimpleInArchive simpleInterface) {
-        try {
-            ContentView newView = new ContentView();
-            ArrayList<ArchiveItem> files = new ArrayList<ArchiveItem>();
-            for (ISimpleInArchiveItem item : simpleInterface.getArchiveItems()) {
-                try {
-                    files.add(ArchiveItem.create(item));
-                    String p = item.getPath();
-                    if (p.trim().equals("")) continue;
-                    newView.add(new PackedFile(item.isFolder(), item.getPath(), item.getSize()));
-                } catch (SevenZipException e) {
-                    logger.log(e);
-                }
-            }
-            archive.setContentView(newView);
-            archive.getSettings().setArchiveItems(files);
-        } catch (SevenZipException e) {
-            logger.log(e);
-        }
+        // try {
+        ContentView newView = new ContentView();
+        // ArrayList<ArchiveItem> files = new ArrayList<ArchiveItem>();
+        // for (ISimpleInArchiveItem item : simpleInterface.getArchiveItems()) {
+        // try {
+        // files.add(ArchiveItem.create(item));
+        // String p = item.getPath();
+        // if (p.trim().equals("")) continue;
+        // newView.add(new PackedFile(item.isFolder(), item.getPath(), item.getSize()));
+        // } catch (SevenZipException e) {
+        // logger.log(e);
+        // }
+        // }
+        archive.setContentView(newView);
+        // archive.getSettings().setArchiveItems(files);
+        // } catch (SevenZipException e) {
+        // logger.log(e);
+        // }
     }
 
     public void updateContentView() throws ExtractionException {
-        if (rarArchive == null) throw new ExtractionException("Archive is not open");
+        if (rarArchive == null) {
+            throw new ExtractionException("Archive is not open");
+        }
         updateContentView(rarArchive.getSimpleInterface());
     }
 
@@ -572,12 +592,12 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
     public long getFinalFileSize(Archive archive) {
         if (sizeOfItemToExtract <= 0) {
 
-            java.util.List<ArchiveItem> items = this.archive.getSettings().getArchiveItems();
-            if (items != null) {
-                for (ArchiveItem ai : items) {
-                    if (ai.getPath().equals(file)) { return ai.getSize(); }
-                }
-            }
+            // java.util.List<ArchiveItem> items = this.archive.getSettings().getArchiveItems();
+            // if (items != null) {
+            // for (ArchiveItem ai : items) {
+            // if (ai.getPath().equals(file)) { return ai.getSize(); }
+            // }
+            // }
         }
         return sizeOfItemToExtract;
     }
@@ -596,9 +616,13 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
 
                             @Override
                             public int write(byte[] abyte0) throws SevenZipException {
-                                if (abyte0.length == 0) return 0;
+                                if (abyte0.length == 0) {
+                                    return 0;
+                                }
                                 try {
-                                    if (Thread.currentThread().isInterrupted()) throw new SevenZipException("Interrupted");
+                                    if (Thread.currentThread().isInterrupted()) {
+                                        throw new SevenZipException("Interrupted");
+                                    }
                                     streamingChunk.write(abyte0, 0, abyte0.length);
                                     return abyte0.length;
                                 } catch (IOException e) {
@@ -611,9 +635,13 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
 
                             @Override
                             public int write(byte[] abyte0) throws SevenZipException {
-                                if (abyte0.length == 0) return 0;
+                                if (abyte0.length == 0) {
+                                    return 0;
+                                }
                                 try {
-                                    if (Thread.currentThread().isInterrupted()) throw new SevenZipException("Interrupted");
+                                    if (Thread.currentThread().isInterrupted()) {
+                                        throw new SevenZipException("Interrupted");
+                                    }
                                     streamingChunk.write(abyte0, 0, abyte0.length);
                                     return abyte0.length;
                                 } catch (IOException e) {
@@ -672,9 +700,13 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
 
                 @Override
                 public int read() throws IOException {
-                    if (currentPosition != 0 && currentPosition > streamingChunk.getAvailableChunkSize()) return -1;
+                    if (currentPosition != 0 && currentPosition > streamingChunk.getAvailableChunkSize()) {
+                        return -1;
+                    }
                     int ret = read(bufferByte, 0, 1);
-                    if (ret == 1) return bufferByte[1];
+                    if (ret == 1) {
+                        return bufferByte[1];
+                    }
                     return -1;
                 }
 
@@ -694,7 +726,9 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
                     try {
                         int ret;
                         ret = streamingChunk.read(b, off, len, currentPosition);
-                        if (ret >= 0) currentPosition += ret;
+                        if (ret >= 0) {
+                            currentPosition += ret;
+                        }
 
                         return ret;
                     } catch (InterruptedException e) {
@@ -751,7 +785,9 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
                 }
                 openStreamMap.clear();
 
-                if (streamingChunk != null) streamingChunk.close();
+                if (streamingChunk != null) {
+                    streamingChunk.close();
+                }
 
             }
 
