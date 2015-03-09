@@ -50,6 +50,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.components.YoutubeClipData;
+import jd.plugins.components.YoutubeCustomConvertVariant;
 import jd.plugins.components.YoutubeCustomVariantStorable;
 import jd.plugins.components.YoutubeITAG;
 import jd.plugins.components.YoutubeStreamData;
@@ -1330,8 +1331,9 @@ public class YoutubeDashV2 extends PluginForHost {
                             downloadLink.removePluginProgress(progress);
                         }
                     } else {
-                        if (variant instanceof YoutubeVariant) {
-                            YoutubeVariant ytVariant = (YoutubeVariant) variant;
+
+                        if (variant instanceof YoutubeVariant || variant instanceof YoutubeCustomConvertVariant) {
+                            YoutubeVariant ytVariant = (variant instanceof YoutubeCustomConvertVariant) ? ((YoutubeCustomConvertVariant) variant).getSource() : (YoutubeVariant) variant;
 
                             if (ytVariant.getFileExtension().toLowerCase(Locale.ENGLISH).equals("aac")) {
 
@@ -1389,6 +1391,7 @@ public class YoutubeDashV2 extends PluginForHost {
                             } else {
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
+
                         } else {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
@@ -1507,7 +1510,8 @@ public class YoutubeDashV2 extends PluginForHost {
         }
         if (variant.hasConverer(downloadLink)) {
             long lastMod = new File(downloadLink.getFileOutput()).lastModified();
-            variant.convert(downloadLink);
+
+            variant.convert(downloadLink, this);
 
             try {
 
@@ -1830,7 +1834,7 @@ public class YoutubeDashV2 extends PluginForHost {
         }
 
         @Override
-        public void convert(DownloadLink downloadLink) {
+        public void convert(DownloadLink downloadLink, PluginForHost plugin) {
         }
 
         @Override

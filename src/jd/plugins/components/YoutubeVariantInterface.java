@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.List;
 
 import jd.plugins.DownloadLink;
+import jd.plugins.PluginForHost;
 
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
@@ -76,7 +77,7 @@ public interface YoutubeVariantInterface extends LinkVariant {
 
     VariantGroup getGroup();
 
-    void convert(DownloadLink downloadLink) throws Exception;
+    void convert(DownloadLink downloadLink, PluginForHost plugin) throws Exception;
 
     String getQualityExtension();
 

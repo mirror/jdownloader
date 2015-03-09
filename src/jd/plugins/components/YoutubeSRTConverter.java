@@ -5,6 +5,7 @@ import java.io.File;
 import javax.swing.Icon;
 
 import jd.plugins.DownloadLink;
+import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 
 import org.jdownloader.gui.IconKey;
@@ -34,7 +35,7 @@ public class YoutubeSRTConverter implements YoutubeConverter {
     }
 
     @Override
-    public void run(DownloadLink downloadLink) {
+    public void run(DownloadLink downloadLink, PluginForHost plugin) {
         PluginProgress set = null;
         try {
             downloadLink.addPluginProgress(set = new PluginProgress(0, 100, null) {

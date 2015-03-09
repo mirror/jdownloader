@@ -7,6 +7,7 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging2.LogSource;
@@ -44,7 +45,7 @@ public class YoutubeMp4ToAACAudio implements YoutubeConverter {
     }
 
     @Override
-    public void run(DownloadLink downloadLink) throws Exception {
+    public void run(DownloadLink downloadLink, PluginForHost plugin) throws Exception {
         final FFMpegProgress set = new FFMpegProgress();
         try {
             downloadLink.addPluginProgress(set);

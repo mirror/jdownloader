@@ -1,5 +1,7 @@
 package jd.plugins.components;
 
+import jd.plugins.components.YoutubeVariantInterface.VariantGroup;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
 
@@ -10,6 +12,16 @@ public class YoutubeCustomVariantStorable implements Storable {
     }
 
     private YoutubeCustomVariantStorable(/* storable */) {
+    }
+
+    private YoutubeVariant source;
+
+    public YoutubeVariant getSource() {
+        return source;
+    }
+
+    public void setSource(YoutubeVariant source) {
+        this.source = source;
     }
 
     private String uniqueID;
@@ -30,36 +42,12 @@ public class YoutubeCustomVariantStorable implements Storable {
         this.typeID = typeID;
     }
 
-    public String getDownloadType() {
-        return downloadType;
-    }
-
-    public void setDownloadType(String downloadType) {
-        this.downloadType = downloadType;
-    }
-
-    public String getGroup() {
+    public VariantGroup getGroup() {
         return group;
     }
 
-    public void setGroup(String group) {
+    public void setGroup(VariantGroup group) {
         this.group = group;
-    }
-
-    public String getAudioTag() {
-        return audioTag;
-    }
-
-    public void setAudioTag(String audioTag) {
-        this.audioTag = audioTag;
-    }
-
-    public String getVideoTag() {
-        return videoTag;
-    }
-
-    public void setVideoTag(String videoTag) {
-        this.videoTag = videoTag;
     }
 
     public double getQualityRating() {
@@ -110,16 +98,15 @@ public class YoutubeCustomVariantStorable implements Storable {
         this.parameters = parameters;
     }
 
-    private String   typeID;
-    private String   downloadType;
-    private String   group;
-    private String   audioTag;
-    private String   videoTag;
-    private double   qualityRating;
-    private String   name;
-    private String   nameTag;
-    private String   extension;
-    private String   binary;
-    private String[] parameters;
+    private String       typeID;
+
+    private VariantGroup group;
+
+    private double       qualityRating;
+    private String       name;
+    private String       nameTag;
+    private String       extension;
+    private String       binary;
+    private String[]     parameters;
 
 }
