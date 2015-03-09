@@ -52,7 +52,7 @@ public class NitroFlareCom extends antiDDoSForHost {
 
     private final String         language = System.getProperty("user.language");
     private final String         baseURL  = "https://nitroflare.com";
-    private final String         apiURL   = "https://www.nitroflare.com/api/v2";
+    private final String         apiURL   = "http://nitroflare.com/api/v2";
     private static AtomicBoolean useAPI   = new AtomicBoolean(true);
 
     public NitroFlareCom(PluginWrapper wrapper) {
