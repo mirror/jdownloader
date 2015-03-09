@@ -63,6 +63,7 @@ import jd.config.ConfigContainer;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.UIConstants;
 import jd.gui.swing.jdgui.components.StatusBarImpl;
+import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
 import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.menu.JDMenuBar;
@@ -145,6 +146,16 @@ import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.UpdaterListener;
 
 public class JDGui implements UpdaterListener, OwnerFinder {
+    private static final String TITLE_PATTERN_UPDATE            = "\\|([^\\|]*)\\#UPDATENOTIFY([^\\|]*)\\|";
+
+    private static final String TITLE_PATTERN_TITLE             = "\\|([^\\|]*)\\#TITLE([^\\|]*)\\|";
+
+    private static final String TITLE_PATTERN_SPEED_AVERAGE     = "\\|([^\\|]*)\\#AVGSPEED([^\\|]*)\\|";
+
+    private static final String TITLE_PATTERN_RUNNING_DOWNLOADS = "\\|([^\\|]*)\\#RUNNING_DOWNLOADS([^\\|]*)\\|";
+
+    private static final String TITLE_PATTERN_SPEED             = "\\|([^\\|]*)\\#SPEED([^\\|]*)\\|";
+
     static {
         if (Application.isHeadless()) {
             throw new HeadlessException();
@@ -1765,54 +1776,79 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     }
 
     private String generateTitle(String title) {
-        String speedpattern = "\\|([^\\|]*)\\#SPEED([^\\|]*)\\|";
-        String titlepattern = "\\|([^\\|]*)\\#TITLE([^\\|]*)\\|";
-        String updatepattern = "\\|([^\\|]*)\\#UPDATENOTIFY([^\\|]*)\\|";
+
         String pattern = CFG_GUI.CFG.getTitlePattern();
-        pattern = pattern.replaceAll(titlepattern, "$1" + title + "$2");
+        pattern = pattern.replaceAll(TITLE_PATTERN_TITLE, "$1" + title + "$2");
 
         switch (CFG_GUI.CFG.getSpeedInWindowTitle()) {
 
         case ALWAYS:
 
-            int speed = DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeed();
-            if (DownloadWatchDog.getInstance().isRunning()) {
-
-                pattern = pattern.replaceAll(speedpattern, "$1" + SizeFormatter.formatBytes(Math.max(0, speed)) + "$2");
-            } else {
-                pattern = pattern.replaceAll(speedpattern, "");
-            }
+            pattern = updateTitle(pattern);
             break;
 
         case WHEN_WINDOW_IS_MINIMIZED:
             if (WindowManager.getInstance().getExtendedState(getMainFrame()) == WindowExtendedState.ICONIFIED) {
 
-                if (DownloadWatchDog.getInstance().isRunning()) {
-                    speed = DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeed();
-                    pattern = pattern.replaceAll(speedpattern, "$1" + SizeFormatter.formatBytes(Math.max(0, speed)) + "$2");
-                } else {
-                    pattern = pattern.replaceAll(speedpattern, "");
-                }
+                pattern = updateTitle(pattern);
             } else {
-                pattern = pattern.replaceAll(speedpattern, "");
+                pattern = pattern.replaceAll(TITLE_PATTERN_SPEED, "");
+
+                pattern = pattern.replaceAll(TITLE_PATTERN_SPEED_AVERAGE, "");
             }
             break;
 
         default:
-            pattern = pattern.replaceAll(speedpattern, "");
+            pattern = pattern.replaceAll(TITLE_PATTERN_SPEED, "");
+
+            pattern = pattern.replaceAll(TITLE_PATTERN_SPEED_AVERAGE, "");
             break;
         }
 
         if (UpdateController.getInstance().hasPendingUpdates()) {
 
-            pattern = pattern.replaceAll(updatepattern, "$1" + _GUI._.JDGui_updateTitle_updates_available2() + "$2");
+            pattern = pattern.replaceAll(TITLE_PATTERN_UPDATE, "$1" + _GUI._.JDGui_updateTitle_updates_available2() + "$2");
 
         } else {
-            pattern = pattern.replaceAll(updatepattern, "");
 
+            pattern = pattern.replaceAll(TITLE_PATTERN_UPDATE, "");
+        }
+        int running = DownloadWatchDog.getInstance().getActiveDownloads();
+        if (DownloadWatchDog.getInstance().isRunning()) {
+
+            pattern = pattern.replaceAll(TITLE_PATTERN_RUNNING_DOWNLOADS, "$1" + running + "$2");
+        } else {
+            pattern = pattern.replaceAll(TITLE_PATTERN_RUNNING_DOWNLOADS, "");
+        }
+        return pattern.trim();
+    }
+
+    protected String updateTitle(String pattern) {
+        int speed = DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeed();
+        if (DownloadWatchDog.getInstance().isRunning()) {
+
+            pattern = pattern.replaceAll(TITLE_PATTERN_SPEED, "$1" + SizeFormatter.formatBytes(Math.max(0, speed)) + "$2");
+        } else {
+            pattern = pattern.replaceAll(TITLE_PATTERN_SPEED, "");
         }
 
-        return pattern.trim();
+        long speedAverage = -1;
+        SpeedMeterPanel sm = MainToolBar.getInstance().getSpeedMeter();
+        if (sm != null) {
+            speedAverage = sm.getAverageSpeed();
+        }
+        if (speedAverage < 0) {
+            speedAverage = DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeedMeter().getSpeedMeter();
+        }
+
+        if (DownloadWatchDog.getInstance().isRunning()) {
+
+            pattern = pattern.replaceAll(TITLE_PATTERN_SPEED_AVERAGE, "$1" + SizeFormatter.formatBytes(Math.max(0, speedAverage)) + "$2");
+        } else {
+            pattern = pattern.replaceAll(TITLE_PATTERN_SPEED_AVERAGE, "");
+        }
+
+        return pattern;
     }
 
     public static void init() {
