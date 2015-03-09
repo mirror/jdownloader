@@ -8,6 +8,7 @@ import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -159,7 +160,13 @@ public class AddLinksProgress extends AbstractDialog<Object> {
                             for (CrawledLink unhandledLink : unhandledLinks) {
                                 unhandledLink.setCrawlDeep(true);
                             }
-                            final boolean autoExtensionLearning = unhandledLinks.size() == 1 && (LinkOrigin.ADD_LINKS_DIALOG.equals(origin) || LinkOrigin.PASTE_LINKS_ACTION.equals(origin));
+                            final String[] origins = LinkCrawler.getConfig().getAutoLearnExtensionOrigins();
+                            final boolean autoExtensionLearning;
+                            if (origins != null && unhandledLinks.size() == 1) {
+                                autoExtensionLearning = Arrays.asList(origins).contains(origin.name());
+                            } else {
+                                autoExtensionLearning = false;
+                            }
                             if (!autoExtensionLearning) {
                                 try {
                                     Dialog.getInstance().showConfirmDialog(0, _GUI._.AddLinksAction_actionPerformed_deep_title(), _GUI._.AddLinksAction_actionPerformed_deep_msg(), null, _GUI._.literally_yes(), _GUI._.literall_no());
