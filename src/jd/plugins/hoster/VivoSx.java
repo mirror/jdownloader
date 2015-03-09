@@ -82,10 +82,14 @@ public class VivoSx extends PluginForHost {
             final String hash = br.getRegex("type=\"hidden\" name=\"hash\" value=\"([^<>\"]*?)\"").getMatch(0);
             final String expires = br.getRegex("type=\"hidden\" name=\"expires\" value=\"([^<>\"]*?)\"").getMatch(0);
             final String timestamp = br.getRegex("type=\"hidden\" name=\"timestamp\" value=\"([^<>\"]*?)\"").getMatch(0);
-            if (hash == null || expires == null || timestamp == null) {
+            if (hash == null || timestamp == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.postPage(br.getURL(), "hash=" + hash + "&expires=" + expires + "&timestamp=" + timestamp);
+            String postData = "hash=" + hash + "&timestamp=" + timestamp;
+            if (expires != null) {
+                postData += "&expires=" + expires;
+            }
+            br.postPage(br.getURL(), postData);
             dllink = br.getRegex("class=\"stream\\-content\" data\\-url=\"(http[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
