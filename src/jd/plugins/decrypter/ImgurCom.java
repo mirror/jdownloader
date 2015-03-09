@@ -52,7 +52,7 @@ public class ImgurCom extends PluginForDecrypt {
     private static final String     API_FAILED         = "API_FAILED";
 
     /* Constants */
-    private static final long       view_filesizelimit = 20447232;
+    private static long             view_filesizelimit = 0;
 
     private ArrayList<DownloadLink> decryptedLinks     = new ArrayList<DownloadLink>();
     private String                  PARAMETER          = null;
@@ -68,6 +68,7 @@ public class ImgurCom extends PluginForDecrypt {
                 JDUtilities.getPluginForHost("imgur.com");
                 pluginLoaded.set(true);
             }
+            view_filesizelimit = jd.plugins.hoster.ImgUrCom.view_filesizelimit;
             String fpName = null;
             LID = new Regex(PARAMETER, "([A-Za-z0-9]+)$").getMatch(0);
             if (PARAMETER.matches(TYPE_ALBUM) || PARAMETER.matches(TYPE_GALLERY)) {
@@ -145,6 +146,7 @@ public class ImgurCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    @SuppressWarnings("deprecation")
     private void api_decrypt() throws DecrypterException {
         if (br.containsHTML("\"status\":404")) {
             /* Well in case it's a gallery link it might be a single picture */
@@ -210,16 +212,18 @@ public class ImgurCom extends PluginForDecrypt {
              * quality version of the picture. This is why we need a little workaround for this case (works from 19.5++ MB).
              */
             if (filesize >= view_filesizelimit) {
-                directlink = "http://imgur.com/download/" + imgUID;
+                directlink = jd.plugins.hoster.ImgUrCom.getBigFileDownloadlink(dl);
             }
             dl.setProperty("directlink", directlink);
             dl.setProperty("decryptedfilesize", filesize);
             dl.setDownloadSize(filesize);
             /* No need to hide directlinks */
-            try {/* JD2 only */
-                dl.setContentUrl("http://imgur.com/download/" + imgUID);
-            } catch (Throwable e) {/* Stable */
-                dl.setBrowserUrl("http://imgur.com/download/" + imgUID);
+            try {
+                /* JD2 only */
+                dl.setContentUrl(jd.plugins.hoster.ImgUrCom.getURLContent(imgUID));
+            } catch (Throwable e) {
+                /* Stable */
+                dl.setContentUrl(jd.plugins.hoster.ImgUrCom.getURLContent(imgUID));
             }
             decryptedLinks.add(dl);
         }
@@ -272,15 +276,6 @@ public class ImgurCom extends PluginForDecrypt {
             } else {
                 filename = imgUID + ext;
             }
-            /*
-             * Note that for pictures/especially GIFs over 20 MB, the "link" value will only contain a link which leads to a preview or low
-             * quality version of the picture. This is why we need a little workaround for this case (works from 19.5++ MB).
-             */
-            if (filesize >= view_filesizelimit) {
-                directlink = "http://imgur.com/download/" + imgUID;
-            } else {
-                directlink = "http://i.imgur.com/" + imgUID + ext;
-            }
             final DownloadLink dl = createDownloadlink("http://imgurdecrypted.com/download/" + imgUID);
             dl.setFinalFileName(filename);
             dl.setDownloadSize(filesize);
@@ -288,13 +283,25 @@ public class ImgurCom extends PluginForDecrypt {
             dl.setProperty("imgUID", imgUID);
             dl.setProperty("filetype", ext.replace(".", ""));
             dl.setProperty("decryptedfinalfilename", filename);
-            dl.setProperty("directlink", directlink);
             dl.setProperty("decryptedfilesize", filesize);
+            /*
+             * Note that for pictures/especially GIFs over 20 MB, the "link" value will only contain a link which leads to a preview or low
+             * quality version of the picture. This is why we need a little workaround for this case (works from 19.5++ MB).
+             */
+            if (filesize >= view_filesizelimit) {
+                directlink = "http://imgur.com/download/" + imgUID;
+                directlink = jd.plugins.hoster.ImgUrCom.getBigFileDownloadlink(dl);
+            } else {
+                directlink = "http://i.imgur.com/" + imgUID + ext;
+            }
+            dl.setProperty("directlink", directlink);
             /* No need to hide directlinks */
-            try {/* JD2 only */
-                dl.setContentUrl("http://imgur.com/download/" + imgUID);
-            } catch (Throwable e) {/* Stable */
-                dl.setBrowserUrl("http://imgur.com/download/" + imgUID);
+            try {
+                /* JD2 only */
+                dl.setContentUrl(jd.plugins.hoster.ImgUrCom.getURLContent(imgUID));
+            } catch (Throwable e) {
+                /* Stable */
+                dl.setContentUrl(jd.plugins.hoster.ImgUrCom.getURLContent(imgUID));
             }
             decryptedLinks.add(dl);
         }

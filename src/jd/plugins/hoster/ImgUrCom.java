@@ -62,7 +62,7 @@ public class ImgUrCom extends PluginForHost {
     private static final String SETTING_USE_API                = "SETTING_USE_API";
 
     /* Constants */
-    private static final long   view_filesizelimit             = 20447232;
+    public static final long    view_filesizelimit             = 20447232l;
 
     /* Variables */
     private String              dllink                         = null;
@@ -70,11 +70,15 @@ public class ImgUrCom extends PluginForHost {
     private String              imgUID                         = null;
     private boolean             start_DL                       = false;
 
+    /**
+     * TODO: 1. Maybe add a setting to download albums as .zip (if possible via site). 2. Maybe add a setting to add numbers in front of the
+     * filenames (same way imgur does it when you download .zip files of albums).
+     */
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        imgUID = link.getStringProperty("imgUID", null);
-        final String filetype = link.getStringProperty("filetype", null);
+        imgUID = getImgUID(link);
+        final String filetype = getFiletype(link);
         final String finalfilename = link.getStringProperty("decryptedfinalfilename", null);
         final long filesize = getLongProperty(link, "decryptedfilesize", -1);
         dllink = link.getStringProperty("directlink", null);
@@ -110,7 +114,7 @@ public class ImgUrCom extends PluginForHost {
                 /** TODO: Add a workaround for .gif files and/or wait for them to fix their current issues. */
                 if (link.getDownloadSize() >= view_filesizelimit) {
                     logger.info("File is bigger than 20 (19.5) MB --> Using /downloadlink as API-workaround");
-                    dllink = "http://imgur.com/download/" + imgUID;
+                    dllink = getBigFileDownloadlink(link);
                 } else {
                     dllink = getJson(br.toString(), "link");
                 }
@@ -142,9 +146,9 @@ public class ImgUrCom extends PluginForHost {
                  */
                 if (link.getDownloadSize() >= view_filesizelimit) {
                     logger.info("File is bigger than 20 (19.5) MB --> Using /downloadlink as API-workaround");
-                    dllink = "http://imgur.com/download/" + imgUID;
+                    dllink = getBigFileDownloadlink(link);
                 } else {
-                    dllink = "http://i.imgur.com/" + imgUID + "." + link.getStringProperty("filetype", null);
+                    dllink = getURLView(link);
                 }
             }
             link.setProperty("directlink", dllink);
@@ -175,9 +179,34 @@ public class ImgUrCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        start_DL = true;
+        requestFileInformation(downloadLink);
+        if (dl_IMPOSSIBLE_APILIMIT_REACHED) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Api limit reached", 10 * 60 * 1000l);
+        } else if (dllink == null) {
+            /* Should never happen */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* Disable chunks as servers are fast and we usually only download small files. */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (dl.getConnection().getResponseCode() == 503) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 1 * 60 * 60 * 1000l);
+            }
+            logger.warning("Finallink leads to HTML code --> Following connection");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
     /**
      * Parses json either from API, or also if previously set in the browser - it's basically the same as a response similar to the API isa
-     * stored in the htmo code when accessing normal links: imgur.com/xXxXx
+     * stored in the html code when accessing normal content links: imgur.com/xXxXx
      */
     private void parseAPIData(final DownloadLink dl) throws PluginException {
         final long filesize = Long.parseLong(getJson(br.toString(), "size"));
@@ -209,29 +238,51 @@ public class ImgUrCom extends PluginForHost {
         dl.setFinalFileName(finalfilename);
     }
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        start_DL = true;
-        requestFileInformation(downloadLink);
-        if (dl_IMPOSSIBLE_APILIMIT_REACHED) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Api limit reached", 10 * 60 * 1000l);
-        } else if (dllink == null) {
-            /* Should never happen */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    public static String getBigFileDownloadlink(final DownloadLink dl) {
+        final String imgUID = getImgUID(dl);
+        final String filetype = getFiletype(dl);
+        String downloadlink;
+        if (filetype.equals("gif")) {
+            /* Small workaround for gif files. */
+            downloadlink = getURLView(dl);
+        } else {
+            downloadlink = getURLDownload(imgUID);
         }
-        /* Disable chunks as servers are fast and we usually only download small files. */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (dl.getConnection().getResponseCode() == 503) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 1 * 60 * 60 * 1000l);
-            }
-            logger.warning("Finallink leads to HTML code --> Following connection");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        return downloadlink;
+    }
+
+    /** Returns a link for the user to open in browser. */
+    public static final String getURLContent(final String imgUID) {
+        String url_content;
+        if (isJDStable()) {
+            url_content = "http://imgur.com/" + imgUID;
+        } else {
+            url_content = "https://imgur.com/" + imgUID;
         }
-        dl.startDownload();
+        {
+        }
+        return url_content;
+    }
+
+    /** Returns downloadable imgur link. */
+    public static final String getURLDownload(final String imgUID) {
+        return "http://imgur.com/download/" + imgUID;
+    }
+
+    /** Returns viewable/downloadable imgur link. */
+    public static final String getURLView(final DownloadLink dl) {
+        final String imgUID = getImgUID(dl);
+        final String filetype = getFiletype(dl);
+        final String link_view = "http://i.imgur.com/" + imgUID + "." + filetype;
+        return link_view;
+    }
+
+    public static String getImgUID(final DownloadLink dl) {
+        return dl.getStringProperty("imgUID", null);
+    }
+
+    public static String getFiletype(final DownloadLink dl) {
+        return dl.getStringProperty("filetype", null);
     }
 
     private String getJson(final String source, final String parameter) {
@@ -275,6 +326,10 @@ public class ImgUrCom extends PluginForHost {
                 return def;
             }
         }
+    }
+
+    public static boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override
