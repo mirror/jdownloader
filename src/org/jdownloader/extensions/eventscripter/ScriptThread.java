@@ -19,6 +19,7 @@ import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
 import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.storage.JSonStorage;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.IO;
@@ -290,6 +291,27 @@ public class ScriptThread extends Thread {
 
             }
         }
+    }
+
+    /**
+     * create a native javaobject for settings
+     * 
+     * @param settings
+     * @return
+     */
+    public Object toNative(Object settings) {
+        String json = JSonStorage.serializeToJson(settings);
+        // final String reviverjs = "(function(key,value) { return value; })";
+        // final Callable reviver = (Callable) cx.evaluateString(scope, reviverjs, "reviver", 0, null);
+        //
+        // Object nativ = NativeJSON.parse(cx, scope, json, reviver);
+        // String tmpName = "json_" + System.currentTimeMillis();
+        Object ret = cx.evaluateString(scope, "(function(){ return " + json + ";})();", "", 0, null);
+        // for (Entry<Object, Object> es : ((NativeObject) ret).entrySet()) {
+        // ((NativeObject) ret).setAttributes(es.getKey() + "", NativeObject.READONLY);
+        // }
+
+        return ret;
     }
 
 }

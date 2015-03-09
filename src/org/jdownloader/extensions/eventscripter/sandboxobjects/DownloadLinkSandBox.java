@@ -1,12 +1,18 @@
 package org.jdownloader.extensions.eventscripter.sandboxobjects;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.DownloadLink;
 
 import org.jdownloader.api.downloads.v2.DownloadLinkAPIStorableV2;
 import org.jdownloader.api.downloads.v2.LinkQueryStorable;
 import org.jdownloader.extensions.eventscripter.ScriptAPI;
+import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionStatus;
+import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 
 @ScriptAPI(description = "The context download list link")
 public class DownloadLinkSandBox {
@@ -22,6 +28,29 @@ public class DownloadLinkSandBox {
     public DownloadLinkSandBox() {
         storable = new DownloadLinkAPIStorableV2();
 
+    }
+
+    public ArchiveSandbox getArchive() {
+        if (downloadLink == null || ArchiveValidator.EXTENSION == null) {
+            return null;
+        }
+        Archive archive = ArchiveValidator.EXTENSION.getArchiveByFactory(new DownloadLinkArchiveFactory(downloadLink));
+        if (archive != null) {
+            return new ArchiveSandbox(archive);
+        }
+        ArrayList<Object> list = new ArrayList<Object>();
+        list.add(downloadLink);
+        List<Archive> archives = ArchiveValidator.getArchivesFromPackageChildren(list);
+
+        return (archives == null || archives.size() == 0) ? null : new ArchiveSandbox(archives.get(0));
+    }
+
+    public String getComment() {
+        if (downloadLink == null) {
+            return null;
+        }
+
+        return downloadLink.getComment();
     }
 
     public String getDownloadPath() {

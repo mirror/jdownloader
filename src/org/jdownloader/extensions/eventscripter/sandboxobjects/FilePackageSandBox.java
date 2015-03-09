@@ -60,6 +60,14 @@ public class FilePackageSandBox {
         return size.get();
     }
 
+    public String getComment() {
+        if (filePackage == null) {
+            return null;
+        }
+
+        return filePackage.getComment();
+    }
+
     public boolean isFinished() {
         if (filePackage == null) {
             return false;

@@ -22,15 +22,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.appwork.utils.Application;
 import org.jdownloader.extensions.extraction.content.ContentView;
-import org.jdownloader.extensions.extraction.content.PackedFile;
 import org.jdownloader.extensions.extraction.multi.ArchiveType;
 import org.jdownloader.extensions.extraction.split.SplitType;
 
 /**
  * Contains information about the archivefile.
- *
+ * 
  * @author botzi
- *
+ * 
  */
 public class Archive {
 
@@ -41,7 +40,7 @@ public class Archive {
 
     /**
      * returns null or the correct password
-     *
+     * 
      * @return
      */
     public String getFinalPassword() {
@@ -51,7 +50,7 @@ public class Archive {
     /**
      * do not use this setter. if you feel like setting a password outside the extracting internals, use getSettings().setPasswords.. this
      * setter is used to set the CORRECT password in the password finding algorithm only
-     *
+     * 
      * @param password
      */
     public void setFinalPassword(String password) {
@@ -245,22 +244,7 @@ public class Archive {
     }
 
     public synchronized ContentView getContentView() {
-        if (contents == null || (contents.getTotalFileCount() + contents.getTotalFolderCount() == 0)) {
 
-            java.util.List<ArchiveItem> files = getSettings().getArchiveItems();
-            if (files != null && files.size() > 0) {
-                ContentView newView = new ContentView();
-                for (ArchiveItem item : files) {
-                    if (item.getPath().trim().equals("")) {
-                        continue;
-                    }
-                    newView.add(new PackedFile(item.isFolder(), item.getPath(), item.getSize()));
-
-                }
-                contents = newView;
-            }
-
-        }
         return contents;
     }
 
