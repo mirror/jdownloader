@@ -1,6 +1,7 @@
 package org.jdownloader.extensions.extraction.contextmenu.downloadlist.action;
 
 import java.awt.event.ActionEvent;
+import java.util.List;
 
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.WarnLevel;
@@ -25,11 +26,16 @@ public class CleanupAutoDeleteLinksEnabledToggleAction extends AbstractExtractio
     @Override
     protected void onAsyncInitDone() {
         super.onAsyncInitDone();
-        if (archives != null && archives.size() > 0) setSelected(_getExtension().isRemoveDownloadLinksAfterExtractEnabled(archives.get(0)));
+        final List<Archive> lArchives = archives;
+        if (lArchives != null && lArchives.size() > 0) {
+            setSelected(_getExtension().isRemoveDownloadLinksAfterExtractEnabled(lArchives.get(0)));
+        }
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (!isEnabled()) return;
+        if (!isEnabled()) {
+            return;
+        }
         for (Archive archive : archives) {
             archive.getSettings().setRemoveDownloadLinksAfterExtraction(isSelected() ? BooleanStatus.TRUE : BooleanStatus.FALSE);
         }

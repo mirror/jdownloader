@@ -39,27 +39,27 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.controlling.FileCreationManager.DeleteOption;
 import org.jdownloader.extensions.extraction.ExtractionEvent.Type;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.IfFileExistsAction;
 
 /**
  * Responsible for the correct procedure of the extraction process. Contains one IExtraction instance.
- * 
+ *
  * @author botzi
- * 
+ *
  */
 public class ExtractionController extends QueueAction<Void, RuntimeException> {
-    private List<String>                     passwordList;
-    private Exception                        exception;
-    private FileCreationManager.DeleteOption removeAfterExtractionAction;
-    private final Archive                    archive;
-    private final IExtraction                extractor;
-    private ScheduledFuture<?>               timer;
-    private Type                             latestEvent;
+    private List<String>       passwordList;
+    private Exception          exception;
+    private final Archive      archive;
+    private final IExtraction  extractor;
+    private ScheduledFuture<?> timer;
+    private Type               latestEvent;
 
-    private final AtomicLong                 completeBytes  = new AtomicLong(0);
-    private final AtomicLong                 processedBytes = new AtomicLong(0);
+    private final AtomicLong   completeBytes  = new AtomicLong(0);
+    private final AtomicLong   processedBytes = new AtomicLong(0);
 
     public long getCompleteBytes() {
         return completeBytes.get();
@@ -81,7 +81,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         return this.processedBytes.addAndGet(Math.max(0, processedBytes));
     }
 
-    private boolean                   removeDownloadLinksAfterExtraction;
     private final ExtractionExtension extension;
     private final LogSource           logger;
     private FileSignatures            fileSignatures        = null;
@@ -232,7 +231,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
             }
             crashLog.write("Prepare");
             if (extractor.prepare()) {
-                extractToFolder = extension.getFinalExtractToFolder(archive, false);
+                extractToFolder = getExtension().getFinalExtractToFolder(archive, false);
                 crashLog.write("Extract To: " + extractToFolder);
                 if (archive.isProtected()) {
                     crashLog.write("Archive is Protected");
@@ -266,7 +265,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                                 return null;
                             }
                             crashLog.write("Try Password: " + password);
-                            if (checkPassword(password, extension.getSettings().isPasswordFindOptimizationEnabled())) {
+                            if (checkPassword(password, getExtension().getSettings().isPasswordFindOptimizationEnabled())) {
                                 correctPW = password;
                                 crashLog.write("Found password: \"" + password + "\"");
                                 break;
@@ -275,7 +274,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                                 String trimmed = password.trim();
                                 if (trimmed.length() != password.length()) {
                                     password = trimmed;
-                                    if (checkPassword(password, extension.getSettings().isPasswordFindOptimizationEnabled())) {
+                                    if (checkPassword(password, getExtension().getSettings().isPasswordFindOptimizationEnabled())) {
                                         correctPW = password;
                                         crashLog.write("Found password: \"" + password + "\"");
                                         break;
@@ -304,7 +303,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
                     }
                     if (StringUtils.isNotEmpty(archive.getFinalPassword())) {
-                        extension.addPassword(archive.getFinalPassword());
+                        getExtension().addPassword(archive.getFinalPassword());
                     }
                 }
                 final DiskSpaceReservation extractReservation = new DiskSpaceReservation() {
@@ -487,16 +486,21 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
      * Deletes the archive files.
      */
     void removeArchiveFiles() {
-        if (isRemoveDownloadLinksAfterExtraction()) {
+        final DeleteOption remove = getExtension().getRemoveFilesAfterExtractAction(getArchiv());
+        if (remove != null && !DeleteOption.NO_DELETE.equals(remove)) {
             for (ArchiveFile link : archive.getArchiveFiles()) {
-                link.deleteFile(removeAfterExtractionAction);
+                link.deleteFile(remove);
             }
         }
     }
 
+    public ExtractionExtension getExtension() {
+        return extension;
+    }
+
     /**
      * Returns a thrown exception.
-     * 
+     *
      * @return The thrown exception.
      */
     public Exception getException() {
@@ -504,9 +508,9 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     }
 
     /**
-     * 
+     *
      * Returns the current password finding process.
-     * 
+     *
      * @return
      */
     public int getCrackProgress() {
@@ -515,20 +519,11 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
     /**
      * Gets the passwordlist size
-     * 
+     *
      * @return
      */
     public int getPasswordListSize() {
         return passwordList.size();
-    }
-
-    /**
-     * Should the archives be deleted after extracting.
-     * 
-     * @param deleteOption
-     */
-    void setRemoveAfterExtract(FileCreationManager.DeleteOption deleteOption) {
-        this.removeAfterExtractionAction = deleteOption;
     }
 
     /**
@@ -540,7 +535,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
     /**
      * Returns the {@link Archive}.
-     * 
+     *
      * @return
      */
     public Archive getArchiv() {
@@ -549,19 +544,11 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
     /**
      * Sets a exception that occurs during unpacking.
-     * 
+     *
      * @param e
      */
     public void setExeption(Exception e) {
         exception = e;
-    }
-
-    void setRemoveDownloadLinksAfterExtraction(boolean deleteArchiveDownloadlinksAfterExtraction) {
-        this.removeDownloadLinksAfterExtraction = deleteArchiveDownloadlinksAfterExtraction;
-    }
-
-    public boolean isRemoveDownloadLinksAfterExtraction() {
-        return removeDownloadLinksAfterExtraction;
     }
 
     public void setIfFileExistsAction(IfFileExistsAction ifExistsAction) {

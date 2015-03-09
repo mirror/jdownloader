@@ -3,6 +3,7 @@ package org.jdownloader.extensions.extraction.bindings.downloadlink;
 import java.awt.Color;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
@@ -25,6 +26,7 @@ import org.jdownloader.extensions.extraction.ExtractionProgress;
 import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.settings.CleanAfterDownloadAction;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class DownloadLinkArchiveFile implements ArchiveFile {
@@ -150,12 +152,6 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
         return Math.max(0, size);
     }
 
-    @Override
-    public void deleteLink() {
-        DownloadController.getInstance().removeChildren(new ArrayList<DownloadLink>(getDownloadLinks()));
-        invalidateExists();
-    }
-
     public void addMirror(DownloadLink link) {
         getDownloadLinks().add(link);
         size = Math.max(link.getView().getBytesTotal(), size);
@@ -202,22 +198,37 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     @Override
     public void onCleanedUp(final ExtractionController controller) {
-        for (final DownloadLink downloadLink : getDownloadLinks()) {
-            switch (CFG_GENERAL.CFG.getCleanupAfterDownloadAction()) {
+        if (controller.isSuccessful()) {
+            final CleanAfterDownloadAction cleanup;
+            if (controller.getExtension().isRemoveDownloadLinksAfterExtractEnabled(controller.getArchiv())) {
+                cleanup = CleanAfterDownloadAction.CLEANUP_IMMEDIATELY;
+            } else {
+                cleanup = CFG_GENERAL.CFG.getCleanupAfterDownloadAction();
+            }
+            switch (cleanup) {
             case CLEANUP_IMMEDIATELY:
                 DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                     @Override
                     protected Void run() throws RuntimeException {
-                        if (DownloadController.getInstance() == downloadLink.getFilePackage().getControlledBy()) {
-                            controller.getLogger().info("Remove Link " + downloadLink.getView().getDisplayName() + " because Finished and CleanupImmediately and Extrating finished!");
-                            List<DownloadLink> remove = new ArrayList<DownloadLink>();
-                            remove.add(downloadLink);
-                            remove = DownloadController.getInstance().askForRemoveVetos(controller, remove);
-                            if (remove.size() > 0) {
-                                DownloadController.getInstance().removeChildren(remove);
-                            } else {
-                                controller.getLogger().info("Remove Link " + downloadLink.getView().getDisplayName() + " failed because of removeVetos!");
+                        final List<DownloadLink> ask = new ArrayList<DownloadLink>();
+                        for (final DownloadLink downloadLink : getDownloadLinks()) {
+                            if (DownloadController.getInstance() == downloadLink.getFilePackage().getControlledBy()) {
+                                ask.add(downloadLink);
+                            }
+                        }
+                        if (ask.size() > 0) {
+                            final List<DownloadLink> response = DownloadController.getInstance().askForRemoveVetos(controller, ask);
+                            if (response.size() > 0) {
+                                for (final DownloadLink downloadLink : response) {
+                                    controller.getLogger().info(CFG_GENERAL.CFG.getCleanupAfterDownloadAction() + ":" + downloadLink.getView().getDisplayName() + "|" + downloadLink.getHost());
+                                }
+                                DownloadController.getInstance().removeChildren(response);
+                                invalidateExists();
+                            }
+                            ask.removeAll(response);
+                            for (final DownloadLink downloadLink : ask) {
+                                controller.getLogger().info(CFG_GENERAL.CFG.getCleanupAfterDownloadAction() + ":" + downloadLink.getView().getDisplayName() + "|" + downloadLink.getHost() + " failed because of removeVetos!");
                             }
                         }
                         return null;
@@ -229,12 +240,15 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
                     @Override
                     protected Void run() throws RuntimeException {
-                        controller.getLogger().info("Remove Package " + downloadLink.getView().getDisplayName() + " because Finished and CleanupImmediately and Extrating finished!");
-                        FilePackage fp = downloadLink.getFilePackage();
-                        if (fp.getControlledBy() != null) {
+                        final HashSet<FilePackage> fps = new HashSet<FilePackage>();
+                        for (final DownloadLink downloadLink : getDownloadLinks()) {
+                            if (DownloadController.getInstance() == downloadLink.getFilePackage().getControlledBy()) {
+                                fps.add(downloadLink.getFilePackage());
+                            }
+                        }
+                        for (final FilePackage fp : fps) {
                             DownloadController.removePackageIfFinished(controller, controller.getLogger(), fp);
-                        } else {
-                            controller.getLogger().info("Cannot remove. Package has no controller");
+                            invalidateExists();
                         }
                         return null;
                     }
@@ -243,7 +257,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
                 break;
             case CLEANUP_ONCE_AT_STARTUP:
             case NEVER:
-                controller.getLogger().info(CFG_GENERAL.CFG.getCleanupAfterDownloadAction() + "");
+                controller.getLogger().info(CFG_GENERAL.CFG.getCleanupAfterDownloadAction() + ":" + getName());
             }
         }
     }

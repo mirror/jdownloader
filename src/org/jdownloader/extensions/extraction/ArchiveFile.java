@@ -14,8 +14,6 @@ public interface ArchiveFile {
 
     public void deleteFile(FileCreationManager.DeleteOption option);
 
-    public void deleteLink();
-
     public boolean exists();
 
     public void invalidateExists();

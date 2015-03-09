@@ -112,10 +112,6 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
         size = Math.max(Math.max(0, link.getSize()), size);
     }
 
-    @Override
-    public void deleteLink() {
-    }
-
     public AvailableStatus getAvailableStatus() {
         AvailableStatus ret = null;
         for (CrawledLink downloadLink : getLinks()) {

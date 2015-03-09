@@ -34,10 +34,6 @@ public class MissingArchiveFile implements ArchiveFile {
     }
 
     @Override
-    public void deleteLink() {
-    }
-
-    @Override
     public boolean exists() {
         return false;
     }

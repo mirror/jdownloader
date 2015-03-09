@@ -95,10 +95,6 @@ public class FileArchiveFile implements ArchiveFile {
     }
 
     @Override
-    public void deleteLink() {
-    }
-
-    @Override
     public void onCleanedUp(ExtractionController controller) {
     }
 
