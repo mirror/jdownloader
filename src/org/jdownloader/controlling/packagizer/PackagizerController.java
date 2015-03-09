@@ -51,8 +51,8 @@ import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkA
 import org.jdownloader.jd1import.JD1Importer;
 
 public class PackagizerController implements PackagizerInterface, FileCreationListener {
-    private PackagizerSettings                    config;
-    private ArrayList<PackagizerRule>             list;
+    private final PackagizerSettings              config;
+    private ArrayList<PackagizerRule>             list           = new ArrayList<PackagizerRule>();
     private PackagizerControllerEventSender       eventSender;
     private java.util.List<PackagizerRuleWrapper> fileFilter;
     private java.util.List<PackagizerRuleWrapper> urlFilter;
@@ -87,7 +87,10 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         eventSender = new PackagizerControllerEventSender();
         if (!isTestInstance()) {
             config = JsonConfig.create(PackagizerSettings.class);
-
+        } else {
+            config = null;
+        }
+        if (!isTestInstance()) {
             try {
                 list = config.getRuleList();
             } catch (Throwable e) {
