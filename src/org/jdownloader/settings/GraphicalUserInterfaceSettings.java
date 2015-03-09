@@ -52,7 +52,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     /**
      * How many ms the speedmeter shall show/record. Please note that big Timeframes and high fps values may cause high CPU usage
-     * 
+     *
      * @return
      */
     @AboutConfig
@@ -63,7 +63,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     /**
      * How many refreshes and datasamples the speedmeter uses. Please note that big Timeframes and high fps values may cause high CPU usage
-     * 
+     *
      * @return
      */
     @AboutConfig
@@ -178,7 +178,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @AboutConfig
     @DescriptionForConfigEntry("Enable/Disable the DownloadPanel Overview panel ")
     @DefaultBooleanValue(true)
-    @RequiresRestart("A JDownloader Restart is Required")
     boolean isDownloadTabOverviewVisible();
 
     void setDownloadTabOverviewVisible(boolean b);
@@ -186,7 +185,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @AboutConfig
     @DescriptionForConfigEntry("Enable/Disable the Linkgrabber Overview panel ")
     @DefaultBooleanValue(true)
-    @RequiresRestart("A JDownloader Restart is Required")
     boolean isLinkgrabberTabOverviewVisible();
 
     void setLinkgrabberTabOverviewVisible(boolean b);
