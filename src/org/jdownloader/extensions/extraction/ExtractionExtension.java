@@ -195,8 +195,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         final ExtractionController controller = new ExtractionController(this, archive, extractor);
         controller.setAskForUnknownPassword(forceAskForUnknownPassword);
         controller.setIfFileExistsAction(getIfFileExistsAction(archive));
-        controller.setRemoveAfterExtract(getRemoveFilesAfterExtractAction(archive));
-        controller.setRemoveDownloadLinksAfterExtraction(isRemoveDownloadLinksAfterExtractEnabled(archive));
         archive.setActive(true);
         extractor.setConfig(getSettings());
         extractionQueue.addAsynch(controller);
@@ -210,8 +208,9 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             return false;
         case TRUE:
             return true;
+        default:
+            return getSettings().isDeleteArchiveDownloadlinksAfterExtraction();
         }
-        return getSettings().isDeleteArchiveDownloadlinksAfterExtraction();
     }
 
     public FileCreationManager.DeleteOption getRemoveFilesAfterExtractAction(Archive archive) {
@@ -223,11 +222,12 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             case NO_DELETE:
             case RECYCLE:
                 return FileCreationManager.DeleteOption.RECYCLE;
-            case NULL:
+            default:
                 return FileCreationManager.DeleteOption.NULL;
             }
+        default:
+            return getSettings().getDeleteArchiveFilesAfterExtractionAction();
         }
-        return getSettings().getDeleteArchiveFilesAfterExtractionAction();
     }
 
     @Override
