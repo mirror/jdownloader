@@ -59,7 +59,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptobox.com" }, urls = { "https?://(?:www\\.)?(uptobox|uptostream)\\.com/(?:iframe/)?[a-z0-9]{12}" }, flags = { 2 })
-public class UpToBoxCom extends PluginForHost {
+public class UpToBoxCom extends antiDDoSForHost {
 
     private final static String  SSL_CONNECTION               = "SSL_CONNECTION";
 
@@ -330,7 +330,7 @@ public class UpToBoxCom extends PluginForHost {
                         waitTime(timeBefore, downloadLink, true);
                     }
                 }
-                sendForm(dlForm);
+                submitForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true, passCode);
                 dllink = getDllink();
@@ -417,7 +417,7 @@ public class UpToBoxCom extends PluginForHost {
     public String getDllink() throws Exception {
         String dllink = br.getRedirectLocation();
         if (dllink != null && dllink.endsWith("/" + new Regex(this.getDownloadLink().getDownloadURL(), "uptobox.com/([A-Za-z0-9]{12})$").getMatch(0))) {
-            br.getPage(dllink);
+            getPage(dllink);
             return getDllink();
         }
         if (dllink == null) {
@@ -441,32 +441,35 @@ public class UpToBoxCom extends PluginForHost {
         return dllink;
     }
 
-    private void getPage(String page) throws Exception {
+    @Override
+    protected void getPage(String page) throws Exception {
         page = fixLinkSSL(page);
         for (int i = 1; i <= 3; i++) {
-            br.getPage(page);
+            super.getPage(page);
             if (br.containsHTML("No htmlCode read")) {
                 continue;
             }
             break;
         }
+        correctBR();
         if (br.containsHTML("No htmlCode read")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
         }
-        correctBR();
     }
 
-    private void postPage(String page, String postdata) throws Exception {
+    @Override
+    protected void postPage(String page, String postdata) throws Exception {
         page = fixLinkSSL(page);
-        br.postPage(page, postdata);
+        super.postPage(page, postdata);
+        correctBR();
         if (correctedBR.contains("No htmlCode read")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
         }
-        correctBR();
     }
 
-    private void sendForm(Form form) throws Exception {
-        br.submitForm(form);
+    @Override
+    protected void submitForm(Form form) throws Exception {
+        super.submitForm(form);
         correctBR();
     }
 
@@ -741,7 +744,7 @@ public class UpToBoxCom extends PluginForHost {
                 }
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
-                sendForm(loginform);
+                submitForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -794,7 +797,7 @@ public class UpToBoxCom extends PluginForHost {
                     if (new Regex(correctedBR, PASSWORDTEXT).matches()) {
                         passCode = handlePassword(passCode, dlform, link);
                     }
-                    sendForm(dlform);
+                    submitForm(dlform);
                     dllink = getDllink();
                     checkErrors(link, true, passCode);
                 }

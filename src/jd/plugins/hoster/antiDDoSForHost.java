@@ -213,7 +213,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
         postPage(br, page, param);
     }
 
-    protected void sendForm(final Browser ibr, final Form form) throws Exception {
+    protected void submitForm(final Browser ibr, final Form form) throws Exception {
         if (form == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -273,8 +273,8 @@ public abstract class antiDDoSForHost extends PluginForHost {
      * @author raztoki
      *
      * */
-    protected void sendForm(final Form form) throws Exception {
-        sendForm(br, form);
+    protected void submitForm(final Form form) throws Exception {
+        submitForm(br, form);
     }
 
     protected void sendRequest(final Browser ibr, final Request request) throws Exception {

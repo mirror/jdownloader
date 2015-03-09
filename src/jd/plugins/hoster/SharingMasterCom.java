@@ -224,7 +224,7 @@ public class SharingMasterCom extends antiDDoSForHost {
             if (download1 != null) {
                 download1 = cleanForm(download1);
                 download1.remove("method_premium");
-                sendForm(download1);
+                submitForm(download1);
                 scanInfo(downloadLink, fileInfo);
             }
             if (inValidate(fileInfo[0]) && inValidate(fileInfo[1])) {
@@ -372,7 +372,7 @@ public class SharingMasterCom extends antiDDoSForHost {
                 download1 = cleanForm(download1);
                 // end of backward compatibility
                 download1.remove("method_premium");
-                sendForm(download1);
+                submitForm(download1);
                 checkErrors(downloadLink, account, false);
                 getDllink();
             }
@@ -399,7 +399,7 @@ public class SharingMasterCom extends antiDDoSForHost {
                 if (!skipWaitTime) {
                     waitTime(timeBefore, downloadLink);
                 }
-                sendForm(dlForm);
+                submitForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, account, true);
                 getDllink();
@@ -845,7 +845,7 @@ public class SharingMasterCom extends antiDDoSForHost {
                 DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), COOKIE_HOST, true);
                 loginform = captchaForm(dummyLink, loginform);
                 // end of check form for login captcha crap.
-                sendForm(loginform);
+                submitForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     if ("de".equalsIgnoreCase(language)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -914,7 +914,7 @@ public class SharingMasterCom extends antiDDoSForHost {
                     } else if (cbr.containsHTML(PASSWORDTEXT)) {
                         dlform = handlePassword(dlform, downloadLink);
                     }
-                    sendForm(dlform);
+                    submitForm(dlform);
                     checkErrors(downloadLink, account, true);
                     getDllink();
                     if (inValidate(dllink)) {
@@ -1149,8 +1149,8 @@ public class SharingMasterCom extends antiDDoSForHost {
     }
 
     @Override
-    protected void sendForm(final Form form) throws Exception {
-        super.sendForm(form);
+    protected void submitForm(final Form form) throws Exception {
+        super.submitForm(form);
         correctBR();
     }
 
