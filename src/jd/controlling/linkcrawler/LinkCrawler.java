@@ -115,6 +115,10 @@ public class LinkCrawler {
 
     private final static LinkCrawlerConfig CONFIG = JsonConfig.create(LinkCrawlerConfig.class);
 
+    public static LinkCrawlerConfig getConfig() {
+        return CONFIG;
+    }
+
     public void setDirectHttpEnabled(boolean directHttpEnabled) {
         this.directHttpEnabled = directHttpEnabled;
     }

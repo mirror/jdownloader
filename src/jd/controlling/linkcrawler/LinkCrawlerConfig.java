@@ -7,6 +7,7 @@ import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultJsonObject;
+import org.appwork.storage.config.annotations.DefaultStringArrayValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
@@ -41,6 +42,12 @@ public interface LinkCrawlerConfig extends ConfigInterface {
     @DefaultBooleanValue(true)
     @AboutConfig
     boolean isLinkCrawlerRulesEnabled();
+
+    @DefaultStringArrayValue({ "ADD_LINKS_DIALOG", "PASTE_LINKS_ACTION" })
+    @AboutConfig
+    String[] getAutoLearnExtensionOrigins();
+
+    public void setAutoLearnExtensionOrigins(String[] origins);
 
     void setLinkCrawlerRulesEnabled(boolean b);
 
