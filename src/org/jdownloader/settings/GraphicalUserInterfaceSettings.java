@@ -52,7 +52,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     /**
      * How many ms the speedmeter shall show/record. Please note that big Timeframes and high fps values may cause high CPU usage
-     *
+     * 
      * @return
      */
     @AboutConfig
@@ -63,7 +63,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     /**
      * How many refreshes and datasamples the speedmeter uses. Please note that big Timeframes and high fps values may cause high CPU usage
-     *
+     * 
      * @return
      */
     @AboutConfig
@@ -827,7 +827,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     }
 
-    @DescriptionForConfigEntry("Placeholders: |#TITLE|, | - #SPEED/s|, | - #UPDATENOTIFY|")
+    @DescriptionForConfigEntry("Placeholders: |#TITLE|, | - #SPEED/s|, | - #UPDATENOTIFY|, | - #AVGSPEED|, | - #RUNNING_DOWNLOADS|")
     @DefaultStringValue("|#TITLE|| - #SPEED/s|| - #UPDATENOTIFY|")
     @AboutConfig
     public String getTitlePattern();
