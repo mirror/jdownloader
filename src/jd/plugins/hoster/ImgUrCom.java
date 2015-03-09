@@ -16,11 +16,14 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.config.SubConfiguration;
+import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -160,7 +163,7 @@ public class ImgUrCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 try {
-                    con = br.openGetConnection(dllink);
+                    con = openConnection(this.br, this.dllink);
                 } catch (final BrowserException e) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -259,8 +262,6 @@ public class ImgUrCom extends PluginForHost {
         } else {
             url_content = "https://imgur.com/" + imgUID;
         }
-        {
-        }
         return url_content;
     }
 
@@ -326,6 +327,16 @@ public class ImgUrCom extends PluginForHost {
                 return def;
             }
         }
+    }
+
+    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
+        URLConnectionAdapter con;
+        if (isJDStable()) {
+            con = br.openGetConnection(directlink);
+        } else {
+            con = br.openHeadConnection(directlink);
+        }
+        return con;
     }
 
     public static boolean isJDStable() {
