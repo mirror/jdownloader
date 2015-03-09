@@ -7,8 +7,7 @@ import java.util.List;
 import javax.swing.Icon;
 
 import jd.plugins.DownloadLink;
-
-import org.appwork.utils.StringUtils;
+import jd.plugins.PluginForHost;
 
 public class YoutubeCustomConvertVariant implements YoutubeVariantInterface {
     private String                  typeID;
@@ -17,43 +16,29 @@ public class YoutubeCustomConvertVariant implements YoutubeVariantInterface {
     private String                  name;
     private String                  tag;
     private String                  extension;
-    private YoutubeITAG             audioTag;
-    private YoutubeITAG             videoTag;
+
     private YoutubeFilenameModifier nameModifier;
     private YoutubeConverter        converter;
     private String                  uniqueID;
-    private DownloadType            downloadType;
+    private YoutubeVariant          source;
 
     public static YoutubeVariantInterface parse(YoutubeCustomVariantStorable storable) {
-        YoutubeITAG audio = StringUtils.isEmpty(storable.getAudioTag()) ? null : YoutubeITAG.valueOf(storable.getAudioTag());
-        YoutubeITAG video = StringUtils.isEmpty(storable.getVideoTag()) ? null : YoutubeITAG.valueOf(storable.getVideoTag());
 
-        double qr = storable.getQualityRating();
-        if (qr <= 0) {
-            qr = 0.001d;
-            if (audio != null) {
-                qr += audio.getQualityRating();
-            }
-            if (video != null) {
-                qr += video.getQualityRating();
-            }
-        }
-        return new YoutubeCustomConvertVariant(storable.getUniqueID(), storable.getTypeID(), DownloadType.valueOf(storable.getDownloadType()), VariantGroup.valueOf(storable.getGroup()), qr, storable.getName(), storable.getNameTag(), storable.getExtension(), audio, video, null, new YoutubeExternConverter(storable.getBinary(), storable.getParameters()));
+        return new YoutubeCustomConvertVariant(storable.getUniqueID(), storable.getTypeID(), storable.getSource(), storable.getGroup(), storable.getQualityRating(), storable.getName(), storable.getNameTag(), storable.getExtension(), null, new YoutubeExternConverter(storable.getBinary(), storable.getParameters()));
     }
 
-    public YoutubeCustomConvertVariant(String uniqueID, String typeID, DownloadType dltype, VariantGroup group, double qualityRating, String variantName, String fileNameExtender, String fileExtension, YoutubeITAG audio, YoutubeITAG video, YoutubeFilenameModifier nameModifier, YoutubeConverter converter) {
+    public YoutubeCustomConvertVariant(String uniqueID, String typeID, YoutubeVariant source, VariantGroup group, double qualityRating, String variantName, String fileNameExtender, String fileExtension, YoutubeFilenameModifier nameModifier, YoutubeConverter converter) {
         this.typeID = typeID;
         this.group = group;
         this.qualityRating = qualityRating;
         this.name = variantName;
         this.tag = fileNameExtender;
         this.extension = fileExtension;
-        this.audioTag = audio;
-        this.videoTag = video;
+        this.source = source;
         this.nameModifier = nameModifier;
         this.converter = converter;
         this.uniqueID = uniqueID;
-        this.downloadType = dltype;
+
     }
 
     @Override
@@ -106,22 +91,26 @@ public class YoutubeCustomConvertVariant implements YoutubeVariantInterface {
 
     @Override
     public YoutubeITAG getiTagVideo() {
-        return videoTag;
+        return source.getiTagVideo();
+    }
+
+    public YoutubeVariant getSource() {
+        return source;
     }
 
     @Override
     public YoutubeITAG getiTagAudio() {
-        return audioTag;
+        return source.getiTagAudio();
     }
 
     @Override
     public YoutubeITAG getiTagData() {
-        return null;
+        return source.getiTagData();
     }
 
     @Override
     public double getQualityRating() {
-        return qualityRating;
+        return qualityRating < 0 ? source.getQualityRating() : qualityRating;
     }
 
     @Override
@@ -131,7 +120,7 @@ public class YoutubeCustomConvertVariant implements YoutubeVariantInterface {
 
     @Override
     public DownloadType getType() {
-        return downloadType;
+        return source.getType();
     }
 
     @Override
@@ -140,9 +129,9 @@ public class YoutubeCustomConvertVariant implements YoutubeVariantInterface {
     }
 
     @Override
-    public void convert(DownloadLink downloadLink) throws Exception {
+    public void convert(DownloadLink downloadLink, PluginForHost plugin) throws Exception {
         if (converter != null) {
-            converter.run(downloadLink);
+            converter.run(downloadLink, plugin);
         }
     }
 

@@ -8,6 +8,7 @@ import java.util.Locale;
 import javax.swing.Icon;
 
 import jd.plugins.DownloadLink;
+import jd.plugins.PluginForHost;
 
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -1987,9 +1988,9 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
         this.filenameModifier = filenameModifier;
     }
 
-    public void convert(DownloadLink downloadLink) throws Exception {
+    public void convert(DownloadLink downloadLink, PluginForHost plugin) throws Exception {
         if (converter != null) {
-            converter.run(downloadLink);
+            converter.run(downloadLink, plugin);
         }
     }
 
