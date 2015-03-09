@@ -291,11 +291,11 @@ public class OffCloudCom extends PluginForHost {
         return dllink;
     }
 
-    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
+    @SuppressWarnings({ "deprecation" })
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final long last_fetch_account_info_time_ago = System.currentTimeMillis() - account.getLongProperty("last_fetch_account_info", System.currentTimeMillis());
         setConstants(account, null);
+        final long last_deleted_complete_download_history_time_ago = getLast_deleted_complete_download_history_time_ago();
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
         if (!account.getUser().matches(".+@.+\\..+")) {
@@ -305,7 +305,7 @@ public class OffCloudCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        logger.info("last_fetch_account_info_time_ago: " + TimeFormatter.formatMilliSeconds(last_fetch_account_info_time_ago, 0));
+        logger.info("last_deleted_complete_download_history_time_ago: " + TimeFormatter.formatMilliSeconds(last_deleted_complete_download_history_time_ago, 0));
         /* Only do a full login if either we have no login cookie at all or it is expired */
         if (getLoginCookie() != null) {
             this.loginCheck();
@@ -390,11 +390,14 @@ public class OffCloudCom extends PluginForHost {
         if (this.getPluginConfig().getBooleanProperty(CLEAR_ALLOWED_IP_ADDRESSES, default_clear_allowed_ip_addresses)) {
             this.clearAllowedIPAddresses();
         }
-        if (this.getPluginConfig().getBooleanProperty(CLEAR_DOWNLOAD_HISTORY_COMPLETE, default_clear_download_history_complete) && last_fetch_account_info_time_ago >= DELETE_COMPLETE_DOWNLOAD_HISTORY_INTERVAL) {
+        if (this.getPluginConfig().getBooleanProperty(CLEAR_DOWNLOAD_HISTORY_COMPLETE, default_clear_download_history_complete) && (last_deleted_complete_download_history_time_ago >= DELETE_COMPLETE_DOWNLOAD_HISTORY_INTERVAL || last_deleted_complete_download_history_time_ago == 0)) {
+            /*
+             * Go in here if user wants to have it's history deleted && last deletion was before DELETE_COMPLETE_DOWNLOAD_HISTORY_INTERVAL
+             * or never executed (0).
+             */
             this.deleteCompleteDownloadHistory();
+            account.setProperty("last_time_deleted_history", System.currentTimeMillis());
         }
-
-        account.setProperty("last_fetch_account_info", System.currentTimeMillis());
         return ai;
     }
 
@@ -410,7 +413,7 @@ public class OffCloudCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        currAcc.setProperty("offcloudlogincookie", logincookie);
+        this.currAcc.setProperty("offcloudlogincookie", logincookie);
     }
 
     /** Checks if we're logged in --> If not, re-login (errorhandling will throw error if something is not right with our account) */
@@ -531,6 +534,7 @@ public class OffCloudCom extends PluginForHost {
             } else {
                 logger.info("Failed to delete some requestIDs. Successfully deleted " + counter_success + " of " + requestIDs.size() + " requestIDs");
             }
+            this.currAcc.setProperty("req_ids_size", req_ids_size);
         } catch (final Throwable e) {
             logger.warning("Failed to clear complete download history");
             e.printStackTrace();
@@ -563,6 +567,16 @@ public class OffCloudCom extends PluginForHost {
         return currAcc.getStringProperty("offcloudlogincookie", null);
     }
 
+    /* Returns the time difference between now and the last time the complete download history has been deleted. */
+    private long getLast_deleted_complete_download_history_time_ago() {
+        return System.currentTimeMillis() - this.currAcc.getLongProperty("last_time_deleted_history", System.currentTimeMillis());
+    }
+
+    /* Returns the time difference between now and the last time the complete download history has been deleted. */
+    private long getLast_deleted_complete_download_history_time_ago(final Account acc) {
+        return System.currentTimeMillis() - acc.getLongProperty("last_time_deleted_history", System.currentTimeMillis());
+    }
+
     private void prepareBrForJsonRequest() {
         /* Set these headers before every request else json (ajax) requests will fail! */
         br.getHeaders().put("Accept", "Accept   application/json, text/plain, */*");
@@ -589,48 +603,6 @@ public class OffCloudCom extends PluginForHost {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from provided Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final Browser ibr, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return String[] value from provided JSon Array
-     *
-     * @author raztoki
-     * @param source
-     * @return
-     */
-    private String[] getJsonResultsFromArray(final String source) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
-    }
-
     private void tempUnavailableHoster(final long timeout) throws PluginException {
         if (this.currDownloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
@@ -655,7 +627,6 @@ public class OffCloudCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
-    @SuppressWarnings("unused")
     private void getAPISafe(final String accesslink) throws IOException, PluginException {
         br.getPage(accesslink);
         updatestatuscode();
@@ -949,9 +920,12 @@ public class OffCloudCom extends PluginForHost {
             put("ACCOUNT_RESUME", "Resume of stopped downloads:");
             put("ACCOUNT_YES", "Yes");
             put("ACCOUNT_NO", "No");
+            put("ACCOUNT_HISTORYDELETED", "Last deletion of the complete download history before:");
+            put("ACCOUNT_HISTORYDELETED_COUNT", "Number of deleted entries:");
             put("DETAILS_TITEL", "Account information");
             put("LANG_GENERAL_UNLIMITED", "Unlimited");
             put("LANG_GENERAL_CLOSE", "Close");
+            put("LANG_GENERAL_NEVER", "Never");
         }
     };
 
@@ -969,9 +943,12 @@ public class OffCloudCom extends PluginForHost {
             put("ACCOUNT_RESUME", "Abgebrochene Downloads fortsetzbar:");
             put("ACCOUNT_YES", "Ja");
             put("ACCOUNT_NO", "Nein");
+            put("ACCOUNT_HISTORYDELETED", "Letzte Löschung der kompletten Download History vor:");
+            put("ACCOUNT_HISTORYDELETED_COUNT", "Anzahl der gelöschten Einträge:");
             put("DETAILS_TITEL", "Additional account information");
             put("LANG_GENERAL_UNLIMITED", "Unlimitiert");
             put("LANG_GENERAL_CLOSE", "Schließen");
+            put("LANG_GENERAL_NEVER", "Nie");
         }
     };
 
@@ -1010,11 +987,9 @@ public class OffCloudCom extends PluginForHost {
             final String windowTitleLangText = getPhrase("DETAILS_TITEL");
             final String accType = account.getStringProperty("acc_type", "Premium Account");
             final String accUsername = account.getUser();
-            String linksleft = account.getStringProperty("accinfo_linksleft", "?");
-            if (linksleft.equals("-1")) {
-                linksleft = getPhrase("LANG_GENERAL_UNLIMITED");
-            }
-
+            final long last_deleted_complete_download_history_time_ago = getLast_deleted_complete_download_history_time_ago(account);
+            final long last_deleted_links_count = account.getLongProperty("req_ids_size", -1);
+            final String deleted_links_user_display;
             /* it manages new panel */
             final PanelGenerator panelGenerator = new PanelGenerator();
 
@@ -1023,6 +998,18 @@ public class OffCloudCom extends PluginForHost {
             panelGenerator.addLabel(hostLabel);
 
             String revision = "$Revision$";
+            String lastDeletedCompleteDownloadlistUserDisplay;
+            if (last_deleted_complete_download_history_time_ago == 0) {
+                lastDeletedCompleteDownloadlistUserDisplay = getPhrase("LANG_GENERAL_NEVER");
+                deleted_links_user_display = "-";
+            } else {
+                lastDeletedCompleteDownloadlistUserDisplay = TimeFormatter.formatMilliSeconds(last_deleted_complete_download_history_time_ago, 0);
+                deleted_links_user_display = Long.toString(last_deleted_links_count);
+            }
+            String linksleft = account.getStringProperty("accinfo_linksleft", "?");
+            if (linksleft.equals("-1")) {
+                linksleft = getPhrase("LANG_GENERAL_UNLIMITED");
+            }
             try {
                 String[] revisions = revision.split(":");
                 revision = revisions[1].replace('$', ' ').trim();
@@ -1036,6 +1023,8 @@ public class OffCloudCom extends PluginForHost {
 
             panelGenerator.addCategory("Download");
             panelGenerator.addEntry(getPhrase("ACCOUNT_LINKSLEFT"), linksleft);
+            panelGenerator.addEntry(getPhrase("ACCOUNT_HISTORYDELETED"), lastDeletedCompleteDownloadlistUserDisplay);
+            panelGenerator.addEntry(getPhrase("ACCOUNT_HISTORYDELETED_COUNT"), deleted_links_user_display);
             panelGenerator.addEntry(getPhrase("ACCOUNT_SIMULTANDLS"), Integer.toString(ACCOUNT_PREMIUM_MAXDOWNLOADS));
             panelGenerator.addEntry(getPhrase("ACCOUNT_CHUNKS"), getPhrase("ACCOUNT_CHUNKS_VALUE"));
             panelGenerator.addEntry(getPhrase("ACCOUNT_RESUME"), getPhrase("ACCOUNT_YES"));

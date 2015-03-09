@@ -78,6 +78,11 @@ public class DeviantClipComGallery extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(parameter.replace(currentdomain_full, decrypterdomain)));
             } else {
                 logger.info("Found no valid link for: " + parameter);
+                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+                offline.setAvailable(false);
+                offline.setProperty("offline", true);
+                decryptedLinks.add(offline);
+                return decryptedLinks;
             }
         }
         return decryptedLinks;

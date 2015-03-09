@@ -394,11 +394,7 @@ public class VKontakteRu extends PluginForDecrypt {
                         logger.info("Unknown API problem occured! Stopped decryption of link: " + CRYPTEDLINK_FUNCTIONAL);
                         return decryptedLinks;
                     } else if (e.getMessage().equals(EXCEPTION_LINKOFFLINE)) {
-                        final DownloadLink offline = createDownloadlink("http://vkontaktedecrypted.ru/videolink/" + System.currentTimeMillis() + new Random().nextInt(10000000));
-                        offline.setAvailable(false);
-                        offline.setProperty("offline", true);
-                        offline.setName(new Regex(CRYPTEDLINK_FUNCTIONAL, "vk\\.com/(.+)").getMatch(0));
-                        decryptedLinks.add(offline);
+                        decryptedLinks.add(createOffline(this.CRYPTEDLINK_ORIGINAL));
                         return decryptedLinks;
                     }
                 } catch (final Exception x) {
@@ -959,15 +955,13 @@ public class VKontakteRu extends PluginForDecrypt {
                     singleVideo = singleVideo.replace(" ", "");
                     singleVideo = singleVideo.replace("\"", "");
                     logger.info("Decrypting video " + totalCounter + " / " + numberOfEntrys);
-                    final String completeVideolink = "http://vk.com/video" + singleVideo;
+                    final String completeVideolink = "https://vk.com/video" + singleVideo;
                     try {
                         getPage(br, completeVideolink);
                         decryptSingleVideo(completeVideolink);
                     } catch (final DecrypterException e) {
                         /* Catch offline case and handle it */
-                        final DownloadLink offline = createDownloadlink("http://vkontaktedecrypted.ru/videolink/" + System.currentTimeMillis() + new Random().nextInt(10000000));
-                        offline.setProperty("offline", true);
-                        offline.setName(singleVideo);
+                        final DownloadLink offline = createOffline(completeVideolink);
                         decryptedLinks.add(offline);
                     }
                     if (decryptedLinks == null) {
@@ -1952,6 +1946,21 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             return hasPassed;
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    private DownloadLink createOffline(final String parameter) {
+        final DownloadLink offline = createDownloadlink("http://vkontaktedecrypted.ru/videolink/" + System.currentTimeMillis() + new Random().nextInt(10000000));
+        offline.setAvailable(false);
+        offline.setProperty("offline", true);
+        offline.setName(new Regex(CRYPTEDLINK_FUNCTIONAL, "vk\\.com/(.+)").getMatch(0));
+        try {
+            offline.setContentUrl(parameter);
+        } catch (final Throwable e) {
+            /* Not available in old 0.9.581 Stable */
+            offline.setBrowserUrl(parameter);
+        }
+        return offline;
     }
 
     private boolean isSingeVideo(final String input) {

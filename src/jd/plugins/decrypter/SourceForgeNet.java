@@ -24,11 +24,9 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sourceforge.net" }, urls = { "https?://(www\\.)?(sourceforge\\.net/projects/([^/]+/files/.+/download|[^/]+/)|downloads\\.sourceforge\\.net/.+)" }, flags = { 0 })
 public class SourceForgeNet extends PluginForDecrypt {
@@ -87,9 +85,13 @@ public class SourceForgeNet extends PluginForDecrypt {
                         decryptedLinks.add(createDownloadlink(br.getURL()));
                         return decryptedLinks;
                     }
-                    if (br.containsHTML("(<h1>Error encountered</h1>|>We apologize\\. It appears an error has occurred\\.)")) {
-                        logger.info("Servererror for link: " + parameter);
-                        throw new DecrypterException(JDL.L("plugins.decrypt.sourceforgenet.errormsg.servererror", "A server error happened, please try again or check in browser!"));
+                    /* In very rare cases, files are not downloadable. */
+                    if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(<h1>Error encountered</h1>|>We apologize\\. It appears an error has occurred\\.)")) {
+                        final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+                        offline.setAvailable(false);
+                        offline.setProperty("offline", true);
+                        decryptedLinks.add(offline);
+                        return decryptedLinks;
                     }
                     link = new Regex(Encoding.htmlDecode(br.toString()), "Please use this([\t\n\r ]+)?<a href=\"(http://.*?)\"").getMatch(1);
                 }

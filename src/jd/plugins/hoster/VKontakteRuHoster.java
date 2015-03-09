@@ -50,13 +50,13 @@ import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 //Links are coming from a decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(\\-)?[\\d\\-]+_[\\d\\-]+(\\?tag=[\\d\\-]+)?|audiolink/[\\d\\-]+_[\\d\\-]+|videolink/[\\d\\-]+)|https?://vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://cs[a-z0-9]+\\.(vk\\.com|userapi\\.com|vk\\.me)/u\\d+/audios?/[^<>\"]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(\\-)?[\\d\\-]+_[\\d\\-]+(\\?tag=[\\d\\-]+)?|audiolink/[\\d\\-]+_[\\d\\-]+|videolink/[\\d\\-]+)|https?://vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[a-z0-9/]+/audios?/[^<>\"]+" }, flags = { 2 })
 public class VKontakteRuHoster extends PluginForHost {
 
     private static final String DOMAIN                      = "http://vk.com";
     private static final String TYPE_AUDIOLINK              = "http://vkontaktedecrypted\\.ru/audiolink/[\\d\\-]+_[\\d\\-]+";
     private static final String TYPE_VIDEOLINK              = "http://vkontaktedecrypted\\.ru/videolink/[\\d\\-]+";
-    private static final String TYPE_AUDIO_DIRECT           = "https?://cs[a-z0-9]+\\.(vk\\.com|userapi\\.com|vk\\.me)/u\\d+/audios?/[^<>\"]+";
+    private static final String TYPE_AUDIO_DIRECT           = "https?://[a-z0-9]+\\.(vk\\.com|userapi\\.com|vk\\.me)/[a-z0-9/]+/audios?/[^<>\"]+";
     private static final String TYPE_PICTURELINK            = "http://vkontaktedecrypted\\.ru/picturelink/(\\-)?[\\d\\-]+_[\\d\\-]+(\\?tag=[\\d\\-]+)?";
     private static final String TYPE_DOCLINK                = "https?://vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?";
     private int                 MAXCHUNKS                   = 1;
@@ -196,7 +196,7 @@ public class VKontakteRuHoster extends PluginForHost {
                     final String postID = link.getStringProperty("postID", null);
                     final String fromId = link.getStringProperty("fromId", null);
                     if (postID != null && fromId != null) {
-                        logger.info("Trying to refresh audiolink dsirectlink via wall-handling");
+                        logger.info("Trying to refresh audiolink directlink via wall-handling");
                         /* We got the info we need to access our single mp3 relatively directly as it initially came from a 'wall'. */
                         final String post = "act=get_wall_playlist&al=1&local_id=" + postID + "&oid=" + fromId + "&wall_type=own";
                         br.postPage("https://vk.com/audio", post);
@@ -207,11 +207,11 @@ public class VKontakteRuHoster extends PluginForHost {
                         /* Decodes the json string */
                         url = (String) DummyScriptEnginePlugin.jsonToJavaObject(url);
                     } else {
-                        logger.info("Trying to refresh audiolink directlink via album-handling");
+                        logger.info("refreshing audiolink directlink via album-handling");
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         * 
+                         *
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         this.postPageSafe(aa, link, "https://vk.com/audio", getAudioAlbumPostString(this.mainlink, this.ownerID));

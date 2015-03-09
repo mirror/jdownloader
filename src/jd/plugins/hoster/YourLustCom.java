@@ -21,8 +21,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -48,16 +46,23 @@ public class YourLustCom extends PluginForHost {
 
     private static final String NOCHUNKS = "NOCHUNKS";
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">404 Not Found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">404 Not Found<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("class=\"block_header\">([^<>\"]*?)<").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)\\- Homemade porn tube video at YourLust\\.com\\!</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?)\\- Homemade porn tube video at YourLust\\.com\\!</title>").getMatch(0);
+        }
         DLLINK = br.getRegex("video_url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
         final SimpleDateFormat formatter = new SimpleDateFormat("YYYYMMddhhmmss");
         final Date date = new Date();
@@ -68,28 +73,11 @@ public class YourLustCom extends PluginForHost {
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".flv";
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            br2.setCookie("http://yourlust.com", "kt_tcookie", "1");
-            br2.setCookie("http://yourlust.com", "kt_is_visited", "1");
-            br2.getHeaders().put("Referer", "http://yourlust.com/player/kt_player_3.2.0.swfx");
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            else
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
+        if (ext == null || ext.length() > 5) {
+            ext = ".flv";
         }
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -99,15 +87,26 @@ public class YourLustCom extends PluginForHost {
         if (downloadLink.getBooleanProperty(YourLustCom.NOCHUNKS, false)) {
             maxChunks = 1;
         }
+        br.setFollowRedirects(true);
+        br.setCookie("http://yourlust.com", "kt_tcookie", "1");
+        br.setCookie("http://yourlust.com", "kt_is_visited", "1");
+        br.getHeaders().put("Referer", "http://yourlust.com/player/kt_player_3.2.0.swfx");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
