@@ -71,15 +71,17 @@ public class FastShareCz extends PluginForHost {
         String filesize = br.getRegex("<tr><td>Velikost: </td><td style=font\\-weight:bold>([^<>\"]*?)</td></tr>").getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex("Velikost: ([0-9]+ .*?),").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("<strong>Velikost :</strong>([^<>\"]*?)<").getMatch(0);
+            }
         }
-        if (filesize == null) {
-            filesize = br.getRegex("<strong>Velikost :</strong>([^<>\"]*?)<").getMatch(0);
-        }
-        if (filename == null || filesize == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 

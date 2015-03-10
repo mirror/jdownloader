@@ -252,6 +252,9 @@ public class SharingMasterCom extends antiDDoSForHost {
     }
 
     private String[] scanInfo(final DownloadLink downloadLink, final String[] fileInfo) {
+        final String sharebox0 = "copy\\(this\\);.+>(.+) - ([\\d\\.]+ (?:B|KB|MB|GB))</a></textarea>[\r\n\t ]+</div>";
+        final String sharebox1 = "copy\\(this\\);.+\\](.+) - ([\\d\\.]+ (?:B|KB|MB|GB))\\[/URL\\]";
+
         // standard traits from base page
         if (inValidate(fileInfo[0])) {
             fileInfo[0] = cbr.getRegex("You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
@@ -264,12 +267,12 @@ public class SharingMasterCom extends antiDDoSForHost {
                         // fileInfo[0] = cbr.getRegex("Download File:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
                         // traits from download1 page below.
                         if (inValidate(fileInfo[0])) {
-                            fileInfo[0] = cbr.getRegex("Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
+                            fileInfo[0] = cbr.getRegex("Filename:[^<]*?(<[^>]+>\\s*)+?([^<>\"']+)</td>").getMatch(1);
                             // next two are details from sharing box
                             if (inValidate(fileInfo[0])) {
-                                fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)</a></textarea>").getMatch(0);
+                                fileInfo[0] = cbr.getRegex(sharebox0).getMatch(0);
                                 if (inValidate(fileInfo[0])) {
-                                    fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>[^\r\n]+\\]([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                                    fileInfo[0] = cbr.getRegex(sharebox1).getMatch(0);
                                 }
                             }
                         }
@@ -284,13 +287,20 @@ public class SharingMasterCom extends antiDDoSForHost {
             fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
             if (inValidate(fileInfo[1])) {
                 fileInfo[1] = cbr.getRegex("</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
+                // next two are details from sharing box
                 if (inValidate(fileInfo[1])) {
-                    fileInfo[1] = cbr.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                    fileInfo[1] = cbr.getRegex(sharebox0).getMatch(1);
                     if (inValidate(fileInfo[1])) {
-                        try {
-                            // only needed in rare circumstances
-                            // altAvailStat(downloadLink, fileInfo);
-                        } catch (Exception e) {
+                        fileInfo[1] = cbr.getRegex(sharebox1).getMatch(1);
+                        if (inValidate(fileInfo[1])) {
+                            fileInfo[1] = cbr.getRegex("(\\d+(\\.\\d+)? ?(?:B(?:ytes?)?|KB|MB|GB))").getMatch(0);
+                            if (inValidate(fileInfo[1])) {
+                                try {
+                                    // only needed in rare circumstances
+                                    // altAvailStat(downloadLink, fileInfo);
+                                } catch (Exception e) {
+                                }
+                            }
                         }
                     }
                 }

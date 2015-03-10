@@ -163,15 +163,17 @@ public class ShareSixCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private final static String flname_pt1          = "class=\"[A-Za-z0-9\\-_]+\">Download File ";
+    private final static String patternDownloadFile = flname_pt1 + "(.*?)\\(([0-9]+ (MB|GB|B(?:ytes)?))\\)</";
+
     public static String getFilename(final String correctedBR) {
-        final String flname_pt1 = "class=\"[A-Za-z0-9\\-_]+\">Download File ";
         // this is presented in /f/uid and standard url
-        final Regex fnameregex = new Regex(correctedBR, flname_pt1 + "([^<>\"]*?) \\((\\d+(\\.\\d{1,2})? (MB|GB))\\)</p>");
+        final Regex fnameregex = new Regex(correctedBR, patternDownloadFile);
         String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?(?:sharesix|filenuke)\\.com/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
         if (filename == null) {
             filename = fnameregex.getMatch(0);
             if (filename == null) {
-                filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
+                filename = new Regex(correctedBR, ">Download File(.*?)</").getMatch(0);
                 if (filename == null) {
                     // generic regex will pick up false positives (html)
                     // adjust to make work with COOKIE_HOST
@@ -193,20 +195,18 @@ public class ShareSixCom extends PluginForHost {
     }
 
     public static String getFilesize(final String correctedBR) {
-        final String flname_pt1 = "class=\"[A-Za-z0-9\\-_]+\">Download File ";
         // this is presented in /f/uid and standard url
-        final Regex fnameregex = new Regex(correctedBR, flname_pt1 + "([^<>\"]*?) \\((\\d+(\\.\\d{1,2})? (MB|GB))\\)</p>");
-        String filesize = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
+        final Regex fnameregex = new Regex(correctedBR, patternDownloadFile);
+        String filesize = fnameregex.getMatch(1);
         if (filesize == null) {
-            filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+            filesize = new Regex(correctedBR, "\\(([0-9]+ b(?:ytes)?)\\)").getMatch(0);
             if (filesize == null) {
-                filesize = fnameregex.getMatch(1);
-            }
-            if (filesize == null) {
-                // generic regex picks up false positives (premium ads above
-                // filesize)
-                // adjust accordingly to make work with COOKIE_HOST
-                filesize = new Regex(correctedBR, "(?i)([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
+                filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                if (filesize == null) {
+                    // generic regex picks up false positives (premium ads above filesize)
+                    // adjust accordingly to make work with COOKIE_HOST
+                    filesize = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(?:B(?:ytes?)?|KB|MB|GB))").getMatch(0);
+                }
             }
         }
         return filesize;
