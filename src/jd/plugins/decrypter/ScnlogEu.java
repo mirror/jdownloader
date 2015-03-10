@@ -13,16 +13,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 /**
- * @author ohmygod
+ * @author ohgod
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 24808 $", interfaceVersion = 1, names = { "scnlog.eu" }, urls = { "https?://(?:www\\.)?scnlog\\.eu/(?:[a-z0-9_\\-]+/){2}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 24808 $", interfaceVersion = 2, names = { "scnlog.eu" }, urls = { "https?://(?:www\\.)?scnlog\\.eu/(?:[a-z0-9_\\-]+/){2}" }, flags = { 0 })
 public class ScnlogEu extends antiDDoSForDecrypt {
 
-    /**
-     * @author ohgod
-     * */
     public ScnlogEu(PluginWrapper wrapper) {
         super(wrapper);
     }
