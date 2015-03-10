@@ -314,7 +314,7 @@ public class Grab8Com extends PluginForHost {
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium account");
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd-MM-yyyy", Locale.ENGLISH));
-            final String traffic_used = br.getRegex("Traffic use: <font color=#[A-F0-9]+>(\\d+)(\\.\\d{1,2})? MB</font>").getMatch(0);
+            final String traffic_used = br.getRegex("Traffic use: <font color=#[A-F0-9]+>(\\d+)(\\.\\d{1,20})? MB</font>").getMatch(0);
             final String traffic_max = br.getRegex("Max Traffic: <font color=#[A-F0-9]+>(\\d+) MB</font>").getMatch(0);
             if (traffic_max == null || traffic_used == null) {
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
