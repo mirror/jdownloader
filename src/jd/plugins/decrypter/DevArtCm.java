@@ -231,6 +231,13 @@ public class DevArtCm extends PluginForDecrypt {
     }
 
     private void decryptBlog() throws DecrypterException, IOException {
+        if (br.containsHTML(">Sorry\\! This blog entry cannot be displayed")) {
+            final DownloadLink offline = createDownloadlink("directhttp://" + PARAMETER);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
+            return;
+        }
         String fpName = br.getRegex("name=\"og:title\" content=\"([^<>\"]*?) on DeviantArt\"").getMatch(0);
         final boolean stop_after_first_run = getOffsetFromURL() != null;
         int currentOffset = 0;

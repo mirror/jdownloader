@@ -358,6 +358,10 @@ public class Grab8Com extends PluginForHost {
         return ai;
     }
 
+    /**
+     * IMPORTANT: If a users' account gets banned, their servers will return the exact same message as if the user entered invalid login
+     * data - there is no way to differ between these two states!
+     */
     @SuppressWarnings("unchecked")
     private void login(final boolean force) throws IOException, PluginException {
         synchronized (LOCK) {

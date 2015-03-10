@@ -1828,15 +1828,17 @@ public class VKontakteRu extends PluginForDecrypt {
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost("vkontakte.ru");
         final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
         if (aa == null) {
-            logger.warning("There is no account available, stopping...");
+            logger.warning("There is no account available, continuing without logging in (if possible)");
             return false;
         }
         try {
             ((jd.plugins.hoster.VKontakteRuHoster) hostPlugin).login(this.br, aa, force);
         } catch (final PluginException e) {
+            logger.warning("Login failed - continuing without login");
             aa.setValid(false);
             return false;
         }
+        logger.info("Logged in successfully");
         return true;
     }
 

@@ -72,6 +72,7 @@ public class DeviantArtCom extends PluginForHost {
     private static final String LINKTYPE_ART                 = "https?://[\\w\\.\\-]*?deviantart\\.com/art/[^<>\"/]+";
     private static final String LINKTYPE_JOURNAL             = "https?://[\\w\\.\\-]*?deviantart\\.com/journal/[\\w\\-]+";
     private static final String LINKTYPE_STATUS              = "https?://[\\w\\.\\-]*?\\.deviantart\\.com/status/\\d+";
+    private static final String TYPE_BLOG_OFFLINE                    = "https?://[\\w\\.\\-]*?deviantart\\.com/blog/.+";
 
     /**
      * @author raztoki
@@ -125,6 +126,10 @@ public class DeviantArtCom extends PluginForHost {
         }
         // Motionbooks are not supported (yet)
         if (br.containsHTML(",target: \\'motionbooks/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        /* Redirects can lead to unsupported/offline links/linktypes */
+        if (br.getURL().matches(TYPE_BLOG_OFFLINE)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename;
