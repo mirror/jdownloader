@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import javax.script.Invocable;
@@ -24,7 +25,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
-import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -70,9 +70,11 @@ public class RemixShareCom extends PluginForHost {
         return new Regex(link.getDownloadURL(), "(\\?file=|download/|dl/)([a-z0-9]+)").getMatch(1);
     }
 
+    private static final AtomicReference<String> userAgent = new AtomicReference<String>(jd.plugins.hoster.MediafireCom.stringUserAgent());
+
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.getHeaders().put("User-Agent", userAgent.get());
         br.setCookie("http://remixshare.com", "lang_en", "english");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -110,9 +112,9 @@ public class RemixShareCom extends PluginForHost {
     }
 
     private String execJS() throws Exception {
-        String fun = br.getRegex("=\\s*\"http[^\r\n]+/(downloadstart|startdownload)/[^\r\n]+").getMatch(-1);
+        String fun = br.getRegex("=\\s*\"http[^\r\n]+/[^/]*download[^/]*(/[^\r\n]+){3,}").getMatch(-1);
         if (fun == null) {
-            fun = br.getRegex("document\\.getElementById\\('get-button'\\)\\.href\\s*(=\\s*\"http[^\r\n]+)").getMatch(0);
+            fun = br.getRegex("document\\.getElementById\\('[\\w\\-]+'\\)\\.href\\s*(=\\s*\"http[^\r\n]+)").getMatch(0);
         }
         if (fun == null) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in 15 minutes", 15 * 60 * 1000l);
