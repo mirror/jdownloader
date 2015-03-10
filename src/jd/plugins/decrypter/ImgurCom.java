@@ -88,6 +88,9 @@ public class ImgurCom extends PluginForDecrypt {
                         logger.info("Server problems: " + PARAMETER);
                         return decryptedLinks;
                     }
+                    if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
+                        return createOfflineLink(PARAMETER);
+                    }
                     br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
                     fpName = getJson(br.toString(), "title");
                     if (fpName == null || fpName.equals("null")) {
