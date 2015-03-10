@@ -19,10 +19,12 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -30,53 +32,66 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hentai-foundry.com" }, urls = { "http://www\\.hentai\\-foundrydecrypted\\.com/pictures/user/[A-Za-z0-9\\-_]+/\\d+" }, flags = { 0 })
-public class HentaiFoundryCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "peekvids.com" }, urls = { "https?://(www\\.)?peekvids\\.com/watch\\?v=[A-Za-z0-9]+" }, flags = { 0 })
+public class PeekVidsCom extends PluginForHost {
 
-    public HentaiFoundryCom(PluginWrapper wrapper) {
+    public PeekVidsCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
+    // Porn_get_file_/videos/_basic Version 0.2
     // Tags:
     // protocol: no https
-    // other: connections & downloads limites cause we re downloading small files
+    // other:
 
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".png";
+    private static final String  default_Extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
-    /* Limit chunks to 1 as we re only downloading small files */
-    private static final int     free_maxchunks    = 1;
-    private static final int     free_maxdownloads = 5;
+    private static final int     free_maxchunks    = 0;
+    private static final int     free_maxdownloads = -1;
 
     private String               DLLINK            = null;
 
     @Override
     public String getAGBLink() {
-        return "http://www.hentai-foundry.com/";
+        return "https://www.peekvids.com/terms.html";
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("hentai-foundrydecrypted.com/", "hentai-foundry.com/"));
+        /* Forced https */
+        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        final String[] qualities = { "1080p", "720p", "480p", "360p", "240p" };
         DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL() + "?enterAgree=1&size=0");
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("Video not found<") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<>]*?) \\- Hentai Foundry</title>").getMatch(0);
-        DLLINK = br.getRegex("(//pictures\\.hentai\\-foundry\\.com//?/[^<>\"]*?)\"").getMatch(0);
+        String filename = br.getRegex("itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
+        String flashvars = br.getRegex("flashvars=\"(.*?)\"").getMatch(0);
+        if (flashvars == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        flashvars = Encoding.htmlDecode(flashvars);
+
+        for (final String quality : qualities) {
+            DLLINK = new Regex(flashvars, "\\[" + quality + "\\]=(http[^<>\"]*?)\\&").getMatch(0);
+            if (DLLINK != null) {
+                break;
+            }
+        }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = "http:" + Encoding.htmlDecode(DLLINK);
+        DLLINK = Encoding.htmlDecode(DLLINK);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
@@ -136,33 +151,33 @@ public class HentaiFoundryCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-    // String dllink = downloadLink.getStringProperty(property);
-    // if (dllink != null) {
-    // URLConnectionAdapter con = null;
-    // try {
-    // final Browser br2 = br.cloneBrowser();
-    // if (isJDStable()) {
-    // con = br2.openGetConnection(dllink);
-    // } else {
-    // con = br2.openHeadConnection(dllink);
-    // }
-    // if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-    // downloadLink.setProperty(property, Property.NULL);
-    // dllink = null;
-    // }
-    // } catch (final Exception e) {
-    // downloadLink.setProperty(property, Property.NULL);
-    // dllink = null;
-    // } finally {
-    // try {
-    // con.disconnect();
-    // } catch (final Throwable e) {
-    // }
-    // }
-    // }
-    // return dllink;
-    // }
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                if (isJDStable()) {
+                    con = br2.openGetConnection(dllink);
+                } else {
+                    con = br2.openHeadConnection(dllink);
+                }
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+            } catch (final Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
+        return dllink;
+    }
 
     /* Avoid chars which are not allowed in filenames under certain OS' */
     private static String encodeUnicode(final String input) {

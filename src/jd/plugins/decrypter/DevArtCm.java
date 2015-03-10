@@ -70,7 +70,7 @@ public class DevArtCm extends PluginForDecrypt {
     private static final String   TYPE_CATPATH_1   = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath(=(/|%2F([a-z0-9]+)?|[a-z0-9]+)(\\&offset=\\d+)?)?";
     private static final String   TYPE_CATPATH_2   = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath=[a-z0-9]{1,}(\\&offset=\\d+)?";
     private static final String   TYPE_JOURNAL     = "https?://[\\w\\.\\-]*?deviantart\\.com/journal.+";
-    private static final String   LINKTYPE_JOURNAL = "https?://[\\w\\.\\-]*?deviantart\\.com/journal/[\\w\\-]+";
+    private static final String   LINKTYPE_JOURNAL = "https?://[\\w\\.\\-]*?deviantart\\.com/journal/[\\w\\-]+/?";
     private static final String   TYPE_BLOG        = "https?://[\\w\\.\\-]*?deviantart\\.com/blog/(\\?offset=\\d+)?";
 
     final ArrayList<DownloadLink> decryptedLinks   = new ArrayList<DownloadLink>();
@@ -90,6 +90,8 @@ public class DevArtCm extends PluginForDecrypt {
         if (replace != null) {
             PARAMETER = PARAMETER.replace(replace, "");
         }
+        /* Fix journallinks: http://xx.deviantart.com/journal/poll/xx/ */
+        PARAMETER = PARAMETER.replace("/poll/", "/");
         if (PARAMETER.matches(LINKTYPE_JOURNAL)) {
             final DownloadLink journal = createDownloadlink(PARAMETER.replace("deviantart.com/", "deviantartdecrypted.com/"));
             journal.setName(new Regex(PARAMETER, "deviantart\\.com/journal/([\\w\\-]+)").getMatch(0));

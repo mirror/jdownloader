@@ -86,7 +86,7 @@ public class SourceForgeNet extends PluginForDecrypt {
                         return decryptedLinks;
                     }
                     /* In very rare cases, files are not downloadable. */
-                    if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(<h1>Error encountered</h1>|>We apologize\\. It appears an error has occurred\\.)")) {
+                    if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("/download") || br.containsHTML("(<h1>Error encountered</h1>|>We apologize\\. It appears an error has occurred\\.)")) {
                         final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
                         offline.setAvailable(false);
                         offline.setProperty("offline", true);
