@@ -577,7 +577,7 @@ public abstract class K2SApi extends PluginForHost {
             // stable fail over
             is = con.getErrorStream();
         }
-        String t = readInputStream(is, ibr.getRequest().getCustomCharset());
+        final String t = readInputStream(is, ibr.getRequest().getCustomCharset());
         if (t != null) {
             logger.fine("\r\n" + t);
             ibr.getRequest().setHtmlCode(t);
