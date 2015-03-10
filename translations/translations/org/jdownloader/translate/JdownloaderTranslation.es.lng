@@ -49,6 +49,7 @@ DeleteOption_no_delete=No eliminar los archivos
 DeleteOption_recycle=Mover archivos a la papelera de reciclaje si es posible
 DirectHTTP_getBasicAuth_message=Un nombre de Usuario y Contraseña es requerido para descargar este archivo. Por favor ingrese las credenciales abajo.
 DisableRevFilesPackageRulee_rule_name=Deshabilitar archivos comprimidos de extensión .rev
+DownloadFolderChooserDialogDefaultPath_CURRENT_PATH=Ruta Actual
 DownloadLink_setSkipped_statusmessage=Descarga omitida
 DownloadLink_setSkipped_statusmessage_account=Omitida - Se necesita cuenta para descargar
 DownloadLink_setSkipped_statusmessage_captcha=Omitida - Se requiere Captcha
