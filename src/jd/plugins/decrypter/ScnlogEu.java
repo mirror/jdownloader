@@ -30,6 +30,13 @@ public class ScnlogEu extends antiDDoSForDecrypt {
 
         br.setFollowRedirects(true);
         getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 403 || br.toString().length() <= 100) {
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
+        }
 
         final String content = br.getRegex("<div class=\"download\">(.*?)<div class=\"clear\">").getMatch(0);
 

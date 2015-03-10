@@ -19,14 +19,19 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hentai-foundry.com" }, urls = { "http://www\\.hentai\\-foundry\\.com/pictures/user/[A-Za-z0-9\\-_]+(/\\d+)?" }, flags = { 0 })
 public class HentaiFoundryComGallery extends PluginForDecrypt {
@@ -39,6 +44,7 @@ public class HentaiFoundryComGallery extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        getUserLogin(false);
         br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(true);
         String parameter = param.toString();
@@ -88,6 +94,26 @@ public class HentaiFoundryComGallery extends PluginForDecrypt {
         fp.setName(Encoding.htmlDecode(fpName.trim()));
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
+    }
+
+    /** Log in the account of the hostplugin */
+    @SuppressWarnings("deprecation")
+    private boolean getUserLogin(final boolean force) throws Exception {
+        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("hentai-foundry.com");
+        final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
+        if (aa == null) {
+            logger.warning("There is no account available, continuing without logging in (if possible)");
+            return false;
+        }
+        try {
+            jd.plugins.hoster.HentaiFoundryCom.login(this.br, aa, force);
+        } catch (final PluginException e) {
+            logger.warning("Login failed - continuing without login");
+            aa.setValid(false);
+            return false;
+        }
+        logger.info("Logged in successfully");
+        return true;
     }
 
     /* Avoid chars which are not allowed in filenames under certain OS' */
