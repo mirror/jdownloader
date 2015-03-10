@@ -103,7 +103,7 @@ public class HugeFilesNet extends PluginForHost {
     // DEV NOTES
     // XfileShare Version 3.0.8.4
     // last XfileSharingProBasic compare :: 2.6.2.1
-    // captchatype: recaptcha
+    // captchatype: recaptcha/solvemedia on random
     // other: no redirects
     // mods: increased timeouts needed. changed the captcha look back to browser from form. removed mobile html
 
@@ -428,10 +428,6 @@ public class HugeFilesNet extends PluginForHost {
                 if (!skipWaitTime) {
                     waitTime(timeBefore, downloadLink);
                 }
-                final String ctype = cbr.getRegex("name=\"ctype\" value=\"([^<>\"]*?)\">").getMatch(0);
-                if (ctype != null) {
-                    dlForm.put("ctype", ctype);
-                }
                 dlForm.remove("method_premium");
                 sendForm(dlForm);
                 logger.info("Submitted DLForm");
@@ -538,7 +534,7 @@ public class HugeFilesNet extends PluginForHost {
         ArrayList<String> regexStuff = new ArrayList<String>();
 
         // remove custom rules first!!! As html can change because of generic cleanup rules.
-        regexStuff.add("(<div id=\"mobile\" class=\"mobile-version\">*>?)<div class=\"full-version\" id=\"pc-version\">");
+        regexStuff.add("(<div [^>]*class=\"mobile-version\">.*?)<div [^>]*class=\"full-version\">");
         // generic cleanup
         // this checks for fake or empty forms from original source and corrects
         for (final Form f : br.getForms()) {
@@ -1454,7 +1450,7 @@ public class HugeFilesNet extends PluginForHost {
                 code.append(value);
             }
             form.put("code", Encoding.urlEncode(code.toString()));
-        } else if (cbr.containsHTML("/captchas/")) {
+        } else if (form.containsHTML("/captchas/")) {
             logger.info("Detected captcha method \"Standard Captcha\"");
             final String[] sitelinks = HTMLParser.getHttpLinks(form.getHtmlCode(), null);
             if (sitelinks == null || sitelinks.length == 0) {
@@ -1484,7 +1480,7 @@ public class HugeFilesNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             form.put("code", Encoding.urlEncode(code.toString()));
-        } else if (cbr.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+        } else if (form.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             logger.info("Detected captcha method \"Re Captcha\"");
             final Browser captcha = br.cloneBrowser();
             cleanupBrowser(captcha, cbr.toString());
