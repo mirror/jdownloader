@@ -112,7 +112,7 @@ public class RemixShareCom extends PluginForHost {
     }
 
     private String execJS() throws Exception {
-        String fun = br.getRegex("=\\s*\"http[^\r\n]+/[^/]*download[^/]*(/[^\r\n]+){3,}").getMatch(-1);
+        String fun = null;
         if (fun == null) {
             fun = br.getRegex("document\\.getElementById\\('[\\w\\-]+'\\)\\.href\\s*(=\\s*\"http[^\r\n]+)").getMatch(0);
         }
