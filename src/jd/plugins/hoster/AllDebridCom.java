@@ -48,12 +48,20 @@ public class AllDebridCom extends PluginForHost {
         this.enablePremium("http://www.alldebrid.com/offer/");
     }
 
-    private static final String NOCHUNKS = "NOCHUNKS";
-    private final String        hash1    = "593f356a67e32332c13d6692d1fe10b7";
+    private static final String NICE_HOST         = "alldebrid.com";
+    private static final String NICE_HOSTproperty = NICE_HOST.replaceAll("(\\.|\\-)", "");
+
+    private static final String NOCHUNKS          = "NOCHUNKS";
+    private final String        hash1             = "593f356a67e32332c13d6692d1fe10b7";
+
+    private int                 statuscode        = 0;
+    private Account             currAcc           = null;
+    private DownloadLink        currDownloadLink  = null;
 
     @SuppressWarnings("deprecation")
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        setConstants(account, null);
         prepBrowser(br);
         HashMap<String, String> accDetails = new HashMap<String, String>();
         AccountInfo ac = new AccountInfo();
@@ -84,6 +92,7 @@ public class AllDebridCom extends PluginForHost {
                     // hosts that returned decrypted finallinks bound to users ip session. Can not use multihosters..
                     try {
                         if (host.equals("rapidshare.com") && accDetails.get("limite_rs") != null && Integer.parseInt(accDetails.get("limite_rs")) == 0) {
+                            logger.info("NOT adding the following host to array of supported hosts as its daily limit is reached: " + host);
                             continue;
                         }
                     } catch (final Throwable e) {
@@ -91,6 +100,7 @@ public class AllDebridCom extends PluginForHost {
                     }
                     try {
                         if (host.equals("depositfiles.com") && accDetails.get("limite_dp") != null && Integer.parseInt(accDetails.get("limite_dp")) == 0) {
+                            logger.info("NOT adding the following host to array of supported hosts as its daily limit is reached: " + host);
                             continue;
                         }
                     } catch (final Throwable e) {
@@ -98,6 +108,7 @@ public class AllDebridCom extends PluginForHost {
                     }
                     try {
                         if (host.equals("filefactory.com") && accDetails.get("limite_ff") != null && Integer.parseInt(accDetails.get("limite_ff")) == 0) {
+                            logger.info("NOT adding the following host to array of supported hosts as its daily limit is reached: " + host);
                             continue;
                         }
                     } catch (final Throwable e) {
@@ -105,6 +116,7 @@ public class AllDebridCom extends PluginForHost {
                     }
                     try {
                         if (host.equals("filesmonster.com") && accDetails.get("limite_fm") != null && Integer.parseInt(accDetails.get("limite_fm")) == 0) {
+                            logger.info("NOT adding the following host to array of supported hosts as its daily limit is reached: " + host);
                             continue;
                         }
                     } catch (final Throwable e) {
@@ -132,7 +144,7 @@ public class AllDebridCom extends PluginForHost {
             ac.setStatus("Account valid");
         } else {
             ac.setProperty("multiHostSupport", Property.NULL);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNormal accounts are not supported!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         return ac;
     }
@@ -162,6 +174,7 @@ public class AllDebridCom extends PluginForHost {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         showMessage(link, "Task 1: Check URL validity!");
@@ -169,6 +182,7 @@ public class AllDebridCom extends PluginForHost {
         handleDL(null, link, link.getDownloadURL());
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         showMessage(link, "Task 1: Check URL validity!");
@@ -176,6 +190,7 @@ public class AllDebridCom extends PluginForHost {
         handleDL(account, link, link.getDownloadURL());
     }
 
+    @SuppressWarnings("deprecation")
     private void handleDL(final Account acc, final DownloadLink link, final String genlink) throws Exception {
         showMessage(link, "Task 2: Download begins!");
         int maxChunks = 0;
@@ -198,7 +213,7 @@ public class AllDebridCom extends PluginForHost {
                 /* unknown error */
                 logger.severe("Error: Unknown Error");
                 // disable hoster for 5min
-                tempUnavailableHoster(acc, link, 5 * 60 * 1000l);
+                tempUnavailableHoster(5 * 60 * 1000l);
             } else {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             }
@@ -229,47 +244,27 @@ public class AllDebridCom extends PluginForHost {
         link.getLinkStatus().setStatusText(message);
     }
 
+    /** TODO: Replace errorhandling stuff with new API statuscode-errorhamdling */
     /** no override to keep plugin compatible to old stable */
     @SuppressWarnings("deprecation")
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
+        setConstants(acc, link);
         prepBrowser(br);
         showMessage(link, "Phase 1/2: Generating link");
 
         String host_downloadlink = link.getDownloadURL();
-        // here we can get a 503 error page, which causes an exception
-        String genlink = br.getPage("https://www.alldebrid.com/service.php?pseudo=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&link=" + Encoding.urlEncode(host_downloadlink) + "&view=1");
+        /* here we can get a 503 error page, which causes an exception */
+        final String genlink = this.br.getPage("https://www.alldebrid.com/service.php?pseudo=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&link=" + Encoding.urlEncode(host_downloadlink) + "&view=1");
 
         if (genlink == null || !genlink.matches("https?://.+")) {
-            int retry = link.getIntegerProperty("retryCount", 0);
             logger.severe("Error: " + genlink);
             handleErrors();
-            if (genlink.contains("Hoster unsupported or under maintenance.")) {
-                // disable host for 4h
-                tempUnavailableHoster(acc, link, 4 * 60 * 60 * 1000l);
-            } else if (genlink.contains("_limit")) {
+            if (genlink.contains("_limit")) {
                 /* limit reached for this host, wait 4h */
-                tempUnavailableHoster(acc, link, 4 * 60 * 60 * 1000l);
-            } else if (genlink.contains("\"error\":\"Ip not allowed.\"")) {
-                // dedicated server/colo ip range, not allowed!
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDedicated server detected, account disabled", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else if (genlink.contains(">Invalid link<")) {
-                /* complete html example: 1,;,https://tusfiles.net/xxxxxxxxxxxx : <span style='color:#a00;'>Invalid link</span>,;,0 */
-                // disable host for 4h
-                tempUnavailableHoster(acc, link, 4 * 60 * 60 * 1000l);
+                tempUnavailableHoster(4 * 60 * 60 * 1000l);
             }
-            /*
-             * after x retries we disable this host and retry with normal plugin
-             */
-            if (retry >= 3) {
-                /* reset retrycounter */
-                link.setProperty("retryCount", Property.NULL);
-                // disable hoster for 30min
-                tempUnavailableHoster(acc, link, 30 * 60 * 1000l);
-
-            }
-            String msg = "(" + (retry + 1) + "/" + 3 + ")";
-            link.setProperty("retryCount", (retry + 1));
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 20 * 1000l);
+            updatestatuscode();
+            handleAPIErrors(this.br);
         }
         handleDL(acc, link, genlink);
     }
@@ -283,12 +278,14 @@ public class AllDebridCom extends PluginForHost {
         return prepBr;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink dl) throws PluginException, IOException {
+    public AvailableStatus requestFileInformation(final DownloadLink dl) throws PluginException, IOException {
+        setConstants(null, dl);
         prepBrowser(br);
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(dl.getDownloadURL());
+            con = br.openHeadConnection(dl.getDownloadURL());
             if (con.isContentDisposition()) {
                 if (dl.getFinalFileName() == null) {
                     dl.setFinalFileName(getFileNameFromHeader(con));
@@ -311,20 +308,145 @@ public class AllDebridCom extends PluginForHost {
         }
     }
 
-    private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) {
+    private String getAPISafe(final String accesslink) throws IOException, PluginException {
+        br.getPage(accesslink);
+        updatestatuscode();
+        handleAPIErrors(this.br);
+        return this.br.toString();
+    }
+
+    private String postAPISafe(final String accesslink, final String postdata) throws IOException, PluginException {
+        br.postPage(accesslink, postdata);
+        updatestatuscode();
+        handleAPIErrors(this.br);
+        return this.br.toString();
+    }
+
+    /**
+     * 0 = everything ok, 1-99 = "error"-errors, 100-199 = other errors
+     */
+    private void updatestatuscode() {
+        String error = getJson("error");
+        if (error != null) {
+            if (error.equals("Ip not allowed.")) {
+                statuscode = 1;
+            } else if (error.equals("Hoster unsupported or under maintenance.")) {
+                statuscode = 2;
+            } else {
+                statuscode = 666;
+            }
+        } else {
+            error = this.br.getRegex("<span style=\\'color:#a00;\\'>(.*?)</span>").getMatch(0);
+            if (error == null) {
+                /* No way to tell that something unpredictable happened here --> status should be fine. */
+                statuscode = 0;
+            } else {
+                if (error.equals("Invalid link")) {
+                    /* complete html example: 1,;,https://tusfiles.net/xxxxxxxxxxxx : <span style='color:#a00;'>Invalid link</span>,;,0 */
+                    statuscode = 101;
+                } else {
+                    statuscode = 666;
+                }
+            }
+        }
+    }
+
+    private void handleAPIErrors(final Browser br) throws PluginException {
+        String statusMessage = null;
+        try {
+            switch (statuscode) {
+            case 0:
+                /* Everything ok */
+                break;
+            case 1:
+                /* No email entered --> Should never happen as we validate user-input before -> permanently disable account */
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    statusMessage = "\r\nVPN/proxy entdeckt - Account gesperrt!";
+                } else {
+                    statusMessage = "\r\nDedicated server detected, account disabled!";
+                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case 2:
+                statusMessage = "Host unsupported or in maintenance";
+                handleErrorRetries("hoster_unsupported_or_in_maintenance", 20, 5 * 60 * 1000);
+            case 101:
+                statusMessage = "Invalid link --> Probably unsupported host";
+                tempUnavailableHoster(4 * 60 * 60 * 1000l);
+            default:
+                /* Unknown error */
+                statusMessage = "Unknown error";
+                logger.info(NICE_HOST + ": Unknown API error");
+                handleErrorRetries("unknownAPIerror", 10, 2 * 60 * 1000l);
+            }
+        } catch (final PluginException e) {
+            logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
+            throw e;
+        }
+    }
+
+    /**
+     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
+     * from the host list.
+     *
+     * @param error
+     *            : The name of the error
+     * @param maxRetries
+     *            : Max retries before out of date error is thrown
+     */
+    private void handleErrorRetries(final String error, final int maxRetries, final long disableTime) throws PluginException {
+        int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
+        this.currDownloadLink.getLinkStatus().setRetryCount(0);
+        if (timesFailed <= maxRetries) {
+            logger.info(NICE_HOST + ": " + error + " -> Retrying");
+            timesFailed++;
+            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
+            throw new PluginException(LinkStatus.ERROR_RETRY, error);
+        } else {
+            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
+            logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
+            tempUnavailableHoster(disableTime);
+        }
+    }
+
+    private void tempUnavailableHoster(final long timeout) throws PluginException {
+        if (this.currDownloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         }
         synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(this.currAcc);
             if (unavailableMap == null) {
                 unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(account, unavailableMap);
+                hostUnavailableMap.put(this.currAcc, unavailableMap);
             }
-            /* wait to retry this host */
-            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
+            /* wait 30 mins to retry this host */
+            unavailableMap.put(this.currDownloadLink.getHost(), (System.currentTimeMillis() + timeout));
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
+    }
+
+    private void setConstants(final Account acc, final DownloadLink dl) {
+        this.currAcc = acc;
+        this.currDownloadLink = dl;
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     @Override
