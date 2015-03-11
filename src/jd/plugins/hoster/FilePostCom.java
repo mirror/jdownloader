@@ -65,7 +65,8 @@ public class FilePostCom extends PluginForHost {
     private boolean                        showAccountCaptcha = false;
     private static final String            FILEIDREGEX        = "filepost\\.com/files/(.+)";
     private static final String            MAINPAGE           = "https://filepost.com/";
-    private static Object                  LOCK               = new Object();
+    private static Object                  LOGINLOCK          = new Object();
+    private static Object                  ACCOUNTINFOLOCK    = new Object();
     private static final String            FREEBLOCKED        = "(>The file owner has limited free downloads of this file|premium membership is required to download this file\\.<)";
     private static final String            NOCHUNKS           = "NOCHUNKS";
 
@@ -224,55 +225,58 @@ public class FilePostCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        if (!(account.getUser().matches(".+@.+"))) {
-            ai.setStatus("Please enter your E-Mail adress as username!");
-            account.setValid(false);
-            return ai;
-        }
-        try {
-            showAccountCaptcha = true;
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        } finally {
-            showAccountCaptcha = false;
-        }
-
-        if (br.getRequest() == null) {
-            br.getPage(MAINPAGE);
-        } else {
-            br.getPage("/");
-        }
-        if (!br.containsHTML("<li>Account type: <span>Premium</span>")) {
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        synchronized (ACCOUNTINFOLOCK) {
+            AccountInfo ai = new AccountInfo();
+            if (!(account.getUser().matches(".+@.+"))) {
+                ai.setStatus("Please enter your E-Mail adress as username!");
+                account.setValid(false);
+                return ai;
             }
-        }
-        String space = br.getRegex("(?i)<li>(Used )?storage: <span.*?>([\\d\\.]+ ?(MB|GB))</span>").getMatch(1);
-        if (space != null) {
-            ai.setUsedSpace(space.trim());
-        }
-        String filesNum = br.getRegex("<li>Active files: <span.*?>(\\d+)</span>").getMatch(0);
-        if (filesNum != null) {
-            ai.setFilesNum(Integer.parseInt(filesNum));
-        }
-        ai.setUnlimitedTraffic();
-        String expire = br.getRegex("<li>.*?Valid until: <span>(.*?)</span>").getMatch(0);
-        if (expire == null) {
-            ai.setExpired(true);
-            account.setValid(false);
+            try {
+                showAccountCaptcha = true;
+                login(account, true);
+            } catch (PluginException e) {
+                account.setValid(false);
+                return ai;
+            } finally {
+                showAccountCaptcha = false;
+            }
+
+            if (br.getRequest() == null) {
+                br.getPage(MAINPAGE);
+            } else {
+                br.getPage("/");
+            }
+            if (!br.containsHTML("<li>Account type: <span>Premium</span>")) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+            String space = br.getRegex("(?i)<li>(Used )?storage: <span.*?>([\\d\\.]+ ?(MB|GB))</span>").getMatch(1);
+            if (space != null) {
+                ai.setUsedSpace(space.trim());
+            }
+            String filesNum = br.getRegex("<li>Active files: <span.*?>(\\d+)</span>").getMatch(0);
+            if (filesNum != null) {
+                ai.setFilesNum(Integer.parseInt(filesNum));
+            }
+            // accounts can have daily limit (50GiB/day)
+            ai.setUnlimitedTraffic();
+            String expire = br.getRegex("<li>.*?Valid until: <span>(.*?)</span>").getMatch(0);
+            if (expire == null) {
+                ai.setExpired(true);
+                account.setValid(false);
+                return ai;
+            } else {
+                /* Add one day more re: http://board.jdownloader.org/showthread.php?t=61588 */
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMMM dd, yyyy", Locale.ENGLISH) + 24 * 60 * 60 * 1000l);
+                account.setValid(true);
+            }
+            ai.setStatus("Premium account");
             return ai;
-        } else {
-            /* Add one day more re: http://board.jdownloader.org/showthread.php?t=61588 */
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMMM dd, yyyy", Locale.ENGLISH) + 24 * 60 * 60 * 1000l);
-            account.setValid(true);
         }
-        ai.setStatus("Premium account");
-        return ai;
     }
 
     @Override
@@ -549,6 +553,15 @@ public class FilePostCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 60 * 60 * 1000l);
         }
         if (br.containsHTML("(>Sorry, you have reached the daily download limit|>Please contact our support team if you have questions about this limit)")) {
+            synchronized (ACCOUNTINFOLOCK) {
+                final AccountInfo ai = account.getAccountInfo();
+                ai.setTrafficLeft(0);
+                final String upperLimit = br.getRegex(">You can only download (.*?) a day").getMatch(0);
+                if (upperLimit != null) {
+                    ai.setTrafficMax(SizeFormatter.getSize(upperLimit));
+                }
+                account.setAccountInfo(ai);
+            }
             logger.info("Premium downloadlimit reached, disabling account...");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
@@ -637,7 +650,7 @@ public class FilePostCom extends PluginForHost {
 
     @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (LOGINLOCK) {
             // Load cookies, because no multiple downloads possible when always
             // login in for every download
             br.setCookiesExclusive(true);
@@ -668,9 +681,12 @@ public class FilePostCom extends PluginForHost {
                 if (br.containsHTML("captcha\":true")) {
                     /* too many logins result in recaptcha login */
                     if (showAccountCaptcha == false) {
-                        AccountInfo ai = account.getAccountInfo();
-                        if (ai != null) {
-                            ai.setStatus("Logout/Login in Browser please!");
+                        synchronized (ACCOUNTINFOLOCK) {
+                            final AccountInfo ai = account.getAccountInfo();
+                            if (ai != null) {
+                                ai.setStatus("Logout/Login in Browser please!");
+                                account.setAccountInfo(ai);
+                            }
                         }
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -688,9 +704,12 @@ public class FilePostCom extends PluginForHost {
                 }
                 if (br.containsHTML("captcha\":true")) {
                     /* too many logins result in recaptcha login */
-                    AccountInfo ai = account.getAccountInfo();
-                    if (ai != null) {
-                        ai.setStatus("Captcha Wrong!");
+                    synchronized (ACCOUNTINFOLOCK) {
+                        final AccountInfo ai = account.getAccountInfo();
+                        if (ai != null) {
+                            ai.setStatus("Captcha Wrong!");
+                            account.setAccountInfo(ai);
+                        }
                     }
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
