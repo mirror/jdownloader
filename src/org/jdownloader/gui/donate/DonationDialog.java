@@ -91,12 +91,12 @@ public class DonationDialog extends AbstractDialog<Object> {
 
     @Override
     protected int getPreferredHeight() {
-        return 420;
+        return 500;
     }
 
     @Override
     protected int getPreferredWidth() {
-        return 740;
+        return 780;
     }
 
     public void actionPerformed(final ActionEvent e) {
