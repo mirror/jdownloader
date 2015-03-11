@@ -236,10 +236,6 @@ public class AllDebridCom extends PluginForHost {
         showMessage(link, "Phase 1/2: Generating link");
 
         String host_downloadlink = link.getDownloadURL();
-        /* Workaround for serverside alldebrid share-online bug. */
-        if (link.getHost().equals("share-online.biz") && host_downloadlink.contains("https://")) {
-            host_downloadlink = host_downloadlink.replace("https://", "http://");
-        }
         // here we can get a 503 error page, which causes an exception
         String genlink = br.getPage("https://www.alldebrid.com/service.php?pseudo=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&link=" + Encoding.urlEncode(host_downloadlink) + "&view=1");
 
