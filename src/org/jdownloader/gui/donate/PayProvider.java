@@ -40,12 +40,7 @@ public enum PayProvider implements LabelInterface {
             return _GUI._.DonationDialog_popup_amazon();
         }
     },
-    PAYSAFE_CARD() {
-        @Override
-        public String getLabel() {
-            return _GUI._.DonationDialog_popup_paysafe();
-        }
-    },
+
     CREDIT_CARD() {
         @Override
         public String getLabel() {

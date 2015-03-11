@@ -16,9 +16,10 @@
 	<classpathentry kind="lib" path="ressourcen/libs_ext/jcip-annotations-1.0.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/Filters.jar" sourcepath="ressourcen/code-ressourcen/Filter_src.zip"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/looks.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/laf/synthetica.jar">
+	<classpathentry kind="lib" path="ressourcen/libs/laf/synthetica.jar" sourcepath="C:/Users/Thomas/Downloads/synthetica.src.2.zip">
 		<attributes>
 			<attribute name="javadoc_location" value="jar:platform:/resource/jd/ressourcen/code-ressourcen/synthetica_docs.zip!/"/>
+			<attribute name="source_encoding" value="UTF-8"/>
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaBlackMoon.jar"/>
@@ -63,7 +64,7 @@
 	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbindingMac.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/MyJDownloaderClient"/>
 	<classpathentry kind="lib" path="ressourcen/libs/jna_platform.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/UPNP/cling-core.jar" sourcepath="dev/cling-core-2.0-SNAPSHOT-sources.jar">
+	<classpathentry kind="lib" path="ressourcen/libs/UPNP/cling-core.jar" sourcepath="C:/Users/Thomas/Desktop/cling-distribution-2.0.1">
 		<attributes>
 			<attribute name="source_encoding" value="UTF-8"/>
 		</attributes>
