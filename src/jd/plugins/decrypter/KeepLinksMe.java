@@ -81,7 +81,11 @@ public class KeepLinksMe extends abstractSafeLinking {
 
     @Override
     protected boolean confirmationCheck() {
-        return !br.containsHTML("class=\"co_form_title\">Live Link") && !br.containsHTML("class=\"co_form_title\">Direct Link");
+        if (getHost().equals("keeplinks.me")) {
+            return !br.containsHTML("class=\"co_form_title\">Live Link") && !br.containsHTML("class=\"co_form_title\">Direct Link");
+        } else {
+            return !br.containsHTML(">Live Link</div>") && !br.containsHTML(">Direct Link</div>");
+        }
     }
 
     @Override

@@ -64,6 +64,10 @@ public class RemixShareCom extends PluginForHost {
         } catch (Throwable e) {
             link.setProperty("LINKDUPEID", linkID);
         }
+        // invalid linkformat for open in browser you need to nullify it.
+        if (link.getContentUrl() != null && link.getContentUrl().matches("http://[\\w\\.]*?remixshare\\.com/dl/[a-z0-9]+")) {
+            link.setContentUrl(link.getDownloadURL());
+        }
     }
 
     private String getFileID(DownloadLink link) {
@@ -73,6 +77,7 @@ public class RemixShareCom extends PluginForHost {
     private static final AtomicReference<String> userAgent = new AtomicReference<String>(jd.plugins.hoster.MediafireCom.stringUserAgent());
 
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        correctDownloadLink(downloadLink);
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", userAgent.get());
         br.setCookie("http://remixshare.com", "lang_en", "english");
