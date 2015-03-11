@@ -75,6 +75,12 @@ public class RDMdthk extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /**
+     * Examples of other, unsupported linktypes:
+     *
+     * http://daserste.ndr.de/panorama/aktuell/Mal-eben-die-Welt-retten-Studie-belegt-Gefahren-durch-Voluntourismus-,volontourismus136.html
+     *
+     * */
     @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
