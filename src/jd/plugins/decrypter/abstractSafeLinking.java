@@ -166,11 +166,11 @@ public abstract class abstractSafeLinking extends PluginForDecrypt {
     }
 
     protected String regexLinkP() {
-        return "https?://[^/]+" + regexSupportedDomains() + "/p/[a-z0-9]+";
+        return "https?://[^/]*" + regexSupportedDomains() + "/p/[a-z0-9]+";
     }
 
     protected String regexLinkD() {
-        return "https?://[^/]+" + regexSupportedDomains() + "/d/[a-z0-9]+";
+        return "https?://[^/]*" + regexSupportedDomains() + "/d/[a-z0-9]+";
     }
 
     protected String correctLink(final String string) {

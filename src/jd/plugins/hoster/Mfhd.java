@@ -39,9 +39,9 @@ import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 /**
- * @author gandalf
+ * @author lspcity
  * @author raztoki
- * 
+ *
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mfhd.de" }, urls = { "http://mfhd\\.de/notsupported/blahblbha/[a-z]+" }, flags = { 2 })
 public class Mfhd extends PluginForHost {
