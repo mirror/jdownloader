@@ -51,6 +51,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /** Example of a podcast-URL: http://www.zdf.de/ZDFmediathek/podcast/1074856?view=podcast */
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -98,7 +99,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             prev = prev.replaceAll(",|\\.", "");
         }
         final int rev = Integer.parseInt(prev);
-        if (rev < 10000) { return true; }
+        if (rev < 10000) {
+            return true;
+        }
         return false;
     }
 
@@ -120,7 +123,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
                 String title = getTitle(br);
                 String extension = ".mp4";
-                if (br.getRegex("new MediaCollection\\(\"audio\",").matches()) extension = ".mp3";
+                if (br.getRegex("new MediaCollection\\(\"audio\",").matches()) {
+                    extension = ".mp3";
+                }
                 final Browser br2 = br.cloneBrowser();
 
                 ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
@@ -128,22 +133,32 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 String lastQualityFMT = null;
                 for (String streams[] : br2.getRegex("<formitaet basetype=\"([^\"]+)\" isDownload=\"[^\"]+\">(.*?)</formitaet>").getMatches()) {
 
-                    if (!(streams[0].contains("mp4_http") || streams[0].contains("mp4_rtmp_zdfmeta"))) continue;
+                    if (!(streams[0].contains("mp4_http") || streams[0].contains("mp4_rtmp_zdfmeta"))) {
+                        continue;
+                    }
 
                     for (String stream[] : new Regex(streams[1], "<quality>([^<]+)</quality>.*?<url>([^<]+)<.*?<filesize>(\\d+)<").getMatches()) {
 
-                        if (streams[0].contains("mp4_http") && !new Regex(streams[1], ("<facet>(progressive|restriction_useragent|podcast)</")).matches()) continue;
+                        if (streams[0].contains("mp4_http") && !new Regex(streams[1], ("<facet>(progressive|restriction_useragent|podcast)</")).matches()) {
+                            continue;
+                        }
                         /* only http stream for the old stable */
-                        if (streams[0].contains("mp4_rtmp_zdfmeta") && isStableEnviroment()) continue;
+                        if (streams[0].contains("mp4_rtmp_zdfmeta") && isStableEnviroment()) {
+                            continue;
+                        }
                         if (stream[1].endsWith(".meta") && stream[1].contains("streaming") && stream[1].startsWith("http")) {
                             br2.getPage(stream[1]);
                             stream[1] = br2.getRegex("<default\\-stream\\-url>(.*?)</default\\-stream\\-url>").getMatch(0);
-                            if (stream[1] == null) continue;
+                            if (stream[1] == null) {
+                                continue;
+                            }
                         }
 
                         String url = stream[1];
                         String fmt = stream[0];
-                        if (fmt != null) fmt = fmt.toLowerCase(Locale.ENGLISH).trim();
+                        if (fmt != null) {
+                            fmt = fmt.toLowerCase(Locale.ENGLISH).trim();
+                        }
                         if (fmt != null) {
                             /* best selection is done at the end */
                             if ("low".equals(fmt)) {
@@ -169,13 +184,17 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                     continue;
                                 } else {
                                     if (streams[0].contains("mp4_rtmp")) {
-                                        if (isStableEnviroment()) continue;
+                                        if (isStableEnviroment()) {
+                                            continue;
+                                        }
                                         if (url.startsWith("http://")) {
                                             Browser rtmp = new Browser();
                                             rtmp.getPage(stream[1]);
                                             url = rtmp.getRegex("<default\\-stream\\-url>([^<]+)<").getMatch(0);
                                         }
-                                        if (url == null) continue;
+                                        if (url == null) {
+                                            continue;
+                                        }
                                     }
                                     fmt = "hd";
                                 }
@@ -187,7 +206,11 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         final DownloadLink link = createDownloadlink(data.replace("http://", "decrypted://") + "&quality=" + fmt);
                         link.setAvailable(true);
                         link.setFinalFileName(name);
-                       try{/*JD2 only*/link.setContentUrl(data);}catch(Throwable e){/*Stable*/ link.setBrowserUrl(data);}
+                        try {/* JD2 only */
+                            link.setContentUrl(data);
+                        } catch (Throwable e) {/* Stable */
+                            link.setBrowserUrl(data);
+                        }
                         link.setProperty("directURL", url);
                         link.setProperty("directName", name);
                         link.setProperty("directQuality", stream[0]);
@@ -272,10 +295,18 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
     private String getTitle(Browser br) {
         String title = br.getRegex("<div class=\"MainBoxHeadline\">([^<]+)</").getMatch(0);
         String titleUT = br.getRegex("<span class=\"BoxHeadlineUT\">([^<]+)</").getMatch(0);
-        if (title == null) title = br.getRegex("<title>([^<]+)</title>").getMatch(0);
-        if (title == null) title = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
-        if (title != null) title = Encoding.htmlDecode(title + (titleUT != null ? "__" + titleUT.replaceAll(":$", "") : "").trim());
-        if (title == null) title = "UnknownTitle_" + System.currentTimeMillis();
+        if (title == null) {
+            title = br.getRegex("<title>([^<]+)</title>").getMatch(0);
+        }
+        if (title == null) {
+            title = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
+        }
+        if (title != null) {
+            title = Encoding.htmlDecode(title + (titleUT != null ? "__" + titleUT.replaceAll(":$", "") : "").trim());
+        }
+        if (title == null) {
+            title = "UnknownTitle_" + System.currentTimeMillis();
+        }
         return title;
     }
 

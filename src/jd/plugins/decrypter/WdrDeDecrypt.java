@@ -47,6 +47,11 @@ public class WdrDeDecrypt extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /**
+     * Other, unsupported linktypes:
+     *
+     * http://www1.wdr.de/daserste/monitor/videos/videomonitornrvom168.html
+     * */
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
