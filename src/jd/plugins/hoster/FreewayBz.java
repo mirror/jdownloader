@@ -16,13 +16,18 @@
 
 package jd.plugins.hoster;
 
+import java.awt.Color;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -35,6 +40,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.swing.components.ExtTextField;
+import org.jdownloader.plugins.accounts.AccountFactory;
+import org.jdownloader.plugins.accounts.EditAccountPanel;
+import org.jdownloader.plugins.accounts.Notifier;
 
 @HostPlugin(revision = "$Revision: 26092 $", interfaceVersion = 3, names = { "freeway.bz" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }, flags = { 2 })
 public class FreewayBz extends PluginForHost {
@@ -72,6 +84,11 @@ public class FreewayBz extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+    }
+
+    @Override
+    public AccountFactory getAccountFactory() {
+        return new FreewayBZAccountFactory();
     }
 
     @Override
@@ -444,6 +461,116 @@ public class FreewayBz extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
         link.setProperty(sessionRetry, Property.NULL);
         link.setProperty(globalRetry, Property.NULL);
+    }
+
+    public static class FreewayBZAccountFactory extends AccountFactory {
+
+        public static class FreewayBZPanel extends MigPanel implements EditAccountPanel {
+            /**
+             *
+             */
+            private static final long serialVersionUID = 1L;
+
+            private final String      IDHELP           = "Enter your user id (9 digits)";
+            private final String      PINHELP          = "Enter your pin";
+
+            private String getPassword() {
+                if (this.pass == null) {
+                    return null;
+                }
+                if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
+                    return null;
+                }
+                return new String(this.pass.getPassword());
+            }
+
+            private String getUsername() {
+                if (IDHELP.equals(this.name.getText())) {
+                    return null;
+                }
+                return this.name.getText();
+            }
+
+            private ExtTextField      name;
+
+            ExtPasswordField          pass;
+
+            private volatile Notifier notifier = null;
+            private static String     EMPTYPW  = "                 ";
+            private final JLabel      idLabel;
+
+            public FreewayBZPanel() {
+                super("ins 0, wrap 2", "[][grow,fill]", "");
+                add(new JLabel("Click here to find your User-ID/PIN"));
+                add(new JLink("https://www.freeway.bz/account"));
+                add(idLabel = new JLabel("User-ID: (must be 9 digis)"));
+                add(this.name = new ExtTextField() {
+
+                    @Override
+                    public void onChanged() {
+                        if (notifier != null) {
+                            notifier.onNotify();
+                        }
+                    }
+
+                });
+
+                name.setHelpText(IDHELP);
+
+                add(new JLabel("PIN:"));
+                add(this.pass = new ExtPasswordField() {
+
+                    @Override
+                    public void onChanged() {
+                        if (notifier != null) {
+                            notifier.onNotify();
+                        }
+                    }
+
+                }, "");
+                pass.setHelpText(PINHELP);
+            }
+
+            @Override
+            public JComponent getComponent() {
+                return this;
+            }
+
+            @Override
+            public void setAccount(Account defaultAccount) {
+                if (defaultAccount != null) {
+                    name.setText(defaultAccount.getUser());
+                    pass.setText(defaultAccount.getPass());
+                }
+            }
+
+            @Override
+            public boolean validateInputs() {
+                final String userName = getUsername();
+                if (userName == null || !userName.trim().matches("^\\d{9}$")) {
+                    idLabel.setForeground(Color.RED);
+                    return false;
+                }
+                idLabel.setForeground(Color.BLACK);
+                return getPassword() != null;
+            }
+
+            @Override
+            public void setNotifyCallBack(Notifier notifier) {
+                this.notifier = notifier;
+            }
+
+            @Override
+            public Account getAccount() {
+                return new Account(getUsername(), getPassword());
+            }
+        }
+
+        @Override
+        public EditAccountPanel getPanel() {
+            return new FreewayBZPanel();
+        }
+
     }
 
 }
