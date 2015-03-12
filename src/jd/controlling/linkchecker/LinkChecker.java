@@ -174,7 +174,7 @@ public class LinkChecker<E extends CheckableLink> {
 
     /**
      * is the LinkChecker running
-     * 
+     *
      * @return
      */
     public boolean isRunning() {
@@ -242,7 +242,6 @@ public class LinkChecker<E extends CheckableLink> {
                                              */
                                             link.getCheckableLink().getDownloadLink().setAvailableStatus(AvailableStatus.UNCHECKED);
                                         }
-                                        link.getCheckableLink().getDownloadLink().setLinkStatus(new LinkStatus(link.getCheckableLink().getDownloadLink()));
                                     }
                                 }
                                 final int n = roundComplete.size();
@@ -268,6 +267,7 @@ public class LinkChecker<E extends CheckableLink> {
                                         this.plugin = plg;
                                         try {
                                             if (plg != null && PluginForHost.implementsCheckLinks(plg)) {
+                                                resetLinkStatus();
                                                 logger.info("Check Multiple FileInformation");
                                                 try {
                                                     final HashSet<DownloadLink> downloadLinks = new HashSet<DownloadLink>();
@@ -305,6 +305,7 @@ public class LinkChecker<E extends CheckableLink> {
                                                     }
                                                 }
                                             }
+                                            resetLinkStatus();
                                             final HashSet<DownloadLink> dupCheck = new HashSet<DownloadLink>();
                                             for (final InternCheckableLink link : roundSplit) {
                                                 if (link.linkCheckAllowed() && plg != null) {
@@ -318,6 +319,7 @@ public class LinkChecker<E extends CheckableLink> {
                                                 link.getLinkChecker().linkChecked(link);
                                             }
                                         } finally {
+                                            resetLinkStatus();
                                             this.plugin = null;
                                             this.checkableLinks = null;
                                         }
@@ -326,10 +328,6 @@ public class LinkChecker<E extends CheckableLink> {
                             } catch (Throwable e) {
                                 LogController.CL().log(e);
                             } finally {
-                                /* remove LinkStatus from roundComplete */
-                                for (InternCheckableLink link : roundComplete) {
-                                    link.getCheckableLink().getDownloadLink().setLinkStatus(null);
-                                }
                                 try {
                                     logger.close();
                                 } catch (final Throwable e) {

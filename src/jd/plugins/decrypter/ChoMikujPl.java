@@ -79,8 +79,12 @@ public class ChoMikujPl extends PluginForDecrypt {
             return decryptedLinks;
         }
         String linkending = null;
-        if (parameter.contains(",")) linkending = parameter.substring(parameter.lastIndexOf(","));
-        if (linkending == null) linkending = parameter.substring(parameter.lastIndexOf("/") + 1);
+        if (parameter.contains(",")) {
+            linkending = parameter.substring(parameter.lastIndexOf(","));
+        }
+        if (linkending == null) {
+            linkending = parameter.substring(parameter.lastIndexOf("/") + 1);
+        }
         /* Correct added link */
         parameter = parameter.replace("www.", "");
         br.setFollowRedirects(false);
@@ -96,7 +100,9 @@ public class ChoMikujPl extends PluginForDecrypt {
 
         if (linkending != null) {
             String tempExt = null;
-            if (linkending.contains(".")) tempExt = linkending.substring(linkending.lastIndexOf("."));
+            if (linkending.contains(".")) {
+                tempExt = linkending.substring(linkending.lastIndexOf("."));
+            }
             final boolean isLinkendingWithoutID = (!linkending.contains(",") && tempExt != null && new Regex(tempExt, Pattern.compile(ENDINGS, Pattern.CASE_INSENSITIVE & Pattern.CANON_EQ)).matches());
             if (new Regex(linkending, Pattern.compile("\\d+\\.[A-Za-z0-9]{1,5}", Pattern.CASE_INSENSITIVE)).matches() || isLinkendingWithoutID) {
                 /**
@@ -117,7 +123,9 @@ public class ChoMikujPl extends PluginForDecrypt {
                         // first check if it is folder - i.e foldername with
                         // ENDINGS ("8 Cold fusion 2011 pl brrip x264")
                         String folderIdCheck = br.getRegex("type=\"hidden\" name=\"FolderId\" value=\"(\\d+)\"").getMatch(0);
-                        if (folderIdCheck == null) folderIdCheck = br.getRegex("name=\"folderId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
+                        if (folderIdCheck == null) {
+                            folderIdCheck = br.getRegex("name=\"folderId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
+                        }
                         // if it is not folder then report offline file
                         if (folderIdCheck == null) {
                             final DownloadLink dloffline = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
@@ -136,14 +144,18 @@ public class ChoMikujPl extends PluginForDecrypt {
                     final DownloadLink dl = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
                     final Regex info = new Regex(parameter, "/([^<>\"/]*?),(\\d+)(\\..+)$");
                     String filename = Encoding.htmlDecode(info.getMatch(0)) + info.getMatch(2);
-                    if (filename.equals("nullnull")) filename = parameter.substring(parameter.lastIndexOf("/") + 1);
+                    if (filename.equals("nullnull")) {
+                        filename = parameter.substring(parameter.lastIndexOf("/") + 1);
+                    }
                     String fileid = info.getMatch(1);
                     if (fileid == null) {
                         br.getPage(parameter);
                         fileid = br.getRegex("id=\"fileDetails_(\\d+)\"").getMatch(0);
                     }
                     String ext = null;
-                    if (filename.contains(".")) ext = filename.substring(filename.lastIndexOf("."));
+                    if (filename.contains(".")) {
+                        ext = filename.substring(filename.lastIndexOf("."));
+                    }
                     if (fileid == null) {
                         /* No ID --> We can't download anything --> Must be offline */
                         dl.setProperty("offline", true);
@@ -152,7 +164,9 @@ public class ChoMikujPl extends PluginForDecrypt {
                         dl.setProperty("fileid", fileid);
                     }
                     dl.setName(filename);
-                    if ((ext != null && ext.length() <= 5) && ext.matches(VIDEOENDINGS)) dl.setProperty("video", true);
+                    if ((ext != null && ext.length() <= 5) && ext.matches(VIDEOENDINGS)) {
+                        dl.setProperty("video", true);
+                    }
                     try {
                         distribute(dl);
                     } catch (final Throwable e) {
@@ -280,7 +294,9 @@ public class ChoMikujPl extends PluginForDecrypt {
             }
         }
         String folderID = br.getRegex("type=\"hidden\" name=\"FolderId\" value=\"(\\d+)\"").getMatch(0);
-        if (folderID == null) folderID = br.getRegex("name=\"FolderId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
+        if (folderID == null) {
+            folderID = br.getRegex("name=\"FolderId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
+        }
         REQUESTVERIFICATIONTOKEN = br.getRegex("<input name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"\\']+)\"").getMatch(0);
         if (REQUESTVERIFICATIONTOKEN == null) {
             logger.warning(ERROR + parameter);
@@ -369,7 +385,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                 }
 
                 for (int i = 0; i <= 3; i++) {
-                    FOLDERPASSWORD = param.getStringProperty("password");
+                    FOLDERPASSWORD = param.getDecrypterPassword();
 
                     if (FOLDERPASSWORD == null) {
                         FOLDERPASSWORD = this.getPluginConfig().getStringProperty("password");
@@ -379,17 +395,19 @@ public class ChoMikujPl extends PluginForDecrypt {
                         FOLDERPASSWORD = getUserInput(null, param);
                     }
                     // you should exit if they enter blank password!
-                    if (FOLDERPASSWORD == null || FOLDERPASSWORD.length() == 0) { return decryptedLinks; }
+                    if (FOLDERPASSWORD == null || FOLDERPASSWORD.length() == 0) {
+                        return decryptedLinks;
+                    }
                     pass.put("Password", FOLDERPASSWORD);
                     br.submitForm(pass);
                     if (br.containsHTML("\\{\"IsSuccess\":true")) {
-                        param.setProperty("password", FOLDERPASSWORD);
+                        param.setDecrypterPassword(FOLDERPASSWORD);
                         this.getPluginConfig().setProperty("password", FOLDERPASSWORD);
                         break;
                     } else {
                         // Maybe password was saved before but has changed in the meantime!
                         this.getPluginConfig().setProperty("password", Property.NULL);
-                        param.setProperty("password", Property.NULL);
+                        param.setDecrypterPassword(null);
                         continue;
                     }
                 }
@@ -412,7 +430,9 @@ public class ChoMikujPl extends PluginForDecrypt {
         if (pageCount == -1) {
             logger.warning("Error, couldn't successfully find the number of pages for link: " + parameter);
             return null;
-        } else if (pageCount == 0) pageCount = 1;
+        } else if (pageCount == 0) {
+            pageCount = 1;
+        }
 
         // More than one page? Every page goes back into the decrypter as a
         // single link!
@@ -468,7 +488,9 @@ public class ChoMikujPl extends PluginForDecrypt {
                     final Regex finfo = new Regex(entry, "<span class=\"bold\">(.*?)</span>(\\.[^<>\"/]*?)</a>");
                     String filename = finfo.getMatch(0);
                     /* This is usually only for filenames without ext */
-                    if (filename == null) filename = new Regex(entry, "data\\-title=\"([^<>\"]*?)\"").getMatch(0);
+                    if (filename == null) {
+                        filename = new Regex(entry, "data\\-title=\"([^<>\"]*?)\"").getMatch(0);
+                    }
                     final String fid = new Regex(entry, "rel=\"(\\d+)\"").getMatch(0);
                     String ext = finfo.getMatch(1);
                     if (filename == null || filesize == null || fid == null) {
@@ -560,7 +582,9 @@ public class ChoMikujPl extends PluginForDecrypt {
                                 if (fname.endsWith("...")) {
                                     final String tempname = fname.substring(0, fname.length() - 3);
                                     final String completeName = Encoding.htmlDecode(id[2].trim());
-                                    if (completeName.contains(tempname)) fname = completeName;
+                                    if (completeName.contains(tempname)) {
+                                        fname = completeName;
+                                    }
                                 } else {
                                     fname += Encoding.htmlDecode(id[REGEXSORT.get(1)].trim());
                                 }
@@ -573,7 +597,9 @@ public class ChoMikujPl extends PluginForDecrypt {
                             /**
                              * If the link is a video it needs other download handling
                              */
-                            if (id[REGEXSORT.get(1)].trim().matches(VIDEOENDINGS)) dl.setProperty("video", true);
+                            if (id[REGEXSORT.get(1)].trim().matches(VIDEOENDINGS)) {
+                                dl.setProperty("video", true);
+                            }
                         } else {
                             dl.setName(String.valueOf(new Random().nextInt(1000000)));
                         }
@@ -646,7 +672,9 @@ public class ChoMikujPl extends PluginForDecrypt {
         }
         final String pageCount = new Regex(result, ",(\\d+)$").getMatch(0);
         // Only 1 page
-        if (pageCount == null) return 1;
+        if (pageCount == null) {
+            return 1;
+        }
         return Integer.parseInt(pageCount);
     }
 

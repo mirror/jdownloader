@@ -34,7 +34,6 @@ import jd.captcha.JAntiCaptcha;
 import jd.captcha.gui.ScrollPaneWindow;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.Utilities;
-import jd.config.Property;
 import jd.nutils.Colors;
 
 import org.appwork.utils.logging2.LogSource;
@@ -42,11 +41,11 @@ import org.jdownloader.logging.LogController;
 
 /**
  * Diese Klasse behinhaltet alle wichtigen Methoden um das Image-Pixelgrid zu bearbeiten
- * 
+ *
  * @author JD-Team
  */
 
-public class PixelGrid extends Property {
+public class PixelGrid {
 
     private static final long serialVersionUID = 1L;
 
@@ -109,15 +108,18 @@ public class PixelGrid extends Property {
 
         int g = 0;
         double distBest = getM(xOL, xOR, yOL, yOR);
-        if (distBest == 0) distBest = 0.0001;
+        if (distBest == 0) {
+            distBest = 0.0001;
+        }
         double dist = getM(xUL, xUR, yUL, yUR);
         double distWBest = distBest / ((xOR - xOL + 1) / 4);
         double distW;
         boolean skipw = (xOR - xOL) < (getWidth() / 3) || yOL > getHeight() / 3 || yOR > getHeight() / 3;
-        if (dist == 0)
+        if (dist == 0) {
             distW = distBest / ((xUR - xUL + 1) / 4);
-        else
+        } else {
             distW = dist / ((xUR - xUL + 1) / 4);
+        }
         if (skipw || Math.abs(distW) < Math.abs(distWBest)) {
             distWBest = distW;
             distBest = dist;
@@ -130,11 +132,12 @@ public class PixelGrid extends Property {
 
         int turn = 60;
         // if(Math.abs( Math.round(distBest * turn))>6)
-        if (g > 1)
+        if (g > 1) {
             this.grid = turn((distBest * turn)).grid;
-        else
+        } else {
             this.grid = turn((-distBest * turn)).grid;
-        // if(Math.abs( Math.round(distBest * turn))>6)
+            // if(Math.abs( Math.round(distBest * turn))>6)
+        }
 
         // BasicWindow.showImage(getImage().getScaledInstance(getWidth() * 10,
         // getHeight() * 10, 1), "Turned:" + Math.round(distBest * turn) + " G:"
@@ -201,15 +204,18 @@ public class PixelGrid extends Property {
 
         int g = 0;
         double distBest = getM(xOL, xOR, yOL, yOR);
-        if (distBest == 0) distBest = 0.0001;
+        if (distBest == 0) {
+            distBest = 0.0001;
+        }
         double dist = getM(xUL, xUR, yUL, yUR);
         double distWBest = distBest / ((xOR - xOL + 1) / 4);
         double distW;
         boolean skipw = (xOR - xOL) < (getWidth() / 3) || yOL > getHeight() / 3 || yOR > getHeight() / 3;
-        if (dist == 0)
+        if (dist == 0) {
             distW = distBest / ((xUR - xUL + 1) / 4);
-        else
+        } else {
             distW = dist / ((xUR - xUL + 1) / 4);
+        }
         if (skipw || Math.abs(distW) < Math.abs(distWBest)) {
             distWBest = distW;
             distBest = dist;
@@ -219,10 +225,11 @@ public class PixelGrid extends Property {
         skipw = (xUR - xUL) < (getHeight() / 3) || yUL < (getHeight() * 2 / 3) || yUR < (getHeight() * 2 / 3);
 
         dist = getM(yOL, yUL, xOL, xUL);
-        if (dist == 0)
+        if (dist == 0) {
             distW = distBest / ((yUL - yOL + 1) / 4);
-        else
+        } else {
             distW = dist / ((yUL - yOL + 1) / 4);
+        }
         if (skipw || Math.abs(distW) < Math.abs(distWBest)) {
             distWBest = distW;
             distBest = dist;
@@ -231,10 +238,11 @@ public class PixelGrid extends Property {
         skipw = (yUL - yOL) < (getHeight() / 4) || xUL > (getWidth() / 3) || xOL > (getWidth() / 3);
 
         dist = getM(yOR, yUR, xOR, xUR);
-        if (dist == 0)
+        if (dist == 0) {
             distW = distBest / ((yUR - yOR + 1) / 4);
-        else
+        } else {
             distW = dist / ((yUR - yOR + 1) / 4);
+        }
 
         if (skipw || Math.abs(distW) < Math.abs(distWBest)) {
             skipw = (yUR - yOR) < (getHeight() / 4) || xUR > (getHeight() * 2 / 3) || xOR > (getWidth() * 2 / 3);
@@ -249,11 +257,12 @@ public class PixelGrid extends Property {
 
         int turn = 60;
         // if(Math.abs( Math.round(distBest * turn))>6)
-        if (g > 1)
+        if (g > 1) {
             this.grid = turn((distBest * turn)).grid;
-        else
+        } else {
             this.grid = turn((-distBest * turn)).grid;
-        // if(Math.abs( Math.round(distBest * turn))>6)
+            // if(Math.abs( Math.round(distBest * turn))>6)
+        }
 
         // BasicWindow.showImage(getImage().getScaledInstance(getWidth() * 10,
         // getHeight() * 10, 1), "Turned:" + Math.round(distBest * turn) + " G:"
@@ -262,14 +271,16 @@ public class PixelGrid extends Property {
     }
 
     /**
-     * Dreht das PixelGrid um angle. Dabei wird breite und höhe angepasst. Das drehen dauert länger als über PixelObject, leidet dafür deutlich weniger unter
-     * Pixelfehlern
-     * 
+     * Dreht das PixelGrid um angle. Dabei wird breite und höhe angepasst. Das drehen dauert länger als über PixelObject, leidet dafür
+     * deutlich weniger unter Pixelfehlern
+     *
      * @param angle
      * @return new letter
      */
     public PixelGrid turn(double angle) {
-        if (angle == 0.0) return this;
+        if (angle == 0.0) {
+            return this;
+        }
         while (angle < 0) {
             angle += 360;
         }
@@ -358,7 +369,9 @@ public class PixelGrid extends Property {
             rightLines++;
         }
         // JDUtilities.getLogger().info("right "+rightLines);
-        if (leftLines >= width || width - rightLines > width) { return new int[] { 0, 0 }; }
+        if (leftLines >= width || width - rightLines > width) {
+            return new int[] { 0, 0 };
+        }
 
         line: for (int y = 0; y < height; y++) {
 
@@ -386,14 +399,18 @@ public class PixelGrid extends Property {
         }
         // JDUtilities.getLogger().info("top "+topLines);
         // JDUtilities.getLogger().info("bottom "+bottomLines);
-        if (width - leftLines - rightLines < 0 || height - topLines - bottomLines < 0) { return new int[] { 0, 0 }; }
+        if (width - leftLines - rightLines < 0 || height - topLines - bottomLines < 0) {
+            return new int[] { 0, 0 };
+        }
         return new int[] { width - leftLines - rightLines, height - topLines - bottomLines };
 
     }
 
     /** Why not simple return grid.clone(); ? */
     public static int[][] getGridCopy(int[][] grid) {
-        if (grid.length == 0) return null;
+        if (grid.length == 0) {
+            return null;
+        }
         int[][] ret = new int[grid.length][grid[0].length];
         for (int x = 0; x < grid.length; x++) {
             for (int y = 0; y < grid[0].length; y++) {
@@ -405,7 +422,9 @@ public class PixelGrid extends Property {
     }
 
     public static int getGridHeight(int[][] grid) {
-        if (grid.length == 0) return 0;
+        if (grid.length == 0) {
+            return 0;
+        }
         return grid[0].length;
     }
 
@@ -429,8 +448,12 @@ public class PixelGrid extends Property {
      * @return Pixelwert bei x,y
      */
     public static int getPixelValue(int x, int y, int[][] grid) {
-        if (x < 0 || x >= grid.length) return -1;
-        if (y < 0 || grid.length == 0 || y >= grid[0].length) return -1;
+        if (x < 0 || x >= grid.length) {
+            return -1;
+        }
+        if (y < 0 || grid.length == 0 || y >= grid[0].length) {
+            return -1;
+        }
 
         return grid[x][y];
     }
@@ -459,7 +482,7 @@ public class PixelGrid extends Property {
 
     /**
      * Static setPixelValue Funktion
-     * 
+     *
      * @param x
      * @param y
      * @param localGrid
@@ -497,7 +520,7 @@ public class PixelGrid extends Property {
 
     /**
      * Konstruktor
-     * 
+     *
      * @param width
      *            Breite des Bildes in pixel
      * @param height
@@ -510,7 +533,7 @@ public class PixelGrid extends Property {
 
     /**
      * Lässt das Bild verschwimmen
-     * 
+     *
      * @param faktor
      *            Stärke des Effekts
      */
@@ -532,7 +555,7 @@ public class PixelGrid extends Property {
 
     /**
      * Entfernt von allen 4 Seiten die Zeilen und Reihen bis nur noch der content übrig ist
-     * 
+     *
      * @return true/False
      */
     public boolean clean() {
@@ -630,7 +653,7 @@ public class PixelGrid extends Property {
 
     /**
      * enbtfernt eine farbe... die tolleranz gibt die farbdistanz an die njoch entfernt wird
-     * 
+     *
      * @param i
      *            vergleichsfarbe
      * @param d
@@ -650,7 +673,7 @@ public class PixelGrid extends Property {
 
     /**
      * Entfernt Alle Pixel die über getBackgroundSampleCleanContrast an avg liegen
-     * 
+     *
      * @param avg
      */
     public void cleanBackgroundByColor(int avg) {
@@ -666,7 +689,7 @@ public class PixelGrid extends Property {
 
     /**
      * Nimmt an der angegebenen Positiond en farbwert auf und entfernt desen aus dem ganzen Bild
-     * 
+     *
      * @param px
      * @param py
      * @param width
@@ -679,7 +702,7 @@ public class PixelGrid extends Property {
 
     /**
      * Färbt ein objekt im zugehörigem Captcha ein
-     * 
+     *
      * @param object
      * @param color
      *            Farbe
@@ -692,7 +715,7 @@ public class PixelGrid extends Property {
 
     /**
      * factory Funktion um einen Letter zu erstellen
-     * 
+     *
      * @return Neuer letter
      */
     public Letter createLetter() {
@@ -703,7 +726,7 @@ public class PixelGrid extends Property {
 
     /**
      * Schneidet das grid zurecht
-     * 
+     *
      * @param leftPadding
      * @param topPadding
      * @param rightPadding
@@ -750,7 +773,7 @@ public class PixelGrid extends Property {
 
     /**
      * Die Wellenlänge omega kann aus dem captcha ausgemessen werden. Formel: 2*PI/geschätzte Wellenlänge in Pixeln
-     * 
+     *
      * @param max
      * @param omega
      * @param phi
@@ -778,7 +801,7 @@ public class PixelGrid extends Property {
 
     /**
      * Gibt den Durchschnittlichen pixelwert des Bildes zurück
-     * 
+     *
      * @return int
      */
     public int getAverage() {
@@ -798,7 +821,9 @@ public class PixelGrid extends Property {
 
             }
         }
-        if (i == 0) { return 0; }
+        if (i == 0) {
+            return 0;
+        }
         avg[0] /= i;
         avg[1] /= i;
         avg[2] /= i;
@@ -808,7 +833,7 @@ public class PixelGrid extends Property {
 
     /**
      * Gibt den Durschnittlichen Pixelwert im angegebenen raum zurück
-     * 
+     *
      * @param px
      *            Position x
      * @param py
@@ -850,9 +875,9 @@ public class PixelGrid extends Property {
     }
 
     /**
-     * Gibt den Durschnittlichen Pixelwert im angegebenen raum zurück. Allerdings wird hier im Vergleich zu getAverage(int px,int py,int width,int height) der
-     * Punkt slebet nicht mitberechnet
-     * 
+     * Gibt den Durschnittlichen Pixelwert im angegebenen raum zurück. Allerdings wird hier im Vergleich zu getAverage(int px,int py,int
+     * width,int height) der Punkt slebet nicht mitberechnet
+     *
      * @param px
      *            Position x
      * @param py
@@ -1116,7 +1141,7 @@ public class PixelGrid extends Property {
     }
 
     /**
-     * 
+     *
      * @return Kopie des Internen Grids
      */
     public int[][] getGridCopy() {
@@ -1132,17 +1157,19 @@ public class PixelGrid extends Property {
 
     /**
      * Gibt die Höhe des internen captchagrids zurück
-     * 
+     *
      * @return Höhe
      */
     public int getHeight() {
-        if (grid.length == 0) return 0;
+        if (grid.length == 0) {
+            return 0;
+        }
         return grid[0].length;
     }
 
     /**
      * Gibt das Pixelgrid als Image zurück
-     * 
+     *
      * @return Image
      */
     public BufferedImage getImage() {
@@ -1168,7 +1195,7 @@ public class PixelGrid extends Property {
 
     /**
      * Gibt das Pixelgrid als vergrößertes Image zurück
-     * 
+     *
      * @param faktor
      *            Vergrößerung
      * @return Neues Bild
@@ -1201,7 +1228,7 @@ public class PixelGrid extends Property {
 
     /**
      * Sollte je nach farbmodell den Höchsten pixelwert zurückgeben. RGB: 0xffffff
-     * 
+     *
      * @return Pixelwert je nach Farbbereich
      */
     public int getMaxPixelValue() {
@@ -1210,7 +1237,7 @@ public class PixelGrid extends Property {
 
     /**
      * Gibt den maxpixelvalue mit faktor gewichtet zurück
-     * 
+     *
      * @param faktor
      * @return maxpixelvalue
      */
@@ -1219,9 +1246,9 @@ public class PixelGrid extends Property {
     }
 
     /**
-     * Erstellt das Objekt, ausgehend von einem Pixel. rekursive Funktion! Diese rekusrive Funktion kann bei zu großen Objekten zu einem Stackoverflow führen.
-     * Man sollte sie mal umschreiben!
-     * 
+     * Erstellt das Objekt, ausgehend von einem Pixel. rekursive Funktion! Diese rekusrive Funktion kann bei zu großen Objekten zu einem
+     * Stackoverflow führen. Man sollte sie mal umschreiben!
+     *
      * @param x
      * @param y
      * @param tmpGrid
@@ -1229,7 +1256,9 @@ public class PixelGrid extends Property {
      */
     private void getObject(int x, int y, int[][] tmpGrid, PixelObject object) {
 
-        if (x < 0 || y < 0 || tmpGrid.length <= x || tmpGrid[0].length <= y || tmpGrid[x][y] < 0) { return; }
+        if (x < 0 || y < 0 || tmpGrid.length <= x || tmpGrid[0].length <= y || tmpGrid[x][y] < 0) {
+            return;
+        }
         int localValue = PixelGrid.getPixelValue(x, y, tmpGrid);
         // Utilities.trace(x+"/"+y);
         try {
@@ -1266,7 +1295,7 @@ public class PixelGrid extends Property {
 
     /**
      * Ermittelt alle Objekte im Captcha
-     * 
+     *
      * @param contrast
      * @param objectContrast
      * @return Gibt alle Gefundenen Elemente zurück
@@ -1407,7 +1436,7 @@ public class PixelGrid extends Property {
 
     /**
      * Gibt ein Pixelarray des internen Grids zurück
-     * 
+     *
      * @return Pixelarray
      */
     public int[] getPixel() {
@@ -1424,7 +1453,7 @@ public class PixelGrid extends Property {
 
     /**
      * Gibt den Pixelwert an der stelle x,y zurück.
-     * 
+     *
      * @param x
      * @param y
      * @return Pixelwert bei x,y
@@ -1434,7 +1463,7 @@ public class PixelGrid extends Property {
     }
 
     /**
-     * 
+     *
      * @return Gibt einen ASCII String des Bildes zurück
      */
     public String getString() {
@@ -1443,10 +1472,11 @@ public class PixelGrid extends Property {
 
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
-                if (isElement(getPixelValue(x, y), avg))
+                if (isElement(getPixelValue(x, y), avg)) {
                     ret.append('*');
-                else
+                } else {
                     ret.append((int) Math.floor(9 * (getPixelValue(x, y) / getMaxPixelValue())));
+                }
 
             }
             ret.append(new char[] { '\r', '\n' });
@@ -1458,7 +1488,7 @@ public class PixelGrid extends Property {
 
     /**
      * Gibt die Breite des internen captchagrids zurück
-     * 
+     *
      * @return breite
      */
     public int getWidth() {
@@ -1483,7 +1513,7 @@ public class PixelGrid extends Property {
 
     /**
      * Kontrasterkennung. Prüft ob der wert über einer Schwelle ist
-     * 
+     *
      * @param value
      * @param avg
      *            vergleichswet (meistens durchschnitsswert)
@@ -1503,7 +1533,7 @@ public class PixelGrid extends Property {
 
     /**
      * Normalisiert Pixel und Multipliziert deren wert mit multi. Der Kontrast wird dabei künstlich erhöht bzw erniedrigt.
-     * 
+     *
      * @param multi
      */
     public void normalize(double multi) {
@@ -1512,7 +1542,7 @@ public class PixelGrid extends Property {
 
     /**
      * Normalisiert den Bereich zwischen cutMin und CutMax
-     * 
+     *
      * @param multi
      * @param cutMax
      * @param cutMin
@@ -1576,7 +1606,7 @@ public class PixelGrid extends Property {
 
     /**
      * Entfernt Schwarze Störungen
-     * 
+     *
      * @param faktor
      *            Stärke
      */
@@ -1586,7 +1616,7 @@ public class PixelGrid extends Property {
 
     /**
      * Entfernt schwarze Störungen
-     * 
+     *
      * @param faktor
      *            prüfradius
      * @param contrast
@@ -1616,7 +1646,7 @@ public class PixelGrid extends Property {
 
     /**
      * Entfernt weißes Rauschen
-     * 
+     *
      * @param faktor
      *            Stärke des Effekts
      */
@@ -1626,7 +1656,7 @@ public class PixelGrid extends Property {
 
     /**
      * Entfernt weißes Rauschen
-     * 
+     *
      * @param faktor
      *            Prüfradius
      * @param contrast
@@ -1653,7 +1683,7 @@ public class PixelGrid extends Property {
 
     /**
      * entfernt moegliche bruecken die zwischen zwei buchstaben sind
-     * 
+     *
      * @param pixels
      *            Wieviele Pixel Um das Objekt liegen dürfen
      * @param middel
@@ -1707,7 +1737,7 @@ public class PixelGrid extends Property {
 
     /**
      * Entfernt ein Objekt aus dem Captcha (färbt es weiß ein)
-     * 
+     *
      * @param object
      */
     public void removeObjectFromGrid(PixelObject object) {
@@ -1717,7 +1747,7 @@ public class PixelGrid extends Property {
 
     /**
      * Entfernt kleine Objekte aus dem Bild
-     * 
+     *
      * @param contrast
      * @param objectContrast
      */
@@ -1786,7 +1816,7 @@ public class PixelGrid extends Property {
 
     /**
      * Macht das Bild gröber
-     * 
+     *
      * @param faktor
      *            Grobheit
      */
@@ -1831,7 +1861,7 @@ public class PixelGrid extends Property {
 
     /**
      * Speichert das Bild asl JPG ab
-     * 
+     *
      * @param file
      *            Zielpfad
      */
@@ -1856,7 +1886,7 @@ public class PixelGrid extends Property {
 
     /**
      * Setzt das interne Pixelgrid
-     * 
+     *
      * @param letterGrid
      *            int[][]
      */
@@ -1898,7 +1928,7 @@ public class PixelGrid extends Property {
 
     /**
      * Nimmt ein int-array auf und wandelt es in das interne Grid um
-     * 
+     *
      * @param pixel
      *            Pixel Array
      */
@@ -1913,8 +1943,9 @@ public class PixelGrid extends Property {
     }
 
     /**
-     * Setzt den pixel value bei x,y. Umrechnungen werden dabei gemacht. deshalb kann nicht auf grid direkt zugegriffen werden. Grid beinhaltet roh daten
-     * 
+     * Setzt den pixel value bei x,y. Umrechnungen werden dabei gemacht. deshalb kann nicht auf grid direkt zugegriffen werden. Grid
+     * beinhaltet roh daten
+     *
      * @param x
      * @param y
      * @param value
@@ -1925,7 +1956,7 @@ public class PixelGrid extends Property {
 
     /**
      * TestFUnktion um farbräume zu testen. Das Bild sollte keine ändeungen haben wenn alles stimmt
-     * 
+     *
      */
     public void testColor() {
         for (int x = 0; x < getWidth(); x++) {
@@ -1945,7 +1976,7 @@ public class PixelGrid extends Property {
 
     /**
      * Erzeugt ein schwarzweiß bild
-     * 
+     *
      * @param contrast
      *            Schwellwert für die Kontrasterkennung
      */

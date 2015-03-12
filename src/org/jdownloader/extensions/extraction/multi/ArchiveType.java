@@ -162,6 +162,22 @@ public enum ArchiveType {
             return 1;
         }
 
+        private final int multiPartThreshold = 90;
+
+        @Override
+        protected boolean looksLikeAnArchive(BitSet bitset) {
+            int setCount = 0;
+            for (int index = 0; index < bitset.length(); index++) {
+                if (bitset.get(index)) {
+                    setCount++;
+                }
+            }
+            /**
+             * for this type we need at least multiPartThreshold available parts
+             */
+            return (setCount * 100) / bitset.length() > multiPartThreshold;
+        }
+
         @Override
         protected String buildMissingPart(String[] matches, int partIndex, int partStringLength) {
             return matches[0] + "." + String.format(Locale.US, "%0" + partStringLength + "d", partIndex) + ".rar";
@@ -245,6 +261,20 @@ public enum ArchiveType {
         @Override
         protected int getMinimumNeededPartIndex() {
             return 0;
+        }
+
+        @Override
+        protected boolean looksLikeAnArchive(BitSet bitset) {
+            int setCount = 0;
+            for (int index = 0; index < bitset.length(); index++) {
+                if (bitset.get(index)) {
+                    setCount++;
+                }
+            }
+            /**
+             * for this type we need at least 2 parts or a nonstart part
+             */
+            return setCount > 1 || bitset.length() > 1;
         }
 
         @Override
@@ -1347,7 +1377,7 @@ public enum ArchiveType {
                     archive.setFirstArchiveFile(firstArchiveFile);
                     return archive;
                 } else {
-                    return null;
+                    continue archiveTypeLoop;
                 }
             }
         }

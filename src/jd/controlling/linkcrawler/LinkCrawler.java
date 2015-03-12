@@ -1481,13 +1481,6 @@ public class LinkCrawler {
                 if (pw == null) {
                     pw = sourceCryptedLink.getDecrypterPassword();
                 }
-                /*
-                 * source contains CryptedLink, so lets forward important infos
-                 */
-                final Map<String, Object> props = sourceCryptedLink.getProperties();
-                if (props != null && !props.isEmpty()) {
-                    destCryptedLink.setProperties(props);
-                }
             }
             if (pw == null && LinkCrawler.this instanceof JobLinkCrawler && ((JobLinkCrawler) LinkCrawler.this).getJob() != null) {
                 pw = ((JobLinkCrawler) LinkCrawler.this).getJob().getCrawlerPassword();
