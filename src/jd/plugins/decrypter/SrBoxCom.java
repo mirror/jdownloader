@@ -74,7 +74,7 @@ public class SrBoxCom extends PluginForDecrypt {
         String[] TabImage2 = br.getRegex("<img src=\"(http://[\\w\\.]*?lectro\\.ws)/*?/uploads/posts/(.*?)\"").getColumn(1);
         String[] TabImage1 = null;
         if (TabImage2.length == 0) {
-            TabImage1 = br.getRegex("<img src=\"(http://[\\w\\.]*?israbox\\.org)*?/uploads(.*?)\"").getColumn(1);
+            TabImage1 = br.getRegex("<img src=\"(http://[\\w\\.]*?israbox\\.(com|net|org))*?/uploads(.*?)\"").getColumn(2);
         }
 
         // Creation of the array of link that is supported by all plug-in
