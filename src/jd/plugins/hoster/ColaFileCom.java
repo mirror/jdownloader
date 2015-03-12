@@ -97,7 +97,6 @@ public class ColaFileCom extends PluginForHost {
             if (uid == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.postPage("http://www.colafile.com/ajax.php", "action=file_views&file_id=" + fid + "&uid=" + uid + "&ref=");
             br.getPage("http://www.colafile.com/ajax.php?action=check_down&file_id=" + fid + "&_=" + System.currentTimeMillis());
             if (br.containsHTML("down_disabled\\(\\);")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
@@ -106,10 +105,6 @@ public class ColaFileCom extends PluginForHost {
             dllink = br.getRegex("downloadFile\\(\"(http[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            try {
-                br.postPage("http://www.colafile.com/ajax.php", "action=down_process&file_id=" + fid + "&antiads=0&t=0." + System.currentTimeMillis());
-            } catch (final Throwable e) {
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
