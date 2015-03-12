@@ -65,6 +65,7 @@ public class Grab8Com extends PluginForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap             = new HashMap<Account, HashMap<String, Long>>();
     private Account                                        currAcc                        = null;
     private DownloadLink                                   currDownloadLink               = null;
+    private String                                         currTransloadPage              = null;
     private static Object                                  LOCK                           = new Object();
 
     public Grab8Com(PluginWrapper wrapper) {
@@ -143,14 +144,14 @@ public class Grab8Com extends PluginForHost {
         if (dllink == null) {
             br.setFollowRedirects(true);
             br.getPage("http://grab8.com/member/index.php");
-            final String premiumPage = br.getRegex("<b>Your Premium Page is at: </b><a href=(?:\\'|\")(http://[a-z0-9\\-\\.]+\\.grab8\\.com[^<>\"]*?)(?:\\'|\")").getMatch(0);
-            if (premiumPage == null) {
+            currTransloadPage = br.getRegex("<b>Your Premium Page is at: </b><a href=(?:\\'|\")(http://[a-z0-9\\-\\.]+\\.grab8\\.com[^<>\"]*?)(?:\\'|\")").getMatch(0);
+            if (currTransloadPage == null) {
                 logger.warning("Transloadpage is null");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* Save this for later usage! */
-            link.setProperty("premiumPage", premiumPage);
-            br.getPage(premiumPage);
+            link.setProperty("premiumPage", currTransloadPage);
+            br.getPage(currTransloadPage);
             dllink = br.getBaseURL();
             br.setFollowRedirects(true);
             this.postAPISafe(br.getBaseURL() + "index.php", "referer=&yt_fmt=highest&tor_user=&tor_pass=&mu_cookie=&cookie=&email=&method=tc&partSize=10&proxy=&proxyuser=&proxypass=&premium_acc=on&premium_user=&premium_pass=&path=%2Fhome%2Fgrab8%2Fpublic_html%2F2%2Ffiles&link=" + Encoding.urlEncode(link.getDownloadURL()));
@@ -201,7 +202,7 @@ public class Grab8Com extends PluginForHost {
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
         final String transferID = link.getStringProperty("transferID", null);
         final boolean deleteAfterDownload = this.getPluginConfig().getBooleanProperty(CLEAR_DOWNLOAD_HISTORY, false);
-        final String premiumPage = link.getStringProperty("premiumPage", default_premium_page);
+        currTransloadPage = link.getStringProperty("premiumPage", default_premium_page);
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
         /* First set hardcoded limit */
@@ -234,19 +235,7 @@ public class Grab8Com extends PluginForHost {
             try {
                 if (this.dl.startDownload()) {
                     if (transferID != null && deleteAfterDownload) {
-                        boolean success = false;
-                        try {
-                            /* We can skip this first step and directly confirm that we want to delete that file. */
-                            // br.postPage(premiumPage, "act=delete&files%5B%5D=" + transferID);
-                            br.postPage(premiumPage, "act=delete_go&files%5B%5D=" + transferID + "&yes=Yes");
-                            success = true;
-                        } catch (final Throwable e) {
-                        }
-                        if (success) {
-                            logger.info("Successfully deleted file from server");
-                        } else {
-                            logger.warning("Failed to delete file from server");
-                        }
+                        deleteFileFromServer(transferID);
                     }
                 } else {
                     try {
@@ -275,6 +264,23 @@ public class Grab8Com extends PluginForHost {
             link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
             throw e;
         }
+    }
+
+    private boolean deleteFileFromServer(final String transferID) {
+        boolean success = false;
+        try {
+            /* We can skip this first step and directly confirm that we want to delete that file. */
+            // br.postPage(premiumPage, "act=delete&files%5B%5D=" + transferID);
+            br.postPage(currTransloadPage, "act=delete_go&files%5B%5D=" + transferID + "&yes=Yes");
+            success = true;
+        } catch (final Throwable e) {
+        }
+        if (success) {
+            logger.info("Successfully deleted file from server");
+        } else {
+            logger.warning("Failed to delete file from server");
+        }
+        return success;
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
