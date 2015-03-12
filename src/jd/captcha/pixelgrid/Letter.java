@@ -463,12 +463,12 @@ public class Letter extends PixelGrid {
 
     /*
      * private int[] getPartnerPixel(int x, int y, Vector<int[]> border) {
-     *
+     * 
      * int radius = 1; boolean[][] badgrid = new boolean[this.getWidth()][this.getHeight()]; badgrid[x][y] = true; double dir =
      * getBorderDir(x, y);
-     *
+     * 
      * return null; }
-     *
+     * 
      * private double getBorderDir(int x, int y) { int count = 0; double angle = 0; int[][] angleMap = new int[3][3]; angleMap[2][1] = 0;
      * angleMap[2][0] = 45; angleMap[1][0] = 90; angleMap[0][0] = 135; angleMap[0][1] = 180; angleMap[0][2] = 225; angleMap[1][2] = 270;
      * angleMap[2][2] = 315; angleMap[1][1] = -1; for (int xx = -1; xx < 2; xx++) { for (int yy = -1; yy < 2; yy++) { try { // ((x + xx < 0
@@ -998,7 +998,6 @@ public class Letter extends PixelGrid {
         l.id = this.id;
         l.setDecodedValue(getDecodedValue());
         l.setAngle((int) (angle * 180.0));
-        l.setProperties(getProperties());
         // BasicWindow.showImage(l.getImage(), sizeAngle+" angle "+angle+" -
         // "+newWidth+"/"+newHeight+" - "+getWidth()+"/"+getHeight());
 

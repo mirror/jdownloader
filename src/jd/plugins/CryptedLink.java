@@ -16,14 +16,13 @@
 
 package jd.plugins;
 
-import jd.config.Property;
 
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Crypted Link festgehalten.
- * 
+ *
  * @author jiaz
  */
-public class CryptedLink extends Property {
+public class CryptedLink {
     private static final long serialVersionUID = 6493927031856751251L;
 
     /**

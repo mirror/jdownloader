@@ -445,10 +445,6 @@ public abstract class PluginForDecrypt extends Plugin {
         if (Thread.currentThread() instanceof SingleDownloadController) {
             logger.severe("PluginForDecrypt.getCaptchaCode inside SingleDownloadController!?");
         }
-        String orgCaptchaImage = link.getStringProperty("orgCaptchaFile", null);
-        if (orgCaptchaImage != null && new File(orgCaptchaImage).exists()) {
-            file = new File(orgCaptchaImage);
-        }
         File copy = Application.getResource("captchas/" + method + "/" + Hash.getMD5(file) + "." + Files.getExtension(file.getName()));
         copy.deleteOnExit();
         copy.getParentFile().mkdirs();
