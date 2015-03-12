@@ -122,6 +122,10 @@ public class RemixShareCom extends PluginForHost {
             fun = br.getRegex("document\\.getElementById\\('[\\w\\-]+'\\)\\.href\\s*(=\\s*\"http[^\r\n]+)").getMatch(0);
         }
         if (fun == null) {
+            fun = br.getRegex("<a[^>]*href=\"(https?://(?:\\w+\\.)?remixshare\\.com/(?:[^/]+/){4,}\\d+)\"[^>]+title=\"DOWNLOAD\"").getMatch(0);
+            if (fun != null) {
+                return fun;
+            }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in 15 minutes", 15 * 60 * 1000l);
         }
         fun = "var url" + fun;
@@ -203,7 +207,7 @@ public class RemixShareCom extends PluginForHost {
         if (lnk == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!lnk.startsWith("http://")) {
+        if (!lnk.startsWith("http://") || !lnk.startsWith("https://")) {
             lnk = new Regex(lnk, "<a href=\"(http://.*?)\"").getMatch(0);
         }
         br.getPage(lnk);
