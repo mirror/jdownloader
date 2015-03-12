@@ -28,11 +28,9 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
 import jd.config.Property;
@@ -48,7 +46,6 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
-import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
@@ -93,117 +90,113 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
     }
 
-    private static final String                                 PROPERTY_MD5                        = "MD5";
-    private static final String                                 PROPERTY_MIRRORID                   = "MID";
-    private static final String                                 PROPERTY_SHA1                       = "SHA1";
-    private static final String                                 PROPERTY_PASS                       = "pass";
-    private static final String                                 PROPERTY_FINALFILENAME              = "FINAL_FILENAME";
-    private static final String                                 PROPERTY_FORCEDFILENAME             = "FORCED_FILENAME";
-    private static final String                                 PROPERTY_COMMENT                    = "COMMENT";
-    private static final String                                 PROPERTY_PRIORITY                   = "PRIORITY2";
-    private static final String                                 PROPERTY_FINISHTIME                 = "FINISHTIME";
-    private static final String                                 PROPERTY_ENABLED                    = "ENABLED";
-    private static final String                                 PROPERTY_PWLIST                     = "PWLIST";
-    private static final String                                 PROPERTY_LINKDUPEID                 = "LINKDUPEID";
-    private static final String                                 PROPERTY_SPEEDLIMIT                 = "SPEEDLIMIT";
-    private static final String                                 PROPERTY_VERIFIEDFILESIZE           = "VERIFIEDFILESIZE";
-    public static final String                                  PROPERTY_RESUMEABLE                 = "PROPERTY_RESUMEABLE";
-    public static final String                                  PROPERTY_CUSTOM_LOCALFILENAME       = "CUSTOM_LOCALFILENAME";
-    public static final String                                  PROPERTY_CUSTOM_LOCALFILENAMEAPPEND = "CUSTOM_LOCALFILENAMEAPPEND";                    ;
-    public static final String                                  PROPERTY_DOWNLOADTIME               = "DOWNLOADTIME";
-    public static final String                                  PROPERTY_ARCHIVE_ID                 = "ARCHIVE_ID";
-    public static final String                                  PROPERTY_EXTRACTION_STATUS          = "EXTRACTION_STATUS";
-    public static final String                                  PROPERTY_CUSTOM_MESSAGE             = "CUSTOM_MESSAGE";
+    private static final String                         PROPERTY_MD5                        = "MD5";
+    private static final String                         PROPERTY_MIRRORID                   = "MID";
+    private static final String                         PROPERTY_SHA1                       = "SHA1";
+    private static final String                         PROPERTY_PASS                       = "pass";
+    private static final String                         PROPERTY_FINALFILENAME              = "FINAL_FILENAME";
+    private static final String                         PROPERTY_FORCEDFILENAME             = "FORCED_FILENAME";
+    private static final String                         PROPERTY_COMMENT                    = "COMMENT";
+    private static final String                         PROPERTY_PRIORITY                   = "PRIORITY2";
+    private static final String                         PROPERTY_FINISHTIME                 = "FINISHTIME";
+    private static final String                         PROPERTY_PWLIST                     = "PWLIST";
+    private static final String                         PROPERTY_LINKDUPEID                 = "LINKDUPEID";
+    private static final String                         PROPERTY_SPEEDLIMIT                 = "SPEEDLIMIT";
+    private static final String                         PROPERTY_VERIFIEDFILESIZE           = "VERIFIEDFILESIZE";
+    public static final String                          PROPERTY_RESUMEABLE                 = "PROPERTY_RESUMEABLE";
+    public static final String                          PROPERTY_CUSTOM_LOCALFILENAME       = "CUSTOM_LOCALFILENAME";
+    public static final String                          PROPERTY_CUSTOM_LOCALFILENAMEAPPEND = "CUSTOM_LOCALFILENAMEAPPEND"; ;
+    public static final String                          PROPERTY_DOWNLOADTIME               = "DOWNLOADTIME";
+    public static final String                          PROPERTY_ARCHIVE_ID                 = "ARCHIVE_ID";
+    public static final String                          PROPERTY_EXTRACTION_STATUS          = "EXTRACTION_STATUS";
+    public static final String                          PROPERTY_CUSTOM_MESSAGE             = "CUSTOM_MESSAGE";
 
-    private static final long                                   serialVersionUID                    = 1981079856214268373L;
+    private static final long                           serialVersionUID                    = 1981079856214268373L;
 
-    private static final String                                 UNKNOWN_FILE_NAME                   = "unknownFileName";
-    private static final String                                 PROPERTY_CHUNKS                     = "CHUNKS";
-    private static final String                                 URL_ORIGIN                          = "URL_ORIGIN";
-    private static final String                                 URL_REFERRER                        = "URL_REFERRER";
-    private static final String                                 URL_CONTAINER                       = "URL_CONTAINER";
-    private static final String                                 URL_CONTENT                         = "URL_CONTENT";
-    private static final String                                 URL_CUSTOM                          = "URL_CUSTOM";
-    private static final String                                 VARIANT_SUPPORT                     = "VARIANT_SUPPORT";
+    private static final String                         UNKNOWN_FILE_NAME                   = "unknownFileName";
+    private static final String                         PROPERTY_CHUNKS                     = "CHUNKS";
+    private static final String                         URL_ORIGIN                          = "URL_ORIGIN";
+    private static final String                         URL_REFERRER                        = "URL_REFERRER";
+    private static final String                         URL_CONTAINER                       = "URL_CONTAINER";
+    private static final String                         URL_CONTENT                         = "URL_CONTENT";
+    private static final String                         URL_CUSTOM                          = "URL_CUSTOM";
+    private static final String                         VARIANT_SUPPORT                     = "VARIANT_SUPPORT";
 
-    private transient volatile AvailableStatus                  availableStatus                     = AvailableStatus.UNCHECKED;
+    private transient volatile AvailableStatus          availableStatus                     = AvailableStatus.UNCHECKED;
 
     @Deprecated
-    private long[]                                              chunksProgress                      = null;
+    private long[]                                      chunksProgress                      = null;
 
     /** Aktuell heruntergeladene Bytes der Datei */
-    private long                                                downloadCurrent                     = 0;
+    private long                                        downloadCurrent                     = 0;
 
-    private transient volatile SingleDownloadController         downloadLinkController              = null;
+    private transient volatile SingleDownloadController downloadLinkController              = null;
 
     /** Maximum der heruntergeladenen Datei (Dateilaenge) */
-    private long                                                downloadMax                         = -1;
+    private long                                        downloadMax                         = -1;
 
-    private String                                              browserurl                          = null;
+    private String                                      browserurl                          = null;
 
-    private FilePackage                                         filePackage;
+    private FilePackage                                 filePackage;
 
     /** Hoster des Downloads */
-    private String                                              host;
+    private String                                      host;
 
-    /* do not remove to keep stable compatibility */
-    @SuppressWarnings("unused")
-    private boolean                                             isEnabled;
+    private boolean                                     isEnabled;
 
     @Deprecated
-    private LinkStatus                                          linkStatus;
+    private LinkStatus                                  linkStatus;
     @Deprecated
-    private int                                                 linkType                            = 0;
+    private int                                         linkType                            = 0;
 
     /** Beschreibung des Downloads */
     /* kann sich noch ändern, NICHT final */
-    private String                                              name;
+    private String                                      name;
 
-    private transient PluginForHost                             defaultplugin;
+    private transient PluginForHost                     defaultplugin;
 
-    private transient PluginForHost                             liveplugin;
+    private transient PluginForHost                     liveplugin;
 
     /*
      * we need to keep this some time to perform conversion from variable to property
      */
-    private String                                              finalFileName;
+    private String                                      finalFileName;
 
     /**
      * Do not rename urlDownload. We need this field to restore old downloadlinks from the jd09 database
      */
-    private String                                              urlDownload;
+    private String                                      urlDownload;
 
-    private transient volatile List<PluginProgress>             pluginProgress                      = null;
+    private transient volatile List<PluginProgress>     pluginProgress                      = null;
 
-    private long                                                created                             = -1l;
+    private long                                        created                             = -1l;
 
-    private transient volatile UniqueAlltimeID                  uniqueID                            = null;
-    private transient AbstractNodeNotifier                      propertyListener;
+    private transient UniqueAlltimeID                   uniqueID                            = null;
+    private transient AbstractNodeNotifier              propertyListener;
 
-    private transient DomainInfo                                domainInfo                          = null;
-    private transient Boolean                                   resumeable                          = null;
-    private transient volatile SkipReason                       skipReason                          = null;
-    private transient volatile ConditionalSkipReason            conditionalSkipReason               = null;
-    private transient volatile FinalLinkState                   finalLinkState                      = null;
-    private transient AtomicBoolean                             enabled                             = new AtomicBoolean(false);
-    private transient UniqueAlltimeID                           previousParent                      = null;
-    private transient NullsafeAtomicReference<ExtractionStatus> extractionStatus                    = new NullsafeAtomicReference<ExtractionStatus>();
-    private transient volatile LinkStatus                       currentLinkStatus                   = null;
-    private transient volatile Property                         tempProperties                      = null;
-    private transient volatile DownloadLinkView                 view                                = null;
-    private transient NullsafeAtomicReference<LinkInfo>         linkInfo                            = new NullsafeAtomicReference<LinkInfo>();
+    private transient DomainInfo                        domainInfo                          = null;
+    private transient Boolean                           resumeable                          = null;
+    private transient volatile SkipReason               skipReason                          = null;
+    private transient volatile ConditionalSkipReason    conditionalSkipReason               = null;
+    private transient volatile FinalLinkState           finalLinkState                      = null;
+    private transient UniqueAlltimeID                   previousParent                      = null;
+    private transient volatile ExtractionStatus         extractionStatus                    = null;
+    private transient Property                          tempProperties                      = null;
+    private transient DownloadLinkView                  view                                = null;
+    private transient LinkInfo                          linkInfo                            = null;
 
-    private transient volatile long                             lastAvailableStatusChange           = -1;
+    private transient volatile long                     lastAvailableStatusChange           = -1;
 
-    private transient volatile FilePackage                      lastValidFilePackage                = null;
-    private transient volatile String[]                         cachedName                          = null;
+    private transient volatile FilePackage              lastValidFilePackage                = null;
+    private transient volatile String[]                 cachedName                          = null;
 
-    private transient UrlProtection                             urlProtection                       = UrlProtection.UNSET;
-    private transient LinkedList<HistoryEntry>                  history                             = new LinkedList<HistoryEntry>();
+    private transient UrlProtection                     urlProtection                       = UrlProtection.UNSET;
+    private transient List<HistoryEntry>                history                             = null;
 
     public FilePackage getLastValidFilePackage() {
-        if (lastValidFilePackage != null) {
-            return lastValidFilePackage;
+        final FilePackage lFilePackage = lastValidFilePackage;
+        if (lFilePackage != null) {
+            return lFilePackage;
         }
         /* stable import */
         return filePackage;
@@ -248,10 +241,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (name != null) {
             setName(name);
         }
+        this.isEnabled = isEnabled;
         downloadMax = -1;
         setHost(host);
-        this.isEnabled = isEnabled;
-        enabled.set(isEnabled);
         created = System.currentTimeMillis();
         this.setPluginPatternMatcher(pluginPattern);
         if (plugin != null && this.getPluginPatternMatcher() != null) {
@@ -303,10 +295,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         /* deserialize object and then fill other stuff(transient..) */
         stream.defaultReadObject();
         setView(new DefaultDownloadLinkViewImpl());
-        history = new LinkedList<HistoryEntry>();
-        extractionStatus = new NullsafeAtomicReference<ExtractionStatus>();
-        enabled = new AtomicBoolean(isEnabled);
-        linkInfo = new NullsafeAtomicReference<LinkInfo>();
+        history = null;
+        extractionStatus = null;
+        linkInfo = null;
         availableStatus = AvailableStatus.UNCHECKED;
         if (linkType == 0) {
             urlProtection = UrlProtection.UNSET;
@@ -329,14 +320,12 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public UniqueAlltimeID getUniqueID() {
-        if (uniqueID != null) {
-            return uniqueID;
-        }
-        synchronized (this) {
-            if (uniqueID != null) {
-                return uniqueID;
+        if (uniqueID == null) {
+            synchronized (this) {
+                if (uniqueID == null) {
+                    uniqueID = new UniqueAlltimeID();
+                }
             }
-            uniqueID = new UniqueAlltimeID();
         }
         return uniqueID;
     }
@@ -367,7 +356,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             setProperty(PROPERTY_CHUNKS, chunks);
         }
         SingleDownloadController dlc = getDownloadLinkController();
-
         if (hasNotificationListener()) {
             notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.CHUNKS, chunks));
         }
@@ -793,22 +781,13 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public LinkStatus getLinkStatus() {
         final Thread current = Thread.currentThread();
         if (current instanceof UseSetLinkStatusThread) {
-            return currentLinkStatus;
+            return ((UseSetLinkStatusThread) current).getLinkStatus(this);
         }
         final SingleDownloadController controller = getDownloadLinkController();
         if (controller != null) {
             return controller.getLinkStatus();
         }
         throw new WTFException("Cannot use getLinkStatus outside UseSetLinkStatusThread/SingleDownloadController");
-    }
-
-    public void setLinkStatus(LinkStatus linkStatus) {
-        final Thread current = Thread.currentThread();
-        if (current instanceof UseSetLinkStatusThread) {
-            currentLinkStatus = linkStatus;
-        } else {
-            throw new WTFException("Cannot setLinkStatus outside UseSetLinkStatusThread");
-        }
     }
 
     public UrlProtection getUrlProtection() {
@@ -905,34 +884,33 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     private void setCachedName(boolean ignoreUnsafe, boolean ignoreForcedFilename, String ret) {
-        if (cachedName == null) {
-            cachedName = new String[] { null, null, null, null };
+        String[] lCachedName = cachedName;
+        if (lCachedName == null) {
+            lCachedName = new String[] { null, null, null, null };
+            cachedName = lCachedName;
         }
-        cachedName[(ignoreUnsafe ? 1 : 0) * 2 + (ignoreForcedFilename ? 1 : 0)] = ret;
+        lCachedName[(ignoreUnsafe ? 1 : 0) * 2 + (ignoreForcedFilename ? 1 : 0)] = ret;
     }
 
     private String getCachedName(boolean ignoreUnsafe, boolean ignoreForcedFilename) {
-        if (cachedName == null) {
-            return null;
+        final String[] lCachedName = cachedName;
+        if (lCachedName != null) {
+            return lCachedName[(ignoreUnsafe ? 1 : 0) * 2 + (ignoreForcedFilename ? 1 : 0)];
         }
-        return cachedName[(ignoreUnsafe ? 1 : 0) * 2 + (ignoreForcedFilename ? 1 : 0)];
+        return null;
     }
 
     public LinkInfo getLinkInfo() {
-        LinkInfo ret = linkInfo.get();
-        if (ret == null) {
-            ret = LinkInfo.getLinkInfo(this);
-            linkInfo.set(ret);
+        LinkInfo lLinkInfo = linkInfo;
+        if (lLinkInfo == null) {
+            lLinkInfo = LinkInfo.getLinkInfo(this);
+            linkInfo = lLinkInfo;
         }
-        return ret;
+        return lLinkInfo;
     }
 
     private void setLinkInfo(LinkInfo linkInfo) {
-        if (linkInfo != null) {
-            this.linkInfo.set(linkInfo);
-        } else {
-            this.linkInfo.getAndClear();
-        }
+        this.linkInfo = linkInfo;
     }
 
     /**
@@ -1027,7 +1005,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /*
      * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
      * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
-     *
+     * 
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
     public boolean isAvailabilityStatusChecked() {
@@ -1131,7 +1109,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         setEnabled(true);
         setLinkInfo(null);
         setExtractionStatus(null);
-
         if (resetPlugins != null) {
             for (PluginForHost resetPlugin : resetPlugins) {
                 try {
@@ -1150,7 +1127,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         synchronized (NULL) {
             history.clear();
         }
-
     }
 
     public void resume(List<PluginForHost> resetPlugins) {
@@ -1250,21 +1226,19 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * @return wahr, falls dieser DownloadLink aktiviert ist
      */
     public boolean isEnabled() {
-        return enabled.get();
+        return isEnabled;
     }
 
     /**
      * changes the enabled status of this DownloadLink, aborts download if its currently running
      */
-    public void setEnabled(boolean isEnabled) {
-        if (enabled.getAndSet(isEnabled) == isEnabled) {
-            return;
-        }
-
-        if (isEnabled == false) {
-            setProperty(PROPERTY_ENABLED, isEnabled);
-        } else {
-            setProperty(PROPERTY_ENABLED, Property.NULL);
+    public void setEnabled(final boolean isEnabled) {
+        synchronized (this) {
+            if (this.isEnabled == isEnabled) {
+                return;
+            } else {
+                this.isEnabled = isEnabled;
+            }
         }
         if (hasNotificationListener()) {
             notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.ENABLED, isEnabled));
@@ -1346,7 +1320,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void setUrlProtection(UrlProtection type) {
-
         if (type == null) {
             type = UrlProtection.UNSET;
         }
@@ -1537,12 +1510,12 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     @Override
     public String toString() {
         if (getPreviousParentNodeID() == null) {
-            return getName();
+            return getName().concat("@").concat(getHost());
         }
         if (getPreviousParentNodeID().equals(getParentNode().getUniqueID())) {
-            return getName();
+            return getName().concat("@").concat(getHost());
         }
-        return getName() + " previousParentNode:" + getPreviousParentNodeID();
+        return getName().concat("@").concat(getHost()).concat(" previousParentNode:").concat(getPreviousParentNodeID().toString());
 
     }
 
@@ -1767,10 +1740,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public boolean isResumeable() {
-        if (resumeable != null) {
-            return resumeable;
+        if (resumeable == null) {
+            resumeable = getBooleanProperty(PROPERTY_RESUMEABLE, false);
         }
-        resumeable = getBooleanProperty(PROPERTY_RESUMEABLE, false);
         return resumeable;
     }
 
@@ -1854,39 +1826,44 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void setArchiveID(String id) {
-        if (StringUtils.equals(id, getArchiveID())) {
-            return;
-        }
-        if (!StringUtils.isEmpty(id)) {
-            setProperty(DownloadLink.PROPERTY_ARCHIVE_ID, id);
-        } else {
-            setProperty(DownloadLink.PROPERTY_ARCHIVE_ID, Property.NULL);
-        }
-        if (hasNotificationListener()) {
-            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.ARCHIVE_ID, id));
+        if (!StringUtils.equals(id, getArchiveID())) {
+            if (!StringUtils.isEmpty(id)) {
+                setProperty(DownloadLink.PROPERTY_ARCHIVE_ID, id);
+            } else {
+                setProperty(DownloadLink.PROPERTY_ARCHIVE_ID, Property.NULL);
+            }
+            if (hasNotificationListener()) {
+                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.ARCHIVE_ID, id));
+            }
         }
     }
 
     public ExtractionStatus getExtractionStatus() {
-        if (extractionStatus.isValueSet()) {
-            return extractionStatus.get();
+        final ExtractionStatus lExtractionStatus = extractionStatus;
+        if (lExtractionStatus != null) {
+            if (ExtractionStatus.NA.equals(lExtractionStatus)) {
+                return null;
+            }
+            return lExtractionStatus;
         }
-        String string = getStringProperty(PROPERTY_EXTRACTION_STATUS, null);
-        ExtractionStatus ret = null;
+        final String string = getStringProperty(PROPERTY_EXTRACTION_STATUS, null);
         try {
             if (string != null) {
-                ret = ExtractionStatus.valueOf(string);
+                extractionStatus = ExtractionStatus.valueOf(string);
+            } else {
+                extractionStatus = ExtractionStatus.NA;
             }
         } catch (Exception e) {
+            extractionStatus = ExtractionStatus.NA;
         }
-        extractionStatus.set(ret);
-        return ret;
+        return extractionStatus;
     }
 
     public void setExtractionStatus(ExtractionStatus newExtractionStatus) {
-        ExtractionStatus old = extractionStatus.getAndSet(newExtractionStatus);
-        if (old != newExtractionStatus) {
-            if (newExtractionStatus == null) {
+        if (extractionStatus != newExtractionStatus) {
+            extractionStatus = newExtractionStatus;
+            if (newExtractionStatus == null || ExtractionStatus.NA.equals(newExtractionStatus)) {
+                newExtractionStatus = null;
                 setProperty(DownloadLink.PROPERTY_EXTRACTION_STATUS, Property.NULL);
             } else {
                 setProperty(DownloadLink.PROPERTY_EXTRACTION_STATUS, newExtractionStatus.name());
@@ -2228,36 +2205,42 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return getPluginPatternMatcher();
     }
 
-    public void addHistoryEntry(HistoryEntry create) {
-        if (create == null) {
-            return;
-        }
-        synchronized (history) {
-
-            history.add(create);
-            while (history.size() > CFG_GENERAL.CFG.getMaxDownloadLinkHistoryEntries()) {
-                history.remove(0);
+    public void addHistoryEntry(HistoryEntry entry) {
+        if (entry != null) {
+            final int maxEntries = CFG_GENERAL.CFG.getMaxDownloadLinkHistoryEntries();
+            if (maxEntries > 0) {
+                synchronized (this) {
+                    if (history == null) {
+                        history = new ArrayList<HistoryEntry>();
+                    }
+                    while (history.size() > maxEntries) {
+                        history.remove(0);
+                    }
+                    history.add(entry);
+                }
+                if (hasNotificationListener()) {
+                    notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.HISTORY, entry));
+                }
             }
-        }
-        if (hasNotificationListener()) {
-            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.HISTORY, create));
         }
     }
 
     public List<HistoryEntry> getHistory() {
-        synchronized (history) {
-            return new ArrayList<HistoryEntry>(history);
+        synchronized (this) {
+            if (history != null) {
+                return new ArrayList<HistoryEntry>(history);
+            } else {
+                return new ArrayList<HistoryEntry>(0);
+            }
         }
     }
 
     public HistoryEntry getLatestHistoryEntry() {
-        synchronized (history) {
-            if (history.size() == 0) {
+        synchronized (this) {
+            if (history == null) {
                 return null;
             }
-            return history.getLast();
-
+            return history.get(history.size() - 1);
         }
     }
-
 }
