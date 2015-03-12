@@ -633,7 +633,13 @@ public class DirectHTTP extends PluginForHost {
                 if (urlConnection != null) {
                     urlConnection.disconnect();
                 }
-                throw e;
+                if (preferHeadRequest || "HEAD".equals(downloadLink.getStringProperty("requestType", null))) {
+                    /* some servers do not allow head requests */
+                    urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+                    downloadLink.setProperty("requestType", "GET");
+                } else {
+                    throw e;
+                }
             }
         }
         return urlConnection;
