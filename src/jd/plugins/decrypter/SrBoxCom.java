@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "israbox.com" }, urls = { "http://[\\w\\.]*israbox\\.net/[0-9]+\\-.*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "israbox.com" }, urls = { "http://[\\w\\.]*israbox\\.(com|net|org)/[0-9]+\\-.*?\\.html" }, flags = { 0 })
 public class SrBoxCom extends PluginForDecrypt {
 
     public SrBoxCom(PluginWrapper wrapper) {
@@ -43,7 +43,7 @@ public class SrBoxCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        if (br.containsHTML("(An error has occurred|The article cannot be found)") || "http://www.israbox.net/".equals(br.getRedirectLocation()) || "http://www.israbox.com/".equals(br.getRedirectLocation())) {
+        if (br.containsHTML("(An error has occurred|The article cannot be found)") || "http://www.israbox.org/".equals(br.getRedirectLocation()) || "http://www.israbox.net/".equals(br.getRedirectLocation()) || "http://www.israbox.com/".equals(br.getRedirectLocation())) {
             try {
                 decryptedLinks.add(createOfflinelink(parameter));
             } catch (final Throwable t) {
@@ -74,7 +74,7 @@ public class SrBoxCom extends PluginForDecrypt {
         String[] TabImage2 = br.getRegex("<img src=\"(http://[\\w\\.]*?lectro\\.ws)/*?/uploads/posts/(.*?)\"").getColumn(1);
         String[] TabImage1 = null;
         if (TabImage2.length == 0) {
-            TabImage1 = br.getRegex("<img src=\"(http://[\\w\\.]*?israbox\\.com)*?/uploads(.*?)\"").getColumn(1);
+            TabImage1 = br.getRegex("<img src=\"(http://[\\w\\.]*?israbox\\.org)*?/uploads(.*?)\"").getColumn(1);
         }
 
         // Creation of the array of link that is supported by all plug-in
@@ -102,7 +102,7 @@ public class SrBoxCom extends PluginForDecrypt {
         }
 
         // Some link can be crypted in this site, see if it is the case
-        String[] linksCrypted = br.getRegex("\"(http://www\\.israbox\\.com/engine/go\\.php\\?url=.*?)\"").getColumn(0);
+        String[] linksCrypted = br.getRegex("\"(http://www\\.israbox\\.org/engine/go\\.php\\?url=.*?)\"").getColumn(0);
 
         progress.setRange(links.length + iImage + linksCrypted.length);
         // Added links
@@ -128,7 +128,7 @@ public class SrBoxCom extends PluginForDecrypt {
         if (TabImage1 != null) {
             for (String strImageLink : TabImage1) {
                 if (!strImageLink.toLowerCase().contains("foto")) {
-                    strImageLink = "http://www.israbox.com/uploads/" + strImageLink;
+                    strImageLink = "http://www.israbox.org/uploads/" + strImageLink;
 
                     if (strImageLink.contains("/thumbs/")) {
                         DownloadLink DLLink = createDownloadlink(strImageLink, false);
@@ -228,7 +228,7 @@ public class SrBoxCom extends PluginForDecrypt {
             return null;
         }
 
-        if (link.startsWith("http://www.israbox.com/uploads/img/")) {
+        if (link.startsWith("http://www.israbox.com/uploads/img/") || link.startsWith("http://www.israbox.net/uploads/img/") || link.startsWith("http://www.israbox.org/uploads/img/")) {
             return null;
         }
 
@@ -244,7 +244,11 @@ public class SrBoxCom extends PluginForDecrypt {
             return null;
         }
 
-        if (bVerify && (link.startsWith("http://www.israbox.com") || link.startsWith("http://www.israbox.net"))) {
+        if (link.startsWith("http://www.facebook") || link.startsWith("https://twitter.com") || link.startsWith("https://plus.google.com")) {
+            return null;
+        }
+
+        if (bVerify && (link.startsWith("http://www.israbox.com") || link.startsWith("http://www.israbox.net") || link.startsWith("http://www.israbox.org"))) {
             return null;
         }
 
