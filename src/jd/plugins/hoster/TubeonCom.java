@@ -31,10 +31,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "winporn.com" }, urls = { "http://((www|de|fr|ru|es|it|jp|nl|pl|pt)\\.)?winporn\\.com/video/\\d+" }, flags = { 0 })
-public class WinpornCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tubeon.com" }, urls = { "http://((www|de|fr|ru|es|it|jp|nl|pl|pt)\\.)?tubeon\\.com/video/\\d+" }, flags = { 0 })
+public class TubeonCom extends PluginForHost {
 
-    public WinpornCom(PluginWrapper wrapper) {
+    public TubeonCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -50,12 +50,12 @@ public class WinpornCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.winporn.com/static/terms";
+        return "http://www.tubeon.com/static/terms";
     }
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload("http://www.winporn.com/video/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
+        link.setUrlDownload("http://www.tubeon.com/video/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
     }
 
     @SuppressWarnings("deprecation")

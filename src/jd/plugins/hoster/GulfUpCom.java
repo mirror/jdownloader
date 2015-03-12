@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -41,16 +42,29 @@ public class GulfUpCom extends PluginForHost {
         return "http://www.gulfup.com/go.php?go=rules";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">لم نتمكن من إيجاد الملف..!\\!\\ ربما قد تم حذفه من قبل صاحبه أو من قبل الإدارة لمخالفته أحد شروط الموقع")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.setCustomCharset("utf-8");
+        try {
+            br.getPage(link.getDownloadURL());
+        } catch (final BrowserException e) {
+            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            throw e;
+        }
+        if (br.containsHTML("<title>الموقع مغلق !</title>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String ext = get("نوع الملف");
         String filename = get("اسم الملف");
         String filesize = get("حجم الملف");
-        if (filename == null || filesize == null || ext == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null || ext == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "." + ext);
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -60,8 +74,12 @@ public class GulfUpCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex("class=\"download\"><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://dc\\d+\\.gulfup\\.com/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://dc\\d+\\.gulfup\\.com/[^<>\"]*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
