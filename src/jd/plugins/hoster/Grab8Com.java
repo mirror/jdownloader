@@ -490,12 +490,12 @@ public class Grab8Com extends PluginForHost {
                 tempUnavailableHoster(1 * 60 * 60 * 1000l);
             case 5:
                 statusMessage = "'Get link' error";
-                handleErrorRetries("getlinkerror", 10, 2 * 60 * 1000l);
+                handleErrorRetries("getlinkerror", 20, 2 * 60 * 1000l);
             default:
                 /* Unknown error */
                 statusMessage = "Unknown error";
                 logger.info(NICE_HOST + ": Unknown API error");
-                handleErrorRetries("unknownAPIerror", 10, 2 * 60 * 1000l);
+                handleErrorRetries("unknownAPIerror", 50, 2 * 60 * 1000l);
             }
         } catch (final PluginException e) {
             logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);

@@ -704,6 +704,8 @@ public class OffCloudCom extends PluginForHost {
                 statuscode = 203;
             } else if (br.containsHTML(">Error: Premium account is out of bandwidth")) {
                 statuscode = 204;
+            } else if (br.containsHTML(">Error: The requested URL was not found on the server<")) {
+                statuscode = 205;
             } else {
                 /* No way to tell that something unpredictable happened here --> status should be fine. */
                 statuscode = 0;
@@ -843,6 +845,13 @@ public class OffCloudCom extends PluginForHost {
                  */
                 statusMessage = "Host traffic gone";
                 tempUnavailableLink(3 * 60 * 60 * 1000l);
+            case 205:
+                /*
+                 * Basically this is an internal problem - the errormessage itself has no particular meaning for the user - we can only try
+                 * some more before giving up.
+                 */
+                statusMessage = "Server says 'Error: The requested URL was not found on the server'";
+                handleErrorRetries("server_says_file_not_found", 50, 2 * 60 * 1000l);
             default:
                 /* Unknown error */
                 statusMessage = "Unknown error";
