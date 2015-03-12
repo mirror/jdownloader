@@ -52,7 +52,7 @@ public class VipTubeCom extends PluginForHost {
 
     private static final String SKEY = "RXdxT0JRbUpETUpScmdYWg==";
 
-    /* Similar sites: drtuber.com, proporn.com, viptube.com, tubeon.com */
+    /* Similar sites: drtuber.com, proporn.com, viptube.com, tubeon.com, winporn.com */
     /*
      * IMPORTANT: If the crypto stuff fails, use the mobile version of the sites to get uncrypted finallinks! Also, registered users can see
      * uncrypted normal streamlinks!

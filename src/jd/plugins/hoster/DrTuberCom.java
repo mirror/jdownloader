@@ -55,9 +55,10 @@ public class DrTuberCom extends PluginForHost {
         this.enablePremium("http://www.drtuber.com/signup?track=top_menu");
     }
 
+    /* Similar sites: drtuber.com, proporn.com, viptube.com, tubeon.com, winporn.com */
     /*
-     * Similar sites: drtuber.com, proporn.com, viptube.com. Last revision with old filecheck handling: 29195. Checking the directlinks
-     * inside requestFileInformation may lead to 404 errors and offline links which are online via browser so better avoid that.
+     * Last revision with old filecheck handling: 29195. Checking the directlinks inside requestFileInformation may lead to 404 errors and
+     * offline links which are online via browser so better avoid that.
      */
     @Override
     public String getAGBLink() {
@@ -193,7 +194,7 @@ public class DrTuberCom extends PluginForHost {
                     if (new_handling) {
                         /*
                          * Very very very very bad js workaround
-                         * 
+                         *
                          * IMPORTANT: If we find no other way to fix this in the future, switch to /embed/ links, old handling still works
                          * fine for them
                          */
