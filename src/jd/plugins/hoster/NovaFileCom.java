@@ -492,9 +492,8 @@ public class NovaFileCom extends PluginForHost {
                     final AccountInfo ai = account.getAccountInfo();
                     ai.setStatus("Account Disabled due to logging in too many times from different IP address over short period");
                     account.setAccountInfo(ai);
-                    account.setTmpDisabledTimeout(Long.parseLong(hours) * 60 * 60 * 1001l);
-                    account.setTempDisabled(true);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                    account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", Long.parseLong(hours) * 60 * 60 * 1001l);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
             }
         }

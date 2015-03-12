@@ -41,6 +41,13 @@ public interface LinkCrawlerConfig extends ConfigInterface {
 
     @DefaultBooleanValue(true)
     @AboutConfig
+    @DescriptionForConfigEntry("A Offline Link created to indicate to the users when unknown Exceptions are thrown or plugin returns null results.")
+    boolean isAddDefectiveCrawlerTasksAsOfflineInLinkgrabber();
+
+    void setAddDefectiveCrawlerTasksAsOfflineInLinkgrabber(boolean b);
+
+    @DefaultBooleanValue(true)
+    @AboutConfig
     boolean isLinkCrawlerRulesEnabled();
 
     @DefaultStringArrayValue({ "ADD_LINKS_DIALOG", "PASTE_LINKS_ACTION" })
