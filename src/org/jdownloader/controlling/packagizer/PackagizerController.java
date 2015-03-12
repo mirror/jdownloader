@@ -487,9 +487,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     }
 
     private void updateInternal() {
-        // url filter only require the urls, and thus can be done
-        // brefore
-        // linkcheck
+        // url filter only require the urls, and thus can be done before linkcheck
         ArrayList<PackagizerRuleWrapper> urlFilter = new ArrayList<PackagizerRuleWrapper>();
         ArrayList<PackagizerRuleWrapper> fileFilter = new ArrayList<PackagizerRuleWrapper>();
         synchronized (this) {

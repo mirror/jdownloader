@@ -301,6 +301,14 @@ public abstract class PluginForDecrypt extends Plugin {
             errLog(throwable, br, source);
             logger.severe("CrawlerPlugin out of date: " + this + " :" + getVersion());
             logger.severe("URL was: " + source.getURL());
+            /*
+             * we can effectively create generic offline link here. For custom message/comments this must be done within the plugin.
+             * -raztoki
+             */
+            if (tmpLinks == null && LinkCrawler.getConfig().isAddDefectiveCrawlerTasksAsOfflineInLinkgrabber()) {
+                tmpLinks = new ArrayList<DownloadLink>();
+                tmpLinks.add(createOfflinelink(source.getURL()));
+            }
 
             /* lets forward the log */
             if (logger instanceof LogSource) {

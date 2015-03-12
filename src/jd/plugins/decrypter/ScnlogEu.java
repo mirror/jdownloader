@@ -1,4 +1,18 @@
-//    jDownloader - Downloadmanager
+//jDownloader - Downloadmanager
+//Copyright (C) 2013  JD-Team support@jdownloader.org
+//
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
+//
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
+//
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.decrypter;
 
@@ -6,61 +20,70 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 /**
- * @author ohgod
- * @author raztoki
+ * So I had this written some time back, just never committed. Here is my original with proper error handling etc. -raz
  *
- */
-@DecrypterPlugin(revision = "$Revision: 24808 $", interfaceVersion = 2, names = { "scnlog.eu" }, urls = { "https?://(?:www\\.)?scnlog\\.eu/(?:[a-z0-9_\\-]+/){2}" }, flags = { 0 })
+ * @author raztoki
+ * */
+@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "scnlog.eu" }, urls = { "https?://(?:www\\.)?scnlog\\.eu/(?:[a-z0-9_\\-]+/){2}" }, flags = { 0 })
 public class ScnlogEu extends antiDDoSForDecrypt {
 
     public ScnlogEu(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
 
-        br.setFollowRedirects(true);
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+
+        String parameter = param.toString();
+
         getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 403 || br.toString().length() <= 100) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+
+        if (br.containsHTML("<title>404 Page Not Found</title>|>Sorry, but you are looking for something that isn't here.<") || br.getHttpConnection().getResponseCode() == 403) {
+            logger.info("Incorrect URL: " + parameter);
             return decryptedLinks;
         }
 
-        final String content = br.getRegex("<div class=\"download\">(.*?)<div class=\"clear\">").getMatch(0);
+        String fpName = br.getRegex("<strong>Release:</strong>\\s*(.*?)<(?:/|\\w*\\s*/)").getMatch(0);
 
-        if (content == null) {
+        String download = br.getRegex("<div class=\"download\">.*?</div>").getMatch(-1);
+
+        if (download != null) {
+            String[] results = HTMLParser.getHttpLinks(download, "");
+            for (String result : results) {
+                // prevent site links from been added.
+                if (result.matches("https?://[^/]*scnlog.eu/.+")) {
+                    continue;
+                }
+                decryptedLinks.add(createDownloadlink(result));
+
+            }
+        } else {
+            logger.warning("Can not find 'download table', Please report this to JDownloader Development Team : " + parameter);
             return null;
         }
 
-        final String packageName = br.getRegex("<strong>Release:</strong>(.*?)<br/>").getMatch(0);
-
-        final String[] links = new Regex(content, "<a href=\"(https?://.*?)\"").getColumn(0);
-
-        if (links == null || links.length == 0) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
+        if (decryptedLinks.isEmpty()) {
+            logger.warning("'decrptedLinks' isEmpty!, Please report this to JDownloader Development Team : " + parameter);
+            return null;
         }
 
-        for (final String link : links) {
-            decryptedLinks.add(createDownloadlink(link));
-        }
-
-        if (packageName != null) {
-            FilePackage filePackage = FilePackage.getInstance();
-            filePackage.setName(packageName);
-            filePackage.addLinks(decryptedLinks);
+        if (fpName != null) {
+            FilePackage fp = FilePackage.getInstance();
+            fp.setProperty("ALLOW_MERGE", true);
+            fp.setName(fpName.trim());
+            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }
