@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -61,18 +62,13 @@ public class RpdMvzCm extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        String fpName = br.getRegex("<h2>(.*?)<br />").getMatch(0);
+        final String fpName = br.getRegex("<h2>(.*?)<br />").getMatch(0);
+        String filter = br.getRegex("<div class=\"fullsize\">Download</div>(.*?)<h5><a").getMatch(0);
 
-        final String links[] = br.getRegex("<pre class=\"links\"[^>]+>(.*?)</pre>").getColumn(0);
+        final String links[] = HTMLParser.getHttpLinks(filter, "");
         if (links != null) {
             for (final String link : links) {
-                final String[] lin = link.split("\r\n");
-                if (lin != null) {
-                    for (final String li : lin) {
-                        decryptedLinks.add(createDownloadlink(li));
-                    }
-                }
-
+                decryptedLinks.add(createDownloadlink(link));
             }
         }
         if (decryptedLinks.isEmpty()) {
@@ -86,7 +82,7 @@ public class RpdMvzCm extends PluginForDecrypt {
             br.getHeaders().put("Accept", "*/*");
             br.getPage(js);
 
-            String filter = br.getRegex("\\(([\\d,]+)\\)").getMatch(0);
+            filter = br.getRegex("\\(([\\d,]+)\\)").getMatch(0);
             if (filter == null) {
                 logger.warning("Can not find 'filter', Please report this to JDownloader Development Team : " + parameter);
                 return null;
@@ -126,6 +122,7 @@ public class RpdMvzCm extends PluginForDecrypt {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());
             fp.addLinks(decryptedLinks);
+            fp.setProperty("ALLOW_MERGE", true);
         }
         return decryptedLinks;
     }
