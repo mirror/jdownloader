@@ -969,7 +969,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                         continue;
                     }
                 }
-                logger.info("Link is in active Archive do not remove: " + archive);
+                logger.info("Link (" + dlink.toString() + ") is in active Archive do not remove: " + archive.getArchiveID());
             } else {
                 ret.add(dlink);
             }

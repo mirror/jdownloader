@@ -1125,7 +1125,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public void clearHistory() {
         synchronized (NULL) {
-            history.clear();
+            if (history != null) {
+                history.clear();
+            }
         }
     }
 
@@ -1509,13 +1511,14 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     @Override
     public String toString() {
-        if (getPreviousParentNodeID() == null) {
+        final UniqueAlltimeID lPreviousParentNodeID = getPreviousParentNodeID();
+        if (lPreviousParentNodeID == null) {
             return getName().concat("@").concat(getHost());
         }
-        if (getPreviousParentNodeID().equals(getParentNode().getUniqueID())) {
+        if (lPreviousParentNodeID.equals(getParentNode().getUniqueID())) {
             return getName().concat("@").concat(getHost());
         }
-        return getName().concat("@").concat(getHost()).concat(" previousParentNode:").concat(getPreviousParentNodeID().toString());
+        return getName().concat("@").concat(getHost()).concat(" previousParentNode:").concat(lPreviousParentNodeID.toString());
 
     }
 

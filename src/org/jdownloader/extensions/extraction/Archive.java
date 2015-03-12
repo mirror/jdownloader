@@ -27,9 +27,9 @@ import org.jdownloader.extensions.extraction.split.SplitType;
 
 /**
  * Contains information about the archivefile.
- * 
+ *
  * @author botzi
- * 
+ *
  */
 public class Archive {
 
@@ -40,7 +40,7 @@ public class Archive {
 
     /**
      * returns null or the correct password
-     * 
+     *
      * @return
      */
     public String getFinalPassword() {
@@ -50,7 +50,7 @@ public class Archive {
     /**
      * do not use this setter. if you feel like setting a password outside the extracting internals, use getSettings().setPasswords.. this
      * setter is used to set the CORRECT password in the password finding algorithm only
-     * 
+     *
      * @param password
      */
     public void setFinalPassword(String password) {
@@ -228,7 +228,12 @@ public class Archive {
     }
 
     public boolean contains(Object link) {
-        return getArchiveFiles().contains(link);
+        for (ArchiveFile file : getArchiveFiles()) {
+            if (file.equals(link)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public String getName() {
