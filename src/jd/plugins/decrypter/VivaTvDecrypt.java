@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -32,7 +33,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viva.tv", "mtviggy.com", "southpark.de", "southpark.cc.com", "vh1.com", "nickmom.com" }, urls = { "http://www\\.viva\\.tv/charts/16\\-viva\\-top\\-100", "http://www\\.mtviggy\\.com/videos/[a-z0-9\\-]+/|http://www\\.mtvdesi\\.com/(videos/)?[a-z0-9\\-]+|http://www\\.mtvk\\.com/videos/[a-z0-9\\-]+", "http://www\\.southpark\\.de/alle\\-episoden/s\\d{2}e\\d{2}[a-z0-9\\-]+", "http://southpark\\.cc\\.com/full\\-episodes/s\\d{2}e\\d{2}[a-z0-9\\-]+", "http://www\\.vh1.com/(shows/[a-z0-9\\-_]+/[a-z0-9\\-_]+/.+|video/play\\.jhtml\\?id=\\d+|video/[a-z0-9\\-_]+/\\d+/[a-z0-9\\-_]+\\.jhtml|events/[a-z0-9\\-_]+/videos/[a-z0-9\\-_]+/\\d+/)", "http://www\\.nickmom\\.com/videos/[a-z0-9\\-]+/" }, flags = { 0, 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viva.tv", "mtviggy.com", "southpark.de", "southpark.cc.com", "vh1.com", "nickmom.com", "mtv.com.au" }, urls = { "http://www\\.viva\\.tv/charts/16\\-viva\\-top\\-100", "http://www\\.mtviggy\\.com/videos/[a-z0-9\\-]+/|http://www\\.mtvdesi\\.com/(videos/)?[a-z0-9\\-]+|http://www\\.mtvk\\.com/videos/[a-z0-9\\-]+", "http://www\\.southpark\\.de/alle\\-episoden/s\\d{2}e\\d{2}[a-z0-9\\-]+", "http://southpark\\.cc\\.com/full\\-episodes/s\\d{2}e\\d{2}[a-z0-9\\-]+", "http://www\\.vh1.com/(shows/[a-z0-9\\-_]+/[a-z0-9\\-_]+/.+|video/play\\.jhtml\\?id=\\d+|video/[a-z0-9\\-_]+/\\d+/[a-z0-9\\-_]+\\.jhtml|events/[a-z0-9\\-_]+/videos/[a-z0-9\\-_]+/\\d+/)", "http://www\\.nickmom\\.com/videos/[a-z0-9\\-]+/", "http://www\\.mtv\\.com.au/[a-z0-9\\-]+/videos/[a-z0-9\\-]+" }, flags = { 0, 0, 0, 0, 0, 0, 0 })
 public class VivaTvDecrypt extends PluginForDecrypt {
 
     public VivaTvDecrypt(PluginWrapper wrapper) {
@@ -57,6 +58,8 @@ public class VivaTvDecrypt extends PluginForDecrypt {
     private static final String     subtype_vh1_events        = "http://www\\.vh1\\.com/events/.+";
 
     private static final String     type_nickmom_com          = "http://www\\.nickmom\\.com/videos/[a-z0-9\\-]+/";
+
+    private static final String     type_mtv_com_au           = "http://www\\.mtv\\.com\\.au/.+";
 
     private ArrayList<DownloadLink> decryptedLinks            = new ArrayList<DownloadLink>();
     private String                  default_ext               = null;
@@ -83,6 +86,8 @@ public class VivaTvDecrypt extends PluginForDecrypt {
                 decryptVh1();
             } else if (parameter.matches(type_nickmom_com)) {
                 decryptNickmomCom();
+            } else if (parameter.matches(type_mtv_com_au)) {
+                decryptMtvComAuPlaylist();
             } else {
                 /* Probably unsupported linktype */
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -193,6 +198,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         fp.addLinks(decryptedLinks);
     }
 
+    @SuppressWarnings("deprecation")
     private void decryptFeed() throws DecrypterException {
         final String[] items = br.getRegex("<item>(.*?)</item>").getColumn(0);
         if (items == null || items.length == 0 || fpName == null) {
@@ -221,10 +227,10 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             dl.setAvailable(true);
             dl.setProperty("mainlink", parameter);
             try {
-                dl.setContentUrl(parameter);
+                dl.setContentUrl(this.parameter);
             } catch (final Throwable e) {
                 /* Not available in old 0.9.581 Stable */
-                dl.setBrowserUrl(parameter);
+                dl.setBrowserUrl(this.parameter);
             }
             decryptedLinks.add(dl);
         }
@@ -272,6 +278,46 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             }
         }
         decryptedLinks.add(main);
+    }
+
+    /** This function should be able to decrypt any playlist from mtv.com.au. */
+    @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
+    private void decryptMtvComAuPlaylist() throws Exception {
+        br.getPage(parameter);
+        final String playlist_id = br.getRegex("name=\"vimn:entity_uuid\" content=\"([a-z0-9\\-:]*?)\"").getMatch(0);
+        final String js = br.getRegex("<script>jQuery\\.extend\\(Drupal\\.settings, (\\{.*?)\\);</script>").getMatch(0);
+        if (js == null || playlist_id == null) {
+            decryptedLinks = null;
+            return;
+        }
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(js);
+        entries = (LinkedHashMap<String, Object>) entries.get("vimn_video");
+        entries = (LinkedHashMap<String, Object>) entries.get("playlists");
+        entries = (LinkedHashMap<String, Object>) entries.get(playlist_id);
+        final ArrayList<Object> parts = (ArrayList) entries.get("items");
+        fpName = (String) entries.get("title");
+        fpName = doFilenameEncoding(fpName);
+        for (final Object pt : parts) {
+            final LinkedHashMap<String, Object> playlistentry = (LinkedHashMap<String, Object>) pt;
+            final String part_mgid = (String) playlistentry.get("guid");
+            final String partname = (String) playlistentry.get("title");
+            final String final_filename = this.doFilenameEncoding(partname) + this.default_ext;
+            final DownloadLink fina = createDownloadlink("http://intl.mtvnservices.com/mrss/" + part_mgid + "/");
+            fina.setFinalFileName(final_filename);
+            fina.setProperty("decryptedfilename", final_filename);
+            fina.setAvailable(true);
+            try {
+                fina.setContentUrl(this.parameter);
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+                fina.setBrowserUrl(this.parameter);
+            }
+            decryptedLinks.add(fina);
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        fpName = Encoding.htmlDecode(fpName.trim());
+        fp.setName(fpName);
+        fp.addLinks(decryptedLinks);
     }
 
     private String getXML(final String parameter) {

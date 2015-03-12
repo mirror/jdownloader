@@ -38,7 +38,7 @@ public class TubeonCom extends PluginForHost {
         super(wrapper);
     }
 
-    /* Similar sites: winporn.com, tubeon.com */
+    /* Similar sites: drtuber.com, proporn.com, viptube.com, tubeon.com, winporn.com */
     /* Extension which will be used if no correct extension is found */
     private static final String  default_Extension = ".mp4";
     /* Connection stuff */

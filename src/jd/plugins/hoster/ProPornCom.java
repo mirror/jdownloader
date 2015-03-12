@@ -52,7 +52,7 @@ public class ProPornCom extends PluginForHost {
         link.setUrlDownload("http://www.proporn.com/video/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
     }
 
-    /* Similar sites: drtuber.com, proporn.com, viptube.com */
+    /* Similar sites: drtuber.com, proporn.com, viptube.com, tubeon.com, winporn.com */
     /* IMPORTANT: If the crypto stuff fails, use the mobile version of the sites to get uncrypted finallinks! */
     @SuppressWarnings("deprecation")
     @Override

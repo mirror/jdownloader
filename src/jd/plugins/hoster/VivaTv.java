@@ -32,9 +32,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viva.tv", "funnyclips.cc", "comedycentral.tv", "nick.de", "nicknight.de", "nickjr.de", "mtv.de", "mtviggy.com", "mtv.com", "movies.mtv.de", "southpark.de", "southpark.cc.com", "tvland.com", "spike.com", "vh1.com", "nickmom.com", "cmt.com", "cc.com", "thedailyshow.cc.com", "tosh.cc.com", "mtvu.com" }, urls = { "https?://www\\.viva\\.tv/(musikvideo|news|shows|musik/video)/\\d+([a-z0-9\\-]+)?", "http://de\\.funnyclips\\.cc/(listen/.+|[A-Za-z0-9\\-]+/\\d+[A-Za-z0-9\\-]+)", "http://www\\.comedycentral\\.tv/(shows|neuigkeiten)/\\d+([a-z0-9\\-]+)?", "http://www\\.nick\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nicknight\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nickjr\\.de/videos/\\d+([a-z0-9\\-]+)?",
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viva.tv", "funnyclips.cc", "comedycentral.tv", "nick.de", "nicknight.de", "nickjr.de", "mtv.de", "mtviggy.com", "mtv.com", "movies.mtv.de", "southpark.de", "southpark.cc.com", "tvland.com", "spike.com", "vh1.com", "nickmom.com", "cmt.com", "cc.com", "thedailyshow.cc.com", "tosh.cc.com", "mtvu.com", "mtv.com.au" }, urls = { "https?://www\\.viva\\.tv/(musikvideo|news|shows|musik/video)/\\d+([a-z0-9\\-]+)?", "http://de\\.funnyclips\\.cc/(listen/.+|[A-Za-z0-9\\-]+/\\d+[A-Za-z0-9\\-]+)", "http://www\\.comedycentral\\.tv/(shows|neuigkeiten)/\\d+([a-z0-9\\-]+)?", "http://www\\.nick\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nicknight\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nickjr\\.de/videos/\\d+([a-z0-9\\-]+)?",
         "http://www\\.mtv\\.de/(shows/\\d+[a-z0-9\\-]+/staffeln/\\d+/folgen/\\d+[a-z0-9\\-]+|artists/[a-z0-9\\-]+/videos/[a-z0-9\\-]+|news/\\d+[a-z0-9\\-]+)", "http://www\\.mtviggy_jd_decrypted_jd_\\.com/videos/[a-z0-9\\-]+/|http://media\\.mtvnservices\\.com/embed/mgid:uma:video:mtviggy\\.com:\\d+", "http://www\\.mtv\\.com/(shows/[a-z0-9\\-]+/[^<>\"]+|videos/[^<>\"]+\\.jhtml|videos/\\?vid=\\d+)|http://media\\.mtvnservices\\.com/embed/mgid:uma:video:mtv\\.com:\\d+", "http://movies\\.mtv\\.de/(?!playlists)videos/(trailer/)?[a-z0-9\\-]+/[a-z0-9]+", "http://www\\.southpark\\.de/clips/[a-z0-9]+/[a-z0-9\\-]+|http://media\\.mtvnservices\\.com/mgid:arc:video:southparkstudios\\.com:[a-z0-9\\-]+", "http://media\\.mtvnservices\\.com/mgid:arc:video:southparkstudios_jd_decrypted_jd_\\.com:[a-z0-9\\-]+", "http://www\\.tvland\\.com/(video\\-clips|episodes)/[a-z0-9]+/[a-z0-9\\-]+",
-        "http://www\\.spike\\.com/(video\\-clips|full\\-episodes)/[a-z0-9]+/[a-z0-9\\-]+", "http://www\\.vh1_jd_decrypted_jd_\\.com/.+", "http://www\\.nickmom_jd_decrypted_jd_\\.com/.+", "http://www\\.cmt\\.com/videos/[a-z0-9\\-]+/\\d+/[a-z0-9\\-]+\\.jhtml", "http://www\\.cc\\.com/(full\\-episodes|video\\-clips)/[a-z0-9]+/[a-t0-9\\-]+", "http://thedailyshow\\.cc\\.com/(videos|full\\-episodes)/[a-z0-9]+/[a-z0-9\\-]+", "http://tosh\\.cc\\.com/((full\\-episodes|video\\-clips)/[a-z0-9]+/[a-t0-9\\-]+|segments/[a-z0-9\\-]+/[a-z0-9]+)", "http://www\\.mtvu\\.com/(music|shows)/[a-z0-9\\-]+/" }, flags = { 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32 })
+        "http://www\\.spike\\.com/(video\\-clips|full\\-episodes)/[a-z0-9]+/[a-z0-9\\-]+", "http://www\\.vh1_jd_decrypted_jd_\\.com/.+", "http://www\\.nickmom_jd_decrypted_jd_\\.com/.+", "http://www\\.cmt\\.com/videos/[a-z0-9\\-]+/\\d+/[a-z0-9\\-]+\\.jhtml", "http://www\\.cc\\.com/(full\\-episodes|video\\-clips)/[a-z0-9]+/[a-t0-9\\-]+", "http://thedailyshow\\.cc\\.com/(videos|full\\-episodes)/[a-z0-9]+/[a-z0-9\\-]+", "http://tosh\\.cc\\.com/((full\\-episodes|video\\-clips)/[a-z0-9]+/[a-t0-9\\-]+|segments/[a-z0-9\\-]+/[a-z0-9]+)", "http://www\\.mtvu\\.com/(music|shows)/[a-z0-9\\-]+/", "http://intl.mtvnservices.com/mrss/mgid:(?:arc|uma):video:mtv\\.com\\.au:[a-z0-9\\-]+/" }, flags = { 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32 })
 public class VivaTv extends PluginForHost {
 
     public VivaTv(PluginWrapper wrapper) {
@@ -117,6 +117,9 @@ public class VivaTv extends PluginForHost {
     private static final String  subtype_mtvu_com_episodes               = "http://www\\.mtvu\\.com/shows/[a-z0-9\\-]+/";
     private static final String  subtype_mtvu_com_music                  = "http://www\\.mtvu\\.com/music/[a-z0-9\\-]+/";
 
+    private static final String  type_mtv_com_au                         = "http://www\\.mtv\\.com\\.au/.+";
+    private static final String  type_mtv_com_au_embedded                = "http://intl\\.mtvnservices\\.com/mrss/mgid:(?:arc|uma):video:mtv\\.com\\.au:[a-z0-9\\-]+/";
+
     /**
      * NOT using mtv networks for streaming: bet.com, icarly.com
      *
@@ -166,14 +169,17 @@ public class VivaTv extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        String filename = null;
+        String filename = link.getStringProperty("decryptedfilename", null);
         String ext = null;
         String description = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String decrypter_mainlink = link.getStringProperty("mainlink", null);
-        if (link.getDownloadURL().matches(type_viva)) {
-            br.getPage(link.getDownloadURL());
+        String browser_url = link.getStringProperty("mainlink", null);
+        if (browser_url == null) {
+            browser_url = link.getDownloadURL();
+        }
+        if (browser_url.matches(type_viva)) {
+            br.getPage(browser_url);
             if (!br.containsHTML("player\\.mtvnn\\.com/") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -184,14 +190,14 @@ public class VivaTv extends PluginForHost {
             if (filename == null) {
                 filename = br.getRegex("<h1 class=\\'title\\'>([^<>]*?)</h1>").getMatch(0);
             }
-            if (link.getDownloadURL().matches(subtype_viva_musicvideo)) {
+            if (browser_url.matches(subtype_viva_musicvideo)) {
                 final String title = br.getRegex("content=(?:\\'|\")([^<>\"]*?)(?:\\'|\") itemprop=\\'name\\'").getMatch(0);
                 final String author = br.getRegex("content=(?:\\'|\")([^<>\"]*?)(?:\\'|\") itemprop=\\'author\\'").getMatch(0);
                 if (author == null || title == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 filename = doFilenameEncoding(author) + " - " + doFilenameEncoding(title);
-            } else if (link.getDownloadURL().matches(subtype_viva_shows) || link.getDownloadURL().matches(subtype_viva_music_interviews)) {
+            } else if (browser_url.matches(subtype_viva_shows) || browser_url.matches(subtype_viva_music_interviews)) {
                 String h2 = br.getRegex("class=\\'now_playing\\'.*?<h2>([^<>]*?)</h2>.*?class=\\'kobra-watch-count\\'").getMatch(0);
                 if (h2 == null) {
                     h2 = br.getRegex("\">([^<>]*?)</a></h2>").getMatch(0);
@@ -206,9 +212,9 @@ public class VivaTv extends PluginForHost {
                 filename += " - " + doFilenameEncoding(h2) + " - " + doFilenameEncoding(h3);
             }
             ext = ".flv";
-        } else if (link.getDownloadURL().matches(type_funnyclips)) {
+        } else if (browser_url.matches(type_funnyclips)) {
             try {
-                br.getPage(link.getDownloadURL());
+                br.getPage(browser_url);
             } catch (final BrowserException e) {
                 if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 500) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -227,8 +233,8 @@ public class VivaTv extends PluginForHost {
             title = doFilenameEncoding(title);
             filename = show + " - " + title;
             ext = default_ext;
-        } else if (link.getDownloadURL().matches(type_comedycentral)) {
-            br.getPage(link.getDownloadURL());
+        } else if (browser_url.matches(type_comedycentral)) {
+            br.getPage(browser_url);
             if (!br.containsHTML("swfobject\\.createCSS") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -239,7 +245,7 @@ public class VivaTv extends PluginForHost {
             if (filename == null) {
                 filename = br.getRegex("<h1 class=\\'title\\'>([^<>]*?)</h1>").getMatch(0);
             }
-            if (link.getDownloadURL().matches(subtype_shows_comedycentral)) {
+            if (browser_url.matches(subtype_shows_comedycentral)) {
                 String h2 = br.getRegex("class=\\'now_playing\\'.*?<h2>([^<>]*?)</h2>.+class=\\'kobra-watch-count\\'").getMatch(0);
                 if (h2 == null) {
                     h2 = br.getRegex("\">([^<>]*?)</a></h2>").getMatch(0);
@@ -254,8 +260,8 @@ public class VivaTv extends PluginForHost {
                 filename += " - " + doFilenameEncoding(h2) + " - " + doFilenameEncoding(h3);
             }
             ext = ".mp4";
-        } else if (link.getDownloadURL().matches(type_nicknight)) {
-            br.getPage(link.getDownloadURL());
+        } else if (browser_url.matches(type_nicknight)) {
+            br.getPage(browser_url);
             if (!br.containsHTML("swfobject\\.createCSS") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -265,16 +271,16 @@ public class VivaTv extends PluginForHost {
                 filename += " - " + doFilenameEncoding(sub_title);
             }
             ext = ".flv";
-        } else if (link.getDownloadURL().matches(type_nickjr)) {
-            br.getPage(link.getDownloadURL());
+        } else if (browser_url.matches(type_nickjr)) {
+            br.getPage(browser_url);
             if (!br.containsHTML("swfobject\\.createCSS") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = br.getRegex("<title>([^<>\"]*?)\\- kostenlose Videos \\- NickJR\\.de</title>").getMatch(0);
             ext = ".flv";
-        } else if (link.getDownloadURL().matches(type_nick_de)) {
-            String vid = new Regex(link.getDownloadURL(), "/videos/(\\d+)").getMatch(0);
-            br.getPage(link.getDownloadURL());
+        } else if (browser_url.matches(type_nick_de)) {
+            String vid = new Regex(browser_url, "/videos/(\\d+)").getMatch(0);
+            br.getPage(browser_url);
             if (!br.containsHTML("swfobject\\.createCSS") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -301,8 +307,8 @@ public class VivaTv extends PluginForHost {
             title = doFilenameEncoding(title);
             filename = show + " - " + title;
             ext = ".flv";
-        } else if (link.getDownloadURL().matches(type_mtviggy)) {
-            br.getPage(link.getDownloadURL());
+        } else if (browser_url.matches(type_mtviggy)) {
+            br.getPage(browser_url);
             if (!br.containsHTML("class=\"video\\-box\"") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -311,8 +317,8 @@ public class VivaTv extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             ext = ".flv";
-        } else if (link.getDownloadURL().matches(type_mtv_de)) {
-            br.getPage(link.getDownloadURL());
+        } else if (browser_url.matches(type_mtv_de)) {
+            br.getPage(browser_url);
             if (!br.containsHTML("player\\.mtvnn\\.com") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -325,45 +331,39 @@ public class VivaTv extends PluginForHost {
                 filename = doFilenameEncoding(artist) + " - " + filename;
             }
             ext = ".flv";
-        } else if (link.getDownloadURL().matches(type_mtv_com)) {
-            br.getPage(link.getDownloadURL());
+        } else if (browser_url.matches(type_mtv_com)) {
+            br.getPage(browser_url);
             if (!br.containsHTML("MTVN\\.VIDEO\\.PLAYER\\.instance")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = br.getRegex("<title>([^<>\"]*?) \\| MTV</title>").getMatch(0);
             ext = ".flv";
-        } else if (link.getDownloadURL().matches(type_mtv_com) || link.getDownloadURL().matches(type_mtv_com_embedded)) {
-            mgid = new Regex(link.getDownloadURL(), "(mgid.+)").getMatch(0);
+        } else if (browser_url.matches(type_mtv_com) || browser_url.matches(type_mtv_com_embedded)) {
+            mgid = getMGIDOutOfEmbedURL(browser_url);
             feed_url = getFEEDurl("mtv.com");
             br.getPage(feed_url);
-            /* Check for invalid XML --> Video must be offline then */
-            if (!br.containsHTML("</channel>") || br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            checkFeedAvailibility();
             filename = feedGetTitle();
             description = feedGetDescription();
             ext = ".flv";
-        } else if (link.getDownloadURL().matches(type_mtviggy_embedded)) {
+        } else if (browser_url.matches(type_mtviggy_embedded)) {
             /* Handle embedded links just like they are - we do not even want to try to find/use the original video url. */
-            mgid = new Regex(link.getDownloadURL(), "(mgid.+)").getMatch(0);
+            mgid = getMGIDOutOfEmbedURL(browser_url);
             feed_url = getFEEDurl("mtvworldwide");
             br.getPage(feed_url);
-            /* Check for invalid XML --> Video must be offline then */
-            if (!br.containsHTML("</channel>") || br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            checkFeedAvailibility();
             filename = feedGetTitle();
             description = feedGetDescription();
             ext = default_ext;
-        } else if (link.getDownloadURL().matches(type_mtvmovies)) {
-            br.getPage(link.getDownloadURL());
+        } else if (browser_url.matches(type_mtvmovies)) {
+            br.getPage(browser_url);
             if (!br.containsHTML("class=\"mtvn\\-player") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"/>").getMatch(0);
             ext = ".flv";
-        } else if (link.getDownloadURL().matches(type_southpark_de_clips)) {
-            br.getPage(link.getDownloadURL());
+        } else if (browser_url.matches(type_southpark_de_clips)) {
+            br.getPage(browser_url);
             if (!br.containsHTML("\"name\":\"mtvnPlayer\"") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -385,15 +385,12 @@ public class VivaTv extends PluginForHost {
                 this.mediagen_url = String.format(mediagenURLs.get("southpark.de_episode"), this.mgid, possibleAcceptMethodsValues.get("http"));
             }
             ext = default_ext;
-        } else if (decrypter_mainlink != null && decrypter_mainlink.matches(type_southpark_de_episode)) {
+        } else if (browser_url != null && browser_url.matches(type_southpark_de_episode)) {
             /* Handle embedded links just like they are - we do not even want to try to find/use the original video url. */
-            mgid = new Regex(link.getDownloadURL(), "(mgid.+)").getMatch(0);
+            mgid = getMGIDOutOfEmbedURL(browser_url);
             feed_url = getFEEDurl("southpark.de");
             br.getPage(feed_url);
-            /* Check for invalid XML --> Video must be offline then */
-            if (!br.containsHTML("</channel>") || br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            checkFeedAvailibility();
             filename = feedGetTitle();
             description = feedGetDescription();
             ext = default_ext;
@@ -401,42 +398,39 @@ public class VivaTv extends PluginForHost {
                 /* Special case: Define the mediagenURL here because we need to enforce usage of the http protocol. */
                 this.mediagen_url = String.format(mediagenURLs.get("southpark.de_episode"), this.mgid, possibleAcceptMethodsValues.get("http"));
             }
-        } else if (decrypter_mainlink != null && decrypter_mainlink.matches(type_southpark_cc_episode)) {
+        } else if (browser_url != null && browser_url.matches(type_southpark_cc_episode)) {
             /* Handle embedded links just like they are - we do not even want to try to find/use the original video url. */
-            mgid = new Regex(link.getDownloadURL(), "(mgid.+)").getMatch(0);
+            mgid = new Regex(browser_url, "(mgid.+)").getMatch(0);
             feed_url = getFEEDurl("southpark.cc.com");
             br.getPage(feed_url);
-            /* Check for invalid XML --> Video must be offline then */
-            if (!br.containsHTML("</channel>") || br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            checkFeedAvailibility();
             filename = feedGetTitle();
             description = feedGetDescription();
             ext = default_ext;
-        } else if (link.getDownloadURL().matches(type_tvland)) {
-            br.getPage(link.getDownloadURL());
+        } else if (browser_url.matches(type_tvland)) {
+            br.getPage(browser_url);
             if (!br.containsHTML("id=\"video_player_box\"") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (link.getDownloadURL().matches(subtype_tvland_episodes)) {
+            if (browser_url.matches(subtype_tvland_episodes)) {
                 filename = br.getRegex("<title>([^<>]*?) \\| Free Full Episodes \\| TV Land</title>").getMatch(0);
             } else {
                 filename = br.getRegex("class=\"clipTitle\">([^<>\"]*?)</div>").getMatch(0);
             }
             ext = default_ext;
-        } else if (link.getDownloadURL().matches(type_spike)) {
-            br.getPage(link.getDownloadURL());
+        } else if (browser_url.matches(type_spike)) {
+            br.getPage(browser_url);
             if (!br.containsHTML("class=\"player_holder\"") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (link.getDownloadURL().matches(subtype_spike_episodes)) {
+            if (browser_url.matches(subtype_spike_episodes)) {
                 filename = br.getRegex("<title>([^<>\"]*?)- Full Episode \\| SPIKE\\.com</title>").getMatch(0);
             } else {
                 filename = br.getRegex("<title>([^<>\"]*?) \\- Video Clip \\| SPIKE\\.com</title>").getMatch(0);
             }
             ext = default_ext;
-        } else if (link.getDownloadURL().matches(type_vh1)) {
-            br.getPage(link.getDownloadURL());
+        } else if (browser_url.matches(type_vh1)) {
+            br.getPage(browser_url);
             if (!br.containsHTML("MTVN\\.VIDEO\\.PLAYER\\.instance") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -445,8 +439,8 @@ public class VivaTv extends PluginForHost {
             this.find_mgid("vh1.com");
             this.mediagen_url = this.getMEDIAGENurl("vh1.com");
             ext = default_ext;
-        } else if (link.getDownloadURL().matches(type_nickmom_com)) {
-            br.getPage(link.getDownloadURL());
+        } else if (browser_url.matches(type_nickmom_com)) {
+            br.getPage(browser_url);
             if (!br.containsHTML("class=\"video-player-wrapper\"") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -455,12 +449,12 @@ public class VivaTv extends PluginForHost {
             this.mgid = br.getRegex("data-contenturi=\"([a-z0-9:\\-\\.]*?)\"").getMatch(0);
             this.mediagen_url = this.getMEDIAGENurl("nickmom.com");
             ext = default_ext;
-        } else if (link.getDownloadURL().matches(type_cmt)) {
-            br.getPage(link.getDownloadURL());
+        } else if (browser_url.matches(type_cmt)) {
+            br.getPage(browser_url);
             if (!br.containsHTML("MTVN\\.Player\\.") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (link.getDownloadURL().matches(subtype_cmt_episodes)) {
+            if (browser_url.matches(subtype_cmt_episodes)) {
                 filename = br.getRegex("ame=\"mtvn_title\"[\t\n\r ]+content=\"([^<>]*?)\"/>").getMatch(0);
             } else {
                 filename = br.getRegex("class=\"group-abc\">[\t\n\r ]+<div>([^<>]*?)</div>").getMatch(0);
@@ -474,47 +468,64 @@ public class VivaTv extends PluginForHost {
                 }
             }
             ext = default_ext;
-        } else if (link.getDownloadURL().matches(type_cc_com)) {
-            br.getPage(link.getDownloadURL());
+        } else if (browser_url.matches(type_cc_com)) {
+            br.getPage(browser_url);
             if (!br.containsHTML("\"video_player\"") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (link.getDownloadURL().matches(subtype_cc_episodes)) {
+            if (browser_url.matches(subtype_cc_episodes)) {
                 filename = br.getRegex("<title>([^<>]*?)\\| Comedy Central</title>").getMatch(0);
             } else {
                 filename = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\"").getMatch(0);
             }
             ext = default_ext;
-        } else if (link.getDownloadURL().matches(type_thedailyshow_cc_com)) {
-            br.getPage(link.getDownloadURL());
+        } else if (browser_url.matches(type_thedailyshow_cc_com)) {
+            br.getPage(browser_url);
             if (!br.containsHTML("\"video_player\"") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (link.getDownloadURL().matches(subtype_thedailyshow_cc_com_episodes)) {
+            if (browser_url.matches(subtype_thedailyshow_cc_com_episodes)) {
                 filename = br.getRegex("<title>([^<<]*?)\\- Full Episode \\| Comedy Central</title>").getMatch(0);
             } else {
                 filename = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\"").getMatch(0);
             }
             ext = default_ext;
-        } else if (link.getDownloadURL().matches(type_tosh_cc_com)) {
-            br.getPage(link.getDownloadURL());
+        } else if (browser_url.matches(type_tosh_cc_com)) {
+            br.getPage(browser_url);
             if (!br.containsHTML("\"video_player\"") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (link.getDownloadURL().matches(subtype_tosh_cc_com_episodes)) {
+            if (browser_url.matches(subtype_tosh_cc_com_episodes)) {
                 filename = br.getRegex("<title>([^<>]*?)\\-  Full Episode \\| Comedy Central</title>").getMatch(0);
-            } else if (link.getDownloadURL().matches(subtype_tosh_cc_com_videoclips_segments)) {
+            } else if (browser_url.matches(subtype_tosh_cc_com_videoclips_segments)) {
                 filename = br.getRegex("<title>Video Breakdown \\-([^<>\"]*?) \\| Comedy Central</title>").getMatch(0);
             } else {
                 filename = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\"").getMatch(0);
             }
             ext = default_ext;
-        } else if (link.getDownloadURL().matches(type_mtvu_com)) {
-            br.getPage(link.getDownloadURL());
+        } else if (browser_url.matches(type_mtvu_com)) {
+            br.getPage(browser_url);
             if (!br.containsHTML("plugins\\.MTVNMediaPlayer") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = br.getRegex("<title>([^<>]*?)\\| mtvu\\.com[\t\n\r ]*?</title>").getMatch(0);
+            ext = default_ext;
+        } else if (browser_url.matches(type_mtv_com_au) || browser_url.matches(type_mtv_com_au_embedded)) {
+            /* Handle embedded links just like they are - we do not even want to try to find/use the original video url. */
+            mgid = getMGIDOutOfEmbedURL(browser_url);
+            if (mgid.contains(":uma:")) {
+                this.feed_url = getFEEDurl("nick.de");
+                /* Special: Set the mediagen url here already */
+                this.mediagen_url = this.getMEDIAGENurl("nick.de");
+            } else {
+                this.feed_url = getFEEDurl("mtv.com.au");
+                /* Special: Set the mediagen url here already */
+                this.mediagen_url = this.getMEDIAGENurl("mtv.com.au");
+            }
+            br.getPage(feed_url);
+            checkFeedAvailibility();
+            filename = feedGetTitle();
+            description = feedGetDescription();
             ext = default_ext;
         }
         if (filename == null) {
@@ -572,7 +583,7 @@ public class VivaTv extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* Video temporarily or forever offline */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 3 * 60 * 60 * 1000l);
-        } else if (br.containsHTML("status=\"esiblocked\"") || br.containsHTML("/error_country_block") || br.containsHTML(">Sorry, content is not available for your country\\.")) {
+        } else if (br.containsHTML("status=\"esiblocked\"") || br.containsHTML("/error_country_block") || br.containsHTML(">Sorry, content is not available for your country\\.") || br.containsHTML("copyright_error\\.flv") || br.containsHTML(">Copyrights restrict us from playing this video in your country")) {
             /* Geo block */
             throw new PluginException(LinkStatus.ERROR_FATAL, "This video is not available from your location");
         } else if (br.containsHTML(">Sorry, this video is not found or no longer available due to date or rights restrictions")) {
@@ -771,7 +782,7 @@ public class VivaTv extends PluginForHost {
     }
 
     public static String feedGetDescription(final String source) {
-        String description = new Regex(source, "<media:description>[\t\n\r ]+<\\!\\[CDATA\\[(.*?)\\]\\]>[\t\n\r ]+</media:description>").getMatch(0);
+        String description = new Regex(source, "<media:description>[\t\n\r ]*?<\\!\\[CDATA\\[(.*?)\\]\\]>[\t\n\r ]*?</media:description>").getMatch(0);
         if (description == null) {
             description = new Regex(source, "<media:description>(.*?)</media:description>").getMatch(0);
         }
@@ -811,6 +822,10 @@ public class VivaTv extends PluginForHost {
 
     private void find_mgid(final String host) {
         mgid = br.getRegex("(mgid[a-z:]+" + host + ":[A-Za-z0-9_\\-]+)").getMatch(0);
+    }
+
+    private String getMGIDOutOfEmbedURL(final String embed_url) {
+        return new Regex(embed_url, "(mgid:[A-Za-z0-9_\\.\\-:]+)").getMatch(0);
     }
 
     /** Converts rtmp urls to http urls */
@@ -876,6 +891,14 @@ public class VivaTv extends PluginForHost {
         return title;
     }
 
+    /** Checks if a feed is online. */
+    private void checkFeedAvailibility() throws PluginException {
+        /* Check for invalid XML --> Video must be offline then */
+        if (!br.containsHTML("</channel>") || br.getHttpConnection().getResponseCode() == 404 || (feedGetTitle() == null && br.containsHTML("<media:title/>"))) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+    }
+
     public static String getFilenameVH1(final Browser br) {
         String title;
         if (br.getURL().matches(subtype_vh1_episodes)) {
@@ -901,6 +924,8 @@ public class VivaTv extends PluginForHost {
     public static HashMap<String, String> feedURLs                    = new HashMap<String, String>() {
                                                                           {
                                                                               put("ALL_OTHERS", "http://api.mtvnn.com/v2/mrss.xml?uri=%s");
+                                                                              /* Seems like this one is used for most big mtv sites as well */
+                                                                              put("nick.de", "http://intl.esperanto.mtvi.com/www/xml/video.jhtml?uri=%s&version=as3");
                                                                               put("mtvworldwide", "http://all.mtvworldverticals.com/feed-xml/?uri=%s");
                                                                               put("mtv.de", "http://movies.mtv.de/mrss/%s");
                                                                               put("mtvmovies.com", "http://movies.mtv.de/mrss/%s");
