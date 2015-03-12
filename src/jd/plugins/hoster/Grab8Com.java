@@ -461,7 +461,8 @@ public class Grab8Com extends PluginForHost {
             } else if (error.contains("Get link download error")) {
                 statuscode = 5;
             } else {
-                statuscode = 666;
+                /* Do not set any errorcode here as the "htmlerror"-class sometimes simply returns red texts which are no errors! */
+                logger.info("Possibly unhandled error");
             }
         }
     }
