@@ -82,7 +82,9 @@ public class AudioMa extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
+        if (filename != null && link.getFinalFileName() == null) {
+            link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
+        }
         return AvailableStatus.TRUE;
     }
 
