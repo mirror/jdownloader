@@ -222,10 +222,10 @@ public class NovaFileCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, false, 1, "freelink");
+        doFree(downloadLink, null, false, 1, "freelink");
     }
 
-    public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
+    public void doFree(final DownloadLink downloadLink, final Account account, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String passCode = null;
         if (br.containsHTML("<div id=\"premium-only\">")) {
             try {
@@ -245,12 +245,12 @@ public class NovaFileCom extends PluginForHost {
         }
         // Third, continue like normal.
         if (dllink == null) {
-            checkErrors(downloadLink, false, passCode);
+            checkErrors(downloadLink, account, false, passCode);
             Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
                 sendForm(download1);
-                checkErrors(downloadLink, false, passCode);
+                checkErrors(downloadLink, account, false, passCode);
             }
             dllink = getDllink();
         }
@@ -344,7 +344,7 @@ public class NovaFileCom extends PluginForHost {
                 }
                 sendForm(dlForm);
                 logger.info("Submitted DLForm");
-                checkErrors(downloadLink, true, passCode);
+                checkErrors(downloadLink, account, true, passCode);
                 dllink = getDllink();
                 if (dllink == null && (getFormByKey("op", "download2") == null || i == repeat)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
@@ -483,7 +483,21 @@ public class NovaFileCom extends PluginForHost {
         correctBR();
     }
 
-    public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
+    public void checkErrors(final DownloadLink theLink, final Account account, boolean checkAll, final String passCode) throws NumberFormatException, PluginException {
+        if (account != null) {
+            synchronized (LOCK) {
+                final String hours = new Regex(correctedBR, "class=\"error_page\">\\s*You've used \\d+ different IPs to download in last \\d+ hours\\. You're not allowed to download for (\\d+) hours\\.").getMatch(0);
+                // recommend to users that they disable IP reconnection!
+                if (hours != null) {
+                    final AccountInfo ai = account.getAccountInfo();
+                    ai.setStatus("Account Disabled due to logging in too many times from different IP address over short period");
+                    account.setAccountInfo(ai);
+                    account.setTmpDisabledTimeout(Long.parseLong(hours) * 60 * 60 * 1001l);
+                    account.setTempDisabled(true);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        }
         if (checkAll) {
             if (new Regex(correctedBR, PASSWORDTEXT).matches() || correctedBR.contains("Wrong password")) {
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
@@ -810,14 +824,14 @@ public class NovaFileCom extends PluginForHost {
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
             getPage(link.getDownloadURL());
-            doFree(link, false, 1, "freelink2");
+            doFree(link, account, false, 1, "freelink2");
         } else {
             dllink = checkDirectLink(link, "premlink");
             if (dllink == null) {
                 getPage(link.getDownloadURL());
                 dllink = getDllink();
                 if (dllink == null) {
-                    checkErrors(link, true, passCode);
+                    checkErrors(link, account, true, passCode);
                     Form dlform = br.getFormbyProperty("name", "F1");
                     if (dlform == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -827,14 +841,10 @@ public class NovaFileCom extends PluginForHost {
                     }
                     sendForm(dlform);
                     dllink = getDllink();
-                    checkErrors(link, true, passCode);
+                    checkErrors(link, account, true, passCode);
                 }
             }
             if (dllink == null) {
-                if (br.containsHTML("You\\'re not allowed to download for")) {
-                    logger.info("Accound temporarily disabled because of account sharing!");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                }
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
