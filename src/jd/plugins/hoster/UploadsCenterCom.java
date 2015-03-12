@@ -187,7 +187,7 @@ public class UploadsCenterCom extends PluginForHost {
                         fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                         // traits from download1 page below.
                         if (fileInfo[0] == null) {
-                            fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                            fileInfo[0] = new Regex(correctedBR, "File ?Name:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
                             // next two are details from sharing box
                             if (fileInfo[0] == null) {
                                 fileInfo[0] = new Regex(correctedBR, sharebox0).getMatch(0);
@@ -208,14 +208,17 @@ public class UploadsCenterCom extends PluginForHost {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
             if (fileInfo[1] == null) {
                 fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-                // next two are details from sharing box
                 if (fileInfo[1] == null) {
-                    fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
+                    fileInfo[1] = new Regex(correctedBR, "File ?size:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                    // next two are details from sharing box
                     if (fileInfo[1] == null) {
-                        fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
-                        // generic failover.
+                        fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
                         if (fileInfo[1] == null) {
-                            fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(?:B(?:ytes?)?|KB|MB|GB))").getMatch(0);
+                            fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
+                            // generic failover.
+                            if (fileInfo[1] == null) {
+                                fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(?:B(?:ytes?)?|KB|MB|GB))").getMatch(0);
+                            }
                         }
                     }
                 }
