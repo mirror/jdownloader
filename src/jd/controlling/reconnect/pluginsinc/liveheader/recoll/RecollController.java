@@ -12,7 +12,6 @@ import jd.nutils.encoding.Encoding;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
@@ -22,9 +21,9 @@ public class RecollController {
     private static final RecollController INSTANCE  = new RecollController();
     protected static String               HTTP_BASE = "https://reconnect.jdownloader.org/";
     static {
-        if (!Application.isJared(null)) {
-            HTTP_BASE = "https://reconnect.jdownloader.org/test/";
-        }
+        // if (!Application.isJared(null)) {
+        // HTTP_BASE = "https://reconnect.jdownloader.org/test/";
+        // }
     }
 
     /**

@@ -1245,8 +1245,8 @@ public class YoutubeHelper implements YoutubeHelperInterface {
     }
 
     public static void main(String[] args) {
-        for (YoutubeITAG tag : YoutubeITAG.values()) {
-            System.out.println(tag.name());
+        for (YoutubeVariant tag : YoutubeVariant.values()) {
+            System.out.println("<li>" + tag.getType() + " : " + tag.name() + "</li>");
         }
     }
 
