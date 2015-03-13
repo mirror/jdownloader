@@ -456,6 +456,26 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                     fp.add(dl);
                     CrawledLink cl = new CrawledLink(dl);
                     cl.setName(j.getText());
+                    switch (j.getAutoStart()) {
+                    case FALSE:
+                        cl.setAutoStartEnabled(false);
+                        break;
+                    case TRUE:
+                        cl.setAutoStartEnabled(true);
+                        break;
+                    default:
+                    }
+
+                    switch (j.getAutoConfirm()) {
+                    case FALSE:
+                        cl.setAutoConfirmEnabled(false);
+                        break;
+                    case TRUE:
+                        cl.setAutoConfirmEnabled(true);
+                        break;
+                    default:
+                    }
+
                     LinkCollector.getInstance().addCrawledLink(cl);
                 } catch (UpdateRequiredClassNotFoundException e) {
                     e.printStackTrace();

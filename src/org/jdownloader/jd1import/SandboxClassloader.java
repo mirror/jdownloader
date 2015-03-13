@@ -155,7 +155,7 @@ public final class SandboxClassloader extends ClassLoader {
                 jarFile = new JarFile(jar);
                 final JarEntry entry = jarFile.getJarEntry(name);
                 if (entry != null) {
-                    final String url = jar.toURL().toString();
+                    final String url = jar.toURI().toURL().toString();
                     return new URL("jar:" + url + "!/" + name);
                 }
             } catch (final Exception e) {

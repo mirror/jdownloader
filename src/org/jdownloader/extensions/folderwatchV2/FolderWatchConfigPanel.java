@@ -13,6 +13,9 @@ import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedTable;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DevConfig;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.storage.simplejson.mapper.ClassCache;
+import org.appwork.storage.simplejson.mapper.Getter;
+import org.appwork.storage.simplejson.mapper.Setter;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.swing.SwingUtils;
@@ -72,7 +75,24 @@ public class FolderWatchConfigPanel extends ExtensionConfigPanel<FolderWatchExte
             JTextArea txt = new JTextArea();
             txt.setOpaque(false);
             URL url = Application.getRessourceURL("org/jdownloader/extensions/folderwatchV2/explain.txt");
-            txt.setText(new String(IO.readStream(-1, url.openStream()), "UTF-8"));
+            final ClassCache cc = ClassCache.getClassCache(CrawlJobStorable.class);
+            CrawlJobStorable example = new CrawlJobStorable();
+            StringBuilder sb = new StringBuilder();
+            sb.append(new String(IO.readStream(-1, url.openStream()), "UTF-8"));
+            sb.append("\r\n\r\n### Available Fields:\r\n");
+            for (Setter s : cc.getSetter()) {
+                try {
+                    Getter getter = cc.getGetter(s.getKey());
+                    sb.append("\r\n# " + s.getKey() + " Type: " + s.getMethod().getParameterTypes()[0].getSimpleName());
+                    if (getter != null) {
+
+                        sb.append("\r\n# " + s.getKey() + " = " + getter.getMethod().invoke(example, new Object[] {}));
+                    }
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
+            }
+            txt.setText(sb.toString());
 
             add(txt);
         } catch (Throwable e) {

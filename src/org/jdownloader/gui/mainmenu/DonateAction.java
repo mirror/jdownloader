@@ -7,7 +7,6 @@ import jd.http.Browser;
 import org.appwork.storage.JSonStorage;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Regex;
 import org.appwork.utils.encoding.URLEncode;
@@ -23,9 +22,9 @@ import org.jdownloader.statistics.StatsManager;
 public class DonateAction extends CustomizableAppAction {
     public static String SERVER = "https://payments.appwork.org/";
     static {
-        if (!Application.isJared(null)) {
-            SERVER = "https://payments.appwork.org/test/";
-        }
+        // if (!Application.isJared(null)) {
+        // SERVER = "https://payments.appwork.org/test/";
+        // }
     }
 
     public DonateAction() {
