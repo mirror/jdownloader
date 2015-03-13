@@ -31,7 +31,7 @@ import jd.plugins.FilePackage;
  *
  * @author raztoki
  * */
-@DecrypterPlugin(revision = "$Revision: $", interfaceVersion = 2, names = { "scnlog.eu" }, urls = { "https?://(?:www\\.)?scnlog\\.eu/(?:[a-z0-9_\\-]+/){2}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scnlog.eu" }, urls = { "https?://(?:www\\.)?scnlog\\.eu/(?:[a-z0-9_\\-]+/){2}" }, flags = { 0 })
 public class ScnlogEu extends antiDDoSForDecrypt {
 
     public ScnlogEu(PluginWrapper wrapper) {
@@ -52,7 +52,7 @@ public class ScnlogEu extends antiDDoSForDecrypt {
 
         if (br.containsHTML("<title>404 Page Not Found</title>|>Sorry, but you are looking for something that isn't here.<") || br.getHttpConnection().getResponseCode() == 403) {
             try {
-                decryptedLinks.add(createOfflinelink(parameter));
+                decryptedLinks.add(createOfflinelink(parameter, "invalidurl", "invalidurl"));
             } catch (final Throwable t) {
                 logger.info("Incorrect URL: " + parameter);
             }
@@ -79,6 +79,15 @@ public class ScnlogEu extends antiDDoSForDecrypt {
         }
 
         if (decryptedLinks.isEmpty()) {
+            if (br.containsHTML(">Links have been removed due to DMCA request<")) {
+                try {
+                    decryptedLinks.add(createOfflinelink(parameter, fpName, null));
+                } catch (final Throwable t) {
+                    logger.info("Offline Content: " + parameter);
+                }
+                return decryptedLinks;
+            }
+
             logger.warning("'decrptedLinks' isEmpty!, Please report this to JDownloader Development Team : " + parameter);
             return null;
         }
