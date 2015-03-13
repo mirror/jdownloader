@@ -672,6 +672,8 @@ public class NovaFileCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        // reset value
+        account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", Property.NULL);
         AccountInfo ai = new AccountInfo();
         try {
             login(account, true);

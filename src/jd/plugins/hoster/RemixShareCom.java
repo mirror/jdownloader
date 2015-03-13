@@ -87,10 +87,10 @@ public class RemixShareCom extends PluginForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         br.setFollowRedirects(false);
-        /*
-         * 400 = File deleted, maybe abused 500 = Wrong link or maybe deleted some time ago
-         */
-        if (br.containsHTML("Error Code: (400|500)\\.") || br.containsHTML("Please check the downloadlink")) {
+        // 300 = The uploader has deleted the file
+        // 400 = File deleted, maybe abused
+        // 500 = Wrong link or maybe deleted some time ago
+        if (br.containsHTML("<b>Error Code: [345]00\\.") || br.containsHTML("Please check the downloadlink")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<span title=\\'([0-9]{10}_)?(.*?)\\'>", Pattern.CASE_INSENSITIVE)).getMatch(1));
@@ -207,7 +207,7 @@ public class RemixShareCom extends PluginForHost {
         if (lnk == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!lnk.startsWith("http://") || !lnk.startsWith("https://")) {
+        if (!lnk.startsWith("http://") && !lnk.startsWith("https://")) {
             lnk = new Regex(lnk, "<a href=\"(http://.*?)\"").getMatch(0);
         }
         br.getPage(lnk);

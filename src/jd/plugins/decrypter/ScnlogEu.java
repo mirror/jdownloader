@@ -31,7 +31,7 @@ import jd.plugins.FilePackage;
  *
  * @author raztoki
  * */
-@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "scnlog.eu" }, urls = { "https?://(?:www\\.)?scnlog\\.eu/(?:[a-z0-9_\\-]+/){2}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: $", interfaceVersion = 2, names = { "scnlog.eu" }, urls = { "https?://(?:www\\.)?scnlog\\.eu/(?:[a-z0-9_\\-]+/){2}" }, flags = { 0 })
 public class ScnlogEu extends antiDDoSForDecrypt {
 
     public ScnlogEu(PluginWrapper wrapper) {
@@ -51,7 +51,11 @@ public class ScnlogEu extends antiDDoSForDecrypt {
         getPage(parameter);
 
         if (br.containsHTML("<title>404 Page Not Found</title>|>Sorry, but you are looking for something that isn't here.<") || br.getHttpConnection().getResponseCode() == 403) {
-            logger.info("Incorrect URL: " + parameter);
+            try {
+                decryptedLinks.add(createOfflinelink(parameter));
+            } catch (final Throwable t) {
+                logger.info("Incorrect URL: " + parameter);
+            }
             return decryptedLinks;
         }
 

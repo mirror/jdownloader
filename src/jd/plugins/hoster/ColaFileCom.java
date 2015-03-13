@@ -55,19 +55,16 @@ public class ColaFileCom extends PluginForHost {
         if (br.containsHTML(">当前文件不存在，请尝试其它链接。</div>|>当前文件所有者由于违反可乐云使用条例，帐号暂时被锁定，请联系可乐云客户服务中心。<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("class=\"file_name\"><a href=\"https?://(www\\.)?colafile\\.com/file/\\d+\">([^<>\"]*?)</a>").getMatch(1);
+        String filename = br.getRegex("class=\"file_name\"><a href=\"(?:https?://(?:www\\.)?colafile\\.com/file/\\d+)?\">([^<>\"]*?)</a>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("class=\"download_filename\">([^<>\"]*?)</p>").getMatch(0);
         }
         if (filename == null) {
-            filename = br.getRegex("class=\"b\\-fl ellipsis\" title=\"([^<>\"]*?)\"").getMatch(0);
+            filename = br.getRegex("class=\"b-fl ellipsis\" title=\"([^<>\"]*?)\"").getMatch(0);
         }
         // for mp3s
         if (filename == null) {
-            filename = br.getRegex("<a href=\"file/\\d+\">([^<>\"]*?)</a>").getMatch(0);
-        }
-        if (filename == null) {
-            filename = br.getRegex("class=\"file_name\"><a href=\"\">([^<>\"]*?)</a>").getMatch(0);
+            filename = br.getRegex("<a href=\"(?:file/\\d+)\">([^<>\"]*?)</a>").getMatch(0);
         }
         String filesize = br.getRegex("class=\"file_detail\">[\t\n\r ]+<span>大小：([^<>\"]*?)</span>").getMatch(0);
         if (filesize == null) {
@@ -80,11 +77,13 @@ public class ColaFileCom extends PluginForHost {
         if (filesize == null) {
             filesize = br.getRegex("大小：([^<>\"]*?)</em>").getMatch(0);
         }
-        if (filename == null || filesize == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.trim()) + "b"));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.trim()) + "iB"));
+        }
         return AvailableStatus.TRUE;
     }
 
