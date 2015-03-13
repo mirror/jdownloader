@@ -45,6 +45,7 @@ public class ColaFileCom extends PluginForHost {
         return "http://www.colafile.com/";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -64,6 +65,9 @@ public class ColaFileCom extends PluginForHost {
         // for mp3s
         if (filename == null) {
             filename = br.getRegex("<a href=\"file/\\d+\">([^<>\"]*?)</a>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("class=\"file_name\"><a href=\"\">([^<>\"]*?)</a>").getMatch(0);
         }
         String filesize = br.getRegex("class=\"file_detail\">[\t\n\r ]+<span>大小：([^<>\"]*?)</span>").getMatch(0);
         if (filesize == null) {
@@ -109,6 +113,11 @@ public class ColaFileCom extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
             br.followConnection();
             /* It says "file has been deleted" */
             if (br.containsHTML("当前文件已被删除，请您更换资源下载。")) {

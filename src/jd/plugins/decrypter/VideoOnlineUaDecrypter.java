@@ -56,7 +56,7 @@ public class VideoOnlineUaDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        externID = br.getRegex("\"(//(www\\.)?youtube\\.com/embed/[^<>\"]*?)\"").getMatch(0);
+        externID = br.getRegex("(?:\"|\\')(//(www\\.)?youtube\\.com/embed/[^<>\"]*?)(?:\"|\\')").getMatch(0);
         if (externID == null) {
             externID = br.getRegex("src=\\'https?:(//(www\\.)?youtube\\.com/embed/[A-Za-z0-9\\-_]+)\\'").getMatch(0);
         }
@@ -74,7 +74,7 @@ public class VideoOnlineUaDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        externID = br.getRegex("src=\\'(http://www\\.old\\.novy\\.tv/embed/\\d+)\\'").getMatch(0);
+        externID = br.getRegex("src=\\'(http://www\\.(?:old\\.)?novy\\.tv/embed/\\d+)\\'").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
