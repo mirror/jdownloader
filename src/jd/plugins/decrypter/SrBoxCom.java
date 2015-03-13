@@ -87,7 +87,7 @@ public class SrBoxCom extends PluginForDecrypt {
         int iImage = TabImage1 == null ? 0 : TabImage1.length;
         if (TabImage1 != null) {
             for (String strImageLink : TabImage1) {
-                if (strImageLink.contains("/thumbs/")) {
+                if (strImageLink.contains("/thumbs/") || strImageLink.contains("/medium/")) {
                     iImage++;
                 }
             }
@@ -95,7 +95,7 @@ public class SrBoxCom extends PluginForDecrypt {
         iImage += TabImage2 == null ? 0 : TabImage2.length;
         if (TabImage2 != null) {
             for (String strImageLink : TabImage2) {
-                if (strImageLink.contains("/thumbs/")) {
+                if (strImageLink.contains("/thumbs/") || strImageLink.contains("/medium/")) {
                     iImage++;
                 }
             }
@@ -130,13 +130,14 @@ public class SrBoxCom extends PluginForDecrypt {
                 if (!strImageLink.toLowerCase().contains("foto")) {
                     strImageLink = "http://www.israbox.org/uploads/" + strImageLink;
 
-                    if (strImageLink.contains("/thumbs/")) {
+                    if (strImageLink.contains("/thumbs/") || strImageLink.contains("/medium/")) {
                         DownloadLink DLLink = createDownloadlink(strImageLink, false);
                         if (DLLink != null) {
                             TabImageLink[iImageIndex++] = DLLink;
                             iImageFinal++;
                         }
                         strImageLink = strImageLink.replace("thumbs/", "");
+                        strImageLink = strImageLink.replace("medium/", "");
                     }
 
                     DownloadLink DLLink = createDownloadlink(strImageLink, false);
@@ -152,13 +153,14 @@ public class SrBoxCom extends PluginForDecrypt {
             for (String strImageLink : TabImage2) {
                 strImageLink = "http://www.lectro.ws/uploads/posts/" + strImageLink;
 
-                if (strImageLink.contains("/thumbs/")) {
+                if (strImageLink.contains("/thumbs/") || strImageLink.contains("/medium/")) {
                     DownloadLink DLLink = createDownloadlink(strImageLink, false);
                     if (DLLink != null) {
                         TabImageLink[iImageIndex++] = DLLink;
                         iImageFinal++;
                     }
                     strImageLink = strImageLink.replace("thumbs/", "");
+                    strImageLink = strImageLink.replace("medium/", "");
                 }
 
                 DownloadLink DLLink = createDownloadlink(strImageLink, false);
