@@ -122,7 +122,10 @@ public class RemixShareCom extends PluginForHost {
             fun = br.getRegex("document\\.getElementById\\('[\\w\\-]+'\\)\\.href\\s*(=\\s*\"http[^\r\n]+)").getMatch(0);
         }
         if (fun == null) {
-            fun = br.getRegex("<a[^>]*href=\"(https?://(?:\\w+\\.)?remixshare\\.com/(?:[^/]+/){4,}\\d+)\"[^>]+title=\"DOWNLOAD\"").getMatch(0);
+            fun = br.getRegex("<a[^>]*href=\"(https?://(?:\\w+\\.)?remixshare\\.com/(?:[^/]+/){4,}\\d+)\"[^>]+title=\"[^\"]*DOWNLOAD[^\"]*\"").getMatch(0);
+            if (fun == null) {
+                fun = br.getRegex("<a[^>]*href=\"(https?://(?:\\w+\\.)?remixshare\\.com/(?:[^/]+/){4,}\\d+)\"").getMatch(0);
+            }
             if (fun != null) {
                 return fun;
             }
