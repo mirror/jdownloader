@@ -155,13 +155,12 @@ public class Grab8Com extends PluginForHost {
             dllink = br.getBaseURL();
             br.setFollowRedirects(true);
             this.postAPISafe(br.getBaseURL() + "index.php", "referer=&yt_fmt=highest&tor_user=&tor_pass=&mu_cookie=&cookie=&email=&method=tc&partSize=10&proxy=&proxyuser=&proxypass=&premium_acc=on&premium_user=&premium_pass=&path=%2Fhome%2Fgrab8%2Fpublic_html%2F2%2Ffiles&link=" + Encoding.urlEncode(link.getDownloadURL()));
-            if (br.containsHTML("Transloading in progress<")) {
-                /* We have to send this form to finally start the transfer */
-                final Form continueForm = br.getForm(0);
-                if (continueForm == null) {
-                    handleErrorRetries("continueformnull", 10, 2 * 60 * 1000l);
-                }
-                submitFormAPISafe(continueForm);
+            final Form transloadform = br.getFormbyKey("saveto");
+            if (transloadform != null) {
+                logger.info("Found transloadform --> Submitting it");
+                submitFormAPISafe(transloadform);
+            } else {
+                logger.warning("Could not find transloadform --> Possible failure");
             }
             /*
              * If e.g. the user already transfered the file to the server but this code tries to do it again for whatever reason we will not
