@@ -397,7 +397,12 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
 
             @Override
             public int getMaxWidth() {
-                return 60;
+                return 125;
+            }
+
+            @Override
+            protected boolean isDefaultResizable() {
+                return true;
             }
 
             public boolean isDefaultVisible() {
