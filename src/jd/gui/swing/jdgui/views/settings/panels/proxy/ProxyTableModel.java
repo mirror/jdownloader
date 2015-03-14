@@ -214,7 +214,7 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
             }
 
             /**
-             * 
+             *
              */
             private static final long serialVersionUID = 1L;
 
@@ -333,14 +333,14 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
         this.addColumn(new ExtSpinnerColumn<AbstractProxySelectorImpl>(_GUI._.gui_column_port()) {
 
             /**
-			 * 
-			 */
+             *
+             */
             private static final long serialVersionUID = 7770193565380136904L;
 
             @Override
             protected Number getNumber(AbstractProxySelectorImpl value) {
                 if (value.getClass() == SingleBasicProxySelectorImpl.class) {
-                    ((SingleBasicProxySelectorImpl) value).getPort();
+                    return ((SingleBasicProxySelectorImpl) value).getPort();
                 }
                 return -1;
             }
