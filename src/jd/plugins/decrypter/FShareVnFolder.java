@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -49,7 +50,10 @@ public class FShareVnFolder extends PluginForDecrypt {
         final String fpName = br.getRegex("data-id=\"" + uid + "\" data-path=\"/(.*?)\"").getMatch(0);
         String[] linkinformation = new String[0];
         for (int i = 0; linkinformation != null; i++) {
+            final Browser br = this.br.cloneBrowser();
             if (i != 0) {
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.getHeaders().put("Accept", "*/*");
                 br.getPage(parameter + "?pageIndex=" + i);
             }
             linkinformation = br.getRegex("<li>(\\s*<div[^>]+class=\"[^\"]+file_name[^\"]*.*?)</li>").getColumn(0);
