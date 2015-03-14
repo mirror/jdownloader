@@ -52,7 +52,7 @@ public class EnableAccountAction extends AbstractScheduleAction<AccountActionCon
         panel.put(noAccLabel, "");
 
         updateAccounts();
-        cbAccounts.setRenderer(new AccountListRenderer());
+        cbAccounts.setRenderer(new AccountListRenderer(cbAccounts.getRenderer()));
         cbAccounts.addActionListener(new ActionListener() {
 
             @Override
