@@ -17,7 +17,7 @@ public interface UpdateSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("If enabled, JD will install Updates silently during the next JDStart")
+    @DescriptionForConfigEntry("If enabled, JD will ask before installing Updates")
     boolean isDoAskMyBeforeInstallingAnUpdateEnabled();
 
     void setDoAskMyBeforeInstallingAnUpdateEnabled(boolean b);
