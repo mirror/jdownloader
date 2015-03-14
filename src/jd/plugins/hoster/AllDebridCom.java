@@ -285,7 +285,7 @@ public class AllDebridCom extends PluginForHost {
         prepBrowser(br);
         URLConnectionAdapter con = null;
         try {
-            con = br.openHeadConnection(dl.getDownloadURL());
+            con = br.openGetConnection(dl.getDownloadURL());
             if (con.isContentDisposition()) {
                 if (dl.getFinalFileName() == null) {
                     dl.setFinalFileName(getFileNameFromHeader(con));
