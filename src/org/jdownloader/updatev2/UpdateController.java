@@ -376,7 +376,7 @@ public class UpdateController implements UpdateCallbackInterface {
             if (handler.hasPendingSelfupdate()) {
                 fireUpdatesAvailable(false, handler.createAWFInstallLog());
                 if (!isThreadConfirmed()) {
-                    if (handler.isGuiVisible() || settings.isDoAskMyBeforeInstallingAnUpdateEnabled()) {
+                    if (handler.isGuiVisible() || settings.isDoAskMeBeforeInstallingAnUpdateEnabled()) {
 
                         logger.info("ASK for installing selfupdate");
 
@@ -453,7 +453,7 @@ public class UpdateController implements UpdateCallbackInterface {
                 fireUpdatesAvailable(false, null);
             } else {
 
-                if (handler.isGuiVisible() || settings.isDoAskMyBeforeInstallingAnUpdateEnabled()) {
+                if (handler.isGuiVisible() || settings.isDoAskMeBeforeInstallingAnUpdateEnabled()) {
 
                     List<String> rInstalls = handler.getRequestedInstalls();
                     List<String> ruInstalls = handler.getRequestedUnInstalls();

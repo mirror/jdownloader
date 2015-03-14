@@ -51,7 +51,7 @@ public class InstallUpdatesOnExitRestartRequest implements RestartRequest {
     public void onShutdown() {
         // ask
         this.runUpdates = true;
-        if (JsonConfig.create(UpdateSettings.class).isDoAskMyBeforeInstallingAnUpdateEnabled()) {
+        if (JsonConfig.create(UpdateSettings.class).isDoAskMeBeforeInstallingAnUpdateEnabled()) {
             // DialogHook.showConfirmDialog(0, _UPDATE._.confirmdialog_new_update_available_frametitle(),
             // _UPDATE._.confirmdialog_new_update_available_for_install_message_launcher(), null,
             // _UPDATE._.confirmdialog_new_update_available_answer_now_install(),
