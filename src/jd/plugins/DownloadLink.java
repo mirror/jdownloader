@@ -1005,7 +1005,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /*
      * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
      * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
-     * 
+     *
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
     public boolean isAvailabilityStatusChecked() {
@@ -1842,7 +1842,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public ExtractionStatus getExtractionStatus() {
-        final ExtractionStatus lExtractionStatus = extractionStatus;
+        ExtractionStatus lExtractionStatus = extractionStatus;
         if (lExtractionStatus != null) {
             if (ExtractionStatus.NA.equals(lExtractionStatus)) {
                 return null;
@@ -1852,14 +1852,17 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         final String string = getStringProperty(PROPERTY_EXTRACTION_STATUS, null);
         try {
             if (string != null) {
-                extractionStatus = ExtractionStatus.valueOf(string);
+                lExtractionStatus = ExtractionStatus.valueOf(string);
+                extractionStatus = lExtractionStatus;
+                return lExtractionStatus;
             } else {
                 extractionStatus = ExtractionStatus.NA;
+                return null;
             }
         } catch (Exception e) {
             extractionStatus = ExtractionStatus.NA;
+            return null;
         }
-        return extractionStatus;
     }
 
     public void setExtractionStatus(ExtractionStatus newExtractionStatus) {
