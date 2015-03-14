@@ -152,7 +152,7 @@ public class DownloadLinkSandBox {
         if (downloadLink == null) {
             return null;
         }
-        ExtractionStatus ret = downloadLink.getExtractionStatus();
+        final ExtractionStatus ret = downloadLink.getExtractionStatus();
         return ret == null ? null : ret.name();
     }
 

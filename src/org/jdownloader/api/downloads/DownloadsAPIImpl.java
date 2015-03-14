@@ -13,6 +13,7 @@ import jd.plugins.FilePackage;
 
 import org.appwork.remoteapi.APIQuery;
 import org.jdownloader.controlling.DownloadLinkAggregator;
+import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.plugins.FinalLinkState;
 
 @Deprecated
@@ -260,8 +261,9 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                 infomap.put("enabled", dl.isEnabled());
             }
             if (queryParams.fieldRequested("extractionStatus")) {
-                if (dl.getExtractionStatus() != null) {
-                    infomap.put("extractionStatus", dl.getExtractionStatus().toString());
+                final ExtractionStatus extractionStatus = dl.getExtractionStatus();
+                if (extractionStatus != null) {
+                    infomap.put("extractionStatus", extractionStatus.name());
                 }
             }
 

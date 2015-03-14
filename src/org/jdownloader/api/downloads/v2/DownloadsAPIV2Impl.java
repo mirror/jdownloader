@@ -365,8 +365,9 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
             dls.setEnabled(dl.isEnabled());
         }
         if (queryParams.isExtractionStatus()) {
-            if (dl.getExtractionStatus() != null) {
-                dls.setExtractionStatus(dl.getExtractionStatus().toString());
+            final ExtractionStatus extractionStatus = dl.getExtractionStatus();
+            if (extractionStatus != null) {
+                dls.setExtractionStatus(extractionStatus.name());
             }
         }
 
@@ -414,7 +415,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
                 dls.setStatus(label);
                 return dls;
             }
-            ExtractionStatus extractionStatus = link.getExtractionStatus();
+            final ExtractionStatus extractionStatus = link.getExtractionStatus();
             if (extractionStatus != null) {
                 switch (extractionStatus) {
                 case ERROR:
@@ -567,11 +568,11 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     /**
      * the SelectionInfo Class is actually used for the GUI downloadtable. it generates a logic selection out of selected links and
      * packages.
-     * 
+     *
      * example: if a package is selected, and non if it's links - all its links will be in the selection info<br>
      * example2: if a package is selected AND SOME of it's children. The packge will not be considered as fully selected. only the actual
      * selected links.
-     * 
+     *
      * @param linkIds
      * @param packageIds
      * @return
@@ -677,15 +678,15 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
     @Override
     public void setPriority(PriorityStorable priority, long[] linkIds, long[] packageIds) throws BadParameterException {
-            org.jdownloader.controlling.Priority jdPriority = org.jdownloader.controlling.Priority.valueOf(priority.name());
-            List<DownloadLink> children = convertIdsToLinks(linkIds);
-            List<FilePackage> pkgs = convertIdsToPackages(packageIds);
-            for (DownloadLink dl : children) {
-                dl.setPriorityEnum(jdPriority);
-            }
-            for (FilePackage pkg : pkgs) {
-                pkg.setPriorityEnum(jdPriority);
-            }
+        org.jdownloader.controlling.Priority jdPriority = org.jdownloader.controlling.Priority.valueOf(priority.name());
+        List<DownloadLink> children = convertIdsToLinks(linkIds);
+        List<FilePackage> pkgs = convertIdsToPackages(packageIds);
+        for (DownloadLink dl : children) {
+            dl.setPriorityEnum(jdPriority);
+        }
+        for (FilePackage pkg : pkgs) {
+            pkg.setPriorityEnum(jdPriority);
+        }
     }
 
     @Override
