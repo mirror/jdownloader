@@ -79,6 +79,8 @@ public class ARDMediathek extends PluginForHost {
         if (downloadLink.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        /* Load this plugin as we use functions of it. */
+        JDUtilities.getPluginForHost("br-online.de");
         if (downloadLink.getStringProperty("directURL", null) == null) {
             /* fetch fresh directURL */
             setBrowserExclusive();
@@ -226,15 +228,8 @@ public class ARDMediathek extends PluginForHost {
      *
      * @return The success of the conversion.
      */
-    public boolean convertSubtitle(final DownloadLink downloadlink) {
+    private boolean convertSubtitle(final DownloadLink downloadlink) {
         final File source = new File(downloadlink.getFileOutput());
-
-        BufferedWriter dest;
-        try {
-            dest = new BufferedWriter(new FileWriter(new File(source.getAbsolutePath().replace(".xml", ".srt"))));
-        } catch (IOException e1) {
-            return false;
-        }
 
         final StringBuilder xml = new StringBuilder();
         int counter = 1;
@@ -251,77 +246,89 @@ public class ARDMediathek extends PluginForHost {
         } finally {
             in.close();
         }
+        boolean success;
         final String xmlContent = xml.toString();
-
-        final String[] matches = new Regex(xmlContent, "(<p id=\"subtitle\\d+\".*?</p>)").getColumn(0);
-        try {
-            /* Find style --> color assignments */
-            final HashMap<String, String> styles_color_names = new HashMap<String, String>();
-            final String[] styles = new Regex(xmlContent, "(<style id=\"s\\d+\".*?/>)").getColumn(0);
-            if (styles != null) {
-                for (final String style_info : styles) {
-                    final String style_id = new Regex(style_info, "<style id=\"(s\\d+)\"").getMatch(0);
-                    final String style_color = new Regex(style_info, "tts:color=\"([a-z]+)\"").getMatch(0);
-                    if (style_id != null && style_color != null) {
-                        styles_color_names.put(style_id, style_color);
-                    }
-                }
-            }
-            styles_color_names.put("s1", "black");
-
-            for (final String info : matches) {
-                dest.write(counter++ + lineseparator);
-                final DecimalFormat df = new DecimalFormat("00");
-                final Regex startInfo = new Regex(info, "begin=\"(\\d{2}):([^<>\"]*?)\"");
-                final Regex endInfo = new Regex(info, "end=\"(\\d{2}):([^<>\"]*?)\"");
-                int startHour = Integer.parseInt(startInfo.getMatch(0));
-                int endHour = Integer.parseInt(endInfo.getMatch(0));
-                startHour -= 10;
-                endHour -= 10;
-                final String start = df.format(startHour) + ":" + startInfo.getMatch(1).replace(".", ",");
-                final String end = df.format(endHour) + ":" + endInfo.getMatch(1).replace(".", ",");
-                dest.write(start + " --> " + end + lineseparator);
-
-                final String[][] color_texts = new Regex(info, "style=\"(s\\d+)\">?(.*?)</p>").getMatches();
-                String text = "";
-                for (final String[] style_text : color_texts) {
-                    final String style = style_text[0];
-                    text = style_text[1];
-                    text = text.replaceAll(lineseparator, " ");
-                    text = text.replaceAll("&apos;", "\\\\u0027");
-                    text = unescape(text);
-                    text = HTMLEntities.unhtmlentities(text);
-                    text = HTMLEntities.unhtmlAmpersand(text);
-                    text = HTMLEntities.unhtmlAngleBrackets(text);
-                    text = HTMLEntities.unhtmlSingleQuotes(text);
-                    text = HTMLEntities.unhtmlDoubleQuotes(text);
-                    text = text.replaceAll("<br />", lineseparator);
-                    text = text.replaceAll("</?(p|span)>?", "");
-                    text = text.trim();
-                    final String remove_color = new Regex(text, "( ?tts:color=\"[a-z0-9]+\">)").getMatch(0);
-                    if (remove_color != null) {
-                        text = text.replace(remove_color, "");
-                    }
-
-                    final String color = styles_color_names.get(style);
-                    final String color_code = getColorCode(color);
-                    text = "<font color=#" + color_code + ">" + text + "</font>";
-
-                }
-                dest.write(text + lineseparator + lineseparator);
-            }
-        } catch (Exception e) {
-            return false;
-        } finally {
+        /* They got two different subtitle formats */
+        if (xmlContent.contains("<ebuttm:documentEbuttVersion>")) {
+            success = jd.plugins.hoster.BrOnlineDe.convertSubtitleBrOnlineDe(downloadlink, xmlContent, 0);
+        } else {
+            BufferedWriter dest;
             try {
-                dest.close();
-            } catch (IOException e) {
+                dest = new BufferedWriter(new FileWriter(new File(source.getAbsolutePath().replace(".xml", ".srt"))));
+            } catch (IOException e1) {
+                return false;
             }
+
+            final String[] matches = new Regex(xmlContent, "(<p id=\"subtitle\\d+\".*?</p>)").getColumn(0);
+            try {
+                /* Find style --> color assignments */
+                final HashMap<String, String> styles_color_names = new HashMap<String, String>();
+                final String[] styles = new Regex(xmlContent, "(<style id=\"s\\d+\".*?/>)").getColumn(0);
+                if (styles != null) {
+                    for (final String style_info : styles) {
+                        final String style_id = new Regex(style_info, "<style id=\"(s\\d+)\"").getMatch(0);
+                        final String style_color = new Regex(style_info, "tts:color=\"([a-z]+)\"").getMatch(0);
+                        if (style_id != null && style_color != null) {
+                            styles_color_names.put(style_id, style_color);
+                        }
+                    }
+                }
+                styles_color_names.put("s1", "black");
+
+                for (final String info : matches) {
+                    dest.write(counter++ + lineseparator);
+                    final DecimalFormat df = new DecimalFormat("00");
+                    final Regex startInfo = new Regex(info, "begin=\"(\\d{2}):([^<>\"]*?)\"");
+                    final Regex endInfo = new Regex(info, "end=\"(\\d{2}):([^<>\"]*?)\"");
+                    int startHour = Integer.parseInt(startInfo.getMatch(0));
+                    int endHour = Integer.parseInt(endInfo.getMatch(0));
+                    startHour -= 10;
+                    endHour -= 10;
+                    final String start = df.format(startHour) + ":" + startInfo.getMatch(1).replace(".", ",");
+                    final String end = df.format(endHour) + ":" + endInfo.getMatch(1).replace(".", ",");
+                    dest.write(start + " --> " + end + lineseparator);
+
+                    final String[][] color_texts = new Regex(info, "style=\"(s\\d+)\">?(.*?)</p>").getMatches();
+                    String text = "";
+                    for (final String[] style_text : color_texts) {
+                        final String style = style_text[0];
+                        text = style_text[1];
+                        text = text.replaceAll(lineseparator, " ");
+                        text = text.replaceAll("&apos;", "\\\\u0027");
+                        text = unescape(text);
+                        text = HTMLEntities.unhtmlentities(text);
+                        text = HTMLEntities.unhtmlAmpersand(text);
+                        text = HTMLEntities.unhtmlAngleBrackets(text);
+                        text = HTMLEntities.unhtmlSingleQuotes(text);
+                        text = HTMLEntities.unhtmlDoubleQuotes(text);
+                        text = text.replaceAll("<br />", lineseparator);
+                        text = text.replaceAll("</?(p|span)>?", "");
+                        text = text.trim();
+                        final String remove_color = new Regex(text, "( ?tts:color=\"[a-z0-9]+\">)").getMatch(0);
+                        if (remove_color != null) {
+                            text = text.replace(remove_color, "");
+                        }
+
+                        final String color = styles_color_names.get(style);
+                        final String color_code = getColorCode(color);
+                        text = "<font color=#" + color_code + ">" + text + "</font>";
+
+                    }
+                    dest.write(text + lineseparator + lineseparator);
+                }
+                success = true;
+            } catch (Exception e) {
+                success = false;
+            } finally {
+                try {
+                    dest.close();
+                } catch (IOException e) {
+                }
+            }
+            source.delete();
         }
 
-        source.delete();
-
-        return true;
+        return success;
     }
 
     private static String getColorCode(final String colorName) {

@@ -129,7 +129,7 @@ public class BrOnlineDe extends PluginForHost {
 
     /**
      * Converts the BR Closed Captions subtitles to SRT subtitles. It runs after the completed download.
-     * 
+     *
      * @return The success of the conversion.
      */
     public boolean convertSubtitle(final DownloadLink downloadlink) {
@@ -158,6 +158,28 @@ public class BrOnlineDe extends PluginForHost {
             in.close();
         }
         final String xmlContent = xml.toString();
+        final boolean success = convertSubtitleBrOnlineDe(downloadlink, xmlContent, 10);
+
+        return success;
+    }
+
+    /**
+     * Converts the BR Closed Captions subtitles to SRT subtitles. It runs after the completed download.
+     *
+     * @return The success of the conversion.
+     */
+    public static boolean convertSubtitleBrOnlineDe(final DownloadLink downloadlink, final String xmlContent, final int offset_reduce_hours) {
+        final File source = new File(downloadlink.getFileOutput());
+
+        BufferedWriter dest;
+        try {
+            dest = new BufferedWriter(new FileWriter(new File(source.getAbsolutePath().replace(".xml", ".srt"))));
+        } catch (IOException e1) {
+            return false;
+        }
+        int counter = 1;
+        final String lineseparator = System.getProperty("line.separator");
+
         try {
             /* Find hex color text --> code assignments */
             final HashMap<String, String> color_codes = new HashMap<String, String>();
@@ -168,14 +190,13 @@ public class BrOnlineDe extends PluginForHost {
                 }
             }
             final DecimalFormat df = new DecimalFormat("00");
-            final int offset_minus_hours = 10;
             final String[] matches = new Regex(xmlContent, "(<tt:p xml:id=\"sub\\d+\".*?</tt:p>)").getColumn(0);
             for (final String info : matches) {
                 dest.write(counter++ + lineseparator);
                 final Regex startInfo = new Regex(info, "begin=\"(\\d{2})(:\\d{2}:\\d{2})\\.(\\d{3})\"");
                 final Regex endInfo = new Regex(info, "end=\"(\\d{2})(:\\d{2}:\\d{2})\\.(\\d{3})\"");
-                final String start_hours_corrected = df.format(Integer.parseInt(startInfo.getMatch(0)) - offset_minus_hours);
-                final String end_hours_corrected = df.format(Integer.parseInt(endInfo.getMatch(0)) - offset_minus_hours);
+                final String start_hours_corrected = df.format(Integer.parseInt(startInfo.getMatch(0)) - offset_reduce_hours);
+                final String end_hours_corrected = df.format(Integer.parseInt(endInfo.getMatch(0)) - offset_reduce_hours);
                 final String start = start_hours_corrected + startInfo.getMatch(1) + "," + startInfo.getMatch(2);
                 final String end = end_hours_corrected + endInfo.getMatch(1) + "," + endInfo.getMatch(2);
                 dest.write(start + " --> " + end + lineseparator);

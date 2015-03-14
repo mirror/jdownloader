@@ -51,7 +51,8 @@ public class VideoMegaTv extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
-        br = new Browser();
+        this.br = new Browser();
+        this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:36.0) Gecko/20100101 Firefox/36.0");
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         fuid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
@@ -76,8 +77,10 @@ public class VideoMegaTv extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        String dllink = null;
         requestFileInformation(downloadLink);
         // cdn
         getPage("/cdn.php?ref=" + fuid + "&width=1000&height=450");
@@ -85,42 +88,73 @@ public class VideoMegaTv extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster issue converting video.", 30 * 60 * 1000l);
         }
         String[] escaped = br.getRegex("document\\.write\\(unescape\\(\"([^<>\"]*?)\"").getColumn(0);
-        if (escaped == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        for (String escape : escaped) {
-            Browser br2 = br.cloneBrowser();
-            escape = Encoding.htmlDecode(escape);
-            String dllink = new Regex(escape, "file:\\s*\"(https?://[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = new Regex(escape, "\"(https?://([a-z0-9]+\\.){1,}videomega\\.tv/vid(?:eo)?s/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.mp4)\"").getMatch(0);
-            }
-            if (dllink == null) {
-                if (!escaped[escaped.length - 1].equals(escape)) {
-                    // this tests if link is last in array
-                    continue;
+        if (escaped != null && escaped.length > 0) {
+            /* Old way */
+            for (String escape : escaped) {
+                Browser br2 = br.cloneBrowser();
+                escape = Encoding.htmlDecode(escape);
+                dllink = new Regex(escape, "file:\\s*\"(https?://[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = new Regex(escape, "\"(https?://([a-z0-9]+\\.){1,}videomega\\.tv/vid(?:eo)?s/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.mp4)\"").getMatch(0);
                 }
+                if (dllink == null) {
+                    if (!escaped[escaped.length - 1].equals(escape)) {
+                        // this tests if link is last in array
+                        continue;
+                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                try {
+                    dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, dllink, true, 0);
+                } catch (final Exception t) {
+                    if (!escaped[escaped.length - 1].equals(escape)) {
+                        // this tests if link is last in array
+                        continue;
+                    }
+                    throw t;
+                }
+                if (dl.getConnection().getContentType().contains("html")) {
+                    if (!escaped[escaped.length - 1].equals(escape)) {
+                        // this tests if link is last in array
+                        continue;
+                    }
+                    if (dl.getConnection().getResponseCode() == 403) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                    } else if (dl.getConnection().getResponseCode() == 404) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                    }
+                    br2.followConnection();
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dl.startDownload();
+                break;
+            }
+        } else {
+            /* New way */
+            dllink = br.getRegex("<source src=\"(http://[^<>\"]*?)\"").getMatch(0);
+            final String id = br.getRegex("id: \"(\\d+)\"").getMatch(0);
+            if (dllink == null || id == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            try {
-                dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, dllink, true, 0);
-            } catch (final Exception t) {
-                if (!escaped[escaped.length - 1].equals(escape)) {
-                    // this tests if link is last in array
-                    continue;
+            final String[] adlinks = br.getRegex("\"(/[A-Z0-9]+/ad\\.php[^<>\"]*?)\"").getColumn(0);
+            if (adlinks != null) {
+                for (final String adlink : adlinks) {
+                    br.cloneBrowser().getPage(adlink);
                 }
-                throw t;
             }
+            br.cloneBrowser().postPage("http://videomega.tv/upd_views.php", "id=" + id + "&referal=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
+            br.getHeaders().put("Accept", "video/webm,video/ogg,video/*;q=0.9,application/ogg;q=0.7,audio/*;q=0.6,*/*;q=0.5");
+            dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
-                if (!escaped[escaped.length - 1].equals(escape)) {
-                    // this tests if link is last in array
-                    continue;
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
                 }
-                br2.followConnection();
+                br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
-            break;
         }
     }
 
