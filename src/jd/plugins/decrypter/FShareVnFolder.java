@@ -47,42 +47,51 @@ public class FShareVnFolder extends PluginForDecrypt {
         }
         final String uid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         final String fpName = br.getRegex("data-id=\"" + uid + "\" data-path=\"/(.*?)\"").getMatch(0);
-        String[] linkinformation = br.getRegex("<li>(\\s*<div[^>]+class=\"[^\"]+file_name[^\"]*.*?)</li>").getColumn(0);
-        if (linkinformation == null || linkinformation.length == 0) {
-            failed = true;
-            linkinformation = br.getRegex("(https?://(www\\.)?fshare\\.vn/file/[A-Z0-9]+)").getColumn(0);
-        }
-        if (linkinformation == null || linkinformation.length == 0) {
-            return null;
-        }
-        for (final String data : linkinformation) {
-            if (failed) {
-                decryptedLinks.add(createDownloadlink(data));
-            } else {
-                // check if folder
-                final String folder = new Regex(data, "class=\"filename folder\" data-id=\"(.*?)\"").getMatch(0);
-                if (folder != null) {
-                    decryptedLinks.add(createDownloadlink(parameter.replace(uid, folder)));
-                    continue;
-                }
-                final String filename = new Regex(data, "title=\"(.*?)\"").getMatch(0);
-                final String filesize = new Regex(data, "file_size align-right\">(.*?)</div>").getMatch(0);
-                final String dlink = new Regex(data, "(http://(www\\.)?fshare\\.vn/file/[A-Z0-9]+)").getMatch(0);
-                if (filename == null && filesize == null && dlink == null) {
-                    continue;
-                }
-                if (dlink == null) {
+        String[] linkinformation = new String[0];
+        for (int i = 0; linkinformation != null; i++) {
+            if (i != 0) {
+                br.getPage(parameter + "?pageIndex=" + i);
+            }
+            linkinformation = br.getRegex("<li>(\\s*<div[^>]+class=\"[^\"]+file_name[^\"]*.*?)</li>").getColumn(0);
+            if (linkinformation == null || linkinformation.length == 0) {
+                failed = true;
+                linkinformation = br.getRegex("(https?://(www\\.)?fshare\\.vn/file/[A-Z0-9]+)").getColumn(0);
+            }
+            if (linkinformation == null || linkinformation.length == 0) {
+                if (i == 0) {
                     return null;
                 }
-                final DownloadLink aLink = createDownloadlink(dlink);
-                if (filename != null) {
-                    aLink.setName(filename.trim());
-                    aLink.setAvailable(true);
+                break;
+            }
+            for (final String data : linkinformation) {
+                if (failed) {
+                    decryptedLinks.add(createDownloadlink(data));
+                } else {
+                    // check if folder
+                    final String folder = new Regex(data, "class=\"filename folder\" data-id=\"(.*?)\"").getMatch(0);
+                    if (folder != null) {
+                        decryptedLinks.add(createDownloadlink(parameter.replace(uid, folder)));
+                        continue;
+                    }
+                    final String filename = new Regex(data, "title=\"(.*?)\"").getMatch(0);
+                    final String filesize = new Regex(data, "file_size align-right\">(.*?)</div>").getMatch(0);
+                    final String dlink = new Regex(data, "(http://(www\\.)?fshare\\.vn/file/[A-Z0-9]+)").getMatch(0);
+                    if (filename == null && filesize == null && dlink == null) {
+                        continue;
+                    }
+                    if (dlink == null) {
+                        return null;
+                    }
+                    final DownloadLink aLink = createDownloadlink(dlink);
+                    if (filename != null) {
+                        aLink.setName(filename.trim());
+                        aLink.setAvailable(true);
+                    }
+                    if (filesize != null) {
+                        aLink.setDownloadSize(SizeFormatter.getSize(filesize));
+                    }
+                    decryptedLinks.add(aLink);
                 }
-                if (filesize != null) {
-                    aLink.setDownloadSize(SizeFormatter.getSize(filesize));
-                }
-                decryptedLinks.add(aLink);
             }
         }
         if (!decryptedLinks.isEmpty() && fpName != null) {
