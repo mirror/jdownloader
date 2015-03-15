@@ -314,7 +314,7 @@ public class JustinTv extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                br.postPage("https://secure.twitch.tv/user/login", "utf8=%E2%9C%93&authenticity_token=" + Encoding.urlEncode(auth_token) + "&redirect_on_login=&embed_form=false&mp_source_action=login-button&follow=&user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("https://secure.twitch.tv/user/login", "utf8=%E2%9C%93&authenticity_token=" + Encoding.urlEncode(auth_token) + "&redirect_on_login=&embed_form=false&mp_source_action=login-button&follow=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(MAINPAGE, "persistent") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -354,7 +354,7 @@ public class JustinTv extends PluginForHost {
         } catch (final Throwable e) {
             /* not available in old Stable 0.9.581 */
         }
-        ai.setStatus("Registered (free) user");
+        ai.setStatus("Free Account");
         account.setValid(true);
         return ai;
     }
