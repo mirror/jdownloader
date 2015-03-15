@@ -61,8 +61,13 @@ public class VoyeurHitCom extends PluginForHost {
         }
         String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         // video_url: 'http://voyeurhit.com/get_file/1/020fe1f099fb36263435405241261583/16000/16688/16688_lq.mp4/?br=293',
+        // 'file': "http://voyeurhit.com/get_file/1/020fe1f099fb36263435405241261583/16000/16688/16688_lq.mp4/?br=293",
         dllink = br.getRegex("video_url: \'(http://.*?)/\\?br=\\d+\'").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\'file\': \"(http://voyeurhit.com/get_file/.*?)/\\?br=\\d+\"").getMatch(0);
+        }
         if (filename == null || dllink == null) {
+            logger.info("filename = " + filename + ", dllink = " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
