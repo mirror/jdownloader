@@ -47,7 +47,11 @@ public class VideoMegaTv extends antiDDoSForHost {
         return true;
     }
 
-    private String fuid = null;
+    private String               fuid              = null;
+    /* Connection stuff */
+    private static final boolean FREE_RESUME       = true;
+    private static final int     FREE_MAXCHUNKS    = 0;
+    private static final int     FREE_MAXDOWNLOADS = 20;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
@@ -105,7 +109,7 @@ public class VideoMegaTv extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 try {
-                    dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, dllink, true, 0);
+                    dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
                 } catch (final Exception t) {
                     if (!escaped[escaped.length - 1].equals(escape)) {
                         // this tests if link is last in array
@@ -118,11 +122,7 @@ public class VideoMegaTv extends antiDDoSForHost {
                         // this tests if link is last in array
                         continue;
                     }
-                    if (dl.getConnection().getResponseCode() == 403) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                    } else if (dl.getConnection().getResponseCode() == 404) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                    }
+                    handleServerErrors();
                     br2.followConnection();
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -144,17 +144,23 @@ public class VideoMegaTv extends antiDDoSForHost {
             }
             br.cloneBrowser().postPage("http://videomega.tv/upd_views.php", "id=" + id + "&referal=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
             br.getHeaders().put("Accept", "video/webm,video/ogg,video/*;q=0.9,application/ogg;q=0.7,audio/*;q=0.6,*/*;q=0.5");
-            dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                }
+                handleServerErrors();
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
+        }
+    }
+
+    private void handleServerErrors() throws PluginException {
+        if (dl.getConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+        } else if (dl.getConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+        } else if (dl.getConnection().getLongContentLength() < 10000l) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: File is too small", 60 * 60 * 1000l);
         }
     }
 
@@ -164,7 +170,7 @@ public class VideoMegaTv extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return FREE_MAXDOWNLOADS;
     }
 
     @Override
