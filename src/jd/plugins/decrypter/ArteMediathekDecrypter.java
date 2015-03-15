@@ -375,6 +375,10 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    /* Collection of possible values */
+    private final String[] versionCodes             = { "VO", "VO-STA", "VOF-STMF", "VA-STMA", "VOF-STA", "VOA-STMA", "VAAUD", "VE", "VF-STMF" };
+    private final String[] versionShortLibelleCodes = { "DE", "VA", "VE", "FR", "VF", "OmU", "VO", "VOF", "VOSTF" };
+
     /* Non-subtitled versions, 3 = Subtitled versions, 4 = Subtitled versions for disabled people, 5 = Audio descriptions */
     private int getFormatCode(final String versionShortLibelle, final String versionCode) throws DecrypterException {
         /* versionShortLibelle: What is UTH?? */
@@ -455,6 +459,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         case 2:
             /* French */
             return "fr";
+        case 3:
+            /* We assume that a subtitled version is always german too */
+            return "de";
         default:
             /* Obviously this should never happen */
             return "WTF_PLUGIN_FAILED";

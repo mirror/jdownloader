@@ -53,39 +53,39 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String     EXCEPTION_LINKOFFLINE   = "EXCEPTION_LINKOFFLINE";
+    private static final String     EXCEPTION_LINKOFFLINE         = "EXCEPTION_LINKOFFLINE";
 
-    private static final String     TYPE_INVALID            = "https?://(www\\.)?soundcloud\\.com/(you/|tour|signup|logout|login|premium|messages|settings|imprint|community\\-guidelines|videos|terms\\-of\\-use|sounds|jobs|press|mobile|#?search|upload|people|dashboard|#/).*?";
-    private static final String     TYPE_API_PLAYLIST       = "https?://(www\\.|m\\.)?api\\.soundcloud\\.com/playlists/\\d+\\?secret_token=[A-Za-z0-9\\-_]+";
-    private static final String     TYPE_API_TRACK          = "https?://(www\\.|m\\.)?api\\.soundcloud\\.com/tracks/\\d+(\\?secret_token=[A-Za-z0-9\\-_]+)?";
-    private static final String     TYPE_SINGLE_SET         = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/sets/[A-Za-z0-9\\-_]+";
-    private static final String     TYPE_USER_SETS          = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/sets";
-    private static final String     TYPE_USER_IN_PLAYLIST   = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/sets";
-    private static final String     TYPE_USER_LIKES         = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/likes";
-    private static final String     TYPE_GROUPS             = "https?://(www\\.)?soundcloud\\.com/groups/[A-Za-z0-9\\-_]+";
+    private static final String     TYPE_INVALID                  = "https?://(www\\.)?soundcloud\\.com/(you/|tour|signup|logout|login|premium|messages|settings|imprint|community\\-guidelines|videos|terms\\-of\\-use|sounds|jobs|press|mobile|#?search|upload|people|dashboard|#/).*?";
+    private static final String     TYPE_API_PLAYLIST             = "https?://(www\\.|m\\.)?api\\.soundcloud\\.com/playlists/\\d+\\?secret_token=[A-Za-z0-9\\-_]+";
+    private static final String     TYPE_API_TRACK                = "https?://(www\\.|m\\.)?api\\.soundcloud\\.com/tracks/\\d+(\\?secret_token=[A-Za-z0-9\\-_]+)?";
+    private static final String     TYPE_SINGLE_SET               = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/sets/[A-Za-z0-9\\-_]+";
+    private static final String     TYPE_USER_SETS                = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/sets";
+    private static final String     TYPE_USER_IN_PLAYLIST         = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/sets";
+    private static final String     TYPE_USER_LIKES               = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/likes";
+    private static final String     TYPE_GROUPS                   = "https?://(www\\.)?soundcloud\\.com/groups/[A-Za-z0-9\\-_]+";
 
     /* Single soundcloud tracks, posted via smartphone/app. */
     private static final String     subtype_mobile_facebook_share = "https?://(m\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+\\?fb_action_ids=.+";
 
-    private static final String     TYPE_SHORT              = "https?://snd\\.sc/[A-Za-z0-9]+";
+    private static final String     TYPE_SHORT                    = "https?://snd\\.sc/[A-Za-z0-9]+";
 
-    private static int              max_entries_per_request = 100;
+    private static int              max_entries_per_request       = 100;
 
-    private static final String     GRAB500THUMB            = "GRAB500THUMB";
-    private static final String     GRABORIGINALTHUMB       = "GRABORIGINALTHUMB";
-    private static final String     CUSTOM_PACKAGENAME      = "CUSTOM_PACKAGENAME";
-    private static final String     CUSTOM_DATE             = "CUSTOM_DATE";
+    private static final String     GRAB500THUMB                  = "GRAB500THUMB";
+    private static final String     GRABORIGINALTHUMB             = "GRABORIGINALTHUMB";
+    private static final String     CUSTOM_PACKAGENAME            = "CUSTOM_PACKAGENAME";
+    private static final String     CUSTOM_DATE                   = "CUSTOM_DATE";
 
-    private PluginForHost           hostPlugin              = null;
-    private SubConfiguration        CFG                     = null;
-    private String                  originalLink           = null;
-    private String                  parameter               = null;
-    private ArrayList<DownloadLink> decryptedLinks          = null;
-    private boolean                 decrypt500Thumb         = false;
-    private boolean                 decryptOriginalThumb    = false;
-    private String                  username                = null;
-    private String                  playlistname            = null;
-    private String                  url_username            = null;
+    private PluginForHost           hostPlugin                    = null;
+    private SubConfiguration        CFG                           = null;
+    private String                  originalLink                  = null;
+    private String                  parameter                     = null;
+    private ArrayList<DownloadLink> decryptedLinks                = null;
+    private boolean                 decrypt500Thumb               = false;
+    private boolean                 decryptOriginalThumb          = false;
+    private String                  username                      = null;
+    private String                  playlistname                  = null;
+    private String                  url_username                  = null;
 
     /**
      * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
@@ -514,6 +514,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         return parseTracklist(collection);
     }
 
+    @SuppressWarnings("unchecked")
     public List<Map<String, Object>> parseTracklist(List<Map<String, Object>> collection) throws ParseException, IOException {
         for (final Map<String, Object> item : collection) {
             if (this.isAbort()) {
@@ -528,7 +529,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 entry = (Map<String, Object>) item.get("track");
             } else if ("track".equals(type)) {
                 entry = (Map<String, Object>) item.get("track");
-            } else if ("track_repost".equals(type)) {
+            } else if ("track_repost".equals(type) || "track-repost".equals(type)) {
                 entry = (Map<String, Object>) item.get("track");
             } else if ("playlist".equals(type)) {
                 entry = (Map<String, Object>) item.get("playlist");
