@@ -3,6 +3,7 @@ package org.jdownloader.api.jdanywhere.api;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import jd.http.Browser;
@@ -26,6 +27,25 @@ public class EventsAPI implements IEventsApi {
         if (captchaPushList == null) {
             captchaPushList = new HashMap<String, CaptchaPushRegistration>();
         }
+
+        Boolean itemRemoved = false;
+        synchronized (captchaPushList) {
+            for (Iterator<Map.Entry<String, CaptchaPushRegistration>> it = captchaPushList.entrySet().iterator(); it.hasNext();) {
+                Map.Entry<String, CaptchaPushRegistration> entry = it.next();
+                // System.out.println(entry.getKey() + "/" + entry.getValue());
+                if (entry.getKey().startsWith("DeviceToken=")) {
+                    if (captchaPushList.containsKey(entry.getKey().substring(12))) {
+                        it.remove();
+                        itemRemoved = true;
+                    }
+                }
+            }
+        }
+
+        if (itemRemoved) {
+            cfg.setList(captchaPushList);
+        }
+
         return captchaPushList;
     }
 
@@ -51,6 +71,7 @@ public class EventsAPI implements IEventsApi {
         cpr.setWithSound(withSound);
         synchronized (captchaPushList) {
             captchaPushList.remove(deviceID);
+            captchaPushList.remove("DeviceToken=" + deviceID);
             captchaPushList.put(deviceID, cpr);
             cfg.setList(captchaPushList);
         }
