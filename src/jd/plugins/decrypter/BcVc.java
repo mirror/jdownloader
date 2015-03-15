@@ -23,14 +23,15 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
 /**
- * Note: using cloudflare
+ * Note: using cloudflare, has simlar link structure/behaviour to adfly
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bc.vc" }, urls = { "http://(www\\.)?bc\\.vc/(?!advertising)[A-Za-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bc.vc" }, urls = { "https?://(?:www\\.)?bc\\.vc/([A-Za-z0-9]{5,6}$|\\d+/(?:ftp|http).+)" }, flags = { 0 })
 public class BcVc extends antiDDoSForDecrypt {
 
     public BcVc(PluginWrapper wrapper) {
@@ -55,20 +56,36 @@ public class BcVc extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        {
+            final String linkInsideLink = new Regex(parameter, "/\\d+/((?:http|ftp).+)").getMatch(0);
+            if (linkInsideLink != null) {
+                if (!linkInsideLink.matches(this.getHost() + "/.+")) {
+                    decryptedLinks.add(createDownloadlink(linkInsideLink));
+                    return decryptedLinks;
+                } else {
+                    parameter = linkInsideLink;
+                }
+            }
+        }
+        // we have to rename them here because we can damage urls within urls.
+        // - parameters containing www. will always be offline.
+        // - https never returns results, doesn't work in browser either.
+        parameter = parameter.replaceFirst("://www.", "://").replaceFirst("https://", "http://");
+
         br.setFollowRedirects(false);
         getPage(parameter);
 
         /* Check for direct redirect */
         String redirect = br.getRedirectLocation();
         if (redirect == null) {
-            redirect = br.getRegex("top\\.location\\.href = \"(http[^<>\"]*?)\"").getMatch(0);
+            redirect = br.getRegex("top\\.location\\.href = \"((?:http|ftp)[^<>\"]*?)\"").getMatch(0);
         }
         if (redirect != null && !redirect.contains("bc.vc/")) {
             decryptedLinks.add(createDownloadlink(redirect));
             return decryptedLinks;
         }
 
-        if (br.getURL().equals("http://bc.vc/") || br.containsHTML("top\\.location\\.href = \"http://bc\\.vc/\"") || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">404 Not Found<") || br.containsHTML(">Sorry the page you are looking for does not exist")) {
+        if (br.getURL().matches("https?://(?:www\\.)?bc.vc/") || br.containsHTML("top\\.location\\.href = \"https?://(?:www\\.)?bc\\.vc/\"") || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">404 Not Found<") || br.containsHTML(">Sorry the page you are looking for does not exist")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -104,15 +121,14 @@ public class BcVc extends antiDDoSForDecrypt {
         data.put(Encoding.urlEncode("args[nok]"), "no");
         ajaxPostPage("/fly/ajax.fly.php", data);
 
-        String url = ajax.getRegex("\"url\"\\:\"(.*)\"").getMatch(0);
+        String url = jd.plugins.hoster.K2SApi.JSonUtils.getJson(ajax, "url");
         if (url == null) {
             // maybe we have to wait even longer?
             Thread.sleep(2000);
             ajaxPostPage("/fly/ajax.fly.php", data);
-            url = ajax.getRegex("\"url\"\\:\"(.*)\"").getMatch(0);
+            url = jd.plugins.hoster.K2SApi.JSonUtils.getJson(ajax, "url");
         }
         if (url != null) {
-            url = url.replace("\\", "");
             decryptedLinks.add(createDownloadlink(url));
         }
         return decryptedLinks;
