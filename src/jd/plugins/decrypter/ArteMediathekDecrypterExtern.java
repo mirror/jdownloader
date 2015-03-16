@@ -89,6 +89,7 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
         /* Load host plugin to access some static methods later */
         JDUtilities.getPluginForHost("arte.tv");
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        int foundFormatsNum = 0;
         parameter = param.toString();
         ArrayList<String> selectedFormats = new ArrayList<String>();
         ArrayList<String> selectedLanguages = new ArrayList<String>();
@@ -167,6 +168,7 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
                     final String url = (String) qualitymap.get("url");
                     if (!short_lang_current.equals(selectedLanguage)) {
                         logger.info("Skipping " + quality + " because it is not the selected language");
+                        foundFormatsNum++;
                         continue;
                     }
                     if (url.contains(".m3u8") || url.contains("/hls/")) {
@@ -177,6 +179,7 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
                         /* Ignore others/rtmp versions */
                         continue;
                     }
+                    foundFormatsNum++;
 
                 }
 
@@ -201,6 +204,11 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
                 }
             }
 
+            /* User did not activate all versions --> Show this info in filename so he can correct his mistake. */
+            if (bestMap.isEmpty() && foundFormatsNum > 0) {
+                title = "Überprüfe_deine_Plugineinstellungen_aktiviere_fehlende_Formate_z_B_Untertitelte_Version_" + title;
+                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            }
             /* We should always have 3 links (their basic qualities) or more! */
             if (bestMap.isEmpty()) {
                 logger.warning("Decrypter broken");
@@ -551,14 +559,14 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
     }
 
     private HashMap<String, Integer> hlsBitrates = new HashMap<String, Integer>() {
-        {
-            put("200x112", 250);
-            put("320x180", 500);
-            put("504x284", 1000);
-            put("804x452", 2000);
-            put("1280x720", 4000);
-        }
-    };
+                                                     {
+                                                         put("200x112", 250);
+                                                         put("320x180", 500);
+                                                         put("504x284", 1000);
+                                                         put("804x452", 2000);
+                                                         put("1280x720", 4000);
+                                                     }
+                                                 };
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
