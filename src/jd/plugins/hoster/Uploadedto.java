@@ -1063,7 +1063,8 @@ public class Uploadedto extends PluginForHost {
             if (arg != null) {
                 getLogger().info("Input " + arg);
                 arg = arg.replaceAll("(\\\\|\\\"|\0|')", "\\\\$1");
-                arg = URLDecoder.decode(arg, "ISO-8859-1");
+                arg = arg.replaceAll("+", " ");
+                // arg = URLDecoder.decode(arg, "ISO-8859-1"); <<- causes issues with % in pw
                 arg = arg.replaceAll("[ \t\n\r\0\u000B]", "");
                 while (arg.startsWith("%20")) {
                     arg = arg.substring(3);
