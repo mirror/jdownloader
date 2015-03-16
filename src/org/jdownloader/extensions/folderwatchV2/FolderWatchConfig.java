@@ -3,6 +3,7 @@ package org.jdownloader.extensions.folderwatchV2;
 import jd.plugins.ExtensionConfigInterface;
 
 import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultLongValue;
 import org.appwork.storage.config.annotations.DefaultStringArrayValue;
 
@@ -18,4 +19,10 @@ public interface FolderWatchConfig extends ExtensionConfigInterface {
     long getCheckInterval();
 
     void setCheckInterval(long ms);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    boolean isDebugEnabled();
+
+    void setDebugEnabled(boolean b);
 }

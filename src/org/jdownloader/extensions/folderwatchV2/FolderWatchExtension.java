@@ -170,7 +170,9 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
 
     @Override
     public void run() {
-        getLogger().info("RUN");
+        if (CFG_FOLDER_WATCH.CFG.isDebugEnabled()) {
+            getLogger().info("RUN");
+        }
         try {
 
             String[] folders = getSettings().getFolders();
@@ -182,16 +184,22 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                         if (!folder.isAbsolute()) {
                             folder = Application.getResource(s);
                         }
-                        getLogger().info("Scan " + s + " - " + folder.getAbsolutePath());
-                        getLogger().info("exists: " + folder.exists());
-                        getLogger().info("isDirectory: " + folder.isDirectory());
+                        if (CFG_FOLDER_WATCH.CFG.isDebugEnabled()) {
+                            getLogger().info("Scan " + s + " - " + folder.getAbsolutePath());
+                            getLogger().info("exists: " + folder.exists());
+                            getLogger().info("isDirectory: " + folder.isDirectory());
+                        }
                         if (folder.exists() && folder.isDirectory()) {
-                            getLogger().info(Arrays.toString(folder.list()));
+                            if (CFG_FOLDER_WATCH.CFG.isDebugEnabled()) {
+                                getLogger().info(Arrays.toString(folder.list()));
+                            }
                             for (File f : folder.listFiles(new FilenameFilter() {
 
                                 @Override
                                 public boolean accept(File dir, String name) {
-                                    getLogger().info(name + " : " + name.toLowerCase(Locale.ENGLISH).endsWith(".crawljob"));
+                                    if (CFG_FOLDER_WATCH.CFG.isDebugEnabled()) {
+                                        getLogger().info(name + " : " + name.toLowerCase(Locale.ENGLISH).endsWith(".crawljob"));
+                                    }
                                     return name.toLowerCase(Locale.ENGLISH).endsWith(".crawljob");
                                 }
                             })) {
@@ -211,12 +219,16 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
             getLogger().log(e);
 
         } finally {
-            getLogger().info("DONE");
+            if (CFG_FOLDER_WATCH.CFG.isDebugEnabled()) {
+                getLogger().info("DONE");
+            }
         }
     }
 
     private void move(File f) {
-        getLogger().info("Move " + f);
+        if (CFG_FOLDER_WATCH.CFG.isDebugEnabled()) {
+            getLogger().info("Move " + f);
+        }
         File dir = new File(f.getParentFile(), "added");
         dir.mkdirs();
         int i = 1;
@@ -230,7 +242,9 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
 
     private void addCrawlJob(File f) throws IOException {
         if (f.length() == 0) {
-            getLogger().info("Ignore " + f);
+            if (CFG_FOLDER_WATCH.CFG.isDebugEnabled()) {
+                getLogger().info("Ignore " + f);
+            }
             return;
         }
         getLogger().info("Parse " + f);
