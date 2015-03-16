@@ -402,64 +402,71 @@ public class DownloadSession extends Property {
                 return ret;
             }
         }
-        ret = HosterRuleController.getInstance().getAccountCache(host, this);
-        if (ret == null) {
+        if (isUseAccountsEnabled() == false) {
+            /* accounts disabled -> free only */
             final ArrayList<CachedAccount> newCache = new ArrayList<CachedAccount>();
-            for (Account acc : AccountController.getInstance().list(host)) {
-                newCache.add(new CachedAccount(host, acc, getPlugin(host)));
-            }
-            final List<Account> multiHosts = AccountController.getInstance().getMultiHostAccounts(host);
-            if (multiHosts != null) {
-                for (Account acc : multiHosts) {
-                    newCache.add(new CachedAccount(host, acc, getPlugin(acc.getHoster())));
-                }
-            }
             newCache.add(new CachedAccount(host, null, getPlugin(host)));
-            try {
-                if (true && isUseAccountsEnabled()) {
-                    /* temp hotfix for candidate issues losing premium candidate */
-                    boolean hasPremiumorMultiAccount = false;
-                    checkLoop: for (CachedAccount cachedAccount : newCache) {
-                        switch (cachedAccount.getType()) {
-                        case ORIGINAL:
-                            if (cachedAccount.getAccount().isEnabled() && cachedAccount.getAccount().isValid()) {
-                                hasPremiumorMultiAccount = true;
-                                break checkLoop;
-                            }
-                            break;
-                        }
-                    }
-                    if (hasPremiumorMultiAccount) {
-                        final Iterator<CachedAccount> it = newCache.iterator();
-                        while (it.hasNext()) {
-                            final CachedAccount next = it.next();
-                            if (AccountCache.ACCOUNTTYPE.NONE.equals(next.getType()) && next.hasCaptcha(link)) {
-                                it.remove();
-                            }
-                        }
+            ret = new AccountCache(newCache);
+        } else {
+            ret = HosterRuleController.getInstance().getAccountCache(host, this);
+            if (ret == null) {
+                final ArrayList<CachedAccount> newCache = new ArrayList<CachedAccount>();
+                for (Account acc : AccountController.getInstance().list(host)) {
+                    newCache.add(new CachedAccount(host, acc, getPlugin(host)));
+                }
+                final List<Account> multiHosts = AccountController.getInstance().getMultiHostAccounts(host);
+                if (multiHosts != null) {
+                    for (Account acc : multiHosts) {
+                        newCache.add(new CachedAccount(host, acc, getPlugin(acc.getHoster())));
                     }
                 }
-                Collections.sort(newCache, new Comparator<CachedAccount>() {
-
-                    private int compare(boolean x, boolean y) {
-                        return (x == y) ? 0 : (x ? 1 : -1);
-                    }
-
-                    @Override
-                    public int compare(CachedAccount o1, CachedAccount o2) {
-                        /* 1ST SORT: ORIGINAL;MULTI;NONE */
-                        int ret = o1.getType().compareTo(o2.getType());
-                        if (ret == 0) {
-                            /* 2ND SORT: NO CAPTCHA;CAPTCHA */
-                            ret = compare(o1.hasCaptcha(link), o2.hasCaptcha(link));
+                newCache.add(new CachedAccount(host, null, getPlugin(host)));
+                try {
+                    if (true) {
+                        /* temp hotfix for candidate issues losing premium candidate */
+                        boolean hasPremiumorMultiAccount = false;
+                        checkLoop: for (CachedAccount cachedAccount : newCache) {
+                            switch (cachedAccount.getType()) {
+                            case ORIGINAL:
+                                if (cachedAccount.getAccount().isEnabled() && cachedAccount.getAccount().isValid()) {
+                                    hasPremiumorMultiAccount = true;
+                                    break checkLoop;
+                                }
+                                break;
+                            }
                         }
-                        return ret;
+                        if (hasPremiumorMultiAccount) {
+                            final Iterator<CachedAccount> it = newCache.iterator();
+                            while (it.hasNext()) {
+                                final CachedAccount next = it.next();
+                                if (AccountCache.ACCOUNTTYPE.NONE.equals(next.getType()) && next.hasCaptcha(link)) {
+                                    it.remove();
+                                }
+                            }
+                        }
                     }
-                });
-            } catch (final Throwable e) {
-                LogController.CL(true).log(e);
+                    Collections.sort(newCache, new Comparator<CachedAccount>() {
+
+                        private int compare(boolean x, boolean y) {
+                            return (x == y) ? 0 : (x ? 1 : -1);
+                        }
+
+                        @Override
+                        public int compare(CachedAccount o1, CachedAccount o2) {
+                            /* 1ST SORT: ORIGINAL;MULTI;NONE */
+                            int ret = o1.getType().compareTo(o2.getType());
+                            if (ret == 0) {
+                                /* 2ND SORT: NO CAPTCHA;CAPTCHA */
+                                ret = compare(o1.hasCaptcha(link), o2.hasCaptcha(link));
+                            }
+                            return ret;
+                        }
+                    });
+                } catch (final Throwable e) {
+                    LogController.CL(true).log(e);
+                }
+                ret = new AccountCache(newCache);
             }
-            ret = new AccountCache(newCache);
         }
         synchronized (accountCache) {
             if (!accountCache.containsKey(host)) {
