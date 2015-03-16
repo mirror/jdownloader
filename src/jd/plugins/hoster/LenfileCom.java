@@ -1181,6 +1181,10 @@ public class LenfileCom extends PluginForHost {
                 br.setFollowRedirects(false);
                 getPage(downloadLink.getDownloadURL());
                 dllink = getDllink();
+                if (dllink != null && dllink.matches(".+/files\\d+\\.html")) {
+                    getPage(dllink);
+                    dllink = getDllink();
+                }
                 if (dllink == null) {
                     Form dlform = br.getFormbyProperty("name", "F1");
                     if (dlform != null && new Regex(correctedBR, PASSWORDTEXT).matches()) {
