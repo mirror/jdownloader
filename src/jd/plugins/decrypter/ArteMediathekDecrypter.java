@@ -204,7 +204,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
                 final LinkedHashMap<String, Object> videoJsonPlayer = (LinkedHashMap<String, Object>) entries.get("videoJsonPlayer");
                 // final String sourceURL = (String) videoJsonPlayer.get("VTR");
-                if ((String) videoJsonPlayer.get("VTI") != null) {
+                /* Title is sometimes null e.g. for expired videos */
+                final String json_title = (String) videoJsonPlayer.get("VTI");
+                if (json_title != null) {
                     title = encodeUnicode((String) videoJsonPlayer.get("VTI"));
                 }
                 final String description = (String) videoJsonPlayer.get("VDE");
