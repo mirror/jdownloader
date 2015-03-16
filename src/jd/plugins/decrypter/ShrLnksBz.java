@@ -91,16 +91,25 @@ public class ShrLnksBz extends PluginForDecrypt {
         br.getHeaders().put("Pragma", null);
         br.getHeaders().put("User-Agent", ua);
         br.getHeaders().put("Accept", "*/*");
+        /* Prefer English */
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.getHeaders().put("Accept-Encoding", "gzip,deflate");
         br.getHeaders().put("Accept-Charset", "utf-8,*");
+        /* Prefer English */
+        br.setCookie(MAINPAGE, "SLlng", "en");
         // br.getHeaders().put("Connection", "close");
 
+        /* Prefer English */
         parameter += "?lng=en";
 
         br.getPage(parameter);
         if (br.containsHTML("(>No usable content was found<|not able to find the desired content under the given URL.<)")) {
             logger.info("Link offline: " + parameter);
+            try {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+            }
             return decryptedLinks;
         }
         /* Very important! */
@@ -128,6 +137,11 @@ public class ShrLnksBz extends PluginForDecrypt {
         }
         if (br.containsHTML("(>No usable content was found<|not able to find the desired content under the given URL.<)")) {
             logger.info("Link offline: " + parameter);
+            try {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+            }
             return decryptedLinks;
         }
         /* Folderpassword */
@@ -252,7 +266,7 @@ public class ShrLnksBz extends PluginForDecrypt {
                         infos.put("crypted", crypted);
                         infos.put("jk", jk);
                         infos.put("source", parameter.toString());
-                        String pkgName = br.getRegex("<title>Share.*?\\.biz - (.*?)</title>").getMatch(0);
+                        String pkgName = br.getRegex("<title>Share.*?\\.biz \\- (.*?)</title>").getMatch(0);
                         if (pkgName != null && pkgName.length() > 0) {
                             infos.put("package", pkgName);
                         }
@@ -271,7 +285,7 @@ public class ShrLnksBz extends PluginForDecrypt {
                         final String jk = new StringBuffer(Encoding.Base64Decode(encVars[1])).reverse().toString();
                         final String crypted = new StringBuffer(Encoding.Base64Decode(encVars[2])).reverse().toString();
                         String pkgName = br.getRegex("<title>Share.*?\\.biz - (.*?)</title>").getMatch(0);
-                        if (pkgName != null && pkgName.length() > 0) {
+                        if (pkgName != null && pkgName.length() > 0 && !pkgName.equals("unnamed Folder")) {
                             pkgName = "package=" + Encoding.formEncoding(pkgName) + "&";
                         }
                         flashVars = pkgName + "passwords=&crypted=" + Encoding.formEncoding(crypted) + "&jk=" + Encoding.formEncoding(jk) + "&source=" + Encoding.formEncoding(parameter);
