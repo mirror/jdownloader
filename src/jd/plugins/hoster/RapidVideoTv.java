@@ -46,18 +46,18 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidvideo.tv" }, urls = { "https?://(www\\.)?rapidvideo\\.tv/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidvideo.tv" }, urls = { "https?://(www\\.)?rapidvideo\\.(?:tv|org)/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class RapidVideoTv extends PluginForHost {
 
     private String                         correctedBR                  = "";
     private String                         passCode                     = null;
     private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     // primary website url, take note of redirects
-    private static final String            COOKIE_HOST                  = "http://rapidvideo.tv";
+    private static final String            COOKIE_HOST                  = "http://rapidvideo.org";
     private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     // domain names used within download links.
-    private static final String            DOMAINS                      = "(rapidvideo\\.tv)";
+    private static final String            DOMAINS                      = "(rapidvideo\\.(?:org|tv))";
     private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -93,14 +93,21 @@ public class RapidVideoTv extends PluginForHost {
     // captchatype: null
     // other:
 
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        // link cleanup, but respect users protocol choosing.
-        if (!SUPPORTSHTTPS) {
-            link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
+        setFUID(link);
+        link.setUrlDownload("http://www.rapidvideo.org/" + this.fuid);
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("rapidvideo.tv".equals(getHost())) {
+            if (host == null || "rapidvideo.tv".equals(host)) {
+                return "rapidvideo.org";
+            }
         }
-        final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
-        link.setUrlDownload(COOKIE_HOST + "/" + fid);
+        return super.rewriteHost(host);
     }
 
     @Override
@@ -463,13 +470,13 @@ public class RapidVideoTv extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlFree
      *            (+1|-1)
      */
@@ -601,7 +608,7 @@ public class RapidVideoTv extends PluginForHost {
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
-     * 
+     *
      * @param key
      * @param value
      * @return
@@ -627,7 +634,7 @@ public class RapidVideoTv extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
@@ -644,7 +651,7 @@ public class RapidVideoTv extends PluginForHost {
     /**
      * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
      * which is based on fuid.
-     * 
+     *
      * @version 0.2
      * @author raztoki
      * */

@@ -44,7 +44,7 @@ public class SheshaftCom extends PluginForHost {
     // mods: filename RegEx
     // limit-info:
     // protocol: no https
-    // other:
+    // other: potential sister sites: see vikiporn.com plugin
 
     /* Extension which will be used if no correct extension is found */
     private static final String  default_Extension = ".mp4";

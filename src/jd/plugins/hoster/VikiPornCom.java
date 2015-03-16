@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vikiporn.com" }, urls = { "http://(www\\.)?vikiporn\\.com/videos/\\d+/[a-z0-9\\-]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vikiporn.com", "fetishshrine.com", "katestube.com", "sleazyneasy.com", "yeswegays.com" }, urls = { "http://www\\.vikiporn\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://www\\.fetishshrine\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://www\\.katestube\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://www\\.sleazyneasy\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://www\\.yeswegays\\.com/videos/\\d+/[a-z0-9\\-]+/" }, flags = { 0, 0, 0, 0, 0 })
 public class VikiPornCom extends PluginForHost {
 
     public VikiPornCom(PluginWrapper wrapper) {
@@ -43,7 +43,7 @@ public class VikiPornCom extends PluginForHost {
     // Tags: Script, template
     // mods: filename RegEx
     // protocol: no https
-    // other:
+    // other: potential sister site: sheshaft.com
 
     /* Extension which will be used if no correct extension is found */
     private static final String  default_Extension = ".mp4";
@@ -71,7 +71,13 @@ public class VikiPornCom extends PluginForHost {
         }
         String filename = br.getRegex("<div id=\"main\">[\t\n\r ]+<h2>([^<>]*?)</h2>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>VikiPorn \\- ([^<>]*?)</title>").getMatch(0);
+            filename = br.getRegex("class=\"block video\\-view\">[\t\n\r ]+<h2>([^<>]*?)</h2>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("<h2 style=\"[^>\"]*?\">([^<>]*?)</h2>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("<div class=\"content\">[\t\n\r ]+<h2>([^<>]*?)</h2>").getMatch(0);
         }
         DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
         if (DLLINK == null) {

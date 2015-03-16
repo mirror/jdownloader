@@ -35,15 +35,15 @@ public class MyGirlfriendsVidsNetDecrypt extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
-        String parameter = param.toString();
+        final String parameter = param.toString();
         br.getPage(parameter);
-        String tempID = br.getRedirectLocation();
+        final String tempID = br.getRedirectLocation();
         if (tempID != null) {
             DownloadLink dl = createDownloadlink(tempID);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        DownloadLink dl = createDownloadlink(parameter.replace("mygirlfriendvids.net/", "mygirlfriendvidsdecrypted.net/"));
+        final DownloadLink dl = createDownloadlink(parameter.replace("mygirlfriendvids.net/", "mygirlfriendvidsdecrypted.net/"));
         decryptedLinks.add(dl);
         return decryptedLinks;
     }

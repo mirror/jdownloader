@@ -36,7 +36,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flimmit.com" }, urls = { "http://(www\\.)?flimmit\\.com/video/stream/play/order_item/\\d+" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flimmit.com" }, urls = { "https?://(www\\.)?flimmit\\.com/video/stream/play/order_item/\\d+" }, flags = { 32 })
 public class FlimmitCom extends PluginForHost {
 
     public FlimmitCom(PluginWrapper wrapper) {
@@ -47,6 +47,11 @@ public class FlimmitCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.flimmit.com/agb/";
+    }
+
+    public void correctDownloadLink(final DownloadLink link) {
+        /* Forced https */
+        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
     }
 
     /* Connection stuff */
@@ -126,8 +131,18 @@ public class FlimmitCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getPage("http://www.flimmit.com/customer/account/login/");
-                br.postPage("http://www.flimmit.com/customer/account/loginPost/", "send=&login%5Busername%5D=" + Encoding.urlEncode(account.getUser()) + "&login%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()));
+                br.getPage("https://www.flimmit.com/customer/account/login/");
+                final String form_key = br.getRegex("name=\"form_key\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
+                if (form_key == null) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                br.postPage("https://www.flimmit.com/customer/account/loginPost/", "send=&login%5Busername%5D=" + Encoding.urlEncode(account.getUser()) + "&login%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&form_key=" + Encoding.urlEncode(form_key));
                 if (!br.containsHTML("customer/account/logout/\"")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
