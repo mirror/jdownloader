@@ -43,41 +43,63 @@ public class HeiseDeVideo extends PluginForHost {
         return "http://www.heise.de/Kontakt-4864.html";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">Fehlermeldung<|>404 \\- File not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Fehlermeldung<|>404 \\- File not found<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<meta name=\"fulltitle\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) filename = br.getRegex("<meta name=\"DC\\.title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            filename = br.getRegex("<meta name=\"DC\\.title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        }
+        final String container = br.getRegex("data\\-container=\"(\\d+)\"").getMatch(0);
+        final String sequenz = br.getRegex("data\\-sequenz=\"(\\d+)\"").getMatch(0);
+        if (filename == null || container == null || sequenz == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         filename = Encoding.htmlDecode(filename.trim()).replace(":", " - ");
         String ext = null;
-        DLLINK = br.getRegex("\"(http://(www\\.)?heise\\.de/videout/info[^<>\"]*?)\"").getMatch(0);
-        if (DLLINK != null) {
-            br.getPage(DLLINK);
-            // ios formats also exist
-            final String[] formats = { "mp4", "webm" };
-            final String qualities[] = { "720", "360", "270", "180" };
-            boolean stop = false;
-            for (final String format : formats) {
-                String tempLinks = br.getRegex("(\"" + format + "\":\\{\".*?\"\\}\\})").getMatch(0);
-                if (tempLinks != null) {
-                    for (final String quality : qualities) {
-                        DLLINK = br.getRegex("\"" + quality + "\":\\{\"url\":\"(http://[^<>\"]*?)\"").getMatch(0);
-                        if (DLLINK != null && linkOk(downloadLink)) {
-                            filename += "_" + quality + "p";
-                            ext = "." + format;
-                            stop = true;
-                            break;
-                        }
+        br.getPage("http://www.heise.de/videout/feed?container=" + container + "&sequenz=" + sequenz);
+        // ios formats also exist
+        final String[] formats = { "mp4", "webm" };
+        final String qualities[] = { "720", "360", "270", "180" };
+        boolean stop = false;
+        for (final String format : formats) {
+            String tempLinks = br.getRegex("(\"" + format + "\":\\{\".*?\"\\}\\})").getMatch(0);
+            if (tempLinks != null) {
+                /* json */
+                for (final String quality : qualities) {
+                    DLLINK = br.getRegex("\"" + quality + "\":\\{\"url\":\"(http://[^<>\"]*?)\"").getMatch(0);
+                    if (DLLINK != null && linkOk(downloadLink)) {
+                        filename += "_" + quality + "p";
+                        ext = "." + format;
+                        stop = true;
+                        break;
                     }
                 }
-                if (stop) break;
+            } else {
+                /* XML */
+                for (final String quality : qualities) {
+                    DLLINK = br.getRegex("file=\"(https?://[^<>\"]*?)\" label=\"" + quality + "p\" type=\"video/" + format + "\"").getMatch(0);
+                    if (DLLINK != null && linkOk(downloadLink)) {
+                        filename += "_" + quality + "p";
+                        ext = "." + format;
+                        stop = true;
+                        break;
+                    }
+                }
+            }
+            if (stop) {
+                break;
             }
         }
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         downloadLink.setFinalFileName(filename + ext);
         DLLINK = Encoding.htmlDecode(DLLINK);
         return AvailableStatus.TRUE;
@@ -91,7 +113,9 @@ public class HeiseDeVideo extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (con.getResponseCode() == 403) return false;
+            if (con.getResponseCode() == 403) {
+                return false;
+            }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
                 return true;
