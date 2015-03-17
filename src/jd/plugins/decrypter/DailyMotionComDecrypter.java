@@ -46,7 +46,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.TimeFormatter;
 
 //Decrypts embedded videos from dailymotion
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://(www\\.)?dailymotion\\.com/((embed/)?video/[a-z0-9\\-_]+|swf(/video)?/[a-zA-Z0-9]+|user/[A-Za-z0-9_\\-]+/\\d+|playlist/[A-Za-z0-9]+_[A-Za-z0-9\\-_]+/(\\d+)?|[A-Za-z0-9_\\-]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://(www\\.)?dailymotion\\.com/((embed/)?video/[a-z0-9\\-_]+|swf(/video)?/[a-zA-Z0-9]+|user/[A-Za-z0-9_\\-]+/\\d+|playlist/[A-Za-z0-9]+_[A-Za-z0-9\\-_]+(/\\d+)?|[A-Za-z0-9_\\-]+)" }, flags = { 0 })
 public class DailyMotionComDecrypter extends PluginForDecrypt {
 
     public DailyMotionComDecrypter(PluginWrapper wrapper) {
@@ -85,7 +85,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     private static final String             ALLOW_HDS         = "ALLOW_HDS";
 
     private static final String             TYPE_USER         = "https?://(www\\.)?dailymotion\\.com/user/[A-Za-z0-9_\\-]+/\\d+";
-    private static final String             TYPE_PLAYLIST     = "https?://(www\\.)?dailymotion\\.com/playlist/[A-Za-z0-9]+_[A-Za-z0-9\\-_]+/(\\d+)?";
+    private static final String             TYPE_PLAYLIST     = "https?://(www\\.)?dailymotion\\.com/playlist/[A-Za-z0-9]+_[A-Za-z0-9\\-_]+(/\\d+)?";
     private static final String             TYPE_VIDEO        = "https?://(www\\.)?dailymotion\\.com/((embed/)?video/[a-z0-9\\-_]+|swf(/video)?/[a-zA-Z0-9]+)";
     private static final String             TYPE_INVALID      = "https?://(www\\.)?dailymotion\\.com/playlist";
 
@@ -315,7 +315,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         final int pagesNum = bd.setScale(0, BigDecimal.ROUND_UP).intValue();
 
         int currentPage = Integer.parseInt(desiredPage);
-        final String base_link = "http://www.dailymotion.com/playlist/" + new Regex(PARAMETER, "/playlist/([^<>\"/]*?)/").getMatch(0) + "/";
+        final String base_link = "http://www.dailymotion.com/playlist/" + new Regex(PARAMETER, "/playlist/([a-z0-9\\-_]+)/?").getMatch(0);
         do {
             try {
                 if (this.isAbort()) {
