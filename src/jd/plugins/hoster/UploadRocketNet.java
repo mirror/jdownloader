@@ -543,11 +543,12 @@ public class UploadRocketNet extends PluginForHost {
         ArrayList<String> regexStuff = new ArrayList<String>();
 
         // remove custom rules first!!! As html can change because of generic cleanup rules.
-
+        regexStuff.add("(<div class=\"footer\">.*?)<\\s*/BODY\\s*>");
         // generic cleanup
-        regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
+        regexStuff.add("<!(--.*?--)>");
         regexStuff.add("(<td[^>]+style=(\"|')[\\w:;\\s#-]*color\\s*:\\s*transparent\\s*;[^>]*>.*?</td>)");
-        regexStuff.add("(<\\s*(\\w+)\\s+[^>]*style\\s*=\\s*(\"|')(?:(?:[\\w:;\\s#-]*(visibility\\s*:\\s*hidden;|display\\s*:\\s*none;|font-size\\s*:\\s*0;)[\\w:;\\s#-]*)|font-size\\s*:\\s*0|visibility\\s*:\\s*hidden|display\\s*:\\s*none)\\3[^>]*(>.*?<\\s*/\\2[^>]*>|/\\s*>))");
+        regexStuff.add("(<\\s*(\\w+)\\s+[^>]*style\\s*=\\s*(\"|')(?:(?:[\\w:;\\s#-]*(visibility\\s*:\\s*hidden;|display\\s*:\\s*none;|font-size\\s*:\\s*0;)[\\w:;\\s#-]*)|font-size\\s*:\\s*0|visibility\\s*:\\s*hidden|display\\s*:\\s*none)\\3[^>]*/\\s*>)");
+        regexStuff.add("(<\\s*(\\w+)\\s+[^>]*style\\s*=\\s*(\"|')(?:(?:[\\w:;\\s#-]*(visibility\\s*:\\s*hidden;|display\\s*:\\s*none;|font-size\\s*:\\s*0;)[\\w:;\\s#-]*)|font-size\\s*:\\s*0|visibility\\s*:\\s*hidden|display\\s*:\\s*none)\\3[^>]*>.*?<\\s*/\\2[^>]*>)");
         for (String aRegex : regexStuff) {
             String results[] = new Regex(correctedBR, aRegex).getColumn(0);
             if (results != null) {
