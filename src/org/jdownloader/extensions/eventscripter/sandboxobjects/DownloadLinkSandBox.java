@@ -55,7 +55,7 @@ public class DownloadLinkSandBox {
 
     public String getDownloadPath() {
         if (downloadLink == null) {
-            return null;
+            return "c:/I am a dummy folder/";
         }
 
         return downloadLink.getFileOutput();
