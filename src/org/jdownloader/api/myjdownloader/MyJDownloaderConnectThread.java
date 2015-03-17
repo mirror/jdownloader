@@ -35,6 +35,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.awfc.AWFCUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings.DIRECTMODE;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings.MyJDownloaderError;
 import org.jdownloader.api.myjdownloader.MyJDownloaderWaitingConnectionThread.MyJDownloaderConnectionRequest;
@@ -918,17 +919,28 @@ public class MyJDownloaderConnectThread extends Thread {
         }
     }
 
+    protected String getUniqueDeviceIDSalt() {
+        return Hash.getSHA256(CFG_MYJD.CFG._getStorageHandler().getPath().getAbsolutePath() + CrossSystem.getOS().name() + CrossSystem.getARCHFamily().name() + CrossSystem.is64BitArch() + CrossSystem.is64BitOperatingSystem() + System.getProperty("user.name"));
+    }
+
     protected String getUniqueDeviceID() {
-        String salt = Hash.getSHA256(CFG_MYJD.CFG._getStorageHandler().getPath().getAbsolutePath());
-        if (salt.equals(CFG_MYJD.CFG.getUniqueDeviceIDSalt())) {
-            return CFG_MYJD.CFG.getUniqueDeviceID();
+        final String uuid = CFG_MYJD.CFG.getUniqueDeviceID();
+        if (StringUtils.isNotEmpty(uuid)) {
+            CFG_MYJD.CFG.setUniqueDeviceID(null);
+            CFG_MYJD.CFG.setUniqueDeviceIDV2(uuid);
+            CFG_MYJD.CFG.setUniqueDeviceIDSaltV2(getUniqueDeviceIDSalt());
+            /* convert */
+            return uuid;
+        }
+        if (getUniqueDeviceIDSalt().equals(CFG_MYJD.CFG.getUniqueDeviceIDSaltV2())) {
+            return CFG_MYJD.CFG.getUniqueDeviceIDV2();
         }
         return null;
     }
 
     private void setUniqueDeviceID(String uniqueID) {
-        CFG_MYJD.CFG.setUniqueDeviceIDSalt(Hash.getSHA256(CFG_MYJD.CFG._getStorageHandler().getPath().getAbsolutePath()));
-        CFG_MYJD.CFG.setUniqueDeviceID(uniqueID);
+        CFG_MYJD.CFG.setUniqueDeviceIDSaltV2(getUniqueDeviceIDSalt());
+        CFG_MYJD.CFG.setUniqueDeviceIDV2(uniqueID);
         CFG_MYJD.CFG._getStorageHandler().write();
     }
 
