@@ -133,10 +133,10 @@ public class ShareDirCom extends PluginForHost {
         if (br.containsHTML("0")) {
             ac.setTrafficMax(default_free_account_traffic_max);
             account.setType(AccountType.FREE);
-            acctype = "Registered (free) user";
+            acctype = "Registered (free) account";
         } else {
             account.setType(AccountType.PREMIUM);
-            acctype = "Premium Account";
+            acctype = "Premium account";
         }
         safeAPIRequest("http://sharedir.com/sdapi.php?get_traffic_left", account, null);
         ac.setTrafficLeft(Long.parseLong(br.toString().trim()) * 1024);
