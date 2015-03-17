@@ -14,6 +14,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
+import org.jdownloader.gui.donate.DonateFeedback;
 import org.jdownloader.gui.donate.DonationDetails;
 import org.jdownloader.gui.donate.DonationDialog;
 import org.jdownloader.gui.translate._GUI;
@@ -89,6 +90,7 @@ public class DonateAction extends CustomizableAppAction {
                     } catch (Throwable e2) {
                         StatsManager.I().track("/donation/button/exception/" + URLEncode.encodeRFC2396(e2.getClass() + "/" + e2.getMessage()));
                     }
+                    DonateFeedback.reportFailed(e);
                 } finally {
 
                 }

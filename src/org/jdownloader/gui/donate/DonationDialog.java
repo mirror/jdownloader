@@ -166,11 +166,13 @@ public class DonationDialog extends AbstractDialog<Object> {
                                     return;
                                 case FAILED:
                                     StatsManager.I().track("/donation/button/failed");
+                                    DonateFeedback.reportFailed(null);
                                     Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_failed());
                                     close.set(false);
                                     return;
                                 case CANCELED:
                                     StatsManager.I().track("/donation/button/canceled");
+                                    DonateFeedback.reportCanceled();
                                     Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_cancel());
                                     close.set(false);
                                     return;
@@ -212,7 +214,7 @@ public class DonationDialog extends AbstractDialog<Object> {
                         } catch (Throwable e2) {
                             StatsManager.I().track("/donation/button/exception/" + URLEncode.encodeRFC2396(e2.getClass() + "/" + e2.getMessage()));
                         }
-
+                        DonateFeedback.reportFailed(e);
                         logger.log(e);
                         custom.put("source", "buttonFallback");
 
@@ -427,11 +429,13 @@ public class DonationDialog extends AbstractDialog<Object> {
                             return;
                         case FAILED:
                             StatsManager.I().track("/donation/button/failed/fallbackwait");
+                            DonateFeedback.reportFailed(null);
                             Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_failed());
 
                             return;
                         case CANCELED:
                             StatsManager.I().track("/donation/button/canceled/fallbackwait");
+                            DonateFeedback.reportCanceled();
                             Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_cancel());
 
                             return;

@@ -5866,4 +5866,15 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "<Unknown Router>" })
     String unknown_router_name();
 
+    @Default(lngs = { "en" }, values = { "The donation failed" })
+    String DonateFeedback_reportFailed_title_();
+
+    @Default(lngs = { "en" }, values = { "The donation failed due to unknown reasons.\r\nPlease help us by telling us what happened and why the donation might have failed:" })
+    String DonateFeedback_reportFailed_title_message();
+
+    @Default(lngs = { "en" }, values = { "The donation has been cancelled" })
+    String DonateFeedback_reportCanceled_title_();
+
+    @Default(lngs = { "en" }, values = { "The donation has been cancelled.\r\nPlease help us by telling us what happened and why you cancelled the donation:" })
+    String DonateFeedback_reportCanceled_title_message();
 }
