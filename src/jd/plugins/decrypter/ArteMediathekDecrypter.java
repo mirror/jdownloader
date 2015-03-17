@@ -81,6 +81,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         /* Load host plugin to access some static methods later */
         JDUtilities.getPluginForHost("arte.tv");
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        int foundFormatsNum = 0;
         parameter = param.toString();
         ArrayList<String> selectedFormats = new ArrayList<String>();
         ArrayList<String> selectedLanguages = new ArrayList<String>();
@@ -207,7 +208,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 /* Title is sometimes null e.g. for expired videos */
                 final String json_title = (String) videoJsonPlayer.get("VTI");
                 if (json_title != null) {
-                    title = encodeUnicode((String) videoJsonPlayer.get("VTI"));
+                    title = encodeUnicode(json_title);
                 }
                 final String description = (String) videoJsonPlayer.get("VDE");
                 final String errormessage = (String) entries.get("msg");
@@ -252,6 +253,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 fp.setName(title);
 
                 for (final Object o : vsr_quals) {
+                    foundFormatsNum++;
                     final LinkedHashMap<String, Object> qualitymap = (LinkedHashMap<String, Object>) o;
                     final String protocol = "http";
                     final int videoBitrate = ((Number) qualitymap.get("bitrate")).intValue();
@@ -349,6 +351,12 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 if (thisformat != null) {
                     decryptedLinks.add(thisformat);
                 }
+            }
+
+            /* User did not activate all versions --> Show this info in filename so he can correct his mistake. */
+            if (decryptedLinks.isEmpty() && foundFormatsNum > 0) {
+                title = jd.plugins.hoster.ArteTv.getPhrase("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION") + title;
+                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
             }
 
             /* Check if user wants to download the thumbnail as well. */
