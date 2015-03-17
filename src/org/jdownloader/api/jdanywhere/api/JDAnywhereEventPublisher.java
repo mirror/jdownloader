@@ -43,7 +43,6 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.jdownloader.api.captcha.CaptchaAPISolver;
 import org.jdownloader.api.captcha.CaptchaAPISolverListener;
 import org.jdownloader.api.jdanywhere.api.storable.CaptchaJob;
-import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.download.DownloadControllerListener;
@@ -285,10 +284,9 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
 
     private void sendEvent(SolverJob<?> job, String type) {
         long captchCount = 0;
-        for (SolverJob<?> entry : ChallengeResponseController.getInstance().listJobs()) {
-            if (entry.isDone()) {
-                continue;
-            }
+
+        for (SolverJob<?> entry : CaptchaAPISolver.getInstance().listJobs()) {
+
             if (entry.getChallenge() instanceof ImageCaptchaChallenge) {
                 captchCount++;
             }
