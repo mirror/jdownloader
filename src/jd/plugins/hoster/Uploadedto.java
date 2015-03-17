@@ -505,7 +505,9 @@ public class Uploadedto extends PluginForHost {
                 }
             }
         } catch (final PluginException e) {
-            usePremiumAPI.set(false);
+            if (e.getLinkStatus() != LinkStatus.ERROR_PREMIUM) {
+                usePremiumAPI.set(false);
+            }
             account.setProperty("token", null);
             account.setProperty("tokenType", null);
             throw e;
