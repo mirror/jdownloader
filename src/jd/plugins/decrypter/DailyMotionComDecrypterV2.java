@@ -32,7 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.components.DailyMotionVariant;
 
 //Decrypts embedded videos from dailymotion
-@DecrypterPlugin(revision = "$Revision: 26321 $", interfaceVersion = 3, names = { "dailymotion.com" }, urls = { "https?://(www\\.)?dailymotion\\.com/((embed/)?video/[a-z0-9\\-_]+|swf(/video)?/[a-zA-Z0-9]+|playlist/[A-Za-z0-9]+_[A-Za-z0-9\\-_]+/(\\d+)?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 26321 $", interfaceVersion = 3, names = { "dailymotion.com" }, urls = { "https?://(www\\.)?dailymotion\\.com/((embed/)?video/[a-z0-9\\-_]+|swf(/video)?/[a-zA-Z0-9]+|playlist/[A-Za-z0-9]+_[A-Za-z0-9\\-_]+(/\\d+)?|(?!playlist)[A-Za-z0-9_\\-]+)" }, flags = { 0 })
 public class DailyMotionComDecrypterV2 extends DailyMotionComDecrypter {
 
     public DailyMotionComDecrypterV2(PluginWrapper wrapper) {
