@@ -243,7 +243,7 @@ public class Tube8Com extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             if (downloadLink.getIntegerProperty("401", -1) == 401) {
-                downloadLink.getProperties().remove("401");
+                downloadLink.removeProperty("401");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
             }
             if (dl.getConnection().getResponseCode() == 404) {
@@ -263,7 +263,7 @@ public class Tube8Com extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             if (downloadLink.getIntegerProperty("401", -1) == 401) {
-                downloadLink.getProperties().remove("401");
+                downloadLink.removeProperty("401");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
             }
             br.followConnection();

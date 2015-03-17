@@ -16,7 +16,7 @@ import org.jdownloader.gui.views.components.packagetable.context.SetDownloadFold
 public class SetDownloadFolderInDownloadTableAction extends SetDownloadFolderAction<FilePackage, DownloadLink> {
 
     /**
-     * 
+     *
      */
 
     public SetDownloadFolderInDownloadTableAction() {
@@ -52,7 +52,7 @@ public class SetDownloadFolderInDownloadTableAction extends SetDownloadFolderAct
         pkg.setCreated(System.currentTimeMillis());
         pkg.setName(entry.getName());
         pkg.setComment(entry.getComment());
-        pkg.getProperties().putAll(entry.getProperties());
+        pkg.setProperties(entry.getProperties());
         return pkg;
     }
 
