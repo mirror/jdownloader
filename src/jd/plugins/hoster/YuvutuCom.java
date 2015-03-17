@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -29,14 +31,38 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yuvutu.com" }, urls = { "http://(www\\.)?yuvutu.com/(video/\\d+/|modules\\.php\\?name=Video\\&op=view\\&video_id=\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yuvutu.com" }, urls = { "http://(www\\.)?yuvutu.com/(video/\\d+/|modules\\.php\\?name=Video\\&op=view\\&video_id=\\d+)" }, flags = { 2 })
 public class YuvutuCom extends PluginForHost {
 
     public String dllink = null;
 
     public YuvutuCom(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
+    }
+
+    private static final String  ALLOW_MULTIHOST_USAGE           = "ALLOW_MULTIHOST_USAGE";
+    private static final boolean default_allow_multihoster_usage = false;
+
+    private void setConfigElements() {
+        String user_text;
+        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+            user_text = "Erlaube den Download von Links dieses Anbieters über Multihoster (nicht empfohlen)?\r\n<html><b>Kann die Anonymität erhöhen, aber auch die Fehleranfälligkeit!</b>\r\nAktualisiere deine(n) Multihoster Account(s) nach dem Aktivieren dieser Einstellung um diesen Hoster in der Liste der unterstützten Hoster deines/r Multihoster Accounts zu sehen (sofern diese/r ihn unterstützen).</html>";
+        } else {
+            user_text = "Allow links of this host to be downloaded via multihosters (not recommended)?\r\n<html><b>This might improve anonymity but perhaps also increase error susceptibility!</b>\r\nRefresh your multihoster account(s) after activating this setting to see this host in the list of the supported hosts of your multihost account(s) (in case this host is supported by your used multihost(s)).</html>";
+        }
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MULTIHOST_USAGE, JDL.L("plugins.hoster." + this.getClass().getName() + ".ALLOW_MULTIHOST_USAGE", user_text)).setDefaultValue(default_allow_multihoster_usage));
+    }
+
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
+        if (this.getPluginConfig().getBooleanProperty(ALLOW_MULTIHOST_USAGE, default_allow_multihoster_usage)) {
+            return true;
+        } else {
+            return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+        }
     }
 
     @Override
@@ -68,18 +94,28 @@ public class YuvutuCom extends PluginForHost {
         br.followConnection();
         conf.disconnect();
         // Link offline
-        if (br.containsHTML(">The video you requested does not exist<|video_noexist\\.png\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">The video you requested does not exist<|video_noexist\\.png\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<span itemprop=\"name\">([^<>\"]*?)</span>").getMatch(0);
         final String embedlink = br.getRegex("\"(/embed_video\\.php\\?uri=[^<>\"]*?)\"").getMatch(0);
-        if (embedlink == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (embedlink == null || filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getPage("http://www.yuvutu.com" + embedlink);
         // Invalid link
-        if (!br.containsHTML("player\\.swf")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!br.containsHTML("player\\.swf")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         dllink = br.getRegex("value=\"file=(http[^<>\"]*?)\\&amp;width").getMatch(0);
-        if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         filename = Encoding.htmlDecode(filename.trim());
         String ext = new Regex(dllink, ".+(\\..{2,5})$").getMatch(0);
-        if (ext == null) ext = ".mp4";
+        if (ext == null) {
+            ext = ".mp4";
+        }
         downloadLink.setFinalFileName(filename + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -87,10 +123,11 @@ public class YuvutuCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(dllink);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         } finally {
             try {
                 con.disconnect();
@@ -109,11 +146,6 @@ public class YuvutuCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
-        return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
     @Override

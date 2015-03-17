@@ -34,7 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divxstage.to", "divxstage.net" }, urls = { "http://(www\\.)?((divxstage\\.(net|eu|to)|cloudtime\\.to)/video/|embed\\.(divxstage\\.(net|eu|to)|cloudtime\\.to)/embed\\.php\\?v=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudtime.to", "divxstage.to", "divxstage.net" }, urls = { "http://(www\\.)?((divxstage\\.(net|eu|to)|cloudtime\\.to)/video/|embed\\.(divxstage\\.(net|eu|to)|cloudtime\\.to)/embed\\.php\\?v=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 0, 0, 0 })
 public class DivxStageNet extends PluginForHost {
 
     /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet, DivxStageNet */

@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -64,17 +65,26 @@ public class MyGirlfriendsVidsNet extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("<b>Warning</b>:  Invalid argument supplied for foreach|No htmlCode read")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<b>Warning</b>:  Invalid argument supplied for foreach|No htmlCode read")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\">").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        }
         DLLINK = br.getRegex("addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\\'(http://media\\d+\\.mygirlfriendvids\\.net/videos/.*?)\\'").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\\'(http://media\\d+\\.mygirlfriendvids\\.net/videos/.*?)\\'").getMatch(0);
+        }
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
@@ -83,11 +93,16 @@ public class MyGirlfriendsVidsNet extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            try {
+                con = br2.openGetConnection(DLLINK);
+            } catch (final UnknownHostException eu) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (!con.getContentType().contains("html")) {
+                downloadLink.setDownloadSize(con.getLongContentLength());
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
