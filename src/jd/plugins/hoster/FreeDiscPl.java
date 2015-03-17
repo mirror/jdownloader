@@ -129,22 +129,25 @@ public class FreeDiscPl extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
             if (br.containsHTML("rel=\"video_src\"")) {
-                dllink = br.getRegex("<iframe src=\"(http://freedisc\\.pl/embed/video/\\d+/[^<>\"]*?)\"").getMatch(0);
+                resumable = true;
+                maxchunks = 0;
+                dllink = br.getRegex("<iframe src=\"(http://freedisc\\.pl/embed/video/\\d+[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                dllink = dllink.replace("/embed/", "/");
+                br.getPage(dllink);
+                dllink = br.getRegex("data\\-video\\-url=\"(http://[^<>\"]*?)\"").getMatch(0);
                 String ext = null;
                 final String currentFname = downloadLink.getName();
                 if (currentFname.contains(".")) {
                     ext = currentFname.substring(currentFname.lastIndexOf("."));
                 }
-                if (ext != null && ext.length() <= 5) {
-                    downloadLink.setFinalFileName(downloadLink.getName().replace(ext, ".mp4"));
+                if (ext == null || (ext != null && ext.length() <= 5)) {
+                    downloadLink.setFinalFileName(downloadLink.getName() + ".mp4");
                 }
             } else {
                 final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);

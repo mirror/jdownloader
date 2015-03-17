@@ -46,6 +46,7 @@ public class WorldSexCom extends PluginForHost {
 
     private static final String EMBEDLINK = "http://(www\\.)?movies\\.worldsex\\.com/playerConfig\\.php\\?[a-z0-9]+\\.flv";
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -56,27 +57,36 @@ public class WorldSexCom extends PluginForHost {
             filename = new Regex(downloadLink.getDownloadURL(), "playerConfig\\.php\\?([a-z0-9]+)\\.flv").getMatch(0);
             DLLINK = br.getRegex("flvMask:(http://[^<>\"]*?);").getMatch(0);
         } else {
-            if (br.getURL().contains("worldsex.com/404.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.getURL().contains("worldsex.com/404.php")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             filename = br.getRegex("title: \\'([^<>\"]*?)\\'").getMatch(0);
-            if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)at Worldsex Movies</title>").getMatch(0);
-            DLLINK = br.getRegex("url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>([^<>\"]*?)at Worldsex Movies</title>").getMatch(0);
+            }
+            DLLINK = br.getRegex("url: (?:\\'|\")(http://[^<>\"]*?)(?:\\'|\")").getMatch(0);
         }
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".flv";
+        if (ext == null || ext.length() > 5) {
+            ext = ".flv";
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            con = openConnection(br2, DLLINK);
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -95,6 +105,20 @@ public class WorldSexCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
+        URLConnectionAdapter con;
+        if (isJDStable()) {
+            con = br.openGetConnection(directlink);
+        } else {
+            con = br.openHeadConnection(directlink);
+        }
+        return con;
+    }
+
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override

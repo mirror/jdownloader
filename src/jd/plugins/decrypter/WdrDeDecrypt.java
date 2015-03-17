@@ -52,6 +52,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
      *
      * http://www1.wdr.de/daserste/monitor/videos/videomonitornrvom168.html
      * */
+    @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -191,6 +192,11 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                 dl_video.setProperty("plain_filename", final_video_name);
                 dl_video.setProperty("plain_resolution", resolution);
                 dl_video.setFinalFileName(final_video_name);
+                try {
+                    dl_video.setContentUrl(parameter);
+                } catch (final Throwable e) {
+                    dl_video.setBrowserUrl(parameter);
+                }
                 best_map.put(quality_name, dl_video);
                 newRet.add(dl_video);
                 counter++;
@@ -239,6 +245,11 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                         dl_subtitle.setProperty("streamingType", "subtitle");
                         dl_subtitle.setAvailable(true);
                         dl_subtitle.setFinalFileName(subtitle_filename);
+                        try {
+                            dl_subtitle.setContentUrl(parameter);
+                        } catch (final Throwable e) {
+                            dl_subtitle.setBrowserUrl(parameter);
+                        }
                         decryptedLinks.add(dl_subtitle);
                     }
                     decryptedLinks.add(keep);

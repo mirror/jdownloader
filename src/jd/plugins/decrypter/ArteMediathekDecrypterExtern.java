@@ -560,16 +560,18 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
     }
 
     private HashMap<String, Integer> hlsBitrates = new HashMap<String, Integer>() {
-                                                     {
-                                                         put("200x112", 250);
-                                                         put("320x180", 500);
-                                                         put("504x284", 1000);
-                                                         put("804x452", 2000);
-                                                         /* Special - either one of those is available */
-                                                         put("1024x576", 4000);
-                                                         put("1280x720", 4000);
-                                                     }
-                                                 };
+        {
+            put("200x112", 250);
+            put("320x180", 500);
+            put("504x284", 1000);
+            /* Special - either one of those two is available */
+            put("720x408", 2000);
+            put("804x452", 2000);
+            /* Special - either one of those two is available */
+            put("1024x576", 4000);
+            put("1280x720", 4000);
+        }
+    };
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {

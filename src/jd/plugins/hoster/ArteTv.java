@@ -196,7 +196,12 @@ public class ArteTv extends PluginForHost {
     public static String getNiceDate(final String input) {
         String nicedate = null;
         SimpleDateFormat df = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.getDefault());
-        SimpleDateFormat convdf = new SimpleDateFormat("dd.MMM.yyyy '_' HH:mm");
+        SimpleDateFormat convdf;
+        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+            convdf = new SimpleDateFormat("dd.MMMM.yyyy '_' HH-mm 'Uhr'", Locale.GERMANY);
+        } else {
+            convdf = new SimpleDateFormat("MMMM.dd.yyyy '_' hh-mm 'o clock'", Locale.ENGLISH);
+        }
         try {
             Date date = null;
             try {
@@ -371,7 +376,7 @@ public class ArteTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), hls_extern_250, JDL.L("plugins.hoster.arte.hls_extern_250", "250kBit/s 200x112")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), hls_extern_500, JDL.L("plugins.hoster.arte.hls_extern_500", "500kBit/s 320x180")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), hls_extern_1000, JDL.L("plugins.hoster.arte.hls_extern_1000", "1000kBit/s 504x284")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), hls_extern_2000, JDL.L("plugins.hoster.arte.hls_extern_2000", "2000kBit/s 804x452")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), hls_extern_2000, JDL.L("plugins.hoster.arte.hls_extern_2000", "2000kBit/s 720x408 oder 804x452")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), hls_extern_4000, JDL.L("plugins.hoster.arte.hls_extern_4000", "4000kBit/s 1024x576 oder 1280x720")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Auswahl der Qualitätsstufen für normale creative.arte.tv/concert.arte.tv/arte.tv Videos:"));
