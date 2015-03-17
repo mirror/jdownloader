@@ -216,9 +216,10 @@ public class JSHtmlUnitPermissionRestricter {
     }
 
     public static class SandboxWrapFactory extends WrapFactory {
+
         @Override
         public Scriptable wrapJavaClass(Context cx, Scriptable scope, Class javaClass) {
-            // System.out.println("Wrap Java Class: " + javaClass);
+
             Scriptable ret = new NativeJavaClass(scope, javaClass) {
                 @Override
                 public Object unwrap() {
@@ -249,7 +250,15 @@ public class JSHtmlUnitPermissionRestricter {
 
         @Override
         public Object wrap(Context cx, Scriptable scope, Object obj, Class<?> staticType) {
+
             Object ret = super.wrap(cx, scope, obj, staticType);
+
+            if (obj instanceof String || obj instanceof Number || obj instanceof Boolean) {
+                return obj;
+            } else if (obj instanceof Character) {
+                char[] a = { ((Character) obj).charValue() };
+                return new String(a);
+            }
             return ret;
         }
 
