@@ -4,6 +4,7 @@ import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.remoteapi.annotations.ApiNamespace;
+import org.appwork.remoteapi.exceptions.RemoteAPIException;
 
 @ApiNamespace("RedirectInterface")
 public interface RedirectInterface extends RemoteAPIInterface {
@@ -18,5 +19,7 @@ public interface RedirectInterface extends RemoteAPIInterface {
     void redirect(String url, RemoteAPIResponse response);
 
     void banner(RemoteAPIRequest request, RemoteAPIResponse response, String md5, String sig, String uid, String pid, String source, String lng, boolean hasUploaded, boolean hasOthers);
+
+    void submitKayakoTicket(String email, String name, String subject, String text) throws RemoteAPIException;
 
 }
