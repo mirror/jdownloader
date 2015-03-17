@@ -55,6 +55,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
 
     private CaptchaAPIEventPublisher                 eventPublisher;
     private CaptchaMyJDownloaderRemoteSolverSettings config;
+    private CaptchaAPISolverEventSender              eventSender;
 
     @Override
     public boolean canHandle(Challenge<?> c) {
@@ -62,7 +63,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
     }
 
     @Override
-    public void solve(SolverJob<Object> job) throws InterruptedException, SolverException, SkipException {
+    public void solve(final SolverJob<Object> job) throws InterruptedException, SolverException, SkipException {
         // JobRunnable<Object> jr;
         // jr = new JobRunnable<Object>(this, job);
         //
@@ -72,6 +73,13 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         //
         // }
         job.getLogger().info("Fire MyJDownloader Captcha Event");
+        eventSender.fireEvent(new CaptchaAPISolverEvent(this) {
+
+            @Override
+            public void sendTo(CaptchaAPISolverListener listener) {
+                listener.onAPIJobStarted(job);
+            }
+        });
         MyJDownloaderController.getInstance().pushCaptchaFlag(true);
         eventPublisher.fireNewJobEvent(job);
         if (Application.isHeadless() || !DialogSolverService.getInstance().isEnabled()) {
@@ -90,10 +98,15 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
     public CaptchaAPISolver() {
         // 0: no threadpool
         super(new CaptchaAPIManualRemoteSolverService(), 0);
+        eventSender = new CaptchaAPISolverEventSender();
         config = JsonConfig.create(CaptchaMyJDownloaderRemoteSolverSettings.class);
 
         eventPublisher = new CaptchaAPIEventPublisher();
         ChallengeResponseController.getInstance().getEventSender().addListener(this);
+    }
+
+    public CaptchaAPISolverEventSender getEventSender() {
+        return eventSender;
     }
 
     public CaptchaAPIEventPublisher getEventPublisher() {
@@ -177,12 +190,19 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         }
     }
 
-    public boolean isJobDone(SolverJob<?> job) {
+    public boolean isJobDone(final SolverJob<?> job) {
+
         if (!isMyJDownloaderActive()) {
             return true;
             // if (job.areDone(DialogBasicCaptchaSolver.getInstance(), DialogClickCaptchaSolver.getInstance())) return true;
         }
+        eventSender.fireEvent(new CaptchaAPISolverEvent(this) {
 
+            @Override
+            public void sendTo(CaptchaAPISolverListener listener) {
+                listener.onAPIJobDone(job);
+            }
+        });
         synchronized (map) {
             return !map.containsKey(job);
         }
