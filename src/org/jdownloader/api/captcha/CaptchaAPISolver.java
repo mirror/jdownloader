@@ -196,13 +196,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
             return true;
             // if (job.areDone(DialogBasicCaptchaSolver.getInstance(), DialogClickCaptchaSolver.getInstance())) return true;
         }
-        eventSender.fireEvent(new CaptchaAPISolverEvent(this) {
 
-            @Override
-            public void sendTo(CaptchaAPISolverListener listener) {
-                listener.onAPIJobDone(job);
-            }
-        });
         synchronized (map) {
             return !map.containsKey(job);
         }
@@ -341,7 +335,14 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
     }
 
     @Override
-    public void onJobDone(SolverJob<?> job) {
+    public void onJobDone(final SolverJob<?> job) {
+        eventSender.fireEvent(new CaptchaAPISolverEvent(this) {
+
+            @Override
+            public void sendTo(CaptchaAPISolverListener listener) {
+                listener.onAPIJobDone(job);
+            }
+        });
         eventPublisher.fireJobDoneEvent(job);
         synchronized (map) {
             dispose(job);
