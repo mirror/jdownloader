@@ -46,7 +46,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.TimeFormatter;
 
 //Decrypts embedded videos from dailymotion
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://(www\\.)?dailymotion\\.com/((embed/)?video/[a-z0-9\\-_]+|swf(/video)?/[a-zA-Z0-9]+|user/[A-Za-z0-9_\\-]+/\\d+|playlist/[A-Za-z0-9]+_[A-Za-z0-9\\-_]+(/\\d+)?|[A-Za-z0-9_\\-]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://(www\\.)?dailymotion\\.com/((embed/)?video/[a-z0-9\\-_]+|swf(/video)?/[a-zA-Z0-9]+|user/[A-Za-z0-9_\\-]+/\\d+|playlist/[A-Za-z0-9]+_[A-Za-z0-9\\-_]+(/\\d+)?|(?!playlist)[A-Za-z0-9_\\-]+)" }, flags = { 0 })
 public class DailyMotionComDecrypter extends PluginForDecrypt {
 
     public DailyMotionComDecrypter(PluginWrapper wrapper) {
@@ -87,7 +87,6 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     private static final String             TYPE_USER         = "https?://(www\\.)?dailymotion\\.com/user/[A-Za-z0-9_\\-]+/\\d+";
     private static final String             TYPE_PLAYLIST     = "https?://(www\\.)?dailymotion\\.com/playlist/[A-Za-z0-9]+_[A-Za-z0-9\\-_]+(/\\d+)?";
     private static final String             TYPE_VIDEO        = "https?://(www\\.)?dailymotion\\.com/((embed/)?video/[a-z0-9\\-_]+|swf(/video)?/[a-zA-Z0-9]+)";
-    private static final String             TYPE_INVALID      = "https?://(www\\.)?dailymotion\\.com/playlist";
 
     public final static boolean             defaultAllowAudio = true;
 
@@ -110,10 +109,6 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         PARAMETER = param.toString().replace("www.", "").replace("embed/video/", "video/").replaceAll("\\.com/swf(/video)?/", ".com/video/").replace("https://", "http://");
         br.setFollowRedirects(true);
 
-        if (PARAMETER.matches(TYPE_INVALID)) {
-            logger.info("Invalid link: " + PARAMETER);
-            return decryptedLinks;
-        }
         synchronized (ctrlLock) {
             /* Login if account available */
             final PluginForHost dailymotionHosterplugin = JDUtilities.getPluginForHost("dailymotion.com");
