@@ -144,14 +144,14 @@ public abstract class PluginForHost extends Plugin {
 
     private static Pattern[]         PATTERNS       = new Pattern[] {
 
-                                                    /**
-                                                     * these patterns should split filename and fileextension (extension must include the
-                                                     * point)
-                                                     */
-                                                    // multipart rar archives
-            Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
-            // normal files with extension
-            Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
+        /**
+         * these patterns should split filename and fileextension (extension must include the
+         * point)
+         */
+        // multipart rar archives
+        Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
+        // normal files with extension
+        Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
 
     private LazyHostPlugin           lazyP          = null;
     /**
@@ -678,7 +678,7 @@ public abstract class PluginForHost extends Plugin {
             return null;
         }
         KeyValueInfoGenerator ret = new KeyValueInfoGenerator(_JDT._.pluginforhost_infogenerator_title(account.getUser(), account.getHoster()));
-        for (Entry<String, Object> es : ai.getProperties().entrySet()) {
+        for (Entry<String, Object> es : props.entrySet()) {
             String key = es.getKey();
             Object value = es.getValue();
 
@@ -864,16 +864,16 @@ public abstract class PluginForHost extends Plugin {
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
         /*
          * fetchAccountInfo must fill ai.setMultiHostSupport to signal all supported multiHosts
-         * 
+         *
          * please synchronized on accountinfo and the ArrayList<String> when you change something in the handleMultiHost function
-         * 
+         *
          * in fetchAccountInfo we don't have to synchronize because we create a new instance of AccountInfo and fill it
-         * 
+         *
          * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host
          * does not equal link host!
-         * 
-         * 
-         * 
+         *
+         *
+         *
          * will update this doc about error handling
          */
         logger.severe("invalid call to handleMultiHost: " + downloadLink.getName() + ":" + downloadLink.getHost() + " to " + getHost() + ":" + this.getVersion() + " with " + account);

@@ -21,6 +21,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import jd.PluginWrapper;
@@ -99,10 +100,12 @@ public class DailyMotionComDecrypterV2 extends DailyMotionComDecrypter {
             if (cfg.getBooleanProperty(ALLOW_AUDIO, defaultAllowAudio)) {
 
                 DownloadLink audio = createDownloadlink(variantLink.getDownloadURL());
-                for (Entry<String, Object> es : variantLink.getProperties().entrySet()) {
-                    audio.setProperty(es.getKey(), es.getValue());
+                final Map<String, Object> props = variantLink.getProperties();
+                if (props != null) {
+                    for (Entry<String, Object> es : props.entrySet()) {
+                        audio.setProperty(es.getKey(), es.getValue());
+                    }
                 }
-
                 ArrayList<DailyMotionVariant> audioVariants = new ArrayList<DailyMotionVariant>();
                 audioVariants.add(new DailyMotionVariant(bestVi, "aac", "128kbits", "AAC Audio (~128kbit/s)"));
                 DailyMotionVariant mp4;

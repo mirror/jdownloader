@@ -130,11 +130,13 @@ public class Property implements Serializable {
     }
 
     /**
-     * Returns the internal HashMap Properties
+     * returns a copy of the internal Map
+     *
+     * @return
      */
     public Map<String, Object> getProperties() {
         final HashMap<String, Object> lInternal = properties;
-        if (lInternal == null) {
+        if (lInternal == null || lInternal.size() == 0) {
             return new HashMap<String, Object>();
         } else {
             synchronized (lInternal) {
@@ -154,7 +156,7 @@ public class Property implements Serializable {
             throw new WTFException("key ==null is forbidden!");
         }
         final HashMap<String, Object> lInternal = properties;
-        if (lInternal == null) {
+        if (lInternal == null || lInternal.size() == 0) {
             return null;
         } else {
             synchronized (lInternal) {
@@ -207,7 +209,7 @@ public class Property implements Serializable {
             throw new WTFException("key ==null is forbidden!");
         }
         final HashMap<String, Object> lInternal = properties;
-        if (lInternal == null) {
+        if (lInternal == null || lInternal.size() == 0) {
             return false;
         } else {
             synchronized (lInternal) {
@@ -286,7 +288,7 @@ public class Property implements Serializable {
     @Override
     public String toString() {
         final HashMap<String, Object> lInternal = properties;
-        if (lInternal == null) {
+        if (lInternal == null || lInternal.size() == 0) {
             return "Property: empty";
         } else {
             synchronized (lInternal) {
