@@ -40,11 +40,10 @@ import org.appwork.remoteapi.events.SimpleEventObject;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.jdownloader.api.captcha.CaptchaAPISolver;
+import org.jdownloader.api.captcha.CaptchaAPISolverListener;
 import org.jdownloader.api.jdanywhere.api.storable.CaptchaJob;
-import org.jdownloader.captcha.event.ChallengeResponseListener;
-import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
-import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.download.DownloadControllerListener;
@@ -53,7 +52,7 @@ import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 
-public class JDAnywhereEventPublisher implements EventPublisher, AccountControllerListener, DownloadWatchdogListener, DownloadControllerListener, StateEventListener, LinkCollectorListener, ChallengeResponseListener {
+public class JDAnywhereEventPublisher implements EventPublisher, AccountControllerListener, DownloadWatchdogListener, DownloadControllerListener, StateEventListener, LinkCollectorListener, CaptchaAPISolverListener {
 
     private CopyOnWriteArraySet<RemoteAPIEventsSender> eventSenders       = new CopyOnWriteArraySet<RemoteAPIEventsSender>();
     private EventsAPI                                  eventsApi          = new EventsAPI();
@@ -502,26 +501,19 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
     }
 
     @Override
-    public void onNewJobAnswer(SolverJob<?> job, AbstractResponse<?> response) {
+    public void onLinkCrawlerNewJob(LinkCollectingJob job) {
     }
 
     @Override
-    public void onJobDone(SolverJob<?> job) {
+    public void onAPIJobDone(SolverJob<?> job) {
         sendEvent(job, "expired");
+
     }
 
     @Override
-    public void onNewJob(SolverJob<?> job) {
+    public void onAPIJobStarted(SolverJob<Object> job) {
         sendEvent(job, "new");
         eventsApi.sendNewCaptcha(job);
-    }
-
-    @Override
-    public void onJobSolverEnd(ChallengeSolver<?> solver, SolverJob<?> job) {
-    }
-
-    @Override
-    public void onJobSolverStart(ChallengeSolver<?> solver, SolverJob<?> job) {
     }
 
     @Override
@@ -530,7 +522,8 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
         eventSenders.add(eventsAPI);
         if (wasEmpty && eventSenders.isEmpty() == false) {
             DownloadController.getInstance().addListener(this, true);
-            ChallengeResponseController.getInstance().getEventSender().addListener(this);
+
+            CaptchaAPISolver.getInstance().getEventSender().addListener(this);
             LinkCollector.getInstance().getEventsender().addListener(this, true);
             DownloadWatchDog.getInstance().getStateMachine().addListener(this);
             DownloadWatchDog.getInstance().getEventSender().addListener(this);
@@ -551,7 +544,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
         eventSenders.remove(eventsAPI);
         if (eventSenders.isEmpty()) {
             DownloadController.getInstance().removeListener(this);
-            ChallengeResponseController.getInstance().getEventSender().removeListener(this);
+            CaptchaAPISolver.getInstance().getEventSender().removeListener(this);
             LinkCollector.getInstance().getEventsender().removeListener(this);
             DownloadWatchDog.getInstance().getStateMachine().removeListener(this);
             DownloadWatchDog.getInstance().getEventSender().removeListener(this);
@@ -821,10 +814,6 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
             }
             publishEvent(EVENTID.ACCOUNTCHANGED, data, "ACCOUNT_" + event.getAccount().getId().toString());
         }
-    }
-
-    @Override
-    public void onLinkCrawlerNewJob(LinkCollectingJob job) {
     }
 
 }
