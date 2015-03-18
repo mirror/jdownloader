@@ -1,4 +1,3 @@
-AutoDetectAction_run_failed=Périphériques UPNP trouvés, mais il est impossible d'effectuer la reconnexion. Essayez la reconnexion directe à la place !
 AutoDetectUpnpAction_AutoDetectUpnpAction_=Essaie de trouver tous les périphériques de reconnexion UPNP dans votre réseau.\n\nLa plupart des routeurs FritzBox peuvent être reconnecter de cette manière
 UPNPReconnectInvoker_getName_=Reconnexion au routeur UPNP
 UPNPRouterPlugin_run_error=Impossible de trouver des périphériques UPNP. Essayez la reconnexion directe à la place !
