@@ -220,7 +220,7 @@ public class Property implements Serializable {
 
     public void setProperties(final Map<String, Object> properties) {
         final HashMap<String, Object> newProperties = new HashMap<String, Object>();
-        if (properties != null && properties.isEmpty()) {
+        if (properties != null && properties.size() > 0) {
             final Iterator<Entry<String, Object>> it = properties.entrySet().iterator();
             while (it.hasNext()) {
                 final Entry<String, Object> next = it.next();
