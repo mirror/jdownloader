@@ -204,6 +204,11 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
                 }
             }
 
+            /* User did not activate all versions --> Show this info in filename so he can correct his mistake. */
+            if (bestMap.isEmpty() && foundFormatsNum > 0) {
+                title = jd.plugins.hoster.ArteTv.getPhrase("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION") + title;
+                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            }
             /* We should always have 3 links (their basic qualities) or more! */
             if (bestMap.isEmpty()) {
                 logger.warning("Decrypter broken");
@@ -560,18 +565,18 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
     }
 
     private HashMap<String, Integer> hlsBitrates = new HashMap<String, Integer>() {
-                                                     {
-                                                         put("200x112", 250);
-                                                         put("320x180", 500);
-                                                         put("504x284", 1000);
-                                                         /* Special - either one of those two is available */
-                                                         put("720x408", 2000);
-                                                         put("804x452", 2000);
-                                                         /* Special - either one of those two is available */
-                                                         put("1024x576", 4000);
-                                                         put("1280x720", 4000);
-                                                     }
-                                                 };
+        {
+            put("200x112", 250);
+            put("320x180", 500);
+            put("504x284", 1000);
+            /* Special - either one of those two is available */
+            put("720x408", 2000);
+            put("804x452", 2000);
+            /* Special - either one of those two is available */
+            put("1024x576", 4000);
+            put("1280x720", 4000);
+        }
+    };
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
