@@ -120,6 +120,8 @@ public class DonationDialog extends AbstractDialog<Object> {
             final AtomicBoolean close = new AtomicBoolean(true);
             final ProgressDialog d = new ProgressDialog(new ProgressGetter() {
 
+                private long started;
+
                 @Override
                 public String getLabelString() {
                     return null;
@@ -146,9 +148,16 @@ public class DonationDialog extends AbstractDialog<Object> {
 
                         StatsManager.I().track("/donation/button/redirect");
                         CrossSystem.openURL(DonateAction.SERVER + "payment/donationRedirect?" + toQuery(transactionID));
-
+                        started = System.currentTimeMillis();
                         while (true) {
                             try {
+                                if (System.currentTimeMillis() - started > 10 * 60 * 1000l) {
+                                    StatsManager.I().track("/donation/button/timeout/600");
+                                    DonateFeedback.reportFailed(new Exception("Timeout 600"));
+                                    Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_failed());
+                                    close.set(false);
+                                    return;
+                                }
                                 String url = DonateAction.SERVER + "payment/getStatus?" + toQuery(transactionID);
 
                                 final String jsonStatus = br.getPage(url);
@@ -408,8 +417,16 @@ public class DonationDialog extends AbstractDialog<Object> {
             public void run() {
                 long start = System.currentTimeMillis();
 
-                while (System.currentTimeMillis() - start < 30 * 60 * 60 * 1000l) {
+                while (true) {
                     try {
+
+                        if (System.currentTimeMillis() - start > 30 * 60 * 1000l) {
+                            StatsManager.I().track("/donation/button/timeout/1800");
+                            DonateFeedback.reportFailed(new Exception("Timeout 1800"));
+                            Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_failed());
+
+                            return;
+                        }
                         String url;
 
                         url = DonateAction.SERVER + "payment/getStatus?" + toQuery(transactionID);
