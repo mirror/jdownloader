@@ -100,6 +100,7 @@ settings_blacklist_regex=Dateien nicht entpacken, die folgenden regulären Ausdr
 settings_cpupriority_high=Hoch
 settings_cpupriority_low=Niedrig
 settings_cpupriority_middle=Mittel
+settings_cpupriority_v2=CPU/Festplatten-Auslastung
 settings_extract_to_archive_folder=In das folgende Verzeichnis entpacken
 settings_extract_to_path=Entpacken nach
 settings_extractto=Zielordner zum Entpacken
