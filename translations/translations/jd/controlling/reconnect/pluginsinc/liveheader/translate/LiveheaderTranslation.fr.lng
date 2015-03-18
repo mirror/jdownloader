@@ -28,7 +28,6 @@ LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm=Ce service est actuellem
 LiveHeaderDetectionWizard_runOnlineScan_notavailable_t=Service non disponible
 LiveHeaderDetectionWizard_runOnlineScan_warning_badhost=L'IP du routeur '%s1' est invalide !
 LiveHeaderDetectionWizard_runOnlineScan_warning_badip=Il apparait qu'il n'y a pas d'interface web à http://%s1. Le routeur d'IP dit qu'elle est invalide. Continuer quand même?
-LiveHeaderDetectionWizard_sendRouter_reconnectFailed=Èchec de reconnexion. Vous ne pouvez partager uniquement les réglages de reconnexions qui fonctionnent.
 LiveHeaderDetectionWizard_uploadData_sent_failed=Nous avons remarqué que votre script existe déjà dans notre base de données. Merci quand même.
 LiveHeaderDetectionWizard_uploadData_sent_ok=Merci! Nous avons ajouté votre script à notre bas de donné de routeur de reconnexion
 LiveHeaderDetectionWizard_userConfirm_loginstext=Les logins ne seront PAS téléchargés. Merci de les saisir tout de même.\nNous avons besoin d'eux afin de supprimer toute information sensible à partir de vos paramètres de reconnexion avant le transfert. \nSi vous ne les connaissez pas, laissez vide, ou demandez à votre administrateur réseau.
