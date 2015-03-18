@@ -128,7 +128,7 @@ public class LinkSnappyCom extends PluginForHost {
         String accountType = null;
         final String expire = br.getRegex("\"expire\":\"([^<>\"]*?)\"").getMatch(0);
         if ("lifetime".equals(expire)) {
-            accountType = "Lifetime Premium Account";
+            accountType = "Lifetime Premium account";
         } else if ("expired".equals(expire)) {
             /* Free account = also expired */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported!\r\nIf your account is Premium contact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);

@@ -339,6 +339,11 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 }
             }
 
+            /* User did not activate all versions --> Show this info in filename so he can correct his mistake. */
+            if (bestMap.isEmpty() && foundFormatsNum > 0) {
+                title = jd.plugins.hoster.ArteTv.getPhrase("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION") + title;
+                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            }
             /* We should always have 3 links (their basic qualities) or more! */
             if (bestMap.isEmpty()) {
                 logger.warning("Decrypter broken");

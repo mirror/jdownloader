@@ -123,7 +123,7 @@ public class PremiumTo extends PluginForHost {
             }
         }
         account.setValid(true);
-        ac.setStatus("Premium Account");
+        ac.setStatus("Premium account");
         return ac;
     }
 
