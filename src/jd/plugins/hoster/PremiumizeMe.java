@@ -64,6 +64,11 @@ public class PremiumizeMe extends PluginForHost {
     private static final String                            NOCHUNKS           = "NOCHUNKS";
     private static final String                            FAIL_STRING        = "premiumizeme";
 
+    /*
+     * IMPORTANT INFORMATION: According to their support we can 'hammer' their API every 5 minutes so we could even make an
+     * "endless retries" mode which, on fatal errors, waits 5 minutes, then tries again.
+     */
+    @SuppressWarnings("deprecation")
     public PremiumizeMe(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -267,6 +272,7 @@ public class PremiumizeMe extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         br = newBrowser();
@@ -317,8 +323,9 @@ public class PremiumizeMe extends PluginForHost {
         }
     }
 
+    @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         login(account);
         account.setValid(true);
@@ -509,6 +516,7 @@ public class PremiumizeMe extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void sendErrorLog(DownloadLink link, Account acc) {
         try {
             if (getPluginConfig().getBooleanProperty(SENDDEBUGLOG, true) == false) {
