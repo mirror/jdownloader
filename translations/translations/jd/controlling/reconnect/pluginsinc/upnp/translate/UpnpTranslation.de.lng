@@ -1,3 +1,4 @@
+AutoDetectAction_run_failed2=Keine funktionierende UPNP-Reconnect-Methode gefunden.\r\nProbiere stattdessen den Live Header - Reconnect!
 AutoDetectUpnpAction_AutoDetectUpnpAction_=Versuche alle UPnP-Reconnect-Geräte in deinem Netzwerk zu finden. Die meisten FRITZ!Box-Router können mit dieser Methode einen Reconnect durchführen.
 UPNPReconnectInvoker_getName_=UPnP-Router Reconnect
 UPNPRouterPlugin_run_error=Es konnten keine UPnP-Geräte gefunden werden. Versuche die Live Header Reconnect-Methode stattdessen!
