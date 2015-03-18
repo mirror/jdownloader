@@ -120,6 +120,9 @@ public class RemixShareCom extends PluginForHost {
         String fun = null;
         if (fun == null) {
             fun = br.getRegex("document\\.getElementById\\('[\\w\\-]+'\\)\\.href\\s*(=\\s*\"((?:(?:https?:)?//(?:\\w+\\.)?remixshare\\.com)?/(?:[^/]+/){4})[^\r\n]+)").getMatch(0);
+            if (fun == null) {
+                fun = br.getRegex("var \\w+\\s*(=\\s*\"((?:(?:https?:)?//(?:\\w+\\.)?remixshare\\.com)?/(?:[^/]+/){4})[^\r\n]+)").getMatch(0);
+            }
         }
         if (fun == null) {
             fun = br.getRegex("<a[^>]*href=\"((?:(?:https?:)?//(?:\\w+\\.)?remixshare\\.com)?/(?:[^/]+/){4,}\\d+)\"[^>]+><img[^>]+src=\"/images/dl_btn\\.png\"").getMatch(0);
