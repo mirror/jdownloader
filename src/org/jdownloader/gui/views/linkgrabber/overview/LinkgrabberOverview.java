@@ -29,7 +29,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.overviewpanel.AbstractOverviewPanel;
 import org.jdownloader.gui.views.downloads.overviewpanel.DataEntry;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
-import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
@@ -204,22 +203,20 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
     }
 
     /**
-     * 
+     *
      */
-    private static final long     serialVersionUID = -195024600818162517L;
-    private LinkGrabberTable      table;
+    private static final long           serialVersionUID = -195024600818162517L;
 
-    private ListSelectionListener selectionListener;
-    private TableModelListener    tableListener;
+    private final ListSelectionListener selectionListener;
+    private final TableModelListener    tableListener;
 
     public LinkgrabberOverview(final LinkGrabberTable table) {
-        super();
-        this.table = table;
+        super(table.getModel());
 
         CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.getEventSender().addListener(this, true);
 
         LinkCollector.getInstance().getEventsender().addListener(this, true);
-        LinkGrabberTableModel.getInstance().addTableModelListener(tableListener = new TableModelListener() {
+        tableModel.addTableModelListener(tableListener = new TableModelListener() {
 
             @Override
             public void tableChanged(TableModelEvent e) {
@@ -232,7 +229,7 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
 
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                if (e == null || e.getValueIsAdjusting() || table.getModel().isTableSelectionClearing()) {
+                if (e == null || e.getValueIsAdjusting() || tableModel.isTableSelectionClearing()) {
                     return;
                 }
                 onConfigValueModified(null, null);
@@ -259,8 +256,8 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
 
                 CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.getEventSender().removeListener(LinkgrabberOverview.this);
                 LinkCollector.getInstance().getEventsender().removeListener(LinkgrabberOverview.this);
-                LinkGrabberTableModel.getInstance().removeTableModelListener(tableListener);
-                table.getSelectionModel().removeListSelectionListener(selectionListener);
+                tableModel.removeTableModelListener(tableListener);
+                tableModel.getTable().getSelectionModel().removeListSelectionListener(selectionListener);
 
             }
         };
@@ -364,17 +361,17 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
 
     @Override
     protected AggregatedCrawlerNumbers createSelected() {
-        return new AggregatedCrawlerNumbers(table.getSelectionInfo(true, true));
+        return new AggregatedCrawlerNumbers(tableModel.getTable().getSelectionInfo(true, true));
     }
 
     @Override
     protected AggregatedCrawlerNumbers createFiltered() {
-        return new AggregatedCrawlerNumbers(table.getSelectionInfo(false, true));
+        return new AggregatedCrawlerNumbers(tableModel.getTable().getSelectionInfo(false, true));
     }
 
     @Override
     protected AggregatedCrawlerNumbers createTotal() {
-        return new AggregatedCrawlerNumbers(table.getSelectionInfo(false, false));
+        return new AggregatedCrawlerNumbers(tableModel.getTable().getSelectionInfo(false, false));
     }
 
     @Override

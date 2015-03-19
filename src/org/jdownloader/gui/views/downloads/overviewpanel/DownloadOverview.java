@@ -39,7 +39,6 @@ import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
-import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> implements DownloadControllerListener, HierarchyListener, GenericConfigEventListener<Boolean>, GUIListener {
@@ -309,7 +308,7 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
     }
 
     /**
-     * 
+     *
      */
     private static final long                   serialVersionUID = 7849517111823717677L;
 
@@ -323,7 +322,7 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
     }
 
     public DownloadOverview(DownloadsTable table) {
-        super();
+        super(table.getModel());
 
         // new line
 
@@ -355,7 +354,7 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
 
         add(settings, "hidemode 3");
         DownloadController.getInstance().addListener(this, true);
-        DownloadsTableModel.getInstance().addTableModelListener(tableListener = new TableModelListener() {
+        tableModel.addTableModelListener(tableListener = new TableModelListener() {
 
             @Override
             public void tableChanged(TableModelEvent e) {
@@ -384,10 +383,10 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
             }
         });
 
-        DownloadsTableModel.getInstance().getTable().getSelectionModel().addListSelectionListener(listSelection = new ListSelectionListener() {
+        tableModel.getTable().getSelectionModel().addListSelectionListener(listSelection = new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                if (e == null || e.getValueIsAdjusting() || DownloadsTableModel.getInstance().isTableSelectionClearing()) {
+                if (e == null || e.getValueIsAdjusting() || tableModel.isTableSelectionClearing()) {
                     return;
                 }
                 onConfigValueModified(null, null);
@@ -438,8 +437,8 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
                 CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SETTINGS_VISIBLE.getEventSender().removeListener(settingsListener);
                 CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.getEventSender().removeListener(DownloadOverview.this);
                 DownloadController.getInstance().removeListener(DownloadOverview.this);
-                DownloadsTableModel.getInstance().removeTableModelListener(tableListener);
-                DownloadsTableModel.getInstance().getTable().getSelectionModel().removeListSelectionListener(listSelection);
+                tableModel.removeTableModelListener(tableListener);
+                tableModel.getTable().getSelectionModel().removeListSelectionListener(listSelection);
                 DownloadWatchDog.getInstance().getStateMachine().removeListener(stateListener);
             }
         };
@@ -515,14 +514,14 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
     }
 
     protected AggregatedNumbers createSelected() {
-        return new AggregatedNumbers(DownloadsTableModel.getInstance().getTable().getSelectionInfo(true, true));
+        return new AggregatedNumbers(tableModel.getTable().getSelectionInfo(true, true));
     }
 
     protected AggregatedNumbers createFiltered() {
-        return new AggregatedNumbers(DownloadsTableModel.getInstance().getTable().getSelectionInfo(false, true));
+        return new AggregatedNumbers(tableModel.getTable().getSelectionInfo(false, true));
     }
 
     protected AggregatedNumbers createTotal() {
-        return new AggregatedNumbers(DownloadsTableModel.getInstance().getTable().getSelectionInfo(false, false));
+        return new AggregatedNumbers(tableModel.getTable().getSelectionInfo(false, false));
     }
 }

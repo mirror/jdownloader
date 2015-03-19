@@ -28,23 +28,25 @@ import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
-import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.Position;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUIListener, GenericConfigEventListener<Boolean>, HierarchyListener {
 
-    private List<DataEntry<T>>                  dataEntries;
-    protected AtomicBoolean                     visible     = new AtomicBoolean(false);
-    protected NullsafeAtomicReference<Timer>    updateTimer = new NullsafeAtomicReference<Timer>(null);
+    private List<DataEntry<T>>                        dataEntries;
+    protected final AtomicBoolean                     visible     = new AtomicBoolean(false);
+    protected final NullsafeAtomicReference<Timer>    updateTimer = new NullsafeAtomicReference<Timer>(null);
 
-    protected final DelayedRunnable             slowDelayer;
-    protected final DelayedRunnable             fastDelayer;
-    private GenericConfigEventListener<Boolean> relayoutListener;
+    protected final DelayedRunnable                   slowDelayer;
+    protected final DelayedRunnable                   fastDelayer;
+    private final GenericConfigEventListener<Boolean> relayoutListener;
+    protected final PackageControllerTableModel       tableModel;
 
-    public AbstractOverviewPanel() {
+    public AbstractOverviewPanel(PackageControllerTableModel tableModel) {
         super("ins 0", "[][grow,fill][]", "[grow,fill]");
+        this.tableModel = tableModel;
         LAFOptions.getInstance().applyPanelBackground(this);
         GUIEventSender.getInstance().addListener(this, true);
         final MigPanel info = new MigPanel("ins 2 0 0 0", "[grow]10[grow]", "[grow,fill]2[grow,fill]");
@@ -294,11 +296,10 @@ public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUILi
 
             @Override
             protected void runInEDT() {
-                boolean hasSelectedObjects = DownloadsTableModel.getInstance().hasSelectedObjects();
+                boolean hasSelectedObjects = tableModel.hasSelectedObjects();
                 for (DataEntry di : dataEntries) {
                     di.updateVisibility(hasSelectedObjects);
                 }
-
                 fastDelayer.run();
             }
         };
