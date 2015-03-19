@@ -33,7 +33,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viva.tv", "mtviggy.com", "southpark.de", "southpark.cc.com", "vh1.com", "nickmom.com", "mtv.com.au" }, urls = { "http://www\\.viva\\.tv/charts/16\\-viva\\-top\\-100", "http://www\\.mtviggy\\.com/videos/[a-z0-9\\-]+/|http://www\\.mtvdesi\\.com/(videos/)?[a-z0-9\\-]+|http://www\\.mtvk\\.com/videos/[a-z0-9\\-]+", "http://www\\.southpark\\.de/alle\\-episoden/s\\d{2}e\\d{2}[a-z0-9\\-]+", "http://southpark\\.cc\\.com/full\\-episodes/s\\d{2}e\\d{2}[a-z0-9\\-]+", "http://www\\.vh1.com/(shows/[a-z0-9\\-_]+/[a-z0-9\\-_]+/.+|video/play\\.jhtml\\?id=\\d+|video/[a-z0-9\\-_]+/\\d+/[a-z0-9\\-_]+\\.jhtml|events/[a-z0-9\\-_]+/videos/[a-z0-9\\-_]+/\\d+/)", "http://www\\.nickmom\\.com/videos/[a-z0-9\\-]+/", "http://www\\.mtv\\.com.au/[a-z0-9\\-]+/videos/[a-z0-9\\-]+" }, flags = { 0, 0, 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viva.tv", "mtviggy.com", "southpark.de", "southpark.cc.com", "vh1.com", "nickmom.com", "mtv.com.au", "mtv.com" }, urls = { "http://www\\.viva\\.tv/charts/16\\-viva\\-top\\-100", "http://www\\.mtviggy\\.com/videos/[a-z0-9\\-]+/|http://www\\.mtvdesi\\.com/(videos/)?[a-z0-9\\-]+|http://www\\.mtvk\\.com/videos/[a-z0-9\\-]+", "http://www\\.southpark\\.de/alle\\-episoden/s\\d{2}e\\d{2}[a-z0-9\\-]+", "http://southpark\\.cc\\.com/full\\-episodes/s\\d{2}e\\d{2}[a-z0-9\\-]+", "http://www\\.vh1.com/(shows/[a-z0-9\\-_]+/[a-z0-9\\-_]+/.+|video/play\\.jhtml\\?id=\\d+|video/[a-z0-9\\-_]+/\\d+/[a-z0-9\\-_]+\\.jhtml|events/[a-z0-9\\-_]+/videos/[a-z0-9\\-_]+/\\d+/)", "http://www\\.nickmom\\.com/videos/[a-z0-9\\-]+/", "http://www\\.mtv\\.com\\.au/[a-z0-9\\-]+/videos/[a-z0-9\\-]+",
+        "http://www\\.mtv\\.com/(shows/[a-z0-9\\-_]+/[^<>\"]+|[^<>\"]*?videos/.+)" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0 })
 public class VivaTvDecrypt extends PluginForDecrypt {
 
     public VivaTvDecrypt(PluginWrapper wrapper) {
@@ -60,6 +61,8 @@ public class VivaTvDecrypt extends PluginForDecrypt {
     private static final String     type_nickmom_com          = "http://www\\.nickmom\\.com/videos/[a-z0-9\\-]+/";
 
     private static final String     type_mtv_com_au           = "http://www\\.mtv\\.com\\.au/.+";
+
+    private static final String     type_mtv_com              = "http://www\\.mtv\\.com/.+";
 
     private ArrayList<DownloadLink> decryptedLinks            = new ArrayList<DownloadLink>();
     private String                  default_ext               = null;
@@ -88,6 +91,8 @@ public class VivaTvDecrypt extends PluginForDecrypt {
                 decryptNickmomCom();
             } else if (parameter.matches(type_mtv_com_au)) {
                 decryptMtvComAuPlaylist();
+            } else if (parameter.matches(type_mtv_com)) {
+                decryptMtvCom();
             } else {
                 /* Probably unsupported linktype */
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -173,7 +178,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         final String feedURL = String.format(getFEEDURL("southpark.de"), this.mgid);
         br.getPage(feedURL);
         fpName = getXML("title");
-        decryptFeed();
+        decryptFeed(getEMBEDURL("ALL_OTHERS"));
         fpName = new Regex(parameter, "episoden/(s\\d{2}e\\d{2})").getMatch(0) + " - " + fpName;
         final FilePackage fp = FilePackage.getInstance();
         fpName = Encoding.htmlDecode(fpName.trim());
@@ -190,7 +195,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         final String feedURL = String.format(getFEEDURL("southpark.cc.com"), this.mgid);
         br.getPage(feedURL);
         fpName = getFEEDtitle(br.toString());
-        decryptFeed();
+        decryptFeed(getEMBEDURL("ALL_OTHERS"));
         fpName = new Regex(parameter, "episodes/(s\\d{2}e\\d{2})").getMatch(0) + " - " + fpName;
         final FilePackage fp = FilePackage.getInstance();
         fpName = Encoding.htmlDecode(fpName.trim());
@@ -198,8 +203,9 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         fp.addLinks(decryptedLinks);
     }
 
+    /** General function to decrypt viacom RSS feeds, especially with multiple segments of a single video no matter what their source is. */
     @SuppressWarnings("deprecation")
-    private void decryptFeed() throws DecrypterException {
+    private void decryptFeed(final String decrypter_url_plain) throws DecrypterException {
         final String[] items = br.getRegex("<item>(.*?)</item>").getColumn(0);
         if (items == null || items.length == 0 || fpName == null) {
             throw new DecrypterException("Decrypter broken for link: " + parameter);
@@ -207,9 +213,8 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         int counter = 0;
         for (final String item : items) {
             String title = getFEEDtitle(item);
-            final String item_mgid = new Regex(item, "scheme=\"urn:mtvn:id\">(mgid[^<>\"]*?)</media:category>").getMatch(0);
-            final String mediagen_url = new Regex(item, "url=\"(http://[^<>\"]+/mediagen[^<>\"]*?)\"").getMatch(0);
-            if (title == null || item_mgid == null || mediagen_url == null) {
+            final String item_mgid = new Regex(item, "uri=(mgid:[A-Za-z0-9:\\-\\.]+)").getMatch(0);
+            if (title == null || item_mgid == null) {
                 throw new DecrypterException("Decrypter broken for link: " + parameter);
             }
             /* We don't need the intro - it's always the same! */
@@ -217,15 +222,11 @@ public class VivaTvDecrypt extends PluginForDecrypt {
                 continue;
             }
             title = doFilenameEncoding(title);
-            String final_url = String.format(getEMBEDURL("ALL_OTHERS"), item_mgid);
-            /* Dirty workaround to display the correct domain in JD. */
-            if (parameter.matches(type_southpark_cc_episode)) {
-                final_url = final_url.replace("video:southparkstudios.com:", "video:southparkstudios_jd_decrypted_jd_.com:");
-            }
+            // feedURL_plain
+            final String final_url = String.format(decrypter_url_plain, item_mgid);
             final DownloadLink dl = createDownloadlink(final_url);
             dl.setName(title + this.default_ext);
             dl.setAvailable(true);
-            dl.setProperty("mainlink", parameter);
             try {
                 dl.setContentUrl(this.parameter);
             } catch (final Throwable e) {
@@ -314,6 +315,39 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             }
             decryptedLinks.add(fina);
         }
+        final FilePackage fp = FilePackage.getInstance();
+        fpName = Encoding.htmlDecode(fpName.trim());
+        fp.setName(fpName);
+        fp.addLinks(decryptedLinks);
+    }
+
+    private void decryptMtvCom() throws Exception {
+        final String feedURL_plain = this.getFEEDURL("mtv.com");
+        br.getPage(parameter);
+        final String vevo_ID = br.getRegex("MTVN\\.Player\\.vevoVideoId = \"([A-Za-z0-9]+)\";").getMatch(0);
+        if (vevo_ID != null) {
+            logger.info("Current link is a VEVO link");
+            decryptedLinks.add(createDownloadlink("http://www.vevo.com/watch/" + vevo_ID));
+            return;
+        }
+        logger.info("Current link is NO VEVO link");
+        if (!br.containsHTML("MTVN\\.VIDEO\\.PLAYER\\.instance")) {
+            try {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return;
+            } catch (final Throwable e) {
+                return;
+            }
+        }
+        this.mgid = br.getRegex("MTVN\\.VIDEO\\.contentUri = \'(mgid:uma:[^<>\"]*?)\\';").getMatch(0);
+        if (this.mgid == null) {
+            this.decryptedLinks = null;
+            return;
+        }
+        final String feedURL = String.format(feedURL_plain, this.mgid);
+        br.getPage(feedURL);
+        fpName = getXML("title");
+        decryptFeed(feedURL_plain);
         final FilePackage fp = FilePackage.getInstance();
         fpName = Encoding.htmlDecode(fpName.trim());
         fp.setName(fpName);
