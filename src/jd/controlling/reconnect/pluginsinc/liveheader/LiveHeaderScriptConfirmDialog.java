@@ -120,9 +120,10 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
      * 
      */
     private HashSet<String> confirmed = new HashSet<String>();
+    private AppAction       editAction;
 
     public void addEditAction() {
-        setLeftActions(new AppAction() {
+        setLeftActions(editAction = new AppAction() {
             {
                 setName(_GUI._.LiveHeaderScriptConfirmDialog_LiveHeaderScriptConfirmDialog_edit());
             }
@@ -245,7 +246,7 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                             };
                         }.run();
                     } catch (Exception e1) {
-
+                        e1.printStackTrace();
                         UIOManager.I().show(ConfirmDialogInterface.class, new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.lit_warning(), _GUI._.LiveHeaderReconnect_validateAndSet_object_(), null, null, null));
 
                     }
@@ -292,6 +293,9 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
 
         p.add(new JScrollPane(textpane), "pushx,growx,spanx,pushy,growy");
         updateScriptInfo();
+        if (StringUtils.isEmpty(textpane.toString())) {
+            editAction.actionPerformed(null);
+        }
         return p;
     }
 
@@ -349,6 +353,9 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
     }
 
     private String toOverView(String script) throws Exception {
+        if (StringUtils.isEmpty(script)) {
+            return "";
+        }
         final HashMap<String, String> map = new HashMap<String, String>();
         map.put("user", URLEncode.encodeRFC2396("<Username required>"));
         map.put("pass", URLEncode.encodeRFC2396("<Password required>"));

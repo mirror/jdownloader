@@ -26,6 +26,7 @@ import jd.controlling.reconnect.ReconnectResult;
 import jd.controlling.reconnect.RouterUtils;
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.controlling.reconnect.ipcheck.IPController;
+import jd.controlling.reconnect.pluginsinc.liveheader.recoll.AddRouterResponse;
 import jd.controlling.reconnect.pluginsinc.liveheader.recoll.RecollController;
 import jd.controlling.reconnect.pluginsinc.liveheader.remotecall.RouterData;
 import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
@@ -689,8 +690,6 @@ public class LiveHeaderDetectionWizard {
     private java.util.List<RouterData> downloadRouterDatasByAutoDetectValues() throws InterruptedException {
 
         RouterData rd = getRouterData();
-        // debug
-        // rd.setMac(null);
 
         java.util.List<RouterData> scripts = RecollController.getInstance().findRouter(rd);
 
@@ -966,6 +965,7 @@ public class LiveHeaderDetectionWizard {
                     UIOManager.I().show(null, confirm).throwCloseExceptions();
                     script = rd.getScript();
                     test(processCallBack, script);
+
                     if (StringUtils.isNotEmpty(password)) {
                         settings.setPassword(password);
                     }
@@ -1174,8 +1174,17 @@ public class LiveHeaderDetectionWizard {
 
         RouterData rd = getRouterData();
         rd.setScript(script);
-
-        if (RecollController.getInstance().addRouter(rd)) {
+        AddRouterResponse resp = RecollController.getInstance().addRouter(rd);
+        if (resp == null) {
+            UIOManager.I().showMessageDialog(T._.LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm());
+            return;
+        }
+        rd.setScriptID(resp.getScriptID());
+        JsonConfig.create(LiveHeaderReconnectSettings.class).setRouterData(rd);
+        JsonConfig.create(LiveHeaderReconnectSettings.class).setScript(rd.getScript());
+        JsonConfig.create(LiveHeaderReconnectSettings.class).setUserName(username);
+        JsonConfig.create(LiveHeaderReconnectSettings.class).setPassword(password);
+        if (!resp.isDupe()) {
             UIOManager.I().showMessageDialog(T._.LiveHeaderDetectionWizard_uploadData_sent_ok());
         } else {
             UIOManager.I().showMessageDialog(T._.LiveHeaderDetectionWizard_uploadData_sent_failed());

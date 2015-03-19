@@ -72,6 +72,9 @@ public class Scriptvalidator {
     }
 
     public String toOverView(String script) throws Exception {
+        if (StringUtils.isEmpty(script)) {
+            return "";
+        }
         String lc = script.toLowerCase(Locale.ENGLISH);
         if (!lc.contains("[[[request")) {
             throw new Exception("No Request Tag");
