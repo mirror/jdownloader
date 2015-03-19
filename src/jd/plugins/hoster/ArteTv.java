@@ -337,20 +337,20 @@ public class ArteTv extends PluginForHost {
     }
 
     public static HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                        {
-                                                            put("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION", "Check_your_plugin_settings_activate_missing_formats_e_g_subtitled_versions_or_other_language_versions_");
-                                                            put("ERROR_CONTENT_NOT_AVAILABLE_ANYMORE_COPYRIGHTS_EXPIRED", "This video is not available anymore since %s!_");
-                                                            put("ERROR_CONTENT_NOT_AVAILABLE_YET", "This content is not available yet. It will be available from the %s!_");
-                                                        }
-                                                    };
+        {
+            put("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION", "Check_your_plugin_settings_activate_missing_formats_e_g_subtitled_versions_or_other_language_versions_");
+            put("ERROR_CONTENT_NOT_AVAILABLE_ANYMORE_COPYRIGHTS_EXPIRED", "This video is not available anymore since %s!_");
+            put("ERROR_CONTENT_NOT_AVAILABLE_YET", "This content is not available yet. It will be available from the %s!_");
+        }
+    };
 
     public static HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-                                                        {
-                                                            put("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION", "Überprüfe_deine_Plugineinstellungen_aktiviere_fehlende_Formate_z_B_Untertitelte_Version_oder_andere_Sprachversionen_");
-                                                            put("ERROR_CONTENT_NOT_AVAILABLE_ANYMORE_COPYRIGHTS_EXPIRED", "Dieses Video ist seit dem %s nicht mehr verfügbar!_");
-                                                            put("ERROR_CONTENT_NOT_AVAILABLE_YET", "Dieses Video ist noch nicht verfügbar. Es ist erst ab dem %s verfügbar!_");
-                                                        }
-                                                    };
+        {
+            put("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION", "Überprüfe_deine_Plugineinstellungen_aktiviere_fehlende_Formate_z_B_Untertitelte_Version_oder_andere_Sprachversionen_");
+            put("ERROR_CONTENT_NOT_AVAILABLE_ANYMORE_COPYRIGHTS_EXPIRED", "Dieses Video ist seit dem %s nicht mehr verfügbar!_");
+            put("ERROR_CONTENT_NOT_AVAILABLE_YET", "Dieses Video ist noch nicht verfügbar. Es ist erst ab dem %s verfügbar!_");
+        }
+    };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
@@ -373,11 +373,11 @@ public class ArteTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Auswahl der immer verfügbaren http Qualitätsstufen:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), http_extern_1000, JDL.L("plugins.hoster.arte.http_extern_1000", "1000kBit/s 504x284")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Auswahl der immer verfügbaren hls Qualitätsstufen für spezielle externe creative.arte.tv Videos:"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), hls_extern_250, JDL.L("plugins.hoster.arte.hls_extern_250", "250kBit/s 192x144 oder 196x144 oder 200x112")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), hls_extern_500, JDL.L("plugins.hoster.arte.hls_extern_500", "500kBit/s 308x232 oder 312x228 oder 320x180")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), hls_extern_1000, JDL.L("plugins.hoster.arte.hls_extern_1000", "1000kBit/s 496x372 oder 500x364 oder 504x284")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), hls_extern_2000, JDL.L("plugins.hoster.arte.hls_extern_2000", "2000kBit/s 720x408 oder 720x528 oder 720x540 oder 803x452 oder 804x452")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), hls_extern_4000, JDL.L("plugins.hoster.arte.hls_extern_4000", "4000kBit/s 1024x576 oder 1280x720")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), hls_extern_250, JDL.L("plugins.hoster.arte.hls_extern_250", "250kBit/s 192x144 oder ähnlich")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), hls_extern_500, JDL.L("plugins.hoster.arte.hls_extern_500", "500kBit/s 308x232 oder ähnlich")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), hls_extern_1000, JDL.L("plugins.hoster.arte.hls_extern_1000", "1000kBit/s 496x372 oder ähnlich")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), hls_extern_2000, JDL.L("plugins.hoster.arte.hls_extern_2000", "2000kBit/s 720x408 oder ähnlich")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), hls_extern_4000, JDL.L("plugins.hoster.arte.hls_extern_4000", "4000kBit/s oder ähnlich")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Auswahl der Qualitätsstufen für normale creative.arte.tv/concert.arte.tv/arte.tv Videos:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Auswahl der manchmal verfügbaren Qualitätsstufen:"));

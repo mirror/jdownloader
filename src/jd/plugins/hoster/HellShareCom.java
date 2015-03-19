@@ -24,6 +24,7 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.UserIO;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -46,21 +47,45 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hellshare.com" }, urls = { "http://[\\w\\.]*?(download\\.)?(sk|cz|en)?hellshare\\.(com|sk|hu|de|cz|pl)/((.+/[0-9]+)|(/[0-9]+/.+/.+))" }, flags = { 2 })
 public class HellShareCom extends PluginForHost {
 
-    private static final String  LIMITREACHED       = "(You have exceeded today´s free download limit|You exceeded your today\\'s limit for free download|<strong>Dnešní limit free downloadů jsi vyčerpal\\.</strong>)";
+    /*
+     * Sister sites: hellshare.cz, (and their other domains), hellspy.cz (and their other domains), using same dataservers but slightly
+     * different script
+     */
+
+    /* Connection stuff */
+    private static final boolean FREE_RESUME                  = false;
+    private static final int     FREE_MAXCHUNKS               = 1;
+    private static final int     FREE_MAXDOWNLOADS            = 1;
+    // private static final boolean ACCOUNT_FREE_RESUME = true;
+    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
+    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = -5;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 2;
+
+    private static final String  LIMITREACHED                 = "(You have exceeded today´s free download limit|You exceeded your today\\'s limit for free download|<strong>Dnešní limit free downloadů jsi vyčerpal\\.</strong>)";
 
     // edt: added 2 constants for testing, in normal work - waittime when server
     // is 100% load should be 2-5 minutes
-    private static final String  COOKIE_HOST        = "http://hellshare.cz";
-    private final long           WAITTIME100PERCENT = 60 * 1000l;
-    private final long           WAITTIMEDAILYLIMIT = 4 * 3600 * 1000l;
-    private static final boolean ALL_PREMIUMONLY    = true;
-    private static Object        LOCK               = new Object();
+    private static final String  COOKIE_HOST                  = "http://hellshare.cz";
+    private final long           WAITTIME100PERCENT           = 60 * 1000l;
+    private final long           WAITTIMEDAILYLIMIT           = 4 * 3600 * 1000l;
+    private static final boolean ALL_PREMIUMONLY              = true;
+    private static Object        LOCK                         = new Object();
 
     public HellShareCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.en.hellshare.com/register");
+        /* Especially for premium - don't make too many requests in a short time or we'll get 503 responses. */
+        this.setStartIntervall(2000l);
     }
 
+    @Override
+    public String getAGBLink() {
+        return "http://www.en.hellshare.com/terms";
+    }
+
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
         final String numbers = new Regex(link.getDownloadURL(), "hellshare\\.com/(\\d+)").getMatch(0);
@@ -73,33 +98,19 @@ public class HellShareCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         setBrowserExclusive();
-        /* to prefer english page UPDATE: English does not work anymore */
+        /* To prefer english page UPDATE: English does not work anymore */
         br.setCustomCharset("utf-8");
         br.getHeaders().put("Accept-Language", "en-gb;q=0.9, en;q=0.8");
         br.setFollowRedirects(true);
         try {
-            try {
-                /* not available in 0.9.* && nightly */
-                br.setAllowedResponseCodes(new int[] { 502 });
-            } catch (final Throwable e) {
-            }
             br.getPage(link.getDownloadURL());
-            if (br.getHttpConnection().getResponseCode() == 502) {
-                link.getLinkStatus().setStatusText("We are sorry, but HellShare is unavailable in your country");
-                return AvailableStatus.UNCHECKABLE;
-            }
-        } catch (final Exception e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
-            }
-            // for stable: we assume that 502 == country block.
-            if (e.getMessage().contains("502 Bad Gateway")) {
-                link.getLinkStatus().setStatusText(">We are sorry, but HellShare is unavailable in");
+        } catch (final BrowserException e) {
+            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 502) {
                 link.getLinkStatus().setStatusText("We are sorry, but HellShare is unavailable in your country");
                 return AvailableStatus.UNCHECKABLE;
             }
         }
-        if (br.containsHTML("<h1>File not found</h1>") || br.containsHTML("<h1>Soubor nenalezen</h1>")) {
+        if (br.containsHTML("<h1>File not found</h1>") || br.containsHTML("<h1>Soubor nenalezen</h1>") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filesize = br.getRegex("FileSize_master\">(.*?)</strong>").getMatch(0);
@@ -120,83 +131,13 @@ public class HellShareCom extends PluginForHost {
             }
         }
         if (filename == null || filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setName(filename.trim());
+        filename = Encoding.htmlDecode(filename).trim();
+        link.setName(filename);
         link.setDownloadSize(SizeFormatter.getSize(filesize.replace("&nbsp;", "")));
         link.setUrlDownload(br.getURL());
         return AvailableStatus.TRUE;
-    }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
-
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            ai.setStatus("Login failed");
-            account.setValid(false);
-            throw e;
-        }
-        final String hostedFiles = br.getRegex(">Number of your files:</label></th>.*?<td id=\"info_files_counter\">.*?>(\\d+)</").getMatch(0);
-        if (hostedFiles != null) {
-            ai.setFilesNum(Long.parseLong(hostedFiles));
-        }
-
-        // edt
-        // searching for known account plans
-        // Free Registered
-
-        String premiumActive = br.getRegex("<div class=\"icon-timecredit icon\">[\n\t\r]+<h4>Premium account</h4>[\n\t\r]+(.*)[\n\t\r]+<br />[\n\t\r]+<a href=\"/credit/time\">Buy</a>").getMatch(0);
-
-        if (premiumActive == null) {
-            // Premium User
-            premiumActive = br.getRegex("<div class=\"icon-timecredit icon\">[\n\t\r]+<h4>Premium account</h4>[\n\t\r]+(.*)<br />[\n\t\r]+<a href=\"/credit/time\">Buy</a>").getMatch(0);
-        }
-
-        if (premiumActive == null) {
-            // User with Credits
-            premiumActive = br.getRegex("<div class=\"icon-credit icon\">[\n\t\r]+<h4>(.*)</h4>[\n\t\r]+<table>+[\n\t\r]+<tr>[\n\t\r]+<th>Current:</th>[\n\t\r]+<td>(.*?)</td>[\n\t\r]+</tr>").getMatch(0);
-        }
-
-        if (premiumActive == null) {
-            ai.setStatus("Invalid/Unknown");
-            account.setValid(false);
-        } else if (premiumActive.contains("Inactive")) {
-            ai.setStatus("Free User");
-            // for inactive - set traffic left to 0
-            ai.setTrafficLeft(0l);
-            account.setValid(true);
-        } else if (premiumActive.contains("Active")) {
-
-            String validUntil = premiumActive.substring(premiumActive.indexOf(":") + 1);
-            // page only displays full day, so JD fails in the last day of Premium
-            // added time as if the account is Premium until the midnight
-            validUntil += " 23:59:59";
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd.MM.yyyy HH:mm:ss", null));
-            ai.setStatus("Premium User");
-            ai.setExpired(false);
-            account.setValid(true);
-
-        } else if (premiumActive.contains("Download credit")) {
-            final String trafficleft = br.getRegex("id=\"info_credit\" class=\"va-middle\">[\n\t\r ]+<strong>(.*?)</strong>").getMatch(0);
-            if (trafficleft != null) {
-                ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
-            }
-            ai.setValidUntil(-1);
-            ai.setStatus("User with Credits");
-            account.setValid(true);
-
-        }
-
-        return ai;
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "http://www.en.hellshare.com/terms";
     }
 
     private String getDownloadOverview(final String fileID) {
@@ -220,12 +161,12 @@ public class HellShareCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return FREE_MAXDOWNLOADS;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 2;
+        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
     }
 
     @Override
@@ -244,16 +185,10 @@ public class HellShareCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
         }
-        // edt: added more logging info
         if (br.containsHTML(LIMITREACHED)) {
             // edt: to support bug when server load = 100% and daily limit
             // reached are simultaneously displayed
             if (br.containsHTML("Current load 100%") || br.containsHTML("Server load: 100%")) {
-                // throw new
-                // PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE,
-                // JDL.L("plugins.hoster.HellShareCom.error.CurrentLoadIs100Percent",
-                // "The current serverload is 100%"), 10 * WAITTIME100PERCENT);
-                // } else {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.HellShareCom.error.DailyLimitReached", "Daily Limit for free downloads reached"), WAITTIMEDAILYLIMIT);
             }
         }
@@ -348,7 +283,7 @@ public class HellShareCom extends PluginForHost {
 
             br.setFollowRedirects(true);
             br.setReadTimeout(120 * 1000);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaForm, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaForm, FREE_RESUME, FREE_MAXCHUNKS);
         } else {
             Form form = br.getForm(1);
             if (form == null) {
@@ -357,7 +292,7 @@ public class HellShareCom extends PluginForHost {
             final String captcha = "http://www.en.hellshare.com/antispam.php?sv=FreeDown:" + fileId;
             final String code = getCaptchaCode(captcha, downloadLink);
             form.put("captcha", Encoding.urlEncode(code));
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, FREE_RESUME, FREE_MAXCHUNKS);
         }
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
@@ -418,7 +353,7 @@ public class HellShareCom extends PluginForHost {
                     // throw new PluginException(LinkStatus.ERROR_PREMIUM, "Daily limit exceeded!");
                 }
                 // Hellshare Premium sharing not allowed!
-                if (br.containsHTML("HellShare not allowed to share the login information to the accounts.")) {
+                if (br.containsHTML("HellShare not allowed to share the login information to the accounts\\.")) {
                     UserIO.getInstance().requestMessageDialog(0, "Hellshare.com Premium Error", "HellShare not allowed to share the login information to the accounts!");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
@@ -434,7 +369,10 @@ public class HellShareCom extends PluginForHost {
         }
         dllink = dllink.replaceAll("\\\\", "");
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+        if (dl.getConnection().getResponseCode() == 503) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -464,6 +402,71 @@ public class HellShareCom extends PluginForHost {
     // do not add @Override here to keep 0.* compatibility
     public boolean hasCaptcha() {
         return true;
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+
+        try {
+            login(account, true);
+        } catch (final PluginException e) {
+            ai.setStatus("Login failed");
+            account.setValid(false);
+            throw e;
+        }
+        final String hostedFiles = br.getRegex(">Number of your files:</label></th>.*?<td id=\"info_files_counter\">.*?>(\\d+)</").getMatch(0);
+        if (hostedFiles != null) {
+            ai.setFilesNum(Long.parseLong(hostedFiles));
+        }
+
+        // edt
+        // searching for known account plans
+        // Free Registered
+
+        String premiumActive = br.getRegex("<div class=\"icon-timecredit icon\">[\n\t\r]+<h4>Premium account</h4>[\n\t\r]+(.*)[\n\t\r]+<br />[\n\t\r]+<a href=\"/credit/time\">Buy</a>").getMatch(0);
+
+        if (premiumActive == null) {
+            // Premium User
+            premiumActive = br.getRegex("<div class=\"icon-timecredit icon\">[\n\t\r]+<h4>Premium account</h4>[\n\t\r]+(.*)<br />[\n\t\r]+<a href=\"/credit/time\">Buy</a>").getMatch(0);
+        }
+
+        if (premiumActive == null) {
+            // User with Credits
+            premiumActive = br.getRegex("<div class=\"icon-credit icon\">[\n\t\r]+<h4>(.*)</h4>[\n\t\r]+<table>+[\n\t\r]+<tr>[\n\t\r]+<th>Current:</th>[\n\t\r]+<td>(.*?)</td>[\n\t\r]+</tr>").getMatch(0);
+        }
+
+        if (premiumActive == null) {
+            ai.setStatus("Invalid/Unknown");
+            account.setValid(false);
+        } else if (premiumActive.contains("Inactive")) {
+            ai.setStatus("Free User");
+            // for inactive - set traffic left to 0
+            ai.setTrafficLeft(0l);
+            account.setValid(true);
+        } else if (premiumActive.contains("Active")) {
+
+            String validUntil = premiumActive.substring(premiumActive.indexOf(":") + 1);
+            // page only displays full day, so JD fails in the last day of Premium
+            // added time as if the account is Premium until the midnight
+            validUntil += " 23:59:59";
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd.MM.yyyy HH:mm:ss", null));
+            ai.setStatus("Premium accoount");
+            ai.setExpired(false);
+            account.setValid(true);
+
+        } else if (premiumActive.contains("Download credit")) {
+            final String trafficleft = br.getRegex("id=\"info_credit\" class=\"va-middle\">[\n\t\r ]+<strong>(.*?)</strong>").getMatch(0);
+            if (trafficleft != null) {
+                ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
+            }
+            ai.setValidUntil(-1);
+            ai.setStatus("Account with credits");
+            account.setValid(true);
+
+        }
+        return ai;
     }
 
     @SuppressWarnings("unchecked")
