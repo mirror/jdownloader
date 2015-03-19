@@ -441,22 +441,9 @@ public class RealDebridCom extends PluginForHost {
         final String switcheroonie = getJson("swap");
         if (switcheroonie != null) {
             swapped = Boolean.parseBoolean(switcheroonie);
-        }
-        final String fileSizeBytes = getJson("file_size_bytes");
-        if (fileSizeBytes != null) {
-            final long fileSize = Long.parseLong(fileSizeBytes);
-            final long verifiedFileSize = link.getVerifiedFileSize();
-            if (verifiedFileSize < 0) {
-                logger.info("Trust fileSizeBytes:" + fileSize);
-                link.setVerifiedFileSize(fileSize);
-            } else {
-                if (fileSize != verifiedFileSize) {
-                    logger.info("FileSize missmatch:" + fileSize + "!=" + verifiedFileSize + " swap:" + swapped);
-                    if (swapped) {
-                        logger.info("Forced trust fileSizeBytes:" + fileSize);
-                        link.setVerifiedFileSize(fileSize);
-                    }
-                }
+            if (swapped) {
+                logger.info("Swapped file, do not trust fileSize");
+                link.setVerifiedFileSize(-1);
             }
         }
         if (genLnk == null) {
