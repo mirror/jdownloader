@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viva.tv", "mtviggy.com", "southpark.de", "southpark.cc.com", "vh1.com", "nickmom.com", "mtv.com.au", "mtv.com" }, urls = { "http://www\\.viva\\.tv/charts/16\\-viva\\-top\\-100", "http://www\\.mtviggy\\.com/videos/[a-z0-9\\-]+/|http://www\\.mtvdesi\\.com/(videos/)?[a-z0-9\\-]+|http://www\\.mtvk\\.com/videos/[a-z0-9\\-]+", "http://www\\.southpark\\.de/alle\\-episoden/s\\d{2}e\\d{2}[a-z0-9\\-]+", "http://southpark\\.cc\\.com/full\\-episodes/s\\d{2}e\\d{2}[a-z0-9\\-]+", "http://www\\.vh1.com/(shows/[a-z0-9\\-_]+/[a-z0-9\\-_]+/.+|video/play\\.jhtml\\?id=\\d+|video/[a-z0-9\\-_]+/\\d+/[a-z0-9\\-_]+\\.jhtml|events/[a-z0-9\\-_]+/videos/[a-z0-9\\-_]+/\\d+/)", "http://www\\.nickmom\\.com/videos/[a-z0-9\\-]+/", "http://www\\.mtv\\.com\\.au/[a-z0-9\\-]+/videos/[a-z0-9\\-]+",
-        "http://www\\.mtv\\.com/(shows/[a-z0-9\\-_]+/[^<>\"]+|[^<>\"]*?videos/.+)" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0 })
+"http://www\\.mtv\\.com/(shows/[a-z0-9\\-_]+/[^<>\"]+|[^<>\"]*?videos/.+)" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0 })
 public class VivaTvDecrypt extends PluginForDecrypt {
 
     public VivaTvDecrypt(PluginWrapper wrapper) {
@@ -70,6 +70,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
     private String                  mgid                      = null;
     private String                  fpName                    = null;
 
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         /* we first have to load the plugin, before we can reference it */
         JDUtilities.getPluginForHost("viva.tv");
@@ -203,40 +204,6 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         fp.addLinks(decryptedLinks);
     }
 
-    /** General function to decrypt viacom RSS feeds, especially with multiple segments of a single video no matter what their source is. */
-    @SuppressWarnings("deprecation")
-    private void decryptFeed(final String decrypter_url_plain) throws DecrypterException {
-        final String[] items = br.getRegex("<item>(.*?)</item>").getColumn(0);
-        if (items == null || items.length == 0 || fpName == null) {
-            throw new DecrypterException("Decrypter broken for link: " + parameter);
-        }
-        int counter = 0;
-        for (final String item : items) {
-            String title = getFEEDtitle(item);
-            final String item_mgid = new Regex(item, "uri=(mgid:[A-Za-z0-9:\\-\\.]+)").getMatch(0);
-            if (title == null || item_mgid == null) {
-                throw new DecrypterException("Decrypter broken for link: " + parameter);
-            }
-            /* We don't need the intro - it's always the same! */
-            if (counter == 0 && title.contains("Intro")) {
-                continue;
-            }
-            title = doFilenameEncoding(title);
-            // feedURL_plain
-            final String final_url = String.format(decrypter_url_plain, item_mgid);
-            final DownloadLink dl = createDownloadlink(final_url);
-            dl.setName(title + this.default_ext);
-            dl.setAvailable(true);
-            try {
-                dl.setContentUrl(this.parameter);
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-                dl.setBrowserUrl(this.parameter);
-            }
-            decryptedLinks.add(dl);
-        }
-    }
-
     private void decryptVh1() throws DecrypterException, IOException {
         br.getPage(parameter);
         final String vevo_ID = br.getRegex("MTVN\\.Player\\.vevoVideoId = \"([A-Za-z0-9]+)\";").getMatch(0);
@@ -296,7 +263,18 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         entries = (LinkedHashMap<String, Object>) entries.get("playlists");
         entries = (LinkedHashMap<String, Object>) entries.get(playlist_id);
         final ArrayList<Object> parts = (ArrayList) entries.get("items");
-        fpName = (String) entries.get("title");
+        final Object title_object = entries.get("title");
+        if (title_object instanceof String) {
+            fpName = (String) entries.get("title");
+        }
+        if (fpName == null) {
+            fpName = new Regex(parameter, "mtv\\.com\\.au/([a-z0-9\\-_]+)/videos/.+").getMatch(0);
+        }
+        if (fpName == null) {
+            logger.warning("fpName is null");
+            decryptedLinks = null;
+            return;
+        }
         fpName = doFilenameEncoding(fpName);
         for (final Object pt : parts) {
             final LinkedHashMap<String, Object> playlistentry = (LinkedHashMap<String, Object>) pt;
@@ -339,7 +317,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
                 return;
             }
         }
-        this.mgid = br.getRegex("MTVN\\.VIDEO\\.contentUri = \'(mgid:uma:[^<>\"]*?)\\';").getMatch(0);
+        this.mgid = br.getRegex("MTVN\\.VIDEO\\.contentUri = \\'(mgid:uma:[^<>\"]*?)\\';").getMatch(0);
         if (this.mgid == null) {
             this.decryptedLinks = null;
             return;
@@ -352,6 +330,40 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         fpName = Encoding.htmlDecode(fpName.trim());
         fp.setName(fpName);
         fp.addLinks(decryptedLinks);
+    }
+
+    /** General function to decrypt viacom RSS feeds, especially with multiple segments of a single video no matter what their source is. */
+    @SuppressWarnings("deprecation")
+    private void decryptFeed(final String decrypter_url_plain) throws DecrypterException {
+        final String[] items = br.getRegex("<item>(.*?)</item>").getColumn(0);
+        if (items == null || items.length == 0 || fpName == null) {
+            throw new DecrypterException("Decrypter broken for link: " + parameter);
+        }
+        int counter = 0;
+        for (final String item : items) {
+            String title = getFEEDtitle(item);
+            final String item_mgid = new Regex(item, "uri=(mgid:[A-Za-z0-9:\\-\\.]+)").getMatch(0);
+            if (title == null || item_mgid == null) {
+                throw new DecrypterException("Decrypter broken for link: " + parameter);
+            }
+            /* We don't need the intro - it's always the same! */
+            if (counter == 0 && title.contains("Intro")) {
+                continue;
+            }
+            title = doFilenameEncoding(title);
+            // feedURL_plain
+            final String final_url = String.format(decrypter_url_plain, item_mgid);
+            final DownloadLink dl = createDownloadlink(final_url);
+            dl.setName(title + this.default_ext);
+            dl.setAvailable(true);
+            try {
+                dl.setContentUrl(this.parameter);
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+                dl.setBrowserUrl(this.parameter);
+            }
+            decryptedLinks.add(dl);
+        }
     }
 
     private String getXML(final String parameter) {

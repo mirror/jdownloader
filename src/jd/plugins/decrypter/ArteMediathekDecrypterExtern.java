@@ -260,7 +260,7 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     private void getHLSQualities(final LinkedHashMap<String, Object> qualitymap, final String selectedLanguage) throws DecrypterException, IOException {
         final String protocol = "hls_extern";
-        int videoBitrate;
+        int videoBitrate = 0;
         String filename;
         String linkid;
         String quality_intern;
@@ -280,7 +280,12 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
                 /* Skip audio-only */
                 continue;
             }
-            videoBitrate = hlsBitrates.get(resolution);
+            try {
+                videoBitrate = hlsBitrates.get(resolution);
+            } catch (final NullPointerException en) {
+                logger.warning("Failed to grab (unsupported) resolution: " + resolution);
+                continue;
+            }
             quality_intern = selectedLanguage + "_" + get_intern_format_code_from_format_code(this.languageVersion) + "_" + protocol + "_" + videoBitrate;
             linkid = fid + "_" + quality_intern;
             filename = title + "_" + getLongLanguage(selectedLanguage) + "_" + get_user_format_from_format_code(this.languageVersion) + "_" + resolution + "_" + videoBitrate + ".mp4";
@@ -565,18 +570,30 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
     }
 
     private HashMap<String, Integer> hlsBitrates = new HashMap<String, Integer>() {
-        {
-            put("200x112", 250);
-            put("320x180", 500);
-            put("504x284", 1000);
-            /* Special - either one of those two is available */
-            put("720x408", 2000);
-            put("804x452", 2000);
-            /* Special - either one of those two is available */
-            put("1024x576", 4000);
-            put("1280x720", 4000);
-        }
-    };
+                                                     {
+                                                         /* Either one of these is available */
+                                                         put("192x144", 250);
+                                                         put("196x144", 250);
+                                                         put("200x112", 250);
+
+                                                         put("308x232", 500);
+                                                         put("312x228", 500);
+                                                         put("320x180", 500);
+
+                                                         put("496x372", 1000);
+                                                         put("500x364", 1000);
+                                                         put("504x284", 1000);
+
+                                                         put("720x408", 2000);
+                                                         put("720x528", 2000);
+                                                         put("720x540", 2000);
+                                                         put("803x452", 2000);
+                                                         put("804x452", 2000);
+
+                                                         put("1024x576", 4000);
+                                                         put("1280x720", 4000);
+                                                     }
+                                                 };
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {

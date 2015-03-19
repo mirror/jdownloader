@@ -21,6 +21,7 @@ import java.net.UnknownHostException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -97,6 +98,9 @@ public class MyGirlfriendsVidsNet extends PluginForHost {
                 con = br2.openGetConnection(DLLINK);
             } catch (final UnknownHostException eu) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } catch (final BrowserException ebr) {
+                logger.warning("Rare offline state:");
+                ebr.printStackTrace();
             }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());

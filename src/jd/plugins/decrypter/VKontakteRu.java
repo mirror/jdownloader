@@ -111,7 +111,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_VIDEO_COMMUNITY_ALBUM      = "https?://(www\\.)?vk\\.com/video\\?gid=\\d+";
     private static final String     PATTERN_PHOTO_SINGLE               = "https?://(www\\.)?vk\\.com/photo(\\-)?\\d+_\\d+";
     private static final String     PATTERN_PHOTO_MODULE               = "https?://(www\\.)?vk\\.com/[A-Za-z0-9\\-_\\.]+\\?z=photo(\\-)?\\d+_\\d+/(wall|album)\\-\\d+_\\d+";
-    private static final String     PATTERN_PHOTO_ALBUM                = ".*?(tag|album(\\-)?\\d+_|photos)\\d+";
+    private static final String     PATTERN_PHOTO_ALBUM                = ".*?(tag|album(?:\\-)?\\d+_|photos(?:\\-)?)\\d+";
     private static final String     PATTERN_PHOTO_ALBUMS               = "https?://(www\\.)?vk\\.com/(albums(\\-)?\\d+|id\\d+\\?z=albums\\d+)";
     private static final String     PATTERN_PHOTO_ALBUMS_USERNAME_Z    = "https?://(www\\.)?vk\\.com/[^<>\"/]+\\?z=albums\\d+";
     private static final String     PATTERN_GENERAL_WALL_LINK          = "https?://(www\\.)?vk\\.com/wall(\\-)?\\d+(\\-maxoffset=\\d+\\-currentoffset=\\d+)?";
@@ -787,8 +787,8 @@ public class VKontakteRu extends PluginForDecrypt {
         final String type = "singlephotoalbum";
         if (this.CRYPTEDLINK_FUNCTIONAL.contains("#/album")) {
             this.CRYPTEDLINK_FUNCTIONAL = "http://vk.com/album" + new Regex(this.CRYPTEDLINK_FUNCTIONAL, "#/album((\\-)?\\d+_\\d+)").getMatch(0);
-        } else if (this.CRYPTEDLINK_FUNCTIONAL.matches(".*?vk\\.com/(photos|id)\\d+")) {
-            this.CRYPTEDLINK_FUNCTIONAL = this.CRYPTEDLINK_FUNCTIONAL.replaceAll("vk\\.com/(photos|id)", "vk.com/album") + "_0";
+        } else if (this.CRYPTEDLINK_FUNCTIONAL.matches(".*?vk\\.com/(photos|id)(?:\\-)?\\d+")) {
+            this.CRYPTEDLINK_FUNCTIONAL = this.CRYPTEDLINK_FUNCTIONAL.replaceAll("vk\\.com/(?:photos|id)(?:\\-)?", "vk.com/album") + "_0";
         }
         this.getPageSafe(this.CRYPTEDLINK_FUNCTIONAL);
         if (br.containsHTML(FILEOFFLINE) || br.containsHTML("(В альбоме нет фотографий|<title>DELETED</title>)")) {

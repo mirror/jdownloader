@@ -60,6 +60,21 @@ public class XnXxCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        /* Correct link for user 'open in browser' */
+        final String addedlink = link.getDownloadURL();
+        if (!addedlink.endsWith("/")) {
+            final String user_url = addedlink + "/";
+            try {
+                link.setContentUrl(user_url);
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+                link.setBrowserUrl(user_url);
+            }
+        }
+    }
+
     @Override
     public String getAGBLink() {
         return "http://www.xnxx.com/contact.php";
