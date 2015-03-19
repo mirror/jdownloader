@@ -918,50 +918,50 @@ public class OffCloudCom extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Delete downloaded link entry from the offcloud download history after successful download?\r\n<html><b>Note that this does NOT delete the complete download history but only the entry of the SUCCESSFULLY downloaded link!</b></hml>");
-            put("SETTING_CLEAR_DOWNLOAD_HISTORY_COMPLETE", "Delete complete download history each 60 minutes when?\r\n<html><p style=\"color:#F62817\">Note that this process happens during the account check.\r\nEspecially if you have a lot of links, the first time can take over 10 minutes!</p></html>");
-            put("SETTING_CLEAR_ALLOWED_IP_ADDRESSES", "Activate 'Confirm IP' workaround?\r\nIn case you often get E-Mails from offcloud to confirm your current IP address, this setting may help.\r\nThis will always delete all of your allowed IPs except your current IP from your offcloud account.\r\n<html><p style=\"color:#F62817\">WARNING: Do NOT use this function in case you\r\n-Use multiple internet connections (IPs) at the same time\r\n-Share your offcloud account with friends\r\n-Use one or more proxies (or VPNs)</p></html>");
-            put("ACCOUNT_USERNAME", "Username:");
-            put("ACCOUNT_LINKSLEFT", "Instant download inputs left:");
-            put("ACCOUNT_TYPE", "Account type:");
-            put("ACCOUNT_SIMULTANDLS", "Max. simultaneous downloads:");
-            put("ACCOUNT_CHUNKS", "Max number of chunks per file:");
-            put("ACCOUNT_CHUNKS_VALUE", "Depends on the host, see: offcloud.com/api/sites/chunks");
-            put("ACCOUNT_RESUME", "Resume of stopped downloads:");
-            put("ACCOUNT_YES", "Yes");
-            put("ACCOUNT_NO", "No");
-            put("ACCOUNT_HISTORYDELETED", "Last deletion of the complete download history before:");
-            put("ACCOUNT_HISTORYDELETED_COUNT", "Number of deleted entries:");
-            put("DETAILS_TITEL", "Account information");
-            put("LANG_GENERAL_UNLIMITED", "Unlimited");
-            put("LANG_GENERAL_CLOSE", "Close");
-            put("LANG_GENERAL_NEVER", "Never");
-        }
-    };
+                                                  {
+                                                      put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Delete downloaded link entry from the offcloud download history after successful download?\r\n<html><b>Note that this does NOT delete the complete download history but only the entry of the SUCCESSFULLY downloaded link!</b></hml>");
+                                                      put("SETTING_CLEAR_DOWNLOAD_HISTORY_COMPLETE", "Delete complete download history each 60 minutes when?\r\n<html><p style=\"color:#F62817\">Note that this process happens during the account check.\r\nEspecially if you have a lot of links, the first time can take over 10 minutes!</p></html>");
+                                                      put("SETTING_CLEAR_ALLOWED_IP_ADDRESSES", "Activate 'Confirm IP' workaround?\r\nIn case you often get E-Mails from offcloud to confirm your current IP address, this setting may help.\r\nThis will always delete all of your allowed IPs except your current IP from your offcloud account.\r\n<html><p style=\"color:#F62817\">WARNING: Do NOT use this function in case you\r\n-Use multiple internet connections (IPs) at the same time\r\n-Share your offcloud account with friends\r\n-Use one or more proxies (or VPNs)</p></html>");
+                                                      put("ACCOUNT_USERNAME", "Username:");
+                                                      put("ACCOUNT_LINKSLEFT", "Instant download inputs left:");
+                                                      put("ACCOUNT_TYPE", "Account type:");
+                                                      put("ACCOUNT_SIMULTANDLS", "Max. simultaneous downloads:");
+                                                      put("ACCOUNT_CHUNKS", "Max number of chunks per file:");
+                                                      put("ACCOUNT_CHUNKS_VALUE", "Depends on the host, see: offcloud.com/api/sites/chunks");
+                                                      put("ACCOUNT_RESUME", "Resume of stopped downloads:");
+                                                      put("ACCOUNT_YES", "Yes");
+                                                      put("ACCOUNT_NO", "No");
+                                                      put("ACCOUNT_HISTORYDELETED", "Last deletion of the complete download history before:");
+                                                      put("ACCOUNT_HISTORYDELETED_COUNT", "Number of deleted entries:");
+                                                      put("DETAILS_TITEL", "Account information");
+                                                      put("LANG_GENERAL_UNLIMITED", "Unlimited");
+                                                      put("LANG_GENERAL_CLOSE", "Close");
+                                                      put("LANG_GENERAL_NEVER", "Never");
+                                                  }
+                                              };
 
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-        {
-            put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Lösche heruntergeladenen Link nach jedem erfolgreichen Download aus der offcloud Download-Historie?\r\n<html><b>Bedenke, dass dies NICHT die komplette Historie löscht sondern nur jeweils den Eintrag des ERFOLGREICH heruntergeladenen Links!</b></hml>");
-            put("SETTING_CLEAR_DOWNLOAD_HISTORY_COMPLETE", "Lösche die komplette Download Historie alle 60 Minuten?\r\n<html><p style=\"color:#F62817\">Bedenke, dass diese Aktion während der Accountüberprüfung ausgeführt wird.\r\nDie erste Ausführung kann je nach Anzahl der History Einträge länger als 10 Minuten in Anspruch nehmen, weswegen es eventuell so aussieht, als würde die Accountüberprüfung hängen.</p></html>");
-            put("SETTING_CLEAR_ALLOWED_IP_ADDRESSES", "Aktiviere 'IP-bestätigen' Workaround?\r\nFalls du oft E-Mails von offcloud bekommst mit der Aufforderung, deine aktuelle IP-Adresse zu bestätigen, könnte diese Einstellung helfen.\r\nSie wird immer alle erlaubten IPs außer deine aktuelle in deinem offcloud Konto löschen.\r\n<html><p style=\"color:#F62817\">WARNUNG: Benutze diese Einstellungsmöglichkeit NICHT, falls du\r\n-Mehrere Internetverbindungen (IPs) gleichzeitig nutzt\r\n-Deinen offcloud Account mit Freunden teilst\r\n-Einen oder mehrere Proxys (oder VPNs) nutzt</p></html>");
-            put("ACCOUNT_USERNAME", "Account Name:");
-            put("ACCOUNT_LINKSLEFT", "Verbleibende Anzahl von Instant-Download Links:");
-            put("ACCOUNT_TYPE", "Account Typ:");
-            put("ACCOUNT_SIMULTANDLS", "Max. Anzahl gleichzeitiger Downloads:");
-            put("ACCOUNT_CHUNKS", "Max. Anzahl Verbindungen pro Datei (Chunks):");
-            put("ACCOUNT_CHUNKS_VALUE", "Kommt auf den Hoster an, siehe: offcloud.com/api/sites/chunks");
-            put("ACCOUNT_RESUME", "Abgebrochene Downloads fortsetzbar:");
-            put("ACCOUNT_YES", "Ja");
-            put("ACCOUNT_NO", "Nein");
-            put("ACCOUNT_HISTORYDELETED", "Letzte Löschung der kompletten Download History vor:");
-            put("ACCOUNT_HISTORYDELETED_COUNT", "Anzahl der gelöschten Einträge:");
-            put("DETAILS_TITEL", "Additional account information");
-            put("LANG_GENERAL_UNLIMITED", "Unlimitiert");
-            put("LANG_GENERAL_CLOSE", "Schließen");
-            put("LANG_GENERAL_NEVER", "Nie");
-        }
-    };
+                                                  {
+                                                      put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Lösche heruntergeladenen Link nach jedem erfolgreichen Download aus der offcloud Download-Historie?\r\n<html><b>Bedenke, dass dies NICHT die komplette Historie löscht sondern nur jeweils den Eintrag des ERFOLGREICH heruntergeladenen Links!</b></hml>");
+                                                      put("SETTING_CLEAR_DOWNLOAD_HISTORY_COMPLETE", "Lösche die komplette Download Historie alle 60 Minuten?\r\n<html><p style=\"color:#F62817\">Bedenke, dass diese Aktion während der Accountüberprüfung ausgeführt wird.\r\nDie erste Ausführung kann je nach Anzahl der History Einträge länger als 10 Minuten in Anspruch nehmen, weswegen es eventuell so aussieht, als würde die Accountüberprüfung hängen.</p></html>");
+                                                      put("SETTING_CLEAR_ALLOWED_IP_ADDRESSES", "Aktiviere 'IP-bestätigen' Workaround?\r\nFalls du oft E-Mails von offcloud bekommst mit der Aufforderung, deine aktuelle IP-Adresse zu bestätigen, könnte diese Einstellung helfen.\r\nSie wird immer alle erlaubten IPs außer deine aktuelle in deinem offcloud Konto löschen.\r\n<html><p style=\"color:#F62817\">WARNUNG: Benutze diese Einstellungsmöglichkeit NICHT, falls du\r\n-Mehrere Internetverbindungen (IPs) gleichzeitig nutzt\r\n-Deinen offcloud Account mit Freunden teilst\r\n-Einen oder mehrere Proxys (oder VPNs) nutzt</p></html>");
+                                                      put("ACCOUNT_USERNAME", "Account Name:");
+                                                      put("ACCOUNT_LINKSLEFT", "Verbleibende Anzahl von Instant-Download Links:");
+                                                      put("ACCOUNT_TYPE", "Account Typ:");
+                                                      put("ACCOUNT_SIMULTANDLS", "Max. Anzahl gleichzeitiger Downloads:");
+                                                      put("ACCOUNT_CHUNKS", "Max. Anzahl Verbindungen pro Datei (Chunks):");
+                                                      put("ACCOUNT_CHUNKS_VALUE", "Kommt auf den Hoster an, siehe: offcloud.com/api/sites/chunks");
+                                                      put("ACCOUNT_RESUME", "Abgebrochene Downloads fortsetzbar:");
+                                                      put("ACCOUNT_YES", "Ja");
+                                                      put("ACCOUNT_NO", "Nein");
+                                                      put("ACCOUNT_HISTORYDELETED", "Letzte Löschung der kompletten Download History vor:");
+                                                      put("ACCOUNT_HISTORYDELETED_COUNT", "Anzahl der gelöschten Einträge:");
+                                                      put("DETAILS_TITEL", "Additional account information");
+                                                      put("LANG_GENERAL_UNLIMITED", "Unlimitiert");
+                                                      put("LANG_GENERAL_CLOSE", "Schließen");
+                                                      put("LANG_GENERAL_NEVER", "Nie");
+                                                  }
+                                              };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and

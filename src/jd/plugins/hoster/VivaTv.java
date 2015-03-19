@@ -146,7 +146,7 @@ public class VivaTv extends PluginForHost {
     private static final String  player_url                              = "http://player.mtvnn.com/g2/g2player_2.2.1.swf";
     /* Obey german law - very important! */
     private static final boolean rtmpe_supported                         = false;
-    public static final String   default_ext                             = ".flv";
+    public static final String   default_ext                             = ".mp4";
 
     private String               mgid                                    = null;
     private String               feed_url                                = null;
@@ -335,7 +335,7 @@ public class VivaTv extends PluginForHost {
             checkFeedAvailibility();
             filename = feedGetTitle();
             description = feedGetDescription();
-            ext = ".flv";
+            ext = ".mp4";
         } else if (browser_url.matches(type_mtviggy_embedded)) {
             /* Handle embedded links just like they are - we do not even want to try to find/use the original video url. */
             mgid = getMGIDOutOfEmbedURL(browser_url);
