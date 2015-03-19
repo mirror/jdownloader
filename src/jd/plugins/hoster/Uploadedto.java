@@ -64,6 +64,7 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
@@ -84,7 +85,6 @@ public class Uploadedto extends PluginForHost {
     private String                         LASTIP                       = "LASTIP";
     private static AtomicReference<String> lastIP                       = new AtomicReference<String>();
     private static AtomicBoolean           usePremiumAPI                = new AtomicBoolean(true);
-    private boolean                        usePremiumDownloadAPI        = true;
     private static final long              RECONNECTWAIT                = 10802000;
     private static final String            NOCHUNKS                     = "NOCHUNKS";
     private static final String            NORESUME                     = "NORESUME";
@@ -439,10 +439,22 @@ public class Uploadedto extends PluginForHost {
         return true;
     }
 
+    private boolean preferAPI(final Account account) {
+        if (account == null) {
+            return this.getPluginConfig().getBooleanProperty(PREFER_PREMIUM_DOWNLOAD_API, default_ppda);
+        } else {
+            final AccountInfo ai = account.getAccountInfo();
+            if (ai == null) {
+                return this.getPluginConfig().getBooleanProperty(PREFER_PREMIUM_DOWNLOAD_API, default_ppda);
+            } else {
+                return !StringUtils.equals(account.getPass(), ai.getStringProperty("NOAPI", null)) && this.getPluginConfig().getBooleanProperty(PREFER_PREMIUM_DOWNLOAD_API, default_ppda);
+            }
+        }
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        usePremiumDownloadAPI = this.getPluginConfig().getBooleanProperty(PREFER_PREMIUM_DOWNLOAD_API, default_ppda);
-        if (usePremiumAPI.get() && usePremiumDownloadAPI) {
+        if (usePremiumAPI.get() && preferAPI(account)) {
             try {
                 // This password won't work: FLR&Y$9i,?+yk=Kx08}:PhkmÖ]nmYAr#n6O=xHiZzm,NI&k)Qü
                 return api_Fetch_accountinfo(account);
@@ -548,6 +560,9 @@ public class Uploadedto extends PluginForHost {
             } catch (final Throwable e) {
             }
             account.setProperty("free", true);
+            if (preferAPI(account)) {
+                ai.setProperty("NOAPI", account.getPass());
+            }
         } else {
             String traffic = br.getMatch("traffic: (\\d+)");
             String expire = br.getMatch("expire: (\\d+)");
@@ -567,6 +582,9 @@ public class Uploadedto extends PluginForHost {
             } catch (final Throwable e) {
             }
             account.setProperty("free", false);
+            if (preferAPI(account)) {
+                ai.setProperty("NOAPI", account.getPass());
+            }
         }
         return ai;
     }
@@ -1002,7 +1020,7 @@ public class Uploadedto extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance", 20 * 60 * 1000l);
         }
         if (throwPluginDefect) {
-            if (usePremiumDownloadAPI && usePremiumAPI.get()) {
+            if (usePremiumAPI.get() && preferAPI(acc)) {
                 usePremiumAPI.set(false);
             }
             logger.info("ErrorCode: unknown\r\n" + br);
@@ -1066,7 +1084,7 @@ public class Uploadedto extends PluginForHost {
                 getLogger().info("Input " + arg);
                 arg = arg.replaceAll("(\\\\|\\\"|\0|')", "\\\\$1");
                 arg = arg.replace("+", " ");
-                // arg = URLDecoder.decode(arg, "ISO-8859-1"); <<- causes issues with % in pw
+                // arg = URLDecoder.decode(arg, "ISO-8859-1"); // <<- causes issues with % in pw
                 arg = arg.replaceAll("[ \t\n\r\0\u000B]", "");
                 while (arg.startsWith("%20")) {
                     arg = arg.substring(3);
@@ -1141,9 +1159,7 @@ public class Uploadedto extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-
-        usePremiumDownloadAPI = this.getPluginConfig().getBooleanProperty(PREFER_PREMIUM_DOWNLOAD_API, default_ppda);
-        if (usePremiumAPI.get() && usePremiumDownloadAPI && !downloadLink.getBooleanProperty("preDlPass", false)) {
+        if (usePremiumAPI.get() && preferAPI(account) && !downloadLink.getBooleanProperty("preDlPass", false)) {
             api_handle_Premium(downloadLink, account);
             return;
         } else {
