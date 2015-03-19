@@ -60,13 +60,12 @@ public class AdvancedConfigAPIEntry extends AdvancedConfigEntryDataStorable impl
     }
 
     private String createKey(KeyHandler<?> kh) {
-        String getterName = kh.getGetter().getMethod().getName();
+        final String getterName = kh.getGetMethod().getName();
         if (getterName.startsWith("is")) {
-            getterName = getterName.substring(2);
+            return getterName.substring(2);
         } else if (getterName.startsWith("get")) {
-            getterName = getterName.substring(3);
+            return getterName.substring(3);
         }
-
         return getterName;
     }
 

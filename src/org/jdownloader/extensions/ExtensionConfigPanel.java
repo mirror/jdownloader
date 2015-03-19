@@ -1,18 +1,24 @@
 package org.jdownloader.extensions;
 
 import java.awt.Component;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 import javax.swing.Icon;
 
 import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DevConfig;
 import org.appwork.storage.config.events.ConfigEventListener;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 
 public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends AbstractConfigPanel implements ConfigEventListener {
 
@@ -28,6 +34,29 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
     @Override
     public String getPanelID() {
         return getExtension().getClass().getSimpleName();
+    }
+
+    public ArrayList<AdvancedConfigEntry> register() {
+        final ArrayList<AdvancedConfigEntry> configInterfaces = new ArrayList<AdvancedConfigEntry>();
+        final HashMap<KeyHandler, Boolean> map = new HashMap<KeyHandler, Boolean>();
+        for (KeyHandler m : getExtension().getSettings()._getStorageHandler().getMap().values()) {
+            if (map.containsKey(m)) {
+                continue;
+            }
+            if (m.getAnnotation(AboutConfig.class) != null && (m.getAnnotation(DevConfig.class) == null || !Application.isJared(null))) {
+                if (m.getSetMethod() == null) {
+                    throw new RuntimeException("Setter for " + m.getKey() + " missing");
+                } else if (m.getGetMethod() == null) {
+                    throw new RuntimeException("Getter for " + m.getKey() + " missing");
+                } else {
+                    synchronized (configInterfaces) {
+                        configInterfaces.add(new AdvancedConfigEntry(getExtension().getSettings(), m));
+                    }
+                    map.put(m, true);
+                }
+            }
+        }
+        return configInterfaces;
     }
 
     public ExtensionConfigPanel(T plg, boolean clean) {

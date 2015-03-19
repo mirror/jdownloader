@@ -2,8 +2,6 @@ package org.jdownloader.extensions.schedulerV2;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
 
 import javax.swing.AbstractAction;
 import javax.swing.JScrollPane;
@@ -12,13 +10,9 @@ import javax.swing.event.ListSelectionListener;
 
 import jd.gui.swing.components.linkbutton.JLink;
 
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DevConfig;
-import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.exttable.utils.MinimumSelectionObserver;
-import org.appwork.utils.Application;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.schedulerV2.gui.ScheduleTableModel;
@@ -28,13 +22,12 @@ import org.jdownloader.extensions.schedulerV2.gui.actions.EditAction;
 import org.jdownloader.extensions.schedulerV2.gui.actions.NewAction;
 import org.jdownloader.extensions.schedulerV2.gui.actions.RemoveAction;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class SchedulerConfigPanel extends ExtensionConfigPanel<SchedulerExtension> {
 
     /**
-     * 
+     *
      */
     private static final long  serialVersionUID = 1L;
     private SchedulerTable     table;
@@ -43,34 +36,6 @@ public class SchedulerConfigPanel extends ExtensionConfigPanel<SchedulerExtensio
 
     public ScheduleTableModel getTableModel() {
         return tableModel;
-    }
-
-    public ArrayList<AdvancedConfigEntry> register() {
-        ArrayList<AdvancedConfigEntry> configInterfaces = new ArrayList<AdvancedConfigEntry>();
-        HashMap<KeyHandler, Boolean> map = new HashMap<KeyHandler, Boolean>();
-
-        for (KeyHandler m : getExtension().getSettings()._getStorageHandler().getMap().values()) {
-
-            if (map.containsKey(m)) {
-                continue;
-            }
-
-            if (m.getAnnotation(AboutConfig.class) != null && (m.getAnnotation(DevConfig.class) == null || !Application.isJared(null))) {
-                if (m.getSetter() == null) {
-                    throw new RuntimeException("Setter for " + m.getGetter().getMethod() + " missing");
-                } else if (m.getGetter() == null) {
-                    throw new RuntimeException("Getter for " + m.getSetter().getMethod() + " missing");
-                } else {
-                    synchronized (configInterfaces) {
-                        configInterfaces.add(new AdvancedConfigEntry(getExtension().getSettings(), m));
-                    }
-                    map.put(m, true);
-                }
-            }
-
-        }
-
-        return configInterfaces;
     }
 
     public SchedulerConfigPanel(SchedulerExtension extension) {

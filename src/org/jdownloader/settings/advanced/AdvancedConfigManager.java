@@ -106,18 +106,15 @@ public class AdvancedConfigManager {
     public void register(ConfigInterface cf) {
         logger.info("Register " + cf._getStorageHandler().getConfigInterface());
         HashMap<KeyHandler, Boolean> map = new HashMap<KeyHandler, Boolean>();
-
         for (KeyHandler m : cf._getStorageHandler().getMap().values()) {
-
             if (map.containsKey(m)) {
                 continue;
             }
-
             if (m.getAnnotation(AboutConfig.class) != null && (m.getAnnotation(DevConfig.class) == null || !Application.isJared(null))) {
-                if (m.getSetter() == null) {
-                    throw new RuntimeException("Setter for " + m.getGetter().getMethod() + " missing");
-                } else if (m.getGetter() == null) {
-                    throw new RuntimeException("Getter for " + m.getSetter().getMethod() + " missing");
+                if (m.getSetMethod() == null) {
+                    throw new RuntimeException("Setter for " + m.getKey() + " missing");
+                } else if (m.getGetMethod() == null) {
+                    throw new RuntimeException("Getter for " + m.getKey() + " missing");
                 } else {
                     configInterfaces.add(new AdvancedConfigEntry(cf, m));
                     map.put(m, true);
@@ -144,10 +141,10 @@ public class AdvancedConfigManager {
                             continue;
                         }
                         if (m.getAnnotation(AboutConfig.class) != null && (m.getAnnotation(DevConfig.class) == null || !Application.isJared(null))) {
-                            if (m.getSetter() == null) {
-                                throw new RuntimeException("Setter for " + m.getGetter().getMethod() + " missing");
-                            } else if (m.getGetter() == null) {
-                                throw new RuntimeException("Getter for " + m.getSetter().getMethod() + " missing");
+                            if (m.getSetMethod() == null) {
+                                throw new RuntimeException("Setter for " + m.getKey() + " missing");
+                            } else if (m.getGetMethod() == null) {
+                                throw new RuntimeException("Getter for " + m.getKey() + " missing");
                             } else {
                                 ret.add(new AdvancedConfigEntry(cf, m));
                                 map.put(m, true);

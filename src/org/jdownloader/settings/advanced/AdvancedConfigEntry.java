@@ -78,7 +78,7 @@ public class AdvancedConfigEntry {
 
         try {
             Object v = getValue();
-            keyHandler.getSetter().getMethod().invoke(configInterface, new Object[] { value });
+            keyHandler.getSetMethod().invoke(configInterface, new Object[] { value });
             if (!equals(v, value)) {
 
                 if (keyHandler.getAnnotation(RequiresRestart.class) != null) {
@@ -126,7 +126,7 @@ public class AdvancedConfigEntry {
 
     public String getTypeString() {
         final Validator v = getValidator();
-        final Type gen = keyHandler.getGetter().getMethod().getGenericReturnType();
+        final Type gen = keyHandler.getGetMethod().getGenericReturnType();
         String ret;
         if (gen instanceof Class) {
             ret = ((Class<?>) gen).getSimpleName();
@@ -134,7 +134,6 @@ public class AdvancedConfigEntry {
             ret = gen.toString();
         }
         if (v != null) {
-
             ret += " [" + v + "]";
         }
         return ret;

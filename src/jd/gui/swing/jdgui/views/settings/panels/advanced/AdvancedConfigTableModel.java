@@ -141,7 +141,7 @@ public class AdvancedConfigTableModel extends ExtTableModel<AdvancedConfigEntry>
     }
 
     protected String createKeyText(AdvancedConfigEntry value) {
-        String getterName = value.getKeyHandler().getGetter().getMethod().getName();
+        String getterName = value.getKeyHandler().getGetMethod().getName();
         if (getterName.startsWith("is")) {
             getterName = getterName.substring(2);
         } else if (getterName.startsWith("get")) {
