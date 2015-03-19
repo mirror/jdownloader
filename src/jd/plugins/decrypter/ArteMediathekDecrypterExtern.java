@@ -274,18 +274,14 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
         final String hls_base = new Regex(br.getURL(), "(http://[^<>\"]*?\\.ism/)abs").getMatch(0);
         for (final String hls_media : hls_medias) {
             final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
-            final String hls_directlink = hls_base + new Regex(hls_media, "(abs\\-audio.+)").getMatch(0).trim();
+            final String hls_part = new Regex(hls_media, "(abs\\-(?:audio|video).+)").getMatch(0);
             final String resolution = new Regex(hls_media, "RESOLUTION=(\\d+x\\d+)").getMatch(0);
-            if (resolution == null) {
+            if (resolution == null || hls_part == null) {
                 /* Skip audio-only */
                 continue;
             }
-            try {
-                videoBitrate = hlsBitrates.get(resolution);
-            } catch (final NullPointerException en) {
-                logger.warning("Failed to grab (unsupported) resolution: " + resolution);
-                continue;
-            }
+            final String hls_directlink = hls_base + hls_part.trim();
+            videoBitrate = resolutionToBitrate(resolution);
             quality_intern = selectedLanguage + "_" + get_intern_format_code_from_format_code(this.languageVersion) + "_" + protocol + "_" + videoBitrate;
             linkid = fid + "_" + quality_intern;
             filename = title + "_" + getLongLanguage(selectedLanguage) + "_" + get_user_format_from_format_code(this.languageVersion) + "_" + resolution + "_" + videoBitrate + ".mp4";
@@ -569,31 +565,23 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
         return output;
     }
 
-    private HashMap<String, Integer> hlsBitrates = new HashMap<String, Integer>() {
-                                                     {
-                                                         /* Either one of these is available */
-                                                         put("192x144", 250);
-                                                         put("196x144", 250);
-                                                         put("200x112", 250);
-
-                                                         put("308x232", 500);
-                                                         put("312x228", 500);
-                                                         put("320x180", 500);
-
-                                                         put("496x372", 1000);
-                                                         put("500x364", 1000);
-                                                         put("504x284", 1000);
-
-                                                         put("720x408", 2000);
-                                                         put("720x528", 2000);
-                                                         put("720x540", 2000);
-                                                         put("803x452", 2000);
-                                                         put("804x452", 2000);
-
-                                                         put("1024x576", 4000);
-                                                         put("1280x720", 4000);
-                                                     }
-                                                 };
+    /** Finds the video bitrate to a resolution based on the width of the video. */
+    private int resolutionToBitrate(final String resolution) {
+        int final_bitrate;
+        final int resolution_width = Integer.parseInt(new Regex(resolution, "(\\d+)x\\d+").getMatch(0));
+        if (resolution_width < 250) {
+            final_bitrate = 250;
+        } else if (resolution_width >= 250 && resolution_width < 450) {
+            final_bitrate = 500;
+        } else if (resolution_width >= 450 && resolution_width < 650) {
+            final_bitrate = 1000;
+        } else if (resolution_width >= 650 && resolution_width < 1000) {
+            final_bitrate = 2000;
+        } else {
+            final_bitrate = 4000;
+        }
+        return final_bitrate;
+    }
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
