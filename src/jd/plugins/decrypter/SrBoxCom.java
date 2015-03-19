@@ -73,8 +73,10 @@ public class SrBoxCom extends PluginForDecrypt {
         // in it
         String[] TabImage2 = br.getRegex("<img src=\"(http://[\\w\\.]*?lectro\\.ws)/*?/uploads/posts/(.*?)\"").getColumn(1);
         String[] TabImage1 = null;
+        String[] TabNet = null;
         if (TabImage2.length == 0) {
             TabImage1 = br.getRegex("<img src=\"(http://[\\w\\.]*?israbox\\.(com|net|org))*?/uploads(.*?)\"").getColumn(2);
+            TabNet = br.getRegex("<img src=\"(http://[\\w\\.]*?israbox\\.(com|net|org))*?/uploads(.*?)\"").getColumn(1);
         }
 
         // Creation of the array of link that is supported by all plug-in
@@ -102,7 +104,7 @@ public class SrBoxCom extends PluginForDecrypt {
         }
 
         // Some link can be crypted in this site, see if it is the case
-        String[] linksCrypted = br.getRegex("\"(http://www\\.israbox\\.org/engine/go\\.php\\?url=.*?)\"").getColumn(0);
+        String[] linksCrypted = br.getRegex("\"(http://www\\.israbox\\.(com|net|org)/engine/go\\.php\\?url=.*?)\"").getColumn(0);
 
         progress.setRange(links.length + iImage + linksCrypted.length);
         // Added links
@@ -126,9 +128,14 @@ public class SrBoxCom extends PluginForDecrypt {
         int iImageFinal = 0;
         int iImageIndex = 0;
         if (TabImage1 != null) {
+            int iImageNet = 0;
             for (String strImageLink : TabImage1) {
                 if (!strImageLink.toLowerCase().contains("foto")) {
-                    strImageLink = "http://www.israbox.org/uploads/" + strImageLink;
+                    String strNet = "org";
+                    if (TabNet[iImageNet] != null) {
+                        strNet = TabNet[iImageNet];
+                    }
+                    strImageLink = "http://www.israbox." + strNet + "/uploads/" + strImageLink;
 
                     if (strImageLink.contains("/thumbs/") || strImageLink.contains("/medium/")) {
                         DownloadLink DLLink = createDownloadlink(strImageLink, false);
@@ -146,6 +153,7 @@ public class SrBoxCom extends PluginForDecrypt {
                         iImageFinal++;
                     }
                 }
+                iImageNet++;
             }
         }
 
