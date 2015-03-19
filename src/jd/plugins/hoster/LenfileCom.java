@@ -400,23 +400,43 @@ public class LenfileCom extends PluginForHost {
         /* Fourth, continue like normal */
         if (dllink == null) {
             checkErrors(downloadLink, false);
-            final Form download1 = getFormByKey("method_free", "Download");
-            if (download1 != null) {
-                download1.remove("method_premium");
-                /* stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable! */
-                if (downloadLink.getName().contains("'")) {
-                    String fname = new Regex(br, "<input type=\"hidden\" name=\"fname\" value=\"([^\"]+)\">").getMatch(0);
-                    if (fname != null) {
-                        download1.put("fname", Encoding.urlEncode(fname));
-                    } else {
-                        logger.warning("Could not find 'fname'");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
+            String formFileName = downloadLink.getName();
+            /* stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable! */
+            if (formFileName.contains("'")) {
+                formFileName = new Regex(br, "<input type=\"hidden\" name=\"fname\" value=\"([^\"]+)\">").getMatch(0);
+                if (formFileName == null) {
+                    logger.warning("Could not find 'fname'");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                /* end of backward compatibility */
-                sendForm(download1);
-                checkErrors(downloadLink, false);
-                dllink = getDllink();
+                formFileName = Encoding.urlEncode(formFileName);
+            }
+            boolean useForm = false;
+            if (useForm) {
+                final Form download1 = getFormByKey("method_free", "Download");
+                if (download1 != null) {
+                    download1.remove("method_premium");
+                    /*
+                     * stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes
+                     * stable!
+                     */
+                    if (downloadLink.getName().contains("'")) {
+                        String fname = new Regex(br, "<input type=\"hidden\" name=\"fname\" value=\"([^\"]+)\">").getMatch(0);
+                        if (fname != null) {
+                            download1.put("fname", Encoding.urlEncode(fname));
+                        } else {
+                            logger.warning("Could not find 'fname'");
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                    }
+                    download1.put("fname", formFileName);
+                    /* end of backward compatibility */
+                    sendForm(download1);
+                    checkErrors(downloadLink, false);
+                    dllink = getDllink();
+                }
+            } else {
+                final String postData = "op=download1&usr_login=&id=" + this.fuid + "&fname=" + formFileName + "&referer=&method_free=Free+Download";
+                br.postPage(br.getURL(), postData);
             }
         }
         if (dllink == null) {
