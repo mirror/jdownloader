@@ -63,18 +63,24 @@ public class FileniumCom extends PluginForHost {
     }
 
     /** The list of server values displayed to the user */
-    private final String[]                                 domainsList        = new String[] { "filenium.com", "ams.filenium.com", "lon.filenium.com" };
-    private final String                                   domains            = "domains";
-    private String                                         SELECTEDDOMAIN     = domainsList[0];
+    private final String[]                                 domainsList                  = new String[] { "filenium.com", "ams.filenium.com", "lon.filenium.com" };
+    private final String                                   domains                      = "domains";
+    private String                                         SELECTEDDOMAIN               = domainsList[0];
 
-    private static final String                            NICE_HOST          = "offcloud.com";
-    private static final String                            NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private static final String                            NICE_HOST                    = "offcloud.com";
+    private static final String                            NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private static final String                            NORESUME                     = NICE_HOSTproperty + "NORESUME";
 
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static final String                            DLFAILED           = "<title>Error: Cannot get access at this time, check your link or advise us of this error to fix\\.</title>";
+    /* Connection limits */
+    private static final boolean                           ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
+    private static final int                               ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
 
-    private Account                                        currAcc            = null;
-    private DownloadLink                                   currDownloadLink   = null;
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap           = new HashMap<Account, HashMap<String, Long>>();
+    private static final String                            DLFAILED                     = "<title>Error: Cannot get access at this time, check your link or advise us of this error to fix\\.</title>";
+
+    private Account                                        currAcc                      = null;
+    private DownloadLink                                   currDownloadLink             = null;
 
     public Browser newBrowser() {
         br = new Browser();
@@ -199,9 +205,10 @@ public class FileniumCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         setConstants(account, link);
@@ -213,13 +220,19 @@ public class FileniumCom extends PluginForHost {
         // Right now this errorhandling doesn't make that much sense but if the
         // connection limits change, it could help
         final boolean chunkError = link.getBooleanProperty("chunkerror", false);
-        int maxChunks = 1;
+        int maxChunks = ACCOUNT_PREMIUM_MAXCHUNKS;
         if (chunkError) {
+            maxChunks = 1;
+        }
+        boolean resume = ACCOUNT_PREMIUM_RESUME;
+        if (link.getBooleanProperty(FileniumCom.NORESUME, false)) {
+            resume = false;
+            link.setProperty(FileniumCom.NORESUME, Boolean.valueOf(false));
             maxChunks = 1;
         }
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
         if (dl.getConnection().isContentDisposition()) {
             /* contentdisposition, lets download it */
             if (!dl.startDownload()) {
@@ -238,6 +251,12 @@ public class FileniumCom extends PluginForHost {
             final int responseCode = dl.getConnection().getResponseCode();
             if (liveLink == false && responseCode == 404) {
                 handleErrorRetries("error_response_404", 10, 60 * 60 * 1000l);
+            }
+            if (responseCode == 416) {
+                logger.info("Resume impossible, disabling it for the next try");
+                link.setChunksProgress(null);
+                link.setProperty(FileniumCom.NORESUME, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             if (responseCode == 503) {
                 try {

@@ -83,6 +83,9 @@ public class SheshaftCom extends PluginForHost {
             filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         }
         DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("video_url: \\'(https?://[^<>\"]*?)\\'").getMatch(0);
+        }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
