@@ -1,9 +1,30 @@
 package org.jdownloader.extensions.extraction;
 
-public enum CPUPriority {
-    HIGH(0),
-    MIDDLE(5),
-    LOW(10);
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.jdownloader.extensions.extraction.translate.T;
+
+public enum CPUPriority implements LabelInterface {
+    HIGH(0) {
+        @Override
+        public String getLabel() {
+
+            return T._.settings_cpupriority_high();
+        }
+    },
+    MIDDLE(5) {
+        @Override
+        public String getLabel() {
+
+            return T._.settings_cpupriority_middle();
+        }
+    },
+    LOW(10) {
+        @Override
+        public String getLabel() {
+
+            return T._.settings_cpupriority_low();
+        }
+    };
 
     private int time = 0;
 

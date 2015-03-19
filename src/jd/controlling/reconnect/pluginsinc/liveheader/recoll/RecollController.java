@@ -148,13 +148,14 @@ public class RecollController {
 
     }
 
-    public boolean addRouter(RouterData rd) {
+    public AddRouterResponse addRouter(RouterData rd) {
         try {
-            return call("addRouter", TypeRef.BOOLEAN, rd);
+
+            return call("addRouter", AddRouterResponse.TYPE_REF, rd);
         } catch (IOException e) {
             logger.log(e);
             ;
-            return false;
+            return null;
         }
 
     }

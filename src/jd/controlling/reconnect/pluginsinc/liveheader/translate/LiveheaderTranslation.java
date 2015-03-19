@@ -397,4 +397,7 @@ public interface LiveheaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Your IP changed. For JDownloader, it looks like everything worked fine. Did this work 100% automatically, or did you have to do anything manually (Like resetting the router or anything like this)?\r\nOnly click [Yes] if everything worked fine without you doing anything but waiting..." })
     String confirm_success_message();
 
+    @Default(lngs = { "en" }, values = { "New Script" })
+    String EditScriptAction_EditScriptAction_add();
+
 }

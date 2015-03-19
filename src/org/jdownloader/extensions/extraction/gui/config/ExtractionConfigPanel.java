@@ -30,7 +30,6 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
-import org.jdownloader.extensions.extraction.CPUPriority;
 import org.jdownloader.extensions.extraction.ExtractionConfig;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.translate.T;
@@ -53,7 +52,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
     private Pair<ComboBox<IfFileExistsAction>>               toggleOverwriteExisting;
     private Pair<TextArea>                                   blacklist;
     private Pair<Checkbox>                                   toggleUseOriginalFileDate;
-    private Pair<ComboBox<String>>                           cpupriority;
+
     private Pair<TextArea>                                   passwordlist;
     private Pair<Checkbox>                                   toggleDeleteArchiveDownloadLinks;
     private Pair<Checkbox>                                   toggleDefaultEnabled;
@@ -242,7 +241,6 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
 
         toggleDeleteArchiveDownloadLinks = this.addPair(T._.settings_remove_after_extract_downloadlink(), null, new Checkbox());
         toggleOverwriteExisting = this.addPair(T._.settings_if_file_exists(), null, new ComboBox<IfFileExistsAction>(IfFileExistsAction.values()));
-        cpupriority = this.addPair(T._.settings_cpupriority_v2(), null, new ComboBox<String>(T._.settings_cpupriority_high(), T._.settings_cpupriority_middle(), T._.settings_cpupriority_low()));
 
         this.addHeader(T._.settings_multi(), NewTheme.I().getIcon("settings", 32));
         toggleUseOriginalFileDate = this.addPair(T._.settings_multi_use_original_file_date(), null, new Checkbox());
@@ -305,13 +303,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                             }
                         }
                         passwordlist.getComponent().setText(sb.toString());
-                        if (s.getCPUPriority() == CPUPriority.HIGH) {
-                            cpupriority.getComponent().setValue(T._.settings_cpupriority_high());
-                        } else if (s.getCPUPriority() == CPUPriority.MIDDLE) {
-                            cpupriority.getComponent().setValue(T._.settings_cpupriority_middle());
-                        } else {
-                            cpupriority.getComponent().setValue(T._.settings_cpupriority_low());
-                        }
+
                         toggleUseOriginalFileDate.getComponent().setSelected(s.isUseOriginalFileDate());
                     }
                 };
@@ -350,14 +342,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         } catch (final Throwable e) {
             Log.exception(e);
         }
-        String cpuValue = cpupriority.getComponent().getValue();
-        if (T._.settings_cpupriority_high().equals(cpuValue)) {
-            s.setCPUPriority(CPUPriority.HIGH);
-        } else if (T._.settings_cpupriority_middle().equals(cpuValue)) {
-            s.setCPUPriority(CPUPriority.MIDDLE);
-        } else {
-            s.setCPUPriority(CPUPriority.LOW);
-        }
+
         s.setUseOriginalFileDate(toggleUseOriginalFileDate.getComponent().isSelected());
         {
             final String txt = passwordlist.getComponent().getText();
