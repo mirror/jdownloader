@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzuka.ru" }, urls = { "http://(www\\.)?myzuka\\.ru/Album/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzuka.ru" }, urls = { "https?://(www\\.)?myzuka\\.(ru|org)/Album/\\d+" }, flags = { 0 })
 public class MyzukaRuDecrypter extends PluginForDecrypt {
 
     public MyzukaRuDecrypter(PluginWrapper wrapper) {
@@ -39,7 +39,8 @@ public class MyzukaRuDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        /* Forced https */
+        final String parameter = "https://myzuka.org/Album/" + new Regex(param.toString(), "(\\d+)$").getMatch(0);
         br.setFollowRedirects(true);
         br.getPage(parameter);
         /* offline|abused */

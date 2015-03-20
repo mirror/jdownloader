@@ -36,7 +36,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzuka.ru" }, urls = { "http://(www\\.)?myzuka\\.ru/Song/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzuka.ru" }, urls = { "https?://(www\\.)?myzuka\\.(ru|org)/Song/\\d+" }, flags = { 0 })
 public class MyzukaRu extends PluginForHost {
 
     public MyzukaRu(PluginWrapper wrapper) {
@@ -46,6 +46,12 @@ public class MyzukaRu extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://myzuka.ru/Contacts";
+    }
+
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        /* Florced https */
+        link.setUrlDownload("https://myzuka.org/Song/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
     }
 
     @Override
@@ -86,7 +92,7 @@ public class MyzukaRu extends PluginForHost {
             if (dllink == null) {
                 logger.info("Could not find downloadurl, trying to get streamurl");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.getPage("http://myzuka.ru/Song/GetPlayFileUrl/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
+                br.getPage("http://myzuka.org/Song/GetPlayFileUrl/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
                 dllink = br.getRegex("\"(http://[^<>\"]*?)\"").getMatch(0);
                 if (dllink != null) {
                     logger.info("Found streamurl");
