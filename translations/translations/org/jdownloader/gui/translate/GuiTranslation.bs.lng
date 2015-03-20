@@ -1839,6 +1839,7 @@ skip_file=Preskoči dokument
 solver_types_all=sve
 solver_types_click=klik(miš)
 solver_types_text=tekst
+special_char_lib_loading_problem=Modul %s2 ne radi ispravno.\r\nIzgleda da postoji problem sa instalacionim direktorijem JDownloader-a.\r\nMolimo provjerite d ali ime instalacionog direktorija sadrži specijalne znakove.\r\nVaš JDownloader instalacioni direktorij je: %s1
 specialdeals_oboom_dialog_conditions=O ovom Poslu!
 specialdeals_oboom_dialog_email=Unesite svoju email adresu
 specialdeals_oboom_dialog_email_help=vaša email adresa ...
