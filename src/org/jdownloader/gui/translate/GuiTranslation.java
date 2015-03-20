@@ -5877,4 +5877,7 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "The donation has been cancelled.\r\nPlease help us by telling us what happened and why you cancelled the donation:" })
     String DonateFeedback_reportCanceled_title_message();
+
+    @Default(lngs = { "en" }, values = { "The module %s2 does not work properly.\r\nIt seems that there is a problem with the installation directory of JDownloader.\r\nPlease make sure that the installation directory dies not contain any special chars.\r\nYour Installation Directory: %s1" })
+    String special_char_lib_loading_problem(String dir, String module);
 }

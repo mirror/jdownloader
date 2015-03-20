@@ -18,6 +18,7 @@
 package jd;
 
 import java.awt.AWTEvent;
+import java.awt.Dialog.ModalityType;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.io.File;
@@ -73,6 +74,7 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.txtresource.TranslationFactory;
+import org.appwork.uio.ExceptionDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -89,6 +91,7 @@ import org.appwork.utils.swing.SlowEDTDetector;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.appwork.utils.swing.dialog.ExceptionDialog;
 import org.appwork.utils.swing.dialog.ExtFileSystemView;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.api.cnl2.ExternInterface;
@@ -98,6 +101,7 @@ import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.ArchiveController;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.osevents.OperatingSystemEventSender;
@@ -445,6 +449,7 @@ public class SecondLevelLaunch {
                                 if (backup.exists()) {
                                     backup.delete();
                                 }
+
                                 if (vmOption.renameTo(backup)) {
                                     StringBuilder sb = new StringBuilder();
                                     if (CrossSystem.isWindows()) {
@@ -679,6 +684,7 @@ public class SecondLevelLaunch {
             System.setProperty("jna.debug_load.jna", "true");
             System.setProperty("jna.nosystrue", "true");
             Application.getResource("tmp/jna").mkdir();
+
             System.setProperty("jna.tmpdir", Application.getResource("tmp/jna").getAbsolutePath());
             com.sun.jna.Native.setCallbackExceptionHandler(new com.sun.jna.Callback.UncaughtExceptionHandler() {
                 @Override
@@ -688,7 +694,25 @@ public class SecondLevelLaunch {
                     logger.close();
                 }
             });
+        } catch (java.lang.UnsatisfiedLinkError e) {
+            if (e.getMessage() != null && e.getMessage().contains("Can't find dependent libraries")) {
+                StatsManager.I().track("UnsatisfiedLinkError/JNA");
+                // probably the path contains unsupported special chars
+                LOG.info("The Library Path probably contains special chars: " + Application.getResource("tmp/jna").getAbsolutePath());
+                ExceptionDialog d = new ExceptionDialog(UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_COUNTDOWN | UIOManager.BUTTONS_HIDE_OK, _GUI._.lit_error_occured(), _GUI._.special_char_lib_loading_problem(Application.getHome(), "Java Native Interface"), e, null, _GUI._.lit_close()) {
+                    @Override
+                    public ModalityType getModalityType() {
+                        return ModalityType.MODELESS;
+                    }
+                };
+                UIOManager.I().show(ExceptionDialogInterface.class, d);
+
+            } else {
+                StatsManager.I().track("UnsatisfiedLinkError/Diff");
+            }
+            LOG.log(e);
         } catch (final Throwable e1) {
+
             LOG.log(e1);
         }
         UJCECheck.check();

@@ -702,6 +702,24 @@ public class ProxyController implements ProxySelectorInterface {
                                         }
                                     }
                                 }
+                            } catch (java.lang.UnsatisfiedLinkError e) {
+                                if (e.getMessage() != null && e.getMessage().contains("Can't find dependent libraries")) {
+                                    // probably the path contains unsupported special chars
+                                    logger.info("The Library Path probably contains special chars: " + Application.getResource("tmp/jna").getAbsolutePath());
+                                    logger.log(e);
+                                    // ExceptionDialog d = new ExceptionDialog(UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN |
+                                    // UIOManager.LOGIC_COUNTDOWN|UIOManager.BUTTONS_HIDE_OK, _GUI._.lit_error_occured(),
+                                    // _GUI._.special_char_lib_loading_problem(Application.getHome(), _GUI._.), e, null, _GUI._.lit_close())
+                                    // {
+                                    // @Override
+                                    // public ModalityType getModalityType() {
+                                    // return ModalityType.MODELESS;
+                                    // }
+                                    // };
+                                    // UIOManager.I().show(ExceptionDialogInterface.class, d);
+                                    break;
+                                }
+                                logger.log(e);
                             } catch (Throwable e) {
                                 logger.log(e);
                             }
