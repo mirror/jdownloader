@@ -35,7 +35,7 @@ import jd.plugins.PluginForHost;
 public class MovShareNet extends PluginForHost {
 
     private static final String HUMANTEXT = "We need you to prove you\\'re human";
-    private static final String EPRON     = "epornik.com/";
+    private static final String EPORN     = "epornik.com/";
     private static final String DOMAIN    = "movshare.net";
 
     public MovShareNet(PluginWrapper wrapper) {
@@ -52,20 +52,24 @@ public class MovShareNet extends PluginForHost {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload("http://www.movshare.net/video/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+        if (link.getDownloadURL().contains("movshare.net/")) {
+            link.setUrlDownload("http://www.movshare.net/video/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+        }
     }
 
     /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet */
     // This plugin is 99,99% copy the same as the DivxStageNet plugin, if this
     // gets broken please also check the other one!
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         setBrowserExclusive();
         br.getHeaders().put("Accept-Encoding", "identity");
         br.getPage(downloadLink.getDownloadURL());
-        if (!br.getURL().contains(EPRON)) {
+        if (!br.getURL().contains(EPORN)) {
             if (br.containsHTML(HUMANTEXT)) {
                 Form IAmAHuman = br.getForm(0);
                 if (IAmAHuman == null) {
@@ -84,6 +88,9 @@ public class MovShareNet extends PluginForHost {
         String filename = br.getRegex("Title: </strong>(.*?)</td>( <td>)?").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>Watch ([^<>\"]*?) online \\| MovShare</title>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("<h4 class=\"vidtitle\">([^<>\"]*?)</h4>").getMatch(0);
         }
         if (br.containsHTML("<strong>Title:</strong> Untitled</p>") && filename == null) {
             filename = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
@@ -109,9 +116,16 @@ public class MovShareNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        String dllink = null;
         requestFileInformation(downloadLink);
-        if (!br.getURL().contains(EPRON)) {
+        if (br.getURL().contains(EPORN)) {
+            dllink = br.getRegex("file: \"(http[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        } else {
             if (br.containsHTML(HUMANTEXT)) {
                 Form IAmAHuman = br.getForm(0);
                 if (IAmAHuman == null) {
@@ -125,50 +139,50 @@ public class MovShareNet extends PluginForHost {
             if (br.containsHTML("The file is beeing transfered to our other servers")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             }
-        }
-        String cid2 = br.getRegex("flashvars\\.cid2=\"(\\d+)\";").getMatch(0);
-        String key = br.getRegex("flashvars\\.filekey=\"(.*?)\"").getMatch(0);
-        if (key == null && br.containsHTML("w,i,s,e")) {
-            String result = unWise();
-            key = new Regex(result, "(\"\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}-[a-f0-9]{32})\"").getMatch(0);
-        }
-        if (key == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (cid2 == null) {
-            cid2 = "undefined";
-        }
-        final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
-        String lastdllink = null;
-        boolean success = false;
-        for (int i = 0; i <= 3; i++) {
-            if (i > 0) {
-                br.getPage("http://www." + DOMAIN + "/api/player.api.php?user=undefined&errorUrl=" + Encoding.urlEncode(lastdllink) + "&pass=undefined&cid3=undefined&errorCode=404&cid=1&cid2=" + cid2 + "&key=" + key + "&file=" + fid + "&numOfErrors=" + i);
-            } else {
-                br.getPage("http://www." + DOMAIN + "/api/player.api.php?cid2=" + cid2 + "&numOfErrors=0&user=undefined&cid=1&pass=undefined&key=" + key + "&file=" + fid + "&cid3=undefined");
+            String cid2 = br.getRegex("flashvars\\.cid2=\"(\\d+)\";").getMatch(0);
+            String key = br.getRegex("flashvars\\.filekey=\"(.*?)\"").getMatch(0);
+            if (key == null && br.containsHTML("w,i,s,e")) {
+                String result = unWise();
+                key = new Regex(result, "(\"\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}-[a-f0-9]{32})\"").getMatch(0);
             }
-            String dllink = br.getRegex("url=(http://.*?)\\&title").getMatch(0);
-            if (dllink == null) {
+            if (key == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            try {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-                if (!dl.getConnection().getContentType().contains("html")) {
-                    success = true;
-                    break;
+            if (cid2 == null) {
+                cid2 = "undefined";
+            }
+            final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+            String lastdllink = null;
+            boolean success = false;
+            for (int i = 0; i <= 3; i++) {
+                if (i > 0) {
+                    br.getPage("http://www." + DOMAIN + "/api/player.api.php?user=undefined&errorUrl=" + Encoding.urlEncode(lastdllink) + "&pass=undefined&cid3=undefined&errorCode=404&cid=1&cid2=" + cid2 + "&key=" + key + "&file=" + fid + "&numOfErrors=" + i);
                 } else {
-                    lastdllink = dllink;
-                    continue;
+                    br.getPage("http://www." + DOMAIN + "/api/player.api.php?cid2=" + cid2 + "&numOfErrors=0&user=undefined&cid=1&pass=undefined&key=" + key + "&file=" + fid + "&cid3=undefined");
                 }
-            } finally {
+                dllink = br.getRegex("url=(http://.*?)\\&title").getMatch(0);
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 try {
-                    dl.getConnection().disconnect();
-                } catch (final Throwable e) {
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+                    if (!dl.getConnection().getContentType().contains("html")) {
+                        success = true;
+                        break;
+                    } else {
+                        lastdllink = dllink;
+                        continue;
+                    }
+                } finally {
+                    try {
+                        dl.getConnection().disconnect();
+                    } catch (final Throwable e) {
+                    }
                 }
             }
-        }
-        if (!success) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+            if (!success) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+            }
         }
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 410) {
