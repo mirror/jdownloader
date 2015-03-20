@@ -90,6 +90,16 @@ public class FlickrCom extends PluginForHost {
         }
     }
 
+    /* Max 2000 requests per hour */
+    @Override
+    public void init() {
+        try {
+            Browser.setRequestIntervalLimitGlobal(this.getHost(), 3000, 20, 1900);
+        } catch (final Throwable t) {
+            Browser.setRequestIntervalLimitGlobal(this.getHost(), 1800);
+        }
+    }
+
     /**
      * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
      */
