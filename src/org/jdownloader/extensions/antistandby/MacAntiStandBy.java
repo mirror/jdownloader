@@ -1,6 +1,7 @@
 package org.jdownloader.extensions.antistandby;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -77,7 +78,14 @@ public class MacAntiStandBy extends Thread {
                 if (process != null) {
                     process.destroy();
                     if (Application.getJavaVersion() >= Application.JAVA18) {
-                        process.destroyForcibly();
+                        try {
+                            final Method method = process.getClass().getMethod("destroyForcibly", new Class[0]);
+                            if (method != null) {
+                                method.invoke(process, new Object[0]);
+                            }
+                        } catch (final Throwable e) {
+                            logger.log(e);
+                        }
                     }
                     logger.fine("JDAntiStandby: Stop");
                 }
