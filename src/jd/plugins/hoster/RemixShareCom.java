@@ -17,6 +17,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
@@ -25,6 +27,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -117,7 +120,32 @@ public class RemixShareCom extends PluginForHost {
     }
 
     private String execJS() throws Exception {
+        // we have established he is a dick
         String fun = null;
+        final String elementid = br.getRegex("= '<a id=\"(\\w+)\" href=\"#\".*?title=\"START\" onclick=\"return OnSubmitForm\\(\\);").getMatch(0);
+        if (elementid != null) {
+            final String[] s1 = br.getRegex("<script[^>]+>").getColumn(-1);
+            final ArrayList<String> s0 = new ArrayList<String>();
+            if (s1 != null) {
+                for (String s : s1) {
+                    if (s != null /* && new Regex(s, "type=('|\")text/javascript\\1").matches() */) {
+                        final String s2 = new Regex(s, "src=(\"|')(.*?)\\1").getMatch(1);
+                        if (s2 != null) {
+                            s0.add(s2);
+                        }
+                    }
+                }
+            }
+            final LinkedHashSet<String> dupe = new LinkedHashSet<String>();
+            for (final String s : s0) {
+                if (!dupe.add(s) || ((s.startsWith("://") || s.startsWith("http")) && !Browser.getHost(s).contains(this.getHost()))) {
+                    continue;
+                }
+                Browser a = br.cloneBrowser();
+                a.getPage(s);
+                fun = a.getRegex("document\\.getElementById\\('" + elementid + "'\\)\\.href\\s*(=\\s*[^\r\n]+)").getMatch(0);
+            }
+        }
         if (fun == null) {
             fun = br.getRegex("document\\.getElementById\\('[\\w\\-]+'\\)\\.href\\s*(=\\s*\"((?:(?:https?:)?//(?:\\w+\\.)?remixshare\\.com)?/(?:[^/]+/){4})[^\r\n]+)").getMatch(0);
             if (fun == null) {
