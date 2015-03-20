@@ -135,6 +135,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /** Maximum der heruntergeladenen Datei (Dateilaenge) */
     private long                                        downloadMax                         = -1;
 
+    @Deprecated
     private String                                      browserurl                          = null;
 
     private FilePackage                                 filePackage;
@@ -356,6 +357,12 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             setProperty(PROPERTY_CHUNKS, chunks);
         }
         SingleDownloadController dlc = getDownloadLinkController();
+        // DownloadInterface dli = null;
+        // if (dlc != null && (dli = dlc.getDownloadInstance()) != null) {
+        // if (dli instanceof HTTPDownloader) {
+        // ((HTTPDownloader) dli).setChunkNum(chunks);
+        // }
+        // }
         if (hasNotificationListener()) {
             notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.CHUNKS, chunks));
         }
@@ -563,11 +570,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * http://svn.jdownloader.org/issues/51004
      */
     public String getOriginUrl() {
-        final String ret = getStringProperty(URL_ORIGIN);
-        if (StringUtils.isEmpty(ret)) {
-            return browserurl;
-        }
-        return ret;
+        return getStringProperty(URL_ORIGIN);
     }
 
     public void setOriginUrl(final String url) {
@@ -620,10 +623,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     @Deprecated
     public String getBrowserUrl() {
-        final String lBrowserUrl = browserurl;
-        if (lBrowserUrl != null) {
-            return lBrowserUrl;
-        }
         return getPluginPatternMatcher();
     }
 
@@ -1109,6 +1108,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         setEnabled(true);
         setLinkInfo(null);
         setExtractionStatus(null);
+        // bindData(HTTPDownloadHints.class).reset();
         if (resetPlugins != null) {
             for (PluginForHost resetPlugin : resetPlugins) {
                 try {
@@ -2200,10 +2200,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public String getCustomExtension() {
         return getStringProperty("EXTENSION");
-    }
-
-    public boolean hasBrowserUrl() {
-        return browserurl != null;
     }
 
     public String getContentUrlOrPatternMatcher() {
