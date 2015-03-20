@@ -1093,19 +1093,29 @@ public class VidSpotNet extends PluginForHost {
     @SuppressWarnings("unused")
     @Override
     public void correctDownloadLink(final DownloadLink downloadLink) {
+        // use depreciated for now
+        String contenturl = downloadLink.getDownloadURL();
         if ((supportsHTTPS && enforcesHTTPS) || (supportsHTTPS && getPluginConfig().getBooleanProperty(preferHTTPS, false))) {
             // does the site enforce the use of https?
-            downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceFirst("http://", "https://"));
+            contenturl = contenturl.replaceFirst("http://", "https://");
         } else if (!supportsHTTPS) {
             // link cleanup, but respect users protocol choosing.
-            downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceFirst("https://", "http://"));
+            contenturl = contenturl.replaceFirst("https://", "http://");
         }
         // strip video hosting url's to reduce possible duped links.
-        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("/((vid)?embed-|builtin-)", "/"));
+        contenturl = contenturl.replaceAll("/((vid)?embed-|builtin-)", "/");
         // output the hostmask as we wish based on COOKIE_HOST url!
         String desiredHost = new Regex(COOKIE_HOST, "https?://([^/]+)").getMatch(0);
         String importedHost = new Regex(downloadLink.getDownloadURL(), "https?://([^/]+)").getMatch(0);
-        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(importedHost, desiredHost));
+        contenturl = contenturl.replaceAll(importedHost, desiredHost);
+        // because this plugin works off depreciated references we still need to setter.
+        downloadLink.setUrlDownload(contenturl);
+        try {
+            downloadLink.setContentUrl(contenturl);
+        } catch (final Throwable e) {
+            /* Not available in old 0.9.581 Stable */
+            // downloadLink.setUrlDownload(contenturl);
+        }
     }
 
     @SuppressWarnings("unused")
