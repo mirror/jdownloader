@@ -711,6 +711,8 @@ public class LenfileCom extends PluginForHost {
                 }
             }
         }
+        /* Replace escaped js stuff */
+        correctedBR = correctedBR.replace("\\", "");
     }
 
     private String getDllink() {

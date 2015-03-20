@@ -406,6 +406,10 @@ public class FileJokerNet extends PluginForHost {
                 dllink = getDllink();
                 if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                    if (br.containsHTML("<td>No Captcha Required</td>")) {
+                        logger.warning("Throwing special captcha failed exception");
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
                     dlForm = br.getFormbyProperty("name", "F1");

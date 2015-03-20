@@ -69,7 +69,7 @@ public class FreewayBz extends PluginForHost {
     private final int                                      globalRepeat       = 4;
     private final String                                   sessionRetry       = "sessionRetry";
     private final String                                   globalRetry        = "globalRetry";
-    private static final long                              maxtraffic_daily   = 32212254720l;
+    private static final long                              maxtraffic_daily   = 53687091200l;
 
     public FreewayBz(PluginWrapper wrapper) {
         super(wrapper);

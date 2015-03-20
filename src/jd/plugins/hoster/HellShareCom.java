@@ -416,15 +416,12 @@ public class HellShareCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        final String hostedFiles = br.getRegex(">Number of your files:</label></th>.*?<td id=\"info_files_counter\">.*?>(\\d+)</").getMatch(0);
-        if (hostedFiles != null) {
-            ai.setFilesNum(Long.parseLong(hostedFiles));
-        }
 
         // edt
         // searching for known account plans
         // Free Registered
 
+        final String trafficleft = br.getRegex("id=\"info_credit\" class=\"va-middle\">[\n\t\r ]+<strong>(.*?)</strong>").getMatch(0);
         String premiumActive = br.getRegex("<div class=\"icon-timecredit icon\">[\n\t\r]+<h4>Premium account</h4>[\n\t\r]+(.*)[\n\t\r]+<br />[\n\t\r]+<a href=\"/credit/time\">Buy</a>").getMatch(0);
 
         if (premiumActive == null) {
@@ -437,7 +434,12 @@ public class HellShareCom extends PluginForHost {
             premiumActive = br.getRegex("<div class=\"icon-credit icon\">[\n\t\r]+<h4>(.*)</h4>[\n\t\r]+<table>+[\n\t\r]+<tr>[\n\t\r]+<th>Current:</th>[\n\t\r]+<td>(.*?)</td>[\n\t\r]+</tr>").getMatch(0);
         }
 
-        if (premiumActive == null) {
+        if (trafficleft != null) {
+            ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
+            ai.setValidUntil(-1);
+            ai.setStatus("Account with credits");
+            account.setValid(true);
+        } else if (premiumActive == null) {
             ai.setStatus("Invalid/Unknown");
             account.setValid(false);
         } else if (premiumActive.contains("Inactive")) {
@@ -454,15 +456,6 @@ public class HellShareCom extends PluginForHost {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd.MM.yyyy HH:mm:ss", null));
             ai.setStatus("Premium accoount");
             ai.setExpired(false);
-            account.setValid(true);
-
-        } else if (premiumActive.contains("Download credit")) {
-            final String trafficleft = br.getRegex("id=\"info_credit\" class=\"va-middle\">[\n\t\r ]+<strong>(.*?)</strong>").getMatch(0);
-            if (trafficleft != null) {
-                ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
-            }
-            ai.setValidUntil(-1);
-            ai.setStatus("Account with credits");
             account.setValid(true);
 
         }
@@ -500,7 +493,7 @@ public class HellShareCom extends PluginForHost {
                 /*
                  * this will change account language to eng,needed because language is saved in profile
                  */
-                final String cookie = br.getCookie(br.getURL(), "PHPSESSID");
+                // final String cookie = br.getCookie(br.getURL(), "PHPSESSID");
                 final String permLogin = br.getCookie(br.getURL(), "permlogin");
                 if (permLogin == null || br.containsHTML("zadal jsi špatné uživatelské")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
