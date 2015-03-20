@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "javon.tv" }, urls = { "http://(www\\.)?javon\\.tv/watch/[a-z0-9\\-]+/video/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "javon.tv" }, urls = { "http://(www\\.)?javon\\.tv/[a-z0-9\\-/]*?video/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
 public class JavonTv extends PluginForDecrypt {
 
     public JavonTv(PluginWrapper wrapper) {
@@ -54,6 +54,7 @@ public class JavonTv extends PluginForDecrypt {
         } else if (redirect != null) {
             br.getPage(redirect);
         }
+        /* iframe which usually contains extern links to embedded content. */
         final String iframe = br.getRegex("(<iframe width.*?</iframe>)").getMatch(0);
         if (iframe == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -61,6 +62,11 @@ public class JavonTv extends PluginForDecrypt {
         }
         final String finallink = new Regex(iframe, "src=\"(https?://[^<>\"]*?)\"").getMatch(0);
         if (finallink == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        /* This should never happen */
+        if (finallink.contains("javon.tv/")) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }

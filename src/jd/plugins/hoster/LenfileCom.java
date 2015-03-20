@@ -555,6 +555,10 @@ public class LenfileCom extends PluginForHost {
                 if (password) {
                     passCode = handlePassword(dlForm, downloadLink);
                 }
+                /* Special: waittime not needed for .mp3 files */
+                if (downloadLink.getName().endsWith(".mp3")) {
+                    skipWaittime = true;
+                }
                 if (!skipWaittime) {
                     waitTime(timeBefore, downloadLink);
                 }
@@ -779,8 +783,12 @@ public class LenfileCom extends PluginForHost {
         /** Ticket Time */
         String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
         if (ttt == null) {
-            ttt = new Regex(correctedBR, "class=\"counterag\">Wait <span id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
+            /* Don't use correctedBR here */
+            ttt = br.getRegex("class=\"counterag\">Wait <span id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
         }
+        // if (ttt == null) {
+        // ttt = new Regex(correctedBR, "class=\"counterag\">Wait <span id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
+        // }
         if (ttt != null) {
             int wait = Integer.parseInt(ttt);
             if (wait >= waitsecondsmax) {
@@ -791,7 +799,8 @@ public class LenfileCom extends PluginForHost {
             logger.info("[Seconds] Waittime on the page: " + ttt);
             logger.info("[Seconds] Passed time: " + passedTime);
             logger.info("[Seconds] Total time to wait: " + wait);
-            if (wait > 0) {
+            /* Special: protection against too high waittimes */
+            if (wait > 0 && wait <= 300) {
                 sleep(wait * 1000l, downloadLink);
             }
         }
