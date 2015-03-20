@@ -494,13 +494,14 @@ public class HellShareCom extends PluginForHost {
                 setBrowserExclusive();
                 br.setFollowRedirects(true);
                 br.setDebug(true);
-                br.postPage("http://www.hellshare.com/uzivatel/prihlaseni?do=loginForm-submit", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&perm_login=on&login=P%C5%99ihl%C3%A1sit+se");
+                br.getPage("http://www.hellshare.cz/?do=login-showLoginWindow");
+                br.postPage("/?do=login-loginBoxForm-submit", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&login=P%C5%99ihl%C3%A1sit+registrovan%C3%A9ho+u%C5%BEivatele&perm_login=on");
 
                 /*
                  * this will change account language to eng,needed because language is saved in profile
                  */
-                String cookie = br.getCookie(br.getURL(), "PHPSESSID");
-                String permLogin = br.getCookie(br.getURL(), "permlogin");
+                final String cookie = br.getCookie(br.getURL(), "PHPSESSID");
+                final String permLogin = br.getCookie(br.getURL(), "permlogin");
                 if (permLogin == null || br.containsHTML("zadal jsi špatné uživatelské")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -510,7 +511,7 @@ public class HellShareCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                br.getPage("http://www.hellshare.com/--" + cookie + "-/members/");
+                br.getPage("/members/");
                 if (br.containsHTML("Wrong user name or wrong password\\.") || !br.containsHTML("credit for downloads") || br.containsHTML("Špatně zadaný login nebo heslo uživatele") || br.containsHTML("zadal jsi špatné uživatelské")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);

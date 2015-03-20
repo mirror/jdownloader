@@ -328,7 +328,7 @@ public class FileniumCom extends PluginForHost {
         }
         String acctype = br.getRegex("(?i)<type>(\\w+)</type>").getMatch(0);
         if (acctype != null) {
-            ai.setStatus(acctype + " User");
+            ai.setStatus(acctype + " account");
         }
         String hostsSup = br.cloneBrowser().getPage("http://" + SELECTEDDOMAIN + "/jddomains");
         String[] hosts = new Regex(hostsSup, "\"([^\"]+)\",").getColumn(0);

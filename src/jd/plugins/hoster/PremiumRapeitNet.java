@@ -208,7 +208,7 @@ public class PremiumRapeitNet extends PluginForHost {
         account.setType(AccountType.PREMIUM);
         account.setMaxSimultanDownloads(-1);
         account.setConcurrentUsePossible(true);
-        ac.setStatus("Premium User");
+        ac.setStatus("Premium account");
         return ac;
     }
 

@@ -250,6 +250,14 @@ public class Grab8Com extends PluginForHost {
                     }
                 }
             } catch (final PluginException e) {
+                /*
+                 * Incomplete means that they have a broken or 0byte file on their servers which we cannot correct via plugin - links for
+                 * which this happens cannot be downloaded via this multihost, at least for some hours.
+                 */
+                if (e.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
+                    logger.info("ERROR_DOWNLOAD_INCOMPLETE --> Next download candidate");
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "grab8.com: Broken file serverside");
+                }
                 e.printStackTrace();
                 // New V2 chunk errorhandling
                 /* unknown error, we disable multiple chunks */
