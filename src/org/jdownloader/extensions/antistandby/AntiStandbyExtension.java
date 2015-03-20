@@ -16,16 +16,22 @@
 
 package org.jdownloader.extensions.antistandby;
 
+import java.awt.Dialog.ModalityType;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jd.plugins.AddonPanel;
 
+import org.appwork.uio.ExceptionDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ExceptionDialog;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.antistandby.translate.AntistandbyTranslation;
+import org.jdownloader.gui.translate._GUI;
 
 public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, AntistandbyTranslation> {
 
@@ -77,14 +83,35 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
     protected void start() throws StartException {
         new Thread("AntiStandByLoader") {
             public void run() {
-                if (CrossSystem.isWindows()) {
-                    final Thread thread = new WindowsAntiStandby(AntiStandbyExtension.this);
-                    currentThread.set(thread);
-                    thread.start();
-                } else if (CrossSystem.isMac()) {
-                    final Thread thread = new MacAntiStandBy(AntiStandbyExtension.this);
-                    currentThread.set(thread);
-                    thread.start();
+                try {
+                    if (CrossSystem.isWindows()) {
+                        final Thread thread = new WindowsAntiStandby(AntiStandbyExtension.this);
+                        currentThread.set(thread);
+                        thread.start();
+                    } else if (CrossSystem.isMac()) {
+                        final Thread thread = new MacAntiStandBy(AntiStandbyExtension.this);
+                        currentThread.set(thread);
+                        thread.start();
+                    }
+                } catch (Throwable e) {
+
+                    ExceptionDialog d = new ExceptionDialog(UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_COUNTDOWN | UIOManager.BUTTONS_HIDE_OK, _GUI._.lit_error_occured(), _GUI._.special_char_lib_loading_problem(Application.getHome(), AntiStandbyExtension.this.getName()), e, null, _GUI._.lit_close()) {
+                        @Override
+                        public ModalityType getModalityType() {
+                            return ModalityType.MODELESS;
+                        }
+                    };
+                    UIOManager.I().show(ExceptionDialogInterface.class, d);
+
+                    logger.log(e);
+                    try {
+
+                        AntiStandbyExtension.this.setEnabled(false);
+
+                    } catch (Throwable e1) {
+
+                        logger.log(e1);
+                    }
                 }
             }
         }.start();
