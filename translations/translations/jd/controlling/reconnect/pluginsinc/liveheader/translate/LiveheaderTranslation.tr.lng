@@ -20,6 +20,7 @@ DataCompareDialog_layoutDialogContent_webinterface=Yönlendirici Web Arayüzü
 DataCompareDialog_layoutDialogContent_webinterface_desc=Yeniden bağlanmanın gerçekleşmesi için JDownloader'ın, yönlendiricinizin web arayüzüne oturum açmasına ihtiyacı vardır.\nGenelde oturum açma bilgilerini yönlendiricinizin kılavuzu ya da arkasında bulubilirsiniz.\nEğer bilmiyorsanız hizmeti aldığınız Müşteri Hizmetlerine sorun
 DataCompareDialog_open_webinterface=Web arayüzünü aç
 EditScriptAction_EditScriptAction_=Betiği Düzenle
+EditScriptAction_EditScriptAction_add=Yeni Betik
 EditScriptAction_EditScriptAction_tt=Kendi Yeniden Bağlanma Betiğinizi girin ya da var olanı düzenleyin.
 GetIPAction_GetIPAction_=Yönlendirici IP'sini Al
 GetIPAction_GetIPAction_tt=Ağınızı tarar ve Yönlendiricinizin IP'sini bulmaya çalışır
