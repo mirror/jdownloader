@@ -79,9 +79,10 @@ public class MacAntiStandBy extends Thread {
                     process.destroy();
                     if (Application.getJavaVersion() >= Application.JAVA18) {
                         try {
-                            final Method method = process.getClass().getMethod("destroyForcibly", new Class[0]);
+                            final Method method = process.getClass().getMethod("destroyForcibly", new Class[] {});
                             if (method != null) {
-                                method.invoke(process, new Object[0]);
+                                method.setAccessible(true);
+                                method.invoke(process, new Object[] {});
                             }
                         } catch (final Throwable e) {
                             logger.log(e);
