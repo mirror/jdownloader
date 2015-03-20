@@ -482,12 +482,12 @@ public class Uploadedto extends PluginForHost {
                     tokenType = api_getTokenType(account, token, true);
                 }
                 if ("free".equals(tokenType)) {
+                    account.setValid(true);
                     /* free user */
                     ai.setUnlimitedTraffic();
                     ai.setValidUntil(-1);
                     ai.setStatus("Free account");
                     account.setProperty("free", true);
-                    account.setValid(true);
                 } else if ("premium".equals(tokenType)) {
                     String traffic = br.getRegex("traffic_left\":\\s*?\"?(\\d+)").getMatch(0);
                     long max = 100 * 1024 * 1024 * 1024l;
@@ -551,6 +551,7 @@ public class Uploadedto extends PluginForHost {
         }
         String isPremium = br.getMatch("status: (premium)");
         if (isPremium == null) {
+            account.setValid(true);
             ai.setStatus("Free account");
             ai.setUnlimitedTraffic();
             try {
@@ -564,13 +565,13 @@ public class Uploadedto extends PluginForHost {
                 ai.setProperty("NOAPI", account.getPass());
             }
         } else {
+            account.setValid(true);
             String traffic = br.getMatch("traffic: (\\d+)");
             String expire = br.getMatch("expire: (\\d+)");
             if (expire != null) {
                 ai.setValidUntil(Long.parseLong(expire) * 1000);
             }
             ai.setStatus("Premium account");
-            account.setValid(true);
             long max = 100 * 1024 * 1024 * 1024l;
             long current = Long.parseLong(traffic);
             ai.setTrafficMax(Math.max(max, current));
