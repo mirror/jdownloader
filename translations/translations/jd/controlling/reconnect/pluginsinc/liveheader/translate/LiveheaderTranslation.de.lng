@@ -20,6 +20,7 @@ DataCompareDialog_layoutDialogContent_webinterface=Router Web Interface
 DataCompareDialog_layoutDialogContent_webinterface_desc=Um einen Reconnect durchzuführen, benötigt JDownloader die Anmeldedaten des Webinterfaces Deines Routers.\nSehr oft sind diese auf der Rückseite des Routers zu finden.\nFalls Du diese nicht finden kannst, frage Deinen Netzwerkadministrator.
 DataCompareDialog_open_webinterface=Webinterface öffnen
 EditScriptAction_EditScriptAction_=Script bearbeiten
+EditScriptAction_EditScriptAction_add=Neues Skript
 EditScriptAction_EditScriptAction_tt=Gib dein eigenes Reconnect-Script ein oder ändere ein bereits Existierendes.
 GetIPAction_GetIPAction_=Beziehe Router-IP-Adresse
 GetIPAction_GetIPAction_tt=Scannt dein Netzwerk und versucht die Router-IP-Adresse zu finden
