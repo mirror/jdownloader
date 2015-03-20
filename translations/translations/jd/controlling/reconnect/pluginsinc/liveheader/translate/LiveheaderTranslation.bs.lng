@@ -20,6 +20,7 @@ DataCompareDialog_layoutDialogContent_webinterface=Web Sučelje Rutera
 DataCompareDialog_layoutDialogContent_webinterface_desc=Da izvrši ponovno konektovanje, JDownloader treba podatke za logoranje u web sučelje rutera.  Vrlo često, ove podatke možete pronaći na zadnjoj strani rutera.  Ako ih neznate, molimo pitajte administratora Mreže
 DataCompareDialog_open_webinterface=Otvori Web Sučelje
 EditScriptAction_EditScriptAction_=Izmijeni Skriptu
+EditScriptAction_EditScriptAction_add=Nova Skripta
 EditScriptAction_EditScriptAction_tt=Unesite vlastitu Skriptu za Ponovno konektovanje ili modifikujte postojeću.
 GetIPAction_GetIPAction_=Pronađi IP rutera
 GetIPAction_GetIPAction_tt=Skenira vašu Mrežu i pokušava da pronađe IP vašeg Rutera
