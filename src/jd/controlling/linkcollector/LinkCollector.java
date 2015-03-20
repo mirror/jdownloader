@@ -664,7 +664,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     List<CrawledLink> badMappings = badMappingMap.get(badID);
                     if (links != null) {
                         for (CrawledLink link : links) {
-                            if (link.getDownloadLink().hasBrowserUrl()) {
+                            final DownloadLink dlLink = link.getDownloadLink();
+                            if (dlLink.getContainerUrl() != null) {
                                 if (badMappings == null) {
                                     badMappings = new ArrayList<CrawledLink>();
                                     badMappingMap.put(badID, badMappings);
@@ -718,7 +719,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
             private CrawledPackage getCrawledPackage(CrawledPackageMappingID crawledPackageMappingID, CrawledLink mappingLink) {
                 CrawledPackage ret = packageMap.get(crawledPackageMappingID);
-                if (ret == null && crawledPackageMappingID.getPackageName() == null && mappingLink.getDownloadLink().hasBrowserUrl()) {
+                if (ret == null && crawledPackageMappingID.getPackageName() == null && mappingLink.getDownloadLink().getContainerUrl() != null) {
                     final HashMap<Integer, HashMap<CrawledPackageMappingID, CrawledPackage>> bestMappings = new HashMap<Integer, HashMap<CrawledPackageMappingID, CrawledPackage>>();
                     for (final Entry<CrawledPackageMappingID, CrawledPackage> chance : packageMap.entrySet()) {
                         int equals = 0;
@@ -737,7 +738,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             mappings.put(chance.getKey(), chance.getValue());
                         }
                     }
-                    final String browserURL = mappingLink.getDownloadLink().getBrowserUrl();
+                    final String browserURL = mappingLink.getDownloadLink().getContainerUrl();
                     for (int x = 2; x > 0; x--) {
                         HashMap<CrawledPackageMappingID, CrawledPackage> mappings = bestMappings.get(new Integer(x));
                         if (mappings != null) {
@@ -747,7 +748,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 try {
                                     for (final CrawledLink cLink : pkg.getChildren()) {
                                         final DownloadLink dlLink = cLink.getDownloadLink();
-                                        if (dlLink != null && dlLink.hasBrowserUrl() && StringUtils.equals(dlLink.getBrowserUrl(), browserURL)) {
+                                        if (dlLink != null && dlLink.getContainerUrl() != null && StringUtils.equals(dlLink.getContainerUrl(), browserURL)) {
                                             final CrawledPackageMappingID id = mapping.getKey();
                                             if (id.getPackageName() != null) {
                                                 return pkg;
@@ -1092,9 +1093,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     *
+     * 
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     *
+     * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {

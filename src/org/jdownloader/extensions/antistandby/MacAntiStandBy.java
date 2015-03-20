@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 
+import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.jdownloader.logging.LogController;
@@ -75,6 +76,9 @@ public class MacAntiStandBy extends Thread {
                 final Process process = lastProcess.getAndSet(null);
                 if (process != null) {
                     process.destroy();
+                    if (Application.getJavaVersion() >= Application.JAVA18) {
+                        process.destroyForcibly();
+                    }
                     logger.fine("JDAntiStandby: Stop");
                 }
             }
