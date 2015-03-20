@@ -101,6 +101,7 @@ public class MyGirlfriendsVidsNet extends PluginForHost {
             } catch (final BrowserException ebr) {
                 logger.warning("Rare offline state:");
                 ebr.printStackTrace();
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
