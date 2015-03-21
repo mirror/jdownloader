@@ -41,7 +41,8 @@ public class MyFastFileCom extends PluginForHost {
 
     // DEV NOTES
     // password is APIKey from users profile.
-    // max-debrid.com sister site
+    // using same API: freeway.bz, myfastfile.com
+    // API description: https://www.myfastfile.com/filehostapi
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private final String                                   mName              = "www.myfastfile.com";
