@@ -1266,7 +1266,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     final String album_id = typeObject.get("aid").toString();
                     final String owner_id = typeObject.get("owner_id").toString();
                     final String content_id = typeObject.get("pid").toString();
-                    final String wall_single_photo_content_url = "http://vk.com/" + wall_ID + "?z=photo" + owner_id + "_" + content_id + "/" + wall_list_id;
+                    final String wall_single_photo_content_url = "http://vk.com/" + wall_ID + "?own=1&z=photo" + owner_id + "_" + content_id + "/" + wall_list_id;
 
                     final DownloadLink dl = getSinglePhotoDownloadLink(owner_id + "_" + content_id);
                     /* Ovverride previously set content URL as this really is the direct link to the picture which works fine via browser. */

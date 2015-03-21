@@ -63,12 +63,12 @@ public class YobtTv extends PluginForHost {
         if (br.containsHTML("class=\"error404\"") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h2 class=\"left\">([^<>\"]*?)</hh>").getMatch(0);
+        String filename = br.getRegex("<h2 class=\"left\">([^<>]*?)</hh>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<h2 style=\"[^<>\"]+\">([^<>\"]*?)</h2>").getMatch(0);
+            filename = br.getRegex("<h2 style=\"[^<>]+\">([^<>\"]*?)</h2>").getMatch(0);
         }
         if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+            filename = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -91,6 +91,7 @@ public class YobtTv extends PluginForHost {
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
+        filename = encodeUnicode(filename);
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) {
             ext = ".mp4";
@@ -144,6 +145,22 @@ public class YobtTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    /** Avoid chars which are not allowed in filenames under certain OS' */
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     @Override
