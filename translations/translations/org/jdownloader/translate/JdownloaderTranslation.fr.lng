@@ -132,6 +132,7 @@ basics_no=Non
 basics_yes=Oui
 configheader_enabled=Activé
 controller_packages_defaultname=Divers
+convert_CLR_Reconnect_to_jdownloader=Convertir les scrips de reconnexion CryptLoad *.clr en script de reconnexion directe JDownloader (LiveHeader)
 decrypter_invalidaccount=Aucun compte valide trouvé
 decrypter_unknownerror=Erreur inconnue
 decrypter_wrongcaptcha=Mauvais code captcha
