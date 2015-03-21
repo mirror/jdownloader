@@ -57,11 +57,10 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.PluginTaskID;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megacrypter" }, urls = { "https?://(?:www\\.)?(encrypterme\\.ga|megacrypter\\.noestasinvitado\\.com|youpaste\\.co)/\\![A-Za-z0-9\\-_\\!]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megacrypter" }, urls = { "https?://(?:www\\.)?(encrypterme\\.ga|megacrypter\\.noestasinvitado\\.com|youpaste\\.co|(?:megacrypter\\.)?linkcrypter\\.net)/\\![A-Za-z0-9\\-_\\!]+" }, flags = { 2 })
 public class MegaCrypterCom extends PluginForHost {
 
     // note: hosts removed due to be down.
-    // 20150206 megacrypter.linkcrypter.net/ throws internal server error 500.
     // 20150206 megacrypter.megabuscame.me/ account suspended on datacenter server.
 
     public MegaCrypterCom(PluginWrapper wrapper) {
@@ -69,12 +68,17 @@ public class MegaCrypterCom extends PluginForHost {
         this.setConfigElements();
     }
 
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("megacrypter.linkcrypter.net/", "linkcrypter.net/"));
+    }
+
     private void setUrl(final DownloadLink downloadLink) {
         if (downloadLink.getDownloadURL().contains("encrypterme.ga/")) {
             // https seems to some soccor sports page
             supportsHTTPS = false;
             enforcesHTTPS = false;
-        } else if (downloadLink.getDownloadURL().contains("megacrypter.noestasinvitado.com/")) {
+        } else if (downloadLink.getDownloadURL().contains("megacrypter.noestasinvitado.com/") || downloadLink.getDownloadURL().contains("linkcrypter.net/")) {
             // all others enable by default.
             supportsHTTPS = true;
             enforcesHTTPS = true;
