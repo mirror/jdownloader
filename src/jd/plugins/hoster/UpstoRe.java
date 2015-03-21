@@ -340,15 +340,14 @@ public class UpstoRe extends antiDDoSForHost {
         br.setFollowRedirects(true);
         areWeStillLoggedIn(account);
         // Make sure that the language is correct
-        getPage((br.getHttpConnection() == null ? MAINPAGE.replace("http://", "https://") : "") + "/?lang=en");
-        ai.setUnlimitedTraffic();
+        getPage((br.getHttpConnection() == null ? MAINPAGE.replace("http://", "https://") : "") + "/stat/download/?lang=en");
         // Check for never-ending premium accounts
         if (!br.containsHTML(lifetimeAccount)) {
             final String expire = br.getRegex(premiumTilAccount).getMatch(0);
             if (expire == null) {
                 if (br.containsHTML("unlimited premium")) {
                     ai.setValidUntil(-1);
-                    ai.setStatus("Unlimited Premium User");
+                    ai.setStatus("Unlimited Premium Account");
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree Accounts are not supported for this host!\r\nKostenlose Accounts dieses Hosters werden nicht unterstützt!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -356,7 +355,16 @@ public class UpstoRe extends antiDDoSForHost {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yy", null));
             }
         }
-        ai.setStatus("Premium User");
+        // traffic is not unlimited they have 20GiB/day fair use. see ticket HZI-220-58438
+        // ai.setUnlimitedTraffic();
+        // this is in MiB, more accurate than the top rounded figure
+        final String trafficUsed = br.getRegex(">Total:</td>\\s*<td>([\\d+\\.]+)<").getMatch(0);
+        final String trafficTotal = br.getRegex("Downloaded in last \\d+ hours: [\\d+\\.]+ of (\\d+) GB").getMatch(0);
+        final long trafficDaily = SizeFormatter.getSize(trafficTotal + "GiB");
+        final long trafficLeft = trafficDaily - SizeFormatter.getSize(trafficUsed + "MiB");
+        ai.setTrafficLeft(trafficLeft);
+        ai.setTrafficMax(trafficDaily);
+        ai.setStatus("Premium Account");
         account.setValid(true);
 
         return ai;
