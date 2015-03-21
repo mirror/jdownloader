@@ -79,7 +79,7 @@ public class LenfileCom extends PluginForHost {
     private static final boolean           SUPPORTSHTTPS_FORCED         = false;
     private static final boolean           SUPPORTS_ALT_AVAILABLECHECK  = true;
     private final boolean                  ENABLE_RANDOM_UA             = true;
-    private static final boolean           enable_hardcore              = false;
+    private final boolean                  enable_hardcore              = false;
     private static final int               waitsecondsmax               = 200;
     private static final int               waitsecondsforced            = 30;
 
@@ -154,7 +154,7 @@ public class LenfileCom extends PluginForHost {
             final String fsize_normal = fileInfo[1];
             final String fsize_alt = performAltAvailablecheck(link, fileInfo);
             fileInfo = new String[3];
-            if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches() || (!correctedBR.contains("value=\"download\\d*\"") && !correctedBR.contains("value=\"" + this.fuid + "\""))) {
+            if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
                 offcount++;
             }
             if (offcount == 3 && oncount == 0 && maybeoncount == 0) {
@@ -172,7 +172,7 @@ public class LenfileCom extends PluginForHost {
             }
 
         } else {
-            if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches() || (!correctedBR.contains("value=\"download\\d*\"") && !correctedBR.contains("value=\"" + this.fuid + "\""))) {
+            if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (new Regex(correctedBR, MAINTENANCE).matches()) {
