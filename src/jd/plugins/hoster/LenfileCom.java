@@ -791,9 +791,9 @@ public class LenfileCom extends PluginForHost {
             /* Don't use correctedBR here */
             ttt = br.getRegex("class=\"counterag\">Wait <span id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
         }
-        // if (ttt == null) {
-        // ttt = new Regex(correctedBR, "class=\"counterag\">Wait <span id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
-        // }
+        if (ttt == null) {
+            ttt = new Regex(correctedBR, ">Wait\\s*<span id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
+        }
         if (ttt != null) {
             int wait = Integer.parseInt(ttt);
             if (wait >= waitsecondsmax) {
