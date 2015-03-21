@@ -16,18 +16,25 @@
 
 package jd.gui.swing.jdgui;
 
+import java.awt.AWTKeyStroke;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.KeyboardFocusManager;
 import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.swing.AbstractAction;
 import javax.swing.Icon;
+import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JTabbedPane;
@@ -151,6 +158,57 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
         }
     }
 
+    private void setupTabTraversalKeys() {
+        KeyStroke ctrlTab = KeyStroke.getKeyStroke("ctrl TAB");
+        KeyStroke ctrlShiftTab = KeyStroke.getKeyStroke("ctrl shift TAB");
+
+        // Remove ctrl-tab from normal focus traversal
+        Set<AWTKeyStroke> forwardKeys = new HashSet<AWTKeyStroke>(getFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS));
+        forwardKeys.remove(ctrlTab);
+        setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, forwardKeys);
+
+        // Remove ctrl-shift-tab from normal focus traversal
+        Set<AWTKeyStroke> backwardKeys = new HashSet<AWTKeyStroke>(getFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS));
+        backwardKeys.remove(ctrlShiftTab);
+        setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, backwardKeys);
+
+        // Add keys to the tab's input map
+        InputMap inputMap = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+        inputMap.put(ctrlTab, "navigateNext");
+        inputMap.put(ctrlShiftTab, "navigatePrevious");
+
+        // add new actions to skip the donatetab
+        getActionMap().put("navigatePrevious", new AbstractAction() {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int index = getSelectedIndex();
+
+                index--;
+                if (index < 0) {
+                    index = getTabCount() - 1;
+                }
+                while (index > 0 && getTabComponentAt(index) instanceof PromotionTabHeader) {
+                    index--;
+                }
+                setSelectedIndex(index);
+            }
+        });
+        getActionMap().put("navigateNext", new AbstractAction() {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int index = getSelectedIndex();
+                index++;
+
+                if (index > getTabCount() - 1 || getTabComponentAt(index) instanceof PromotionTabHeader) {
+                    index = 0;
+                }
+                setSelectedIndex(index);
+            }
+        });
+    }
+
     private void addClosableTab(ClosableView view) {
 
         // super.addTab(view.getTitle(), view.getIcon(), view, view.getTooltip());
@@ -223,6 +281,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
         // fontAttributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
         // specialDealFont = (specialDealFont.deriveFont(specialDealFont.getStyle() ^
         // Font.BOLD).deriveFont(fontAttributes)).deriveFont(16f);
+        setupTabTraversalKeys();
         addMouseMotionListener(this);
         addMouseListener(this);
         // we need this init BEFORE the event listener below.Else we would get a init-loop problem resulting in a nullpointer
@@ -358,7 +417,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
 
     /**
      * returns the component in this tab that equals view
-     *
+     * 
      * @param view
      * @return
      */
@@ -374,7 +433,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
 
     /**
      * CHecks if there is already a tabbepanel of this type in this pane.
-     *
+     * 
      * @param view
      * @return
      */

@@ -1,5 +1,6 @@
 package org.jdownloader.gui.views.downloads.table;
 
+import java.awt.AWTKeyStroke;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.LayoutManager;
@@ -12,8 +13,10 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.EventObject;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import javax.swing.Action;
 import javax.swing.ActionMap;
@@ -344,6 +347,12 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
     @Override
     public ExtColumn<AbstractNode> getExpandCollapseColumn() {
         return DownloadsTableModel.getInstance().expandCollapse;
+    }
+
+    @Override
+    public Set<AWTKeyStroke> getFocusTraversalKeys(int id) {
+        // important to make ctrl+tab and ctrl+shift+tab work for the main tabbed pane
+        return new HashSet<AWTKeyStroke>();
     }
 
     public void updateContextShortcuts() {
