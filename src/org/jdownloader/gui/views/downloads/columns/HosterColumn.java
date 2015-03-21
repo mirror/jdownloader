@@ -66,7 +66,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
         });
     }
     /**
-     * 
+     *
      */
     private static final long serialVersionUID   = 1L;
     private int               maxIcons           = 10;
@@ -256,6 +256,8 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
                     final List<ServiceCollection<?>> services = ServicePanel.getInstance().groupServices(PremiumStatusBarDisplay.GROUP_BY_SUPPORTED_ACCOUNTS, false, di.getTld(), null);
                     if (services.size() > 0) {
                         ToolTipController.getInstance().show(services.get(0).createTooltip(null));
+                    } else {
+                        ToolTipController.getInstance().show(createToolTip(e.getPoint(), obj));
                     }
 
                 } else if (obj instanceof AbstractPackageNode) {
