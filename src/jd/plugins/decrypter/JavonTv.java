@@ -26,12 +26,14 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "javon.tv" }, urls = { "http://(www\\.)?javon\\.tv/[a-z0-9\\-/]*?video/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "javon.tv" }, urls = { "http://(www\\.)?javon\\.tv/[a-z0-9\\-/]*?(video/\\d+/|embed/\\d+)[a-z0-9\\-]+\\.html" }, flags = { 0 })
 public class JavonTv extends PluginForDecrypt {
 
     public JavonTv(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    private static final String type_embed = "http://(www\\.)?javon\\.tv/embed/\\d+[a-z0-9\\-]+\\.html";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -55,18 +57,18 @@ public class JavonTv extends PluginForDecrypt {
             br.getPage(redirect);
         }
         /* iframe which usually contains extern links to embedded content. */
-        final String iframe = br.getRegex("(<iframe width.*?</iframe>)").getMatch(0);
+        final String iframe = br.getRegex("(<iframe (?:width|style).*?</iframe>)").getMatch(0);
         if (iframe == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        final String finallink = new Regex(iframe, "src=\"(https?://[^<>\"]*?)\"").getMatch(0);
+        final String finallink = new Regex(iframe, "src=(?:\"|\\')(https?://[^<>\"]*?)(?:\"|\\')").getMatch(0);
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         /* This should never happen */
-        if (finallink.contains("javon.tv/")) {
+        if (finallink.contains("javon.tv/") && !finallink.matches(type_embed)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }

@@ -70,8 +70,7 @@ public class MyzukaRuDecrypter extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            filesize = filesize.replace("б", "b");
-            filesize = filesize.replace(",", ".");
+            filesize = new Regex(filesize, "(\\d+(?:,\\d+)?)").getMatch(0) + "MB";
             final DownloadLink fina = createDownloadlink("http://myzuka.ru" + Encoding.htmlDecode(url));
             fina.setName(Encoding.htmlDecode(artist) + " - " + Encoding.htmlDecode(title) + ".mp3");
             fina.setDownloadSize(SizeFormatter.getSize(filesize));
