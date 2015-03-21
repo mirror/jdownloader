@@ -436,13 +436,16 @@ public class LenfileCom extends PluginForHost {
                 }
             } else {
                 final String postData = "op=download1&usr_login=&id=" + this.fuid + "&fname=" + formFileName + "&referer=&method_free=Free+Download";
-                br.postPage(br.getURL(), postData);
+                postPage(br.getURL(), postData);
             }
         }
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
             if (dlForm == null) {
-                handlePluginBroken(downloadLink, "dlform_f1_null", 3);
+                dlForm = getFormByKey("op", "download2");
+                if (dlForm == null) {
+                    handlePluginBroken(downloadLink, "dlform_f1_null", 3);
+                }
             }
             /* how many forms deep do you want to try? */
             int repeat = 2;
