@@ -1287,7 +1287,6 @@ public class VKontakteRu extends PluginForDecrypt {
                     fp.add(dl);
                     decryptedLinks.add(dl);
                 } else if (type.equals("doc") && wall_grabdocs) {
-
                     final String title = Encoding.htmlDecode((String) typeObject.get("title"));
                     final String url = (String) typeObject.get("url");
                     if (title == null || url == null) {
@@ -1357,7 +1356,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 } else if (type.equals("poll")) {
                     logger.info("Current post only contains a poll --> Skipping it");
                 } else {
-                    logger.warning("Either the type of the current post is unsupported or unselected: " + type);
+                    logger.warning("Either the type of the current post is unsupported or not selected by the user: " + type);
                 }
             } catch (Throwable ee) {
                 // catches casting errors etc.
