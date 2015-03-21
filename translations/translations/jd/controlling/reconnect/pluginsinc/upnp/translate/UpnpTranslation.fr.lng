@@ -1,6 +1,7 @@
+AutoDetectAction_run_failed2=Aucune méthode de reconnexion UPNP trouvée.\nEssayez la reconnexion directe à la place !
 AutoDetectUpnpAction_AutoDetectUpnpAction_=Essaie de trouver tous les périphériques de reconnexion UPNP dans votre réseau.\n\nLa plupart des routeurs FritzBox peuvent être reconnecter de cette manière
 UPNPReconnectInvoker_getName_=Reconnexion au routeur UPNP
-UPNPRouterPlugin_run_error=Impossible de trouver des périphériques UPNP. Essayez la reconnexion directe à la place !
+UPNPRouterPlugin_run_error=Impossible de trouver des périphériques UPNP.\nEssayez la reconnexion directe à la place !
 UPNPRouterPlugin_run_mesg=Scan de toutes les interfaces réseaux
 UPNPRouterPlugin_run_wizard_title=Assistant pour routeur UPNP
 UPNPScannerAction_UPNPScannerAction_tt=Essaie de trouver tous les périphériques de reconnexion UPNP dans votre réseau, et laisser choisir lequel doit être utiliser pour la reconnexion
