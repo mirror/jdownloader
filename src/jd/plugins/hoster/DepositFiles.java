@@ -68,6 +68,7 @@ public class DepositFiles extends PluginForHost {
 
     private final String                  UA                       = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.72 Safari/537.36";
     private final String                  FILE_NOT_FOUND           = "Dieser File existiert nicht|Entweder existiert diese Datei nicht oder sie wurde";
+    private final String                  downloadLimitReached     = "<strong>Achtung! Sie haben ein Limit|Sie haben Ihre Download Zeitfrist erreicht\\.<";
     private final String                  PATTERN_PREMIUM_FINALURL = "<div id=\"download_url\".*?<a href=\"(.*?)\"";
     public static AtomicReference<String> MAINPAGE                 = new AtomicReference<String>();
     public static final String            DOMAINS                  = "(depositfiles\\.(com|org)|dfiles\\.(eu|ru))";
@@ -226,7 +227,7 @@ public class DepositFiles extends PluginForHost {
         if (br.containsHTML(FILE_NOT_FOUND)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.containsHTML("<strong>Achtung! Sie haben ein Limit")) {
+        if (br.containsHTML(downloadLimitReached)) {
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.depositfilescom.errors.limitreached", "Download limit reached"));
             return AvailableStatus.TRUE;
         }
@@ -288,7 +289,7 @@ public class DepositFiles extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
         }
-        if (br.containsHTML("(Anschlusslimit|Bitte versuchen Sie in)")) {
+        if (br.containsHTML("(Anschlusslimit|Bitte versuchen Sie in|Sie haben Ihre Download Zeitfrist erreicht\\.<)")) {
             String wait = br.getRegex("versuchen Sie in.*?(\\d+) minu").getMatch(0);
             if (wait != null) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(wait) + 1) * 60 * 1000l);
