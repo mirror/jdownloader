@@ -31,7 +31,6 @@ LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm=Usługa jest obecnie nie
 LiveHeaderDetectionWizard_runOnlineScan_notavailable_t=Usługa niedostępna
 LiveHeaderDetectionWizard_runOnlineScan_warning_badhost=Adres IP Routera: %s1 jest nieprawidłowy!
 LiveHeaderDetectionWizard_runOnlineScan_warning_badip=Wydaje się, że adres strony WWW konfuguracji routera (http://%s1) nie jest prawidłowy.\r\nMożliwe, że niepoprawnie podano adres IP Routera.\r\nKontynuować?
-LiveHeaderDetectionWizard_sendRouter_reconnectFailed=Ponowne Połączenie nie zostało nawiązane...
 LiveHeaderDetectionWizard_uploadData_sent_failed=Wykryto, że Twój skrypt znajduje się już w naszej bazie danych. Dziękujemy za pomoc!
 LiveHeaderDetectionWizard_uploadData_sent_ok=Dziękujemy! Twój skrypt Ponownego Połączenia został dodany do naszej bazy danych.
 LiveHeaderDetectionWizard_userConfirm_loginstext=Dane logowania NIE będą uploadowane. Proszę je jednak wprowadzić.\nPotrzebne są, aby usunąć te informacje z ustawien Ponownego Połączenia przed uploadowaniem.\nJeśli ich nie znasz, pozostaw puste.
