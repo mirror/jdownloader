@@ -297,10 +297,10 @@ public class LenfileCom extends PluginForHost {
         }
         /* Below we have 2 special regexes */
         if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "class=\"filezag\" style=\"border:0\">[\n ]+([^<>\"/]+)").getMatch(0);
+            fileInfo[0] = new Regex(correctedBR, "class=\"filezag\"[^>]*>\\s*([^<>\"/]+)").getMatch(0);
         }
         if (fileInfo[1] == null) {
-            fileInfo[1] = new Regex(correctedBR, "<\\!\\-\\- <small>\\((\\d+(\\.\\d+)? ?(KB|MB|GB))\\)  <a").getMatch(0);
+            fileInfo[1] = new Regex(br, "<\\!\\-\\- <small>\\((\\d+(\\.\\d+)? ?(KB|MB|GB))\\)  <a").getMatch(0);
         }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
@@ -362,7 +362,7 @@ public class LenfileCom extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /* Second, check for streaming/direct links on the first page */
         if (dllink == null) {
-            dllink = getDllink();
+            dllink = getDllink(false);
         }
         /* Third, do they provide video hosting? */
         if (dllink == null && VIDEOHOSTER) {
@@ -385,7 +385,7 @@ public class LenfileCom extends PluginForHost {
                 logger.info("Trying to get link via embed");
                 final String embed_access = "http://" + COOKIE_HOST.replace("http://", "") + "/embed-" + fuid + ".html";
                 getPage(embed_access);
-                dllink = getDllink();
+                dllink = getDllink(false);
                 if (dllink == null) {
                     logger.info("Failed to get link via embed because: " + br.toString());
                 } else {
@@ -434,7 +434,7 @@ public class LenfileCom extends PluginForHost {
                     /* end of backward compatibility */
                     sendForm(download1);
                     checkErrors(downloadLink, false);
-                    dllink = getDllink();
+                    dllink = getDllink(false);
                 }
             } else {
                 final String postData = "op=download1&usr_login=&id=" + this.fuid + "&fname=" + formFileName + "&referer=&method_free=Free+Download";
@@ -573,7 +573,7 @@ public class LenfileCom extends PluginForHost {
                 sendForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true);
-                dllink = getDllink();
+                dllink = getDllink(true);
                 if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -724,7 +724,7 @@ public class LenfileCom extends PluginForHost {
 
         /* generic cleanup */
         /* Removed this one - no good idea ;) */
-        // regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
+        regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
         regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
 
@@ -740,10 +740,13 @@ public class LenfileCom extends PluginForHost {
         correctedBR = correctedBR.replace("\\", "");
     }
 
-    private String getDllink() {
+    private String getDllink(final boolean finel) {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+            if (dllink == null && finel) {
+                dllink = new Regex(br, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+            }
             if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
@@ -818,7 +821,7 @@ public class LenfileCom extends PluginForHost {
             // fail over to prevent dickhead from changing text/html and breaking support.
             if (ttt == null) {
                 int i = 0;
-                while (i <= 40) {
+                while (i <= 44) {
                     i = new Random().nextInt(75);
                 }
                 ttt = String.valueOf(i);
@@ -1244,10 +1247,10 @@ public class LenfileCom extends PluginForHost {
             if (dllink == null) {
                 br.setFollowRedirects(false);
                 getPage(downloadLink.getDownloadURL());
-                dllink = getDllink();
+                dllink = getDllink(false);
                 if (dllink != null && dllink.matches(".+/files\\d+\\.html")) {
                     getPage(dllink);
-                    dllink = getDllink();
+                    dllink = getDllink(false);
                 }
                 if (dllink == null) {
                     Form dlform = br.getFormbyProperty("name", "F1");
@@ -1260,7 +1263,7 @@ public class LenfileCom extends PluginForHost {
                     }
                     sendForm(dlform);
                     checkErrors(downloadLink, true);
-                    dllink = getDllink();
+                    dllink = getDllink(true);
                 }
             }
             if (dllink == null) {
