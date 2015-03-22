@@ -26,7 +26,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videomega.tv" }, urls = { "http://(www\\.)?videomega\\.tv/(iframe\\.php)?\\?ref=[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videomega.tv" }, urls = { "http://(www\\.)?videomega\\.tv/(?:(?:iframe|cdn)\\.php)?\\?ref=[A-Za-z0-9]+" }, flags = { 0 })
 public class VideoMegaTv extends antiDDoSForHost {
 
     public VideoMegaTv(PluginWrapper wrapper) {
@@ -55,8 +55,7 @@ public class VideoMegaTv extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
-        this.br = new Browser();
-        this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:36.0) Gecko/20100101 Firefox/36.0");
+        br = new Browser();
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         fuid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
@@ -158,7 +157,7 @@ public class VideoMegaTv extends antiDDoSForHost {
         if (dl.getConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
         } else if (dl.getConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (dl.getConnection().getLongContentLength() < 10000l) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: File is too small", 60 * 60 * 1000l);
         }
