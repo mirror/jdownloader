@@ -31,7 +31,6 @@ LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm=This service is currentl
 LiveHeaderDetectionWizard_runOnlineScan_notavailable_t=Service not Available
 LiveHeaderDetectionWizard_runOnlineScan_warning_badhost=The Router IP '%s1' is invalid!
 LiveHeaderDetectionWizard_runOnlineScan_warning_badip=It seems that there is no Webinterface at http://%s1. \n\nThe Router IP might be invalid. \n\n\n\nContinue anyway?
-LiveHeaderDetectionWizard_sendRouter_reconnectFailed=Reconnect failed. You can only share working reconnect settings.
 LiveHeaderDetectionWizard_uploadData_sent_failed=We noticed, that your script already exists in our database.  Thanks anyway.
 LiveHeaderDetectionWizard_uploadData_sent_ok=Thank you!\n\nWe added your script to our router reconnect database.
 LiveHeaderDetectionWizard_userConfirm_loginstext=Logins will NOT be uploaded. Please enter them anyway. \n\nWe need them to remove any sensitive information form your reconnect settings before uploading.\n\nIf you don't know them, leave empty, or ask your Network Administrator.
