@@ -1839,6 +1839,7 @@ skip_file=Datei überspringen
 solver_types_all=alle
 solver_types_click=Klick (Maus)
 solver_types_text=Text
+special_char_lib_loading_problem=Das Modul %s2 arbeitet nicht richtig.\r\nEs scheint, als gäbe es ein Problem mit dem Installationsverzeichnis von JDownloader.\r\nBitte stelle sicher, dass das dieses keine Sonderzeichen enthält.\r\nDein Installationsverzeichnis: %s1
 specialdeals_oboom_dialog_conditions=Über dieses Angebot:
 specialdeals_oboom_dialog_email=Geben Sie ihre eMail-Adresse ein
 specialdeals_oboom_dialog_email_help=Ihre eMail-Adresse ...
