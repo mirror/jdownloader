@@ -1,4 +1,3 @@
-AutoDetectAction_run_failed=Znaleziono urządzenia UPNP, lecz nie można było wykonać ponownego połączenia.\r\r\nSpróbuj metody "Live Header"!
 AutoDetectUpnpAction_AutoDetectUpnpAction_=Próba znalezienia wszystkich urządzeń UPNP w twojej Sieci.\nWiększość routerów FritzBox może wykonywać Ponowne Połączenia w ten sposób.
 UPNPReconnectInvoker_getName_=Ponowne Połączenie dla routera UPNP
 UPNPRouterPlugin_run_error=Nie znaleziono urządzeń UPNP.\r\nSpróbuj metody "Live Header"!
