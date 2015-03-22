@@ -721,6 +721,7 @@ public class LenfileCom extends PluginForHost {
         ArrayList<String> regexStuff = new ArrayList<String>();
 
         // remove custom rules first!!! As html can change because of generic cleanup rules.
+        regexStuff.add(".*</form>.*(>LenFile Blog<.*?)</BODY>");
 
         /* generic cleanup */
         /* Removed this one - no good idea ;) */
