@@ -155,9 +155,6 @@ public class UploadRocketNet extends PluginForHost {
         prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion\\.?:\n|File Not Found|>The file expired|>The file was removed by administrator<)").matches()) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
             fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
             if (fileInfo[0] != null) {
@@ -212,6 +209,9 @@ public class UploadRocketNet extends PluginForHost {
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
+            }
+            if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion\\.?:\n|File Not Found|>The file expired|>The file was removed by administrator<)").matches()) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             logger.warning("filename equals null, throwing \"plugin defect\"");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -543,7 +543,7 @@ public class UploadRocketNet extends PluginForHost {
         ArrayList<String> regexStuff = new ArrayList<String>();
 
         // remove custom rules first!!! As html can change because of generic cleanup rules.
-        regexStuff.add("(<div class=\"footer\">.*?)<\\s*/BODY\\s*>");
+        regexStuff.add("(<!--\\s*XFSCUSTOM.COM: gunggo pops Start.*?)<\\s*/BODY\\s*>");
         // generic cleanup
         regexStuff.add("<!(--.*?--)>");
         regexStuff.add("(<td[^>]+style=(\"|')[\\w:;\\s#-]*color\\s*:\\s*transparent\\s*;[^>]*>.*?</td>)");
