@@ -442,16 +442,17 @@ public class LenfileCom extends PluginForHost {
             }
         }
         if (dllink == null) {
-            Form dlForm = br.getFormbyProperty("name", "F1");
-            if (dlForm == null) {
-                dlForm = getFormByKey("op", "download2");
-                if (dlForm == null) {
-                    dlForm = dlFormManual();
-                    if (dlForm == null) {
-                        handlePluginBroken(downloadLink, "dlform_f1_null", 3);
-                    }
-                }
-            }
+            Form dlForm = dlFormManual();
+            // br.getFormbyProperty("name", "F1");
+            // if (dlForm == null) {
+            // dlForm = getFormByKey("op", "download2");
+            // if (dlForm == null) {
+            // dlForm = dlFormManual();
+            // if (dlForm == null) {
+            // handlePluginBroken(downloadLink, "dlform_f1_null", 3);
+            // }
+            // }
+            // }
             /* how many forms deep do you want to try? */
             int repeat = 2;
             for (int i = 0; i <= repeat; i++) {
@@ -630,7 +631,7 @@ public class LenfileCom extends PluginForHost {
         dlForm.put("method_free", "Free+Download");
         dlForm.put("method_premium", "");
         dlForm.put("down_direct", "1");
-        final String rand = br.getRegex("<input[^>]+name=\"rand\" value=\"([a-z0-9]+)\"").getMatch(0);
+        final String rand = new Regex(br.toString().replace("\\\"", "\""), "<input[^>]+name=\"rand\" value=\"([a-z0-9]+)\"").getMatch(0);
         dlForm.put("rand", rand != null ? rand : "");
         return dlForm;
     }
