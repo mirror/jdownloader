@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -792,7 +793,15 @@ public class LenfileCom extends PluginForHost {
             ttt = br.getRegex("class=\"counterag\">Wait <span id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
         }
         if (ttt == null) {
-            ttt = new Regex(correctedBR, ">Wait\\s*<span id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
+            ttt = new Regex(correctedBR, "Wait\\s*<span id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
+            // fail over to prevent dickhead from changing text/html and breaking support.
+            if (ttt == null) {
+                int i = 0;
+                while (i <= 40) {
+                    i = new Random().nextInt(75);
+                }
+                ttt = String.valueOf(i);
+            }
         }
         if (ttt != null) {
             int wait = Integer.parseInt(ttt);
