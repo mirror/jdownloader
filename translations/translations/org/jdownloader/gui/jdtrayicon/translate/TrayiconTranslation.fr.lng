@@ -11,6 +11,7 @@ OnMinimizeAction_totaskbar=Réduire dans la barre des tâches
 OnMinimizeAction_totray=Minimiser dans la zone de notification
 TrayMenuManager_getName=Zone de notification
 getName=Zone de notification
+jd_plugins_optional_jdtrayicon_jdlighttray=Zone de notification
 jd_plugins_optional_jdtrayicon_jdlighttray_description=Autorisations pour fermer ou minimiser JDownloader vers la zone de notification, et autres.
 plugins_optional_JDLightTray_closetotray2=Au clic sur 'Fermer'
 plugins_optional_JDLightTray_hideifframevisible=Masquer l'icone de la zone de notification si la fenêtre est visible
