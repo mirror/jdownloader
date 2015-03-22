@@ -38,6 +38,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
 import jd.plugins.Account;
@@ -445,7 +446,10 @@ public class LenfileCom extends PluginForHost {
             if (dlForm == null) {
                 dlForm = getFormByKey("op", "download2");
                 if (dlForm == null) {
-                    handlePluginBroken(downloadLink, "dlform_f1_null", 3);
+                    dlForm = dlFormManual();
+                    if (dlForm == null) {
+                        handlePluginBroken(downloadLink, "dlform_f1_null", 3);
+                    }
                 }
             }
             /* how many forms deep do you want to try? */
@@ -579,6 +583,9 @@ public class LenfileCom extends PluginForHost {
                         invalidateLastChallengeResponse();
                     } catch (final Throwable e) {
                     }
+                    if (dlForm == null) {
+                        dlForm = dlFormManual();
+                    }
                     continue;
                 } else {
                     try {
@@ -612,6 +619,20 @@ public class LenfileCom extends PluginForHost {
             /* remove download slot */
             controlFree(-1);
         }
+    }
+
+    private Form dlFormManual() {
+        final Form dlForm = new Form();
+        dlForm.setMethod(MethodType.POST);
+        dlForm.put("id", fuid);
+        dlForm.put("op", "download2");
+        dlForm.put("referer", Encoding.urlEncode(br.getURL()));
+        dlForm.put("method_free", "Free+Download");
+        dlForm.put("method_premium", "");
+        dlForm.put("down_direct", "1");
+        final String rand = br.getRegex("<input[^>]+name=\"rand\" value=\"([a-z0-9]+)\"").getMatch(0);
+        dlForm.put("rand", rand != null ? rand : "");
+        return dlForm;
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
