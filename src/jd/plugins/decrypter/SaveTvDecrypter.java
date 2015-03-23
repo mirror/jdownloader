@@ -334,7 +334,8 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         }
     }
 
-    private void addID_api(final String id_source) throws ParseException, DecrypterException {
+    @SuppressWarnings("deprecation")
+    private void addID_api(final String id_source) throws ParseException, DecrypterException, PluginException {
         final String telecast_id = new Regex(id_source, "<a:Id>(\\d+)</a:Id>").getMatch(0);
         final String telecast_url = "https://www.save.tv/STV/M/obj/archive/VideoArchiveDetails.cfm?TelecastId=" + telecast_id;
         final DownloadLink dl = createDownloadlink(telecast_url);
@@ -369,7 +370,8 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         }
     }
 
-    private void addID_site(final String id_source) throws ParseException, DecrypterException {
+    @SuppressWarnings("deprecation")
+    private void addID_site(final String id_source) throws ParseException, DecrypterException, PluginException {
         final String telecast_id = getJson(id_source, "ITELECASTID");
         final String telecast_url = "https://www.save.tv/STV/M/obj/archive/VideoArchiveDetails.cfm?TelecastId=" + telecast_id;
         final DownloadLink dl = createDownloadlink(telecast_url);
@@ -386,7 +388,6 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                 /* JD2 only */
                 dl.setContentUrl(telecast_url);
                 dl.setLinkID(linkdupeid);
-                ;
             } catch (Throwable e) {
                 /* Not available in old 0.9.581 Stable */
                 dl.setProperty("LINKDUPEID", linkdupeid);
