@@ -117,4 +117,16 @@ public interface EventScripterTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Any Extraction Event" })
     String ON_GENERIC_EXTRACTION();
 
+    @Default(lngs = { "en" }, values = { "Example Scripts" })
+    String btnExampleScripts();
+
+    @Default(lngs = { "en" }, values = { "Create an Info-File in the Download-Folder with detailed information" })
+    String example_infoFile();
+
+    @Default(lngs = { "en" }, values = { "@%s1: %s2" })
+    String ExampleMenuEntry(String label, String description);
+
+    @Default(lngs = { "en" }, values = { "Play a Wav File" })
+    String example_play_sound();
+
 }
