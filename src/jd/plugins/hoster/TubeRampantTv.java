@@ -81,7 +81,7 @@ public class TubeRampantTv extends PluginForHost {
                 downloadLink.setName(filename + default_Extension);
                 return AvailableStatus.TRUE;
             }
-            final String playerConfigUrl = br.getRegex("(http://(www\\.)?tube\\.rampant\\.tv/playerConfig\\.php\\?[a-z0-9]+\\.mp4)").getMatch(0);
+            final String playerConfigUrl = br.getRegex("(https?://(www\\.)?tube\\.rampant\\.tv/playerConfig\\.php\\?[a-z0-9]+\\.mp4)").getMatch(0);
             if (playerConfigUrl == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -104,7 +104,7 @@ public class TubeRampantTv extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openGetConnection(DLLINK);
+                con = openConnection(br2, DLLINK);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -155,7 +155,7 @@ public class TubeRampantTv extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                con = br2.openGetConnection(dllink);
+                con = openConnection(br2, dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -187,6 +187,20 @@ public class TubeRampantTv extends PluginForHost {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
+    }
+
+    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
+        URLConnectionAdapter con;
+        if (isJDStable()) {
+            con = br.openGetConnection(directlink);
+        } else {
+            con = br.openHeadConnection(directlink);
+        }
+        return con;
+    }
+
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override
