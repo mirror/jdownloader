@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -59,7 +60,9 @@ public class ImageVenueCom extends PluginForHost {
         String filename = null;
         String finallink = br.getRegex("id=\"thepic\".*?SRC=\"(.*?)\"").getMatch(0);
         if (finallink == null) {
-            if (br.containsHTML("tempval\\.focus\\(\\)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("tempval\\.focus\\(\\)")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             logger.warning("Could not find finallink reference");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -67,12 +70,18 @@ public class ImageVenueCom extends PluginForHost {
         finallink = "http://" + server + finallink;
         String ending = new Regex(finallink, "imagevenue\\.com.*?\\.(.{3,4}$)").getMatch(0);
         String filename0 = new Regex(finallink, "imagevenue\\.com/.*?/.*?/\\d+.*?_(.*?)($|\\..{2,4}$)").getMatch(0);
-        if (ending != null && filename0 != null) filename = filename0 + "." + ending;
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (ending != null && filename0 != null) {
+            filename = filename0 + "." + ending;
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(finallink);
-            if (!con.isOK()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            con = openConnection(this.br, finallink);
+            if (!con.isOK()) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             long size = con.getLongContentLength();
             link.setDownloadSize(Long.valueOf(size));
             link.setName(filename.trim());
@@ -90,11 +99,27 @@ public class ImageVenueCom extends PluginForHost {
         requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
         String finallink = br.getRegex("id=\"thepic\".*?SRC=\"(.*?)\"").getMatch(0);
-        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (finallink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String server = new Regex(downloadLink.getDownloadURL(), "(img[0-9]+\\.imagevenue\\.com/)").getMatch(0);
         finallink = "http://" + server + finallink;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
         dl.startDownload();
+    }
+
+    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
+        URLConnectionAdapter con;
+        if (isJDStable()) {
+            con = br.openGetConnection(directlink);
+        } else {
+            con = br.openHeadConnection(directlink);
+        }
+        return con;
+    }
+
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override
