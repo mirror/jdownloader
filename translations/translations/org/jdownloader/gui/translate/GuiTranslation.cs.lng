@@ -1839,6 +1839,7 @@ skip_file=Přeskočit soubor
 solver_types_all=vše
 solver_types_click=kliknutí (myš)
 solver_types_text=text
+special_char_lib_loading_problem=Modul %s2 nefunguje správně.\nZdá se, že je problém s instalačním adresářem JDownloaderu.\nUjistěte se, že cesta k instalačnímu adresáři neobsahuje žádné speciální znaky.\nVáš instalační adresář: %s1
 specialdeals_oboom_dialog_conditions=O dohodě!
 specialdeals_oboom_dialog_email=Zadejte svou e-mailovou adresu
 specialdeals_oboom_dialog_email_help=vaše e-mailová dresa...
