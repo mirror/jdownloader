@@ -78,11 +78,11 @@ public class CrawlJobStorable implements Storable {
     private String        text;
     private boolean       deepAnalyseEnabled = false;
     private String        packageName;
-    private Priority      priority;
+    private Priority      priority           = null;
     private BooleanStatus extractAfterDownload;
 
     public Priority getPriority() {
-        return priority == null ? Priority.DEFAULT : priority;
+        return priority;
     }
 
     public void setPriority(Priority priority) {

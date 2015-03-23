@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -54,6 +55,7 @@ import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.reflection.Clazz;
+import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
@@ -391,27 +393,23 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                         }
                     }
 
-                    if (!BooleanStatus.UNSET.equals(j.getExtractAfterDownload())) {
-                        BooleanStatus existing = BooleanStatus.UNSET;
-                        if (link.hasArchiveInfo()) {
-                            existing = link.getArchiveInfo().getAutoExtract();
-                        }
-                        if (j.isOverwritePackagizerEnabled() || existing == null || BooleanStatus.UNSET.equals(existing)) {
-                            link.getArchiveInfo().setAutoExtract(j.getExtractAfterDownload());
-                        }
+                    final BooleanStatus extract = j.getExtractAfterDownload();
+                    if (extract != null && extract != BooleanStatus.UNSET) {
+                        link.getArchiveInfo().setAutoExtract(extract);
                     }
-                    if (j.isOverwritePackagizerEnabled()) {
+                    final Priority priority = j.getPriority();
+                    if (priority != null) {
                         link.setPriority(j.getPriority());
                     }
                     DownloadLink dlLink = link.getDownloadLink();
                     if (dlLink != null) {
                         if (StringUtils.isNotEmpty(j.getComment())) {
-                            if (j.isOverwritePackagizerEnabled() || StringUtils.isEmpty(dlLink.getComment())) {
+                            if (StringUtils.isEmpty(dlLink.getComment())) {
                                 dlLink.setComment(j.getComment());
                             }
                         }
                         if (StringUtils.isNotEmpty(j.getDownloadPassword())) {
-                            if (j.isOverwritePackagizerEnabled() || StringUtils.isEmpty(dlLink.getDownloadPassword())) {
+                            if (StringUtils.isEmpty(dlLink.getDownloadPassword())) {
                                 dlLink.setDownloadPassword(j.getDownloadPassword());
                             }
                         }
@@ -428,28 +426,29 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                         }
                     }
                     if (j.getExtractPasswords() != null && j.getExtractPasswords().length > 0) {
-                        HashSet<String> list = new HashSet<String>();
+                        final LinkedHashSet<String> list = new LinkedHashSet<String>();
                         for (String s : j.getExtractPasswords()) {
                             list.add(s);
                         }
                         link.getArchiveInfo().getExtractionPasswords().addAll(list);
                     }
-
-                    if (j.getAutoConfirm() != BooleanStatus.UNSET) {
-                        link.setAutoConfirmEnabled(j.getAutoConfirm().getBoolean());
+                    final BooleanStatus autoConfirm = j.getAutoConfirm();
+                    if (autoConfirm != null && autoConfirm != BooleanStatus.UNSET) {
+                        link.setAutoConfirmEnabled(autoConfirm.getBoolean());
                     }
-                    if (j.getAutoStart() != BooleanStatus.UNSET) {
-                        link.setAutoStartEnabled(j.getAutoStart().getBoolean());
+                    final BooleanStatus autoStart = j.getAutoStart();
+                    if (autoStart != null && autoStart != BooleanStatus.UNSET) {
+                        link.setAutoStartEnabled(autoStart.getBoolean());
                     }
-                    if (j.getForcedStart() != BooleanStatus.UNSET) {
-                        link.setForcedAutoStartEnabled(j.getForcedStart().getBoolean());
+                    final BooleanStatus forcedStart = j.getForcedStart();
+                    if (forcedStart != null && forcedStart != BooleanStatus.UNSET) {
+                        link.setForcedAutoStartEnabled(forcedStart.getBoolean());
                     }
                     if (j.getChunks() > 0) {
                         link.setChunks(j.getChunks());
                     }
                     if (StringUtils.isNotEmpty(j.getFilename())) {
                         link.setName(j.getFilename());
-
                     }
                 }
             };
