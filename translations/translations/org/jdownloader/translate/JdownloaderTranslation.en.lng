@@ -74,6 +74,7 @@ gui_settings_downloadpath_description=Set the default download path here. Changi
 gui_settings_extensions_show_now=Show %s1 now?  You may open it later using Mainmenu->Window
 gui_settings_filewriting_description=JDownloader will verify your downloads for correctness after download using the hashcheck option
 gui_settings_general_title=General
+gui_settings_linkgrabber_filter_description2=The linkfilter is used to filter or group links. Use it to ignore or group links, addresses, urls or files based on their properties. Set up 'Views' for the Linkgrabber's sidebar, or 'Filters' to avoid grabbing special links completely...
 gui_settings_linkgrabber_packagizer_description=The Packagizer rules let you auto-set Download Settings on Files based on their properties.
 gui_settings_linkgrabber_title=Linkgrabber Filter
 gui_settings_plugins_description=JDownloader uses 'Plugins' for %s1 websites to automate downloads which would take a lot of time without JDownloader. Some of these Plugins have settings to customize their behaviour.
