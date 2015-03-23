@@ -127,10 +127,14 @@ public class TopUpload1Com extends PluginForHost {
             if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = br.getRegex("Filename:[\t\n\r ]+</td>[\t\n\r ]+<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
-            if (filename == null || inValidate(Encoding.htmlDecode(filename).trim()) || Encoding.htmlDecode(filename).trim().equals("  ")) {
-                /* Filename might not be available here either */
-                filename = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+            filename = br.getRegex("<meta name=\"description\" content=\"Information about\\s*(.*?)\"").getMatch(0);
+            if (inValidate(filename)) {
+                // this cuts off filename
+                filename = br.getRegex("Filename:[\t\n\r ]+</td>[\t\n\r ]+<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+                if (inValidate(filename) || inValidate(Encoding.htmlDecode(filename).trim()) || Encoding.htmlDecode(filename).trim().equals("  ")) {
+                    /* Filename might not be available here either */
+                    filename = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+                }
             }
             filesize = br.getRegex("Filesize:[\t\n\r ]+</td>[\t\n\r ]+<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
         } else {
