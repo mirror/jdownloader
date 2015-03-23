@@ -174,9 +174,6 @@ public class LenfileCom extends PluginForHost {
             }
 
         } else {
-            if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
             if (new Regex(correctedBR, MAINTENANCE).matches()) {
                 fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
                 if (fileInfo[0] != null) {
@@ -226,16 +223,22 @@ public class LenfileCom extends PluginForHost {
                 return AvailableStatus.UNCHECKABLE;
             }
             scanInfo(fileInfo);
-            if (fileInfo[0] == null || fileInfo[0].equals("")) {
+            if (inValidate(fileInfo[0])) {
                 fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
-                if (fileInfo[0] == null || fileInfo[0].equals("")) {
-                    if (correctedBR.contains("You have reached the download(\\-| )limit")) {
-                        logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
-                        return AvailableStatus.UNCHECKABLE;
-                    }
-                    logger.warning("filename equals null, throwing \"plugin defect\"");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (inValidate(fileInfo[0])) {
+                if (correctedBR.contains("You have reached the download(\\-| )limit")) {
+                    logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
+                    return AvailableStatus.UNCHECKABLE;
                 }
+                if (offcount >= 1) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                logger.warning("filename equals null, throwing \"plugin defect\"");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (fileInfo[1] == null && SUPPORTS_ALT_AVAILABLECHECK) {
                 /* Do alt availablecheck here but don't check availibility because we already know that the file must be online! */
@@ -268,21 +271,21 @@ public class LenfileCom extends PluginForHost {
 
     private String[] scanInfo(final String[] fileInfo) {
         /* standard traits from base page */
-        if (fileInfo[0] == null) {
+        if (inValidate(fileInfo[0])) {
             fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
-            if (fileInfo[0] == null) {
+            if (inValidate(fileInfo[0])) {
                 fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
-                if (fileInfo[0] == null) {
+                if (inValidate(fileInfo[0])) {
                     fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                     /* traits from download1 page below */
-                    if (fileInfo[0] == null) {
+                    if (inValidate(fileInfo[0])) {
                         fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
                         // next two are details from sharing box
-                        if (fileInfo[0] == null) {
+                        if (inValidate(fileInfo[0])) {
                             fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
-                            if (fileInfo[0] == null) {
+                            if (inValidate(fileInfo[0])) {
                                 fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
-                                if (fileInfo[0] == null) {
+                                if (inValidate(fileInfo[0])) {
                                     /* Link of the box without filesize */
                                     fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + DOMAINS + "/" + fuid + "/([^<>\"]*?)</textarea").getMatch(2);
                                 }
@@ -292,21 +295,21 @@ public class LenfileCom extends PluginForHost {
                 }
             }
         }
-        if (fileInfo[0] == null) {
+        if (inValidate(fileInfo[0])) {
             fileInfo[0] = new Regex(correctedBR, "style=\"border:0\">([^<>\"]*?)<small>").getMatch(0);
         }
         /* Below we have 2 special regexes */
-        if (fileInfo[0] == null) {
+        if (inValidate(fileInfo[0])) {
             fileInfo[0] = new Regex(correctedBR, "class=\"filezag\"[^>]*>\\s*([^<>\"/]+)").getMatch(0);
         }
-        if (fileInfo[1] == null) {
+        if (inValidate(fileInfo[1])) {
             fileInfo[1] = new Regex(br, "<\\!\\-\\- <small>\\((\\d+(\\.\\d+)? ?(KB|MB|GB))\\)  <a").getMatch(0);
         }
-        if (fileInfo[1] == null) {
+        if (inValidate(fileInfo[1])) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
-            if (fileInfo[1] == null) {
+            if (inValidate(fileInfo[1])) {
                 fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-                if (fileInfo[1] == null) {
+                if (inValidate(fileInfo[1])) {
                     fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
                 }
             }
@@ -623,16 +626,25 @@ public class LenfileCom extends PluginForHost {
     }
 
     private Form dlFormManual() {
-        final Form dlForm = new Form();
-        dlForm.setMethod(MethodType.POST);
-        dlForm.put("id", fuid);
-        dlForm.put("op", "download2");
-        dlForm.put("referer", Encoding.urlEncode(br.getURL()));
-        dlForm.put("method_free", "Free+Download");
-        dlForm.put("method_premium", "");
-        dlForm.put("down_direct", "1");
-        final String rand = new Regex(br.toString().replace("\\\"", "\""), "<input[^>]+name=\"rand\" value=\"([a-z0-9]+)\"").getMatch(0);
-        dlForm.put("rand", rand != null ? rand : "");
+        Form dlForm = this.getFormByKey("op", "download2");
+        if (dlForm != null) {
+            final String z = new Regex(dlForm.getHtmlCode().replace("\\\"", "\""), "<input[^>]+name=\"rand3\" value=\"([a-z0-9]+)\"").getMatch(0);
+            if (z != null) {
+                dlForm.put("rand3", z);
+            }
+        }
+        if (dlForm == null) {
+            dlForm = new Form();
+            dlForm.setMethod(MethodType.POST);
+            dlForm.put("id", fuid);
+            dlForm.put("op", "download2");
+            dlForm.put("referer", Encoding.urlEncode(br.getURL()));
+            dlForm.put("method_free", "Free+Download");
+            dlForm.put("method_premium", "");
+            dlForm.put("down_direct", "1");
+            final String rand = new Regex(br.toString().replace("\\\"", "\""), "<input[^>]+name=\"rand\" value=\"([a-z0-9]+)\"").getMatch(0);
+            dlForm.put("rand", rand != null ? rand : "");
+        }
         return dlForm;
     }
 
