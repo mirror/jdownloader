@@ -20,6 +20,7 @@ DataCompareDialog_layoutDialogContent_webinterface=Webové rozhraní routeru
 DataCompareDialog_layoutDialogContent_webinterface_desc=Pro vykonání znovupřipojení potřebuje JDownloader přihlašovací údaje k webovému rozhraní routeru.\nVelice často můžete tyto přihlašovací údaje nalézt na zadní straně routeru.\nPokud je neznáte, požádejte administrátora vaší sítě.
 DataCompareDialog_open_webinterface=Otevřít webové rozhraní
 EditScriptAction_EditScriptAction_=Upravit skript
+EditScriptAction_EditScriptAction_add=Nový skript
 EditScriptAction_EditScriptAction_tt=Zadejte vlastní skript znovupřipojení nebo upravte existující.
 GetIPAction_GetIPAction_=Získat IP routeru
 GetIPAction_GetIPAction_tt=Proskenuje Vaši síť a pokusí se najít IP routeru
