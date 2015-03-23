@@ -22,7 +22,7 @@ abstract public class Client {
     final static public int    SOFTWARE_VENDOR_ID = 0;
 
     final static public int    DEFAULT_TIMEOUT    = 60;
-    final static public int    POLLS_INTERVAL     = 5;
+    final static public int    POLLS_INTERVAL     = 3;
 
     /**
      * Client verbosity flag.
@@ -240,7 +240,9 @@ abstract public class Client {
                 Thread.sleep(Client.POLLS_INTERVAL * 1000);
                 captcha = this.getCaptcha(captcha.id);
             }
-            if (captcha.isSolved() && captcha.isCorrect()) { return captcha; }
+            if (captcha.isSolved() && captcha.isCorrect()) {
+                return captcha;
+            }
         }
         return null;
     }
