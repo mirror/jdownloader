@@ -96,7 +96,7 @@ public class OneDriveLiveCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (downloadLink.getBooleanProperty("account_only", false) && false) {
+        if (downloadLink.getBooleanProperty("account_only", false)) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
