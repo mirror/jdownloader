@@ -36,3 +36,4 @@ popup_reconnect=Reconnexion
 popup_reconnecttoggle=Reconnexion automatique activée
 popup_update=Vérifier les mises à jour
 popup_update_install=Installer les dernières mises à jour
+popup_update_install_tt=Il y a des mises à jour en attente d'installation. Cliquez pour les installer maintenant !
