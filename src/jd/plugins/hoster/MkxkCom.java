@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mkxk.com" }, urls = { "http://(www\\.)?mkxk\\.com/dance/play/id/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mkxk.com" }, urls = { "http://(www\\.)?mkxk\\.com/(?:play|down)/\\d+\\.html" }, flags = { 0 })
 public class MkxkCom extends PluginForHost {
 
     public MkxkCom(PluginWrapper wrapper) {
@@ -42,21 +42,36 @@ public class MkxkCom extends PluginForHost {
         return "http://www.mkxk.com/";
     }
 
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("/down/", "/play/"));
+    }
+
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.setCustomCharset("UTF-8");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">We\\'re sorry but the page your are looking for is Not") || br.getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">We\\'re sorry but the page your are looking for is Not") || br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("class=\"jp\\-title split\">([^<>\"]*?)</span>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            filename = br.getRegex("title:\"([^<>\"]*?)\"").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
         final String filesize = br.getRegex(">大小：([^<>\"]*?)</li>").getMatch(0);
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings({ "deprecation", "unused" })
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         final String fuid = new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0);
@@ -65,17 +80,23 @@ public class MkxkCom extends PluginForHost {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
         }
         // player, download not possible without an account.. best I could do..
         br.getPage("/play/flash.php?id=" + fuid);
         final String m4a = br.getRegex("\"(https?://[\\w\\d]+\\.mkxk\\.com[^\"<>]+\\.m4a)\"").getMatch(0);
-        if (m4a == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (m4a == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, m4a, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
