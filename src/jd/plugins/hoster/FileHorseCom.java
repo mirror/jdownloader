@@ -83,7 +83,7 @@ public class FileHorseCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL() + "download/");
-        String dllink = br.getRegex("http\\-equiv=\"refresh\" content=\"\\d+; url=(http://[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("http-equiv=\"refresh\" content=\"\\d+; url=(http://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             Form d = br.getFormBySubmitvalue(Encoding.urlEncode("Download Now"));
             // NEW, recaptchav2
@@ -105,6 +105,9 @@ public class FileHorseCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
                 d.put("g-recaptcha-response", Encoding.urlEncode(responseToken));
+                br.submitForm(d);
+                dllink = br.getRegex("<a href=\"(https?://(\\w+\\.)?filehorse\\.com/download/file/[^\"]+)").getMatch(0);
+            } else {
                 br.submitForm(d);
                 dllink = br.getRegex("<a href=\"(https?://(\\w+\\.)?filehorse\\.com/download/file/[^\"]+)").getMatch(0);
             }
