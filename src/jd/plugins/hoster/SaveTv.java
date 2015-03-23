@@ -337,8 +337,12 @@ public class SaveTv extends PluginForHost {
         return filename;
     }
 
-    public static void parseFilenameInformation_site(final DownloadLink dl, final String source) {
-        final String site_title = correctData(getJson(source, "STITLE"));
+    public static void parseFilenameInformation_site(final DownloadLink dl, final String source) throws PluginException {
+        /*
+         * #NEVERHAPPEN1 site_title should never be null but in some very very rare cases this might happen but usually this happens with
+         * series - their episode-titles should be available then!
+         */
+        final String site_title = getJson(source, "STITLE");
         long datemilliseconds = 0;
 
         /* For series only */
@@ -368,6 +372,11 @@ public class SaveTv extends PluginForHost {
         datemilliseconds = TimeFormatter.getMilliSeconds(runtime_start, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN);
         final long site_runtime_minutes = (TimeFormatter.getMilliSeconds(runtime_end, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN) - datemilliseconds) / 1000 / 60;
         final String tv_station = getJson(source, "STVSTATIONNAME");
+
+        /* #NEVERHAPPEN1 This should NEVER happen */
+        if (site_title == null && episodename == null && episodenumber == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
         /* TODO: Add more/all numbers here, improve this! */
         if (category.equals("2")) {
@@ -417,13 +426,19 @@ public class SaveTv extends PluginForHost {
         }
 
         /* Add remaining basic information */
-        dl.setProperty("plainfilename", site_title);
+        if (site_title != null) {
+            dl.setProperty("plainfilename", correctData(site_title));
+        }
         dl.setProperty("originaldate", datemilliseconds);
         dl.setProperty("site_runtime_minutes", site_runtime_minutes);
     }
 
-    public static void parseFilenameInformation_api(final DownloadLink dl, final String source) {
-        final String site_title = correctData(new Regex(source, "<a:T>([^<>]*?)</a:T>").getMatch(0));
+    public static void parseFilenameInformation_api(final DownloadLink dl, final String source) throws PluginException {
+        /*
+         * #NEVERHAPPEN1 site_title should never be null but in some very very rare cases this might happen but usually this happens with
+         * series - their episode-titles should be available then!
+         */
+        final String site_title = new Regex(source, "<a:T>([^<>]*?)</a:T>").getMatch(0);
         long datemilliseconds = 0;
 
         /* For series only */
@@ -449,6 +464,11 @@ public class SaveTv extends PluginForHost {
         datemilliseconds = TimeFormatter.getMilliSeconds(runtime_start, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN);
         final long site_runtime_minutes = (TimeFormatter.getMilliSeconds(runtime_end, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN) - datemilliseconds) / 1000 / 60;
         final String tv_station = getJson(source, "STVSTATIONNAME");
+
+        /* #NEVERHAPPEN1 This should NEVER happen */
+        if (site_title == null && episodename == null && episodenumber == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
         /* TODO: Add more/all numbers here, improve this! */
         if (category.equals("2")) {
@@ -488,7 +508,9 @@ public class SaveTv extends PluginForHost {
         }
 
         /* Add remaining basic information */
-        dl.setProperty("plainfilename", site_title);
+        if (site_title != null) {
+            dl.setProperty("plainfilename", correctData(site_title));
+        }
         dl.setProperty("originaldate", datemilliseconds);
         dl.setProperty("site_runtime_minutes", site_runtime_minutes);
     }
@@ -1360,7 +1382,7 @@ public class SaveTv extends PluginForHost {
     @SuppressWarnings("deprecation")
     public static String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
         final SubConfiguration cfg = SubConfiguration.getConfig("save.tv");
-        final String customStringForEmptyTags = cfg.getStringProperty(CUSTOM_FILENAME_EMPTY_TAG_STRING, defaultCustomStringForEmptyTags);
+        final String customStringForEmptyTags = getCustomStringForEmptyTags();
         final String acc_username = cfg.getStringProperty("acc_username", customStringForEmptyTags);
 
         final String server_filename = downloadLink.getStringProperty("server_filename", customStringForEmptyTags);
@@ -1454,26 +1476,6 @@ public class SaveTv extends PluginForHost {
         return formattedFilename;
     }
 
-    /* Stable workaround */
-    public static long getLongProperty(final Property link, final String key, final long def) {
-        try {
-            return link.getLongProperty(key, def);
-        } catch (final Throwable e) {
-            try {
-                Object r = link.getProperty(key, def);
-                if (r instanceof String) {
-                    r = Long.parseLong((String) r);
-                } else if (r instanceof Integer) {
-                    r = ((Integer) r).longValue();
-                }
-                final Long ret = (Long) r;
-                return ret;
-            } catch (final Throwable e2) {
-                return def;
-            }
-        }
-    }
-
     /** Returns either the original server filename or one that is very similar to the original */
     @SuppressWarnings("deprecation")
     public static String getFakeOriginalFilename(final DownloadLink downloadLink) throws ParseException {
@@ -1510,7 +1512,7 @@ public class SaveTv extends PluginForHost {
             /* Server = already original filename - no need to 'fake' anything */
             formattedFilename += EXTENSION;
         } else {
-            final String title = convertNormalDataToServer(downloadLink.getStringProperty("plainfilename", null));
+            final String title = convertNormalDataToServer(downloadLink.getStringProperty("plainfilename", getCustomStringForEmptyTags()));
             String episodename = downloadLink.getStringProperty("episodename", null);
             final String episodenumber = getEpisodeNumber(downloadLink);
             formattedFilename = title + "_";
@@ -1546,7 +1548,7 @@ public class SaveTv extends PluginForHost {
             episodenumber = dl.getStringProperty("episodenumber", null);
         }
         if (episodenumber == null) {
-            return SubConfiguration.getConfig("save.tv").getStringProperty(CUSTOM_FILENAME_EMPTY_TAG_STRING, defaultCustomStringForEmptyTags);
+            return getCustomStringForEmptyTags();
         } else {
             return episodenumber;
         }
@@ -1557,8 +1559,7 @@ public class SaveTv extends PluginForHost {
      */
     @SuppressWarnings("deprecation")
     private static boolean isSeries(final DownloadLink dl) {
-        final SubConfiguration cfg = SubConfiguration.getConfig("save.tv");
-        final String customStringForEmptyTags = cfg.getStringProperty(CUSTOM_FILENAME_EMPTY_TAG_STRING, defaultCustomStringForEmptyTags);
+        final String customStringForEmptyTags = getCustomStringForEmptyTags();
         /* For series */
         final String episodename = dl.getStringProperty("episodename", customStringForEmptyTags);
         final String episodenumber = getEpisodeNumber(dl);
@@ -1571,6 +1572,17 @@ public class SaveTv extends PluginForHost {
 
         final boolean isSeries = (forceSeries || !belongsToCategoryMovie);
         return isSeries;
+    }
+
+    /**
+     * Returns the user-defined string to be used for empty filename-tags.Empty filename tag = needed data is not there (null) and
+     * CUSTOM_FILENAME_EMPTY_TAG_STRING will be used instead.
+     */
+    @SuppressWarnings("deprecation")
+    public static String getCustomStringForEmptyTags() {
+        final SubConfiguration cfg = SubConfiguration.getConfig("save.tv");
+        final String customStringForEmptyTags = cfg.getStringProperty(CUSTOM_FILENAME_EMPTY_TAG_STRING, defaultCustomStringForEmptyTags);
+        return customStringForEmptyTags;
     }
 
     /**
@@ -1612,6 +1624,26 @@ public class SaveTv extends PluginForHost {
             }
         }
         return parameter;
+    }
+
+    /* Stable workaround */
+    public static long getLongProperty(final Property link, final String key, final long def) {
+        try {
+            return link.getLongProperty(key, def);
+        } catch (final Throwable e) {
+            try {
+                Object r = link.getProperty(key, def);
+                if (r instanceof String) {
+                    r = Long.parseLong((String) r);
+                } else if (r instanceof Integer) {
+                    r = ((Integer) r).longValue();
+                }
+                final Long ret = (Long) r;
+                return ret;
+            } catch (final Throwable e2) {
+                return def;
+            }
+        }
     }
 
     /* Helps to get good looking custom filenames out of server filenames */
