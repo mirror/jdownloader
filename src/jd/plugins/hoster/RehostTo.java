@@ -291,6 +291,8 @@ public class RehostTo extends PluginForHost {
                 statusMessage = "No Traffic available for this host: " + error;
                 tempUnavailableHoster(account, downloadLink, 60 * 60 * 1000l);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if (error.equals("no_more_traffic")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Traffic exhausted", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
             if (statusMessage == null) {
                 statusMessage = "Unknown error code, please inform JDownloader Development Team";

@@ -32,10 +32,14 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 
 //rghost.ru by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rghost.ru" }, urls = { "http://(www\\.)?(((tr|pl)\\.)?rghost\\.net|rghost\\.ru|phonon\\.rghost\\.ru)/([A-Za-z0-9]+/private/[A-Za-z0-9]+|download/[0-9]+|users/[A-Za-z0-9\\-_]+/releases/[A-Za-z0-9\\-_]+/files/\\d+|[A-Za-z0-9]+(\\?key=[a-z0-9]+)?)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rghost.ru" }, urls = { "http://([a-z0-9]+\\.)?rghost\\.(?:net|ru)/.+" }, flags = { 0 })
 public class RGhostRu extends PluginForHost {
 
-    private static final String PWTEXT = "Password: <input id=\"password\" name=\"password\" type=\"password\"";
+    private static final String PWTEXT              = "id=\"password_field\"";
+
+    private static final String type_private_all    = "http://([a-z0-9]+\\.)?rghost\\.net/private/.+";
+    private static final String type_private_direct = "http://([a-z0-9]+\\.)?rghost\\.net/private/[A-Za-z0-9]+/[a-f0-9]{32}/.+";
+    private static final String type_normal_direct  = "http://([a-z0-9]+\\.)?rghost\\.net/[A-Za-z0-9]+/.+";
 
     public RGhostRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,8 +58,19 @@ public class RGhostRu extends PluginForHost {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("((tr|pl)\\.)rghost.net/", "rghost.net/"));
+        String newlink = link.getDownloadURL().replaceAll("((tr|pl)\\.)?rghost\\.(?:net|ru)/", "rghost.net/");
+        if (newlink.matches(type_private_direct) || (newlink.matches(type_normal_direct) && !newlink.matches(type_private_all))) {
+            /* Directlinks --> Change to normal links */
+            newlink = newlink.substring(0, newlink.lastIndexOf("/"));
+        } else {
+            /* Picture view-links */
+            if (newlink.endsWith(".view")) {
+                newlink = newlink.substring(0, newlink.lastIndexOf("."));
+            }
+        }
+        link.setUrlDownload(newlink);
     }
 
     @Override
@@ -65,13 +80,10 @@ public class RGhostRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server maintenance");
         }
         br.setFollowRedirects(false);
-        String dllink = br.getRegex("class=\"header_link\">.*?<a href=\"([^\"]*?/download/(private/)?\\d+.*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("<a href=\"([^\"]*?/download/(private/)?\\d+.*?)\"").getMatch(0);
-        }
+        String dllink = getDownloadlink();
         String passCode = null;
         if (dllink == null && br.containsHTML(PWTEXT)) {
-            Form pwform = br.getForm(2);
+            Form pwform = br.getFormbyKey("password");
             if (pwform == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -83,12 +95,19 @@ public class RGhostRu extends PluginForHost {
                 passCode = link.getStringProperty("pass", null);
             }
             pwform.put("password", passCode);
+            /* Correct some stuff */
+            pwform.remove("commit");
+            pwform.put("commit", "Get+link");
+            pwform.put("utf8", "%E2%9C%93");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+            br.getHeaders().put("Accept", "*/*;q=0.5, text/javascript, application/javascript, application/ecmascript, application/x-ecmascript");
+            // br.getHeaders().put("X-CSRF-Token", "");
             br.submitForm(pwform);
-            dllink = br.getRegex("class=\"header_link\">.*?<a href=\"([^\"]*?/download/\\d+.*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("<a href=\"([^\"]*?/download/\\d+.*?)\"").getMatch(0);
-            }
-            if (dllink == null) {
+            /* Correct html */
+            br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
+            dllink = getDownloadlink();
+            if (dllink == null && br.containsHTML(PWTEXT)) {
                 link.setProperty("pass", null);
                 logger.info("DownloadPW wrong!");
                 throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -112,12 +131,18 @@ public class RGhostRu extends PluginForHost {
         dl.startDownload();
     }
 
+    private String getDownloadlink() {
+        String dllink = br.getRegex("\"(http://rghost\\.net/download/[^<>\"]*?)\"").getMatch(0);
+        return dllink;
+    }
+
     private void offlineCheck() throws PluginException {
         if (br.containsHTML("(Access to the file (is|was) restricted|the action is prohibited, this is a private file and your key is incorrect|<title>404|File was deleted|>File is deleted<)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
