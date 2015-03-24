@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.CharacterCodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -582,14 +583,11 @@ public class LenfileCom extends PluginForHost {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
-                    dlForm = br.getFormbyProperty("name", "F1");
                     try {
                         invalidateLastChallengeResponse();
                     } catch (final Throwable e) {
                     }
-                    if (dlForm == null) {
-                        dlForm = dlFormManual();
-                    }
+                    dlForm = dlFormManual();
                     continue;
                 } else {
                     try {
@@ -627,14 +625,19 @@ public class LenfileCom extends PluginForHost {
 
     private Form dlFormManual() {
         Form dlForm = this.getFormByKey("op", "download2");
+        while (dlForm.hasInputFieldByName("id")) {
+            dlForm.remove("id");
+        }
         if (dlForm != null) {
             final String fc = dlForm.getHtmlCode().toString().replace("\\\"", "\"").replaceAll("<\\!\\-\\-.*?\\-\\->", "");
             final String[][] z = new Regex(fc, "<input[^>]+name=\"(\\w+)\"\\s+value=\"([a-z0-9]+)\"").getMatches();
             if (z != null) {
                 for (String[] f : z) {
-                    if (!dlForm.hasInputFieldByName(f[0])) {
-                        dlForm.put(f[0], Encoding.urlEncode(f[1]));
+                    if (f[0].equalsIgnoreCase("id") && !f[1].equalsIgnoreCase(fuid)) {
+                        continue;
                     }
+                    dlForm.put(Encoding.urlEncode(f[0]), Encoding.urlEncode(f[1]));
+
                 }
             }
         }
@@ -734,7 +737,8 @@ public class LenfileCom extends PluginForHost {
     }
 
     /* Removes HTML code which could break the plugin */
-    private void correctBR() throws NumberFormatException, PluginException {
+    private void correctBR() throws NumberFormatException, PluginException, CharacterCodingException {
+        br.getRequest().setHtmlCode(br.getRequest().getHtmlCode().replace("\\\"", "\""));
         correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
 
@@ -755,8 +759,7 @@ public class LenfileCom extends PluginForHost {
                 }
             }
         }
-        /* Replace escaped js stuff */
-        correctedBR = correctedBR.replace("\\", "");
+        correctedBR = correctedBR;
     }
 
     private String getDllink(final boolean finel) {
