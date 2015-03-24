@@ -628,9 +628,13 @@ public class LenfileCom extends PluginForHost {
     private Form dlFormManual() {
         Form dlForm = this.getFormByKey("op", "download2");
         if (dlForm != null) {
-            final String z = new Regex(dlForm.getHtmlCode().replace("\\\"", "\""), "<input[^>]+name=\"rand3\" value=\"([a-z0-9]+)\"").getMatch(0);
+            final String[][] z = new Regex(dlForm.getHtmlCode().replace("\\\"", "\""), "<input[^>]+name=\"(\\w+)\"\\s+value=\"([a-z0-9]+)\"").getMatches();
             if (z != null) {
-                dlForm.put("rand3", z);
+                for (String[] f : z) {
+                    if (!dlForm.hasInputFieldByName(f[0])) {
+                        dlForm.put(f[0], Encoding.urlEncode(f[1]));
+                    }
+                }
             }
         }
         if (dlForm == null) {
