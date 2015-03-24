@@ -1839,6 +1839,7 @@ skip_file=Hoppa över filen
 solver_types_all=alla
 solver_types_click=klick(mus)
 solver_types_text=text
+special_char_lib_loading_problem=Modulen %s2 fungerar inte som den ska.\nDet verkar vara ett problem med installationskatalogen för JDownloader.\nKontrollera att installationskatalogens namn inte innehåller några specialtecken.\nDin installationskatalog: %s1
 specialdeals_oboom_dialog_conditions=Om erbjudandet!
 specialdeals_oboom_dialog_email=Ange din e-postadress
 specialdeals_oboom_dialog_email_help=din e-postadress...
