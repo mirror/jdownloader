@@ -71,7 +71,7 @@ public class VikiPornCom extends PluginForHost {
         }
         String filename = br.getRegex("<div id=\"main\">[\t\n\r ]+<h2>([^<>]*?)</h2>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("class=\"block video\\-view\">[\t\n\r ]+<h2>([^<>]*?)</h2>").getMatch(0);
+            filename = br.getRegex("class=\"block video[a-z0-9\\- ]*?\">[\t\n\r ]+<h2>([^<>]*?)</h2>").getMatch(0);
         }
         if (filename == null) {
             filename = br.getRegex("<h2 style=\"[^>\"]*?\">([^<>]*?)</h2>").getMatch(0);
