@@ -188,13 +188,13 @@ public class DebridLinkFr extends PluginForHost {
                     dump(account);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (vT.containsHTML("name='user'>") && vT.containsHTML("name='password'>")) {
+                if (vT.hasInputFieldByName("user") && vT.hasInputFieldByName("password")) {
                     vT.put("sessidTime", "24");
                     vT.put("user", Encoding.urlEncode(account.getUser()));
                     vT.put("password", Encoding.urlEncode(account.getPass()));
                     vT.put("authorizedToken", "1");
                     br2.submitForm(vT);
-                    if (br2.containsHTML("La session à bien été activé. Vous pouvez utiliser l'application Jdownloader|The session has been activated\\. You can use the application Jdownloader")) {
+                    if (br2.containsHTML("<div class=\"alert alert-success\">[\\w\\.\\s]+</div>")) {
                         logger.info("success!!");
                     } else if (br2.containsHTML(">Password or username not valid<")) {
                         dump(account);
