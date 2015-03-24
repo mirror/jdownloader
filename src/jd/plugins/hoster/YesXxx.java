@@ -58,7 +58,7 @@ public class YesXxx extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains(">Requested video not exist") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML(">Requested video not ") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>]*?)\\- YES\\.XXX</title>").getMatch(0);

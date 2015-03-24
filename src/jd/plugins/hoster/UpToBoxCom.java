@@ -437,6 +437,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                 }
             }
         }
+        dllink = fixLinkSSL(dllink);
 
         return dllink;
     }
@@ -870,6 +871,7 @@ public class UpToBoxCom extends antiDDoSForHost {
         return link;
     }
 
+    @SuppressWarnings("deprecation")
     private static boolean checkSsl() {
         return SubConfiguration.getConfig("uptobox.com").getBooleanProperty(SSL_CONNECTION, false);
     }

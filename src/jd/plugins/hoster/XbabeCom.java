@@ -68,6 +68,9 @@ public class XbabeCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().contains("404.php") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.containsHTML("class=\"block_player\"")) {
+            /* No videolink */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("class=\"video_info\">[\t\n\r ]+<h2>([^<>]*?)</h2>").getMatch(0);
         if (filename == null) {
