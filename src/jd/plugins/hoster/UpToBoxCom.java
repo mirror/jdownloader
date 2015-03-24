@@ -437,6 +437,10 @@ public class UpToBoxCom extends antiDDoSForHost {
                 }
             }
         }
+        /*
+         * Special: Usually it is a bad idea to change the protocol of final downloadlinks but in this case it is fine plus this helps to
+         * avoid gouvernment/ISP blocks!
+         */
         dllink = fixLinkSSL(dllink);
 
         return dllink;
