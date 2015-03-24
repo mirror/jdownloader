@@ -20,6 +20,7 @@ DataCompareDialog_layoutDialogContent_webinterface=Router webb gränssnitt
 DataCompareDialog_layoutDialogContent_webinterface_desc=För att göra en återuppkoppling, behöver JDownloader routerns inloggningsuppgifter.\n\nOfta hittar du inloggningsuppgiterna på baksidan av din router.\n\nOm du inte känner till dessa fråga din Nätverksaministratör
 DataCompareDialog_open_webinterface=Öppna Webbinterface
 EditScriptAction_EditScriptAction_=Redigera skript
+EditScriptAction_EditScriptAction_add=Nytt skript
 EditScriptAction_EditScriptAction_tt=Ange ett eget Återuppkopplingsskript, eller modifera ett existerande.
 GetIPAction_GetIPAction_=Hämta Router IP
 GetIPAction_GetIPAction_tt=Hämta Router IP
