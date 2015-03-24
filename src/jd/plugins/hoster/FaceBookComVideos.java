@@ -48,6 +48,8 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.storage.simplejson.JSonUtils;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(www\\.)?facebookdecrypted\\.com/(video\\.php\\?v=|photo\\.php\\?fbid=|download/)\\d+" }, flags = { 2 })
 public class FaceBookComVideos extends PluginForHost {
 
@@ -339,7 +341,7 @@ public class FaceBookComVideos extends PluginForHost {
             }
             DLLINK = Encoding.urlDecode(decodeUnicode(DLLINK), true);
             DLLINK = Encoding.htmlDecode(DLLINK);
-            DLLINK = DLLINK.replace("\\", "");
+            DLLINK = JSonUtils.unescape(DLLINK);
             if (DLLINK == null) {
                 logger.warning("Final downloadlink (dllink) is null");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
