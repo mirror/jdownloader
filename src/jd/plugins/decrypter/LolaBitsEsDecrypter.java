@@ -39,6 +39,7 @@ public class LolaBitsEsDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -141,14 +142,18 @@ public class LolaBitsEsDecrypter extends PluginForDecrypt {
                 if (filename == null || filename.equals("")) {
                     filename = finfo.getMatch(0);
                 }
-                final String ext = finfo.getMatch(1);
+                String ext = finfo.getMatch(1);
                 String filesize = new Regex(lnkinfo, "(\\d+(,\\d+)? (B|KB|MB|GB))([\t\n\r ]+)?<").getMatch(0);
                 if (fid == null || filename == null || ext == null || filesize == null || contenturl == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
                 filesize = Encoding.htmlDecode(filesize).trim();
-                filename = Encoding.htmlDecode(filename).trim() + Encoding.htmlDecode(ext).trim();
+                filename = Encoding.htmlDecode(filename).trim();
+                ext = Encoding.htmlDecode(ext).trim();
+                if (!filename.endsWith(ext)) {
+                    filename += ext;
+                }
                 contenturl = "http://lolabits.es" + contenturl;
 
                 final DownloadLink dl = createDownloadlink("http://lolabitsdecrypted.es/" + System.currentTimeMillis() + new Random().nextInt(1000000));

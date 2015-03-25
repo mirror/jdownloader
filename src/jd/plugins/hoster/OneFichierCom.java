@@ -256,7 +256,7 @@ public class OneFichierCom extends PluginForHost {
             }
             br.setFollowRedirects(false);
 
-            errorHandling(downloadLink, br, true);
+            errorHandling(downloadLink, br);
             if (pwProtected) {
                 handlePassword();
                 dllink = br.getRedirectLocation();
@@ -278,7 +278,7 @@ public class OneFichierCom extends PluginForHost {
                 sleep(2000, downloadLink);
                 // br2.submitForm(a1);
                 br2.postPageRaw(br.getURL(), "");
-                errorHandling(downloadLink, br2, true);
+                errorHandling(downloadLink, br2);
                 dllink = br2.getRedirectLocation();
                 if (dllink == null) {
                     sleep(2000, downloadLink);
@@ -290,7 +290,7 @@ public class OneFichierCom extends PluginForHost {
                     br3.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
                     sleep(2000, downloadLink);
                     br3.submitForm(a2);
-                    errorHandling(downloadLink, br3, true);
+                    errorHandling(downloadLink, br3);
                     if (dllink == null) {
                         dllink = br3.getRedirectLocation();
                     }
@@ -317,23 +317,27 @@ public class OneFichierCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            errorHandling(downloadLink, this.br, true);
+            errorHandling(downloadLink, this.br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty(PROPERTY_FREELINK, dllink);
         dl.startDownload();
     }
 
-    private void errorHandling(final DownloadLink downloadLink, final Browser ibr, final boolean checkAll) throws Exception {
-        if (br.getHttpConnection().getResponseCode() == 403) {
+    private void errorHandling(final DownloadLink downloadLink, final Browser ibr) throws Exception {
+        long responsecode = 200;
+        if (ibr.getHttpConnection() != null) {
+            responsecode = ibr.getHttpConnection().getResponseCode();
+        }
+        if (responsecode == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 15 * 60 * 1000l);
-        } else if (ibr.getHttpConnection().getResponseCode() == 404) {
+        } else if (responsecode == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
         } else if (ibr.containsHTML(">Software error:<")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Software error'", 10 * 60 * 1000l);
-        } else if (br.containsHTML(">Connexion à la base de données impossible<")) {
+        } else if (ibr.containsHTML(">Connexion à la base de données impossible<|>Can\\'t connect DB")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Internal database error", 5 * 60 * 1000l);
-        } else if (br.containsHTML(">Votre adresse IP ouvre trop de connexions vers le serveur")) {
+        } else if (ibr.containsHTML(">Votre adresse IP ouvre trop de connexions vers le serveur")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many connections - wait before starting new downloads", 3 * 60 * 1000l);
         }
         errorIpBlockedHandling(ibr);
@@ -648,7 +652,7 @@ public class OneFichierCom extends PluginForHost {
                     }
                     logger.warning("The final dllink seems not to be a file!");
                     br.followConnection();
-                    errorHandling(link, this.br, false);
+                    errorHandling(link, this.br);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 link.setProperty(PROPERTY_PREMLINK, dllink);
