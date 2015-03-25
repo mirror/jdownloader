@@ -38,9 +38,14 @@ public class EbkHellTo extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML(">Es existiert kein Eintrag mit der ID")) {
+        if (br.containsHTML(">Es existiert kein Eintrag mit der ID") || br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);
+            try {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+            } catch (final Throwable e) {
+            }
             return decryptedLinks;
         }
         final String fpName = br.getRegex("<title>Ebook\\-Hell\\.to \\-([^<>\"]*?)</title>").getMatch(0);
@@ -49,8 +54,9 @@ public class EbkHellTo extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (final String singleLink : links)
+        for (final String singleLink : links) {
             decryptedLinks.add(createDownloadlink(singleLink));
+        }
 
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
@@ -59,5 +65,4 @@ public class EbkHellTo extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
 }

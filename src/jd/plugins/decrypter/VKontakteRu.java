@@ -48,6 +48,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(www\\.)?(vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc|picturelink|audiolink|videolink).+" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt {
 
@@ -122,6 +124,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_CLUB_LINK                       = "https?://(www\\.)?vk\\.com/club\\d+";
     private static final String     PATTERN_EVENT_LINK                      = "https?://(www\\.)?vk\\.com/event\\d+";
     private static final String     PATTERN_ID_LINK                         = "https?://(www\\.)?vk\\.com/id\\d+";
+    private static final String     PATTERN_DOCS                            = "https?://(www\\.)?vk\\.com/docs\\?oid=\\-\\d+";
 
     /* Some html text patterns: English, Russian, German, Polish */
     public static final String      TEMPORARILYBLOCKED                      = "You tried to load the same page more than once in one second|Вы попытались загрузить более одной однотипной страницы в секунду|Pr\\&#243;bujesz za\\&#322;adowa\\&#263; wi\\&#281;cej ni\\&#380; jedn\\&#261; stron\\&#281; w ci\\&#261;gu sekundy|Sie haben versucht die Seite mehrfach innerhalb einer Sekunde zu laden";
@@ -361,6 +364,8 @@ public class VKontakteRu extends PluginForDecrypt {
                     if (decryptedLinks.size() == 0) {
                         logger.info("Check your plugin settings -> They affect the results!");
                     }
+                } else if (this.CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_DOCS)) {
+                    decryptDocs();
                 } else {
                     /*
                      * Unsupported link --> Should never happen -> Errorhandling -> Either link offline or plugin broken
@@ -403,7 +408,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /** Checks if the type of a link is clear, meaning we're sure we have no vk.com/username link if this is returns true. */
     private boolean isKnownType() {
-        final boolean isKnown = CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_MODULE) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUMS) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_PAGE) || isSingeVideo(CRYPTEDLINK_ORIGINAL) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_WALL_LINK) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_AUDIO) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_COMMUNITY_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_WALL_POST_LINK) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_MODULE) || this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_PAGE_oid);
+        final boolean isKnown = CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_MODULE) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUMS) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_PAGE) || isSingeVideo(CRYPTEDLINK_ORIGINAL) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_WALL_LINK) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_AUDIO) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_COMMUNITY_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_WALL_POST_LINK) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_MODULE) || this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_PAGE_oid) || this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_DOCS);
         return isKnown;
     }
 
@@ -1226,7 +1231,7 @@ public class VKontakteRu extends PluginForDecrypt {
         }
     }
 
-    /** Decrypts media of single API wall-post json objects */
+    /** Decrypts media of single API wall-post json objects. */
     @SuppressWarnings({ "deprecation", "unchecked" })
     private void decryptWallPost(final String wall_ID, final Map<String, Object> entry, FilePackage fp) throws IOException {
         final long id = ((Number) entry.get("id")).longValue();
@@ -1409,6 +1414,53 @@ public class VKontakteRu extends PluginForDecrypt {
         return;
     }
 
+    /**
+     * NOT Using API
+     *
+     * @throws Exception
+     */
+    @SuppressWarnings("deprecation")
+    private void decryptDocs() throws Exception {
+        this.getPageSafe(this.CRYPTEDLINK_FUNCTIONAL);
+        if (br.containsHTML("Unfortunately, you are not a member of this group and cannot view its documents")) {
+            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+        }
+        // if (false) {
+        // throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+        // }
+        final String owner_ID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "((?:\\-)?\\d+)$").getMatch(0);
+        final String alldocs = br.getRegex("cur\\.docs = \\[(.*?)\\];").getMatch(0);
+        final String[] docs = alldocs.split("\\],\\[");
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(owner_ID);
+        for (final String docinfo : docs) {
+            final String[] stringdata = new Regex(docinfo, "\\'([^<>\"\\']*?)\\'").getColumn(0);
+            final String filesize = new Regex(docinfo, "(\\d{1,3} (?:kB|MB|GB))").getMatch(0);
+            if (stringdata == null || stringdata.length < 2 || filesize == null) {
+                this.decryptedLinks = null;
+                return;
+            }
+            final String filename = stringdata[1];
+            final String content_ID = new Regex(docinfo, "^(?:\\[)?(\\d+)").getMatch(0);
+            final DownloadLink dl = getSinglePhotoDownloadLink("https://vk.com/doc" + owner_ID + "_" + content_ID);
+            try {
+                dl.setContentUrl(CRYPTEDLINK_FUNCTIONAL);
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 stable */
+            }
+            dl.setBrowserUrl(CRYPTEDLINK_FUNCTIONAL);
+
+            dl.setName(Encoding.htmlDecode(filename));
+            dl.setDownloadSize(SizeFormatter.getSize(filesize));
+
+            dl.setProperty("owner_id", owner_ID);
+            dl.setProperty("content_id", content_ID);
+            fp.add(dl);
+            decryptedLinks.add(dl);
+        }
+        return;
+    }
+
     /** NOT using API - general method --> NEVER change a running system! */
     private ArrayList<String> decryptMultiplePages(final String type, final String numberOfEntries, final String[][] regexesPageOne, final String[][] regexesAllOthers, int offset, int increase, int alreadyOnPage, final String postPage, final String postData) throws Exception {
         ArrayList<String> decryptedData = new ArrayList<String>();
@@ -1547,7 +1599,10 @@ public class VKontakteRu extends PluginForDecrypt {
         return decryptedData;
     }
 
-    // Handle all kinds of stuff that disturbs the downloadflow
+    /**
+     * Handles all kinds of stuff that disturbs the crawl-/downloadflow. Such as refreshing login cookies or handling additional account
+     * security checks.
+     */
     private void getPageSafe(final String parameter) throws Exception {
         // If our current url is already the one we want to access here, don't access it!
         for (int i = 1; i <= 3; i++) {

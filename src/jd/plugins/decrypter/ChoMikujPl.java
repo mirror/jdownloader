@@ -102,6 +102,8 @@ public class ChoMikujPl extends PluginForDecrypt {
             String tempExt = null;
             if (linkending.contains(".")) {
                 tempExt = linkending.substring(linkending.lastIndexOf("."));
+                /* Be sure to get a correct ending - exclude any other html-encoded stuff. */
+                tempExt = new Regex(tempExt, "^(\\.[A-Za-z0-9]+)").getMatch(0);
             }
             final boolean isLinkendingWithoutID = (!linkending.contains(",") && tempExt != null && new Regex(tempExt, Pattern.compile(ENDINGS, Pattern.CASE_INSENSITIVE & Pattern.CANON_EQ)).matches());
             if (new Regex(linkending, Pattern.compile("\\d+\\.[A-Za-z0-9]{1,5}", Pattern.CASE_INSENSITIVE)).matches() || isLinkendingWithoutID) {
@@ -142,7 +144,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                 // if the single link was not a folder then handle this file
                 if (!folderCheck) {
                     final DownloadLink dl = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
-                    final Regex info = new Regex(parameter, "/([^<>\"/]*?),(\\d+)(\\..+)$");
+                    final Regex info = new Regex(parameter, "/([^<>\"/]*?),(\\d+)(\\.[A-Za-z0-9]+).*?$");
                     String filename = Encoding.htmlDecode(info.getMatch(0)) + info.getMatch(2);
                     if (filename.equals("nullnull")) {
                         filename = parameter.substring(parameter.lastIndexOf("/") + 1);

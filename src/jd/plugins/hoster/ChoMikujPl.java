@@ -58,6 +58,7 @@ public class ChoMikujPl extends PluginForHost {
     private static final String ACCESSDENIED        = "Nie masz w tej chwili uprawnień do tego pliku lub dostęp do niego nie jest w tej chwili możliwy z innych powodów.";
     private static final String MAINPAGE            = "http://chomikuj.pl/";
     // private static final String FILEIDREGEX = "\\&id=(.*?)\\&";
+    private final String        AUDIOENDINGS        = "\\.(mp3)";
     private boolean             videolink           = false;
     private static Object       LOCK                = new Object();
     public static final String  DECRYPTFOLDERS      = "DECRYPTFOLDERS";
@@ -527,7 +528,7 @@ public class ChoMikujPl extends PluginForHost {
     /**
      * This allows backward compatibility for design flaw in setHtmlCode(), It injects updated html into all browsers that share the same
      * request id. This is needed as request.cloneRequest() was never fully implemented like browser.cloneBrowser().
-     * 
+     *
      * @param ibr
      *            Import Browser
      * @param t
