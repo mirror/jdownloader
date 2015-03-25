@@ -152,7 +152,9 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
     @Override
     public void closeConnection() {
         try {
-            getOutputStream(true).close();
+            if (!clientSocket.isClosed()) {
+                getOutputStream(true).close();
+            }
         } catch (final Throwable nothing) {
             nothing.printStackTrace();
         }
@@ -233,10 +235,10 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
                     this.os = new OutputStream() {
                         private ChunkedOutputStream chunkedOS = new ChunkedOutputStream(new BufferedOutputStream(clientSocket.getOutputStream(), 16384));
                         Base64OutputStream          b64os     = new Base64OutputStream(chunkedOS) {
-                                                                  // public void close() throws IOException {
-                                                                  // };
+                            // public void close() throws IOException {
+                            // };
 
-                                                              };
+                        };
                         OutputStream                outos     = new CipherOutputStream(b64os, cipher);
 
                         {

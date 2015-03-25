@@ -28,10 +28,12 @@ public interface FavIconsConfig extends ConfigInterface {
     void setThreadKeepAlive(int i);
 
     @DefaultLongValue(0)
+    @AboutConfig
     long getLastRefresh();
 
     void setLastRefresh(long t);
 
+    @AboutConfig
     ArrayList<String> getFailedHosts();
 
     void setFailedHosts(ArrayList<String> hosts);

@@ -110,7 +110,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         MyJDownloaderSettings set = JsonConfig.create(MyJDownloaderSettings.class);
         JSonObject obj = new JSonObject();
         obj.put("version", new JSonValue(JDUtilities.getRevision()));
-        obj.put("deviceId", new JSonValue(set.getUniqueDeviceID()));
+        obj.put("deviceId", new JSonValue(set.getUniqueDeviceIDV2()));
         obj.put("name", new JSonValue(set.getDeviceName()));
         writeString(response, null, obj.toString(), false);
     }
