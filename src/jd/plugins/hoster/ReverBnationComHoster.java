@@ -17,10 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.logging.Level;
-
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -39,6 +35,8 @@ public class ReverBnationComHoster extends PluginForHost {
         super(wrapper);
     }
 
+    private String PASS = null;
+
     @Override
     public String getAGBLink() {
         return "http://www.reverbnation.com/main/terms_and_conditions";
@@ -51,12 +49,26 @@ public class ReverBnationComHoster extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         setBrowserExclusive();
+        /* Errorhandling for crippled/old links */
+        if (getMainlink(link) == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        br.getPage(getMainlink(link));
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        PASS = br.getRegex("pass: \"([a-z0-9]+)\"").getMatch(0);
+        if (PASS == null) {
+            logger.warning("Pass is null");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.setDebug(true);
         br.setFollowRedirects(false);
         // alternative Downloadmethode
@@ -67,7 +79,9 @@ public class ReverBnationComHoster extends PluginForHost {
         if (dllink == null) {
             dllink = getDllink(downloadLink);
         }
-        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -75,7 +89,9 @@ public class ReverBnationComHoster extends PluginForHost {
         }
         // Probably no correct file
         if (dl.getConnection().getLongContentLength() < 40000) {
-            if (downloadLink.getBooleanProperty("downloadstream")) throw new PluginException(LinkStatus.ERROR_FATAL, "This song is not downloadable");
+            if (downloadLink.getBooleanProperty("downloadstream")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This song is not downloadable");
+            }
             downloadLink.setProperty("downloadstream", true);
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
@@ -87,58 +103,71 @@ public class ReverBnationComHoster extends PluginForHost {
             if ("flash9-en.ocx".equals(name)) {
                 /* workaround for dirty name */
                 String orgName = downloadLink.getStringProperty("orgName", null);
-                if (orgName != null) downloadLink.setFinalFileName(orgName);
+                if (orgName != null) {
+                    downloadLink.setFinalFileName(orgName);
+                }
             }
         }
         dl.startDownload();
     }
 
-    private String getBps(final String crap, final String sID) throws PluginException {
-        /*
-         * Ich habe es mit BigInteger versucht!
-         */
-        final String tk = new Regex(crap, "tk=(\\d+)").getMatch(0);
-        final String rk = new Regex(crap, "rk=(\\d+)").getMatch(0);
-        final String keyCode = "1103515245";
-        final String constantKey = "12345";
-        final String binRate = "1.000000E+015";
-        Object result = new Object();
-        final String fun = "(" + rk + "+" + tk + "*" + sID + "*" + keyCode + "+" + constantKey + ")%" + binRate;
-        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
-        final ScriptEngine engine = manager.getEngineByName("javascript");
-        try {
-            result = ((Double) engine.eval(fun)).longValue();
-        } catch (final Exception e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        return result.toString();
-    }
+    // private String getBps(final String crap, final String sID) throws PluginException {
+    // /*
+    // * Ich habe es mit BigInteger versucht!
+    // */
+    // final String tk = new Regex(crap, "tk=(\\d+)").getMatch(0);
+    // final String rk = new Regex(crap, "rk=(\\d+)").getMatch(0);
+    // final String keyCode = "1103515245";
+    // final String constantKey = "12345";
+    // final String binRate = "1.000000E+015";
+    // Object result = new Object();
+    // final String fun = "(" + rk + "+" + tk + "*" + sID + "*" + keyCode + "+" + constantKey + ")%" + binRate;
+    // final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+    // final ScriptEngine engine = manager.getEngineByName("javascript");
+    // try {
+    // result = ((Double) engine.eval(fun)).longValue();
+    // } catch (final Exception e) {
+    // logger.log(Level.SEVERE, e.getMessage(), e);
+    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    // }
+    // return result.toString();
+    // }
 
+    @SuppressWarnings("deprecation")
     private String getDllink(final DownloadLink link) throws IOException, PluginException {
         String finallink = null;
         final Regex infoRegex = new Regex(link.getDownloadURL(), "reverbnationcomid(\\d+)reverbnationcomartist(\\d+)");
+        final String song_id = infoRegex.getMatch(0);
+        final String artist_id = infoRegex.getMatch(1);
         if (link.getBooleanProperty("downloadstream")) {
             br.getPage(link.getDownloadURL());
             final String pass = br.getRegex("pass: \"([a-z0-9]+)\"").getMatch(0);
-            if (pass == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            br.getPage("http://www.reverbnation.com/audio_player/html_player_stream/" + pass + "?client=234s3rwas&song_id=" + infoRegex.getMatch(0));
+            if (pass == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage("http://www.reverbnation.com/audio_player/html_player_stream/" + pass + "?client=234s3rwas&song_id=" + song_id);
             finallink = br.getRedirectLocation();
         } else {
-            br.postPage("http://www.reverbnation.com/audio_player/add_to_beginning/" + infoRegex.getMatch(0) + "?from_page_object=artist_" + infoRegex.getMatch(1), "");
-            final String damnString = br.getRegex("from_page_object=(String_)?-?(.*?)\\\\\"").getMatch(1);
-            if (damnString == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            // folgender Request macht unten den redirect
-            br.postPage("http://www.reverbnation.com/audio_player/set_now_playing_index/0", "");
-            br.getPage("http://www.reverbnation.com/controller/audio_player/get_tk");
-            final String crap = br.toString().trim();
-            if (crap.length() > 300) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            // bps berechnen
-            final String bps = getBps(crap, infoRegex.getMatch(0));
-            br.getPage("http://www.reverbnation.com/controller/audio_player/liby/_" + infoRegex.getMatch(0) + "?from_page_object=String_-" + damnString + "&" + crap + "&bps=" + bps);
-            // http://www.reverbnation.com/audio_player/html_player_stream/fa0c9265ab882df20aa0faf6920745ca?client=234s3rwas&song_id=10525727
+            /*
+             * Last revision with old handling: 25939 Modified date: 25.03.2015
+             */
+            final String song_cookie = PASS + "song-" + song_id;
+            br.setCookie(br.getURL(), "_reverb_currentsong", song_cookie);
+            br.getPage("http://www.reverbnation.com/controller/audio_player/get_xml/?player=InlineAudioPlayer");
+            // br.getHeaders().put("X-CSRF-Token", "xxxxxxxkIobXmDTc=");
+            br.getHeaders().put("X-RN-FRAMEWORK-VERSION", "R4.1.003");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.getHeaders().put("Referer", "http://www.reverbnation.com/neoclubber/songs");
+            br.getHeaders().put("Accept", "*/*");
+            br.postPage("http://www.reverbnation.com/audio_player/add_to_beginning/" + song_id + "?from_page_object=artist_" + artist_id, "");
+            br.getPage("http://www.reverbnation.com/audio_player/html_player_stream/" + PASS + "?client=234s3rwas&song_id=" + song_id);
             finallink = br.getRedirectLocation();
-            if (finallink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (finallink == null) {
+                finallink = br.getRegex("location\\.href = (?:\\'|\")(http://[^<>\"]*?)(?:\\'|\")").getMatch(0);
+            }
+            if (finallink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             // wichtige Header
             br.getHeaders().put("Referer", "http://cache.reverbnation.com/audio_player/inline_audioplayer_v2xx.swf?4037");
             br.getHeaders().put("x-flash-version", "10,1,53,64");
@@ -150,6 +179,10 @@ public class ReverBnationComHoster extends PluginForHost {
             br.getHeaders().put("Connection", "Keep-Alive");
         }
         return finallink;
+    }
+
+    private String getMainlink(final DownloadLink dl) {
+        return dl.getStringProperty("mainlink", null);
     }
 
     @Override

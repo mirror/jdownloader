@@ -39,6 +39,7 @@ public class ReverBnationCom extends PluginForDecrypt {
     private static final String PLAYLISTLINK = "http://(www\\.)?reverbnation\\.com/playlist/view_playlist/[0-9\\-]+\\?page_object=artist_\\d+";
     private static final String INVALIDLINKS = "http://(www\\.)?reverbnation\\.com/(facebook_channel|main|mailto|user|promoter\\-promotion|fan\\-promotion|venue\\-promotion|label\\-promotion|javascript:|signup|appending|head|css|images|data:|band\\-promotion|static|https|press_releases|widgets|controller|yourboitc)";
 
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -69,7 +70,9 @@ public class ReverBnationCom extends PluginForDecrypt {
             }
         } else if (parameter.matches("http://(www\\.)?reverbnation\\.com/(play_now/song_\\d+|open_graph/song/\\d+|[A-Za-z0-9\\-_]+/song/\\d+)")) {
             final String fileID = new Regex(parameter, "(\\d+)$").getMatch(0);
-            if (parameter.matches("http://(www\\.)?reverbnation\\.com/open_graph/song/\\d+")) parameter = parameter.replace("open_graph/song/", "play_now/song_");
+            if (parameter.matches("http://(www\\.)?reverbnation\\.com/open_graph/song/\\d+")) {
+                parameter = parameter.replace("open_graph/song/", "play_now/song_");
+            }
             br.getPage(parameter);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 logger.info("Link offline: " + parameter);
@@ -78,7 +81,9 @@ public class ReverBnationCom extends PluginForDecrypt {
             String artistID = br.getRegex("onclick=\"playSongNow\\(\\'all_artist_songs_(\\d+)\\'\\)").getMatch(0);
             if (artistID == null) {
                 artistID = br.getRegex("\\(\\'all_artist_songs_(\\d+)\\'\\)").getMatch(0);
-                if (artistID == null) artistID = br.getRegex("artist/artist_songs/(\\d+)\\?").getMatch(0);
+                if (artistID == null) {
+                    artistID = br.getRegex("artist/artist_songs/(\\d+)\\?").getMatch(0);
+                }
             }
             String filename = br.getRegex("data\\-song\\-id=\"" + fileID + "\" title=\"Play \\&quot;([^<>\"]*?)\\&quot;\"").getMatch(0);
             if (artistID == null || filename == null) {
@@ -87,10 +92,11 @@ public class ReverBnationCom extends PluginForDecrypt {
             }
             filename = Encoding.htmlDecode(filename.trim());
             final DownloadLink dlLink = createDownloadlink("http://reverbnationcomid" + fileID + "reverbnationcomartist" + artistID);
-            if (filename.contains(".mp3"))
+            if (filename.contains(".mp3")) {
                 dlLink.setName(filename);
-            else
+            } else {
                 dlLink.setName(filename + ".mp3");
+            }
             dlLink.setProperty("orgName", dlLink.getName());
             decryptedLinks.add(dlLink);
         } else if (parameter.matches("http://(www\\.)?reverbnation\\.com/(artist/artist_songs/\\d+|open_graph/song/\\d+|artist/downloads/\\d+|[^<>\"/]+)") || parameter.matches(PLAYLISTLINK)) {
@@ -106,16 +112,19 @@ public class ReverBnationCom extends PluginForDecrypt {
                 fpName = getFpname();
                 allInfo = br.getRegex("production_public/Artist/(\\d+)/image/thumb/[a-z0-9_\\-]+\\.jpg\" /><a href=\"#\" class=\"size_48  standard_play_button song\\-action play\" data\\-song\\-id=\"(\\d+)\" title=\"Play &quot;([^<>\"]*?)&quot;\"").getMatches();
             } else {
+                if (!parameter.endsWith("/songs")) {
+                    parameter += "/songs";
+                }
                 br.getPage(parameter);
                 if (br.containsHTML(">Page Not Found<")) {
                     logger.info("Link offline/invalid: " + parameter);
                     return decryptedLinks;
                 }
-                if (br.containsHTML("rel=\"nofollow\" title=\"Listen to") || !br.containsHTML("<div class=\"profile_section_container profile_songs\">")) {
+                if (br.containsHTML("rel=\"nofollow\" title=\"Listen to") || !br.containsHTML("class=\"artist_name\"")) {
                     logger.info("No content to decrypt: " + parameter);
                     return decryptedLinks;
                 }
-                fpName = br.getRegex("<h1 class=\"profile_user_name\">([^<>\"]*?)</h1>").getMatch(0);
+                fpName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
                 final String showAllSongs = br.getRegex("<a href=\"([^<>\"]+/songs)\" class=\"standard_well see_more\">All Songs</a>").getMatch(0);
                 if (showAllSongs != null) {
                     br.getPage("http://www.reverbnation.com" + showAllSongs);
@@ -125,7 +134,7 @@ public class ReverBnationCom extends PluginForDecrypt {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                allInfo = br.getRegex("data\\-song\\-id=\"(\\d+)\" title=\"Play \\&quot;([^<>\"]*?)\\&quot;\"").getMatches();
+                allInfo = br.getRegex("data\\-song\\-id=\"(\\d+)\" title=\"Play (?:\\&quot;)?([^<>\"]*?)(?:\\&quot;)?\"").getMatches();
             }
             if (allInfo == null || allInfo.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -143,12 +152,22 @@ public class ReverBnationCom extends PluginForDecrypt {
                     songID = singleInfo[1];
                     name = Encoding.htmlDecode(singleInfo[2]);
                 }
+                final String content_url = "http://www.reverbnation.com/controller/audio_player/download_song/" + songID + "?modal=true";
                 final DownloadLink dlLink = createDownloadlink("http://reverbnationcomid" + songID + "reverbnationcomartist" + artistsID);
-                if (name.contains(".mp3"))
+                if (name.contains(".mp3")) {
                     dlLink.setName(name);
-                else
+                } else {
                     dlLink.setName(name + ".mp3");
+                }
+                try {
+                    dlLink.setContentUrl(content_url);
+                } catch (final Throwable e) {
+                    /* Not available in old 0.9.581 Stable */
+                    dlLink.setBrowserUrl(content_url);
+                }
                 dlLink.setProperty("orgName", dlLink.getName());
+                dlLink.setProperty("mainlink", parameter);
+                dlLink.setAvailable(true);
                 decryptedLinks.add(dlLink);
             }
 

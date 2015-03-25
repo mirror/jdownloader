@@ -58,7 +58,6 @@ public class ChoMikujPl extends PluginForHost {
     private static final String ACCESSDENIED        = "Nie masz w tej chwili uprawnień do tego pliku lub dostęp do niego nie jest w tej chwili możliwy z innych powodów.";
     private static final String MAINPAGE            = "http://chomikuj.pl/";
     // private static final String FILEIDREGEX = "\\&id=(.*?)\\&";
-    private final String        AUDIOENDINGS        = "\\.(mp3)";
     private boolean             videolink           = false;
     private static Object       LOCK                = new Object();
     public static final String  DECRYPTFOLDERS      = "DECRYPTFOLDERS";
@@ -254,6 +253,7 @@ public class ChoMikujPl extends PluginForHost {
         return true;
     }
 
+    @SuppressWarnings("deprecation")
     public boolean getDllink_premium(final DownloadLink theLink, final Browser br, final boolean premium) throws Exception {
         final boolean redirectsSetting = br.isFollowingRedirects();
         br.setFollowRedirects(false);
@@ -328,6 +328,9 @@ public class ChoMikujPl extends PluginForHost {
         if (DLLINK != null) {
             DLLINK = unescape(DLLINK);
             DLLINK = Encoding.htmlDecode(DLLINK);
+            if (DLLINK.contains("#SliderTransfer")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Traffic limit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
         }
         br.setFollowRedirects(redirectsSetting);
         return true;

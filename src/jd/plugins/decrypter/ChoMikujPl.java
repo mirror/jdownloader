@@ -102,7 +102,7 @@ public class ChoMikujPl extends PluginForDecrypt {
             String tempExt = null;
             if (linkending.contains(".")) {
                 tempExt = linkending.substring(linkending.lastIndexOf("."));
-                /* Be sure to get a correct ending - exclude any other html-encoded stuff. */
+                /* Be sure to get a correct ending - exclude any other html-encoded stuff. This might reset it to null but that's fine. */
                 tempExt = new Regex(tempExt, "^(\\.[A-Za-z0-9]+)").getMatch(0);
             }
             final boolean isLinkendingWithoutID = (!linkending.contains(",") && tempExt != null && new Regex(tempExt, Pattern.compile(ENDINGS, Pattern.CASE_INSENSITIVE & Pattern.CANON_EQ)).matches());

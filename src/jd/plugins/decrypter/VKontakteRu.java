@@ -159,15 +159,15 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /* General errorhandling language implementation: English | Rus | Polish */
     /*
-     * Information: General linkstructure: vk.com/ownerID_contentID --> ownerID is always positive for users, negative for communities (also
-     * groups??)
+     * Information: General linkstructure: vk.com/ownerID_contentID --> ownerID is always positive for users, negative for communities and
+     * groups.
      */
     @SuppressWarnings({ "deprecation", "serial" })
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        CRYPTEDLINK_ORIGINAL = param.toString();
-        CRYPTEDLINK = param;
-        decryptedLinks = new ArrayList<DownloadLink>() {
+        this.CRYPTEDLINK_ORIGINAL = param.toString();
+        this.CRYPTEDLINK = param;
+        this.decryptedLinks = new ArrayList<DownloadLink>() {
             @Override
             public boolean add(DownloadLink e) {
                 try {
@@ -1422,12 +1422,9 @@ public class VKontakteRu extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     private void decryptDocs() throws Exception {
         this.getPageSafe(this.CRYPTEDLINK_FUNCTIONAL);
-        if (br.containsHTML("Unfortunately, you are not a member of this group and cannot view its documents")) {
+        if (br.containsHTML("Unfortunately, you are not a member of this group and cannot view its documents") || br.getRedirectLocation() != null) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
-        // if (false) {
-        // throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-        // }
         final String owner_ID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "((?:\\-)?\\d+)$").getMatch(0);
         final String alldocs = br.getRegex("cur\\.docs = \\[(.*?)\\];").getMatch(0);
         final String[] docs = alldocs.split("\\],\\[");
