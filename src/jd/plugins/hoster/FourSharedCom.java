@@ -200,6 +200,7 @@ public class FourSharedCom extends PluginForHost {
         doFree(downloadLink, null);
     }
 
+    @SuppressWarnings("deprecation")
     private void doFree(final DownloadLink downloadLink, final Account acc) throws Exception {
         String pass = null;
         int maxChunks = -10;

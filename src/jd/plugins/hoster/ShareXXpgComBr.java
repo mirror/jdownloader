@@ -26,7 +26,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharex.xpg.com.br" }, urls = { "http://(www\\.)?sharex\\.xpg\\.com\\.br/files/[0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharex.xpg.com.br" }, urls = { "http://(www\\.)?sharex\\.xpg(?:\\.uol)?\\.com\\.br/files/[0-9]+" }, flags = { 0 })
 public class ShareXXpgComBr extends PluginForHost {
 
     public ShareXXpgComBr(PluginWrapper wrapper) {
@@ -41,21 +41,28 @@ public class ShareXXpgComBr extends PluginForHost {
     /**
      * Important: brazil proxy is needed, else you are redirected to http://www3.xpg.uol.com.br/404.html
      */
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("/?NOT_FOUND")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("/?NOT_FOUND")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<div class=\"downinfo\">([^<>\"]*?)<").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("/download/.*?/(.*?)\"").getMatch(0);
         }
         String filesize = br.getRegex(">([0-9]+ bytes)<").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         downloadLink.setName(filename.trim());
-        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -63,8 +70,10 @@ public class ShareXXpgComBr extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
-        String dllink = br.getRegex("\"(http://sharex\\.xpg\\.com\\.br/download/[0-9]+/.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String dllink = br.getRegex("\"(http://sharex\\.xpg(?:\\.uol)?\\.com\\.br/download/[0-9]+/.*?)\"").getMatch(0);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = dllink.replaceAll("\\{", "%7B");
         dllink = dllink.replaceAll("\\[", "%5B");
         dllink = dllink.replaceAll("\\]", "%5D");
@@ -72,13 +81,23 @@ public class ShareXXpgComBr extends PluginForHost {
 
         int wait = 15;
         final String waittime = br.getRegex("id=\"tempo_espera\">(\\d+)</span>").getMatch(0);
-        if (waittime != null) wait = Integer.parseInt(waittime);
+        if (waittime != null) {
+            wait = Integer.parseInt(waittime);
+        }
         sleep(wait * 1001l, link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if ((dl.getConnection().getContentType().contains("html"))) {
-            if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 503) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 60 * 60 * 1000l);
+            }
             br.followConnection();
-            if (br.containsHTML(">404 Not Found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML(">404 Not Found<")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

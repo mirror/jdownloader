@@ -46,14 +46,19 @@ public class DnbShareCom extends PluginForHost {
         return 15;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("not found.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-        String filesize = br.getRegex("<em>Filesize</em>: (.*?)</li></ul>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("not found\\.") || br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+        final String filesize = br.getRegex("<em>Filesize</em>: (.*?)</li>").getMatch(0);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         parameter.setName(filename.trim());
         parameter.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
@@ -64,10 +69,14 @@ public class DnbShareCom extends PluginForHost {
         requestFileInformation(link);
         final String file = br.getRegex("name=\"file\" value=\"(.*?)\"").getMatch(0);
         final String payload = br.getRegex("name=\"payload\" value=\"(.*?)\"").getMatch(0);
-        if (file == null || payload == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (file == null || payload == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         int wait = 10;
         final String waittime = br.getRegex("var c = (\\d+);").getMatch(0);
-        if (waittime != null) wait = Integer.parseInt(waittime);
+        if (waittime != null) {
+            wait = Integer.parseInt(waittime);
+        }
         sleep(wait * 1001l, link);
         final Form dlform = new Form();
         dlform.setAction(link.getDownloadURL());
@@ -76,7 +85,9 @@ public class DnbShareCom extends PluginForHost {
         dlform.put("payload", payload);
         br.setFollowRedirects(false);
         br.submitForm(dlform);
-        if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.getRedirectLocation() == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
