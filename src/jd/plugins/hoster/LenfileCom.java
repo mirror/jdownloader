@@ -83,6 +83,7 @@ public class LenfileCom extends PluginForHost {
     private static final boolean           SUPPORTS_ALT_AVAILABLECHECK  = true;
     private final boolean                  ENABLE_RANDOM_UA             = true;
     private final boolean                  enable_hardcore              = false;
+    private static final int               waitsecondsmin               = 40;
     private static final int               waitsecondsmax               = 200;
     private static final int               waitsecondsforced            = 30;
 
@@ -836,6 +837,7 @@ public class LenfileCom extends PluginForHost {
     }
 
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
+        int wait;
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
         String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
@@ -845,29 +847,30 @@ public class LenfileCom extends PluginForHost {
         }
         if (ttt == null) {
             ttt = new Regex(correctedBR, "Wait\\s*<span id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
-            // fail over to prevent dickhead from changing text/html and breaking support.
-            if (ttt == null) {
-                int i = 0;
-                while (i <= 44) {
-                    i = new Random().nextInt(75);
-                }
-                ttt = String.valueOf(i);
-            }
         }
         if (ttt != null) {
-            int wait = Integer.parseInt(ttt);
-            if (wait >= waitsecondsmax) {
-                logger.warning("Wait exceeds max, using forced wait!");
+            wait = Integer.parseInt(ttt);
+            if (wait >= waitsecondsmax || wait <= waitsecondsmin) {
+                logger.warning("Wait exceeds max/min, using forced wait!");
                 wait = waitsecondsforced;
             }
-            wait -= passedTime;
-            logger.info("[Seconds] Waittime on the page: " + ttt);
-            logger.info("[Seconds] Passed time: " + passedTime);
-            logger.info("[Seconds] Total time to wait: " + wait);
-            /* Special: protection against too high waittimes */
-            if (wait > 0 && wait <= 300) {
-                sleep(wait * 1000l, downloadLink);
+        } else {
+            // fail over to prevent dickhead from changing text/html and breaking support.
+            int i = 0;
+            while (i <= 44) {
+                i = new Random().nextInt(75);
             }
+            wait = i;
+        }
+        /* Add some more seconds */
+        wait += new Random().nextInt(10);
+        wait -= passedTime;
+        logger.info("[Seconds] Waittime on the page: " + ttt);
+        logger.info("[Seconds] Passed time: " + passedTime);
+        logger.info("[Seconds] Total time to wait: " + wait);
+        /* Special: protection against too high waittimes */
+        if (wait > 0) {
+            sleep(wait * 1000l, downloadLink);
         }
     }
 
