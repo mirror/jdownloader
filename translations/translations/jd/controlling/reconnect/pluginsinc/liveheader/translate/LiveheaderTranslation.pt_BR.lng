@@ -20,6 +20,7 @@ DataCompareDialog_layoutDialogContent_webinterface=Interface Web do Roteador
 DataCompareDialog_layoutDialogContent_webinterface_desc=Para executar uma reconexão, o JDownloader precisa do login da interface web do roteador.\r\nMuitas muitas vezes você pode encontrar os logins na parte de trás do seu roteador.\r\nSe Desconhecido, pergunte ao seu administrador de Rede
 DataCompareDialog_open_webinterface=Abrir Interface Web
 EditScriptAction_EditScriptAction_=Editar Script
+EditScriptAction_EditScriptAction_add=Novo script
 EditScriptAction_EditScriptAction_tt=Insira um Script de Reconexão próprio, ou modifique um existente.
 GetIPAction_GetIPAction_=Obter IP do Roteador
 GetIPAction_GetIPAction_tt=Verifica sua Rede e tenta encontrar o IP do seu Roteador
