@@ -743,7 +743,12 @@ public class LenfileCom extends PluginForHost {
         ArrayList<String> regexStuff = new ArrayList<String>();
 
         // remove custom rules first!!! As html can change because of generic cleanup rules.
-        regexStuff.add(".*</form>.*(>LenFile Blog<.*?)</BODY>");
+        if (correctedBR.contains(">LenFile Blog<")) {
+            String results[] = new Regex(correctedBR, ".*</form>.*(>LenFile Blog<.*)</BODY>").getColumn(0);
+            for (String result : results) {
+                correctedBR = correctedBR.replace(result, "");
+            }
+        }
 
         /* generic cleanup */
         /* Removed this one - no good idea ;) */
