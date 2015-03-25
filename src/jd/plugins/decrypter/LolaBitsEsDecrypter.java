@@ -121,9 +121,13 @@ public class LolaBitsEsDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
         } else {
             final String fpName = br.getRegex("class=\"T_selected\">([^<>\"]*?)<").getMatch(0);
+            /* Stupid - but okay let's do trail- and error! */
             String[] linkinfo = br.getRegex("<div class=\"fileinfo tab\">(.*?)<span class=\"filedescription\"").getColumn(0);
             if (linkinfo == null || linkinfo.length == 0) {
                 linkinfo = br.getRegex("<li class=\"fileItemContainer\">(.*?)class=\"directFileLink\"").getColumn(0);
+            }
+            if (linkinfo == null || linkinfo.length == 0) {
+                linkinfo = br.getRegex("<div class=\"filerow fileItemContainer\">(.*?)class=\"fileCommentsAction\"").getColumn(0);
             }
             if (linkinfo == null || linkinfo.length == 0 || fpName == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
