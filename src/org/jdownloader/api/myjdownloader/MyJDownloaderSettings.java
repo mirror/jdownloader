@@ -64,6 +64,7 @@ public interface MyJDownloaderSettings extends ConfigInterface {
 
     public void setPassword(String s);
 
+    @Deprecated
     public String getUniqueDeviceID();
 
     public String getUniqueDeviceIDV2();
