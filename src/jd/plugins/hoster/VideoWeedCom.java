@@ -195,13 +195,14 @@ public class VideoWeedCom extends PluginForHost {
                         break;
                     } else {
                         lastdllink = dllink;
+                        try {
+                            dl.getConnection().disconnect();
+                        } catch (final Throwable e) {
+                        }
                         continue;
                     }
-                } finally {
-                    try {
-                        dl.getConnection().disconnect();
-                    } catch (final Throwable e) {
-                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
             if (!success) {
