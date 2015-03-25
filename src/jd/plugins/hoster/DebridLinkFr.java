@@ -196,7 +196,7 @@ public class DebridLinkFr extends PluginForHost {
                     br2.submitForm(vT);
                     if (br2.containsHTML("<div class=\"alert alert-success\">[\\w\\.\\s]+</div>")) {
                         logger.info("success!!");
-                    } else if (br2.containsHTML(">Password or username not valid<")) {
+                    } else if (br2.containsHTML(">Password or username not valid<|>Bad username or password\\.<")) {
                         dump(account);
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
