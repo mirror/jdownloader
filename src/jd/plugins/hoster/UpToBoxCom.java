@@ -441,7 +441,9 @@ public class UpToBoxCom extends antiDDoSForHost {
          * Special: Usually it is a bad idea to change the protocol of final downloadlinks but in this case it is fine plus this helps to
          * avoid gouvernment/ISP blocks!
          */
-        dllink = fixLinkSSL(dllink);
+        if (dllink != null) {
+            dllink = fixLinkSSL(dllink);
+        }
 
         return dllink;
     }
@@ -684,7 +686,7 @@ public class UpToBoxCom extends antiDDoSForHost {
             ai.setUnlimitedTraffic();
         }
         if (account.getBooleanProperty("nopremium")) {
-            ai.setStatus("Registered (free) User");
+            ai.setStatus("Free Account");
             try {
                 maxPrem.set(20);
                 // free accounts can still have captcha.
@@ -710,7 +712,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                 } catch (final Throwable e) {
                 }
             }
-            ai.setStatus("Premium User");
+            ai.setStatus("Premium Account");
         }
         return ai;
     }
@@ -867,6 +869,9 @@ public class UpToBoxCom extends antiDDoSForHost {
     }
 
     private static String fixLinkSSL(String link) {
+        if (link == null) {
+            return null;
+        }
         if (checkSsl()) {
             link = link.replace("http://", "https://");
         } else {
