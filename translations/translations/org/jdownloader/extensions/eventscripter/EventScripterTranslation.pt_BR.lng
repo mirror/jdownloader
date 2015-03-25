@@ -1,3 +1,4 @@
+ExampleMenuEntry=@%s1: %s2
 NONE=Nenhum
 ON_ARCHIVE_EXTRACTED=Extração de arquivo concluída
 ON_DOWNLOAD_CONTROLLER_START=Download iniciado
@@ -10,6 +11,7 @@ ON_OUTGOING_REMOTE_API_EVENT=Evento API remoto disparado
 ON_PACKAGE_FINISHED=Pacote concluído
 ON_PACKAGIZER=Gancho do Criador de Pacotes
 allow=permitir
+btnExampleScripts=Scripts de exemplo
 classes=/* ===== Classes ===== */
 deny=negar
 description=Escuta eventos internos do JDownloader, e permite executar scripts relevantes (JavaScript)
@@ -21,6 +23,8 @@ editor_testcompile=Testar Compilar
 editor_testrun=Testar Executar
 emptyScript=// Adicione seu script aqui. Sinta-se a vontade para usar as propriedades e métodos API disponíveis
 event_trigger=Disparador
+example_infoFile=Criar arquivo INFO na pasta de downloads com informações detalhadas
+example_play_sound=Tocar um arquivo WAV
 example_script_name=Exemplo
 filepackage=// Pacote de arquivo
 loading_editor_title=Carregando editor...
