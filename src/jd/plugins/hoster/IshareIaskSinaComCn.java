@@ -52,7 +52,9 @@ public class IshareIaskSinaComCn extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage("http://ishare.iask.sina.com.cn/download.php?fileid=" + new Regex(downloadLink.getDownloadURL(), "ishare\\.iask\\.sina\\.com\\.cn/f/(\\d+)\\.html").getMatch(0));
         String dllink = br.getRedirectLocation();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -61,11 +63,14 @@ public class IshareIaskSinaComCn extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(<title>共享资料</title>|<br>5秒钟后跳转到首页</div>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<title>共享资料</title>|<br>5秒钟后跳转到首页</div>|近期共享资料正在配合有关部门进行淫秽、色情、")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>(.*?) - 免费高速下载 - 共享资料</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("name=\"file_title\" id=\"file_des\" value=\"(.*?)\"").getMatch(0);
@@ -80,9 +85,13 @@ public class IshareIaskSinaComCn extends PluginForHost {
             }
         }
         String filesize = br.getRegex("class=\"f10\">0分<br>(.*?)</span></td>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(filename.trim());
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 

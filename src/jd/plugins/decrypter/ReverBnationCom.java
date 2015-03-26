@@ -69,7 +69,7 @@ public class ReverBnationCom extends PluginForDecrypt {
                 fp.addLinks(decryptedLinks);
             }
         } else if (parameter.matches("http://(www\\.)?reverbnation\\.com/(play_now/song_\\d+|open_graph/song/\\d+|[A-Za-z0-9\\-_]+/song/\\d+)")) {
-            final String fileID = new Regex(parameter, "(\\d+)$").getMatch(0);
+            final String songID = new Regex(parameter, "(\\d+)$").getMatch(0);
             if (parameter.matches("http://(www\\.)?reverbnation\\.com/open_graph/song/\\d+")) {
                 parameter = parameter.replace("open_graph/song/", "play_now/song_");
             }
@@ -85,19 +85,29 @@ public class ReverBnationCom extends PluginForDecrypt {
                     artistID = br.getRegex("artist/artist_songs/(\\d+)\\?").getMatch(0);
                 }
             }
-            String filename = br.getRegex("data\\-song\\-id=\"" + fileID + "\" title=\"Play \\&quot;([^<>\"]*?)\\&quot;\"").getMatch(0);
+            String filename = br.getRegex("data\\-song\\-id=\"" + songID + "\" title=\"Play \\&quot;([^<>\"]*?)\\&quot;\"").getMatch(0);
             if (artistID == null || filename == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             filename = Encoding.htmlDecode(filename.trim());
-            final DownloadLink dlLink = createDownloadlink("http://reverbnationcomid" + fileID + "reverbnationcomartist" + artistID);
+            final String content_url = createContentURL(songID);
+            final DownloadLink dlLink = createDownloadlink("http://reverbnationcomid" + songID + "reverbnationcomartist" + artistID);
             if (filename.contains(".mp3")) {
                 dlLink.setName(filename);
             } else {
                 dlLink.setName(filename + ".mp3");
             }
+            try {
+                dlLink.setContentUrl(content_url);
+                dlLink.setLinkID(songID);
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+                dlLink.setBrowserUrl(content_url);
+                dlLink.setProperty("LINKDUPEID", songID);
+            }
             dlLink.setProperty("orgName", dlLink.getName());
+            dlLink.setProperty("mainlink", parameter);
             decryptedLinks.add(dlLink);
         } else if (parameter.matches("http://(www\\.)?reverbnation\\.com/(artist/artist_songs/\\d+|open_graph/song/\\d+|artist/downloads/\\d+|[^<>\"/]+)") || parameter.matches(PLAYLISTLINK)) {
             String fpName = null;
@@ -152,7 +162,7 @@ public class ReverBnationCom extends PluginForDecrypt {
                     songID = singleInfo[1];
                     name = Encoding.htmlDecode(singleInfo[2]);
                 }
-                final String content_url = "http://www.reverbnation.com/controller/audio_player/download_song/" + songID + "?modal=true";
+                final String content_url = createContentURL(songID);
                 final DownloadLink dlLink = createDownloadlink("http://reverbnationcomid" + songID + "reverbnationcomartist" + artistsID);
                 if (name.contains(".mp3")) {
                     dlLink.setName(name);
@@ -161,9 +171,11 @@ public class ReverBnationCom extends PluginForDecrypt {
                 }
                 try {
                     dlLink.setContentUrl(content_url);
+                    dlLink.setLinkID(songID);
                 } catch (final Throwable e) {
                     /* Not available in old 0.9.581 Stable */
                     dlLink.setBrowserUrl(content_url);
+                    dlLink.setProperty("LINKDUPEID", songID);
                 }
                 dlLink.setProperty("orgName", dlLink.getName());
                 dlLink.setProperty("mainlink", parameter);
@@ -180,6 +192,11 @@ public class ReverBnationCom extends PluginForDecrypt {
         }
 
         return decryptedLinks;
+    }
+
+    private String createContentURL(final String songID) {
+        final String content_url = "http://www.reverbnation.com/controller/audio_player/download_song/" + songID + "?modal=true";
+        return content_url;
     }
 
     private String getFpname() {

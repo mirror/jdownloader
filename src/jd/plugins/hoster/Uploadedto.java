@@ -697,7 +697,7 @@ public class Uploadedto extends PluginForHost {
             prepBrowser();
 
             /**
-             * Free-Account Errorhandling: This allows users to switch between free accounts instead of reconnecting if a limit is reached
+             * Free-Account Errorhandling: This allows users to switch between free accounts instead of reconnecting when a limit is reached
              */
             if (account != null && this.getPluginConfig().getBooleanProperty(ACTIVATEACCOUNTERRORHANDLING, default_aaeh)) {
                 final String lastdownloadString = account.getStringProperty("LASTDOWNLOAD2");
@@ -1650,37 +1650,56 @@ public class Uploadedto extends PluginForHost {
         return (!thiscfg.getBooleanProperty(PREFER_PREMIUM_DOWNLOAD_API, default_ppda) && thiscfg.getBooleanProperty(DOWNLOAD_ABUSED, false));
     }
 
+    private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
+                                                  {
+                                                      put("SETTING_ACTIVATEACCOUNTERRORHANDLING", "Activate experimental free account errorhandling: Reconnect and switch between free accounts (to get more dl speed), also prevents having to enter additional captchas in between downloads.");
+                                                      put("SETTING_EXPERIMENTALHANDLING", "Activate reconnect workaround for freeusers: Prevents having to enter additional captchas in between downloads.");
+                                                      put("SETTING_SSL_CONNECTION", "Use Secure Communication over SSL (HTTPS://)");
+                                                      put("SETTING_PREFER_PREMIUM_DOWNLOAD_API", "By enabling this feature, JDownloader downloads via custom download API. On failure it will auto revert to web method!\r\nBy disabling this feature, JDownloader downloads via Web download method. Web method is generally less reliable than API method.");
+                                                      put("SETTING_DOWNLOAD_ABUSED", "--> If they're still downloadable, their filename- and size will be shown on downloadstart\r\n--> If they're really offline, the correct status will be shown on downloadstart\r\n-When activated, links which have the public status 'offline' will get an 'uncheckable' status instead\r\n-This function enabled uploaders to download their own links which have a 'legacy takedown' status till uploaded irrevocably deletes them\r\nNote the following:\r\nActivate download of DMCA blocked links?");
+                                                  }
+                                              };
+
+    private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
+                                                  {
+                                                      put("SETTING_ACTIVATEACCOUNTERRORHANDLING", "Aktiviere experimentielles free Account Handling: Führe Reconnects aus und wechsle zwischen verfügbaren free Accounts (um die Downloadgeschwindigkeit zu erhöhen). Verhindert auch sinnlose Captchaabfragen zwischen Downloads.");
+                                                      put("SETTING_EXPERIMENTALHANDLING", "Aktiviere Reconnect Workaround: Verhindert sinnlose Captchaabfragen zwischen Downloads.");
+                                                      put("SETTING_SSL_CONNECTION", "Verwende sichere Verbindungen per SSL (HTTPS://)");
+                                                      put("SETTING_PREFER_PREMIUM_DOWNLOAD_API", "Ist dieses Feature aktiviert, verwendet JDownloader die Programmierschnittstelle (API). Nach Fehlversuchen wird automatisch zum Handling per Webseite gewechselt.\r\nIst dieses Feature deaktiviert benutzt JDownloader ausschließlich die Webseite. Die Webseite ist allgemein instabiler als die API.");
+                                                      put("SETTING_DOWNLOAD_ABUSED", "Aktiviere Download DMCA gesperrter Links?\r\nBedenke folgendes:\r\n-Diese Funktion erlaubt es Uploadern, ihre eigenen mit 'legacy takedown' Status versehenen Links in dem vom Hoster gegebenen Zeitraum noch herunterladen zu können\r\n-Diese Funktion führt dazu, dass Links, die öffentlich den Status 'offline' haben, stattdessen den Status 'nicht überprüft' bekommen\r\n--> Falls diese wirklich offline sind, wird der korrekte Status erst beim Downloadstart angezeigt\r\n--> Falls diese noch ladbar sind, werden deren Dateiname- und Größe beim Downloadstart angezeigt");
+                                                  }
+                                              };
+
+    /**
+     * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
+     * English.
+     *
+     * @param key
+     * @return
+     */
+    private String getPhrase(String key) {
+        if ("de".equals(System.getProperty("user.language")) && phrasesDE.containsKey(key)) {
+            return phrasesDE.get(key);
+        } else if (phrasesEN.containsKey(key)) {
+            return phrasesEN.get(key);
+        }
+        return "Translation not found!";
+    }
+
     private final boolean default_ppda   = true;
     private final boolean default_aaeh   = false;
     private final boolean default_eh     = false;
     private final boolean default_abused = false;
 
     public void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ACTIVATEACCOUNTERRORHANDLING, JDL.L("plugins.hoster.uploadedto.activateExperimentalFreeAccountErrorhandling", "Activate experimental free account errorhandling: Reconnect and switch between free accounts (to get more dl speed), also prevents having to enter captchas in between downloads.")).setDefaultValue(default_aaeh));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EXPERIMENTALHANDLING, JDL.L("plugins.hoster.uploadedto.activateExperimentalReconnectHandling", "Activate experimental reconnect handling for freeusers: Prevents having to enter captchas in between downloads.")).setDefaultValue(default_eh));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ACTIVATEACCOUNTERRORHANDLING, getPhrase("SETTING_ACTIVATEACCOUNTERRORHANDLING")).setDefaultValue(default_aaeh));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EXPERIMENTALHANDLING, getPhrase("SETTING_EXPERIMENTALHANDLING")).setDefaultValue(default_eh));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.uploadedto.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(PREFERSSL));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SSL_CONNECTION, getPhrase("SETTING_SSL_CONNECTION")).setDefaultValue(PREFERSSL));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        final ConfigEntry cfe = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_PREMIUM_DOWNLOAD_API, JDL.L("plugins.hoster.uploadedto.preferAPIdownload", "By enabling this feature, JDownloader downloads via custom download API. On failure it will auto revert to web method!\r\nBy disabling this feature, JDownloader downloads via Web download method. Web method is generally less reliable than API method.")).setDefaultValue(default_ppda);
+        final ConfigEntry cfe = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_PREMIUM_DOWNLOAD_API, getPhrase("SETTING_PREFER_PREMIUM_DOWNLOAD_API")).setDefaultValue(default_ppda);
         getConfig().addEntry(cfe);
-        final String lang = System.getProperty("user.language");
-        String dmcmenutext = null;
-        if ("de".equalsIgnoreCase(lang)) {
-            dmcmenutext = "Aktiviere Download DMCA gesperrter Links?\r\n";
-            dmcmenutext += "Bedenke folgendes:\r\n";
-            dmcmenutext += "-Diese Funktion erlaubt es Uploadern, ihre eigenen mit 'legacy takedown' Status versehenen Links in dem vom Hoster gegebenen Zeitraum noch herunterladen zu können\r\n";
-            dmcmenutext += "-Diese Funktion führt dazu, dass Links, die öffentlich den Status 'offline' haben, stattdessen den Status 'nicht überprüft' bekommen\r\n";
-            dmcmenutext += "--> Falls diese wirklich offline sind, wird der korrekte Status erst beim Downloadstart angezeigt\r\n";
-            dmcmenutext += "--> Falls diese noch ladbar sind, werden deren Dateiname- und Größe beim Downloadstart angezeigt";
-        } else {
-            dmcmenutext = "Activate download of DMCA blocked links?";
-            dmcmenutext += "Note the following:\r\n";
-            dmcmenutext += "-This function enabled uploaders to download their own links which have a 'legacy takedown' status till uploaded irrevocably deletes them\r\n";
-            dmcmenutext += "-When activated, links which have the public status 'offline' will get an 'uncheckable' status instead\r\n";
-            dmcmenutext += "--> If they're really offline, the correct status will be shown on downloadstart\r\n";
-            dmcmenutext += "--> If they're still downloadable, their filename- and size will be shown on downloadstart";
-        }
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DOWNLOAD_ABUSED, JDL.L("plugins.hoster.uploadedto.downloadAbused", dmcmenutext)).setDefaultValue(default_abused).setEnabledCondidtion(cfe, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DOWNLOAD_ABUSED, JDL.L("plugins.hoster.uploadedto.downloadAbused", getPhrase("SETTING_DOWNLOAD_ABUSED"))).setDefaultValue(default_abused).setEnabledCondidtion(cfe, false));
 
     }
 

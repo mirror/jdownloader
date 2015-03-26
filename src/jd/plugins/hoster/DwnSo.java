@@ -42,26 +42,41 @@ public class DwnSo extends PluginForHost {
         return "http://dwn.so/rules.html";
     }
 
-    private static final String STREAMLINK = "http://(www\\.)?st\\.dwn\\.so/v/[A-Z0-9]+";
+    private static final String STREAMLINK  = "http://(www\\.)?st\\.dwn\\.so/v/[A-Z0-9]+";
+    private static final String MAINTENANCE = ">Closed for maintenance";
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("http://dwn.so/", "lang", "en");
         br.getPage(link.getDownloadURL());
 
+        if (br.containsHTML(MAINTENANCE)) {
+            link.getLinkStatus().setStatusText("Server is under maintenance");
+            return AvailableStatus.UNCHECKABLE;
+        }
         if (link.getDownloadURL().matches(STREAMLINK)) {
-            if (br.getURL().equals("http://dwn.so/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.getURL().equals("http://dwn.so/")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             String filename = br.getRegex("<title>([^<>\"]*?) \\- Watch Movie \\- DwnShare</title>").getMatch(0);
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         } else {
-            if (br.getURL().contains("dwn.so/?error=not_found") || br.getURL().equals("http://dwn.so/") || br.containsHTML("<title>Upload Files \\- DwnShare</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.getURL().contains("dwn.so/?error=not_found") || br.getURL().equals("http://dwn.so/") || br.containsHTML("<title>Upload Files \\- DwnShare</title>")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             String filename = br.getRegex("<title>([^<>\"]*?) \\- Download File \\- DwnShare</title>").getMatch(0);
-            if (filename == null) filename = br.getRegex("class=\"link_download\" href=\"#\"><b>([^<>\"]*?)</b></a></div>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("class=\"link_download\" href=\"#\"><b>([^<>\"]*?)</b></a></div>").getMatch(0);
+            }
             String filesize = br.getRegex("class=\"result\">File Size ([^<>\"]*?), uploaded").getMatch(0);
-            if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filename == null || filesize == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -70,23 +85,34 @@ public class DwnSo extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(MAINTENANCE)) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is under maintenance", 3 * 60 * 60 * 1000l);
+        }
         if (downloadLink.getDownloadURL().matches(STREAMLINK)) {
             // Convert streamlink to filelink
             final String vid = new Regex(downloadLink.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0);
             br.getPage("http://st.dwn.so/player/embed.php?v=" + vid + "&width=850&height=440");
             final String yk = br.getRegex("\\&yk=([^<>\"]*?)\\'").getMatch(0);
-            if (yk == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (yk == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             br.getPage("http://st.dwn.so/xml/videolink.php?v=" + vid + "&yk=" + yk + "&width=830&id=" + System.currentTimeMillis() + "&u=undefined");
             final String fileLink = br.getRegex("\"(http://(www\\.)?dwn\\.so/show\\-file/[a-z0-9]+/\\d+/[^<>\"/]+\\.html)\"").getMatch(0);
-            if (fileLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (fileLink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             downloadLink.setUrlDownload(fileLink);
             br.getPage(downloadLink.getDownloadURL());
         }
         String dllink = br.getRegex("\\{\\$\\(\\'\\.link_download\\'\\)\\.attr\\(\\'href\\',\\'(http://[^<>\"]*?)\\'\\)").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\\'(http://s\\d+\\.dwnshare\\.com/download\\-file\\-directly/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/\\d+/[^<>\"]*?)\\'").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            dllink = br.getRegex("\\'(http://s\\d+\\.dwnshare\\.com/download\\-file\\-directly/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/\\d+/[^<>\"]*?)\\'").getMatch(0);
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

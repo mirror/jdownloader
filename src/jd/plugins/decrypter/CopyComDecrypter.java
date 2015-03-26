@@ -44,6 +44,7 @@ public class CopyComDecrypter extends PluginForDecrypt {
 
     private static final String  VALID_URL      = "https?://(www\\.)?copy\\.com/s/[A-Za-z0-9]+(/[^<>\"]+)?";
 
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
