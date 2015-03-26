@@ -205,6 +205,14 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
         } else if (parameter.matches(".+postim(age|g)\\.org/.+")) {
             br.setFollowRedirects(true);
             br.getPage(parameter.replace("postimage/", "postimg/") + "/full/");
+            if (!br.getURL().contains("/full")) {
+                try {
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                } catch (final Throwable e) {
+                    /* Not available in old 0.9.581 Stable */
+                }
+                return decryptedLinks;
+            }
             finallink = br.getRegex("rel=\"image_src\" href=\"(http[^<>\"]*?)\"").getMatch(0);
             if (finallink == null) {
                 finallink = br.getRegex("<img src=\\'(http://[^<>\"]*?)\\'").getMatch(0);

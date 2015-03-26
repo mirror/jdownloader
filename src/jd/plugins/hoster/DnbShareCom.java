@@ -51,7 +51,7 @@ public class DnbShareCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("not found\\.") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("not found\\.|was deleted due to low activity") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);

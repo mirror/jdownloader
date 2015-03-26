@@ -60,7 +60,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         }
         try {
             /* Sometimes html can be very big */
-            br.setLoadLimit(br.getLoadLimit() * 2);
+            br.setLoadLimit(br.getLoadLimit() * 3);
         } catch (final Throwable e) {
             /* Not available in old 0.9.581 Stable */
         }
