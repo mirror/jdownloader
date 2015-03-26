@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dnbshare.com" }, urls = { "http://[\\w\\.]*?dnbshare\\.com/download/.*" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dnbshare.com" }, urls = { "http://[\\w\\.]*?dnbshare\\.com/download/[^<>\"/]*?\\.html" }, flags = { 2 })
 public class DnbShareCom extends PluginForHost {
 
     public DnbShareCom(PluginWrapper wrapper) {
@@ -51,7 +51,7 @@ public class DnbShareCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("not found\\.|was deleted due to low activity") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("not found\\.|was deleted due to low activity|was deleted due to reported infringement") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
@@ -64,6 +64,7 @@ public class DnbShareCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
