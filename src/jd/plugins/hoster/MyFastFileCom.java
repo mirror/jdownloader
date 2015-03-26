@@ -60,6 +60,7 @@ public class MyFastFileCom extends PluginForHost {
     private final String                                   globalRetry        = "globalRetry";
     private static final long                              maxtraffic_daily   = 32212254720l;
 
+    @SuppressWarnings("deprecation")
     public MyFastFileCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mProt + mName + "/premium");

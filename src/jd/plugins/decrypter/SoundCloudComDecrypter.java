@@ -71,6 +71,8 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
 
     private static int              max_entries_per_request       = 100;
 
+    /* Settings */
+    private static final String     GRAB_PURCHASE_URL             = "GRAB_PURCHASE_URL";
     private static final String     GRAB500THUMB                  = "GRAB500THUMB";
     private static final String     GRABORIGINALTHUMB             = "GRABORIGINALTHUMB";
     private static final String     CUSTOM_PACKAGENAME            = "CUSTOM_PACKAGENAME";
@@ -81,6 +83,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     private String                  originalLink                  = null;
     private String                  parameter                     = null;
     private ArrayList<DownloadLink> decryptedLinks                = null;
+    private boolean                 decryptPurchaseURL            = false;
     private boolean                 decrypt500Thumb               = false;
     private boolean                 decryptOriginalThumb          = false;
     private String                  username                      = null;
@@ -96,6 +99,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        JDUtilities.getPluginForHost("soundcloud.com");
         decryptedLinks = new ArrayList<DownloadLink>() {
             @Override
             public boolean add(DownloadLink e) {
@@ -120,8 +124,9 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         if (originalLink.contains("#")) {
             originalLink = originalLink.substring(0, originalLink.indexOf("#"));
         }
-        decrypt500Thumb = CFG.getBooleanProperty(GRAB500THUMB, false);
-        decryptOriginalThumb = CFG.getBooleanProperty(GRABORIGINALTHUMB, false);
+        decryptPurchaseURL = CFG.getBooleanProperty(GRAB_PURCHASE_URL, jd.plugins.hoster.SoundcloudCom.defaultGRAB_PURCHASE_URL);
+        decrypt500Thumb = CFG.getBooleanProperty(GRAB500THUMB, jd.plugins.hoster.SoundcloudCom.defaultGRAB500THUMB);
+        decryptOriginalThumb = CFG.getBooleanProperty(GRABORIGINALTHUMB, jd.plugins.hoster.SoundcloudCom.defaultGRABORIGINALTHUMB);
         // Sometimes slow servers
         br.setConnectTimeout(3 * 60 * 1000);
         br.setReadTimeout(3 * 60 * 1000);
@@ -143,7 +148,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         }
 
         try {
-            /* Correct links */
+            /* Correct added links */
             correctInputLinks();
             url_username = new Regex(parameter, "soundcloud\\.com/([^<>\"/]+)/?").getMatch(0);
 
@@ -179,23 +184,23 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 fp.addLinks(decryptedLinks);
             } else {
                 /* If the user wants to download the thumbnail as well it's a bit more complicated */
-                if (decrypt500Thumb || decryptOriginalThumb) {
+                if (decrypt500Thumb || decryptOriginalThumb || decryptPurchaseURL) {
                     try {
-
                         resolve(parameter);
                         /* Add soundcloud link */
                         DownloadLink dl = createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted"));
-                        Map<String, Object> entry = DummyScriptEnginePlugin.jsonToJavaMap(br.toString());
+                        final Map<String, Object> entry = DummyScriptEnginePlugin.jsonToJavaMap(br.toString());
                         dl = setDlDataJson(dl, entry);
                         decryptedLinks.add(dl);
 
+                        getPurchaseURL(entry);
                         get500Thumbnail(dl, entry);
                         getOriginalThumbnail(dl, entry);
                     } catch (final Exception e) {
                         if (br.containsHTML("\"404 - Not Found\"")) {
                             return decryptedLinks;
                         }
-                        logger.info("Failed to get thumbnail, adding song link only");
+                        logger.info("Failed to get thumbnail/purchase_url, adding song link only");
                         decryptedLinks.add(createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted")));
                     }
                 } else {
@@ -628,7 +633,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                     decryptedLinks.add(thumb);
                 }
             } catch (final ParseException e) {
-                logger.info("Failed to get 500x500 thumbnail...");
+                logger.warning("Failed to find 500x500 thumbnail...");
             }
         }
 
@@ -657,10 +662,26 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                     decryptedLinks.add(thumb);
                 }
             } catch (final ParseException e) {
-                logger.info("Failed to get original thumbnail...");
+                logger.warning("Failed to find original thumbnail...");
             }
         }
         return thumb;
+    }
+
+    private void getPurchaseURL(final Map<String, Object> source) throws ParseException {
+        if (this.decryptPurchaseURL) {
+            try {
+                final String purchase_url = getString(source, "purchase_url");
+                if (purchase_url != null) {
+                    logger.info("Found purchase_url");
+                    decryptedLinks.add(createDownloadlink(purchase_url));
+                } else {
+                    logger.info("Failed to find purchase_url - probably doesn't exist");
+                }
+            } catch (final Throwable e) {
+                logger.warning("Failed to find purchase_url...");
+            }
+        }
     }
 
     /**
