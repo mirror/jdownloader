@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,12 +32,11 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastshare.cz" }, urls = { "http://(www\\.)?fastshare\\.cz/\\d+/[^<>\"#]+" }, flags = { 2 })
-public class FastShareCz extends PluginForHost {
+public class FastShareCz extends antiDDoSForHost {
 
     public FastShareCz(PluginWrapper wrapper) {
         super(wrapper);
@@ -55,12 +53,12 @@ public class FastShareCz extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie(MAINPAGE, "lang", "cs");
         br.setCustomCharset("utf-8");
-        br.getPage(link.getDownloadURL());
+        super.getPage(link.getDownloadURL());
         if (br.containsHTML("(<title>FastShare\\.cz</title>|>Tento soubor byl smazán na základě požadavku vlastníka autorských)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -97,7 +95,7 @@ public class FastShareCz extends PluginForHost {
         if (captchaLink == null || action == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.postPage(action, "code=" + getCaptchaCode(MAINPAGE + captchaLink, downloadLink));
+        super.postPage(action, "code=" + getCaptchaCode(MAINPAGE + captchaLink, downloadLink));
         if (br.containsHTML("Pres FREE muzete stahovat jen jeden soubor najednou")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 60 * 1000l);
         } else if (br.containsHTML("Špatně zadaný kód. Zkuste to znovu")) {
@@ -157,7 +155,7 @@ public class FastShareCz extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage("http://fastshare.cz/sql.php", "login=" + Encoding.urlEncode(account.getUser()) + "&heslo=" + Encoding.urlEncode(account.getPass()));
+                super.postPage("http://fastshare.cz/sql.php", "login=" + Encoding.urlEncode(account.getUser()) + "&heslo=" + Encoding.urlEncode(account.getPass()));
                 if (br.getURL().contains("fastshare.cz/error=1") || !br.containsHTML(">Kredit[\t\n\r ]+:[\t\n\r ]+</td>")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -211,7 +209,7 @@ public class FastShareCz extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
+        super.getPage(link.getDownloadURL());
         if (br.containsHTML("máte dostatečný kredit pro stažení tohoto souboru")) {
             logger.info("Trafficlimit reached!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
