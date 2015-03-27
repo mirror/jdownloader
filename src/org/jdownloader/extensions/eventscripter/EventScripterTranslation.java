@@ -129,13 +129,13 @@ public interface EventScripterTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Play a Wav File" })
     String example_play_sound();
 
-    @Default(lngs = { "en" }, values = { "Download Controller State: Pause" })
+    @Default(lngs = { "en" }, values = { "Download Controller paused" })
     String ON_DOWNLOADS_PAUSE();
 
-    @Default(lngs = { "en" }, values = { "Download Controller State: Running" })
+    @Default(lngs = { "en" }, values = { "Download Controller started" })
     String ON_DOWNLOADS_RUNNING();
 
-    @Default(lngs = { "en" }, values = { "Download Controller State: Stopped" })
+    @Default(lngs = { "en" }, values = { "Download Controller stopped" })
     String ON_DOWNLOADS_STOPPED();
 
 }
