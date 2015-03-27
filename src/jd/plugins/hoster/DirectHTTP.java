@@ -610,36 +610,47 @@ public class DirectHTTP extends PluginForHost {
     private URLConnectionAdapter prepareConnection(final Browser br, final DownloadLink downloadLink) throws IOException {
         URLConnectionAdapter urlConnection = null;
         this.setCustomHeaders(br, downloadLink);
-        if (downloadLink.getStringProperty("post", null) != null) {
-            urlConnection = br.openPostConnection(downloadLink.getDownloadURL(), downloadLink.getStringProperty("post", null));
-        } else {
-            try {
-                if (!preferHeadRequest || "GET".equals(downloadLink.getStringProperty("requestType", null))) {
-                    urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
-                } else if (preferHeadRequest || "HEAD".equals(downloadLink.getStringProperty("requestType", null))) {
-                    urlConnection = br.openHeadConnection(downloadLink.getDownloadURL());
-                    if (urlConnection.getResponseCode() == 404 && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"), "must-revalidate") && urlConnection.getHeaderField("Via") != null) {
-                        urlConnection.disconnect();
+        boolean rangeHeader = false;
+        try {
+            if (downloadLink.getProperty("streamMod") != null) {
+                rangeHeader = true;
+                br.getHeaders().put("Range", "bytes=" + 0 + "-");
+            }
+            if (downloadLink.getStringProperty("post", null) != null) {
+                urlConnection = br.openPostConnection(downloadLink.getDownloadURL(), downloadLink.getStringProperty("post", null));
+            } else {
+                try {
+                    if (!preferHeadRequest || "GET".equals(downloadLink.getStringProperty("requestType", null))) {
                         urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
-                    } else if (urlConnection.getResponseCode() != 404 && urlConnection.getResponseCode() >= 300) {
-                        // no head support?
-                        urlConnection.disconnect();
+                    } else if (preferHeadRequest || "HEAD".equals(downloadLink.getStringProperty("requestType", null))) {
+                        urlConnection = br.openHeadConnection(downloadLink.getDownloadURL());
+                        if (urlConnection.getResponseCode() == 404 && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"), "must-revalidate") && urlConnection.getHeaderField("Via") != null) {
+                            urlConnection.disconnect();
+                            urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+                        } else if (urlConnection.getResponseCode() != 404 && urlConnection.getResponseCode() >= 300) {
+                            // no head support?
+                            urlConnection.disconnect();
+                            urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+                        }
+                    } else {
                         urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
                     }
-                } else {
-                    urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+                } catch (final IOException e) {
+                    if (urlConnection != null) {
+                        urlConnection.disconnect();
+                    }
+                    if (preferHeadRequest || "HEAD".equals(downloadLink.getStringProperty("requestType", null))) {
+                        /* some servers do not allow head requests */
+                        urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+                        downloadLink.setProperty("requestType", "GET");
+                    } else {
+                        throw e;
+                    }
                 }
-            } catch (final IOException e) {
-                if (urlConnection != null) {
-                    urlConnection.disconnect();
-                }
-                if (preferHeadRequest || "HEAD".equals(downloadLink.getStringProperty("requestType", null))) {
-                    /* some servers do not allow head requests */
-                    urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
-                    downloadLink.setProperty("requestType", "GET");
-                } else {
-                    throw e;
-                }
+            }
+        } finally {
+            if (rangeHeader) {
+                br.getHeaders().remove("Range");
             }
         }
         return urlConnection;
@@ -777,6 +788,16 @@ public class DirectHTTP extends PluginForHost {
                     downloadLink.setProperty("htmlRedirect", true);
                     return this.requestFileInformation(downloadLink);
                 }
+            }
+            final String streamMod = urlConnection.getHeaderField("X-Mod-H264-Streaming");
+            if (streamMod != null) {
+                downloadLink.setProperty("streamMod", streamMod);
+                if (urlConnection.getRequest() instanceof HeadRequest) {
+                    br.followConnection();
+                } else {
+                    urlConnection.disconnect();
+                }
+                return this.requestFileInformation(downloadLink);
             }
             if (this.contentType != null && this.contentType.startsWith("text/html") && urlConnection.isContentDisposition() == false && downloadLink.getBooleanProperty(DirectHTTP.TRY_ALL, false) == false) {
                 /* jd does not want to download html content! */
@@ -964,6 +985,7 @@ public class DirectHTTP extends PluginForHost {
         link.setProperty(DirectHTTP.NOCHUNKS, Property.NULL);
         link.setProperty("lastRefURL", Property.NULL);
         link.setProperty("requestType", Property.NULL);
+        link.setProperty("streamMod", Property.NULL);
         if (link.getStringProperty("fixName", null) != null) {
             link.setFinalFileName(link.getStringProperty("fixName", null));
         }
