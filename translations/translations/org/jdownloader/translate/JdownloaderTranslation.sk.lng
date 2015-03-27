@@ -19,6 +19,7 @@ DeleteOption_no_delete=Neodstraňovať žiadne súbory
 DeleteOption_recycle=Ak je to možné, presunúť súbory do koša
 DirectHTTP_getBasicAuth_message=Pre stiahnutie tohto súboru je vyžadované užívateľské meno a heslo. Prosím, zadajte prihlasovacie údaje nižšie.
 DisableRevFilesPackageRulee_rule_name=Zakázať súbory archívov *.rev
+DownloadFolderChooserDialogDefaultPath_CURRENT_PATH=Aktuálna cesta
 DownloadLink_setSkipped_statusmessage=Preskočené
 DownloadLink_setSkipped_statusmessage_account=Preskočené - Chýba účet
 DownloadLink_setSkipped_statusmessage_captcha=Preskočené - Je vyžadované captcha
