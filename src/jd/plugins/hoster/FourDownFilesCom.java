@@ -111,8 +111,8 @@ public class FourDownFilesCom extends PluginForHost {
     @Override
     public String rewriteHost(String host) {
         if ("4downfiles.com".equals(getHost())) {
-            if (host == null || "4downfiles.com".equals(host)) {
-                return "4downfiles.net";
+            if (host == null || "4downfiles.com".equals(host) || "4downfiles.net".equals(host)) {
+                return "4downfiles.com";
             }
         }
         return super.rewriteHost(host);
