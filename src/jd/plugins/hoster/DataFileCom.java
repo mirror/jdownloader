@@ -552,7 +552,14 @@ public class DataFileCom extends PluginForHost {
                 final AccountInfo ac = new AccountInfo();
                 ac.setTrafficLeft(0);
                 account.setAccountInfo(ac);
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Trafficlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                /* Small extra handling for free accounts so user can see the correct errormessage. */
+                if (account.getBooleanProperty("free", false)) {
+                    logger.info("Free account: Daily downloadlimit reached");
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily downloadlimit reached", 1 * 60 * 60 * 1000l);
+                } else {
+                    logger.info("Premium account: Daily downloadlimit reached");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Trafficlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                }
             }
             logger.warning("Unknown error");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unknown error", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
