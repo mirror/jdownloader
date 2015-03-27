@@ -68,7 +68,7 @@ public class YunFileCom extends PluginForHost {
     public String rewriteHost(String host) {
         if ("filemarkets.com".equals(getHost()) || "yfdisk.com".equals(getHost())) {
             if (host == null || "filemarkets.com".equals(host) || "yfdisk.com".equals(host)) {
-                return "freakshare.com";
+                return "yunfile.com";
             }
         }
         return super.rewriteHost(host);
