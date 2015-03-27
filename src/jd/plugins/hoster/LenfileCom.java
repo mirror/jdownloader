@@ -417,7 +417,7 @@ public class LenfileCom extends PluginForHost {
                 }
                 formFileName = Encoding.urlEncode(formFileName);
             }
-            boolean useForm = false;
+            boolean useForm = true;
             if (useForm) {
                 final Form download1 = getFormByKey("method_free", "Download");
                 if (download1 != null) {
@@ -846,7 +846,7 @@ public class LenfileCom extends PluginForHost {
             ttt = br.getRegex("class=\"counterag\">Wait <span id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
         }
         if (ttt == null) {
-            ttt = new Regex(correctedBR, "Wait\\s*<span id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
+            ttt = new Regex(correctedBR, "Wait\\s*<span id=\"[a-z0-9]+\">\\s*(\\d+)\\s*<\\s*\\\\?/span>").getMatch(0);
         }
         if (ttt != null) {
             wait = Integer.parseInt(ttt);
