@@ -1,5 +1,9 @@
+ExampleMenuEntry=@%s1: %s2
 NONE=Hiçbiri
 ON_ARCHIVE_EXTRACTED=Arşiv çıkartma tamamlandı
+ON_DOWNLOADS_PAUSE=İndirme Denetleyicisi duraklatıldı
+ON_DOWNLOADS_RUNNING=İndirme Denetleyicisi başlatıldı
+ON_DOWNLOADS_STOPPED=İndirme Denetleyicisi durduruldu
 ON_DOWNLOAD_CONTROLLER_START=İndirme başladı
 ON_DOWNLOAD_CONTROLLER_STOPPED=İndirme durdu
 ON_GENERIC_EXTRACTION=Herhangi Bir Çıkartma Olayı
@@ -10,6 +14,7 @@ ON_OUTGOING_REMOTE_API_EVENT=Uzak API Olayı atıldı
 ON_PACKAGE_FINISHED=Paket tamamlandı
 ON_PACKAGIZER=Paketleyici Kancası
 allow=izin ver
+btnExampleScripts=Örnek Betikler
 classes=/* ===== Class'lar ===== */
 deny=reddet
 description=Dahili JDownloader olayını dinler ve ilgili betikleri (Javascript) çalıştırmaya izin verir.
@@ -21,6 +26,8 @@ editor_testcompile=Derlemeyi Dene
 editor_testrun=Çalıştırmayı Dene
 emptyScript=// Betiğinizi buraya ekleyin. Mevcut API özelliklerini ve yöntemlerini çekinmeden kullanın
 event_trigger=Tetikleyici
+example_infoFile=Ayrıntılı bilgilerle İndirme Klasörüne bir Bilgi Dosyası oluştur
+example_play_sound=Bir Wav Dosyası Çal
 example_script_name=Örnek
 filepackage=// Dosya paketi
 loading_editor_title=Düzenleyici yükleniyor...
