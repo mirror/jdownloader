@@ -522,9 +522,15 @@ public class OffCloudCom extends PluginForHost {
         }
     }
 
+    /**
+     * Deletes the complete offcloud download history.
+     *
+     * Last revision with old (single request-ID delete) handling: 29703
+     **/
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private void deleteCompleteDownloadHistory() throws Exception {
         try {
+            /* First let's find all requestIDs to delete. */
             logger.info("Deleting complete download history");
             final ArrayList<String> requestIDs = new ArrayList<String>();
             boolean isEnd = false;
@@ -547,16 +553,40 @@ public class OffCloudCom extends PluginForHost {
             } while (!isEnd);
 
             final int req_ids_size = requestIDs.size();
-
             logger.info("Found " + req_ids_size + " requestIDs to delete - starting deletion");
-            int counter = 0;
+            /* Now let's delete them */
             int counter_success = 0;
-            for (final String requestID : requestIDs) {
-                logger.info("Deleting requestID: " + counter + " of " + requestIDs.size());
-                if (deleteSingleDownloadHistoryEntry(requestID)) {
-                    counter_success++;
+            ArrayList<String> ids_to_delete = new ArrayList<String>();
+            int index = 0;
+            String postData = null;
+            while (true) {
+                ids_to_delete.clear();
+                while (true) {
+                    /* We delete 200 IDs at once */
+                    if (index == requestIDs.size() || ids_to_delete.size() > 199) {
+                        break;
+                    }
+                    ids_to_delete.add(requestIDs.get(index));
+                    index++;
                 }
-                counter++;
+                int temp_index = 0;
+                /* Make sure not to send empty requests. */
+                if (ids_to_delete.size() > 0) {
+                    postData = "{\"requests\":[";
+                    for (final String id : ids_to_delete) {
+                        if (temp_index > 0) {
+                            postData += ",";
+                        }
+                        postData += "\"" + id + "\"";
+                        temp_index++;
+                        counter_success++;
+                    }
+                    postData += "]}";
+                    this.postRawAPISafe("https://offcloud.com/instant/remove", postData);
+                }
+                if (index == requestIDs.size()) {
+                    break;
+                }
             }
             if (counter_success == req_ids_size) {
                 logger.info("Successfully deleted all requestIDs: " + req_ids_size);
