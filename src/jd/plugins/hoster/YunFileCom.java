@@ -64,6 +64,16 @@ public class YunFileCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("share.yunfile.com/", "yunfile.com/"));
     }
 
+    @Override
+    public String rewriteHost(String host) {
+        if ("filemarkets.com".equals(getHost()) || "yfdisk.com".equals(getHost())) {
+            if (host == null || "filemarkets.com".equals(host) || "yfdisk.com".equals(host)) {
+                return "freakshare.com";
+            }
+        }
+        return super.rewriteHost(host);
+    }
+
     private Browser prepBrowser(final Browser prepBr) {
         // // define custom browser headers and language settings.
         // if (agent.get() == null) {

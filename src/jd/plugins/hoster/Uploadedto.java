@@ -75,26 +75,27 @@ public class Uploadedto extends PluginForHost {
     // other: respects https in download methods, even though final download
     // link isn't https (free tested).
 
-    private static AtomicInteger           maxPrem                      = new AtomicInteger(1);
-    private char[]                         FILENAMEREPLACES             = new char[] { '_', '[', ']' };
-    private final String                   ACTIVATEACCOUNTERRORHANDLING = "ACTIVATEACCOUNTERRORHANDLING";
-    private final String                   EXPERIMENTALHANDLING         = "EXPERIMENTALHANDLING";
-    private Pattern                        IPREGEX                      = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-    private static AtomicBoolean           hasDled                      = new AtomicBoolean(false);
-    private static AtomicLong              timeBefore                   = new AtomicLong(0);
-    private String                         LASTIP                       = "LASTIP";
-    private static AtomicReference<String> lastIP                       = new AtomicReference<String>();
-    private static AtomicBoolean           usePremiumAPI                = new AtomicBoolean(true);
-    private static final long              RECONNECTWAIT                = 10802000;
-    private static final String            NOCHUNKS                     = "NOCHUNKS";
-    private static final String            NORESUME                     = "NORESUME";
-    private static final String            SSL_CONNECTION               = "SSL_CONNECTION";
-    private static final String            PREFER_PREMIUM_DOWNLOAD_API  = "PREFER_PREMIUM_DOWNLOAD_API_V2";
-    private static final String            DOWNLOAD_ABUSED              = "DOWNLOAD_ABUSED";
-    private boolean                        PREFERSSL                    = true;
-    private boolean                        avoidHTTPS                   = false;
+    private static AtomicInteger           maxPrem                         = new AtomicInteger(1);
+    private char[]                         FILENAMEREPLACES                = new char[] { '_', '[', ']' };
+    private final String                   ACTIVATEACCOUNTERRORHANDLING    = "ACTIVATEACCOUNTERRORHANDLING";
+    private final String                   EXPERIMENTALHANDLING            = "EXPERIMENTALHANDLING";
+    private Pattern                        IPREGEX                         = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private static AtomicBoolean           hasAttemptedDownloadstart       = new AtomicBoolean(false);
+    private static AtomicLong              timeBefore                      = new AtomicLong(0);
+    private String                         LASTIP                          = "LASTIP";
+    private static AtomicReference<String> lastIP                          = new AtomicReference<String>();
+    private static AtomicBoolean           usePremiumAPI                   = new AtomicBoolean(true);
+    private static final long              RECONNECTWAIT                   = 3660000l;
+    private static final String            NOCHUNKS                        = "NOCHUNKS";
+    private static final String            NORESUME                        = "NORESUME";
+    private static final String            PROPERTY_LASTDOWNLOAD_TIMESTAMP = "uploadednet_lastdownload_timestamp";
+    private static final String            SSL_CONNECTION                  = "SSL_CONNECTION";
+    private static final String            PREFER_PREMIUM_DOWNLOAD_API     = "PREFER_PREMIUM_DOWNLOAD_API_V2";
+    private static final String            DOWNLOAD_ABUSED                 = "DOWNLOAD_ABUSED";
+    private boolean                        PREFERSSL                       = true;
+    private boolean                        avoidHTTPS                      = false;
 
-    private static final String            CURRENT_DOMAIN               = "http://uploaded.net/";
+    private static final String            CURRENT_DOMAIN                  = "http://uploaded.net/";
 
     private String getProtocol() {
         if (avoidHTTPS) {
@@ -233,6 +234,7 @@ public class Uploadedto extends PluginForHost {
 
         private byte[] prep;
 
+        @SuppressWarnings("deprecation")
         public Sec() {
             key = new byte[] { 0x01, 0x02, 0x11, 0x01, 0x01, 0x54, 0x01, 0x01, 0x01, 0x01, 0x12, 0x01, 0x01, 0x01, 0x22, 0x01 };
             prep = Base64.decode("MC8O21gQXUaeSgMxxiOGugSrROkQHTbadlwDeJqHOpU4Q2o38bGWkm3/2zfS0N0s");
@@ -468,6 +470,7 @@ public class Uploadedto extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     public AccountInfo api_Fetch_accountinfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
@@ -527,6 +530,7 @@ public class Uploadedto extends PluginForHost {
         return ai;
     }
 
+    @SuppressWarnings("deprecation")
     public AccountInfo site_Fetch_accountinfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
@@ -623,6 +627,7 @@ public class Uploadedto extends PluginForHost {
         return "http://uploaded.net/legal";
     }
 
+    @SuppressWarnings("deprecation")
     private String getID(final DownloadLink downloadLink) {
         String id = new Regex(downloadLink.getDownloadURL(), "/file/([\\w]+)/?").getMatch(0);
         if (id != null) {
@@ -660,6 +665,7 @@ public class Uploadedto extends PluginForHost {
         doFree(downloadLink, null);
     }
 
+    @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
         if (account == null) {
             logger.info("Free, WEB download method in use!");
@@ -699,37 +705,38 @@ public class Uploadedto extends PluginForHost {
             /**
              * Free-Account Errorhandling: This allows users to switch between free accounts instead of reconnecting when a limit is reached
              */
+            long lastdownload = timeBefore.get();
+            if (lastdownload == 0) {
+                lastdownload = getLongProperty(this.getPluginConfig(), PROPERTY_LASTDOWNLOAD_TIMESTAMP, 0);
+            }
+            long passedTimeSinceLastDl = 0;
+            logger.info("New Download: currentIP = " + currentIP);
             if (account != null && this.getPluginConfig().getBooleanProperty(ACTIVATEACCOUNTERRORHANDLING, default_aaeh)) {
-                final String lastdownloadString = account.getStringProperty("LASTDOWNLOAD2");
-                long lastdownload = 0;
-                if (lastdownloadString != null && lastdownloadString.length() > 0) {
-                    lastdownload = Long.parseLong(lastdownloadString);
-                }
-                final long passedTime = System.currentTimeMillis() - lastdownload;
-                if (passedTime < RECONNECTWAIT && lastdownload > 0) {
+                lastdownload = getLongProperty(account, PROPERTY_LASTDOWNLOAD_TIMESTAMP, 0);
+                passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
+                if (passedTimeSinceLastDl < RECONNECTWAIT) {
                     /**
-                     * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached
+                     * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
                      */
-                    logger.info("New Download: currentIP = " + currentIP);
-                    if (hasDled.get() && ipChanged(currentIP, downloadLink) == true) {
+                    if (ipChanged(currentIP, downloadLink) == true) {
+                        /* IP was changed - now we only have to switch to the next account! */
                         logger.info("IP has changed -> Disabling current free account to try to use the next free account");
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     } else {
                         logger.info("IP has not changed, limit active on account and IP -> Throwing IP_BLOCKED exception go get a new IP for the next try");
                         logger.warning("Reconnect + account = buggy, this code will not work as intended!!");
-                        final long wait = RECONNECTWAIT - passedTime;
+                        final long wait = RECONNECTWAIT - passedTimeSinceLastDl;
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
                     }
                 }
             } else if (account == null && this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, default_eh)) {
                 /**
-                 * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached
+                 * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
                  */
-                logger.info("New Download: currentIP = " + currentIP);
-                if (hasDled.get() && ipChanged(currentIP, downloadLink) == false) {
-                    long result = System.currentTimeMillis() - timeBefore.get();
-                    if (result < RECONNECTWAIT && result > 0) {
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, RECONNECTWAIT - result);
+                if (ipChanged(currentIP, downloadLink) == false) {
+                    passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
+                    if (passedTimeSinceLastDl < RECONNECTWAIT) {
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, RECONNECTWAIT - passedTimeSinceLastDl);
                     }
                 }
             }
@@ -827,6 +834,8 @@ public class Uploadedto extends PluginForHost {
                     }
                 }
             }
+            /* The download attempt already triggers reconnect waittime! */
+            hasAttemptedDownloadstart.set(true);
             dl = BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
             try {
                 /* remove next major update */
@@ -873,17 +882,26 @@ public class Uploadedto extends PluginForHost {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (account != null) {
-                account.setProperty("LASTDOWNLOAD2", "" + System.currentTimeMillis());
-            }
             dl.startDownload();
-            hasDled.set(true);
         } catch (Exception e) {
             e.printStackTrace();
-            hasDled.set(false);
+            /*
+             * Experiment! Do not disable this trigger here as already the attempt of a free download will trigger the uploaded IP_BLOCKED
+             * limit!
+             */
+            // hasAttemptedDownloadstart.set(false);
             throw e;
         } finally {
-            timeBefore.set(System.currentTimeMillis());
+            /* Remember time of the last download */
+            if (hasAttemptedDownloadstart.get() == true) {
+                logger.info("Downloadstart was attempted --> Setting timestamps");
+                timeBefore.set(System.currentTimeMillis());
+                if (account != null) {
+                    account.setProperty(PROPERTY_LASTDOWNLOAD_TIMESTAMP, System.currentTimeMillis());
+                }
+            } else {
+                logger.info("Downloadstart was NOT attempted --> NOT setting timestamps");
+            }
             setIP(currentIP, downloadLink, account);
         }
     }
@@ -920,8 +938,8 @@ public class Uploadedto extends PluginForHost {
                 logger.info("Limit reached, throwing reconnect exception");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, RECONNECTWAIT);
             } else {
-                logger.info("Limit reached, disabling account to use the next one!");
-                account.setProperty("LASTDOWNLOAD2", "" + System.currentTimeMillis());
+                logger.info("Limit reached, disabling free account to use the next one!");
+                account.setProperty(PROPERTY_LASTDOWNLOAD_TIMESTAMP, System.currentTimeMillis());
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
         }
@@ -1645,30 +1663,50 @@ public class Uploadedto extends PluginForHost {
         return !currentIP.equals(lastIP);
     }
 
+    private static long getLongProperty(final Property link, final String key, final long def) {
+        try {
+            return link.getLongProperty(key, def);
+        } catch (final Throwable e) {
+            try {
+                Object r = link.getProperty(key, def);
+                if (r instanceof String) {
+                    r = Long.parseLong((String) r);
+                } else if (r instanceof Integer) {
+                    r = ((Integer) r).longValue();
+                }
+                final Long ret = (Long) r;
+                return ret;
+            } catch (final Throwable e2) {
+                return def;
+            }
+        }
+    }
+
+    @SuppressWarnings("deprecation")
     private boolean dmcaDlEnabled() {
         final SubConfiguration thiscfg = this.getPluginConfig();
         return (!thiscfg.getBooleanProperty(PREFER_PREMIUM_DOWNLOAD_API, default_ppda) && thiscfg.getBooleanProperty(DOWNLOAD_ABUSED, false));
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("SETTING_ACTIVATEACCOUNTERRORHANDLING", "Activate experimental free account errorhandling: Reconnect and switch between free accounts (to get more dl speed), also prevents having to enter additional captchas in between downloads.");
-                                                      put("SETTING_EXPERIMENTALHANDLING", "Activate reconnect workaround for freeusers: Prevents having to enter additional captchas in between downloads.");
-                                                      put("SETTING_SSL_CONNECTION", "Use Secure Communication over SSL (HTTPS://)");
-                                                      put("SETTING_PREFER_PREMIUM_DOWNLOAD_API", "By enabling this feature, JDownloader downloads via custom download API. On failure it will auto revert to web method!\r\nBy disabling this feature, JDownloader downloads via Web download method. Web method is generally less reliable than API method.");
-                                                      put("SETTING_DOWNLOAD_ABUSED", "Activate download of DMCA blocked links?\r\n-This function enabled uploaders to download their own links which have a 'legacy takedown' status till uploaded irrevocably deletes them\r\nNote the following:\r\n-When activated, links which have the public status 'offline' will get an 'uncheckable' status instead\r\n--> If they're still downloadable, their filename- and size will be shown on downloadstart\r\n--> If they're really offline, the correct (offline) status will be shown on downloadstart");
-                                                  }
-                                              };
+        {
+            put("SETTING_ACTIVATEACCOUNTERRORHANDLING", "Activate experimental free account errorhandling: Reconnect and switch between free accounts (to get more dl speed), also prevents having to enter additional captchas in between downloads.");
+            put("SETTING_EXPERIMENTALHANDLING", "Activate reconnect workaround for freeusers: Prevents having to enter additional captchas in between downloads.");
+            put("SETTING_SSL_CONNECTION", "Use Secure Communication over SSL (HTTPS://)");
+            put("SETTING_PREFER_PREMIUM_DOWNLOAD_API", "By enabling this feature, JDownloader downloads via custom download API. On failure it will auto revert to web method!\r\nBy disabling this feature, JDownloader downloads via Web download method. Web method is generally less reliable than API method.");
+            put("SETTING_DOWNLOAD_ABUSED", "Activate download of DMCA blocked links?\r\n-This function enabled uploaders to download their own links which have a 'legacy takedown' status till uploaded irrevocably deletes them\r\nNote the following:\r\n-When activated, links which have the public status 'offline' will get an 'uncheckable' status instead\r\n--> If they're still downloadable, their filename- and size will be shown on downloadstart\r\n--> If they're really offline, the correct (offline) status will be shown on downloadstart");
+        }
+    };
 
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-                                                  {
-                                                      put("SETTING_ACTIVATEACCOUNTERRORHANDLING", "Aktiviere experimentielles free Account Handling: Führe Reconnects aus und wechsle zwischen verfügbaren free Accounts (um die Downloadgeschwindigkeit zu erhöhen). Verhindert auch sinnlose Captchaabfragen zwischen Downloads.");
-                                                      put("SETTING_EXPERIMENTALHANDLING", "Aktiviere Reconnect Workaround: Verhindert sinnlose Captchaabfragen zwischen Downloads.");
-                                                      put("SETTING_SSL_CONNECTION", "Verwende sichere Verbindungen per SSL (HTTPS://)");
-                                                      put("SETTING_PREFER_PREMIUM_DOWNLOAD_API", "Ist dieses Feature aktiviert, verwendet JDownloader die Programmierschnittstelle (API). Nach Fehlversuchen wird automatisch zum Handling per Webseite gewechselt.\r\nIst dieses Feature deaktiviert benutzt JDownloader ausschließlich die Webseite. Die Webseite ist allgemein instabiler als die API.");
-                                                      put("SETTING_DOWNLOAD_ABUSED", "Aktiviere Download DMCA gesperrter Links?\r\nBedenke folgendes:\r\n-Diese Funktion erlaubt es Uploadern, ihre eigenen mit 'legacy takedown' Status versehenen Links in dem vom Hoster gegebenen Zeitraum noch herunterladen zu können\r\n-Diese Funktion führt dazu, dass Links, die öffentlich den Status 'offline' haben, stattdessen den Status 'nicht überprüft' bekommen\r\n--> Falls diese wirklich offline sind, wird der korrekte (offline) Status erst beim Downloadstart angezeigt\r\n--> Falls diese noch ladbar sind, werden deren Dateiname- und Größe beim Downloadstart angezeigt");
-                                                  }
-                                              };
+        {
+            put("SETTING_ACTIVATEACCOUNTERRORHANDLING", "Aktiviere experimentielles free Account Handling: Führe Reconnects aus und wechsle zwischen verfügbaren free Accounts (um die Downloadgeschwindigkeit zu erhöhen). Verhindert auch sinnlose Captchaabfragen zwischen Downloads.");
+            put("SETTING_EXPERIMENTALHANDLING", "Aktiviere Reconnect Workaround: Verhindert sinnlose Captchaabfragen zwischen Downloads.");
+            put("SETTING_SSL_CONNECTION", "Verwende sichere Verbindungen per SSL (HTTPS://)");
+            put("SETTING_PREFER_PREMIUM_DOWNLOAD_API", "Ist dieses Feature aktiviert, verwendet JDownloader die Programmierschnittstelle (API). Nach Fehlversuchen wird automatisch zum Handling per Webseite gewechselt.\r\nIst dieses Feature deaktiviert benutzt JDownloader ausschließlich die Webseite. Die Webseite ist allgemein instabiler als die API.");
+            put("SETTING_DOWNLOAD_ABUSED", "Aktiviere Download DMCA gesperrter Links?\r\nBedenke folgendes:\r\n-Diese Funktion erlaubt es Uploadern, ihre eigenen mit 'legacy takedown' Status versehenen Links in dem vom Hoster gegebenen Zeitraum noch herunterladen zu können\r\n-Diese Funktion führt dazu, dass Links, die öffentlich den Status 'offline' haben, stattdessen den Status 'nicht überprüft' bekommen\r\n--> Falls diese wirklich offline sind, wird der korrekte (offline) Status erst beim Downloadstart angezeigt\r\n--> Falls diese noch ladbar sind, werden deren Dateiname- und Größe beim Downloadstart angezeigt");
+        }
+    };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and

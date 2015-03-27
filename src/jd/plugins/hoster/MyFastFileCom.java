@@ -16,13 +16,18 @@
 
 package jd.plugins.hoster;
 
+import java.awt.Color;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -35,6 +40,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.swing.components.ExtTextField;
+import org.jdownloader.plugins.accounts.AccountFactory;
+import org.jdownloader.plugins.accounts.EditAccountPanel;
+import org.jdownloader.plugins.accounts.Notifier;
 
 @HostPlugin(revision = "$Revision: 26092 $", interfaceVersion = 3, names = { "myfastfile.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class MyFastFileCom extends PluginForHost {
@@ -72,6 +84,11 @@ public class MyFastFileCom extends PluginForHost {
     }
 
     @Override
+    public AccountFactory getAccountFactory() {
+        return new MyFastFileComAccountFactory();
+    }
+
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
@@ -94,12 +111,12 @@ public class MyFastFileCom extends PluginForHost {
         final AccountInfo ac = new AccountInfo();
         br.setFollowRedirects(true);
         /* account is valid, let's fetch account details */
-        getAPISafe(mProt + mName + "/api.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+        getAPISafe(mProt + mName + "/filehostapi?action=accountstatus&user_id=" + Encoding.urlEncode(account.getUser()) + "&pin=" + Encoding.urlEncode(account.getPass()));
         try {
-            final float daysleft = Float.parseFloat(getJson("days_left"));
-            if (daysleft > 0) {
-                long validuntil = System.currentTimeMillis() + (long) (daysleft * 1000 * 60 * 60 * 24);
-                ac.setValidUntil(validuntil);
+            long premium_until = Long.parseLong(getJson("premium_until"));
+            if (premium_until > 0) {
+                premium_until *= 1000l;
+                ac.setValidUntil(premium_until);
                 ac.setUnlimitedTraffic();
                 account.setType(AccountType.PREMIUM);
                 ac.setStatus("Premium Account");
@@ -111,11 +128,11 @@ public class MyFastFileCom extends PluginForHost {
                 ac.setStatus("Registered (free) account");
             }
         } catch (Exception e) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nCan not parse days_left!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nCan not parse premium_until!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
 
         // now it's time to get all supported hosts
-        getAPISafe("/api.php?hosts");
+        getAPISafe("/filehostapi?action=hosts&user_id=" + Encoding.urlEncode(account.getUser()) + "&pin=" + Encoding.urlEncode(account.getPass()));
         if (inValidStatus()) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nCan not parse supported hosts!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
@@ -144,7 +161,7 @@ public class MyFastFileCom extends PluginForHost {
 
         /* generate downloadlink */
         br.setFollowRedirects(true);
-        getAPISafe(mProt + mName + "/api.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
+        getAPISafe(mProt + mName + "/filehostapi?action=download&user_id=" + Encoding.urlEncode(account.getUser()) + "&pin=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
 
         // parse json
         if (br.containsHTML("Max atteint\\s*!")) {
@@ -446,6 +463,116 @@ public class MyFastFileCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
         link.setProperty(sessionRetry, Property.NULL);
         link.setProperty(globalRetry, Property.NULL);
+    }
+
+    public static class MyFastFileComAccountFactory extends AccountFactory {
+
+        public static class FreewayBZPanel extends MigPanel implements EditAccountPanel {
+            /**
+             *
+             */
+            private static final long serialVersionUID = 1L;
+
+            private final String      IDHELP           = "Enter your user id (9 digits)";
+            private final String      PINHELP          = "Enter your pin";
+
+            private String getPassword() {
+                if (this.pass == null) {
+                    return null;
+                }
+                if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
+                    return null;
+                }
+                return new String(this.pass.getPassword());
+            }
+
+            private String getUsername() {
+                if (IDHELP.equals(this.name.getText())) {
+                    return null;
+                }
+                return this.name.getText();
+            }
+
+            private ExtTextField      name;
+
+            ExtPasswordField          pass;
+
+            private volatile Notifier notifier = null;
+            private static String     EMPTYPW  = "                 ";
+            private final JLabel      idLabel;
+
+            public FreewayBZPanel() {
+                super("ins 0, wrap 2", "[][grow,fill]", "");
+                add(new JLabel("Click here to find your User-ID/PIN:"));
+                add(new JLink("https://www.myfastfile.com/account"));
+                add(idLabel = new JLabel("User-ID: (must be 9 digis)"));
+                add(this.name = new ExtTextField() {
+
+                    @Override
+                    public void onChanged() {
+                        if (notifier != null) {
+                            notifier.onNotify();
+                        }
+                    }
+
+                });
+
+                name.setHelpText(IDHELP);
+
+                add(new JLabel("PIN:"));
+                add(this.pass = new ExtPasswordField() {
+
+                    @Override
+                    public void onChanged() {
+                        if (notifier != null) {
+                            notifier.onNotify();
+                        }
+                    }
+
+                }, "");
+                pass.setHelpText(PINHELP);
+            }
+
+            @Override
+            public JComponent getComponent() {
+                return this;
+            }
+
+            @Override
+            public void setAccount(Account defaultAccount) {
+                if (defaultAccount != null) {
+                    name.setText(defaultAccount.getUser());
+                    pass.setText(defaultAccount.getPass());
+                }
+            }
+
+            @Override
+            public boolean validateInputs() {
+                final String userName = getUsername();
+                if (userName == null || !userName.trim().matches("^\\d{9}$")) {
+                    idLabel.setForeground(Color.RED);
+                    return false;
+                }
+                idLabel.setForeground(Color.BLACK);
+                return getPassword() != null;
+            }
+
+            @Override
+            public void setNotifyCallBack(Notifier notifier) {
+                this.notifier = notifier;
+            }
+
+            @Override
+            public Account getAccount() {
+                return new Account(getUsername(), getPassword());
+            }
+        }
+
+        @Override
+        public EditAccountPanel getPanel() {
+            return new FreewayBZPanel();
+        }
+
     }
 
 }

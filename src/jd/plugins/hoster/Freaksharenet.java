@@ -66,6 +66,7 @@ public class Freaksharenet extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("freakshare.net", "freakshare.com"));

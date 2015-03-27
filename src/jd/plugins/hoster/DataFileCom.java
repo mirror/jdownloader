@@ -229,7 +229,7 @@ public class DataFileCom extends PluginForHost {
         if (br.getURL().contains("error.html?code=9")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You can not download more than one file at a time without Premium membership", 2 * 60 * 60 * 1000l);
         }
-        if (br.containsHTML(DAILYLIMIT) || br.getURL().contains("error.html?code=7")) {
+        if (br.containsHTML(DAILYLIMIT) || br.getURL().contains("?code=7")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You exceeded your free daily download limit", 2 * 60 * 60 * 1000l);
         }
         if (br.containsHTML("ErrorCode 7: Download file count limit")) {
@@ -432,9 +432,17 @@ public class DataFileCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
+        if (!account.getUser().matches(".+@.+\\..+")) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
         if (useAPI.get()) {
             return fetchAccountInfo_API(account, ai);
         } else {
@@ -458,11 +466,11 @@ public class DataFileCom extends PluginForHost {
             if (expire == null) {
                 logger.info("JD could not detect account expire time, your account has been determined as a free account");
                 account.setProperty("free", true);
-                ai.setStatus("Free User");
+                ai.setStatus("Registered (free) account");
             } else {
                 account.setProperty("free", false);
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMM dd, yyyy HH:mm", Locale.ENGLISH));
-                ai.setStatus("Premium User");
+                ai.setStatus("Premium account");
             }
             account.setValid(true);
         }

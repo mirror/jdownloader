@@ -110,7 +110,10 @@ public class PanBaiduCom extends PluginForHost {
             }
 
             /* Experimental code */
-            final String i_frame = br.getRegex("<iframe src=\"(http://pan\\.baidu\\.com/share/link\\?shareid=\\d+\\&uk=\\d+\\&t=[A-Za-z0-9]+)\"").getMatch(0);
+            String i_frame = br.getRegex("<iframe src=\"(http://pan\\.baidu\\.com/share/link\\?shareid=\\d+\\&uk=\\d+\\&t=[A-Za-z0-9]+)\"").getMatch(0);
+            if (i_frame == null) {
+                i_frame = br.getRegex("<iframe src=\"(http://pan\\.baidu\\.com/share/link\\?shareid=\\d+\\&uk=\\d+\\&t=[A-Za-z0-9]+)\"").getMatch(0);
+            }
             if (i_frame != null) {
                 logger.info("Found i_frame - accessing it!");
                 getPage(this.br, i_frame);
