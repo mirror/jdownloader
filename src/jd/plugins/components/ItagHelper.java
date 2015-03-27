@@ -1,4 +1,4 @@
-package jd.plugins.decrypter;
+package jd.plugins.components;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -13,9 +13,6 @@ import java.util.Map;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
-import jd.plugins.components.YoutubeClipData;
-import jd.plugins.components.YoutubeITAG;
-import jd.plugins.components.YoutubeVariant;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.Application;

@@ -1486,81 +1486,85 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     }
 
     public void logDownloadException(DownloadLink link, PluginForHost plugin, Throwable e) {
-        DownloadLinkCandidateResult result = new DownloadLinkCandidateResult(RESULT.PLUGIN_DEFECT, e, plugin.getHost());
-        DownloadLogEntry dl = new DownloadLogEntry();
+        try {
+            DownloadLinkCandidateResult result = new DownloadLinkCandidateResult(RESULT.PLUGIN_DEFECT, e, plugin.getHost());
+            DownloadLogEntry dl = new DownloadLogEntry();
 
-        SingleDownloadController downloadController = link.getDownloadLinkController();
-        dl.setResult(DownloadResult.PLUGIN_DEFECT);
+            SingleDownloadController downloadController = link.getDownloadLinkController();
+            dl.setResult(DownloadResult.PLUGIN_DEFECT);
 
-        HTTPProxy usedProxy = downloadController.getUsedProxy();
-        boolean aborted = downloadController.isAborting();
-        // long duration = link.getView().getDownloadTime();
+            HTTPProxy usedProxy = downloadController.getUsedProxy();
+            boolean aborted = downloadController.isAborting();
+            // long duration = link.getView().getDownloadTime();
 
-        long sizeChange = Math.max(0, link.getView().getBytesLoaded() - downloadController.getSizeBefore());
+            long sizeChange = Math.max(0, link.getView().getBytesLoaded() - downloadController.getSizeBefore());
 
-        dl.setBuildTime(StatsManager.readBuildTime());
+            dl.setBuildTime(StatsManager.readBuildTime());
 
-        dl.setResume(downloadController.isResumed());
-        dl.setCanceled(aborted);
-        dl.setHost(Candidate.replace(link.getHost()));
-        dl.setCandidate(Candidate.create(new CachedAccount(plugin.getHost(), null, plugin)));
+            dl.setResume(downloadController.isResumed());
+            dl.setCanceled(aborted);
+            dl.setHost(Candidate.replace(link.getHost()));
+            dl.setCandidate(Candidate.create(new CachedAccount(plugin.getHost(), null, plugin)));
 
-        dl.setCaptchaRuntime(0);
-        dl.setFilesize(Math.max(0, link.getView().getBytesTotal()));
-        dl.setPluginRuntime(1000);
-        dl.setProxy(usedProxy != null && !usedProxy.isDirect() && !usedProxy.isNone());
-        dl.setSpeed(1000);
-        dl.setWaittime(1000);
-        dl.setOs(CrossSystem.getOSFamily().name());
-        dl.setUtcOffset(TimeZone.getDefault().getOffset(System.currentTimeMillis()));
-        final String errorID = result.getErrorID();
-        String stacktrace = errorID;
-        if (stacktrace != null) {
-            stacktrace = "IDV" + StatsManager.STACKTRACE_VERSION + ":\r\n" + dl.getCandidate().getPlugin() + "-" + dl.getCandidate().getType() + "\r\n" + getClass().getName() + "\r\n" + StatsManager.cleanErrorID(stacktrace);
-        }
+            dl.setCaptchaRuntime(0);
+            dl.setFilesize(Math.max(0, link.getView().getBytesTotal()));
+            dl.setPluginRuntime(1000);
+            dl.setProxy(usedProxy != null && !usedProxy.isDirect() && !usedProxy.isNone());
+            dl.setSpeed(1000);
+            dl.setWaittime(1000);
+            dl.setOs(CrossSystem.getOSFamily().name());
+            dl.setUtcOffset(TimeZone.getDefault().getOffset(System.currentTimeMillis()));
+            final String errorID = result.getErrorID();
+            String stacktrace = errorID;
+            if (stacktrace != null) {
+                stacktrace = "IDV" + StatsManager.STACKTRACE_VERSION + ":\r\n" + dl.getCandidate().getPlugin() + "-" + dl.getCandidate().getType() + "\r\n" + getClass().getName() + "\r\n" + StatsManager.cleanErrorID(stacktrace);
+            }
 
-        dl.setErrorID(errorID == null ? null : Hash.getMD5(stacktrace));
-        dl.setTimestamp(System.currentTimeMillis());
-        dl.setSessionStart(StatsManager.I().getSessionStart());
-        // this linkid is only unique for you. it is not globaly unique, thus it cannot be mapped to the actual url or anything like
-        // this.
-        dl.setLinkID(link.getUniqueID().getID());
-        String id = dl.getCandidate().getRevision() + "_" + dl.getErrorID() + "_" + dl.getCandidate().getPlugin() + "_" + dl.getCandidate().getType();
-        AtomicInteger errorCounter = counterMap.get(id);
-        if (errorCounter == null) {
-            counterMap.put(id, errorCounter = new AtomicInteger());
-        }
+            dl.setErrorID(errorID == null ? null : Hash.getMD5(stacktrace));
+            dl.setTimestamp(System.currentTimeMillis());
+            dl.setSessionStart(StatsManager.I().getSessionStart());
+            // this linkid is only unique for you. it is not globaly unique, thus it cannot be mapped to the actual url or anything like
+            // this.
+            dl.setLinkID(link.getUniqueID().getID());
+            String id = dl.getCandidate().getRevision() + "_" + dl.getErrorID() + "_" + dl.getCandidate().getPlugin() + "_" + dl.getCandidate().getType();
+            AtomicInteger errorCounter = counterMap.get(id);
+            if (errorCounter == null) {
+                counterMap.put(id, errorCounter = new AtomicInteger());
+            }
 
-        //
-        dl.setCounter(errorCounter.incrementAndGet());
-        ;
+            //
+            dl.setCounter(errorCounter.incrementAndGet());
+            ;
 
-        if (dl.getErrorID() != null) {
-            ErrorDetails error = errors.get(dl.getErrorID());
+            if (dl.getErrorID() != null) {
+                ErrorDetails error = errors.get(dl.getErrorID());
 
-            if (error == null) {
+                if (error == null) {
 
-                ErrorDetails error2 = errors.putIfAbsent(dl.getErrorID(), error = new ErrorDetails(dl.getErrorID()));
-                error.setStacktrace(stacktrace);
+                    ErrorDetails error2 = errors.putIfAbsent(dl.getErrorID(), error = new ErrorDetails(dl.getErrorID()));
+                    error.setStacktrace(stacktrace);
 
-                error.setBuildTime(dl.getBuildTime());
+                    error.setBuildTime(dl.getBuildTime());
 
-                if (error2 != null) {
-                    error = error2;
+                    if (error2 != null) {
+                        error = error2;
+                    }
                 }
             }
-        }
-        logger.info("Tracker Package: \r\n" + JSonStorage.serializeToJson(dl));
-        if (dl.getErrorID() != null) {
-            logger.info("Error Details: \r\n" + JSonStorage.serializeToJson(errors.get(dl.getErrorID())));
-        }
+            logger.info("Tracker Package: \r\n" + JSonStorage.serializeToJson(dl));
+            if (dl.getErrorID() != null) {
+                logger.info("Error Details: \r\n" + JSonStorage.serializeToJson(errors.get(dl.getErrorID())));
+            }
 
-        if (result.getLastPluginHost() != null && !StringUtils.equals(dl.getCandidate().getPlugin(), result.getLastPluginHost())) {
-            // the error did not happen in the plugin
-            logger.info("Do not track. " + result.getLastPluginHost() + "!=" + dl.getCandidate().getPlugin());
-            // return;
+            if (result.getLastPluginHost() != null && !StringUtils.equals(dl.getCandidate().getPlugin(), result.getLastPluginHost())) {
+                // the error did not happen in the plugin
+                logger.info("Do not track. " + result.getLastPluginHost() + "!=" + dl.getCandidate().getPlugin());
+                // return;
+            }
+            //
+            log(dl);
+        } catch (Throwable e1) {
+            logger.log(e1);
         }
-        //
-        log(dl);
     }
 }
