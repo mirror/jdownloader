@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.imageio.ImageIO;
 import javax.sound.sampled.AudioFormat;
@@ -255,12 +256,13 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
             new Thread("Captcha Sound") {
                 public void run() {
                     AudioInputStream stream = null;
+                    Clip clip = null;
                     try {
                         stream = AudioSystem.getAudioInputStream(finalSoundUrl);
                         final AudioFormat format = stream.getFormat();
                         final DataLine.Info info = new DataLine.Info(Clip.class, format);
                         if (AudioSystem.isLineSupported(info)) {
-                            final Clip clip = (Clip) AudioSystem.getLine(info);
+                            clip = (Clip) AudioSystem.getLine(info);
                             clip.open(stream);
                             try {
                                 final FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
@@ -275,17 +277,18 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
                             } catch (Exception e) {
                                 Log.exception(e);
                             }
-                            clip.start();
+                            final AtomicBoolean runningFlag = new AtomicBoolean(true);
                             clip.addLineListener(new LineListener() {
 
                                 @Override
                                 public void update(LineEvent event) {
                                     if (event.getType() == Type.STOP) {
-                                        clip.close();
+                                        runningFlag.set(false);
                                     }
                                 }
                             });
-                            while (clip.isRunning()) {
+                            clip.start();
+                            while (clip.isRunning() && runningFlag.get()) {
                                 Thread.sleep(100);
                             }
                         }
@@ -298,11 +301,12 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
                             }
                         } catch (Throwable e) {
                         }
-                        // try {
-                        // clip.close();
-                        // } catch (Throwable e) {
-                        //
-                        // }
+                        try {
+                            if (clip != null) {
+                                clip.close();
+                            }
+                        } catch (Throwable e) {
+                        }
                     }
                 }
             }.start();
@@ -542,7 +546,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
         ret.setOpaque(false);
         ExtButton premium = new ExtButton(new AppAction() {
             /**
-             * 
+             *
              */
             private static final long serialVersionUID = -3551320196255605774L;
 
@@ -849,7 +853,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
         iconPanel = new JPanel(new MigLayout("ins 0", "[grow]", "[grow]")) {
 
             /**
-             * 
+             *
              */
             private static final long serialVersionUID = 1L;
             private Color             col              = (lafOptions.getColorForPanelBackground());
