@@ -641,6 +641,9 @@ public class LenfileCom extends PluginForHost {
 
                 }
             }
+            if (!dlForm.hasInputFieldByName("id")) {
+                dlForm.put("id", fuid);
+            }
         }
         if (dlForm == null) {
             dlForm = new Form();
