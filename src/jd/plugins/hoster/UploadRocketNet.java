@@ -315,7 +315,10 @@ public class UploadRocketNet extends PluginForHost {
         // Fourth, continue like normal.
         if (dllink == null) {
             checkErrors(downloadLink, false);
-            final Form download1 = getFormByKey("op", "download1");
+            Form download1 = getFormByKey("op", "download1");
+            if (download1 == null) {
+                download1 = getFormByKey("method_free", "Free+Download");
+            }
             if (download1 != null) {
                 download1.remove("method_premium");
                 // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
