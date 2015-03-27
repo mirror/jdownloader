@@ -5,9 +5,9 @@ import java.io.File;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.settings.GeneralSettings;
 
 public class OpenDefaultDownloadFolderAction extends AbstractToolBarAction {
@@ -18,9 +18,16 @@ public class OpenDefaultDownloadFolderAction extends AbstractToolBarAction {
 
     public void actionPerformed(ActionEvent e) {
         final String dlDir = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
-        if (dlDir == null) { return; }
+        if (dlDir == null) {
+            return;
+        }
+        String str = PackagizerController.replaceDynamicTags(dlDir, "packagename");
         /* we want to open the dlDir and not its parent folder/select it */
-        CrossSystem.openFile(new File(dlDir));
+        File file = new File(str);
+        while (file != null && !file.exists()) {
+            file = file.getParentFile();
+        }
+        CrossSystem.openFile(file);
     }
 
     @Override
