@@ -194,18 +194,54 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     @Override
     public void onDownloadWatchdogStateIsIdle() {
+
     }
 
     @Override
     public void onDownloadWatchdogStateIsPause() {
+
+        for (ScriptEntry script : entries) {
+            if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_DOWNLOADS_PAUSE == script.getEventTrigger()) {
+                try {
+                    HashMap<String, Object> props = new HashMap<String, Object>();
+
+                    runScript(script, props);
+                } catch (Throwable e) {
+                    getLogger().log(e);
+                }
+            }
+        }
     }
 
     @Override
     public void onDownloadWatchdogStateIsRunning() {
+        for (ScriptEntry script : entries) {
+            if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_DOWNLOADS_RUNNING == script.getEventTrigger()) {
+                try {
+                    HashMap<String, Object> props = new HashMap<String, Object>();
+
+                    runScript(script, props);
+                } catch (Throwable e) {
+                    getLogger().log(e);
+                }
+            }
+        }
     }
 
     @Override
     public void onDownloadWatchdogStateIsStopped() {
+        for (ScriptEntry script : entries) {
+            if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_DOWNLOADS_STOPPED == script.getEventTrigger()) {
+                try {
+                    HashMap<String, Object> props = new HashMap<String, Object>();
+
+                    runScript(script, props);
+                } catch (Throwable e) {
+                    getLogger().log(e);
+                }
+            }
+        }
+
     }
 
     @Override

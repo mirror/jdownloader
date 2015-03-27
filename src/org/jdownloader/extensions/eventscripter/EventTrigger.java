@@ -212,6 +212,69 @@ public enum EventTrigger implements LabelInterface {
         public String getAPIDescription() {
             return defaultAPIDescription(this);
         }
+    },
+    ON_DOWNLOADS_PAUSE {
+        @Override
+        public String getLabel() {
+            return T._.ON_DOWNLOADS_PAUSE();
+        }
+
+        public boolean isSynchronous() {
+            // scripts should be able to modify the link
+            return true;
+        }
+
+        public HashMap<String, Object> getTestProperties() {
+            HashMap<String, Object> props = new HashMap<String, Object>();
+
+            return props;
+        }
+
+        public String getAPIDescription() {
+            return defaultAPIDescription(this);
+        }
+    },
+    ON_DOWNLOADS_RUNNING {
+        @Override
+        public String getLabel() {
+            return T._.ON_DOWNLOADS_RUNNING();
+        }
+
+        public boolean isSynchronous() {
+            // scripts should be able to modify the link
+            return true;
+        }
+
+        public HashMap<String, Object> getTestProperties() {
+            HashMap<String, Object> props = new HashMap<String, Object>();
+
+            return props;
+        }
+
+        public String getAPIDescription() {
+            return defaultAPIDescription(this);
+        }
+    },
+    ON_DOWNLOADS_STOPPED {
+        @Override
+        public String getLabel() {
+            return T._.ON_DOWNLOADS_STOPPED();
+        }
+
+        public boolean isSynchronous() {
+            // scripts should be able to modify the link
+            return true;
+        }
+
+        public HashMap<String, Object> getTestProperties() {
+            HashMap<String, Object> props = new HashMap<String, Object>();
+
+            return props;
+        }
+
+        public String getAPIDescription() {
+            return defaultAPIDescription(this);
+        }
     };
 
     public String getAPIDescription() {

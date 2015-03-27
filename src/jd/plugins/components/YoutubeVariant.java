@@ -2100,7 +2100,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
     @Override
     public String _getExtendedName() {
-        String saname = _getName();
+
         switch (getGroup()) {
         case AUDIO:
             if (getiTagVideo() != null) {
