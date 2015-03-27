@@ -85,7 +85,7 @@ public class Uploadedto extends PluginForHost {
     private String                         LASTIP                          = "LASTIP";
     private static AtomicReference<String> lastIP                          = new AtomicReference<String>();
     private static AtomicBoolean           usePremiumAPI                   = new AtomicBoolean(true);
-    private static final long              RECONNECTWAIT                   = 3660000l;
+    private static final long              RECONNECTWAIT                   = 10860000L;
     private static final String            NOCHUNKS                        = "NOCHUNKS";
     private static final String            NORESUME                        = "NORESUME";
     private static final String            PROPERTY_LASTDOWNLOAD_TIMESTAMP = "uploadednet_lastdownload_timestamp";
@@ -883,14 +883,6 @@ public class Uploadedto extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             dl.startDownload();
-        } catch (Exception e) {
-            e.printStackTrace();
-            /*
-             * Experiment! Do not disable this trigger here as already the attempt of a free download will trigger the uploaded IP_BLOCKED
-             * limit!
-             */
-            // hasAttemptedDownloadstart.set(false);
-            throw e;
         } finally {
             /* Remember time of the last download */
             if (hasAttemptedDownloadstart.get() == true) {
