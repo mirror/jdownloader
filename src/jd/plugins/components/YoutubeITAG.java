@@ -13,12 +13,12 @@ public enum YoutubeITAG {
     DASH_AUDIO_OPUS_160KBIT(251, null, null, "Opus", "160kbit", YoutubeITAG.AUDIO_CODEC_OPUS_160),
     DASH_AUDIO_OPUS_48KBIT(249, null, null, "Opus", "48kbit", YoutubeITAG.AUDIO_CODEC_OPUS_48),
     DASH_AUDIO_OPUS_64KBIT(250, null, null, "Opus", "64kbit", YoutubeITAG.AUDIO_CODEC_OPUS_64),
-    DASH_VIDEO_1080_H264_FPS60(299, "H264", "1080p 60fps", null, null, 1080.4 + 0.05),
+    DASH_VIDEO_1080_H264_FPS60(299, "H264", "1080p 60fps", null, null, 1080.4 + YoutubeITAG.FPS_60),
     DASH_VIDEO_1080P_H264(137, "H264", "1080p", null, null, 1080.4),
     // http://www.youtube.com/watch?v=gBabKoHSErI
     DASH_VIDEO_1440P_H264(264, "H264", "1440p", null, null, 1440.4),
     DASH_VIDEO_144P_H264(160, "H264", "144p", null, null, 144.4),
-    DASH_VIDEO_2160_H264_FPS_60(266, "H264", "2160p", null, null, 2160.4 - 0.05),
+    DASH_VIDEO_2160_H264_FPS_60(266, "H264", "2160p 60fps", null, null, 2160.4 + YoutubeITAG.FPS_60),
     DASH_VIDEO_240P_H264(133, "H264", "240p", null, null, 240.4),
 
     DASH_VIDEO_360P_H264(134, "H264", "360p", null, null, 360.4),
@@ -26,9 +26,9 @@ public enum YoutubeITAG {
     DASH_VIDEO_720_H264_FPS60(298, "H264", "720p 60fps", null, null, 720.4 + 0.05),
 
     DASH_VIDEO_720P_H264(136, "H264", "720p", null, null, 720.4),
-    DASH_VIDEO_ITAG308_VP9_1440P_60FPS(308, "vp9", "1440p", null, null, YoutubeITAG.VIDEO_RESOLUTION_1440P + YoutubeITAG.VIDEO_CODEC_VP9),
+    DASH_VIDEO_ITAG308_VP9_1440P_60FPS(308, "vp9", "1440p 60fps", null, null, YoutubeITAG.VIDEO_RESOLUTION_1440P + YoutubeITAG.VIDEO_CODEC_VP9 + YoutubeITAG.FPS_60),
     DASH_VIDEO_ITAG313_VP9_2160P_30FPS(313, "vp9", "2160p", null, null, YoutubeITAG.VIDEO_RESOLUTION_2160P + YoutubeITAG.VIDEO_CODEC_VP9),
-    DASH_VIDEO_ITAG315_VP9_2160P_60FPS(315, "vp9", "2160p", null, null, YoutubeITAG.VIDEO_RESOLUTION_2160P + YoutubeITAG.VIDEO_CODEC_VP9 + YoutubeITAG.FPS_60),
+    DASH_VIDEO_ITAG315_VP9_2160P_60FPS(315, "vp9", "2160p 60fps", null, null, YoutubeITAG.VIDEO_RESOLUTION_2160P + YoutubeITAG.VIDEO_CODEC_VP9 + YoutubeITAG.FPS_60),
     DASH_VIDEO_ORIGINAL_H264(138, "H264", "Original", null, null, 2160.4),
     // https://www.youtube.com/watch?v=ZSn3Tvc7jQU
     // DASH_WEBM_VIDEO_1080P_VP9_60FPS(299, "VP9", "1080p", null, null, 1080.3),
@@ -203,7 +203,7 @@ public enum YoutubeITAG {
     public static final double MP3_64                 = 0.0442;
 
     public static final double VIDEO_CODEC_VP9        = 0.3;
-    public static final double FPS_60                 = 0.01;
+    public static final double FPS_60                 = 0.05;
     public static final double VIDEO_RESOLUTION_1440P = 1440.0;
 
     public static final double VIDEO_RESOLUTION_2160P = 2160.0;
