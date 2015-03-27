@@ -39,7 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginCache;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
+import jd.plugins.components.ItagHelper;
 import jd.plugins.components.YoutubeClipData;
 import jd.plugins.components.YoutubeCustomConvertVariant;
 import jd.plugins.components.YoutubeCustomVariantStorable;
@@ -53,7 +53,6 @@ import jd.plugins.components.YoutubeVariant;
 import jd.plugins.components.YoutubeVariantInterface;
 import jd.plugins.hoster.YoutubeDashV2.SubtitleVariant;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.exceptions.WTFException;
@@ -1171,9 +1170,6 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                         this.logger.info(url + "");
                         this.logger.info(query + "");
                         try {
-                            PluginForHost plg = JDUtilities.getPluginForHost("youtube.com");
-                            // dummy log to collect new itags
-                            StatsManager.I().logDownloadException(new DownloadLink(plg, vid.videoID, "youtube.com", "youtube.com", true), plg, new Exception("Unknown ITAG: " + query.get("itag")));
 
                             if (!Application.isJared(null)) {
                                 new ItagHelper(vid, br, query, url).run();
@@ -1720,9 +1716,6 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             this.logger.info(url + "");
             this.logger.info(query + "");
             try {
-                PluginForHost plg = JDUtilities.getPluginForHost("youtube.com");
-                // dummy log to collect new itags
-                StatsManager.I().logDownloadException(new DownloadLink(plg, vid.videoID, "youtube.com", "youtube.com", true), plg, new Exception("Unknown ITAG: " + query.get("itag")));
 
                 if (!Application.isJared(null)) {
                     new ItagHelper(vid, br, query, url).run();
