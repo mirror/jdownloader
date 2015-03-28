@@ -42,6 +42,7 @@ public class MkxkCom extends PluginForHost {
         return "http://www.mkxk.com/";
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("/down/", "/play/"));
     }
