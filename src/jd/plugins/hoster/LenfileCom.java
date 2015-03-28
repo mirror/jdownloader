@@ -39,7 +39,6 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.Form.MethodType;
 import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
 import jd.plugins.Account;
@@ -419,7 +418,7 @@ public class LenfileCom extends PluginForHost {
             }
             boolean useForm = true;
             if (useForm) {
-                final Form download1 = getFormByKey("method_free", "Download");
+                final Form download1 = getFormDownload1();
                 if (download1 != null) {
                     download1.remove("method_premium");
                     /*
@@ -447,7 +446,7 @@ public class LenfileCom extends PluginForHost {
             }
         }
         if (dllink == null) {
-            Form dlForm = dlFormManual();
+            Form dlForm = getFormDownload2();
             // br.getFormbyProperty("name", "F1");
             // if (dlForm == null) {
             // dlForm = getFormByKey("op", "download2");
@@ -588,7 +587,7 @@ public class LenfileCom extends PluginForHost {
                         invalidateLastChallengeResponse();
                     } catch (final Throwable e) {
                     }
-                    dlForm = dlFormManual();
+                    dlForm = getFormDownload2();
                     continue;
                 } else {
                     try {
@@ -624,40 +623,85 @@ public class LenfileCom extends PluginForHost {
         }
     }
 
-    private Form dlFormManual() {
-        Form dlForm = this.getFormByKey("op", "download2");
-        while (dlForm.hasInputFieldByName("id")) {
-            dlForm.remove("id");
+    private Form getFormDownload1() {
+        Form download1 = getFormByKey("op", "download1");
+        if (download1 == null) {
+            download1 = getFormByKey("method_free", "Free+Download");
+            if (download1 == null) {
+                download1 = getFormByKey("method_free", "Download");
+                if (download1 == null) {
+                    Form[] dlForms = Form.getForms(correctedBR);
+                    if (dlForms.length == 1) {
+                        download1 = dlForms[0];
+                        final String correction = br.getRegex("document\\.getElementById\\(\"\\w+\"\\)\\.innerHTML\\s*=\\s*\"(<input type=\"submit\"[^>]+value=\"(.*?)\"[^>]*>)").getMatch(0);
+                        if (correction != null) {
+                            final InputField submit = download1.getInputFieldByType("submit");
+                            final InputField n = InputField.parse(correction);
+                            download1.getInputFields().remove(submit);
+                            download1.addInputField(n);
+                        }
+                    } else {
+                        ArrayList<Form> result = new ArrayList<Form>();
+                        if (dlForms != null) {
+                            for (Form f : dlForms) {
+                                if (f.hasInputFieldByName("method_free")) {
+                                    result.add(f);
+                                }
+                            }
+                        }
+                        if (!result.isEmpty()) {
+                            download1 = result.get(0);
+                        }
+                    }
+                }
+            }
         }
-        if (dlForm != null) {
-            final String fc = dlForm.getHtmlCode().toString().replace("\\\"", "\"").replaceAll("<\\!\\-\\-.*?\\-\\->", "");
+        return download1;
+    }
+
+    private Form getFormDownload2() {
+        Form download2 = getFormByKey("op", "download2");
+        if (download2 == null) {
+            download2 = getFormByKey("method_free", "Free+Download");
+        }
+        if (download2 == null) {
+            Form[] dlForms = Form.getForms(correctedBR);
+            ArrayList<Form> result = new ArrayList<Form>();
+            if (dlForms != null) {
+                for (Form f : dlForms) {
+                    if (f.hasInputFieldByName("method_free")) {
+                        result.add(f);
+                    }
+                }
+            }
+            if (!result.isEmpty()) {
+                download2 = result.get(0);
+            }
+        }
+        if (download2 == null) {
+            return null;
+        }
+
+        while (download2.hasInputFieldByName("id")) {
+            download2.remove("id");
+        }
+        if (download2 != null) {
+            final String fc = download2.getHtmlCode().toString().replace("\\\"", "\"").replaceAll("<\\!\\-\\-.*?\\-\\->", "");
             final String[][] z = new Regex(fc, "<input[^>]+name=\"(\\w+)\"\\s+value=\"([a-z0-9]+)\"").getMatches();
             if (z != null) {
                 for (String[] f : z) {
                     if (f[0].equalsIgnoreCase("id") && !f[1].equalsIgnoreCase(fuid)) {
                         continue;
                     }
-                    dlForm.put(Encoding.urlEncode(f[0]), Encoding.urlEncode(f[1]));
+                    download2.put(Encoding.urlEncode(f[0]), Encoding.urlEncode(f[1]));
 
                 }
             }
-            if (!dlForm.hasInputFieldByName("id")) {
-                dlForm.put("id", fuid);
+            if (!download2.hasInputFieldByName("id")) {
+                download2.put("id", fuid);
             }
         }
-        if (dlForm == null) {
-            dlForm = new Form();
-            dlForm.setMethod(MethodType.POST);
-            dlForm.put("id", fuid);
-            dlForm.put("op", "download2");
-            dlForm.put("referer", Encoding.urlEncode(br.getURL()));
-            dlForm.put("method_free", "Free+Download");
-            dlForm.put("method_premium", "");
-            dlForm.put("down_direct", "1");
-            final String rand = new Regex(br.toString().replace("\\\"", "\""), "<input[^>]+name=\"rand\" value=\"([a-z0-9]+)\"").getMatch(0);
-            dlForm.put("rand", rand != null ? rand : "");
-        }
-        return dlForm;
+        return download2;
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -886,7 +930,7 @@ public class LenfileCom extends PluginForHost {
      * @return
      */
     private Form getFormByKey(final String key, final String value) {
-        Form[] workaround = br.getForms();
+        Form[] workaround = Form.getForms(correctedBR);
         if (workaround != null) {
             for (Form f : workaround) {
                 for (InputField field : f.getInputFields()) {
