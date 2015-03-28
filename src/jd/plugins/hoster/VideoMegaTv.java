@@ -16,6 +16,9 @@
 
 package jd.plugins.hoster;
 
+import java.util.HashSet;
+import java.util.Random;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -136,13 +139,28 @@ public class VideoMegaTv extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final String[] adlinks = br.getRegex("\"(/[A-Z0-9]+/ad\\.php[^<>\"]*?)\"").getColumn(0);
+            final HashSet<String> dupe = new HashSet<String>();
             if (adlinks != null) {
                 for (final String adlink : adlinks) {
-                    br.cloneBrowser().getPage(adlink);
+                    if (dupe.add(adlink)) {
+                        br.cloneBrowser().getPage(adlink);
+                    }
                 }
             }
-            br.cloneBrowser().postPage("http://videomega.tv/upd_views.php", "id=" + id + "&referal=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
-            br.getHeaders().put("Accept", "video/webm,video/ogg,video/*;q=0.9,application/ogg;q=0.7,audio/*;q=0.6,*/*;q=0.5");
+            final Browser ajax = br.cloneBrowser();
+            ajax.getHeaders().put("Accept", "*/*");
+            ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            ajax.postPage("/upd_views.php", "id=" + id + "&referal=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
+            br.getHeaders().put("Accept", "*/*");
+            br.getHeaders().put("Accept-Encoding", "identity;q=1, *;q=0");
+            // this is needed
+            String ran = "";
+            while (ran.length() < 12) {
+                ran = new Random().nextLong() + "";
+            }
+            ran = ran.substring(1, 11);
+            br.setCookie(this.getHost(), "_ga", "GA1.2." + ran + "." + System.currentTimeMillis());
+
             dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
                 handleServerErrors();
