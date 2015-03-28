@@ -315,10 +315,7 @@ public class UploadRocketNet extends PluginForHost {
         // Fourth, continue like normal.
         if (dllink == null) {
             checkErrors(downloadLink, false);
-            Form download1 = getFormByKey("op", "download1");
-            if (download1 == null) {
-                download1 = getFormByKey("method_free", "Free+Download");
-            }
+            Form download1 = getFormDownload1();
             if (download1 != null) {
                 download1.remove("method_premium");
                 // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
@@ -516,6 +513,28 @@ public class UploadRocketNet extends PluginForHost {
         }
     }
 
+    private Form getFormDownload1() {
+        Form download1 = getFormByKey("op", "download1");
+        if (download1 == null) {
+            download1 = getFormByKey("method_free", "Free+Download");
+        }
+        if (download1 == null) {
+            Form[] dlForms = Form.getForms(correctedBR);
+            ArrayList<Form> result = new ArrayList<Form>();
+            if (dlForms != null) {
+                for (Form f : dlForms) {
+                    if (f.hasInputFieldByName("method_free")) {
+                        result.add(f);
+                    }
+                }
+            }
+            if (!result.isEmpty()) {
+                download1 = result.get(0);
+            }
+        }
+        return download1;
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return maxFree.get();
@@ -545,8 +564,14 @@ public class UploadRocketNet extends PluginForHost {
         correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
 
+        {
+            String results[] = new Regex(correctedBR, "(<!--\\s*XFSCUSTOM.COM: gunggo pops Start.*?)<\\s*/BODY\\s*>").getColumn(0);
+            for (String result : results) {
+                correctedBR = correctedBR.replace(result, "");
+            }
+        }
         // remove custom rules first!!! As html can change because of generic cleanup rules.
-        regexStuff.add("(<!--\\s*XFSCUSTOM.COM: gunggo pops Start.*?)<\\s*/BODY\\s*>");
+
         // generic cleanup
         regexStuff.add("<!(--.*?--)>");
         regexStuff.add("(<td[^>]+style=(\"|')[\\w:;\\s#-]*color\\s*:\\s*transparent\\s*;[^>]*>.*?</td>)");
@@ -677,7 +702,7 @@ public class UploadRocketNet extends PluginForHost {
      * @return
      */
     private Form getFormByKey(final String key, final String value) {
-        Form[] workaround = br.getForms();
+        Form[] workaround = Form.getForms(correctedBR);
         if (workaround != null) {
             for (Form f : workaround) {
                 for (InputField field : f.getInputFields()) {
