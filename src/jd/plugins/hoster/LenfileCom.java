@@ -58,7 +58,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lenfile.com" }, urls = { "https?://(www\\.)?lenfile\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lenfile.com" }, urls = { "https?://(www\\.)?lenfile\\.com/[a-z0-9]{12}(?:/[^<>\"/]+)?" }, flags = { 2 })
 public class LenfileCom extends PluginForHost {
 
     private String                         correctedBR                  = "";
@@ -121,12 +121,20 @@ public class LenfileCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/embed-", "/"));
+        setFUID(link);
+        String url_filename = new Regex(link.getDownloadURL(), "lenfile\\.com/[a-z0-9]{12}/(.{2,})").getMatch(0);
         /* link cleanup, but respect users protocol choosing or forced protocol */
+        final String protocol;
         if (!SUPPORTSHTTPS) {
-            link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
+            protocol = "http://";
         } else if (SUPPORTSHTTPS && SUPPORTSHTTPS_FORCED) {
-            link.setUrlDownload(link.getDownloadURL().replaceFirst("http://", "https://"));
+            protocol = "https://";
+        }
+        final String corrected_url = protocol + "lenfile.com/" + this.fuid;
+        link.setUrlDownload(corrected_url);
+        if (url_filename != null) {
+            url_filename = Encoding.htmlDecode(url_filename).trim();
+            link.setProperty("url_filename", url_filename);
         }
     }
 
@@ -135,6 +143,7 @@ public class LenfileCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
+    @SuppressWarnings("deprecation")
     public LenfileCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
@@ -1012,7 +1021,7 @@ public class LenfileCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     private void setFUID(final DownloadLink dl) {
-        fuid = new Regex(dl.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
+        fuid = new Regex(dl.getDownloadURL(), "lenfile\\.com/([a-z0-9]{12})").getMatch(0);
     }
 
     private String handlePassword(final Form pwform, final DownloadLink thelink) throws PluginException {
