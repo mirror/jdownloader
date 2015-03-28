@@ -288,6 +288,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
                                 }
                             });
                             clip.start();
+                            Thread.sleep(1000);
                             while (clip.isRunning() && runningFlag.get()) {
                                 Thread.sleep(100);
                             }
@@ -296,14 +297,23 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
                         Log.exception(e);
                     } finally {
                         try {
-                            if (stream != null) {
-                                stream.close();
+                            if (clip != null) {
+                                final Clip finalClip = clip;
+                                Thread thread = new Thread() {
+                                    public void run() {
+                                        finalClip.close();
+                                    };
+                                };
+                                thread.setName("AudioStop");
+                                thread.setDaemon(true);
+                                thread.start();
+                                thread.join(2000);
                             }
                         } catch (Throwable e) {
                         }
                         try {
-                            if (clip != null) {
-                                clip.close();
+                            if (stream != null) {
+                                stream.close();
                             }
                         } catch (Throwable e) {
                         }
