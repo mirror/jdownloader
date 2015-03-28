@@ -523,7 +523,7 @@ public class UploadRocketNet extends PluginForHost {
             ArrayList<Form> result = new ArrayList<Form>();
             if (dlForms != null) {
                 for (Form f : dlForms) {
-                    if (f.hasInputFieldByName("method_free")) {
+                    if (f.hasInputFieldByName("method_premium") || f.hasInputFieldByName("fname") || f.hasInputFieldByName("id") || f.hasInputFieldByName("method_free")) {
                         result.add(f);
                     }
                 }
