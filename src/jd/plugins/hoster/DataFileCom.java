@@ -435,14 +435,7 @@ public class DataFileCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        if (!account.getUser().matches(".+@.+\\..+")) {
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
+        final AccountInfo ai = new AccountInfo();
         if (useAPI.get()) {
             return fetchAccountInfo_API(account, ai);
         } else {
@@ -675,6 +668,7 @@ public class DataFileCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private AccountInfo fetchAccountInfo_API(final Account account, final AccountInfo ai) throws Exception {
         try {
             loginToken(account);
@@ -685,6 +679,7 @@ public class DataFileCom extends PluginForHost {
         return account.getAccountInfo();
     }
 
+    @SuppressWarnings("deprecation")
     private void handlePremium_API(final DownloadLink downloadLink, final Account account) throws Exception {
         // No API method for linkchecking, but can done based on this request response!
         getPage(br, apiURL + "/files/download?file=" + Encoding.urlEncode(downloadLink.getDownloadURL()), account);

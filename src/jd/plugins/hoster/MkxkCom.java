@@ -53,7 +53,7 @@ public class MkxkCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.setCustomCharset("UTF-8");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">We\\'re sorry but the page your are looking for is Not|>抱歉，该歌曲不存在") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML(">We\\'re sorry but the page your are looking for is Not|>window\\.setTimeout") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("class=\"jp\\-title split\">([^<>\"]*?)</span>").getMatch(0);
