@@ -299,6 +299,7 @@ public class Uploadedto extends PluginForHost {
 
     private static String[] IPCHECK = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
 
+    @SuppressWarnings("deprecation")
     public Uploadedto(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -887,7 +888,7 @@ public class Uploadedto extends PluginForHost {
         } finally {
             /* Remember time of the last download */
             if (hasAttemptedDownloadstart.get() == true) {
-                logger.info("Downloadstart was attempted --> Setting timestamps inn plugin config/account");
+                logger.info("Downloadstart was attempted --> Setting timestamps in plugin config/account");
                 this.getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD_TIMESTAMP, timeBefore.get());
                 if (account != null) {
                     account.setProperty(PROPERTY_LASTDOWNLOAD_TIMESTAMP, timeBefore.get());
