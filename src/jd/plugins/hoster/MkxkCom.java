@@ -67,7 +67,11 @@ public class MkxkCom extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
+        if (br.containsHTML("\\.mp3\"")) {
+            link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
+        } else {
+            link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".m4a");
+        }
         final String filesize = br.getRegex(">大小：([^<>\"]*?)</li>").getMatch(0);
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -75,31 +79,30 @@ public class MkxkCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings({ "deprecation", "unused" })
+    @SuppressWarnings({ "deprecation" })
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         final String fuid = new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0);
         requestFileInformation(downloadLink);
-        if (true) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
-        }
-        // player, download not possible without an account.. best I could do..
-        br.getPage("/play/flash.php?id=" + fuid);
-        final String m4a = br.getRegex("\"(https?://[\\w\\d]+\\.mkxk\\.com[^\"<>]+\\.m4a)\"").getMatch(0);
-        if (m4a == null) {
+        // br.getPage("/index.php/url/f/" + fuid);
+        String pt1 = null;
+        final String pt2 = br.getRegex("m4a: furl\\+\"((m4a/|/\\d+)[^<>\"]*?)\"").getMatch(0);
+        if (pt2 == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        br.getPage("http://www.mkxk.com/index.php/dance/hits/id/21192");
+        br.getPage("http://www.mkxk.com/index.php/discuss/lists/dance/21192/1");
+        br.getPage("http://www.mkxk.com/index.php/ding/lists/21192");
+        br.getPage("/index.php/url/f/" + fuid);
+        pt1 = br.getRegex("var furl=\"(http://[^<>\"/]*?/)\";").getMatch(0);
+        if (pt1 == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String m4a = pt1 + pt2;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, m4a, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
             }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
