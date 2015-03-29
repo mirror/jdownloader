@@ -1022,6 +1022,7 @@ public class DepositFiles extends PluginForHost {
             final String expire = getJson("gold_expired");
             if ("gold".equalsIgnoreCase(mode)) {
                 account.setProperty("free", false);
+                ai.setStatus("Premium Account");
                 try {
                     account.setMaxSimultanDownloads(-1);
                     account.setConcurrentUsePossible(true);
@@ -1043,6 +1044,7 @@ public class DepositFiles extends PluginForHost {
                     logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
                 }
             } else {
+                ai.setStatus("Free Account");
                 account.setProperty("free", true);
                 try {
                     account.setMaxSimultanDownloads(1);
@@ -1051,7 +1053,6 @@ public class DepositFiles extends PluginForHost {
                 }
             }
             saveAccountData(account);
-            ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountok", "Premium Account is ok"));
             account.setValid(true);
         } catch (PluginException e) {
             account.setProperty("accountData", Property.NULL);
