@@ -318,7 +318,9 @@ public class UploadRocketNet extends PluginForHost {
             Form download1 = getFormDownload1();
             if (download1 != null) {
                 download1.remove("method_premium");
-                // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
+                download1.remove("method_ispremium");
+                // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes
+                // stable!
                 if (downloadLink.getName().contains("'")) {
                     String fname = new Regex(br, "<input type=\"hidden\" name=\"fname\" value=\"([^\"]+)\">").getMatch(0);
                     if (fname != null) {
@@ -330,12 +332,12 @@ public class UploadRocketNet extends PluginForHost {
                 }
                 // end of backward compatibility
                 sendForm(download1);
-                checkErrors(downloadLink, false);
-                dllink = getDllink();
             }
+            checkErrors(downloadLink, false);
+            dllink = getDllink();
         }
         if (dllink == null) {
-            Form dlForm = br.getFormbyProperty("name", "F1");
+            Form dlForm = getFormDownload2();
             if (dlForm == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -462,7 +464,7 @@ public class UploadRocketNet extends PluginForHost {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
-                    dlForm = br.getFormbyProperty("name", "F1");
+                    dlForm = getFormDownload2();
                     try {
                         invalidateLastChallengeResponse();
                     } catch (final Throwable e) {
@@ -523,7 +525,7 @@ public class UploadRocketNet extends PluginForHost {
             ArrayList<Form> result = new ArrayList<Form>();
             if (dlForms != null) {
                 for (Form f : dlForms) {
-                    if (f.hasInputFieldByName("method_premium") || f.hasInputFieldByName("fname") || f.hasInputFieldByName("id") || f.hasInputFieldByName("method_free")) {
+                    if (f.hasInputFieldByName("method_premium") || f.hasInputFieldByName("method_free") || f.hasInputFieldByName("method_ispremium") || f.hasInputFieldByName("method_isfree") || f.hasInputFieldByName("fname") || f.hasInputFieldByName("id")) {
                         result.add(f);
                     }
                 }
@@ -533,6 +535,25 @@ public class UploadRocketNet extends PluginForHost {
             }
         }
         return download1;
+    }
+
+    private Form getFormDownload2() {
+        Form download2 = getFormByKey("op", "download2");
+        if (download2 == null) {
+            Form[] dlForms = Form.getForms(correctedBR);
+            ArrayList<Form> result = new ArrayList<Form>();
+            if (dlForms != null) {
+                for (Form f : dlForms) {
+                    if (f.hasInputFieldByName("method_premium") || f.hasInputFieldByName("method_free") || f.hasInputFieldByName("method_ispremium") || f.hasInputFieldByName("method_isfree") || f.hasInputFieldByName("fname") || f.hasInputFieldByName("id")) {
+                        result.add(f);
+                    }
+                }
+            }
+            if (!result.isEmpty()) {
+                download2 = result.get(0);
+            }
+        }
+        return download2;
     }
 
     @Override
