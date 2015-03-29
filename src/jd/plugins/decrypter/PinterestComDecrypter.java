@@ -37,7 +37,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.uio.UIOManager;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pinterest.com" }, urls = { "https?://(www\\.)?pinterest\\.com/(?!pin/)[^/]+/[^/]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pinterest.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?pinterest\\.com/(?!pin/)[^/]+/[^/]+/" }, flags = { 0 })
 public class PinterestComDecrypter extends PluginForDecrypt {
 
     public PinterestComDecrypter(PluginWrapper wrapper) {
@@ -52,7 +52,9 @@ public class PinterestComDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        parameter = param.toString().replace("http://", "https://");
+        /* Correct link - remove country related language-subdomains (e.g. 'es.pinterest.com'). */
+        final String linkpart = new Regex(param.toString(), "pinterest\\.com/(.+)").getMatch(0);
+        parameter = "https://www.pinterest.com/" + linkpart;
         br.setFollowRedirects(true);
         if (parameter.matches(unsupported_urls)) {
             decryptedLinks.add(getOffline(parameter));

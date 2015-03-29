@@ -42,7 +42,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pinterest.com" }, urls = { "https?://(www\\.)?pinterest\\.com/pin/\\d+/" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pinterest.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?pinterest\\.com/pin/\\d+/" }, flags = { 2 })
 public class PinterestCom extends PluginForHost {
 
     public PinterestCom(PluginWrapper wrapper) {
@@ -57,7 +57,9 @@ public class PinterestCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+        /* Correct link - remove country related language-subdomains (e.g. 'es.pinterest.com'). */
+        final String pin = new Regex(link.getDownloadURL(), "(\\d+)/$").getMatch(0);
+        link.setUrlDownload("https://www.pinterest.com/pin/" + pin + "/");
     }
 
     /* Connection stuff */
