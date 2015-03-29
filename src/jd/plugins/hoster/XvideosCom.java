@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 //xvideos.com by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvideos.com" }, urls = { "http://((www\\.)?xvideos\\.com/video[0-9]+/|\\w+\\.xvideos\\.com/embedframe/\\d+|(www\\.)?xvideos\\.com/[a-z0-9\\-]+/upload/[a-z0-9\\-]+/\\d+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvideos.com" }, urls = { "http://((www\\.)?xvideos\\.com/video[0-9]+/|\\w+\\.xvideos\\.com/embedframe/\\d+|(www\\.)?xvideos\\.com/[a-z0-9\\-]+/upload/[a-z0-9\\-]+/\\d+|(www\\.)?xvideos\\.com/prof\\-video\\-click/pornstar/[a-z0-9\\-]+/\\d+)" }, flags = { 2 })
 public class XvideosCom extends PluginForHost {
 
     public XvideosCom(PluginWrapper wrapper) {
@@ -73,7 +73,7 @@ public class XvideosCom extends PluginForHost {
 
     private static final String type_normal  = "http://(www\\.)?xvideos\\.com/video[0-9]+/";
     private static final String type_embed   = "http://\\w+\\.xvideos\\.com/embedframe/\\d+";
-    private static final String type_special = "http://(www\\.)?xvideos\\.com/[a-z0-9\\-]+/upload/[a-z0-9\\-]+/\\d+";
+    private static final String type_special = "http://(www\\.)?xvideos\\.com/([a-z0-9\\-]+/upload/[a-z0-9\\-]+/\\d+|prof\\-video\\-click/pornstar/[a-z0-9\\-]+/\\d+)";
     private static final String NOCHUNKS     = "NOCHUNKS";
     private String              DLLINK       = null;
 
@@ -165,6 +165,7 @@ public class XvideosCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private static String decode(String encoded) {
         if (encoded == null) {
             return null;

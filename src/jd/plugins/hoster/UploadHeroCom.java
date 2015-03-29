@@ -89,11 +89,13 @@ public class UploadHeroCom extends PluginForHost {
         return MAINPAGE + "/tos";
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("http://(www\\.)?uploadhero\\.com?/(dl|v)/", MAINPAGE + "/dl/"));
     }
 
     // They got a linkchecker but it's only available for registered users: http://uploadhero.co/link-checker
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();

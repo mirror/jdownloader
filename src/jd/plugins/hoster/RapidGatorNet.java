@@ -79,22 +79,23 @@ public class RapidGatorNet extends PluginForHost {
         this.setConfigElements();
     }
 
-    private static final String            MAINPAGE             = "http://rapidgator.net/";
-    private static Object                  LOCK                 = new Object();
-    private static AtomicReference<String> agent                = new AtomicReference<String>();
-    private static final String            PREMIUMONLYTEXT      = "This file can be downloaded by premium only</div>";
-    private static final String            PREMIUMONLYUSERTEXT  = JDL.L("plugins.hoster.rapidgatornet.only4premium", "Only downloadable for premium users!");
-    private static AtomicBoolean           hasDled              = new AtomicBoolean(false);
-    private static AtomicLong              timeBefore           = new AtomicLong(0);
-    private final String                   LASTIP               = "LASTIP";
-    private static AtomicReference<String> lastIP               = new AtomicReference<String>();
-    private final Pattern                  IPREGEX              = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-    private final String                   EXPERIMENTALHANDLING = "EXPERIMENTALHANDLING";
-    private final String                   DISABLE_API_PREMIUM  = "DISABLE_API_PREMIUM";
+    private static final String            MAINPAGE                        = "http://rapidgator.net/";
+    private static Object                  LOCK                            = new Object();
+    private static AtomicReference<String> agent                           = new AtomicReference<String>();
+    private static final String            PREMIUMONLYTEXT                 = "This file can be downloaded by premium only</div>";
+    private static final String            PREMIUMONLYUSERTEXT             = JDL.L("plugins.hoster.rapidgatornet.only4premium", "Only downloadable for premium users!");
+    private final String                   EXPERIMENTALHANDLING            = "EXPERIMENTALHANDLING";
+    private final String                   DISABLE_API_PREMIUM             = "DISABLE_API_PREMIUM";
 
-    private final String                   apiURL               = "https://rapidgator.net/api/";
+    private final String                   apiURL                          = "https://rapidgator.net/api/";
 
-    private final String[]                 IPCHECK              = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
+    private final String[]                 IPCHECK                         = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
+    private static AtomicBoolean           hasDled                         = new AtomicBoolean(false);
+    private static AtomicLong              timeBefore                      = new AtomicLong(0);
+    private static final String            PROPERTY_LASTDOWNLOAD_TIMESTAMP = "rapidgatornet_lastdownload_timestamp";
+    private final String                   LASTIP                          = "LASTIP";
+    private static AtomicReference<String> lastIP                          = new AtomicReference<String>();
+    private final Pattern                  IPREGEX                         = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
 
     @Override
     public String getAGBLink() {
@@ -196,6 +197,7 @@ public class RapidGatorNet extends PluginForHost {
         return result != null ? result.toString() : null;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.correctDownloadLink(link);
@@ -331,6 +333,7 @@ public class RapidGatorNet extends PluginForHost {
         this.doFree(downloadLink);
     }
 
+    @SuppressWarnings("deprecation")
     private void doFree(final DownloadLink downloadLink) throws Exception {
         // experimental code - raz
         // so called 15mins between your last download, ends up with your IP blocked for the day..
@@ -340,8 +343,12 @@ public class RapidGatorNet extends PluginForHost {
         final String currentIP = this.getIP();
         if (useExperimentalHandling) {
             this.logger.info("New Download: currentIP = " + currentIP);
-            if (RapidGatorNet.hasDled.get() == true && this.ipChanged(currentIP, downloadLink) == false) {
-                final long result = System.currentTimeMillis() - RapidGatorNet.timeBefore.get();
+            if (this.ipChanged(currentIP, downloadLink) == false) {
+                long lastdownload_timestamp = timeBefore.get();
+                if (lastdownload_timestamp == 0) {
+                    lastdownload_timestamp = getPluginSavedLastDownloadTimestamp();
+                }
+                final long result = System.currentTimeMillis() - lastdownload_timestamp;
                 // 35 minute wait less time since last download.
                 this.logger.info("Wait time between downloads to prevent your IP from been blocked for 1 Day!");
                 if (result > 0) {
@@ -571,7 +578,10 @@ public class RapidGatorNet extends PluginForHost {
             throw e;
         } finally {
             try {
-                RapidGatorNet.timeBefore.set(System.currentTimeMillis());
+                if (RapidGatorNet.hasDled.get()) {
+                    RapidGatorNet.timeBefore.set(System.currentTimeMillis());
+                    this.getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD_TIMESTAMP, System.currentTimeMillis());
+                }
                 this.setIP(currentIP, downloadLink);
             } catch (final Throwable e) {
             }
@@ -1234,6 +1244,12 @@ public class RapidGatorNet extends PluginForHost {
         }
     }
 
+    private void handleErrorsBasic() throws PluginException {
+        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404 (session expired?)", 30 * 60 * 1000l);
+        }
+    }
+
     private String getIP() throws PluginException {
         final Browser ip = new Browser();
         String currentIP = null;
@@ -1294,14 +1310,31 @@ public class RapidGatorNet extends PluginForHost {
         }
     }
 
-    private void handleErrorsBasic() throws PluginException {
-        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404 (session expired?)", 30 * 60 * 1000l);
+    private long getPluginSavedLastDownloadTimestamp() {
+        return getLongProperty(getPluginConfig(), PROPERTY_LASTDOWNLOAD_TIMESTAMP, 0);
+    }
+
+    private static long getLongProperty(final Property link, final String key, final long def) {
+        try {
+            return link.getLongProperty(key, def);
+        } catch (final Throwable e) {
+            try {
+                Object r = link.getProperty(key, def);
+                if (r instanceof String) {
+                    r = Long.parseLong((String) r);
+                } else if (r instanceof Integer) {
+                    r = ((Integer) r).longValue();
+                }
+                final Long ret = (Long) r;
+                return ret;
+            } catch (final Throwable e2) {
+                return def;
+            }
         }
     }
 
     private void setConfigElements() {
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), this.EXPERIMENTALHANDLING, JDL.L("plugins.hoster.rapidgatornet.useExperimentalWaittimeHandling", "Activate experimental waittime handling?")).setDefaultValue(false));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), this.EXPERIMENTALHANDLING, JDL.L("plugins.hoster.rapidgatornet.useExperimentalWaittimeHandling", "Activate experimental waittime handling to prevent 24-hours IP ban from rapidgator?")).setDefaultValue(false));
         // Some users always get server error 500 via API
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), this.DISABLE_API_PREMIUM, JDL.L("plugins.hoster.rapidgatornet.disableAPIPremium", "Disable API for premium downloads (use web download)?")).setDefaultValue(false));
     }
