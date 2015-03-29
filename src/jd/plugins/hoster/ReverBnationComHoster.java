@@ -17,8 +17,14 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.util.HashMap;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.config.Property;
+import jd.config.SubConfiguration;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -31,23 +37,28 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "reverbnation.com" }, urls = { "http://reverbnationcomid\\d+reverbnationcomartist\\d+" }, flags = { 0 })
 public class ReverBnationComHoster extends PluginForHost {
 
+    @SuppressWarnings("deprecation")
     public ReverBnationComHoster(final PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
-    private String PASS = null;
+    private static final String CUSTOM_FILENAME = "CUSTOM_FILENAME";
+
+    private String              pass            = null;
 
     @Override
     public String getAGBLink() {
         return "http://www.reverbnation.com/main/terms_and_conditions";
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("http://", ""));
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, ParseException {
         setBrowserExclusive();
         /* Errorhandling for crippled/old links */
         if (getMainlink(link) == null) {
@@ -57,6 +68,7 @@ public class ReverBnationComHoster extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        link.setFinalFileName(getFormattedFilename(link));
         return AvailableStatus.TRUE;
     }
 
@@ -64,8 +76,8 @@ public class ReverBnationComHoster extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        PASS = br.getRegex("pass: \"([a-z0-9]+)\"").getMatch(0);
-        if (PASS == null) {
+        pass = br.getRegex("pass: \"([a-z0-9]+)\"").getMatch(0);
+        if (pass == null) {
             logger.warning("Pass is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -151,7 +163,7 @@ public class ReverBnationComHoster extends PluginForHost {
             /*
              * Last revision with old handling: 25939 Modified date: 25.03.2015
              */
-            final String song_cookie = PASS + "song-" + song_id;
+            final String song_cookie = pass + "song-" + song_id;
             br.setCookie(br.getURL(), "_reverb_currentsong", song_cookie);
             br.getPage("http://www.reverbnation.com/controller/audio_player/get_xml/?player=InlineAudioPlayer");
             // br.getHeaders().put("X-CSRF-Token", "xxxxxxxkIobXmDTc=");
@@ -160,7 +172,7 @@ public class ReverBnationComHoster extends PluginForHost {
             br.getHeaders().put("Referer", "http://www.reverbnation.com/neoclubber/songs");
             br.getHeaders().put("Accept", "*/*");
             br.postPage("http://www.reverbnation.com/audio_player/add_to_beginning/" + song_id + "?from_page_object=artist_" + artist_id, "");
-            br.getPage("http://www.reverbnation.com/audio_player/html_player_stream/" + PASS + "?client=234s3rwas&song_id=" + song_id);
+            br.getPage("http://www.reverbnation.com/audio_player/html_player_stream/" + pass + "?client=234s3rwas&song_id=" + song_id);
             finallink = br.getRedirectLocation();
             if (finallink == null) {
                 finallink = br.getRegex("location\\.href = (?:\\'|\")(http://[^<>\"]*?)(?:\\'|\")").getMatch(0);
@@ -182,7 +194,115 @@ public class ReverBnationComHoster extends PluginForHost {
     }
 
     private String getMainlink(final DownloadLink dl) {
-        return dl.getStringProperty("mainlink", null);
+        return dl.getStringProperty(CUSTOM_FILENAME, null);
+    }
+
+    /** Returns either the original server filename or one that is very similar to the original */
+    @SuppressWarnings("deprecation")
+    public static String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
+        final SubConfiguration cfg = SubConfiguration.getConfig("reverbnation.com");
+        final String ext = downloadLink.getStringProperty("type", ".mp3");
+        final String username = downloadLink.getStringProperty("directusername", null);
+        final String title = downloadLink.getStringProperty("directtitle", null);
+        final String artist = downloadLink.getStringProperty("directartist", null);
+        final String songid = downloadLink.getStringProperty("directsongid", null);
+        final String artistid = downloadLink.getStringProperty("directartistid", null);
+
+        /* Date: Maybe add this in the future, if requested by a user. */
+        // final long date = getLongProperty(downloadLink, "originaldate", 0l);
+        // String formattedDate = null;
+        // /* Get correctly formatted date */
+        // String dateFormat = "yyyy-MM-dd";
+        // SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy");
+        // Date theDate = new Date(date);
+        // try {
+        // formatter = new SimpleDateFormat(dateFormat);
+        // formattedDate = formatter.format(theDate);
+        // } catch (Exception e) {
+        // /* prevent user error killing plugin */
+        // formattedDate = "";
+        // }
+        // /* Get correctly formatted time */
+        // dateFormat = "HHmm";
+        // String time = "0000";
+        // try {
+        // formatter = new SimpleDateFormat(dateFormat);
+        // time = formatter.format(theDate);
+        // } catch (Exception e) {
+        // /* prevent user error killing plugin */
+        // time = "0000";
+        // }
+
+        String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
+
+        if (!formattedFilename.contains("songid") && !formattedFilename.contains("*artistid*") && !formattedFilename.contains("*username*") && !formattedFilename.contains("*title*") && !formattedFilename.contains("*artist*") && !formattedFilename.contains("*ext*")) {
+            formattedFilename = defaultCustomFilename;
+        }
+
+        formattedFilename = formattedFilename.replace("*songid*", songid);
+        formattedFilename = formattedFilename.replace("*artistid*", artistid);
+        formattedFilename = formattedFilename.replace("*ext*", ext);
+        formattedFilename = formattedFilename.replace("*username*", username);
+        formattedFilename = formattedFilename.replace("*title*", title);
+        formattedFilename = formattedFilename.replace("*artist*", artist);
+        return formattedFilename;
+    }
+
+    /* Stable workaround */
+    public static long getLongProperty(final Property link, final String key, final long def) {
+        try {
+            return link.getLongProperty(key, def);
+        } catch (final Throwable e) {
+            try {
+                Object r = link.getProperty(key, def);
+                if (r instanceof String) {
+                    r = Long.parseLong((String) r);
+                } else if (r instanceof Integer) {
+                    r = ((Integer) r).longValue();
+                }
+                final Long ret = (Long) r;
+                return ret;
+            } catch (final Throwable e2) {
+                return def;
+            }
+        }
+    }
+
+    private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
+                                                  {
+                                                      put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content: reverbnation.com/username\r\n*title* = Title of the song\r\n*artist* = Artist of the song\r\n*songid* = Internal ReverbNation id of the song e.g. '12345678'\r\n*artistid* = Internal ReverbNation id of the artist e.g. '12345678'\r\n*ext* = Extension of the file, usually '.mp3'");
+                                                      put("LABEL_FILENAME", "Define custom filename:");
+        }
+                                              };
+
+    private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
+                                                  {
+                                                      put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat: reverbnation.com/username\r\n*title* = Titel des Songs\r\n*artist* = Name des Urhebers\r\n*songid* = Interne ReverbNation id des Songs z.B. '12345678'\r\n*artistid* = Interne ReverbNation id des Urhebers z.B. '12345678'\r\n*ext* = Dateiendung, meistens '.mp3'");
+                                                      put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
+                                                  }
+                                              };
+
+    /**
+     * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
+     * English.
+     *
+     * @param key
+     * @return
+     */
+    private String getPhrase(String key) {
+        if ("de".equals(System.getProperty("user.language")) && phrasesDE.containsKey(key)) {
+            return phrasesDE.get(key);
+        } else if (phrasesEN.containsKey(key)) {
+            return phrasesEN.get(key);
+        }
+        return "Translation not found!";
+    }
+
+    private static final String defaultCustomFilename = "*artist* - *title**ext*";
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME, getPhrase("LABEL_FILENAME")).setDefaultValue(defaultCustomFilename));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, getPhrase("SETTING_TAGS")));
     }
 
     @Override

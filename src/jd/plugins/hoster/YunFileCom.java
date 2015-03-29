@@ -302,6 +302,7 @@ public class YunFileCom extends PluginForHost {
         postData = "module=fileService&action=downfile&userId=" + userid + "&fileId=" + fileid + "&vid=" + vid + "&vid1=" + vid1 + "&md5=" + md5;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, action, postData, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
+            handleServerErrors();
             br.followConnection();
             checkErrors();
             if (br.containsHTML(">Please wait")) {
@@ -310,6 +311,14 @@ public class YunFileCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void handleServerErrors() throws PluginException {
+        if (dl.getConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+        } else if (dl.getConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 3 * 60 * 60 * 1000l);
+        }
     }
 
     private String getFreelink() {
@@ -334,8 +343,8 @@ public class YunFileCom extends PluginForHost {
             if (dllink == null) {
                 dllink = br.getRegex("<td align=center>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
             }
-            String[] counter = br.getRegex("document.getElementById\\(\\'.*?\\'\\)\\.src = \"([^\"]+)").getColumn(0);
-            if (counter != null || counter.length < 0) {
+            final String[] counter = br.getRegex("document.getElementById\\(\\'.*?\\'\\)\\.src = \"([^\"]+)").getColumn(0);
+            if (counter != null && counter.length > 0) {
                 String referer = br.getURL();
                 for (String count : counter) {
                     // need the cookies to update after each response!
@@ -353,6 +362,7 @@ public class YunFileCom extends PluginForHost {
             br.setCookie(MAINPAGE, "vid1", vid1);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
+                handleServerErrors();
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
