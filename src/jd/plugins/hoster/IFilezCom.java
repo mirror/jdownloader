@@ -167,7 +167,7 @@ public class IFilezCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         br.setFollowRedirects(false);
-        String dllink = br.getRegex("document\\.getElementById\\(\"wait_input\"\\)\\.value= unescape\\(\\'(.*?)\\'\\);").getMatch(0);
+        String dllink = br.getRegex("document\\.getElementById\\(\"wait_input\"\\)\\.value= unescape\\('(.*?)'\\);").getMatch(0);
         if (dllink == null) {
             logger.warning("dllink is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -281,9 +281,9 @@ public class IFilezCom extends PluginForHost {
             } catch (final Throwable e) {
                 // not available in old Stable 0.9.581
             }
-            ai.setStatus("Registered (free) account");
+            ai.setStatus("Free Account");
         } else {
-            String expire = br.getRegex("href=\\'/myspace/space/premium\\'>(\\d{2}\\.\\d{2}\\.\\d{2} \\d{2}:\\d{2})<").getMatch(0);
+            String expire = br.getRegex("href='/myspace/space/premium'>(\\d{2}\\.\\d{2}\\.\\d{2} \\d{2}:\\d{2})<").getMatch(0);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);
@@ -299,7 +299,7 @@ public class IFilezCom extends PluginForHost {
             } catch (final Throwable e) {
                 // not available in old Stable 0.9.581
             }
-            ai.setStatus("Premium account");
+            ai.setStatus("Premium Account");
         }
         return ai;
     }
@@ -314,13 +314,16 @@ public class IFilezCom extends PluginForHost {
         } else {
             br.setFollowRedirects(true);
             br.getPage(link.getDownloadURL());
-            if (br.containsHTML("class=\\'notice\\'>You spent limit on links per day")) {
+            if (br.containsHTML("class='notice'>You spent limit on urls/files per \\d+ hours")) {
                 logger.info("Daily limit reached, temp disabling premium");
+                final AccountInfo ai = account.getAccountInfo();
+                ai.setTrafficLeft(0);
+                account.setAccountInfo(ai);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
             String dllink = br.getRegex("<th>A link for 24 hours:</th>[\t\n\r ]+<td><input type=\"text\" readonly=\"readonly\" class=\"text_field width100\" onclick=\"this\\.select\\(\\);\" value=\"(http://.*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("(\"|\\')(http://[a-z0-9]+\\.depfile\\.com/premdw/\\d+/[a-z0-9]+/.*?)(\"|\\')").getMatch(1);
+                dllink = br.getRegex("(\"|')(http://[a-z0-9]+\\.depfile\\.com/premdw/\\d+/[a-z0-9]+/.*?)\\1").getMatch(1);
             }
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
