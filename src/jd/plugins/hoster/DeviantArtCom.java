@@ -115,7 +115,7 @@ public class DeviantArtCom extends PluginForHost {
         DLLINK = null;
         br.setFollowRedirects(true);
         if (this.getPluginConfig().getBooleanProperty(FASTLINKCHECK_ALL, default_FASTLINKCHECK_ALL) && !DOWNLOADS_STARTED) {
-            return AvailableStatus.TRUE;
+            return AvailableStatus.UNCHECKABLE;
         }
         boolean loggedIn = false;
         final Account acc = AccountController.getInstance().getValidAccount(this);
