@@ -67,7 +67,39 @@ public class GloriaTvDecrypt extends PluginForDecrypt {
         final String fid = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
         if (getUserLogin(false)) {
             br.getPage("http://gloria.tv/?media=" + fid + "&action=download&language=KiaLEJq2fBR&particular=&_=" + System.currentTimeMillis());
-            finfo = br.getRegex("\"(http://[a-z0-9\\-\\.]+\\.gloria.tv/[a-z0-9\\-]+/mediafile[^<>\"]*?)\".*?>Download (video|audio), ([a-z0-9:]+).*?, (\\d+\\.\\d{2} MB)</a>").getMatches();
+            /*
+             * href ="http://laurentius-media.gloria.tv/o7/mediafile-206213-1-sd.mp4?upstream=monika-" />Download video (1.067 GB, 03:45:08,
+             * 634x360)</a></div>
+             */
+            final String[] temp = br.getRegex("<div class=\"paragraph lines1 strong(.*?)</a></div>").getColumn(0);
+            finfo = new String[temp.length][4];
+            int counter = 0;
+            for (String info : temp) {
+                final String qualinfo[] = new String[4];
+                String lengtscale = null;
+                String downloadlink = new Regex(info, "href=\"([^<>\"]*?)\"").getMatch(0);
+                if (info.contains("Download video")) {
+                    final String filesize = new Regex(info, "(\\d{1,5}(?:\\.\\d{1,3})? (?:MB|GB))").getMatch(0);
+                    lengtscale = new Regex(info, "(\\d{2,3}x\\d{2,3})\\)").getMatch(0);
+                    qualinfo[1] = "video";
+                    qualinfo[3] = filesize;
+                } else {
+                    lengtscale = new Regex(info, "Download audio \\((.*?)\\)").getMatch(0);
+                    qualinfo[1] = "audio";
+                    qualinfo[3] = "-1";
+                }
+                downloadlink = Encoding.htmlDecode(downloadlink);
+                if (!downloadlink.startsWith("http://")) {
+                    downloadlink = "http://gloria.tv" + downloadlink;
+                }
+                qualinfo[0] = Encoding.htmlDecode(downloadlink);
+                qualinfo[2] = lengtscale;
+                finfo[counter] = qualinfo;
+                counter++;
+                if (counter == 4) {
+                    break;
+                }
+            }
         } else {
             final String resolutions[] = { "686x432", "458x288", "228x144" };
             final String[] qualities = br.getRegex("\"(http://[a-z0-9\\-\\.]+\\.gloria\\.tv/[a-z0-9\\-]+/mediafile[^<>\"]*?)\"").getColumn(0);
