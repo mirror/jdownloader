@@ -67,10 +67,6 @@ public class GloriaTvDecrypt extends PluginForDecrypt {
         final String fid = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
         if (getUserLogin(false)) {
             br.getPage("http://gloria.tv/?media=" + fid + "&action=download&language=KiaLEJq2fBR&particular=&_=" + System.currentTimeMillis());
-            /*
-             * href ="http://laurentius-media.gloria.tv/o7/mediafile-206213-1-sd.mp4?upstream=monika-" />Download video (1.067 GB, 03:45:08,
-             * 634x360)</a></div>
-             */
             final String[] temp = br.getRegex("<div class=\"paragraph lines1 strong(.*?)</a></div>").getColumn(0);
             finfo = new String[temp.length][4];
             int counter = 0;
