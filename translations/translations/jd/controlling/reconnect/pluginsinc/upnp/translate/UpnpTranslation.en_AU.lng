@@ -1,4 +1,4 @@
-AutoDetectAction_run_failed=Found UPNP Devices, but could not perform a reconnect. \n\nTry Live Header Reconnect instead!
+AutoDetectAction_run_failed2=No working UPNP Reconnect method found.\r\nTry Live Header Reconnect instead!
 AutoDetectUpnpAction_AutoDetectUpnpAction_=Tries to find all UPNP Reconnect Devices in your Network.\n\nMost FritzBox Routers can be reonnected this way.
 UPNPReconnectInvoker_getName_=UPNP Router Reconnect
 UPNPRouterPlugin_run_error=Could not find any UPNP Devices. Try Live Header Reconnect instead!
