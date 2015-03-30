@@ -5880,4 +5880,10 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "The module %s2 does not work properly.\r\nIt seems that there is a problem with the installation directory of JDownloader.\r\nPlease make sure that the installation directory dies not contain any special chars.\r\nYour Installation Directory: %s1" })
     String special_char_lib_loading_problem(String dir, String module);
+
+    @Default(lngs = { "en" }, values = { "Youtube offers video streams up to a resolution of 2160p (4K). Most computers and TVs cannot play such high resolutions. If you want to download these streams by default, please uncheck the box below." })
+    String YoutubeDashConfigPanel_YoutubeDashConfigPanel_best_explain();
+
+    @Default(lngs = { "en" }, values = { "Limit the 'Best' Algorithm to 1080p" })
+    String YoutubeDashConfigPanel_allowedtypoes_best_limitation();
 }
