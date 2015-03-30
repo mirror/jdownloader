@@ -179,11 +179,14 @@ public class Srnnks extends PluginForDecrypt {
     @Override
     protected DownloadLink createDownloadlink(final String link) {
         final DownloadLink dlink = super.createDownloadlink(link);
+        try {
+            dlink.setUrlProtection(org.jdownloader.controlling.UrlProtection.PROTECTED_DECRYPTER);
+        } catch (Throwable e) {
+        }
         dlink.setSourcePluginPasswordList(passwords);
         try {
             this.distribute(dlink);
         } catch (Throwable t) {
-
         }
         return dlink;
     }
