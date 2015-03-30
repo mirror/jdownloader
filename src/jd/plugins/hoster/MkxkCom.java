@@ -51,7 +51,7 @@ public class MkxkCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.setCustomCharset("UTF-8");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">We\\'re sorry but the page your are looking for is Not|>window\\.setTimeout") || br.getHttpConnection().getResponseCode() == 404) {
@@ -82,20 +82,26 @@ public class MkxkCom extends PluginForHost {
     @SuppressWarnings({ "deprecation" })
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        String m4a = null;
         final String fuid = new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0);
         requestFileInformation(downloadLink);
-        // br.getPage("/index.php/url/f/" + fuid);
-        String pt1 = null;
-        final String pt2 = br.getRegex("m4a: furl\\+\"((m4a/|/\\d+)[^<>\"]*?)\"").getMatch(0);
-        if (pt2 == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String special_tudou_id = br.getRegex(">mplayer\\(\"(\\d+)\"\\)").getMatch(0);
+        if (special_tudou_id != null) {
+            m4a = "http://vr.tudou.com/v2proxy/v2?it=" + special_tudou_id;
+        } else {
+            // br.getPage("/index.php/url/f/" + fuid);
+            String pt1 = null;
+            final String pt2 = br.getRegex("m4a: furl\\+\"([^<>\"]*?)\"").getMatch(0);
+            if (pt2 == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage("/index.php/url/f/" + fuid);
+            pt1 = br.getRegex("var furl=\"(http://[^<>\"/]*?/)\";").getMatch(0);
+            if (pt1 == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            m4a = pt1 + pt2;
         }
-        br.getPage("/index.php/url/f/" + fuid);
-        pt1 = br.getRegex("var furl=\"(http://[^<>\"/]*?/)\";").getMatch(0);
-        if (pt1 == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final String m4a = pt1 + pt2;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, m4a, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 404) {
