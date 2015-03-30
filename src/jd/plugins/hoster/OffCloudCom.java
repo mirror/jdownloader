@@ -38,6 +38,7 @@ import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -79,6 +80,7 @@ public class OffCloudCom extends PluginForHost {
      * does check the account)
      */
     private static final long                              DELETE_COMPLETE_DOWNLOAD_HISTORY_INTERVAL = 1 * 60 * 60 * 1000l;
+    private static final long                              CLOUD_MAX_WAITTIME                        = 600000l;
 
     private int                                            statuscode                                = 0;
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap                        = new HashMap<Account, HashMap<String, Long>>();
@@ -194,6 +196,8 @@ public class OffCloudCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+        String status = null;
+        String filename = null;
         String requestID = null;
         this.br = newBrowser();
         setConstants(account, link);
@@ -201,18 +205,34 @@ public class OffCloudCom extends PluginForHost {
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
             if (cloudOnlyHosts.contains(link.getHost())) {
+                final long timeStarted = System.currentTimeMillis();
                 link.setProperty(PROPERTY_DOWNLOADTYPE, PROPERTY_DOWNLOADTYPE_cloud);
-                logger.info("Cloud downloads not yet implemented!");
-                tempUnavailableHoster(3 * 60 * 60 * 1000l);
                 this.postRawAPISafe("https://offcloud.com/cloud/request", "{\"url\":\"" + link.getDownloadURL() + "\",\"conversion\":\"\"}");
-                this.postRawAPISafe("https://offcloud.com/cloud/status", "{\"requestIds\":[\"" + "" + "\"]}");
+                requestID = getJson("requestId");
+                if (requestID == null) {
+                    /* Should never happen */
+                    handleErrorRetries("cloud_requestIdnull", 50, 2 * 60 * 1000l);
+                }
+                do {
+                    this.sleep(5000l, link);
+                    this.postRawAPISafe("https://offcloud.com/cloud/status", "{\"requestIds\":[\"" + requestID + "\"]}");
+                    status = getJson("status");
+                } while (System.currentTimeMillis() - timeStarted < CLOUD_MAX_WAITTIME && "downloading".equals(status));
+                filename = getJson("fileName");
+                if (!"downloaded".equals(status)) {
+                    /* Possible error-states discovered until now: "Error during connection with downloader.", "Error" */
+                    logger.warning("Cloud failed");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                /* Filename needed in URL or server will return bad filenames! */
+                dllink = "https://offcloud.com/cloud/download/" + requestID + "/" + Encoding.urlEncode(filename);
             } else {
                 link.setProperty(PROPERTY_DOWNLOADTYPE, PROPERTY_DOWNLOADTYPE_instant);
                 this.postAPISafe(DOMAIN + "instant/download", "proxyId=&url=" + JSonUtils.escape(this.currDownloadLink.getDownloadURL()));
                 requestID = getJson("requestId");
                 if (requestID == null) {
                     /* Should never happen */
-                    handleErrorRetries("requestIdnull", 50, 2 * 60 * 1000l);
+                    handleErrorRetries("instant_requestIdnull", 50, 2 * 60 * 1000l);
                 }
                 dllink = getJson("url");
                 if (dllink == null) {
@@ -573,11 +593,15 @@ public class OffCloudCom extends PluginForHost {
                 final ArrayList<Object> history = (ArrayList) entries.get("history");
                 for (final Object historyentry_object : history) {
                     final LinkedHashMap<String, Object> historyentry = (LinkedHashMap<String, Object>) historyentry_object;
-                    final String requestId = (String) historyentry.get("requestId");
-                    if (requestId == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "WTF");
+                    final String status = (String) historyentry.get("status");
+                    /* Do not delete e.g. cloud-downloads which are still to be completely downloaded! */
+                    if (!status.equals("downloading")) {
+                        final String requestId = (String) historyentry.get("requestId");
+                        if (requestId == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "WTF");
+                        }
+                        requestIDs.add(requestId);
                     }
-                    requestIDs.add(requestId);
                 }
                 isEnd = ((Boolean) entries.get("isEnd")).booleanValue();
                 page++;
@@ -788,6 +812,8 @@ public class OffCloudCom extends PluginForHost {
                 statuscode = 13;
             } else if (error.equals("Incorrect url")) {
                 statuscode = 14;
+            } else if (error.matches("We are sorry but .*? links are supported only via Cloud downloading\\.")) {
+                statuscode = 15;
             } else if (error.equals("premium")) {
                 statuscode = 100;
             } else {
@@ -909,6 +935,11 @@ public class OffCloudCom extends PluginForHost {
                 /* Invalid url --> Host probably not supported --> Disable it */
                 statusMessage = "Host is temporarily disabled";
                 tempUnavailableHoster(3 * 60 * 60 * 1000l);
+            case 15:
+                /* Current host is only supported via cloud downloading --> Add to Cloud-Array and try again */
+                statusMessage = "This host is only supported via cloud downloading";
+                cloudOnlyHosts.add(this.currDownloadLink.getHost());
+                throw new PluginException(LinkStatus.ERROR_RETRY, "This host is only supported via cloud downloading");
             case 100:
                 /* Free account limits reached -> permanently disable account */
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
