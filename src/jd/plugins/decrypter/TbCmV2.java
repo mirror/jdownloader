@@ -146,6 +146,10 @@ public class TbCmV2 extends PluginForDecrypt {
             this.data = data;
         }
 
+        public YoutubeVariantInterface getVariant() {
+            return variant;
+        }
+
         public void fillExtraProperties(DownloadLink thislink, List<VariantInfo> alternatives) {
         }
 
@@ -638,8 +642,25 @@ public class TbCmV2 extends PluginForDecrypt {
 
                                 break;
                             case VIDEO:
+                                boolean added = false;
                                 if (cfg.isCreateBestVideoVariantLinkEnabled()) {
-                                    decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
+                                    if (cfg.isBestVideoVariant1080pLimitEnabled()) {
+                                        for (VariantInfo vv : e.getValue()) {
+                                            try {
+                                                if (vv.getVariant().getiTagVideo().getQualityRating() < YoutubeITAG.VIDEO_RESOLUTION_1440P) {
+                                                    decryptedLinks.add(createLink(vv, e.getValue()));
+                                                    added = true;
+                                                    break;
+                                                }
+                                            } catch (Throwable ee) {
+
+                                            }
+                                        }
+                                    }
+                                    if (!added) {
+                                        decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
+                                    }
+
                                 }
 
                                 break;

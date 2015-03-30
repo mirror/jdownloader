@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import javax.swing.JLabel;
+import javax.swing.JSeparator;
 
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
@@ -59,6 +60,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
     private Pair<Checkbox>           best3D;
     private Pair<Checkbox>           bestSubtitle;
     private Pair<Checkbox>           bestImage;
+    private Pair<Checkbox>           bestLimit;
 
     public class MultiVariantBox extends MultiComboBox<YoutubeVariant> {
 
@@ -282,7 +284,13 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         Pair<ProxyInput> proxy = addPair("", null, null, new ProxyInput(cf._getStorageHandler().getKeyHandler("Proxy", KeyHandler.class)));
         checkbox.getComponent().setDependencies(proxy.getComponent());
         addHeader(_GUI._.YoutubeDashConfigPanel_links(), NewTheme.I().getIcon(IconKey.ICON_LIST, 18));
-        bestVideo = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_best_video(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("CreateBestVideoVariantLinkEnabled", BooleanKeyHandler.class), null));
+
+        BooleanKeyHandler videoKeyhandler;
+        bestVideo = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_best_video(), null, null, new Checkbox(videoKeyhandler = cf._getStorageHandler().getKeyHandler("CreateBestVideoVariantLinkEnabled", BooleanKeyHandler.class), null));
+        addDescriptionPlain(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_best_explain());
+        bestLimit = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_best_limitation(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("BestVideoVariant1080pLimitEnabled", BooleanKeyHandler.class), null));
+        bestVideo.getComponent().setDependencies(bestLimit.getComponent());
+        add(new JSeparator(), "pushx,growx,spanx");
         bestImage = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_best_image(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("CreateBestImageVariantLinkEnabled", BooleanKeyHandler.class), null));
 
         bestAudio = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_best_audio(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("CreateBestAudioVariantLinkEnabled", BooleanKeyHandler.class), null));
@@ -302,6 +310,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
     }
 
     private void updateBest() {
+        bestLimit.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);
         best3D.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);
         bestAudio.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);
         bestImage.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);

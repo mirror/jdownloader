@@ -196,6 +196,13 @@ public class YoutubeDashV2 extends PluginForHost {
 
         void setCreateBestVideoVariantLinkEnabled(boolean b);
 
+        @DefaultBooleanValue(true)
+        @DescriptionForConfigEntry("If enabled, JD will not suggest 1400p and 2160p videos as 'Best' stream and download the 1080p stream instead.")
+        @AboutConfig
+        boolean isBestVideoVariant1080pLimitEnabled();
+
+        void setBestVideoVariant1080pLimitEnabled(boolean b);
+
         @DefaultBooleanValue(false)
         @AboutConfig
         boolean isCustomChunkValueEnabled();
