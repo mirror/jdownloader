@@ -1763,6 +1763,11 @@ public class YoutubeDashV2 extends PluginForHost {
         }
 
         @Override
+        public String _getTooltipDescription() {
+            return _getExtendedName();
+        }
+
+        @Override
         public boolean equals(Object obj) {
             if (obj == null || !(obj instanceof SubtitleVariant)) {
                 return false;

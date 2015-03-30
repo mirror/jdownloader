@@ -220,6 +220,11 @@ public enum GenericVariants implements LinkVariant {
         }
     }
 
+    @Override
+    public String _getTooltipDescription() {
+        return _getExtendedName();
+    }
+
     protected boolean ffmpeg(DownloadLink link, File file, FFMpegProgress set, FFmpeg ffmpeg, File finalFile) throws Exception {
         return false;
     }

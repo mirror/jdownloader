@@ -125,4 +125,9 @@ public class DailyMotionVariant implements Storable, LinkVariant {
         return getDisplayName() + "[" + orgQName + "-" + qrate + "]";
     }
 
+    @Override
+    public String _getTooltipDescription() {
+        return _getExtendedName();
+    }
+
 }

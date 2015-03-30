@@ -211,7 +211,12 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
 
     @Override
     protected String getTooltipText(AbstractNode obj) {
-        return super.getTooltipText(obj);
+        LinkVariant variant = getSelectedItem(obj);
+        if (variant == null) {
+            return null;
+        }
+        return variant._getTooltipDescription();
+
     }
 
     protected Icon modelItemToIcon(LinkVariant selectedItem) {

@@ -35,11 +35,13 @@ public class PluginJsonConfig {
                                                                                                                          cleanup();
                                                                                                                      }
                                                                                                                  };
-    private final static boolean                                                                   DEBUG         = true;
+    private final static boolean                                                                   DEBUG         = false;
 
     static {
         File pluginsFolder = Application.getResource("cfg/plugins/");
-        if (!pluginsFolder.exists()) pluginsFolder.mkdirs();
+        if (!pluginsFolder.exists()) {
+            pluginsFolder.mkdirs();
+        }
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
@@ -86,16 +88,22 @@ public class PluginJsonConfig {
         WeakReference<ConfigInterface> ret = classLoaderMap.get(ID);
         ConfigInterface intf = null;
         if (ret != null && (intf = ret.get()) != null) {
-            if (DEBUG) System.out.println("Reuse cached ConfigInterface " + ID);
+            if (DEBUG) {
+                System.out.println("Reuse cached ConfigInterface " + ID);
+            }
             return (T) intf;
         } else {
-            if (DEBUG) System.out.println("Create new ConfigInterface " + ID);
+            if (DEBUG) {
+                System.out.println("Create new ConfigInterface " + ID);
+            }
         }
 
         JsonKeyValueStorage storage = STORAGE_CACHE.get(configInterface.getName());
         if (storage == null) {
             final File storageFile = Application.getResource("cfg/plugins/" + ID);
-            if (DEBUG) System.out.println("Create PluginJsonConfig for " + ID);
+            if (DEBUG) {
+                System.out.println("Create PluginJsonConfig for " + ID);
+            }
             storage = StorageHandler.createPrimitiveStorage(storageFile, null, configInterface, SAVEDELAYER);
             storage.setEnumCacheEnabled(false);
             STORAGE_CACHE.put(ID, storage);
@@ -109,7 +117,9 @@ public class PluginJsonConfig {
             @Override
             protected void validateKeys(CryptedStorage crypted) {
                 if (getPrimitiveStorage() != null) {
-                    if (!Arrays.equals(getPrimitiveStorage().getCryptKey(), crypted == null ? JSonStorage.KEY : crypted.key())) { throw new InterfaceParseException("Key Mismatch!"); }
+                    if (!Arrays.equals(getPrimitiveStorage().getCryptKey(), crypted == null ? JSonStorage.KEY : crypted.key())) {
+                        throw new InterfaceParseException("Key Mismatch!");
+                    }
                 }
             }
         };

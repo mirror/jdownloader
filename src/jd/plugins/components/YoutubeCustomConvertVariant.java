@@ -22,6 +22,11 @@ public class YoutubeCustomConvertVariant implements YoutubeVariantInterface {
     private String                  uniqueID;
     private YoutubeVariant          source;
 
+    @Override
+    public String _getTooltipDescription() {
+        return _getExtendedName();
+    }
+
     public static YoutubeVariantInterface parse(YoutubeCustomVariantStorable storable) {
 
         return new YoutubeCustomConvertVariant(storable.getUniqueID(), storable.getTypeID(), storable.getSource(), storable.getGroup(), storable.getQualityRating(), storable.getName(), storable.getNameTag(), storable.getExtension(), null, new YoutubeExternConverter(storable.getBinary(), storable.getParameters()));

@@ -13,23 +13,25 @@ public enum YoutubeITAG {
     DASH_AUDIO_OPUS_160KBIT(251, null, null, "Opus", "160kbit", YoutubeITAG.AUDIO_CODEC_OPUS_160),
     DASH_AUDIO_OPUS_48KBIT(249, null, null, "Opus", "48kbit", YoutubeITAG.AUDIO_CODEC_OPUS_48),
     DASH_AUDIO_OPUS_64KBIT(250, null, null, "Opus", "64kbit", YoutubeITAG.AUDIO_CODEC_OPUS_64),
-    DASH_VIDEO_1080_H264_FPS60(299, "H264", "1080p 60fps", null, null, 1080.4 + YoutubeITAG.FPS_60),
-    DASH_VIDEO_1080P_H264(137, "H264", "1080p", null, null, 1080.4),
+    DASH_VIDEO_1080_H264_FPS60(299, "H264", "1080p 60fps", null, null, YoutubeITAG.VIDEO_RESOLUTION_1080P + YoutubeITAG.VIDEO_CODEC_MP4 + YoutubeITAG.FPS_60),
+    DASH_VIDEO_1080P_H264(137, "H264", "1080p", null, null, YoutubeITAG.VIDEO_RESOLUTION_1080P + YoutubeITAG.VIDEO_CODEC_MP4),
     // http://www.youtube.com/watch?v=gBabKoHSErI
-    DASH_VIDEO_1440P_H264(264, "H264", "1440p", null, null, 1440.4),
-    DASH_VIDEO_144P_H264(160, "H264", "144p", null, null, 144.4),
-    DASH_VIDEO_2160_H264_FPS_60(266, "H264", "2160p 60fps", null, null, 2160.4 + YoutubeITAG.FPS_60),
-    DASH_VIDEO_240P_H264(133, "H264", "240p", null, null, 240.4),
+    DASH_VIDEO_1440P_H264(264, "H264", "1440p", null, null, 1440 + YoutubeITAG.VIDEO_CODEC_MP4),
+    DASH_VIDEO_144P_H264(160, "H264", "144p", null, null, 144 + YoutubeITAG.VIDEO_CODEC_MP4),
+    // this is not 60fps!
+    DASH_VIDEO_2160_H264_FPS_60(266, "H264", "2160p", null, null, YoutubeITAG.VIDEO_RESOLUTION_2160P + YoutubeITAG.VIDEO_CODEC_MP4),
+    DASH_VIDEO_240P_H264(133, "H264", "240p", null, null, 240 + YoutubeITAG.VIDEO_CODEC_MP4),
 
-    DASH_VIDEO_360P_H264(134, "H264", "360p", null, null, 360.4),
-    DASH_VIDEO_480P_H264(135, "H264", "480p", null, null, 480.4),
-    DASH_VIDEO_720_H264_FPS60(298, "H264", "720p 60fps", null, null, 720.4 + 0.05),
+    DASH_VIDEO_360P_H264(134, "H264", "360p", null, null, 360 + YoutubeITAG.VIDEO_CODEC_MP4),
+    DASH_VIDEO_480P_H264(135, "H264", "480p", null, null, 480 + YoutubeITAG.VIDEO_CODEC_MP4),
+    DASH_VIDEO_720_H264_FPS60(298, "H264", "720p 60fps", null, null, 720 + YoutubeITAG.VIDEO_CODEC_MP4 + 0.05),
 
-    DASH_VIDEO_720P_H264(136, "H264", "720p", null, null, 720.4),
+    DASH_VIDEO_720P_H264(136, "H264", "720p", null, null, 720 + YoutubeITAG.VIDEO_CODEC_MP4),
     DASH_VIDEO_ITAG308_VP9_1440P_60FPS(308, "vp9", "1440p 60fps", null, null, YoutubeITAG.VIDEO_RESOLUTION_1440P + YoutubeITAG.VIDEO_CODEC_VP9 + YoutubeITAG.FPS_60),
     DASH_VIDEO_ITAG313_VP9_2160P_30FPS(313, "vp9", "2160p", null, null, YoutubeITAG.VIDEO_RESOLUTION_2160P + YoutubeITAG.VIDEO_CODEC_VP9),
     DASH_VIDEO_ITAG315_VP9_2160P_60FPS(315, "vp9", "2160p 60fps", null, null, YoutubeITAG.VIDEO_RESOLUTION_2160P + YoutubeITAG.VIDEO_CODEC_VP9 + YoutubeITAG.FPS_60),
-    DASH_VIDEO_ORIGINAL_H264(138, "H264", "Original", null, null, 2160.4),
+    // has usually a lower quality than DASH_VIDEO_2160_H264_FPS_60
+    DASH_VIDEO_ORIGINAL_H264(138, "H264", "Original (2160p)", null, null, 2160 + YoutubeITAG.VIDEO_CODEC_MP4 - 0.01),
     // https://www.youtube.com/watch?v=ZSn3Tvc7jQU
     // DASH_WEBM_VIDEO_1080P_VP9_60FPS(299, "VP9", "1080p", null, null, 1080.3),
     DASH_WEBM_VIDEO_1080P_VP9(248, "VP9", "1080p", null, null, 1080.3),
@@ -62,29 +64,29 @@ public enum YoutubeITAG {
     IMAGE_LQ(10004, "jpg", "120x90", null, null, 0.1),
 
     // fake id
-    IMAGE_MAX(10001, "jpg", "1400x1080", null, null, 0.4),
+    IMAGE_MAX(10001, "jpg", "1400x1080", null, null, 0 + YoutubeITAG.VIDEO_CODEC_MP4),
 
     // fake id
     IMAGE_MQ(10003, "jpg", "320x180", null, null, 0.2),
     // 192 kbits aac
-    MP4_VIDEO_1080P_H264_AUDIO_AAC(37, "H264", "1080p", "AAC", "192kbit", 1080.4 + YoutubeITAG.AAC_192),
-    MP4_VIDEO_180P_H264_AUDIO_AAC_3D(85, "H264", "1080p", "AAC", "192kbit", 1080.4 + YoutubeITAG.AAC_192),
+    MP4_VIDEO_1080P_H264_AUDIO_AAC(37, "H264", "1080p", "AAC", "192kbit", YoutubeITAG.VIDEO_RESOLUTION_1080P + YoutubeITAG.VIDEO_CODEC_MP4 + YoutubeITAG.AAC_192),
+    MP4_VIDEO_180P_H264_AUDIO_AAC_3D(85, "H264", "1080p", "AAC", "192kbit", YoutubeITAG.VIDEO_RESOLUTION_1080P + YoutubeITAG.VIDEO_CODEC_MP4 + YoutubeITAG.AAC_192),
     // not sure
-    MP4_VIDEO_240P_H264_AUDIO_AAC_3D(83, "H264", "240p", "AAC", "96kbit", 240.4 + YoutubeITAG.AAC_96),
+    MP4_VIDEO_240P_H264_AUDIO_AAC_3D(83, "H264", "240p", "AAC", "96kbit", 240 + YoutubeITAG.VIDEO_CODEC_MP4 + YoutubeITAG.AAC_96),
 
-    MP4_VIDEO_360P_H264_AUDIO_AAC(18, "H264", "360p", "AAC", "128kbit", 360.4 + YoutubeITAG.AAC_128),
-    MP4_VIDEO_360P_H264_AUDIO_AAC_3D(82, "H264", "360p", "AAC", "128kbit", 360.4 + YoutubeITAG.AAC_128),
-    MP4_VIDEO_360P_H264_AUDIO_AAC_3D_V1(82, "H264", "360p", "AAC", "96kbit", 360.4 + YoutubeITAG.AAC_96),
-    MP4_VIDEO_360P_H264_AUDIO_AAC_V1(18, "H264", "360p", "AAC", "96kbit", 360.4 + YoutubeITAG.AAC_96),
+    MP4_VIDEO_360P_H264_AUDIO_AAC(18, "H264", "360p", "AAC", "128kbit", 360 + YoutubeITAG.VIDEO_CODEC_MP4 + YoutubeITAG.AAC_128),
+    MP4_VIDEO_360P_H264_AUDIO_AAC_3D(82, "H264", "360p", "AAC", "128kbit", 360 + YoutubeITAG.VIDEO_CODEC_MP4 + YoutubeITAG.AAC_128),
+    MP4_VIDEO_360P_H264_AUDIO_AAC_3D_V1(82, "H264", "360p", "AAC", "96kbit", 360 + YoutubeITAG.VIDEO_CODEC_MP4 + YoutubeITAG.AAC_96),
+    MP4_VIDEO_360P_H264_AUDIO_AAC_V1(18, "H264", "360p", "AAC", "96kbit", 360 + YoutubeITAG.VIDEO_CODEC_MP4 + YoutubeITAG.AAC_96),
     // 192 kbits aac
-    MP4_VIDEO_720P_H264_AUDIO_AAC(22, "H264", "720p", "AAC", "192kbit", 720.4 + YoutubeITAG.AAC_192),
-    MP4_VIDEO_720P_H264_AUDIO_AAC_3D(84, "H264", "720p", "AAC", "192kbit", 720.4 + YoutubeITAG.AAC_192),
-    MP4_VIDEO_720P_H264_AUDIO_AAC_3D_V1(84, "H264", "720p", "AAC", "128kbit", 720.4 + YoutubeITAG.AAC_128),
-    MP4_VIDEO_720P_H264_AUDIO_AAC_3D_V3(84, "H264", "720p", "AAC", "152kbit", 720.4 + YoutubeITAG.AAC_152),
-    MP4_VIDEO_720P_H264_AUDIO_AAC_V1(22, "H264", "720p", "AAC", "128kbit", 720.4 + YoutubeITAG.AAC_128),
-    MP4_VIDEO_720P_H264_AUDIO_AAC_V3(22, "H264", "720p", "AAC", "152kbit", 720.4 + YoutubeITAG.AAC_152),
+    MP4_VIDEO_720P_H264_AUDIO_AAC(22, "H264", "720p", "AAC", "192kbit", 720 + YoutubeITAG.VIDEO_CODEC_MP4 + YoutubeITAG.AAC_192),
+    MP4_VIDEO_720P_H264_AUDIO_AAC_3D(84, "H264", "720p", "AAC", "192kbit", 720 + YoutubeITAG.VIDEO_CODEC_MP4 + YoutubeITAG.AAC_192),
+    MP4_VIDEO_720P_H264_AUDIO_AAC_3D_V1(84, "H264", "720p", "AAC", "128kbit", 720 + YoutubeITAG.VIDEO_CODEC_MP4 + YoutubeITAG.AAC_128),
+    MP4_VIDEO_720P_H264_AUDIO_AAC_3D_V3(84, "H264", "720p", "AAC", "152kbit", 720 + YoutubeITAG.VIDEO_CODEC_MP4 + YoutubeITAG.AAC_152),
+    MP4_VIDEO_720P_H264_AUDIO_AAC_V1(22, "H264", "720p", "AAC", "128kbit", 720 + YoutubeITAG.VIDEO_CODEC_MP4 + YoutubeITAG.AAC_128),
+    MP4_VIDEO_720P_H264_AUDIO_AAC_V3(22, "H264", "720p", "AAC", "152kbit", 720 + YoutubeITAG.VIDEO_CODEC_MP4 + YoutubeITAG.AAC_152),
     // http://www.h3xed.com/web-and-internet/youtube-audio-quality-bitrate-240p-360p-480p-720p-1080p
-    MP4_VIDEO_AUDIO_ORIGINAL(38, "H264", "Original", "AAC", "192kbit", 2160.4 + YoutubeITAG.AAC_192),
+    MP4_VIDEO_AUDIO_ORIGINAL(38, "H264", "Original", "AAC", "192kbit", 2160 + YoutubeITAG.VIDEO_CODEC_MP4 + YoutubeITAG.AAC_192),
     // fake id
     SUBTITLE(10002, "srt", null, null, null, 0.1),
 
@@ -201,13 +203,13 @@ public enum YoutubeITAG {
 
     // mp3 64 bit is lower than aac48bit
     public static final double MP3_64                 = 0.0442;
-
+    public static final double VIDEO_CODEC_MP4        = 0.4;
     public static final double VIDEO_CODEC_VP9        = 0.3;
     public static final double FPS_60                 = 0.05;
     public static final double VIDEO_RESOLUTION_1440P = 1440.0;
 
     public static final double VIDEO_RESOLUTION_2160P = 2160.0;
-
+    public static final double VIDEO_RESOLUTION_1080P = 1080.0;
     public static final double VORBIS_128             = 0.1283;
 
     public static final double VORBIS_192             = 0.1923;

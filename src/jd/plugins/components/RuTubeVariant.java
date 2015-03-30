@@ -22,6 +22,11 @@ public class RuTubeVariant implements LinkVariant, Storable {
         return width;
     }
 
+    @Override
+    public String _getTooltipDescription() {
+        return _getExtendedName();
+    }
+
     public void setWidth(String width) {
         this.width = width;
     }

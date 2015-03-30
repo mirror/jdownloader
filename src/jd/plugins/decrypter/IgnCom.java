@@ -171,7 +171,7 @@ public class IgnCom extends PluginForDecrypt {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -181,7 +181,7 @@ public class IgnCom extends PluginForDecrypt {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -191,7 +191,7 @@ public class IgnCom extends PluginForDecrypt {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from provided Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
@@ -201,7 +201,7 @@ public class IgnCom extends PluginForDecrypt {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
+     * 
      * @author raztoki
      * */
     private String getJsonArray(final String source, final String key) {
@@ -211,7 +211,7 @@ public class IgnCom extends PluginForDecrypt {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJsonArray(final String key) {
@@ -221,7 +221,7 @@ public class IgnCom extends PluginForDecrypt {
     /**
      * Wrapper<br/>
      * Tries to return String[] value from provided JSon Array
-     *
+     * 
      * @author raztoki
      * @param source
      * @return
@@ -232,7 +232,7 @@ public class IgnCom extends PluginForDecrypt {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
+     * 
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
@@ -281,6 +281,11 @@ public class IgnCom extends PluginForDecrypt {
 
         public void setWidth(String width) {
             this.width = width;
+        }
+
+        @Override
+        public String _getTooltipDescription() {
+            return _getExtendedName();
         }
 
         public String getBitrate() {
@@ -422,7 +427,7 @@ public class IgnCom extends PluginForDecrypt {
 
     /**
      * lets try and prevent possible NPE from killing the progress.
-     *
+     * 
      * @author raztoki
      * @param n
      * @param item
