@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -36,8 +37,8 @@ import jd.plugins.PluginForDecrypt;
 
 // Please do not mess with the following Regex!
 // Do not use lazy regex. Make regex to support the features you need. Lazy regex will pick up false positives in other areas of the plugin.
-// "old style" , "new style", "redirect url shorting service" 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "promodj.com" }, urls = { "https?://((www\\.)?(((([\\w\\-\\.]+\\.(djkolya\\.net|pdj\\.ru|promodeejay\\.(net|ru)|promodj\\.(ru|com)))|(djkolya\\.net|pdj\\.ru|promodeejay\\.(net|ru)|promodj\\.(ru|com))(/[\\w\\-\\.]+)?)/(?!top100|podsafe)(foto/(all|\\d+)/?(#(foto|full|list|biglist|middlelist)\\d+)?(\\d+(\\.html)?(#(foto|full|list|biglist|middlelist)\\d+)?)?|(acapellas|groups|mixes|prelisten|podcasts|promos|radioshows|realtones|remixes|samples|tracks|videos)/\\d+|prelisten_m3u/\\d+/[\\w]+\\.m3u|(download|source)/\\d+/[^\r\n\"'<>]+))|pdj\\.cc/\\w+))" }, flags = { 0 })
+// "old style" , "new style", "redirect url shorting service"
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "promodj.com" }, urls = { "https?://((www\\.)?(((([\\w\\-\\.]+\\.(djkolya\\.net|pdj\\.ru|promodeejay\\.(net|ru)|promodj\\.(ru|com)))|(djkolya\\.net|pdj\\.ru|promodeejay\\.(net|ru)|promodj\\.(ru|com))(/[\\w\\-\\.]+)?)/(?!top100|podsafe)(foto/(all|\\d+)/?(#(foto|full|list|biglist|middlelist)\\d+)?(\\d+(\\.html)?(#(foto|full|list|biglist|middlelist)\\d+)?)?|(acapellas|groups|mixes|prelisten|podcasts|promos|radioshows|realtones|remixes|samples|tracks|videos)/\\d+|prelisten_m3u/\\d+/[\\w]+\\.m3u|(download|source)/\\d+/[^\r\n\"'<>]+))|pdj\\.cc/\\w+))|http://xml\\.maases\\.com/audio/\\d+\\.json" }, flags = { 0 })
 public class ProDjCm extends PluginForDecrypt {
 
     // DEV NOTES
@@ -46,7 +47,9 @@ public class ProDjCm extends PluginForDecrypt {
     // other: As of march 12 they redirect to promodj.com but it's too hard to rename prior to processing, as redirects do not necessarily
     // carry the same parameters.
 
-    private static final String HOSTS = "(djkolya\\.net|pdj\\.(cc|ru)|promodeejay\\.(net|ru)|promodj\\.(ru|com))";
+    private static final String HOSTS     = "(djkolya\\.net|pdj\\.(cc|ru)|promodeejay\\.(net|ru)|promodj\\.(ru|com))";
+    /* This is the important part of embedded links. Such links are very rare and are only sometimes added e.g. by the vk.com decrypter. */
+    private static final String type_json = "http://xml\\.maases\\.com/audio/\\d+\\.json";
 
     /**
      * @author raztoki
@@ -79,14 +82,16 @@ public class ProDjCm extends PluginForDecrypt {
         } else {
             // back to normal!
             br.getPage(parameter);
-            if (br.containsHTML("(<title>404 &ndash;.*?</title>|<h1>Page not found :\\(</h1>)")) {
+            if (br.containsHTML("(<title>404 &ndash;.*?</title>|<h1>Page not found :\\(</h1>)") || br.toString().length() < 10) {
                 if (parameter.contains("/download/")) {
-                    DownloadLink link = createDownloadlink("directhttp://" + parameter);
-                    link.setAvailable(false);
-                    decryptedLinks.add(link);
                     logger.warning("Offline URL : " + parameter);
                 } else {
                     logger.warning("Invalid URL: " + parameter);
+                }
+                try {
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                } catch (final Throwable e) {
+                    /* Not available in old 0.9.581 Stable */
                 }
                 return decryptedLinks;
             }
@@ -99,9 +104,22 @@ public class ProDjCm extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void passItOn(ArrayList<DownloadLink> ret, HashSet<String> filter, String grabThis) throws IOException {
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private void passItOn(ArrayList<DownloadLink> ret, HashSet<String> filter, String grabThis) throws Exception {
         String fpName = null;
-        if (grabThis.matches("https?://pdj\\.cc/\\w+")) {
+        if (grabThis.matches(type_json)) {
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            entries = (LinkedHashMap<String, Object>) entries.get("playlist");
+            final ArrayList<Object> ressourcelist = (ArrayList) entries.get("item");
+            entries = (LinkedHashMap<String, Object>) ressourcelist.get(0);
+            entries = (LinkedHashMap<String, Object>) entries.get("play");
+            final String finallink = (String) entries.get("@download_url");
+            if (finallink == null || finallink.matches(type_json)) {
+                logger.warning("Decrypter broken for link: " + grabThis);
+                return;
+            }
+            ret.add(createDownloadlink(finallink));
+        } else if (grabThis.matches("https?://pdj\\.cc/\\w+")) {
             // domain shorting services
             ret.add(createDownloadlink(br.getURL()));
         } else if (grabThis.matches(".+/prelisten/\\d+")) {
@@ -118,10 +136,14 @@ public class ProDjCm extends PluginForDecrypt {
             String fp1 = br.getRegex("&ndash; (.+)</title>").getMatch(0);
             // if (fp1 == null) fp1 = br.getRegex("").getMatch(0);
             String fp2 = br.getRegex("<meta name=\"title\" content=\"([^\"]+)").getMatch(0);
-            if (fp2 == null) fp2 = br.getRegex("<title>(.+) &ndash;").getMatch(0);
-            if (fp1 != null && fp2 != null)
+            if (fp2 == null) {
+                fp2 = br.getRegex("<title>(.+) &ndash;").getMatch(0);
+            }
+            if (fp1 != null && fp2 != null) {
                 fpName = fp1 + " - " + fp2;
-            else if (fp2 != null) fpName = fp2;
+            } else if (fp2 != null) {
+                fpName = fp2;
+            }
             parseFoto(ret, filter, true, grabThis);
         } else if (grabThis != null && grabThis.matches(".*/(acapellas|mixes|podcasts|promos|radioshows|realtones|remixes|samples|tracks|videos)/\\d+")) {
             // grab all the provided download stuff here
@@ -135,9 +157,11 @@ public class ProDjCm extends PluginForDecrypt {
             String frame = br.getRegex("(<div class=\"dj_bblock\">.*<h2>.*</div>[\r\n ]+</div>[\r\n ]+</div>)").getMatch(0);
             String fp1 = br.getRegex("&ndash; (.*?)</title>").getMatch(0);
             String fp2 = new Regex(frame, ">([^<]+)</span>[\r\n ]+</h2>").getMatch(0);
-            if (fp1 != null || fp2 != null)
+            if (fp1 != null || fp2 != null) {
                 fpName = fp1 + " - " + fp2;
-            else if (fp1 == null) fpName = fp2;
+            } else if (fp1 == null) {
+                fpName = fp2;
+            }
 
             String[] posts = new Regex(frame, this.getSupportedLinks()).getColumn(0);
             if (frame == null || posts == null) {
@@ -146,25 +170,39 @@ public class ProDjCm extends PluginForDecrypt {
             }
             if (posts != null && posts.length != 0) {
                 for (String link : posts) {
-                    if (filter.add(link) == false) continue;
-                    if (!link.matches("https?://")) link = new Regex(br.getURL(), "(https?://)").getMatch(0) + link;
-                    if (!link.matches(".+/(download|source|prelisten_m3u|prelisten)/\\d+/.+")) br.getPage(link);
+                    if (filter.add(link) == false) {
+                        continue;
+                    }
+                    if (!link.matches("https?://")) {
+                        link = new Regex(br.getURL(), "(https?://)").getMatch(0) + link;
+                    }
+                    if (!link.matches(".+/(download|source|prelisten_m3u|prelisten)/\\d+/.+")) {
+                        br.getPage(link);
+                    }
                     passItOn(ret, filter, link);
                 }
             }
         } else if (grabThis.matches(".+/prelisten_m3u/.+")) {
             // worth supporting
             br.setFollowRedirects(false);
-            if (!grabThis.contains(br.getURL())) br.getPage(grabThis);
+            if (!grabThis.contains(br.getURL())) {
+                br.getPage(grabThis);
+            }
             String dllink = br.getRedirectLocation();
             br.setFollowRedirects(true);
-            if (br.containsHTML("<title>404</title>")) return;
-            if (dllink == null) dllink = br.getRegex("#EXTINF:\\-1,[^<>\"/]+(http[^<>\"]*?\\.mp3)").getMatch(0);
+            if (br.containsHTML("<title>404</title>")) {
+                return;
+            }
+            if (dllink == null) {
+                dllink = br.getRegex("#EXTINF:\\-1,[^<>\"/]+(http[^<>\"]*?\\.mp3)").getMatch(0);
+            }
             if (dllink == null) {
                 logger.warning("Decrypter broken for link: " + grabThis);
                 return;
             }
-            if (filter.add(dllink) == false) return;
+            if (filter.add(dllink) == false) {
+                return;
+            }
             final DownloadLink dl = createDownloadlink("directhttp://" + dllink);
             ret.add(dl);
         }
@@ -178,6 +216,7 @@ public class ProDjCm extends PluginForDecrypt {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void parseDownload(ArrayList<DownloadLink> ret, HashSet<String> filter, String grabThis) {
         ArrayList<String[]> customHeaders = new ArrayList<String[]>();
         ArrayList<String> linksFound = new ArrayList<String>();
@@ -187,16 +226,22 @@ public class ProDjCm extends PluginForDecrypt {
             dllink = br.getRegex("<a id=\"download_flasher\" href=\"(https?://" + HOSTS + "/download/\\d+/[^\"<>]+)").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("\"URL\":\"(http:[^<>\"]*?)\"").getMatch(0);
-                if (dllink != null) dllink = Encoding.htmlDecode(dllink.replace("\\", ""));
+                if (dllink != null) {
+                    dllink = Encoding.htmlDecode(dllink.replace("\\", ""));
+                }
             }
         }
         // give the ability to return multiple formats audio sections...
         if (grabThis.matches(".*/(acapellas|mixes|podcasts|promos|radioshows|realtones|remixes|samples|tracks)/\\d+")) {
-            if (dllink != null) linksFound.add(dllink);
+            if (dllink != null) {
+                linksFound.add(dllink);
+            }
             if (dllink == null || dllink.endsWith(".mp3")) {
                 // lets look for wav!
                 dllink = br.getRegex("href=\"(https?://" + HOSTS + "/(source|download)/[^\"]+\\.wav)\"").getMatch(0);
-                if (dllink != null) linksFound.add(dllink);
+                if (dllink != null) {
+                    linksFound.add(dllink);
+                }
             }
         } else if (dllink == null && grabThis.contains("/videos/")) {
             // this type seems to have advertised links escaped but not always download/able! Need to switch to alternative method.
@@ -256,12 +301,16 @@ public class ProDjCm extends PluginForDecrypt {
             }
         }
         // easier doing this here once than multiple times.
-        if (linksFound.isEmpty()) linksFound.add(dllink);
+        if (linksFound.isEmpty()) {
+            linksFound.add(dllink);
+        }
 
         for (String link : linksFound) {
             if (filter.add(link) == true) {
                 DownloadLink dl = createDownloadlink(link);
-                if (customHeaders.size() != 0) dl.setProperty("customHeader", customHeaders);
+                if (customHeaders.size() != 0) {
+                    dl.setProperty("customHeader", customHeaders);
+                }
                 ret.add(dl);
             }
         }
@@ -274,7 +323,9 @@ public class ProDjCm extends PluginForDecrypt {
         if (!album) {
             // place this first, then use null for each possible combination album link but with tag to photo requested.
             fuid = new Regex(grabThis, "#(foto|full)(\\d+)").getMatch(1);
-            if (fuid == null) fuid = new Regex(grabThis, "/foto/\\d+/(\\d+)").getMatch(0);
+            if (fuid == null) {
+                fuid = new Regex(grabThis, "/foto/\\d+/(\\d+)").getMatch(0);
+            }
             String single = br.getRegex("(\\{[\r\n\t ]+fotoID: ?" + fuid + "[^\\}]+)").getMatch(0);
             imgsArray.add(single);
         } else {
@@ -286,7 +337,9 @@ public class ProDjCm extends PluginForDecrypt {
         }
 
         for (String result : imgsArray) {
-            if (fuid == null) fuid = new Regex(result, "link: '.+/foto/\\d+/(\\d+)").getMatch(0);
+            if (fuid == null) {
+                fuid = new Regex(result, "link: '.+/foto/\\d+/(\\d+)").getMatch(0);
+            }
             // Original is best!
             String[] bestImg = new Regex(result, "originalURL: ?'(http://[^\\']+(\\.[a-z]+))").getRow(0);
             if (bestImg == null) {
@@ -294,13 +347,21 @@ public class ProDjCm extends PluginForDecrypt {
             }
             String fileName = null;
             String title = new Regex(result, "title: '(.+)',").getMatch(0);
-            if (filter.add(bestImg[0]) == false) continue;
+            if (filter.add(bestImg[0]) == false) {
+                continue;
+            }
             DownloadLink link = createDownloadlink("directhttp://" + bestImg[0].replace("/labeled/", "/"));
-            if (title != null) fileName = fuid + " - " + title + bestImg[1];
+            if (title != null) {
+                fileName = fuid + " - " + title + bestImg[1];
+            }
             // not all fotos have a title/name
-            if (title == null || title.equals("")) fileName = fuid + bestImg[1];
+            if (title == null || title.equals("")) {
+                fileName = fuid + bestImg[1];
+            }
             link.setFinalFileName(Encoding.htmlDecode(fileName.trim()));
-            if (album) link.setAvailable(true);
+            if (album) {
+                link.setAvailable(true);
+            }
             ret.add(link);
             fuid = null;
         }

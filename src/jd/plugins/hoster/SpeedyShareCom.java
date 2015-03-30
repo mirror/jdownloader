@@ -237,8 +237,12 @@ public class SpeedyShareCom extends PluginForHost {
             if (br.containsHTML(CAPTCHATEXT)) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            logger.warning("Downloadlink doesn't lead to a file!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            logger.warning("Final downloadlink doesn't lead to a file!");
+            /*
+             * We know that this is abnormal but we already know all possible errormessages --> Prevent plugin defect messages - if its
+             * broken users can still report it!
+             */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 60 * 60 * 1000l);
         }
         dl.startDownload();
     }
@@ -308,6 +312,7 @@ public class SpeedyShareCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -355,6 +360,7 @@ public class SpeedyShareCom extends PluginForHost {
         return ai;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         br = new Browser();
@@ -386,7 +392,12 @@ public class SpeedyShareCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(finallink), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            logger.warning("Final downloadlink doesn't lead to a file!");
+            /*
+             * We know that this is abnormal but we already know all possible errormessages --> Prevent plugin defect messages - if its
+             * broken users can still report it!
+             */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 60 * 60 * 1000l);
         }
         dl.startDownload();
     }

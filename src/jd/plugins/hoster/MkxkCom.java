@@ -90,9 +90,6 @@ public class MkxkCom extends PluginForHost {
         if (pt2 == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage("http://www.mkxk.com/index.php/dance/hits/id/21192");
-        br.getPage("http://www.mkxk.com/index.php/discuss/lists/dance/21192/1");
-        br.getPage("http://www.mkxk.com/index.php/ding/lists/21192");
         br.getPage("/index.php/url/f/" + fuid);
         pt1 = br.getRegex("var furl=\"(http://[^<>\"/]*?/)\";").getMatch(0);
         if (pt1 == null) {
