@@ -194,7 +194,7 @@ public class ReverBnationComHoster extends PluginForHost {
     }
 
     private String getMainlink(final DownloadLink dl) {
-        return dl.getStringProperty(CUSTOM_FILENAME, null);
+        return dl.getStringProperty("mainlink", null);
     }
 
     /** Returns either the original server filename or one that is very similar to the original */
@@ -296,6 +296,11 @@ public class ReverBnationComHoster extends PluginForHost {
             return phrasesEN.get(key);
         }
         return "Translation not found!";
+    }
+
+    @Override
+    public String getDescription() {
+        return "JDownloader's reverbnation.com plugin helps downloading albums and songs from ReverbNation. JDownloader provides settings for custom filenames.";
     }
 
     private static final String defaultCustomFilename = "*artist* - *title**ext*";

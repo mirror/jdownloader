@@ -764,6 +764,10 @@ public class DataFileCom extends PluginForHost {
         final String ddlink = getJson("download_url");
         if (ddlink == null) {
             final String code = getJson("code");
+            if ("500".equalsIgnoreCase(code)) {
+                // 500 MySQL server has gone away
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 10 * 60 * 1000l);
+            }
             if ("700".equalsIgnoreCase(code) || "701".equalsIgnoreCase(code)) {
                 // 700 File url not valid
                 // 701 File removed

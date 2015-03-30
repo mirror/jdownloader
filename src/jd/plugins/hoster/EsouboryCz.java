@@ -200,6 +200,7 @@ public class EsouboryCz extends PluginForHost {
             final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
             ai.setMultiHostSupport(this, supportedHosts);
         }
+        ai.setStatus("Premium account");
 
         return ai;
     }
