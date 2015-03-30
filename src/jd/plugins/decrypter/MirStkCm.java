@@ -24,6 +24,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -42,7 +43,7 @@ public class MirStkCm extends PluginForDecrypt {
      * I've noticed this with mediafire links for example http://mirrorstack.com/mf_dbfzhyf2hnxm will at times return
      * http://www.mediafire.com/?HASH(0x15053b48), you can then reload a couple times and it will work in jd.. provider problem not plugin.
      * Other example links I've used seem to work fine. - Please keep code generic as possible.
-     * 
+     *
      * Don't use package name as these type of link protection services export a list of hoster urls of a single file. When one imports many
      * links (parts), JD loads many instances of the decrypter and each url/parameter/instance gets a separate packagename and that sucks.
      * It's best to use linkgrabbers default auto packagename sorting.
@@ -150,18 +151,30 @@ public class MirStkCm extends PluginForDecrypt {
                         Thread.sleep(wait * 1000);
                         brc.getPage(singleLink + add_char);
                         finallink = brc.getRedirectLocation();
-                    }
-                    if (finallink == null) {
-                        logger.warning("WARNING: Couldn't find finallink. Please report this issue to JD Developement team. : " + parameter);
-                        logger.warning("Continuing...");
-                        continue;
+                        if (finallink == null) {
+                            // fail over
+                            final String[] links = HTMLParser.getHttpLinks(brc.toString(), "");
+                            for (final String link : links) {
+                                if (!Browser.getHost(link).contains(Browser.getHost(brc.getURL()))) {
+                                    final DownloadLink dl = createDownloadlink(link);
+                                    decryptedLinks.add(dl);
+                                    try {
+                                        distribute(dl);
+                                    } catch (final Throwable e) {
+                                    }
+                                }
+                            }
+                            continue;
+                        }
                     }
                 }
-                final DownloadLink link = createDownloadlink(finallink);
-                decryptedLinks.add(link);
-                try {
-                    distribute(link);
-                } catch (final Throwable e) {
+                if (!Browser.getHost(finallink).contains(Browser.getHost(brc.getURL()))) {
+                    final DownloadLink dl = createDownloadlink(finallink);
+                    decryptedLinks.add(dl);
+                    try {
+                        distribute(dl);
+                    } catch (final Throwable e) {
+                    }
                 }
             }
         }
