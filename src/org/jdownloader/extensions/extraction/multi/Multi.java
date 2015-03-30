@@ -237,7 +237,7 @@ public class Multi extends IExtraction {
                         }
                         break;
                     case X86:
-                        if (CrossSystem.is64BitOperatingSystem()) {
+                        if (Application.is64BitJvm()) {
                             libID = "Linux-amd64";
                         } else {
                             libID = "Linux-i386";
@@ -248,14 +248,14 @@ public class Multi extends IExtraction {
                     }
                     break;
                 case MAC:
-                    if (CrossSystem.is64BitOperatingSystem()) {
+                    if (Application.is64BitJvm()) {
                         libID = "Mac-x86_64";
                     } else {
                         libID = "Mac-i386";
                     }
                     break;
                 case WINDOWS:
-                    if (CrossSystem.is64BitOperatingSystem()) {
+                    if (Application.is64BitJvm()) {
                         libID = "Windows-amd64";
                     } else {
                         libID = "Windows-x86";
