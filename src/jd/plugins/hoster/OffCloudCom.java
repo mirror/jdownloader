@@ -936,7 +936,12 @@ public class OffCloudCom extends PluginForHost {
                 statusMessage = "Host is temporarily disabled";
                 tempUnavailableHoster(3 * 60 * 60 * 1000l);
             case 15:
-                /* Current host is only supported via cloud downloading --> Add to Cloud-Array and try again */
+                /*
+                 * Current host is only supported via cloud downloading --> Add to Cloud-Array and try again
+                 *
+                 * This should only happen if e.g. a user starts JD and starts downloads right away before the cloudOnlyHosts array gets
+                 * updated. This cann be considered as a small workaround.
+                 */
                 statusMessage = "This host is only supported via cloud downloading";
                 cloudOnlyHosts.add(this.currDownloadLink.getHost());
                 throw new PluginException(LinkStatus.ERROR_RETRY, "This host is only supported via cloud downloading");
