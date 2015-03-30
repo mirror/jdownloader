@@ -1,6 +1,9 @@
 ExampleMenuEntry=@%s1: %s2
 NONE=Nenhum
 ON_ARCHIVE_EXTRACTED=Extração de arquivo concluída
+ON_DOWNLOADS_PAUSE=Controlador de Downloads pausado
+ON_DOWNLOADS_RUNNING=Controlador de Downloads iniciado
+ON_DOWNLOADS_STOPPED=Controlador de Downloads parado
 ON_DOWNLOAD_CONTROLLER_START=Download iniciado
 ON_DOWNLOAD_CONTROLLER_STOPPED=Download parado
 ON_GENERIC_EXTRACTION=Qualquer evento de extração
