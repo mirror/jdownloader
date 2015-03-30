@@ -522,7 +522,16 @@ public class Uploadedto extends PluginForHost {
             }
         } catch (final PluginException e) {
             if (e.getLinkStatus() != LinkStatus.ERROR_PREMIUM) {
-                usePremiumAPI.set(false);
+                if (usePremiumAPI.compareAndSet(true, false)) {
+                    getLogger().info("Disable API");
+                }
+            }
+            account.setProperty("token", null);
+            account.setProperty("tokenType", null);
+            throw e;
+        } catch (final Exception e) {
+            if (usePremiumAPI.compareAndSet(true, false)) {
+                getLogger().info("Disable API");
             }
             account.setProperty("token", null);
             account.setProperty("tokenType", null);
@@ -1033,10 +1042,11 @@ public class Uploadedto extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance", 20 * 60 * 1000l);
         }
         if (throwPluginDefect) {
+            logger.info("ErrorCode: unknown\r\n" + br);
             if (usePremiumAPI.get() && preferAPI(acc)) {
                 usePremiumAPI.set(false);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            logger.info("ErrorCode: unknown\r\n" + br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
@@ -1071,6 +1081,13 @@ public class Uploadedto extends PluginForHost {
                 account.setProperty("token", token);
                 return token;
             } catch (final PluginException e) {
+                account.setProperty("token", null);
+                account.setProperty("tokenType", null);
+                throw e;
+            } catch (final Exception e) {
+                if (usePremiumAPI.compareAndSet(true, false)) {
+                    getLogger().info("Disable API");
+                }
                 account.setProperty("token", null);
                 account.setProperty("tokenType", null);
                 throw e;
@@ -1163,6 +1180,13 @@ public class Uploadedto extends PluginForHost {
                 return tokenType;
             } catch (final PluginException e) {
                 maxPrem.set(-1);
+                account.setProperty("token", null);
+                account.setProperty("tokenType", null);
+                throw e;
+            } catch (final Exception e) {
+                if (usePremiumAPI.compareAndSet(true, false)) {
+                    getLogger().info("Disable API");
+                }
                 account.setProperty("token", null);
                 account.setProperty("tokenType", null);
                 throw e;
