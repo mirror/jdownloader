@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 25143 $", interfaceVersion = 2, names = { "audiocastle.net" }, urls = { "https?://(www\\.)?audiocastle\\.(?:net|co)/(tracks|albums|mixtapes|immortals|videos)/view/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 25143 $", interfaceVersion = 2, names = { "audiocastle.net" }, urls = { "https?://(www\\.)?audiocastle\\.(?:net|co|me)/(tracks|albums|mixtapes|immortals|videos)/view/\\d+" }, flags = { 0 })
 public class AudCtlNt extends PluginForDecrypt {
 
     /**
@@ -38,7 +38,7 @@ public class AudCtlNt extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace(".net/", ".co/");
+        String parameter = param.toString().replaceFirst("://(?:www\\.)?(audiocastle\\.)(?:co|net)", "://www.$1me");
         br.setFollowRedirects(true);
         br.getPage(parameter);
         String dl = null;

@@ -49,16 +49,22 @@ public class FilePiCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:25.0) Gecko/20100101 Firefox/25.0");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.101 Safari/537.36");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex(">File Name:</p>[\t\n\r ]+<p class=\"text\\-lower\">([^<>\"]*?)</p>").getMatch(0);
-        final String filesize = br.getRegex(">File Size:</p>[\t\n\r ]+<p class=\"text\\-lower\">([^<>\"]*?)</p>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML(">File not found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String filename = br.getRegex(">File Name:</p>[\t\n\r ]+<p class=\"text-lower\">([^<>\"]*?)</p>").getMatch(0);
+        final String filesize = br.getRegex(">File Size:</p>[\t\n\r ]+<p class=\"text-lower\">([^<>\"]*?)</p>").getMatch(0);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
-        final String md5 = br.getRegex(">File MD5:</p>[\t\n\r ]+<p class=\"text\\-lower\">([a-z0-9]{32})</p>").getMatch(0);
-        if (md5 != null) link.setMD5Hash(md5);
+        final String md5 = br.getRegex(">File MD5:</p>[\t\n\r ]+<p class=\"text-lower\">([a-z0-9]{32})</p>").getMatch(0);
+        if (md5 != null) {
+            link.setMD5Hash(md5);
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -67,10 +73,14 @@ public class FilePiCom extends PluginForHost {
         requestFileInformation(downloadLink);
         final String waittime = br.getRegex(">wait</small> <span id=\"wait\">(\\d+)</span>").getMatch(0);
         int wait = 5;
-        if (waittime != null) wait = Integer.parseInt(waittime);
+        if (waittime != null) {
+            wait = Integer.parseInt(waittime);
+        }
         final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-        final String fhash = br.getRegex("var hash = \\'([a-z0-9]+)\\';").getMatch(0);
-        if (fhash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String fhash = br.getRegex("var hash = '([a-z0-9]+)';").getMatch(0);
+        if (fhash == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final Browser br2 = br.cloneBrowser();
         br2.getPage("http://static.filepi.com/js/file.js?15");
         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
@@ -79,25 +89,32 @@ public class FilePiCom extends PluginForHost {
         rc.load();
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
         for (int i = 1; i <= 5; i++) {
             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             final String c = getCaptchaCode("recaptcha", cf, downloadLink);
             br.getHeaders().put("Referer", downloadLink.getDownloadURL());
-            br.postPage("http://filepi.com/ajax-re", "cap1=" + Encoding.urlEncode(rc.getChallenge()) + "&cap2=" + Encoding.urlEncode(c) + "&tag=" + fid + "&pass=" + fhash + "&hash=" + fhash);
+            br.postPage("/ajax-re", "cap1=" + Encoding.urlEncode(rc.getChallenge()) + "&cap2=" + Encoding.urlEncode(c) + "&tag=" + fid + "&pass=" + fhash + "&hash=" + fhash);
             if (br.containsHTML("\"error\":\"captcha\"")) {
                 rc.reload();
                 continue;
             }
             break;
         }
-        if (br.containsHTML("\"error\":\"captcha\"")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("\"error\":\"captcha\"")) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         final String time = getJson("re_time"), hash = getJson("re_hash");
-        if (time == null || hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (time == null || hash == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         sleep(wait * 1001l, downloadLink);
         br.getHeaders().put("Referer", downloadLink.getDownloadURL());
-        br.postPage("http://filepi.com/ajax-down", "tag=" + fid + "&pass=" + fhash + "&re_time=" + time + "&re_hash=" + hash);
+        br.postPage("/ajax-down", "tag=" + fid + "&pass=" + fhash + "&re_time=" + time + "&re_hash=" + hash);
         String dllink = getJson("url");
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = dllink.replace("\\", "");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -109,7 +126,9 @@ public class FilePiCom extends PluginForHost {
 
     private String getJson(final String parameter) {
         String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
-        if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        if (result == null) {
+            result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        }
         return result;
     }
 
@@ -126,9 +145,8 @@ public class FilePiCom extends PluginForHost {
     public void resetDownloadlink(final DownloadLink link) {
     }
 
-
-/* NO OVERRIDE!! We need to stay 0.9*compatible */
-public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-return true;
-}
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        return true;
+    }
 }
