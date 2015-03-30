@@ -838,6 +838,8 @@ public class DataFileCom extends PluginForHost {
                 } else {
                     account.setProperty("free", true);
                     account.setProperty("totalMaxSim", ACCOUNT_FREE_MAXDOWNLOADS);
+                    /* Don't use multiple free accounts at the same time. */
+                    account.setConcurrentUsePossible(false);
                     ai.setStatus("Free Account");
                     ai.setUnlimitedTraffic();
                     ai.setValidUntil(-1);
