@@ -213,6 +213,8 @@ public class UploadRocketNet extends PluginForHost {
             if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion\\.?:\n|File Not Found|>The file expired|>The file was removed by administrator<)").matches()) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            /* Last chance, check for offline */
+            getFnameViaAbuseLink(altbr, link);
             logger.warning("filename equals null, throwing \"plugin defect\"");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -279,6 +281,10 @@ public class UploadRocketNet extends PluginForHost {
 
     private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws IOException, PluginException {
         br.getPage("http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
+        br.getRequest().setHtmlCode(correctBR(br));
+        if (br.containsHTML(">No such file<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         return br.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
 
@@ -581,8 +587,14 @@ public class UploadRocketNet extends PluginForHost {
     }
 
     /** Remove HTML code which could break the plugin */
-    public void correctBR() throws NumberFormatException, PluginException {
-        correctedBR = br.toString();
+    private String correctBR() throws NumberFormatException, PluginException {
+        final String corrected = correctBR(this.br);
+        this.correctedBR = corrected;
+        return corrected;
+    }
+
+    private String correctBR(final Browser br) {
+        String correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
 
         {
@@ -606,6 +618,7 @@ public class UploadRocketNet extends PluginForHost {
                 }
             }
         }
+        return correctedBR;
     }
 
     public String getDllink() {
