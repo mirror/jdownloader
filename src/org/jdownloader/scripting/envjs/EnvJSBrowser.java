@@ -108,15 +108,15 @@ public class EnvJSBrowser implements ContextCallback {
         Request request;
 
         try {
-            request = br.createGetRequest(url);
+            final Browser xbr = br.cloneBrowser();
+            request = xbr.createGetRequest(url);
 
             if (permissionFilter != null) {
                 request = permissionFilter.onBeforeLoadingExternalJavaScript(type, src, request);
             }
             if (request != null) {
-                br.loadConnection(br.openRequestConnection(request));
+                xbr.loadConnection(xbr.openRequestConnection(request));
                 String ret = request.getHtmlCode();
-                ;
                 if (permissionFilter != null) {
                     return permissionFilter.onAfterLoadingExternalJavaScript(type, src, ret, request);
                 }
@@ -447,7 +447,7 @@ public class EnvJSBrowser implements ContextCallback {
                  * not have a name, this method will try to return the name under which it was referenced. See <a
                  * href="http://www.digital-web.com/articles/scope_in_javascript/">this page</a> for a good explanation of how the
                  * <tt>thisObj</tt> plays into this guess.
-                 * 
+                 *
                  * @param thisObj
                  *            the object via which the function was referenced, used to try to guess a function name if the function is
                  *            anonymous
@@ -511,7 +511,7 @@ public class EnvJSBrowser implements ContextCallback {
 
                 /**
                  * Returns the name of the parameter at the specified index, or <tt>???</tt> if there is no corresponding name.
-                 * 
+                 *
                  * @param index
                  *            the index of the parameter whose name is to be returned
                  * @return the name of the parameter at the specified index, or <tt>???</tt> if there is no corresponding name
@@ -525,7 +525,7 @@ public class EnvJSBrowser implements ContextCallback {
 
                 /**
                  * Returns the name of this frame's source.
-                 * 
+                 *
                  * @return the name of this frame's source
                  */
                 private String getSourceName(final Context cx) {
@@ -543,7 +543,7 @@ public class EnvJSBrowser implements ContextCallback {
                 /**
                  * Returns the line number of the first line in this frame's function or script, or <tt>???</tt> if it cannot be determined.
                  * This is necessary because the line numbers provided by Rhino are unordered.
-                 * 
+                 *
                  * @return the line number of the first line in this frame's function or script, or <tt>???</tt> if it cannot be determined
                  */
                 private String getFirstLine(final Context cx) {
