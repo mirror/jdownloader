@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anilinkz.com" }, urls = { "http://(www\\.)?anilinkz\\.com/[^<>\"/]+(/[^<>\"/]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anilinkz.com" }, urls = { "http://(?:www\\.)?anilinkz\\.(?:com|tv)/[^<>\"/]+(/[^<>\"/]+)?" }, flags = { 0 })
 /**
  * @author raztoki
  * */
@@ -37,7 +37,7 @@ import jd.plugins.FilePackage;
 public class AniLinkzCom extends antiDDoSForDecrypt {
 
     private final String            supported_hoster = "(4shared\\.com|4vid\\.me|aniupload\\.com|animeuploads\\.com|animeultima\\.tv|arkvid\\.tv|auengine\\.(?:com|io)|bakavideo\\.tv|byzoo\\.org|chia\\-anime\\.com|cheesestream\\.com|cizgifilmlerizle\\.com|dailymotion\\.com|easyvideo\\.me|facebook\\.com/video|gogoanime\\.com|gorillavid\\.in|mp4star\\.com|mp4upload\\.com|movreel\\.com|myspace\\.com|nowvideo\\.eu|novamov\\.com|play44\\.net|(putlocker|firedrive)\\.com|playbb\\.me|playpanda\\.net|rutube\\.ru|sockshare\\.com|stagevu\\.com|upload2\\.com|uploadc\\.com|uploadcrazy\\.net|veevr\\.com|veoh\\.com|vidbox\\.yt|vidbull\\.com|vidcrazy\\.net|video44\\.net|videobb\\.com|videobam\\.com|videobull\\.com|videodrive\\.tv|videofun\\.me|videonest\\.net|videous\\.tv|videoweed\\.com|videowing\\.me|vidzur\\.com|videozoo\\.me|vimeo\\.com|vk\\.com|yourupload\\.com|youtube\\.com|zshare\\.net|220\\.ro|videos\\.sapo\\.pt)";
-    private final String            invalid_links    = "http://(www\\.)?anilinkz\\.com/(search|affiliates|get|img|dsa|forums|files|category|\\?page=|faqs|.*?-list|.*?-info|\\?random).*?";
+    private final String            invalid_links    = "http://(?:www\\.)?anilinkz\\.(?:com|tv)/(search|affiliates|get|img|dsa|forums|files|category|\\?page=|faqs|.*?-list|.*?-info|\\?random).*?";
     private String                  parameter        = null;
     private String                  fpName           = null;
     private String                  escapeAll        = null;
@@ -63,7 +63,7 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
         escapeAll = null;
         spart = 1;
 
-        parameter = param.toString();
+        parameter = param.toString().replaceFirst("anilinkz\\.com/", "anilinkz.tv/");
         if (parameter.matches(invalid_links)) {
             logger.info("Link invalid: " + parameter);
             return decryptedLinks;
@@ -96,7 +96,7 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
                 }
                 return decryptedLinks;
             }
-            if (parameter.contains(".com/series/")) {
+            if (parameter.matches(".+\\.(?:com|tv)/series/.+")) {
                 int p = 1;
                 String page = new Regex(parameter, "\\?page=(\\d+)").getMatch(0);
                 if (page != null) {
@@ -243,7 +243,7 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
                 link = "http:" + link;
             }
             decryptedLinks.add(createDownloadlink(link));
-        } else if (inValidate(link) && new Regex(escapeAll, "(anilinkz\\.com/get/|chia\\-anime\\.com/|myvideo\\.de/)").matches()) {
+        } else if (inValidate(link) && new Regex(escapeAll, "(anilinkz\\.(?:com|tv)/get/|chia-anime\\.com/|myvideo\\.de/)").matches()) {
             String[] aLinks = new Regex(escapeAll, "((?:https?:)?[^\"]+/get/[^\"]+)").getColumn(0);
             // chia-anime can't be redirected back into dedicated plugin
             if ((aLinks == null || aLinks.length == 0) && escapeAll.contains("chia-anime.com")) {
