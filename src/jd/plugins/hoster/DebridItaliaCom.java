@@ -34,10 +34,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debriditalia.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOMasdfasdfsadfsdgfd32423" }, flags = { 2 })
-public class DebridItaliaCom extends PluginForHost {
+public class DebridItaliaCom extends antiDDoSForHost {
 
     public DebridItaliaCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -107,7 +106,7 @@ public class DebridItaliaCom extends PluginForHost {
         ac.setValidUntil(Long.parseLong(expire) * 1000l);
 
         // now let's get a list of all supported hosts:
-        br.getPage("https://debriditalia.com/api.php?hosts");
+        super.br.getPage("https://debriditalia.com/api.php?hosts");
         hosts = br.getRegex("\"([^<>\"]*?)\"").getColumn(0);
         final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
         ac.setMultiHostSupport(this, supportedHosts);
@@ -146,7 +145,7 @@ public class DebridItaliaCom extends PluginForHost {
                 host_downloadlink = host_downloadlink.replace("https://", "http://");
             }
             final String encodedLink = Encoding.urlEncode(host_downloadlink);
-            br.getPage("https://debriditalia.com/api.php?generate=on&u=" + Encoding.urlEncode(acc.getUser()) + "&p=" + Encoding.urlEncode(acc.getPass()) + "&link=" + encodedLink);
+            super.br.getPage("https://debriditalia.com/api.php?generate=on&u=" + Encoding.urlEncode(acc.getUser()) + "&p=" + Encoding.urlEncode(acc.getPass()) + "&link=" + encodedLink);
             /* Either server error or the host is broken (we have to find out by retrying) */
             if (br.containsHTML("ERROR: not_available")) {
                 int timesFailed = link.getIntegerProperty("timesfaileddebriditalia_not_available", 0);
@@ -237,7 +236,7 @@ public class DebridItaliaCom extends PluginForHost {
     }
 
     private boolean loginAPI(final Account acc) throws IOException {
-        br.getPage("https://debriditalia.com/api.php?check=on&u=" + Encoding.urlEncode(acc.getUser()) + "&p=" + Encoding.urlEncode(acc.getPass()));
+        super.br.getPage("https://debriditalia.com/api.php?check=on&u=" + Encoding.urlEncode(acc.getUser()) + "&p=" + Encoding.urlEncode(acc.getPass()));
         if (!br.containsHTML("<status>valid</status>")) {
             return false;
         }

@@ -75,27 +75,37 @@ public class Uploadedto extends PluginForHost {
     // other: respects https in download methods, even though final download
     // link isn't https (free tested).
 
-    private static AtomicInteger           maxPrem                         = new AtomicInteger(1);
-    private char[]                         FILENAMEREPLACES                = new char[] { '_', '[', ']' };
-    private final String                   ACTIVATEACCOUNTERRORHANDLING    = "ACTIVATEACCOUNTERRORHANDLING";
-    private final String                   EXPERIMENTALHANDLING            = "EXPERIMENTALHANDLING";
-    private Pattern                        IPREGEX                         = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-    private static AtomicBoolean           hasAttemptedDownloadstart       = new AtomicBoolean(false);
-    private static AtomicLong              timeBefore                      = new AtomicLong(0);
-    private String                         LASTIP                          = "LASTIP";
-    private static AtomicReference<String> lastIP                          = new AtomicReference<String>();
-    private static AtomicBoolean           usePremiumAPI                   = new AtomicBoolean(true);
-    private static final long              RECONNECTWAIT                   = 10800000L;
-    private static final String            NOCHUNKS                        = "NOCHUNKS";
-    private static final String            NORESUME                        = "NORESUME";
-    private static final String            PROPERTY_LASTDOWNLOAD_TIMESTAMP = "uploadednet_lastdownload_timestamp";
-    private static final String            SSL_CONNECTION                  = "SSL_CONNECTION";
-    private static final String            PREFER_PREMIUM_DOWNLOAD_API     = "PREFER_PREMIUM_DOWNLOAD_API_V2";
-    private static final String            DOWNLOAD_ABUSED                 = "DOWNLOAD_ABUSED";
-    private boolean                        PREFERSSL                       = true;
-    private boolean                        avoidHTTPS                      = false;
+    /* Constants (limits) */
+    private static final long              FREE_RECONNECTWAIT                        = 10800000L;
+    /* Enable/disable usage of multiple free accounts at the same time */
+    private static final boolean           ACCOUNT_FREE_CONCURRENT_USAGE_POSSIBLE    = true;
+    private static final boolean           ACCOUNT_PREMIUM_CONCURRENT_USAGE_POSSIBLE = true;
+    private static final int               ACCOUNT_FREE_MAXDOWNLOADS                 = 1;
 
-    private static final String            CURRENT_DOMAIN                  = "http://uploaded.net/";
+    /* Premium */
+    private static final int               FREE_MAXDOWNLOADS                         = 1;
+    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS              = -1;
+
+    private static AtomicInteger           maxPrem                                   = new AtomicInteger(1);
+    private char[]                         FILENAMEREPLACES                          = new char[] { '_', '[', ']' };
+    private final String                   ACTIVATEACCOUNTERRORHANDLING              = "ACTIVATEACCOUNTERRORHANDLING";
+    private final String                   EXPERIMENTALHANDLING                      = "EXPERIMENTALHANDLING";
+    private Pattern                        IPREGEX                                   = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private static AtomicBoolean           hasAttemptedDownloadstart                 = new AtomicBoolean(false);
+    private static AtomicLong              timeBefore                                = new AtomicLong(0);
+    private String                         LASTIP                                    = "LASTIP";
+    private static AtomicReference<String> lastIP                                    = new AtomicReference<String>();
+    private static AtomicBoolean           usePremiumAPI                             = new AtomicBoolean(true);
+    private static final String            NOCHUNKS                                  = "NOCHUNKS";
+    private static final String            NORESUME                                  = "NORESUME";
+    private static final String            PROPERTY_LASTDOWNLOAD_TIMESTAMP           = "uploadednet_lastdownload_timestamp";
+    private static final String            SSL_CONNECTION                            = "SSL_CONNECTION";
+    private static final String            PREFER_PREMIUM_DOWNLOAD_API               = "PREFER_PREMIUM_DOWNLOAD_API_V2";
+    private static final String            DOWNLOAD_ABUSED                           = "DOWNLOAD_ABUSED";
+    private boolean                        PREFERSSL                                 = true;
+    private boolean                        avoidHTTPS                                = false;
+
+    private static final String            CURRENT_DOMAIN                            = "http://uploaded.net/";
 
     private String getProtocol() {
         if (avoidHTTPS) {
@@ -569,9 +579,9 @@ public class Uploadedto extends PluginForHost {
             ai.setStatus("Free account");
             ai.setUnlimitedTraffic();
             try {
-                maxPrem.set(1);
-                account.setMaxSimultanDownloads(1);
-                account.setConcurrentUsePossible(false);
+                maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
+                account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+                account.setConcurrentUsePossible(ACCOUNT_FREE_CONCURRENT_USAGE_POSSIBLE);
             } catch (final Throwable e) {
             }
             account.setProperty("free", true);
@@ -591,9 +601,9 @@ public class Uploadedto extends PluginForHost {
             ai.setTrafficMax(Math.max(max, current));
             ai.setTrafficLeft(current);
             try {
-                maxPrem.set(-1);
-                account.setMaxSimultanDownloads(-1);
-                account.setConcurrentUsePossible(true);
+                maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+                account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+                account.setConcurrentUsePossible(ACCOUNT_PREMIUM_CONCURRENT_USAGE_POSSIBLE);
             } catch (final Throwable e) {
             }
             account.setProperty("free", false);
@@ -653,7 +663,7 @@ public class Uploadedto extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return FREE_MAXDOWNLOADS;
     }
 
     private String getPassword(final DownloadLink downloadLink) throws Exception {
@@ -724,7 +734,7 @@ public class Uploadedto extends PluginForHost {
             if (account != null && this.getPluginConfig().getBooleanProperty(ACTIVATEACCOUNTERRORHANDLING, default_aaeh)) {
                 lastdownload = getLongProperty(account, PROPERTY_LASTDOWNLOAD_TIMESTAMP, 0);
                 passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
-                if (passedTimeSinceLastDl < RECONNECTWAIT) {
+                if (passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
                     /**
                      * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
                      */
@@ -735,7 +745,7 @@ public class Uploadedto extends PluginForHost {
                     } else {
                         logger.info("IP has not changed, limit active on account and IP -> Throwing IP_BLOCKED exception go get a new IP for the next try");
                         logger.warning("Reconnect + account = buggy, this code will not work as intended!!");
-                        final long wait = RECONNECTWAIT - passedTimeSinceLastDl;
+                        final long wait = FREE_RECONNECTWAIT - passedTimeSinceLastDl;
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
                     }
                 }
@@ -745,8 +755,8 @@ public class Uploadedto extends PluginForHost {
                  */
                 if (ipChanged(currentIP, downloadLink) == false) {
                     passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
-                    if (passedTimeSinceLastDl < RECONNECTWAIT) {
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, RECONNECTWAIT - passedTimeSinceLastDl);
+                    if (passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
                     }
                 }
             }
@@ -1164,16 +1174,16 @@ public class Uploadedto extends PluginForHost {
                 account.setProperty("tokenType", tokenType);
                 if ("premium".equals(tokenType)) {
                     try {
-                        maxPrem.set(-1);
-                        account.setMaxSimultanDownloads(-1);
-                        account.setConcurrentUsePossible(true);
+                        maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+                        account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+                        account.setConcurrentUsePossible(ACCOUNT_PREMIUM_CONCURRENT_USAGE_POSSIBLE);
                     } catch (final Throwable e) {
                     }
                 } else {
                     try {
-                        maxPrem.set(1);
-                        account.setMaxSimultanDownloads(1);
-                        account.setConcurrentUsePossible(false);
+                        maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
+                        account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+                        account.setConcurrentUsePossible(ACCOUNT_FREE_CONCURRENT_USAGE_POSSIBLE);
                     } catch (final Throwable e) {
                     }
                 }
@@ -1688,11 +1698,11 @@ public class Uploadedto extends PluginForHost {
         }
         logger.info("Limit reached: ");
         final long timePassed = System.currentTimeMillis() - timestamp_last_download_started;
-        if (timePassed >= RECONNECTWAIT) {
+        if (timePassed >= FREE_RECONNECTWAIT) {
             logger.info("According to saved waittime we passed the waittime which is impossible as uploaded has shown reconnect errormessage --> Throwing IP_BLOCKED exception with full reconnect time");
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, message, RECONNECTWAIT);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, message, FREE_RECONNECTWAIT);
         } else {
-            final long remainingWaittime = RECONNECTWAIT - timePassed;
+            final long remainingWaittime = FREE_RECONNECTWAIT - timePassed;
             logger.info("According to saved waittime we have not yet waited enough --> Waiting/Reconnecting: Remaining time: " + remainingWaittime);
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, message, remainingWaittime);
         }
