@@ -12,4 +12,6 @@ public interface LinkVariant {
 
     String _getExtendedName();
 
+    String _getTooltipDescription();
+
 }
