@@ -45,10 +45,44 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowvideo.ch", "nowvideo.co", "nowvideo.eu" }, urls = { "http://(www\\.)?(nowvideo\\.(sx|eu|co|ch|ag|at|li)/(video/|player\\.php\\?v=|share\\.php\\?id=)|embed\\.nowvideo\\.(sx|eu|co|ch|ag|at)/embed\\.php\\?v=)[a-z0-9]+", "NEVERUSETHISSUPERDUBERREGEXATALL2013", "NEVERUSETHISSUPERDUBERREGEXATALL2014" }, flags = { 2, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowvideo.ch", "nowvideo.co", "nowvideo.eu" }, urls = { "http://(www\\.)?(nowvideo\\.(sx|eu|co|ch|ag|at|ec|li)/(video/|player\\.php\\?v=|share\\.php\\?id=)|embed\\.nowvideo\\.(sx|eu|co|ch|ag|at)/embed\\.php\\?v=)[a-z0-9]+", "NEVERUSETHISSUPERDUBERREGEXATALL2013", "NEVERUSETHISSUPERDUBERREGEXATALL2014" }, flags = { 2, 0, 0 })
 public class NowVideoEu extends PluginForHost {
 
     /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet */
+
+    private static Object                  LOCK               = new Object();
+    private static final String            currentMainDomain  = "nowvideo.ch";
+    private static AtomicReference<String> MAINPAGE           = new AtomicReference<String>("http://www." + currentMainDomain);
+    private static AtomicReference<String> ccTLD              = new AtomicReference<String>("sx");
+    private final String                   ISBEINGCONVERTED   = ">The file is being converted.";
+    private final String                   domains            = "nowvideo\\.(sx|eu|co|ch|ag|at|ec|li)";
+    private static AtomicBoolean           AVAILABLE_PRECHECK = new AtomicBoolean(false);
+
+    private static AtomicReference<String> agent              = new AtomicReference<String>("http://www." + currentMainDomain);
+
+    private String validateHost() {
+        final String[] ccTLDs = { "ch", "sx", "eu", "co", "ag", "at", "ec", "li" };
+
+        for (int i = 0; i < ccTLDs.length; i++) {
+            String CCtld = ccTLDs[i];
+            try {
+                Browser br = new Browser();
+                workAroundTimeOut(br);
+                br.setCookiesExclusive(true);
+                br.getPage("http://www.nowvideo." + CCtld);
+                String redirect = br.getRedirectLocation();
+                br = null;
+                if (redirect != null) {
+                    return new Regex(redirect, domains).getMatch(0);
+                } else {
+                    return CCtld;
+                }
+            } catch (Exception e) {
+                logger.warning("nowvideo." + CCtld + " seems to be offline...");
+            }
+        }
+        return null;
+    }
 
     public NowVideoEu(PluginWrapper wrapper) {
         super(wrapper);
@@ -62,8 +96,8 @@ public class NowVideoEu extends PluginForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if (getHost().matches("nowvideo\\.(sx|eu|co|ch|ag|at|li)")) {
-            if (host == null || host.matches("nowvideo\\.(sx|eu|co|ch|ag|at|li)")) {
+        if (getHost().matches(domains)) {
+            if (host == null || host.matches(domains)) {
                 return currentMainDomain;
             }
         }
@@ -109,40 +143,6 @@ public class NowVideoEu extends PluginForHost {
             }
         }
     }
-
-    private String validateHost() {
-        final String[] ccTLDs = { "ch", "sx", "eu", "co", "ag", "at" };
-
-        for (int i = 0; i < ccTLDs.length; i++) {
-            String CCtld = ccTLDs[i];
-            try {
-                Browser br = new Browser();
-                workAroundTimeOut(br);
-                br.setCookiesExclusive(true);
-                br.getPage("http://www.nowvideo." + CCtld);
-                String redirect = br.getRedirectLocation();
-                br = null;
-                if (redirect != null) {
-                    return new Regex(redirect, domains).getMatch(0);
-                } else {
-                    return CCtld;
-                }
-            } catch (Exception e) {
-                logger.warning("nowvideo." + CCtld + " seems to be offline...");
-            }
-        }
-        return null;
-    }
-
-    private static Object                  LOCK               = new Object();
-    private static final String            currentMainDomain  = "nowvideo.ch";
-    private static AtomicReference<String> MAINPAGE           = new AtomicReference<String>("http://www." + currentMainDomain);
-    private static AtomicReference<String> ccTLD              = new AtomicReference<String>("sx");
-    private final String                   ISBEINGCONVERTED   = ">The file is being converted.";
-    private final String                   domains            = "nowvideo\\.(sx|eu|co|ch|ag|at|li)";
-    private static AtomicBoolean           AVAILABLE_PRECHECK = new AtomicBoolean(false);
-
-    private static AtomicReference<String> agent              = new AtomicReference<String>("http://www." + currentMainDomain);
 
     private Browser prepBrowser(Browser prepBr) {
         if (agent.get() == null) {

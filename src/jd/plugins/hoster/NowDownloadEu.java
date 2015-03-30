@@ -48,14 +48,41 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowdownload.eu", "likeupload.net" }, urls = { "http://(www\\.)?nowdownload\\.(eu|co|ch|sx|ag|at|ec)/(dl(\\d+)?/|down(load)?\\.php\\?id=)[a-z0-9]+", "https?://(www\\.)?likeupload\\.(net|org)/[a-z0-9]{12}" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowdownload.eu", "likeupload.net" }, urls = { "http://(www\\.)?nowdownload\\.(eu|co|ch|sx|ag|at|ec|li)/(dl(\\d+)?/|down(load)?\\.php\\?id=)[a-z0-9]+", "https?://(www\\.)?likeupload\\.(net|org)/[a-z0-9]{12}" }, flags = { 2, 0 })
 public class NowDownloadEu extends PluginForHost {
 
-    public NowDownloadEu(PluginWrapper wrapper) {
-        super(wrapper);
-        if ("nowdownload.eu".equals(getHost())) {
-            this.enablePremium(MAINPAGE.get() + "/premium.php");
+    private static AtomicReference<String> MAINPAGE                = new AtomicReference<String>("http://www.nowdownload.sx");
+
+    private static AtomicReference<String> DOMAIN                  = new AtomicReference<String>("sx");
+    private static AtomicBoolean           AVAILABLE_PRECHECK      = new AtomicBoolean(false);
+    private static AtomicReference<String> ua                      = new AtomicReference<String>(RandomUserAgent.generate());
+    private static Object                  LOCK                    = new Object();
+    private final String                   TEMPUNAVAILABLE         = ">The file is being transfered\\. Please wait";
+    private final String                   TEMPUNAVAILABLEUSERTEXT = "Host says: 'The file is being transfered. Please wait!'";
+    private final String                   domains                 = "nowdownload\\.(eu|co|ch|sx|ag|at|ec|li)";
+
+    private String validateHost() {
+        final String[] ccTLDs = { "sx", "eu", "co", "ch", "ag", "at", "ec", "li" };
+
+        for (int i = 0; i < ccTLDs.length; i++) {
+            String domain = ccTLDs[i];
+            try {
+                Browser br = new Browser();
+                workAroundTimeOut(br);
+                br.setCookiesExclusive(true);
+                br.getPage("http://www.nowdownload." + domain);
+                String redirect = br.getRedirectLocation();
+                br = null;
+                if (redirect != null) {
+                    return new Regex(redirect, domains).getMatch(0);
+                } else {
+                    return domain;
+                }
+            } catch (Exception e) {
+                logger.warning("NowDownload." + domain + " seems to be offline...");
+            }
         }
+        return null;
     }
 
     @Override
@@ -72,20 +99,17 @@ public class NowDownloadEu extends PluginForHost {
         return super.rewriteHost(host);
     }
 
+    public NowDownloadEu(PluginWrapper wrapper) {
+        super(wrapper);
+        if ("nowdownload.eu".equals(getHost())) {
+            this.enablePremium(MAINPAGE.get() + "/premium.php");
+        }
+    }
+
     @Override
     public String getAGBLink() {
         return MAINPAGE.get() + "/terms.php";
     }
-
-    private static AtomicReference<String> MAINPAGE                = new AtomicReference<String>("http://www.nowdownload.sx");
-
-    private static AtomicReference<String> DOMAIN                  = new AtomicReference<String>("sx");
-    private static AtomicBoolean           AVAILABLE_PRECHECK      = new AtomicBoolean(false);
-    private static AtomicReference<String> ua                      = new AtomicReference<String>(RandomUserAgent.generate());
-    private static Object                  LOCK                    = new Object();
-    private final String                   TEMPUNAVAILABLE         = ">The file is being transfered\\. Please wait";
-    private final String                   TEMPUNAVAILABLEUSERTEXT = "Host says: 'The file is being transfered. Please wait!'";
-    private final String                   domains                 = "nowdownload\\.(eu|co|ch|sx|ag|at)";
 
     public void correctDownloadLink(DownloadLink link) {
         if (link.getDownloadURL().contains("likeupload.")) {
@@ -262,30 +286,6 @@ public class NowDownloadEu extends PluginForHost {
             }
         } catch (final Throwable e) {
         }
-    }
-
-    private String validateHost() {
-        final String[] ccTLDs = { "sx", "eu", "co", "ch", "ag", "at" };
-
-        for (int i = 0; i < ccTLDs.length; i++) {
-            String domain = ccTLDs[i];
-            try {
-                Browser br = new Browser();
-                workAroundTimeOut(br);
-                br.setCookiesExclusive(true);
-                br.getPage("http://www.nowdownload." + domain);
-                String redirect = br.getRedirectLocation();
-                br = null;
-                if (redirect != null) {
-                    return new Regex(redirect, domains).getMatch(0);
-                } else {
-                    return domain;
-                }
-            } catch (Exception e) {
-                logger.warning("NowDownload." + domain + " seems to be offline...");
-            }
-        }
-        return null;
     }
 
     private String getDllink() {
