@@ -236,6 +236,8 @@ public class SpeedyShareCom extends PluginForHost {
             br.followConnection();
             if (br.containsHTML(CAPTCHATEXT)) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else if (br.containsHTML("You are already downloading another file")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "You are already downloading another file. Parallel downloads are available only for Premium users.", 5 * 60 * 1000l);
             }
             logger.warning("Final downloadlink doesn't lead to a file!");
             /*
@@ -523,7 +525,7 @@ public class SpeedyShareCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override
