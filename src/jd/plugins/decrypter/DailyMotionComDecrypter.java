@@ -320,8 +320,9 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             } catch (final Throwable e) {
                 // Not available in 0.9.581
             }
-            logger.info("Decrypting page " + currentPage + " / " + pagesNum);
-            br.getPage(base_link + currentPage);
+            final String nextpage = base_link + "/" + currentPage;
+            logger.info("Decrypting page: " + nextpage);
+            br.getPage(nextpage);
             final String[] videos = br.getRegex("preview_link \"  href=\"(/video/[^<>\"/]+)\"").getColumn(0);
             if (videos == null || videos.length == 0) {
                 logger.info("Found no videos on page " + currentPage + " -> Stopping decryption");

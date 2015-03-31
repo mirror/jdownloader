@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -27,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.org" }, urls = { "https?://(((www\\.)?libgen\\.org)|gen\\.lib\\.rus\\.ec)/book/index\\.php\\?md5=[A-F0-9]{32}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.org" }, urls = { "https?://(www\\.)?(libgen\\.org|gen\\.lib\\.rus\\.ec|libgen\\.in)/book/index\\.php\\?md5=[A-F0-9]{32}" }, flags = { 0 })
 public class LibGen extends PluginForDecrypt {
 
     public LibGen(PluginWrapper wrapper) {
@@ -39,25 +40,44 @@ public class LibGen extends PluginForDecrypt {
         String parameter = param.toString();
         String host = new Regex(parameter, "(https?://[^/]+)").getMatch(0);
         br.setCookie(host, "lang", "en");
+        /* Allow redirects to other of their domains */
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML("entry not found in the database")) {
             logger.info("Invalid URL: " + parameter);
             return decryptedLinks;
         }
         String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        if (fpName != null) {
+            fpName = Encoding.htmlDecode(fpName).trim();
+        }
 
         String[] links = br.getRegex("<url\\d+>(https?://[^<]+)</url\\d+>").getColumn(0);
         // Hmm maybe just try to get all mirrors
-        if (links == null || links.length == 0) links = br.getRegex("<td align='center' width='11,1%'><a href=\\'(http[^<>\"]*?)'").getColumn(0);
-        if (links == null || links.length == 0) return null;
+        if (links == null || links.length == 0) {
+            links = br.getRegex("<td align='center' width='11,1%'><a href=\\'(http[^<>\"]*?)'").getColumn(0);
+        }
+        if (links == null || links.length == 0) {
+            return null;
+        }
         if (links != null && links.length != 0) {
-            for (String dl : links)
+            for (String dl : links) {
                 decryptedLinks.add(createDownloadlink(dl));
+            }
+        }
+
+        final String cover_url = br.getRegex("(?:\\'|\")(https?://libgen\\.(?:in|info|net)/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png))(?:\\'|\")").getMatch(0);
+        if (cover_url != null) {
+            final DownloadLink dl = createDownloadlink("directhttp://" + cover_url);
+            if (fpName != null) {
+                dl.setFinalFileName(fpName + cover_url.substring(cover_url.lastIndexOf(".")));
+            }
+            decryptedLinks.add(dl);
         }
 
         if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName.trim());
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName);
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;

@@ -168,7 +168,7 @@ public class OffCloudCom extends PluginForHost {
         }
         /* Make sure that we do not start more than the allowed number of max simultan downloads for the current host. */
         synchronized (hostRunningDlsNumMap) {
-            final String currentHost = downloadLink.getHost();
+            final String currentHost = correctHost(downloadLink.getHost());
             if (hostRunningDlsNumMap.containsKey(currentHost) && hostMaxdlsMap.containsKey(currentHost)) {
                 final int maxDlsForCurrentHost = hostMaxdlsMap.get(currentHost);
                 final AtomicInteger currentRunningDlsForCurrentHost = hostRunningDlsNumMap.get(currentHost);
@@ -257,8 +257,8 @@ public class OffCloudCom extends PluginForHost {
         /* First set hardcoded limit */
         int maxChunks = ACCOUNT_PREMIUM_MAXCHUNKS;
         /* Then check if we got an individual limit. */
-        final String thishost = link.getHost();
         if (hostMaxchunksMap != null) {
+            final String thishost = link.getHost();
             synchronized (hostMaxchunksMap) {
                 if (hostMaxchunksMap.containsKey(thishost)) {
                     maxChunks = hostMaxchunksMap.get(thishost);
@@ -520,22 +520,13 @@ public class OffCloudCom extends PluginForHost {
             final ArrayList<Object> ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
             for (final Object o : ressourcelist) {
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) o;
-                String host = (String) entries.get("host");
+                final String host = correctHost((String) entries.get("host"));
                 final Object maxdls_object = entries.get("maxChunksGlobal");
                 int maxchunks = ((Number) entries.get("maxChunks")).intValue();
-                /* Small workaround for uploaded.net */
-                if (host.equals("uploaded.net")) {
-                    host = "uploaded.to";
-                }
-                if (maxchunks > 20) {
-                    maxchunks = 0;
-                } else if (maxchunks > 1) {
-                    maxchunks = -maxchunks;
-                }
-                hostMaxchunksMap.put(host, maxchunks);
+                hostMaxchunksMap.put(host, this.correctChunks(maxchunks));
                 if (maxdls_object != null) {
                     final int maxdls = ((Number) maxdls_object).intValue();
-                    hostMaxdlsMap.put(host, maxdls);
+                    hostMaxdlsMap.put(host, this.correctMaxdls(maxdls));
                 }
             }
             /* Leave this in as a test */
@@ -970,7 +961,7 @@ public class OffCloudCom extends PluginForHost {
                 } else {
                     statusMessage = "\r\nDownload ticket broken --> Retry link";
                 }
-                handleErrorRetries("downloadticketBroken", 30, 30 * 60 * 1000l);
+                handleErrorRetries("downloadticketBroken", 30, 5 * 60 * 1000l);
             case 201:
                 /* Host account of multihost is expired --> Disable host for a long period of time! */
                 statusMessage = "Host account of multihost is expired";
@@ -1024,28 +1015,36 @@ public class OffCloudCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
-    /**
-     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
-     * from the host list.
-     *
-     * @param error
-     *            : The name of the error
-     * @param maxRetries
-     *            : Max retries before out of date error is thrown
-     */
-    private void handleErrorRetries(final String error, final int maxRetries, final long disableTime) throws PluginException {
-        int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
-        this.currDownloadLink.getLinkStatus().setRetryCount(0);
-        if (timesFailed <= maxRetries) {
-            logger.info(NICE_HOST + ": " + error + " -> Retrying");
-            timesFailed++;
-            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
-            throw new PluginException(LinkStatus.ERROR_RETRY, error);
-        } else {
-            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
-            logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
-            tempUnavailableHoster(disableTime);
+    /** Corrects input so that it fits what we use in our plugins. */
+    private int correctChunks(int maxchunks) {
+        if (maxchunks < 1) {
+            maxchunks = 1;
+        } else if (maxchunks > 20) {
+            maxchunks = 20;
+        } else if (maxchunks > 1) {
+            maxchunks = -maxchunks;
         }
+        /* Else maxchunks = 1 */
+        return maxchunks;
+    }
+
+    /** Corrects input so that it fits what we use in our plugins. */
+    private int correctMaxdls(int maxdls) {
+        if (maxdls < 1) {
+            maxdls = 1;
+        } else if (maxdls > 20) {
+            maxdls = 20;
+        }
+        /* Else we should have a valid value! */
+        return maxdls;
+    }
+
+    /** Performs slight domain corrections. */
+    private String correctHost(String host) {
+        if (host.equals("uploaded.to") || host.equals("uploaded.net")) {
+            host = "uploaded.net";
+        }
+        return host;
     }
 
     /**
@@ -1073,6 +1072,30 @@ public class OffCloudCom extends PluginForHost {
             }
             currentRunningDls.set(currentRunningDls.get() + num);
             hostRunningDlsNumMap.put(currentHost, currentRunningDls);
+        }
+    }
+
+    /**
+     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
+     * from the host list.
+     *
+     * @param error
+     *            : The name of the error
+     * @param maxRetries
+     *            : Max retries before out of date error is thrown
+     */
+    private void handleErrorRetries(final String error, final int maxRetries, final long disableTime) throws PluginException {
+        int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
+        this.currDownloadLink.getLinkStatus().setRetryCount(0);
+        if (timesFailed <= maxRetries) {
+            logger.info(NICE_HOST + ": " + error + " -> Retrying");
+            timesFailed++;
+            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
+            throw new PluginException(LinkStatus.ERROR_RETRY, error);
+        } else {
+            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
+            logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
+            tempUnavailableHoster(disableTime);
         }
     }
 

@@ -467,7 +467,7 @@ public class MyFastFileCom extends PluginForHost {
 
     public static class MyFastFileComAccountFactory extends AccountFactory {
 
-        public static class FreewayBZPanel extends MigPanel implements EditAccountPanel {
+        public static class MyFastFileComPanel extends MigPanel implements EditAccountPanel {
             /**
              *
              */
@@ -501,11 +501,21 @@ public class MyFastFileCom extends PluginForHost {
             private static String     EMPTYPW  = "                 ";
             private final JLabel      idLabel;
 
-            public FreewayBZPanel() {
+            public MyFastFileComPanel() {
                 super("ins 0, wrap 2", "[][grow,fill]", "");
-                add(new JLabel("Click here to find your User-ID/PIN:"));
+                final String lang = System.getProperty("user.language");
+                String usertext_finddata;
+                String usertext_uid;
+                if ("de".equalsIgnoreCase(lang)) {
+                    usertext_finddata = "Klicke hier um deine User-ID und PIN zu sehen:";
+                    usertext_uid = "User-ID (muss 9-stellig sein)";
+                } else {
+                    usertext_finddata = "Click here to find your User-ID/PIN:";
+                    usertext_uid = "User-ID: (must be 9 digis)";
+                }
+                add(new JLabel(usertext_finddata));
                 add(new JLink("https://www.myfastfile.com/account"));
-                add(idLabel = new JLabel("User-ID: (must be 9 digis)"));
+                add(idLabel = new JLabel(usertext_uid));
                 add(this.name = new ExtTextField() {
 
                     @Override
@@ -570,7 +580,7 @@ public class MyFastFileCom extends PluginForHost {
 
         @Override
         public EditAccountPanel getPanel() {
-            return new FreewayBZPanel();
+            return new MyFastFileComPanel();
         }
 
     }
