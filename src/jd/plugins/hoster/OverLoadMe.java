@@ -46,6 +46,9 @@ public class OverLoadMe extends PluginForHost {
     private int                                            STATUSCODE         = 0;
     private static final String                            NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
 
+    private Account                                        currAcc            = null;
+    private DownloadLink                                   currDownloadLink   = null;
+
     public OverLoadMe(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.over-load.me/premium.php");
@@ -66,6 +69,11 @@ public class OverLoadMe extends PluginForHost {
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
         return br;
+    }
+
+    private void setConstants(final Account acc, final DownloadLink dl) {
+        this.currAcc = acc;
+        this.currDownloadLink = dl;
     }
 
     @Override
@@ -119,9 +127,9 @@ public class OverLoadMe extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("Download not available at the moment")) {
-                handleErrorRetries(account, link, "download_not_available", 5);
+                handleErrorRetries("download_not_available", 5, 5 * 60 * 1000l);
             }
-            handleErrorRetries(account, link, "unknowndlerror", 5);
+            handleErrorRetries("unknowndlerror", 5, 5 * 60 * 1000l);
         }
         try {
             if (!this.dl.startDownload()) {
@@ -133,7 +141,7 @@ public class OverLoadMe extends PluginForHost {
                 }
                 logger.info("Download failed -> Maybe re-trying with only 1 chunk");
                 /* unknown error, we disable multiple chunks */
-                disableChunkload(link);
+                disableChunkload();
                 logger.info("Download failed -> Retry with 1 chunk did not solve the problem");
             }
         } catch (final PluginException e) {
@@ -143,9 +151,9 @@ public class OverLoadMe extends PluginForHost {
                 logger.info(NICE_HOST + ": DOWNLOAD_INCOMPLETE");
                 logger.info("DOWNLOAD_INCOMPLETE -> Maybe re-trying with only 1 chunk");
                 /* unknown error, we disable multiple chunks */
-                disableChunkload(link);
+                disableChunkload();
                 logger.info("DOWNLOAD_INCOMPLETE -> Retry with 1 chunk did not solve the problem");
-                handleErrorRetries(account, link, "dl_incomplete", 5);
+                handleErrorRetries("dl_incomplete", 5, 5 * 60 * 1000l);
             }
             // New V2 errorhandling
             /* unknown error, we disable multiple chunks */
@@ -164,10 +172,10 @@ public class OverLoadMe extends PluginForHost {
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
             /* request Download */
-            this.accessAPISafe(account, link, DOMAIN + "getdownload.php?auth=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
+            this.accessAPISafe(DOMAIN + "getdownload.php?auth=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
             dllink = getJson("downloadlink");
             if (dllink == null) {
-                handleErrorRetries(account, link, "dllinknull", 5);
+                handleErrorRetries("dllinknull", 5, 60 * 60 * 1000l);
             }
             dllink = dllink.replaceAll("\\\\/", "/");
         }
@@ -198,42 +206,42 @@ public class OverLoadMe extends PluginForHost {
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
      * from the host list.
      *
-     * @param dl
-     *            : The DownloadLink
      * @param error
      *            : The name of the error
      * @param maxRetries
      *            : Max retries before out of date error is thrown
      */
-    private void handleErrorRetries(final Account acc, final DownloadLink dl, final String error, final int maxRetries) throws PluginException {
-        int timesFailed = dl.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
-        dl.getLinkStatus().setRetryCount(0);
+    private void handleErrorRetries(final String error, final int maxRetries, final long disableTime) throws PluginException {
+        int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
+        this.currDownloadLink.getLinkStatus().setRetryCount(0);
         if (timesFailed <= maxRetries) {
             logger.info(NICE_HOST + ": " + error + " -> Retrying");
             timesFailed++;
-            dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
+            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
             throw new PluginException(LinkStatus.ERROR_RETRY, error);
         } else {
-            dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
+            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
             logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
-            tempUnavailableHoster(acc, dl, 1 * 60 * 60 * 1000l);
+            tempUnavailableHoster(disableTime);
         }
     }
 
-    private void disableChunkload(final DownloadLink dl) throws PluginException {
+    private void disableChunkload() throws PluginException {
         /* unknown error, we disable multiple chunks */
-        if (dl.getBooleanProperty(OverLoadMe.NOCHUNKS, false) == false) {
-            dl.setProperty(OverLoadMe.NOCHUNKS, Boolean.valueOf(true));
-            dl.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
+        if (this.currDownloadLink.getBooleanProperty(OverLoadMe.NOCHUNKS, false) == false) {
+            this.currDownloadLink.setProperty(OverLoadMe.NOCHUNKS, Boolean.valueOf(true));
+            this.currDownloadLink.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        setConstants(account, null);
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
-        accessAPISafe(account, null, DOMAIN + "account.php?user=" + Encoding.urlEncode(account.getUser()) + "&auth=" + Encoding.urlEncode(account.getPass()));
+        accessAPISafe(DOMAIN + "account.php?user=" + Encoding.urlEncode(account.getUser()) + "&auth=" + Encoding.urlEncode(account.getPass()));
         account.setValid(true);
         account.setConcurrentUsePossible(true);
         final String premium = getJson("membership");
@@ -277,7 +285,7 @@ public class OverLoadMe extends PluginForHost {
             simultandls = 20;
         }
         account.setMaxSimultanDownloads(simultandls);
-        accessAPISafe(account, null, DOMAIN + "hoster.php?auth=" + Encoding.Base64Decode(APIKEY));
+        accessAPISafe(DOMAIN + "hoster.php?auth=" + Encoding.Base64Decode(APIKEY));
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final String[] hostDomains = br.getRegex("\"([^<>\"]*?)\"").getColumn(0);
         for (final String domain : hostDomains) {
@@ -292,36 +300,51 @@ public class OverLoadMe extends PluginForHost {
         link.getLinkStatus().setStatusText(message);
     }
 
-    private String getJson(final String parameter) {
-        String result = br.getRegex("\"" + parameter + "\":((\\-)?\\d+)").getMatch(0);
-        if (result == null) {
-            result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
-        }
-        return result;
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
     }
 
-    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
-        if (downloadLink == null) {
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
+    }
+
+    private void tempUnavailableHoster(final long timeout) throws PluginException {
+        if (this.currDownloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         }
         synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(this.currAcc);
             if (unavailableMap == null) {
                 unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(account, unavailableMap);
+                hostUnavailableMap.put(this.currAcc, unavailableMap);
             }
             /* wait 30 mins to retry this host */
-            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
+            unavailableMap.put(this.currDownloadLink.getHost(), (System.currentTimeMillis() + timeout));
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
-    private void accessAPISafe(final Account acc, final DownloadLink dl, final String accesslink) throws IOException, PluginException {
+    private void accessAPISafe(final String accesslink) throws IOException, PluginException {
         br.getPage(accesslink);
         updatestatuscode();
-        handleAPIErrors(this.br, acc, dl);
+        handleAPIErrors(this.br);
     }
 
+    /**
+     * 0 = everything ok, 1-99 = 'normal'-errors, 666 = hell
+     */
     private void updatestatuscode() {
         if (br.containsHTML("Invalid auth\\.")) {
             STATUSCODE = 1;
@@ -364,7 +387,7 @@ public class OverLoadMe extends PluginForHost {
         }
     }
 
-    private void handleAPIErrors(final Browser br, final Account account, final DownloadLink downloadLink) throws PluginException {
+    private void handleAPIErrors(final Browser br) throws PluginException {
         String statusMessage = null;
         try {
             switch (STATUSCODE) {
@@ -384,11 +407,11 @@ public class OverLoadMe extends PluginForHost {
             case 2:
                 /* Invalid link -> Disable current host */
                 statusMessage = "\r\nCurrent host is not supported";
-                tempUnavailableHoster(account, downloadLink, 3 * 60 * 60 * 1000l);
+                tempUnavailableHoster(3 * 60 * 60 * 1000l);
             case 3:
                 /* No traffic left for current host */
                 statusMessage = "No traffic left for current host";
-                tempUnavailableHoster(account, downloadLink, 60 * 60 * 1000l);
+                tempUnavailableHoster(60 * 60 * 1000l);
             case 4:
                 /* Database connect error */
                 statusMessage = "Could not connect to database";
@@ -408,19 +431,19 @@ public class OverLoadMe extends PluginForHost {
             case 8:
                 /* Error fetching download url -> Disable for 5 minutes */
                 statusMessage = "Error fetching download url";
-                tempUnavailableHoster(account, downloadLink, 5 * 60 * 1000l);
+                tempUnavailableHoster(5 * 60 * 1000l);
             case 9:
                 /* No account found -> Disable host for 30 minutes */
                 statusMessage = "No account found";
-                tempUnavailableHoster(account, downloadLink, 30 * 60 * 1000l);
+                tempUnavailableHoster(30 * 60 * 1000l);
             case 10:
                 /* Host offline or invalid url -> Disable for 5 minutes */
                 statusMessage = "Host offline";
-                tempUnavailableHoster(account, downloadLink, 5 * 60 * 1000l);
+                tempUnavailableHoster(5 * 60 * 1000l);
             case 11:
                 /* Account expired -> Disable account */
                 statusMessage = "Account expired  |  Account abgelaufenF";
-                account.getAccountInfo().setExpired(true);
+                this.currAcc.getAccountInfo().setExpired(true);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 12:
                 /* No API code sent -> Disable account */
@@ -437,22 +460,12 @@ public class OverLoadMe extends PluginForHost {
             case 15:
                 /* No traffic left or server is full -> Disable for 1 hour */
                 statusMessage = "No traffic left or server is full";
-                tempUnavailableHoster(account, downloadLink, 60 * 60 * 1000l);
+                tempUnavailableHoster(60 * 60 * 1000l);
             case 666:
                 /* Unknown error */
                 statusMessage = "Unknown error";
                 logger.info(NICE_HOST + ": Unknown API error");
-                int timesFailed = downloadLink.getIntegerProperty("NICE_HOSTproperty + timesfailed_unknownapierror", 0);
-                downloadLink.getLinkStatus().setRetryCount(0);
-                if (timesFailed <= 2) {
-                    timesFailed++;
-                    downloadLink.setProperty(NICE_HOSTproperty + "timesfailed_unknownapierror", timesFailed);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown API error");
-                } else {
-                    downloadLink.setProperty(NICE_HOSTproperty + "timesfailed_unknownapierror", Property.NULL);
-                    logger.info(NICE_HOST + ": Unknown API error - disabling current host!");
-                    tempUnavailableHoster(account, downloadLink, 30 * 60 * 1000l);
-                }
+                handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknownapierror", 5, 30 * 60 * 1000l);
             }
         } catch (final PluginException e) {
             logger.info(NICE_HOST + ": Exception: statusCode: " + STATUSCODE + " statusMessage: " + statusMessage);
