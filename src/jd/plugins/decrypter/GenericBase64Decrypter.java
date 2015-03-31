@@ -55,8 +55,8 @@ public class GenericBase64Decrypter extends PluginForDecrypt {
         // this covers nested encoding.
         while (i < 20 && finallink != null && !finallink.matches("(?:ftp|https?)://.+")) {
             i++;
-            // cleanup crap after padding. this can break subsequent
-            finallink = Encoding.Base64Decode(finallink.replaceFirst("==[\\w\\+]+$", "=="));
+            // cleanup crap after padding. this can break subsequent tries
+            finallink = Encoding.Base64Decode(finallink.replaceFirst("(={1,2})[\\w\\+]+$", "$1"));
         }
         decryptedLinks.add(createDownloadlink(finallink));
 
