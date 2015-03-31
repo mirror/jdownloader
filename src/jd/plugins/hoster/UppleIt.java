@@ -49,7 +49,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.utils.recaptcha.api2.Recaptcha2Helper;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upple.it" }, urls = { "https?://(www\\.)?upple\\.it/[A-Za-z0-9]+" }, flags = { 2 })
-public class UppleIt extends PluginForHost {
+public class UppleIt extends antiDDoSForHost {
 
     public UppleIt(PluginWrapper wrapper) {
         super(wrapper);
@@ -123,18 +123,21 @@ public class UppleIt extends PluginForHost {
         String filename;
         String filesize;
         if (available_CHECK_OVER_INFO_PAGE) {
-            br.getPage(link.getDownloadURL() + "~i");
+            super.br.getPage(link.getDownloadURL() + "~i");
             if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = br.getRegex("Filename:[\t\n\r ]+</td>[\t\n\r ]+<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+            filename = br.getRegex(">Information about ([^<>\"]*?)</div>").getMatch(0);
+            if (filename == null || inValidate(Encoding.htmlDecode(filename).trim())) {
+                filename = br.getRegex("Filename:[\t\n\r ]+</td>[\t\n\r ]+<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+            }
             if (filename == null || inValidate(Encoding.htmlDecode(filename).trim()) || Encoding.htmlDecode(filename).trim().equals("  ")) {
                 /* Filename might not be available here either */
                 filename = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
             }
             filesize = br.getRegex("Filesize:[\t\n\r ]+</td>[\t\n\r ]+<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
         } else {
-            br.getPage(link.getDownloadURL());
+            super.br.getPage(link.getDownloadURL());
             if (br.getURL().contains(url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT)) {
                 link.setName(getFID(link));
                 link.getLinkStatus().setStatusText(errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT);
@@ -191,7 +194,7 @@ public class UppleIt extends PluginForHost {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, resume, maxchunks);
             } else {
                 if (available_CHECK_OVER_INFO_PAGE) {
-                    br.getPage(downloadLink.getDownloadURL());
+                    super.br.getPage(downloadLink.getDownloadURL());
                 }
                 handleErrors();
                 /* Passwords are usually before waittime. */
@@ -308,7 +311,7 @@ public class UppleIt extends PluginForHost {
                 }
                 dl.setProperty("pass", passCode);
             }
-            br.postPage(br.getURL(), "submit=access+file&submitme=1&file=" + this.getFID(dl) + "&filePassword=" + Encoding.urlEncode(passCode));
+            super.br.postPage(br.getURL(), "submit=access+file&submitme=1&file=" + this.getFID(dl) + "&filePassword=" + Encoding.urlEncode(passCode));
             if (br.getURL().contains("/file_password.html")) {
                 logger.info("User entered incorrect password --> Retrying");
                 dl.setProperty("pass", Property.NULL);
@@ -384,7 +387,7 @@ public class UppleIt extends PluginForHost {
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
      * */
-    private boolean inValidate(final String s) {
+    protected boolean inValidate(final String s) {
         if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
         } else {
@@ -434,11 +437,11 @@ public class UppleIt extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getPage(this.getProtocol() + this.getHost() + "/");
+                super.br.getPage(this.getProtocol() + this.getHost() + "/");
                 final String lang = System.getProperty("user.language");
                 final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
                 if (useOldLoginMethod) {
-                    br.postPage(this.getProtocol() + this.getHost() + "/login." + type, "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
+                    super.br.postPage(this.getProtocol() + this.getHost() + "/login." + type, "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
                     if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout\\.html\">logout \\(")) {
                         if ("de".equalsIgnoreCase(lang)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -447,11 +450,11 @@ public class UppleIt extends PluginForHost {
                         }
                     }
                 } else {
-                    br.getPage(this.getProtocol() + this.getHost() + "/login." + type);
+                    super.br.getPage(this.getProtocol() + this.getHost() + "/login." + type);
                     final String loginpostpage = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                    br.postPage(loginpostpage, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    super.br.postPage(loginpostpage, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                     if (!br.containsHTML("\"login_status\":\"success\"")) {
                         if ("de".equalsIgnoreCase(lang)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -460,7 +463,7 @@ public class UppleIt extends PluginForHost {
                         }
                     }
                 }
-                br.getPage(loginstart + this.getHost() + "/account_home." + type);
+                super.br.getPage(loginstart + this.getHost() + "/account_home." + type);
                 if (!br.containsHTML("class=\"badge badge\\-success\">PAID USER</span>")) {
                     account.setProperty("free", true);
                 } else {
@@ -504,7 +507,7 @@ public class UppleIt extends PluginForHost {
             MAXPREM.set(account_FREE_MAXDOWNLOADS);
             ai.setStatus("Registered (free) account");
         } else {
-            br.getPage("http://" + this.getHost() + "/upgrade." + type);
+            super.br.getPage("http://" + this.getHost() + "/upgrade." + type);
             /* If the premium account is expired we'll simply accept it as a free account. */
             final String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
             if (expire == null) {
@@ -547,7 +550,7 @@ public class UppleIt extends PluginForHost {
         login(account, true);
         if (account.getBooleanProperty("free", false)) {
             if (!available_CHECK_OVER_INFO_PAGE) {
-                br.getPage(link.getDownloadURL());
+                super.br.getPage(link.getDownloadURL());
             }
             doFree(link, account_FREE_RESUME, account_FREE_MAXCHUNKS, "free_acc_directlink");
         } else {

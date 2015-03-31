@@ -46,7 +46,7 @@ public class NoiseTradeCom extends PluginForDecrypt {
         parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        if (br.getRedirectLocation() != null || br.getURL().contains("noisetrade.com/info/error") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getRedirectLocation() != null || br.getURL().contains("noisetrade.com/info/error") || br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("id=\"feature_image_artist\"")) {
             try {
                 decryptedLinks.add(this.createOfflinelink(parameter));
             } catch (final Throwable e) {
@@ -77,13 +77,12 @@ public class NoiseTradeCom extends PluginForDecrypt {
             main.setAvailable(true);
             decryptedLinks.add(main);
         } else {
-            if (!br.containsHTML("class=\"col_album_playlist\"")) {
+            if (br.containsHTML(">This album is not currently available")) {
                 try {
                     decryptedLinks.add(this.createOfflinelink(parameter));
                 } catch (final Throwable e) {
                     /* Not available in old 0.9.581 Stable */
                 }
-                return decryptedLinks;
             }
             final String[] links = br.getRegex("<Track(.*?) />").getColumn(0);
             if (links == null || links.length == 0) {
