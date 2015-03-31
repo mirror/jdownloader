@@ -16,7 +16,9 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -42,8 +44,9 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.utils.recaptcha.api2.Recaptcha2Helper;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudzilla.to" }, urls = { "http://(www\\.)?cloudzilla\\.to/share/file/[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "neodrive.co", "cloudzilla.to" }, urls = { "http://(www\\.)?(cloudzilla\\.to|neodrive\\.co)/share/file/[A-Za-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM" }, flags = { 2, 0 })
 public class CloudZillaTo extends PluginForHost {
 
     public CloudZillaTo(PluginWrapper wrapper) {
@@ -54,6 +57,21 @@ public class CloudZillaTo extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.cloudzilla.to/terms/";
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("cloudzilla.to".equals(getHost())) {
+            if (host == null || "cloudzilla.to".equals(host)) {
+                return "neodrive.co";
+            }
+        }
+        return super.rewriteHost(host);
+    }
+
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("cloudzilla.to/", "neodrive.co/"));
     }
 
     /* Connection stuff */
@@ -70,6 +88,7 @@ public class CloudZillaTo extends PluginForHost {
     /* don't touch the following! */
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -79,7 +98,7 @@ public class CloudZillaTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("class=\"name\" title=\"([^<>\"]*?)\"").getMatch(0);
-        final String filesize = br.getRegex("class=\"size\">\\(([^<>\"]*?)\\)</span>").getMatch(0);
+        final String filesize = br.getRegex("class=\"size\">([^<>\"]*?)</span>").getMatch(0);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -94,13 +113,28 @@ public class CloudZillaTo extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
+    @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+            final String siteKey = br.getRegex("var grecaptcha_key = \"([^<>\"]*?)\";").getMatch(0);
+            if (siteKey == null) {
+                logger.warning("Failed to find siteKey");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            Recaptcha2Helper rchelp = new Recaptcha2Helper();
+            rchelp.init(this.br, siteKey, new URL(br.getURL()).getHost());
+            final File outputFile = rchelp.loadImageFile();
+            final String code = getCaptchaCode("recaptcha", outputFile, downloadLink);
+            boolean success = rchelp.sendResponse(code);
+            if (!success) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            final String responseToken = rchelp.getResponseToken();
             br.getHeaders().put("Accept", "*/*");
             br.getHeaders().put("X-Requested-With   XMLHttpRequest", "XMLHttpRequest");
-            br.postPage("http://www.cloudzilla.to/generateticket/", "key=&file_id=" + fid);
+            br.postPage("/generateticket/", "key=&file_id=" + fid + "&captcha=" + Encoding.urlEncode(responseToken));
             final String server = br.getRegex("<server>([^<>\"]*?)</server>").getMatch(0);
             final String ticket_id = br.getRegex("<ticket_id>([^<>\"]*?)</ticket_id>").getMatch(0);
             final String waittime = br.getRegex("<wait>(\\d+)</wait>").getMatch(0);
@@ -141,7 +175,7 @@ public class CloudZillaTo extends PluginForHost {
         return dllink;
     }
 
-    private static final String MAINPAGE = "http://cloudzilla.to";
+    private static final String MAINPAGE = "http://neodrive.co";
     private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
@@ -286,7 +320,7 @@ public class CloudZillaTo extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return FREE_MAXDOWNLOADS;
     }
 
     @Override
