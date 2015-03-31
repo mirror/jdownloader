@@ -167,6 +167,7 @@ public class OverLoadMe extends PluginForHost {
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+        setConstants(account, link);
         this.br = newBrowser();
         showMessage(link, "Task 1: Generating Link");
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
@@ -238,6 +239,7 @@ public class OverLoadMe extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        this.setConstants(account, null);
         setConstants(account, null);
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();

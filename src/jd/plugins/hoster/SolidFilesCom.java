@@ -68,6 +68,9 @@ public class SolidFilesCom extends PluginForHost {
         if (filesize == null) {
             filesize = br.getRegex("dt>File size<.*?dd>(.*?)</").getMatch(0);
         }
+        if (filesize == null) {
+            filesize = br.getRegex("<p class=\"meta\">([^<>\"]*?), <span title=\"").getMatch(0);
+        }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
