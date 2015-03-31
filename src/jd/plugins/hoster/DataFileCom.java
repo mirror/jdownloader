@@ -102,6 +102,9 @@ public class DataFileCom extends PluginForHost {
     private final Pattern                  IPREGEX                         = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
     private static final long              RECONNECTWAIT                   = 3610000L;
 
+    private Account                        currAcc                         = null;
+    private DownloadLink                   currDownloadLink                = null;
+
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static final AtomicInteger     totalMaxSimultanFreeDownload    = new AtomicInteger(FREE_MAXDOWNLOADS);
@@ -114,6 +117,11 @@ public class DataFileCom extends PluginForHost {
             link.setUrlDownload(link.getDownloadURL().replace(unneededPart, ""));
             link.setProperty("urlfilename", Encoding.htmlDecode(urlfilename.trim()));
         }
+    }
+
+    private void setConstants(final Account acc, final DownloadLink dl) {
+        this.currAcc = acc;
+        this.currDownloadLink = dl;
     }
 
     /**
@@ -210,7 +218,6 @@ public class DataFileCom extends PluginForHost {
     }
 
     private void redirectAntiDDos(Browser br) throws Exception {
-
         String js = br.getRegex("<style type=\"text/css\">a\\{color\\: white\\;\\}</style><script language=\"JavaScript\">(.*)</script>").getMatch(0);
         if (js != null) {
 
@@ -253,6 +260,7 @@ public class DataFileCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        setConstants(null, downloadLink);
         requestFileInformation(downloadLink);
         doFree(downloadLink, null);
     }
@@ -289,14 +297,9 @@ public class DataFileCom extends PluginForHost {
                         }
                     }
                 }
-                if (br.getURL().contains("error.html?code=9")) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You can not download more than one file at a time without premium membership", RECONNECTWAIT);
-                }
-                if (br.containsHTML(DAILYLIMIT) || br.getURL().contains("?code=7")) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You exceeded your free daily download limit", 2 * 60 * 60 * 1000l);
-                }
-                if (br.containsHTML("ErrorCode 7: Download file count limit")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download file count limit", 10 * 60 * 1000l);
+                handleURLErrors(this.br.getURL());
+                if (br.containsHTML(DAILYLIMIT)) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You exceeded your free daily download limit", RECONNECTWAIT);
                 }
                 final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
                 br.setFollowRedirects(false);
@@ -354,10 +357,16 @@ public class DataFileCom extends PluginForHost {
                 if (br.containsHTML("\"errorType\":null")) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown error...");
                 }
-                dllink = br.getRegex("\"link\":\"(http:[^<>\"]*?)\"").getMatch(0);
+                dllink = br.getRegex("\"link\":\"([^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                dllink = dllink.replace("\\", "");
+                if (dllink.startsWith("/")) {
+                    dllink = "http://datafile.com" + dllink;
+                }
+                /* Sometimes a limitmessage/errorcode is inside the link - handle that! */
+                this.handleURLErrors(dllink);
             }
             try {
                 /*
@@ -372,6 +381,7 @@ public class DataFileCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
                     }
                     br.followConnection();
+                    handleGeneralErrors();
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 downloadLink.setFinalFileName(getServerFilename());
@@ -546,6 +556,7 @@ public class DataFileCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+        setConstants(account, downloadLink);
         if (useAPI.get() && !account.getBooleanProperty("free", false)) {
             /* API + premium */
             handlePremium_API(downloadLink, account);
@@ -563,7 +574,7 @@ public class DataFileCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_RETRY);
                     }
                 }
-                handleGeneralErrors(account);
+                handleGeneralErrors();
                 doFree(downloadLink, account);
             } else {
                 br.setFollowRedirects(true);
@@ -574,7 +585,7 @@ public class DataFileCom extends PluginForHost {
                     }
                     logger.warning("The final dllink seems not to be a file!");
                     br.followConnection();
-                    handleGeneralErrors(account);
+                    handleGeneralErrors();
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 downloadLink.setFinalFileName(getServerFilename());
@@ -599,7 +610,7 @@ public class DataFileCom extends PluginForHost {
         return finalname;
     }
 
-    private void handleGeneralErrors(final Account account) throws PluginException {
+    private void handleGeneralErrors() throws PluginException {
         final String redirect = br.getRedirectLocation();
         String errorCode = br.getRegex("ErrorCode (\\d+):").getMatch(0);
         if ((redirect != null && redirect.contains("error.html?code=")) || errorCode != null) {
@@ -607,28 +618,45 @@ public class DataFileCom extends PluginForHost {
                 errorCode = new Regex(redirect, "error\\.html\\?code=(\\d+)").getMatch(0);
             }
             if ("6".endsWith(errorCode)) {
-                logger.info("Trafficlimit reached");
-                final AccountInfo ac = new AccountInfo();
-                ac.setTrafficLeft(0);
-                account.setAccountInfo(ac);
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Trafficlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                logger.info("You are downloading another file at this moment. Please wait for it to complete and then try again.");
+                if (this.currAcc != null) {
+                    final AccountInfo ac = new AccountInfo();
+                    ac.setTrafficLeft(0);
+                    this.currAcc.setAccountInfo(ac);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "You are downloading another file at this moment. Please wait for it to complete and then try again.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You are downloading another file at this moment. Please wait for it to complete and then try again.", RECONNECTWAIT);
+                }
             } else if ("7".endsWith(errorCode)) {
-                // reached daily download quota
-                logger.info("You've reached daily download quota for " + account.getUser() + " account");
-                final AccountInfo ac = new AccountInfo();
-                ac.setTrafficLeft(0);
-                account.setAccountInfo(ac);
-                /* Small extra handling for free accounts so user can see the correct errormessage. */
-                if (account.getBooleanProperty("free", false)) {
+                if (this.currAcc == null) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily downloadlimit reached", RECONNECTWAIT);
+                } else if (this.currAcc != null && this.currAcc.getBooleanProperty("free", false)) {
+                    // reached daily download quota
+                    logger.info("You've reached daily download quota for " + this.currAcc.getUser() + " account");
                     logger.info("Free account: Daily downloadlimit reached");
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily downloadlimit reached", 1 * 60 * 60 * 1000l);
+                    final AccountInfo ac = new AccountInfo();
+                    ac.setTrafficLeft(0);
+                    this.currAcc.setAccountInfo(ac);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Trafficlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 } else {
                     logger.info("Premium account: Daily downloadlimit reached");
+                    final AccountInfo ac = new AccountInfo();
+                    ac.setTrafficLeft(0);
+                    this.currAcc.setAccountInfo(ac);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Trafficlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
             }
             logger.warning("Unknown error");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unknown error", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
+    }
+
+    /** Handles errors based on errorcode inside URL */
+    private void handleURLErrors(final String url) throws PluginException {
+        if (url.contains("code=7")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download file count limit", 10 * 60 * 1000l);
+        } else if (url.contains("code=9")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You can not download more than one file at a time without premium membership", RECONNECTWAIT);
         }
     }
 
@@ -800,7 +828,7 @@ public class DataFileCom extends PluginForHost {
             }
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            handleGeneralErrors(account);
+            handleGeneralErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setFinalFileName(getServerFilename());
