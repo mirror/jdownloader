@@ -46,7 +46,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.utils.recaptcha.api2.Recaptcha2Helper;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "neodrive.co", "cloudzilla.to" }, urls = { "http://(www\\.)?(cloudzilla\\.to|neodrive\\.co)/share/file/[A-Za-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "neodrive.co", "cloudzilla.to" }, urls = { "http://(www\\.)?(cloudzilla\\.to|neodrive\\.co)/share/file/[A-Za-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM" }, flags = { 2, 0 })
 public class CloudZillaTo extends PluginForHost {
 
     public CloudZillaTo(PluginWrapper wrapper) {
