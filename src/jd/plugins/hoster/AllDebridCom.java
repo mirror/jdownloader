@@ -91,14 +91,6 @@ public class AllDebridCom extends PluginForHost {
                     host = host.substring(1, host.length() - 1);
                     // hosts that returned decrypted finallinks bound to users ip session. Can not use multihosters..
                     try {
-                        if (host.equals("rapidshare.com") && accDetails.get("limite_rs") != null && Integer.parseInt(accDetails.get("limite_rs")) == 0) {
-                            logger.info("NOT adding the following host to array of supported hosts as its daily limit is reached: " + host);
-                            continue;
-                        }
-                    } catch (final Throwable e) {
-                        logger.severe(e.toString());
-                    }
-                    try {
                         if (host.equals("depositfiles.com") && accDetails.get("limite_dp") != null && Integer.parseInt(accDetails.get("limite_dp")) == 0) {
                             logger.info("NOT adding the following host to array of supported hosts as its daily limit is reached: " + host);
                             continue;
