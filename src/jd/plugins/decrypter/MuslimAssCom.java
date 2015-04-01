@@ -58,27 +58,14 @@ public class MuslimAssCom extends PluginForDecrypt {
             filename = br.getRegex("title=\"Permanent Link to (.*?)\"").getMatch(0);
         }
         if (filename == null) {
-            logger.warning("hqmaturetube decrypter broken(filename regex) for link: " + parameter);
+            logger.warning("muslimass decrypter broken(filename regex) for link: " + parameter);
             return null;
         }
         filename = Encoding.htmlDecode(filename.trim());
-        String externID = br.getRegex("<p style=\"text-align: center;\"><a href=\"(http://.*?)\"").getMatch(0);
-        if (externID == null) {
-            externID = br.getRegex("\"(http://(www\\.)?xvideohost\\.com/video\\.php\\?id=[a-z0-9]+)\"").getMatch(0);
-        }
-        if (externID != null) {
-            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(externID)));
-            return decryptedLinks;
-        }
-        externID = br.getRegex("\"id_video=(\\d+)\"").getMatch(0);
+        String externID = br.getRegex("\"id_video=(\\d+)\"").getMatch(0);
         if (externID != null) {
             String finallink = "http://www.xvideos.com/video" + externID + "/";
             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(finallink)));
-            return decryptedLinks;
-        }
-        externID = br.getRegex("\"(http://(www\\.)?pornhost\\.com/\\d+/?)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
         externID = br.getRegex("hardsextube\\.com/embed/(\\d+)/\"").getMatch(0);
@@ -92,7 +79,7 @@ public class MuslimAssCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         // For direct hosterlinks - make sure only to grab the links of the related post
-        final String pagePiece = br.getRegex("<div class=\"entry\">(.*?)(<p>\\&nbsp;</p>|<\\!\\-\\- AddThis Button BEGIN \\-\\->)").getMatch(0);
+        final String pagePiece = br.getRegex("<div class=\"entry\">(.*?)>Share:\\&nbsp;</strong>").getMatch(0);
         if (pagePiece != null) {
             String fpName = br.getRegex("<title>([^<>\"]*?) \\| muslimass\\.com</title>").getMatch(0);
             if (fpName == null) {

@@ -297,14 +297,11 @@ public class OneEightZeroUploadCom extends PluginForHost {
                         // can cause new line finds, so check if it matches.
                         // fileInfo[0] = cbr.getRegex("Download File:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
                         // traits from download1 page below.
+                        // next two are details from sharing box
                         if (inValidate(fileInfo[0])) {
-                            fileInfo[0] = br.getRegex("Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
-                            // next two are details from sharing box
+                            fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)</a></textarea>").getMatch(0);
                             if (inValidate(fileInfo[0])) {
-                                fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)</a></textarea>").getMatch(0);
-                                if (inValidate(fileInfo[0])) {
-                                    fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>[^\r\n]+\\]([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
-                                }
+                                fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>[^\r\n]+\\]([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
                             }
                         }
                     }

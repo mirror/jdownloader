@@ -73,6 +73,15 @@ public class DebridItaliaCom extends antiDDoSForHost {
         this.currDownloadLink = dl;
     }
 
+    private void prepBR() {
+        br.setConnectTimeout(60 * 1000);
+        br.setReadTimeout(60 * 1000);
+        /* 401 can happen when user enters invalid logindata */
+        br.setAllowedResponseCodes(401);
+        br.getHeaders().put("User-Agent", "JDownloader");
+    }
+
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setConstants(account, null);
@@ -81,9 +90,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
             accountInvalid();
         }
         final AccountInfo ac = new AccountInfo();
-        br.setConnectTimeout(60 * 1000);
-        br.setReadTimeout(60 * 1000);
-        br.getHeaders().put("User-Agent", "JDownloader");
+        prepBR();
         String hosts[] = null;
         ac.setProperty("multiHostSupport", Property.NULL);
         ac.setUnlimitedTraffic();
@@ -94,9 +101,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
                 account.setValid(false);
                 return ac;
             }
-            ac.setStatus("Account is invalid. Wrong username or password?");
-            account.setValid(false);
-            return ac;
+            accountInvalid();
         }
         final String expire = br.getRegex("<expiration>(\\d+)</expiration>").getMatch(0);
         if (expire == null) {
@@ -135,6 +140,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
     /** no override to keep plugin compatible to old stable */
     @SuppressWarnings("deprecation")
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
+        prepBR();
         setConstants(acc, link);
         showMessage(link, "Generating link");
         String dllink = checkDirectLink(link, "debriditaliadirectlink");
@@ -237,7 +243,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
 
     private boolean loginAPI(final Account acc) throws IOException {
         super.br.getPage("https://debriditalia.com/api.php?check=on&u=" + Encoding.urlEncode(acc.getUser()) + "&p=" + Encoding.urlEncode(acc.getPass()));
-        if (!br.containsHTML("<status>valid</status>")) {
+        if (!br.containsHTML("<status>valid</status>") || br.getHttpConnection().getResponseCode() == 401) {
             return false;
         }
         return true;
