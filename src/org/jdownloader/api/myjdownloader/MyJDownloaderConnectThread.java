@@ -8,6 +8,7 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -610,12 +611,12 @@ public class MyJDownloaderConnectThread extends Thread {
                         }
                         final MyJDCaptchasClient<Type> captchaClient = new MyJDCaptchasClient<Type>(lapi);
                         challengeExchangeEnabled.set(captchaClient.isEnabled());
-                        final TYPE[] types = lapi.listrequesteddevicesnotifications();
-                        final HashSet<TYPE> notifyTypes = new HashSet<TYPE>();
-                        if (types != null) {
-                            for (TYPE type : types) {
-                                notifyTypes.add(type);
-                            }
+                        final TYPE[] deviceNotifications = lapi.listrequesteddevicesnotifications();
+                        final HashSet<TYPE> notifyTypes;
+                        if (deviceNotifications != null) {
+                            notifyTypes = new HashSet<TYPE>((Arrays.asList(deviceNotifications)));
+                        } else {
+                            notifyTypes = new HashSet<TYPE>();
                         }
                         setNotifyTypes(notifyTypes);
                         failed = false;
@@ -640,13 +641,34 @@ public class MyJDownloaderConnectThread extends Thread {
         }
     }
 
-    private AtomicLong captchaSendMark = new AtomicLong(0);
+    private final HashMap<NotificationRequestMessage.TYPE, AtomicLong> notificationMarks = new HashMap<NotificationRequestMessage.TYPE, AtomicLong>();
 
-    protected void pushCaptchaNotification(final boolean requested) {
-        if (!notifyInterests.contains(TYPE.CAPTCHA) || api == null) {
+    private long getNotificationMark(NotificationRequestMessage.TYPE type) {
+        synchronized (notificationMarks) {
+            AtomicLong mark = notificationMarks.get(type);
+            if (mark == null) {
+                mark = new AtomicLong();
+                notificationMarks.put(type, mark);
+            }
+            return mark.incrementAndGet();
+        }
+    }
+
+    private boolean checkNotificationMark(NotificationRequestMessage.TYPE type, final long notificationMark) {
+        synchronized (notificationMarks) {
+            final AtomicLong mark = notificationMarks.get(type);
+            if (mark != null) {
+                return notificationMark == mark.get();
+            }
+            return false;
+        }
+    }
+
+    protected void pushNotification(final NotificationRequestMessage.TYPE type, final boolean requested) {
+        if (!notifyInterests.contains(type) || api == null) {
             return;
         }
-        final long currentMark = captchaSendMark.incrementAndGet();
+        final long currentMark = getNotificationMark(type);
         ScheduledExecutorService lTHREADQUEUE = THREADQUEUE;
         if (lTHREADQUEUE != null) {
             lTHREADQUEUE.execute(new Runnable() {
@@ -658,22 +680,22 @@ public class MyJDownloaderConnectThread extends Thread {
                         if (lapi == null) {
                             return;
                         }
-                        if (!notifyInterests.contains(TYPE.CAPTCHA)) {
+                        if (!notifyInterests.contains(type)) {
                             return;
                         }
                         session = (SessionInfoWrapper) lapi.getSessionInfo();
                         if (!SessionInfoWrapper.STATE.VALID.equals(session.getState())) {
                             return;
                         }
-                        if (MyJDownloaderConnectThread.this.captchaSendMark.get() != currentMark) {
+                        if (!checkNotificationMark(type, currentMark)) {
                             return;
                         }
                         NotificationRequestMessage message = new NotificationRequestMessage();
-                        message.setType(TYPE.CAPTCHA);
+                        message.setType(type);
                         message.setRequested(requested);
                         if (!lapi.pushNotification(message)) {
                             /* no devices are interested in captchas */
-                            removeInterest(TYPE.CAPTCHA);
+                            removeInterest(type);
                         }
                     } catch (final TokenException e) {
                         if (session != null) {
@@ -686,6 +708,10 @@ public class MyJDownloaderConnectThread extends Thread {
                 }
             });
         }
+    }
+
+    protected void pushCaptchaNotification(final boolean requested) {
+        pushNotification(TYPE.CAPTCHA, requested);
     }
 
     protected void removeInterest(TYPE captcha) {
@@ -776,30 +802,36 @@ public class MyJDownloaderConnectThread extends Thread {
     }
 
     public void disconnect() {
-        MyJDownloaderAPI lapi = api;
-        api = null;
-        synchronized (responses) {
-            responses.notifyAll();
-        }
-        terminateWaitingConnections();
-        disconnectSession(lapi, null);
-        synchronized (openConnections) {
-            Iterator<Entry<Thread, Socket>> it = openConnections.entrySet().iterator();
-            while (it.hasNext()) {
-                Entry<Thread, Socket> next = it.next();
-                try {
-                    next.getValue().close();
-                } catch (final Throwable e) {
+        notifyInterests.clear();
+        challengeExchangeEnabled.set(false);
+        try {
+            MyJDownloaderAPI lapi = api;
+            api = null;
+            synchronized (responses) {
+                responses.notifyAll();
+            }
+            terminateWaitingConnections();
+            disconnectSession(lapi, null);
+            synchronized (openConnections) {
+                Iterator<Entry<Thread, Socket>> it = openConnections.entrySet().iterator();
+                while (it.hasNext()) {
+                    Entry<Thread, Socket> next = it.next();
+                    try {
+                        next.getValue().close();
+                    } catch (final Throwable e) {
+                    }
                 }
             }
+            setConnected(MyJDownloaderConnectionStatus.UNCONNECTED);
+            ScheduledExecutorService lTHREADQUEUE = THREADQUEUE;
+            THREADQUEUE = null;
+            if (lTHREADQUEUE != null) {
+                lTHREADQUEUE.shutdownNow();
+            }
+        } finally {
+            notifyInterests.clear();
+            challengeExchangeEnabled.set(false);
         }
-        setConnected(MyJDownloaderConnectionStatus.UNCONNECTED);
-        ScheduledExecutorService lTHREADQUEUE = THREADQUEUE;
-        THREADQUEUE = null;
-        if (lTHREADQUEUE != null) {
-            lTHREADQUEUE.shutdownNow();
-        }
-        notifyInterests.clear();
     }
 
     private void startWaitingConnections(boolean minimumORmaximum) {

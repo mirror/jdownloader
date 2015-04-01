@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -389,57 +390,64 @@ public class ScriptEnvironment {
 
     @ScriptAPI(description = "Play a Wav Audio file", parameters = { "myFilePathOrUrl" }, example = "playWavAudio(JD_HOME+\"/themes/standard/org/jdownloader/sounds/captcha.wav\");")
     public static void playWavAudio(String fileOrUrl) throws EnvironmentException {
-
         try {
-
             AudioInputStream stream = null;
+            Clip clip = null;
             try {
                 stream = AudioSystem.getAudioInputStream(new File(fileOrUrl));
                 final AudioFormat format = stream.getFormat();
                 final DataLine.Info info = new DataLine.Info(Clip.class, format);
                 if (AudioSystem.isLineSupported(info)) {
-                    final Clip clip = (Clip) AudioSystem.getLine(info);
+                    clip = (Clip) AudioSystem.getLine(info);
                     clip.open(stream);
                     try {
                         final FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
-
                         float db = (20f * (float) Math.log(JsonConfig.create(SoundSettings.class).getCaptchaSoundVolume() / 100f));
-
                         gainControl.setValue(Math.max(-80f, db));
                         BooleanControl muteControl = (BooleanControl) clip.getControl(BooleanControl.Type.MUTE);
                         muteControl.setValue(true);
-
                         muteControl.setValue(false);
                     } catch (Exception e) {
                         Log.exception(e);
                     }
-                    clip.start();
+                    final AtomicBoolean runningFlag = new AtomicBoolean(true);
                     clip.addLineListener(new LineListener() {
 
                         @Override
                         public void update(LineEvent event) {
                             if (event.getType() == Type.STOP) {
-                                clip.close();
+                                runningFlag.set(false);
                             }
                         }
                     });
-                    while (clip.isRunning()) {
+                    clip.start();
+                    Thread.sleep(1000);
+                    while (clip.isRunning() && runningFlag.get()) {
                         Thread.sleep(100);
                     }
                 }
-
             } finally {
+                try {
+                    if (clip != null) {
+                        final Clip finalClip = clip;
+                        Thread thread = new Thread() {
+                            public void run() {
+                                finalClip.close();
+                            };
+                        };
+                        thread.setName("AudioStop");
+                        thread.setDaemon(true);
+                        thread.start();
+                        thread.join(2000);
+                    }
+                } catch (Throwable e) {
+                }
                 try {
                     if (stream != null) {
                         stream.close();
                     }
                 } catch (Throwable e) {
                 }
-                // try {
-                // clip.close();
-                // } catch (Throwable e) {
-                //
-                // }
             }
 
         } catch (Throwable e) {
