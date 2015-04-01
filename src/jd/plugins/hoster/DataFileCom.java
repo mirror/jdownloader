@@ -48,6 +48,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -81,17 +82,14 @@ public class DataFileCom extends PluginForHost {
     private static final boolean           FREE_RESUME                     = false;
     private static final int               FREE_MAXCHUNKS                  = 1;
     private static final int               FREE_MAXDOWNLOADS               = 20;
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
     private static final int               ACCOUNT_FREE_MAXDOWNLOADS       = 20;
     private static final boolean           ACCOUNT_PREMIUM_RESUME          = true;
     private static final int               ACCOUNT_PREMIUM_MAXCHUNKS       = 0;
     private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS    = 20;
 
-    private final String                   PREMIUMONLY                     = "(\"Sorry\\. Only premium users can download this file\"|>This file can be downloaded only by users with<br />Premium account!<)";
+    private final String                   PREMIUMONLY                     = "(\"Sorry\\. Only premium users can download this file\"|>This file can be downloaded only by users with<br />Premium account\\!<|>You can download files up to)";
     private final boolean                  SKIPRECONNECTWAITTIME           = true;
     private final boolean                  SKIPWAITTIME                    = true;
-    private final String                   DAILYLIMIT                      = ">You exceeded your free daily download limit";
 
     private final String[]                 IPCHECK                         = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
     private static AtomicBoolean           hasAttemptedDownloadstart       = new AtomicBoolean(false);
@@ -140,12 +138,12 @@ public class DataFileCom extends PluginForHost {
         br.setFollowRedirects(false);
         String filesize = null;
         // Limit reached -> Let's use their linkchecker to at least find the filesize and onlinestatus
-        if (br.containsHTML(DAILYLIMIT) || br.getURL().contains("error.html?code=7") || br.getURL().contains("error.html?code=9")) {
+        if (br.getURL().contains("code=7") || br.getURL().contains("code=9")) {
             final Browser br2 = br.cloneBrowser();
             br2.postPage("http://www.datafile.com/linkchecker.html", "btn=&links=" + Encoding.urlEncode(link.getDownloadURL()));
             filesize = br2.getRegex("title=\"File size\">([^<>\"]*?)</td>").getMatch(0);
             if (filesize != null) {
-                link.getLinkStatus().setStatusText("Cannot show filename when the daily limit is reached");
+                link.getLinkStatus().setStatusText("Cannot show filename when a downloadlimit is reached");
                 link.setDownloadSize(SizeFormatter.getSize(filesize));
                 return AvailableStatus.TRUE;
             } else if (!br2.containsHTML(">Link<") && !br2.containsHTML(">Status<") && !br2.containsHTML(">File size<")) {
@@ -155,21 +153,21 @@ public class DataFileCom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            // No results -> Unckeckable because if the limit
-            link.getLinkStatus().setStatusText("Cannot check available status when the daily limit is reached");
+            /* No results -> Unckeckable because if the limit */
+            link.getLinkStatus().setStatusText("Cannot check available status when a downloadlimit is reached");
             if (urlFileName != null) {
                 link.setName(urlFileName);
             }
             return AvailableStatus.UNCHECKABLE;
         }
-        // Invalid link
+        /* Invalid link */
         if (br.containsHTML("<div class=\"error\\-msg\">")) {
             if (urlFileName != null) {
                 link.setName(urlFileName);
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        // Deleted file
+        /* Deleted file */
         if (br.containsHTML(">Sorry but this file has been deleted")) {
             if (urlFileName != null) {
                 link.setName(urlFileName);
@@ -267,6 +265,7 @@ public class DataFileCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     private void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
+        boolean captchaSuccess = false;
         if (br.containsHTML(PREMIUMONLY)) {
             // not possible to download under handleFree!
             try {
@@ -298,9 +297,6 @@ public class DataFileCom extends PluginForHost {
                     }
                 }
                 handleURLErrors(this.br.getURL());
-                if (br.containsHTML(DAILYLIMIT)) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You exceeded your free daily download limit", RECONNECTWAIT);
-                }
                 final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
                 br.setFollowRedirects(false);
                 final Regex waitTime = br.getRegex("class=\"time\">(\\d+):(\\d+):(\\d+)</span>");
@@ -327,6 +323,7 @@ public class DataFileCom extends PluginForHost {
                 long timeBeforeCaptcha = System.currentTimeMillis();
                 final String rcID = br.getRegex("api/challenge\\?k=([^<>\"]*?)\"").getMatch(0);
                 if (rcID == null) {
+                    logger.warning("rcID is null");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -344,18 +341,20 @@ public class DataFileCom extends PluginForHost {
                     postPage("http://www.datafile.com/files/ajax.html", "doaction=validateCaptcha&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&fileid=" + fid);
 
                     String token = br.getRegex("\\{\"success\":1,\"token\":\"(.*)\"\\}").getMatch(0);
-                    if (token == null || br.containsHTML("\"The two words is not valid")) {
+                    if (token == null || br.containsHTML("\"success\":0")) {
                         rc.reload();
                         continue;
                     }
                     postPage("http://www.datafile.com/files/ajax.html", "doaction=getFileDownloadLink&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&fileid=" + fid + "&token=" + token);
+                    captchaSuccess = true;
                     break;
                 }
-                if (br.containsHTML("\"The two words is not valid")) {
+                /*
+                 * Collection of possible "msg" values: "Please type the two words from picture", "The two words is not valid!<br \/>Please
+                 * try again."
+                 */
+                if (!captchaSuccess) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
-                if (br.containsHTML("\"errorType\":null")) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown error...");
                 }
                 dllink = br.getRegex("\"link\":\"([^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
@@ -617,46 +616,67 @@ public class DataFileCom extends PluginForHost {
             if (errorCode == null) {
                 errorCode = new Regex(redirect, "error\\.html\\?code=(\\d+)").getMatch(0);
             }
-            if ("6".endsWith(errorCode)) {
-                logger.info("You are downloading another file at this moment. Please wait for it to complete and then try again.");
-                if (this.currAcc != null) {
-                    final AccountInfo ac = new AccountInfo();
-                    ac.setTrafficLeft(0);
-                    this.currAcc.setAccountInfo(ac);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "You are downloading another file at this moment. Please wait for it to complete and then try again.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You are downloading another file at this moment. Please wait for it to complete and then try again.", RECONNECTWAIT);
-                }
+            if ("6".endsWith(errorCode) || "9".endsWith(errorCode)) {
+                errorFreeTooManySimultanDownloads();
             } else if ("7".endsWith(errorCode)) {
-                if (this.currAcc == null) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily downloadlimit reached", RECONNECTWAIT);
-                } else if (this.currAcc != null && this.currAcc.getBooleanProperty("free", false)) {
-                    // reached daily download quota
-                    logger.info("You've reached daily download quota for " + this.currAcc.getUser() + " account");
-                    logger.info("Free account: Daily downloadlimit reached");
-                    final AccountInfo ac = new AccountInfo();
-                    ac.setTrafficLeft(0);
-                    this.currAcc.setAccountInfo(ac);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Trafficlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                } else {
-                    logger.info("Premium account: Daily downloadlimit reached");
-                    final AccountInfo ac = new AccountInfo();
-                    ac.setTrafficLeft(0);
-                    this.currAcc.setAccountInfo(ac);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Trafficlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                }
+                errorDailyDownloadlimitReached();
             }
             logger.warning("Unknown error");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unknown error", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
     }
 
+    /**
+     * code = 6 or 9
+     *
+     * Should only happen for free/free account mode.
+     * */
+    private void errorFreeTooManySimultanDownloads() throws PluginException {
+        logger.info("You are downloading another file at this moment. Please wait for it to complete and then try again.");
+        if (this.currAcc != null) {
+            final AccountInfo ac = new AccountInfo();
+            ac.setTrafficLeft(0);
+            this.currAcc.setAccountInfo(ac);
+            this.currAcc.setError(AccountError.TEMP_DISABLED, "You are downloading another file at this moment. Please wait for it to complete and then try again.");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "You are downloading another file at this moment. Please wait for it to complete and then try again.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You are downloading another file at this moment. Please wait for it to complete and then try again.", RECONNECTWAIT);
+        }
+    }
+
+    /**
+     * code = 7
+     *
+     * Can happen in any download mode
+     *
+     * @throws PluginException
+     * */
+    private void errorDailyDownloadlimitReached() throws PluginException {
+        if (this.currAcc == null) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily downloadlimit reached", RECONNECTWAIT);
+        } else if (this.currAcc != null && this.currAcc.getBooleanProperty("free", false)) {
+            // reached daily download quota
+            logger.info("You've reached daily download quota for " + this.currAcc.getUser() + " account");
+            logger.info("Free account: Daily downloadlimit reached");
+            final AccountInfo ac = new AccountInfo();
+            ac.setTrafficLeft(0);
+            this.currAcc.setAccountInfo(ac);
+            this.currAcc.setError(AccountError.TEMP_DISABLED, "Daily downloadlimit reached");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Trafficlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        } else {
+            logger.info("Premium account: Daily downloadlimit reached");
+            final AccountInfo ac = new AccountInfo();
+            ac.setTrafficLeft(0);
+            this.currAcc.setAccountInfo(ac);
+            this.currAcc.setError(AccountError.TEMP_DISABLED, "Daily downloadlimit reached");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Trafficlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
+    }
+
     /** Handles errors based on errorcode inside URL */
     private void handleURLErrors(final String url) throws PluginException {
-        if (url.contains("code=7")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download file count limit", 10 * 60 * 1000l);
-        } else if (url.contains("code=9")) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You can not download more than one file at a time without premium membership", RECONNECTWAIT);
+        if (url.contains("code=9")) {
+            errorFreeTooManySimultanDownloads();
         }
     }
 
@@ -862,13 +882,13 @@ public class DataFileCom extends PluginForHost {
                 if (!"0".equalsIgnoreCase(primium_till) || !ai.isExpired()) {
                     account.setProperty("free", false);
                     account.setProperty("totalMaxSim", ACCOUNT_PREMIUM_MAXDOWNLOADS);
-                    ai.setStatus("Premium Account");
+                    ai.setStatus("Premium account");
                 } else {
                     account.setProperty("free", true);
                     account.setProperty("totalMaxSim", ACCOUNT_FREE_MAXDOWNLOADS);
                     /* Don't use multiple free accounts at the same time. */
                     account.setConcurrentUsePossible(false);
-                    ai.setStatus("Free Account");
+                    ai.setStatus("Free account");
                     ai.setUnlimitedTraffic();
                     ai.setValidUntil(-1);
                 }

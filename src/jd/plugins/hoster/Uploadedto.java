@@ -52,6 +52,7 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
 import jd.plugins.AccountInfo;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
@@ -93,11 +94,11 @@ public class Uploadedto extends PluginForHost {
     private Pattern                        IPREGEX                                   = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
     private static AtomicBoolean           hasAttemptedDownloadstart                 = new AtomicBoolean(false);
     private static AtomicLong              timeBefore                                = new AtomicLong(0);
-    private String                         LASTIP                                    = "LASTIP";
     private static AtomicReference<String> lastIP                                    = new AtomicReference<String>();
     private static AtomicBoolean           usePremiumAPI                             = new AtomicBoolean(true);
     private static final String            NOCHUNKS                                  = "NOCHUNKS";
     private static final String            NORESUME                                  = "NORESUME";
+    private String                         PROPERTY_LASTIP                           = "UPLOADEDNET_PROPERTY_LASTIP";
     private static final String            PROPERTY_LASTDOWNLOAD_TIMESTAMP           = "uploadednet_lastdownload_timestamp";
     private static final String            SSL_CONNECTION                            = "SSL_CONNECTION";
     private static final String            PREFER_PREMIUM_DOWNLOAD_API               = "PREFER_PREMIUM_DOWNLOAD_API_V2";
@@ -738,16 +739,10 @@ public class Uploadedto extends PluginForHost {
                     /**
                      * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
                      */
-                    if (ipChanged(currentIP, downloadLink) == true) {
-                        /* IP was changed - now we only have to switch to the next account! */
-                        logger.info("IP has changed -> Disabling current free account to try to use the next free account");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                    } else {
-                        logger.info("IP has not changed, limit active on account and IP -> Throwing IP_BLOCKED exception go get a new IP for the next try");
-                        logger.warning("Reconnect + account = buggy, this code will not work as intended!!");
-                        final long wait = FREE_RECONNECTWAIT - passedTimeSinceLastDl;
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
-                    }
+                    /* IP was changed - now we only have to switch to the next account! */
+                    logger.info("IP has changed -> Disabling current free account to try to use the next free account or free unregistered mode");
+                    account.setError(AccountError.TEMP_DISABLED, "Free limit reached");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
             } else if (account == null && this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, default_eh)) {
                 /**
@@ -1655,6 +1650,7 @@ public class Uploadedto extends PluginForHost {
         return currentIP;
     }
 
+    @SuppressWarnings("deprecation")
     private boolean setIP(String IP, final DownloadLink link, final Account account) throws PluginException {
         synchronized (IPCHECK) {
             if (IP != null && !new Regex(IP, IPREGEX).matches()) {
@@ -1666,8 +1662,9 @@ public class Uploadedto extends PluginForHost {
                 return false;
             } else {
                 String lastIP = IP;
-                link.setProperty(LASTIP, lastIP);
+                link.setProperty(PROPERTY_LASTIP, lastIP);
                 Uploadedto.lastIP.set(lastIP);
+                getPluginConfig().setProperty(PROPERTY_LASTIP, lastIP);
                 logger.info("LastIP = " + lastIP);
                 return true;
             }
@@ -1684,9 +1681,12 @@ public class Uploadedto extends PluginForHost {
         if (currentIP == null) {
             return false;
         }
-        String lastIP = link.getStringProperty(LASTIP, null);
+        String lastIP = link.getStringProperty(PROPERTY_LASTIP, null);
         if (lastIP == null) {
             lastIP = Uploadedto.lastIP.get();
+        }
+        if (lastIP == null) {
+            lastIP = this.getPluginConfig().getStringProperty(PROPERTY_LASTIP, null);
         }
         return !currentIP.equals(lastIP);
     }

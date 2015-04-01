@@ -202,7 +202,7 @@ public class CloudZillaTo extends PluginForHost {
                 }
                 br.setFollowRedirects(false);
                 // br.getPage("");
-                br.postPage("http://www.cloudzilla.to/", "w=dologin&lusername=" + Encoding.urlEncode(account.getUser()) + "&lpassword=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("http://www.neodrive.co/", "w=dologin&lusername=" + Encoding.urlEncode(account.getUser()) + "&lpassword=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(MAINPAGE, "pwd") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -237,7 +237,7 @@ public class CloudZillaTo extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        br.getPage("http://www.cloudzilla.to/account/basic/");
+        br.getPage("/account/basic/");
         final String space = br.getRegex("<label>TOTAL SPACE USED</label>([^<>\"]*?)</div>").getMatch(0);
         if (space != null) {
             ai.setUsedSpace(space.trim());
