@@ -246,6 +246,10 @@ public class SrBoxCom extends PluginForDecrypt {
             return null;
         }
 
+        if (link.toLowerCase().contains("1418317446_53af83b0c0ff48717413b401bdc95723")) {
+            return null;
+        }
+
         if (link.contains("signup?")) {
             return null;
         }
@@ -281,13 +285,19 @@ public class SrBoxCom extends PluginForDecrypt {
         strName = strName.replace("\\", "&");
         strName = strName.replace("’", "'");
 
-        strName = strName.replace("VA - ", "");
+        strName = strName.replace("&nbsp;", " ");
+        if (strName.startsWith("VA - ")) {
+            strName = strName.replace("VA - ", "");
+        }
         strName = strName.replace("Various Artists - ", "");
+        strName = strName.replace("HDTracks", "");
+        strName = strName.replace("Vinyl", "");
 
         // Remove the exact words mp3, flac, lossless and ape
-        strName = ReplacePattern(strName, "(?<!\\p{L})mp3(?!\\p{L})|(?<!\\p{L})ape(?!\\p{L})|(?<!\\p{L})flac(?!\\p{L})|(?<!\\p{L})lossless(?!\\p{L})|(?<!\\p{L})lossles(?!\\p{L})");
+        strName = ReplacePattern(strName, "(?<!\\p{L})mp3(?!\\p{L})|(?<!\\p{L})ape(?!\\p{L})|(?<!\\p{L})flac(?!\\p{L})|(?<!\\p{L})lossless(?!\\p{L})|(?<!\\p{L})lossles(?!\\p{L})|(?<!\\p{L})alac(?!\\p{L})");
 
         // Remove the box set information
+        strName = ReplacePattern(strName, "[0-9]+ *albums");
         strName = ReplacePattern(strName, "- [0-9]+ *CD Box Set");
         strName = ReplacePattern(strName, "Box Set");
 
@@ -359,7 +369,18 @@ public class SrBoxCom extends PluginForDecrypt {
         // remove trailing ,
         strName = strName.replaceFirst(",$", "");
 
-        return strName;
+        strName = strName.trim();
+        if (strName.endsWith("&")) {
+            strName = strName.substring(0, strName.length() - 1);
+        }
+        if (strName.endsWith("(&)")) {
+            strName = strName.substring(0, strName.length() - 3);
+        }
+        if (strName.endsWith("( & )")) {
+            strName = strName.substring(0, strName.length() - 5);
+        }
+
+        return strName.trim();
     }
 
     /**
