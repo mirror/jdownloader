@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.security.MessageDigest;
@@ -527,7 +528,6 @@ public class Uploadedto extends PluginForHost {
                         account.setValid(true);
                     }
                 } else {
-
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
@@ -1113,13 +1113,79 @@ public class Uploadedto extends PluginForHost {
         return ret.toString();
     }
 
+    private static String urlDecode(String s, String enc) throws UnsupportedEncodingException {
+        final int numChars = s.length();
+        final StringBuilder sb = new StringBuilder(numChars > 500 ? numChars / 2 : numChars);
+        int i = 0;
+        if (enc == null || enc.length() == 0) {
+            throw new UnsupportedEncodingException("URLDecoder: empty string enc parameter");
+        }
+        char c;
+        byte[] bytes = null;
+        loop: while (i < numChars) {
+            c = s.charAt(i);
+            switch (c) {
+            case '+':
+                sb.append(' ');
+                i++;
+                break;
+            case '%':
+                /*
+                 * Starting with this instance of %, process all consecutive substrings of the form %xy. Each substring %xy will yield a
+                 * byte. Convert all consecutive bytes obtained this way to whatever character(s) they represent in the provided encoding.
+                 */
+                int pos = 0;
+                while (((i + 2) < numChars) && (c == '%')) {
+                    final String subString = s.substring(i + 1, i + 3);
+                    int v = -1;
+                    try {
+                        v = Integer.parseInt(subString, 16);
+                    } catch (NumberFormatException e) {
+                    }
+                    if (v < 0) {
+                        if (bytes != null && pos > 0) {
+                            sb.append(new String(bytes, 0, pos, enc));
+                        }
+                        sb.append("%");
+                        sb.append(subString);
+                        i += 3;
+                        continue loop;
+                    }
+                    if (bytes == null) {
+                        bytes = new byte[(numChars - i) / 3];
+                    }
+                    bytes[pos++] = (byte) v;
+                    i += 3;
+                    if (i < numChars) {
+                        c = s.charAt(i);
+                    }
+                }
+
+                // A trailing, incomplete byte encoding such as
+                // "%x" will cause an exception to be thrown
+                if (bytes != null && pos > 0) {
+                    sb.append(new String(bytes, 0, pos, enc));
+                }
+                if ((i < numChars) && (c == '%')) {
+                    sb.append(c);
+                    i++;
+                }
+                break;
+            default:
+                sb.append(c);
+                i++;
+                break;
+            }
+        }
+        return sb.toString();
+    }
+
     public String getLoginSHA1Hash(String arg) throws PluginException {
         try {
             if (arg != null) {
                 getLogger().info("Input " + arg);
                 arg = arg.replaceAll("(\\\\|\\\"|\0|')", "\\\\$1");
-                arg = arg.replace("+", " ");
-                // arg = URLDecoder.decode(arg, "ISO-8859-1"); // <<- causes issues with % in pw
+                arg = urlDecode(arg, "ISO-8859-1"); // <<- causes issues with % in pw
                 arg = arg.replaceAll("[ \t\n\r\0\u000B]", "");
                 while (arg.startsWith("%20")) {
                     arg = arg.substring(3);
