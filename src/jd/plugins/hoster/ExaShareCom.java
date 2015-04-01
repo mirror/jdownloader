@@ -63,6 +63,7 @@ public class ExaShareCom extends PluginForHost {
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean VIDEOHOSTER                  = false;
+    private static final boolean VIDEOHOSTER_2                = true;
     private static final boolean SUPPORTSHTTPS                = false;
     // Connection stuff
     private static final boolean FREE_RESUME                  = true;
@@ -84,7 +85,7 @@ public class ExaShareCom extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.4.2
-    // mods:
+    // mods: modified, attention if you upgrade XFS!!
     // limit-info:
     // protocol: no https
     // captchatype: null
@@ -229,7 +230,7 @@ public class ExaShareCom extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings({ "unused", "deprecation" })
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty("pass");
@@ -251,6 +252,25 @@ public class ExaShareCom extends PluginForHost {
                 }
             } catch (final Throwable e) {
                 logger.info("Failed to get link via vidembed");
+            }
+        }
+        if (dllink == null && VIDEOHOSTER_2) {
+            try {
+                logger.info("Trying to get link via embed");
+                final String embed_access = "http://" + COOKIE_HOST.replace("http://", "") + "/embed-" + fuid + ".html";
+                getPage(embed_access);
+                dllink = getDllink();
+                if (dllink == null) {
+                    logger.info("Failed to get link via embed because: " + br.toString());
+                } else {
+                    logger.info("Successfully found link via embed");
+                }
+            } catch (final Throwable e) {
+                logger.info("Failed to get link via embed");
+            }
+            if (dllink == null) {
+                /* If failed, go back to the beginning */
+                getPage(downloadLink.getDownloadURL());
             }
         }
         // Fourth, continue like normal.
@@ -277,6 +297,9 @@ public class ExaShareCom extends PluginForHost {
         }
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
+            if (dlForm == null) {
+                dlForm = br.getFormbyKey("op");
+            }
             if (dlForm == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -592,7 +615,10 @@ public class ExaShareCom extends PluginForHost {
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        if (ttt == null) {
+            ttt = new Regex(correctedBR, ">Wait <span id=\"[a-z0-9]+\">(\\d+)</span> seconds</span>").getMatch(0);
+        }
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;

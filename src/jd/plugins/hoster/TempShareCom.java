@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -27,7 +28,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "temp-share.com" }, urls = { "https?://(www\\.)?temp-share\\.com/show/[a-zA-Z0-9]{9}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "temp-share.com" }, urls = { "https?://(www\\.)?temp-share\\.com/f/[a-z0-9]+" }, flags = { 0 })
 public class TempShareCom extends PluginForHost {
 
     private static final String mainPage = "http://temp-share.com";
@@ -51,35 +52,31 @@ public class TempShareCom extends PluginForHost {
 
     private static final String MAINTENANCE = ">UNDER CONSTRUCTION<";
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         prepBrowser(br);
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
 
         if (br.containsHTML(MAINTENANCE)) {
             link.getLinkStatus().setStatusText("Site is under maintenance");
             return AvailableStatus.UNCHECKABLE;
-        }
-
-        if (br.containsHTML(">Time has expired for this file\\.<")) {
+        } else if (!br.getURL().contains("/f/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">Time has expired for this file\\.<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
-        String filter = "<h1>([^<]+)</h1><div></div><h2>(\\d+(\\.\\d+)? (B|KB|MB|GB)) </h2>";
-        String filename = br.getRegex(filter).getMatch(0);
-        if (filename == null) {
-            br.getRegex("<title>Temp Share : (.*?) \\|").getMatch(0);
-        }
-        String filesize = br.getRegex(filter).getMatch(1);
+        final String filename = br.getRegex("id=\\'filename\\'>([^<>\"]*?)</h1>").getMatch(0);
+        final String filesize = br.getRegex("\\((\\d{1,4}(?:\\.\\d{1,2})? (?:MB|KB|GB))\\)").getMatch(0);
 
-        if (filename == null) {
+        if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setName(filename.trim());
-        if (filesize != null && !filesize.equals("")) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
-        }
+        link.setName(Encoding.htmlDecode(filename).trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -89,11 +86,13 @@ public class TempShareCom extends PluginForHost {
         if (br.containsHTML(MAINTENANCE)) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Site is under maintenance", 3 * 60 * 1000l);
         }
-        String dllink = br.getRegex("<a href=\\'(/download/[a-z0-9]+)").getMatch(0);
-        if (dllink == null) {
+        final String server = br.getRegex("\\'(https?://[^<>\"]*?/download)\\'").getMatch(0);
+        final String publickey = br.getRegex("id=\\'publickey\\' value=\\'([a-z0-9]+)\\'").getMatch(0);
+        if (server == null || publickey == null) {
             logger.warning("Could not find 'dllink', please report this issue to the JDownloader Development Team");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final String dllink = server + "/" + publickey + "/";
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

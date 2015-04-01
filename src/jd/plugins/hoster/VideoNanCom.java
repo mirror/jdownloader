@@ -63,6 +63,7 @@ public class VideoNanCom extends PluginForHost {
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean VIDEOHOSTER                  = false;
+    private static final boolean VIDEOHOSTER_2                = true;
     private static final boolean SUPPORTSHTTPS                = false;
     // Connection stuff
     private static final boolean FREE_RESUME                  = true;
@@ -134,6 +135,7 @@ public class VideoNanCom extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
@@ -241,6 +243,25 @@ public class VideoNanCom extends PluginForHost {
                 }
             } catch (final Throwable e) {
                 logger.info("Failed to get link via vidembed");
+            }
+        }
+        if (dllink == null && VIDEOHOSTER_2) {
+            try {
+                logger.info("Trying to get link via embed");
+                final String embed_access = "http://" + COOKIE_HOST.replace("http://", "") + "/embed-" + fuid + ".html";
+                getPage(embed_access);
+                dllink = getDllink();
+                if (dllink == null) {
+                    logger.info("Failed to get link via embed because: " + br.toString());
+                } else {
+                    logger.info("Successfully found link via embed");
+                }
+            } catch (final Throwable e) {
+                logger.info("Failed to get link via embed");
+            }
+            if (dllink == null) {
+                /* If failed, go back to the beginning */
+                getPage(downloadLink.getDownloadURL());
             }
         }
         // Fourth, continue like normal.
