@@ -199,11 +199,20 @@ public class JSHtmlUnitPermissionRestricter {
                         Log.L.severe("Javascript error occured");
                         LOADED.add(className);
                         return true;
+                    } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.EvaluatorException")) {
+                        // if (true) {
+                        // ScriptRuntime.constructError("Thread Loaded ", className).printStackTrace();
+                        //
+                        // }
+                        Log.L.severe("Javascript error occured");
+                        LOADED.add(className);
+                        return true;
                     } else {
                         // if (!Application.isJared(null)) {
                         // ScriptRuntime.constructError("Security Violation Loaded Class", className).printStackTrace();
                         // }
-                        throw ScriptRuntime.constructError("Security Violation", "Security Violation " + className);
+                        EcmaError ret = ScriptRuntime.constructError("Security Violation", "Security Violation " + className);
+                        throw ret;
                         // return true;
                     }
 
