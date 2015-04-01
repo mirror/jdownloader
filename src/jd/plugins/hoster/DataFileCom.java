@@ -1006,7 +1006,7 @@ public class DataFileCom extends PluginForHost {
     private static final boolean defaultENABLE_fREE_PARALLEL_DOWNLOADS = false;
 
     private void setConfigElements() {
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), ENABLE_FREE_STORED_WAITTIME, JDL.L("plugins.hoster.datafilecom.enableStoredWaittimeForFreeModes", "Enable saved waittime in between free downloads?\r\nHelps to start more simultaneous downloads with less waittime in between.")).setDefaultValue(defaultENABLE_fREE_PARALLEL_DOWNLOADS));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), ENABLE_FREE_STORED_WAITTIME, JDL.L("plugins.hoster.datafilecom.enableStoredWaittimeForFreeModes", "Enable saved waittime in between free downloads?\r\nHelps to start more simultaneous downloads with less waittime/captchas in between.")).setDefaultValue(defaultENABLE_fREE_PARALLEL_DOWNLOADS));
     }
 
     /**
