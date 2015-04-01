@@ -564,7 +564,7 @@ public class UpdateController implements UpdateCallbackInterface {
             }
 
             final ProcessBuilder pb = ProcessBuilderFactory.create(call);
-            pb.redirectErrorStream();
+            pb.redirectErrorStream(true);
             pb.directory(root);
 
             final Process process = pb.start();

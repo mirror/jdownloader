@@ -529,7 +529,7 @@ public class ScriptEnvironment {
 
         try {
             ProcessBuilder pb = ProcessBuilderFactory.create(commands);
-            pb.redirectErrorStream();
+            pb.redirectErrorStream(true);
             ProcessOutput ret = ProcessBuilderFactory.runCommand(pb);
             if (CrossSystem.getOSFamily() == OSFamily.WINDOWS) {
                 return new String(new String(ret.getStdOutData(), "cp850").getBytes("UTF-8"), "UTF-8");
