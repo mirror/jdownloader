@@ -28,6 +28,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.utils.os.CrossSystem;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.org" }, urls = { "https?://(www\\.)?(libgen\\.org|gen\\.lib\\.rus\\.ec|libgen\\.in)/book/index\\.php\\?md5=[A-F0-9]{32}" }, flags = { 0 })
 public class LibGen extends PluginForDecrypt {
 
@@ -40,6 +42,7 @@ public class LibGen extends PluginForDecrypt {
         String parameter = param.toString();
         String host = new Regex(parameter, "(https?://[^/]+)").getMatch(0);
         br.setCookie(host, "lang", "en");
+        br.setCustomCharset("utf-8");
         /* Allow redirects to other of their domains */
         br.setFollowRedirects(true);
         br.getPage(parameter);
@@ -50,6 +53,7 @@ public class LibGen extends PluginForDecrypt {
         String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
         if (fpName != null) {
             fpName = Encoding.htmlDecode(fpName).trim();
+            fpName = forWindows(fpName);
         }
 
         String[] links = br.getRegex("<url\\d+>(https?://[^<]+)</url\\d+>").getColumn(0);
@@ -70,7 +74,13 @@ public class LibGen extends PluginForDecrypt {
         if (cover_url != null) {
             final DownloadLink dl = createDownloadlink("directhttp://" + cover_url);
             if (fpName != null) {
-                dl.setFinalFileName(fpName + cover_url.substring(cover_url.lastIndexOf(".")));
+                final String ext = cover_url.substring(cover_url.lastIndexOf("."));
+                String filename = encodeUnicode(fpName);
+                if ((filename.length() + ext.length()) > 255) {
+                    filename = filename.substring(0, (filename.length() - 1) - (ext.length() - 1));
+                }
+                filename += ext;
+                dl.setFinalFileName(filename);
             }
             decryptedLinks.add(dl);
         }
@@ -81,6 +91,30 @@ public class LibGen extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    private String forWindows(String data) {
+        /* Cut filenames for Windows systems if necessary */
+        if (CrossSystem.isWindows() && data.length() > 255) {
+            data = data.substring(0, 254);
+        }
+        return data;
+    }
+
+    /** Avoid chars which are not allowed in filenames under certain OS' */
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     /* NO OVERRIDE!! */

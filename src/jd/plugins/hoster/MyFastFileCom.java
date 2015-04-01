@@ -110,19 +110,30 @@ public class MyFastFileCom extends PluginForHost {
         prepBR();
         final AccountInfo ac = new AccountInfo();
         br.setFollowRedirects(true);
-        /* account is valid, let's fetch account details */
         getAPISafe(mProt + mName + "/filehostapi?action=accountstatus&user_id=" + Encoding.urlEncode(account.getUser()) + "&pin=" + Encoding.urlEncode(account.getPass()));
+        if ("error".equals(this.getJson("status"))) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
+        /* Account is valid, let's fetch account details */
+        final String premium_until = getJson("premium_until");
+        long premium_until_long = 0;
+        if (premium_until.matches("\\d+")) {
+            premium_until_long = Long.parseLong(premium_until);
+        }
         try {
-            long premium_until = Long.parseLong(getJson("premium_until"));
-            if (premium_until > 0) {
-                premium_until *= 1000l;
-                ac.setValidUntil(premium_until);
+            if (premium_until_long > 0) {
+                premium_until_long *= 1000l;
+                ac.setValidUntil(premium_until_long);
                 ac.setUnlimitedTraffic();
                 account.setType(AccountType.PREMIUM);
                 ac.setStatus("Premium Account");
             } else {
                 ac.setTrafficLeft(0);
-                /* TODO: Obey this information via API and also show it for premium accounts */
+                /* TODO: Get this information via API and also show it for premium accounts */
                 ac.setTrafficMax(maxtraffic_daily);
                 account.setType(AccountType.FREE);
                 ac.setStatus("Registered (free) account");
@@ -136,7 +147,7 @@ public class MyFastFileCom extends PluginForHost {
         if (inValidStatus()) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nCan not parse supported hosts!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
-        String hostsArray = getJsonArray("hosts");
+        final String hostsArray = getJsonArray("hosts");
         final String[] hosts = new Regex(hostsArray, "\"(.*?)\"").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
         ac.setMultiHostSupport(this, supportedHosts);
