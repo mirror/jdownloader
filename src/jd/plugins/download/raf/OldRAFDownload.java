@@ -317,7 +317,7 @@ public class OldRAFDownload extends DownloadInterface {
 
     protected void connectFirstRange() throws IOException {
         long fileSize = getFileSize();
-        long part = fileSize / this.getChunkNum();
+        long part = fileSize;
         boolean verifiedSize = downloadable.getVerifiedFileSize() > 0;
         boolean openRangeRequested = false;
         boolean rangeRequested = false;
@@ -333,6 +333,7 @@ public class OldRAFDownload extends DownloadInterface {
             /* we request multiple ranges */
             openRangeRequested = false;
             rangeRequested = true;
+            part = fileSize / this.getChunkNum();
             request.getHeaders().put("Range", "bytes=" + (0) + "-" + (part - 1));
         }
         browser.openRequestConnection(request, false);

@@ -566,6 +566,10 @@ public class DirectHTTP extends PluginForHost {
         if (downloadLink.getBooleanProperty(DirectHTTP.NOCHUNKS, false) || downloadLink.getBooleanProperty(DirectHTTP.FORCE_NOCHUNKS, false) || resume == false) {
             chunks = 1;
         }
+        if (downloadLink.getProperty("streamMod") != null) {
+            resume = true;
+            downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
+        }
         this.setCustomHeaders(this.br, downloadLink);
         if (downloadLink.getStringProperty("post", null) != null) {
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL(), downloadLink.getStringProperty("post", null), resume, chunks);
