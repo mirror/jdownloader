@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myspass.de" }, urls = { "http://(www\\.)?myspass\\.de/myspass/shows/tvshows/[a-z0-9\\-_]+/[A-Za-z0-9\\-_]+/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myspass.de" }, urls = { "http://(www\\.)?myspass\\.de/myspass/shows/(?:tv|web)shows/[a-z0-9\\-_]+/[A-Za-z0-9\\-_]+/\\d+" }, flags = { 0 })
 public class MySpassDe extends PluginForHost {
 
     public MySpassDe(PluginWrapper wrapper) {
@@ -45,6 +45,7 @@ public class MySpassDe extends PluginForHost {
         return "http://www.myspass.de/myspass/kontakt/";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -71,7 +72,7 @@ public class MySpassDe extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = openConnection(br2, DLLINK);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -101,6 +102,20 @@ public class MySpassDe extends PluginForHost {
 
     private String getXML(final String parameter) {
         return br.getRegex("<" + parameter + "><\\!\\[CDATA\\[(.*?)\\]\\]></" + parameter + ">").getMatch(0);
+    }
+
+    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
+        URLConnectionAdapter con;
+        if (isJDStable()) {
+            con = br.openGetConnection(directlink);
+        } else {
+            con = br.openHeadConnection(directlink);
+        }
+        return con;
+    }
+
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override

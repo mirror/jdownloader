@@ -28,6 +28,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -202,7 +203,6 @@ public class HighWayMe extends PluginForHost {
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
             /* request creation of downloadlink */
-            /* TODO: Remove this workaround - we want to log in via API! */
             br.setFollowRedirects(true);
             postAPISafe(DOMAIN + "?login", "pass=" + Encoding.urlEncode(account.getPass()) + "&user=" + Encoding.urlEncode(account.getUser()));
             this.getAPISafe("https://high-way.me/load.php?json&link=" + Encoding.urlEncode(link.getDownloadURL()));
@@ -270,14 +270,13 @@ public class HighWayMe extends PluginForHost {
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
         final LinkedHashMap<String, Object> info_account = (LinkedHashMap<String, Object>) entries.get("user");
         final ArrayList<Object> array_hoster = (ArrayList) entries.get("hoster");
-        account.setValid(true);
-        account.setConcurrentUsePossible(true);
         final int account_maxchunks = ((Number) info_account.get("max_chunks")).intValue();
         final int account_maxdls = ((Number) info_account.get("max_connection")).intValue();
         final long free_traffic = ((Number) info_account.get("free_traffic")).longValue();
         final long premium_bis = ((Number) info_account.get("premium_bis")).longValue();
         final long premium_traffic = ((Number) info_account.get("premium_traffic")).longValue();
         final long premium_traffic_max = ((Number) info_account.get("premium_max")).longValue();
+        /* Set account type and related things */
         if (premium_bis > 0 && premium_traffic_max > 0) {
             ai.setTrafficLeft(premium_traffic);
             ai.setTrafficMax(premium_traffic_max);
@@ -289,8 +288,12 @@ public class HighWayMe extends PluginForHost {
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
         }
+        account.setValid(true);
+        account.setConcurrentUsePossible(true);
+        /* Set supported hosts, limits and account limits */
         account.setProperty("account_maxchunks", this.correctChunks(account_maxchunks));
         account.setProperty("account_maxdls", this.correctMaxdls(account_maxdls));
+
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         hostMaxchunksMap.clear();
         hostMaxdlsMap.clear();
@@ -490,16 +493,20 @@ public class HighWayMe extends PluginForHost {
                 /* Login or password missing -> disable account */
                 if ("de".equalsIgnoreCase(lang)) {
                     statusMessage = "\r\nDein Account wurde gesperrt!";
+                    this.currAcc.setError(AccountError.INVALID, statusMessage);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
                     statusMessage = "\r\nYour account was banned!";
+                    this.currAcc.setError(AccountError.INVALID, statusMessage);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             case 2:
                 statusMessage = "Not enough free traffic";
+                this.currAcc.setError(AccountError.TEMP_DISABLED, statusMessage);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 3:
                 statusMessage = "Not enough premium traffic";
+                this.currAcc.setError(AccountError.TEMP_DISABLED, statusMessage);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 4:
                 /* Too many simultaneous downloads */
@@ -509,9 +516,11 @@ public class HighWayMe extends PluginForHost {
                 /* Login or password missing -> disable account */
                 if ("de".equalsIgnoreCase(lang)) {
                     statusMessage = "\r\nCode 5: Login Fehler";
+                    this.currAcc.setError(AccountError.INVALID, statusMessage);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
                     statusMessage = "\r\nCode 5: Login failure";
+                    this.currAcc.setError(AccountError.INVALID, statusMessage);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             case 6:
@@ -541,9 +550,11 @@ public class HighWayMe extends PluginForHost {
                 /* MOCH itself is under maintenance */
                 if ("de".equalsIgnoreCase(lang)) {
                     statusMessage = "\r\nDieser Anbieter führt momentan Wartungsarbeiten durch!";
+                    this.currAcc.setError(AccountError.TEMP_DISABLED, statusMessage);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 } else {
                     statusMessage = "\r\nThis service is doing maintenance work!";
+                    this.currAcc.setError(AccountError.TEMP_DISABLED, statusMessage);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
             case 100:
