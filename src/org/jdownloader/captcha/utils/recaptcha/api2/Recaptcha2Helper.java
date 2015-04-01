@@ -25,7 +25,7 @@ public class Recaptcha2Helper {
 
     private String  siteKey;
     private Browser br;
-    private String  version  = "r20150122184957";
+    private String  version  = "r20150330155956";
     private String  language = "en";
 
     // private HashMap<String, String> apiProperties;
@@ -70,8 +70,8 @@ public class Recaptcha2Helper {
      * Browser can be null and new Browser session will be used. Be aware it will be using JDownloader default User-Agent <br />
      * Provided Browser referer is nullfied. <br />
      * Host can be null only when existing Browser is provided, host will be determined from current URL. <br />
-     * 
-     * 
+     *
+     *
      * @author raztoki
      * @param br
      * @param siteKey
@@ -222,8 +222,9 @@ public class Recaptcha2Helper {
         tokenToReload = unjsonify(br.getRegex("\\[\\\\x22finput\\\\x22\\,\\s*\\\\x22([^\\\\]+)").getMatch(0));
         // .* can cause lag.
         tokenToReloadFbg = unjsonify(br.getRegex(",\\d\\]\\\\n,\\\\x22([^\\\\]+)").getMatch(0));
-
-        br.postPage("https://www.google.com/recaptcha/api2/reload?k=" + siteKey, "c=" + tokenToReload + "&reason=fi&fbg=" + tokenToReloadFbg);
+        // for debugging purposes so we don't throw exception
+        // br.setAllowedResponseCodes(500);
+        br.postPage("https://www.google.com/recaptcha/api2/reload?k=" + siteKey, "c=" + tokenToReload + "&reason=r&fbg=" + (tokenToReloadFbg != null || !"null".equalsIgnoreCase(tokenToReloadFbg) ? tokenToReloadFbg : ""));
         tokenForCaptchaChallengePayload = unjsonify(br.getRegex("\\[\"rresp\",\\s*\"([^\"]+)").getMatch(0));
 
         timeImageLoading = System.currentTimeMillis();
