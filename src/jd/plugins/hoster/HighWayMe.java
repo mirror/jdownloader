@@ -142,12 +142,10 @@ public class HighWayMe extends PluginForHost {
     }
 
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
-        /* TODO: Remove this */
-        final boolean forceone = true;
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
         int maxChunks = account.getIntegerProperty("account_maxchunks", defaultMAXCHUNKS);
-        /* Then check if we got an individual limit. */
+        /* Then check if we got an individual host limit. */
         if (hostMaxchunksMap != null) {
             final String thishost = link.getHost();
             synchronized (hostMaxchunksMap) {
@@ -157,7 +155,7 @@ public class HighWayMe extends PluginForHost {
             }
         }
         /* Check if chunkload failed before. TODO: Remove this! */
-        if (link.getBooleanProperty(NOCHUNKS, false) || forceone) {
+        if (link.getBooleanProperty(NOCHUNKS, false)) {
             maxChunks = 1;
         }
         link.setProperty(NICE_HOSTproperty + "directlink", dllink);
