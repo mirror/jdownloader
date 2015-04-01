@@ -356,13 +356,13 @@ public class XenuBoxCom extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     *
+     * 
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     *
+     * 
      * @param controlFree
      *            (+1|-1)
      */
@@ -686,13 +686,13 @@ public class XenuBoxCom extends PluginForHost {
                         return;
                     }
                 }
-                br.getPage("http://xenubox.com/?op=login");
-                /* They switch betweenv https and http */
+                br.getPage("https://xenubox.com/?op=login");
+                /* They switch between https and http */
                 String action = br.getRegex("action=\"(https?://xenubox\\.com/[^<>\"/]*?)\" name=\"FL\"").getMatch(0);
                 if (action == null) {
-                    action = "http://xenubox.com/";
+                    action = "https://xenubox.com/";
                 }
-                postPage(action, "op=login&redirect=http%3A%2F%2Fxenubox.com%2F&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                postPage(action, "op=login&redirect=https%3A%2F%2Fxenubox.com%2F&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (correctedBR.contains(">Your account was banned ")) {
                     logger.info("xenubox.com: Account " + account.getUser() + " was banned!");
                     final String lang = System.getProperty("user.language");
@@ -707,7 +707,7 @@ public class XenuBoxCom extends PluginForHost {
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                getPage(COOKIE_HOST + "/?op=my_account");
+                getPage("https://xenubox.com/?op=my_account");
                 if (new Regex(correctedBR, ">Apply Premium Key:<").matches()) {
                     account.setProperty("nopremium", true);
                 } else {
