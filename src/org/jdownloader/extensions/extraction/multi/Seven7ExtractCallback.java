@@ -130,6 +130,7 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
             final Long itemSize = (Long) inArchive.getProperty(index, PropID.SIZE);
             final Date lastWriteTime = (Date) inArchive.getProperty(index, PropID.LAST_WRITE_TIME);
             final Boolean itemEncrypted = (Boolean) inArchive.getProperty(index, PropID.ENCRYPTED);
+            final String method = (String) inArchive.getProperty(index, PropID.METHOD);
             ISimpleInArchiveItem item = new ISimpleInArchiveItem() {
 
                 @Override
@@ -189,7 +190,7 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
 
                 @Override
                 public String getMethod() throws SevenZipException {
-                    return null;
+                    return method;
                 }
 
                 @Override

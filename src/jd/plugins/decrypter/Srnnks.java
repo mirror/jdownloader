@@ -296,7 +296,6 @@ public class Srnnks extends PluginForDecrypt {
                                 // suche wahrscheinlichste form
                                 // progress.setStatusText("Suche Captcha Form");
                                 Form form = null;
-
                                 forms = this.br.getForms();
                                 int bestdist = Integer.MAX_VALUE;
                                 if (forms != null) {
