@@ -211,7 +211,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         * 
+                         *
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         this.postPageSafe(aa, link, "https://vk.com/audio", getAudioAlbumPostString(this.mainlink, this.ownerID));
@@ -668,8 +668,8 @@ public class VKontakteRuHoster extends PluginForHost {
         br.getHeaders().put("User-Agent", useragent);
         /* Set english language */
         br.setCookie("http://vk.com/", "remixlang", "3");
-        br.setReadTimeout(3 * 60 * 1000);
-        br.setConnectTimeout(3 * 60 * 1000);
+        br.setReadTimeout(1 * 60 * 1000);
+        br.setConnectTimeout(1 * 60 * 1000);
     }
 
     /**
