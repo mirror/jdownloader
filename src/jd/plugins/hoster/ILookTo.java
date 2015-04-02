@@ -120,7 +120,7 @@ public class ILookTo extends PluginForHost {
         String filesize;
         if (available_CHECK_OVER_INFO_PAGE) {
             br.getPage(link.getDownloadURL() + "~i");
-            if (!br.getURL().contains("~i")) {
+            if (!br.getURL().contains("~i") || br.containsHTML("All_files_are_offline_")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = br.getRegex("Filename:[\t\n\r ]+</td>[\t\n\r ]+<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
@@ -144,7 +144,7 @@ public class ILookTo extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
             handleErrors();
-            if (br.getURL().contains("/error." + type) || br.getURL().contains("/index." + type) || (!br.containsHTML("class=\"downloadPageTable(V2)?\"") && !br.containsHTML("class=\"download\\-timer\""))) {
+            if (br.getURL().contains("/error." + type) || br.getURL().contains("/index." + type) || br.containsHTML("All_files_are_offline_") || (!br.containsHTML("class=\"downloadPageTable(V2)?\"") && !br.containsHTML("class=\"download\\-timer\""))) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(,\\d+)?(\\.\\d+)? (KB|MB|GB))\\)<");
