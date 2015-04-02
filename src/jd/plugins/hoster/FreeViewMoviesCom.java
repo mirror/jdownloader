@@ -62,6 +62,7 @@ public class FreeViewMoviesCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        DLLINK = null;
         if (downloadLink.getDownloadURL().contains("freeviewmoviesdecrypted/")) {
             downloadLink.setUrlDownload(downloadLink.getDownloadURL().replace("freeviewmoviesdecrypted/", "freeviewmovies.com/"));
         }
@@ -69,7 +70,9 @@ public class FreeViewMoviesCom extends PluginForHost {
         // old /porn/ links redirect
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if ("http://www.freeviewmovies.com/".equals(br.getURL()) || br.containsHTML(">404 Error Page")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if ("http://www.freeviewmovies.com/".equals(br.getURL()) || br.containsHTML(">404 Error Page")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?) \\- FreeViewMovies\\.com</title>").getMatch(0);
@@ -80,10 +83,14 @@ public class FreeViewMoviesCom extends PluginForHost {
         if (DLLINK == null) {
             DLLINK = br.getRegex("file: \'(http[^']+)").getMatch(0);
         }
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         filename = filename.trim();
         String ext = new Regex(DLLINK.substring(DLLINK.lastIndexOf(".")), "([^\\?]+)").getMatch(0);
-        if (ext == null || ext.length() > 5) ext = ".mp4";
+        if (ext == null || ext.length() > 5) {
+            ext = ".mp4";
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -91,10 +98,11 @@ public class FreeViewMoviesCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
