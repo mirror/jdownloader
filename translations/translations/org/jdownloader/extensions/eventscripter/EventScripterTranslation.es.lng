@@ -1,6 +1,9 @@
+ExampleMenuEntry=@%s1: %s2
 NONE=Ninguno
+ON_ARCHIVE_EXTRACTED=Extractor de Archivos Finalizado
 ON_DOWNLOAD_CONTROLLER_START=La Descarga ha iniciado
 ON_DOWNLOAD_CONTROLLER_STOPPED=La Descarga ha finalizado
+ON_JDOWNLOADER_STARTED=JDownloader inició
 ON_NEW_FILE=Un nuevo archivo ha sido creado
 ON_PACKAGE_FINISHED=Paquete finalizado
 allow=Permitir
@@ -8,6 +11,7 @@ classes=/* ===== Classes ===== */
 deny=Denegar
 downloadLink=// Enlace de Descarga
 edit_script=Editar Script
+editor_autoformat=Formato Automático
 editor_showhelp=Mostrar/Ocultar Ayuda
 editor_testrun=Ejecutar Prueba
 example_script_name=Ejemplo
@@ -15,3 +19,4 @@ filepackage=// Paquete del Archivo
 loading_editor_title=Cargando Editor...
 script_editor_title=Editor de Script: %s1
 securityLoading_title=¡Alerta de Seguridad!
+showMessageDialog_title=Mensaje de Alerta de %s1@%s2
