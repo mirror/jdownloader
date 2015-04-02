@@ -59,7 +59,7 @@ public class XenuBoxCom extends PluginForHost {
 
     private String                         correctedBR                  = "";
     private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String                   COOKIE_HOST                  = "http://xenubox.com";
+    private final String                   COOKIE_HOST                  = "https://xenubox.com";
     private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -89,7 +89,7 @@ public class XenuBoxCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
     }
 
     @Override
