@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -58,8 +59,19 @@ public class GenericBase64Decrypter extends PluginForDecrypt {
             // cleanup crap after padding. this can break subsequent tries
             finallink = Encoding.Base64Decode(finallink.replaceFirst("(={1,2})[\\w\\+]+$", "$1"));
         }
-        decryptedLinks.add(createDownloadlink(finallink));
-
+        // determine multi or single result?
+        final String[] multi = new Regex(finallink, "(?:https?|ftp)://").getColumn(-1);
+        if (multi != null && multi.length > 1) {
+            // because links might not be separated or deliminated, its best to use htmlparser
+            final String[] links = HTMLParser.getHttpLinks(finallink, "");
+            if (links != null) {
+                for (final String link : links) {
+                    decryptedLinks.add(createDownloadlink(link));
+                }
+            }
+        } else {
+            decryptedLinks.add(createDownloadlink(finallink));
+        }
         return decryptedLinks;
     }
 
