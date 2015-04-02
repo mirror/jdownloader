@@ -462,7 +462,7 @@ public class HighWayMe extends PluginForHost {
     private void updatestatuscode() {
         String error = this.getJson("error");
         if (error == null) {
-            error = getXML("code");
+            error = getJson("code");
         }
         if (error != null) {
             if (error.matches("\\d+")) {
