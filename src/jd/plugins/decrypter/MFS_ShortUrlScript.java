@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "4link.in" }, urls = { "https?://(www\\.)?4link\\.in/[a-zA-Z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "mfs_shorturlscript" }, urls = { "https?://(www\\.)?nullified\\.jdownloader\\.org/[a-zA-Z0-9]+" }, flags = { 0 })
 public class MFS_ShortUrlScript extends PluginForDecrypt {
 
     /**

@@ -275,11 +275,14 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             decryptedLinks = null;
             return;
         }
-        fpName = doFilenameEncoding(fpName);
+        fpName = fpName != null ? doFilenameEncoding(fpName) : null;
         for (final Object pt : parts) {
             final LinkedHashMap<String, Object> playlistentry = (LinkedHashMap<String, Object>) pt;
             final String part_mgid = (String) playlistentry.get("guid");
             final String partname = (String) playlistentry.get("title");
+            if (fpName == null) {
+                fpName = doFilenameEncoding(partname);
+            }
             final String final_filename = this.doFilenameEncoding(partname) + this.default_ext;
             final DownloadLink fina = createDownloadlink("http://intl.mtvnservices.com/mrss/" + part_mgid + "/");
             fina.setFinalFileName(final_filename);
