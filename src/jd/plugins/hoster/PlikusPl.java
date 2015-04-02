@@ -34,64 +34,51 @@ public class PlikusPl extends PluginForHost {
         setStartIntervall(5000l);
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://www.osemka.pl/html/regulamin/#regulamin_plikus";
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public int getTimegapBetweenConnections() {
         return 2500;
     }
 
-    // @Override
+    @SuppressWarnings("deprecation")
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        // Form form = br.getForm(0);
-        br.setFollowRedirects(false);
-        if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
-        // dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form,
-        // true, 0);
-        String linkurl = downloadLink.getDownloadURL().replace("plik,", "pobierz,").replaceAll(",.*,", ",");
-
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl);
+        if (br.getRedirectLocation() != null) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+        }
+        final String linkurl = downloadLink.getDownloadURL().replace("plik,", "pobierz,").replaceAll(",.*,", ",");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, false, 1);
         dl.startDownload();
     }
 
-    // @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
+    @SuppressWarnings("deprecation")
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws PluginException, IOException {
         setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        // not used anymore
-        // String filesize =
-        // br.getRegex("<p><b>Rozmiar pliku:</b>(.*?)</p>").getMatch(0);
-        String filename = br.getRegex("<a class=\"btn_download\" href=\"/pobierz,(.*?)\\.html\">[\n\t\r]+<span class=\"action\">Pobierz teraz!</span>").getMatch(0);
-        // String filename =
-        // br.getRegex("<h1><img src=.*?/>(.*?)</h1>").getMatch(0);
-        if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        downloadLink.setName(downloadLink.getName().replace("plik,", "").replaceAll(",.{3}+\\.html", ""));
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)<").getMatch(0);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        downloadLink.setName(filename);
         return AvailableStatus.TRUE;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    // @Override
     public void resetPluginGlobals() {
 
     }

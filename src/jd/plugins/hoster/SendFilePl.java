@@ -57,16 +57,23 @@ public class SendFilePl extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Plik nie istnieje\\!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Plik nie istnieje\\!") || br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("\">Nazwa pliku:</div>[\t\n\r ]+<div class=\"right\">(.*?)<font").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?) pobierz za darmo - Hosting plików</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>(.*?) pobierz za darmo - Hosting plików</title>").getMatch(0);
+        }
         String filesize = br.getRegex("\">Rozmiar pliku:</div>[\t\n\r ]+<div class=\"right\">(.*?)</div>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
