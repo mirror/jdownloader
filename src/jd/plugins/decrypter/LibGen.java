@@ -16,19 +16,24 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.os.CrossSystem;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.org" }, urls = { "https?://(www\\.)?(libgen\\.org|gen\\.lib\\.rus\\.ec|libgen\\.in)/book/index\\.php\\?md5=[A-F0-9]{32}" }, flags = { 0 })
 public class LibGen extends PluginForDecrypt {
@@ -38,6 +43,10 @@ public class LibGen extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        /* Load hostplugin */
+        JDUtilities.getPluginForHost("libgen.info");
+        String libgen_url = null;
+        String libgen_server_filename = null;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         String host = new Regex(parameter, "(https?://[^/]+)").getMatch(0);
@@ -53,7 +62,6 @@ public class LibGen extends PluginForDecrypt {
         String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
         if (fpName != null) {
             fpName = Encoding.htmlDecode(fpName).trim();
-            fpName = forWindows(fpName);
         }
 
         String[] links = br.getRegex("<url\\d+>(https?://[^<]+)</url\\d+>").getColumn(0);
@@ -65,23 +73,53 @@ public class LibGen extends PluginForDecrypt {
             return null;
         }
         if (links != null && links.length != 0) {
-            for (String dl : links) {
-                decryptedLinks.add(createDownloadlink(dl));
+            for (final String dl : links) {
+                if (dl.matches(jd.plugins.hoster.LibGenInfo.type_libgen_in)) {
+                    libgen_url = dl;
+                } else {
+                    decryptedLinks.add(createDownloadlink(dl));
+                }
             }
         }
 
-        final String cover_url = br.getRegex("(?:\\'|\")(https?://libgen\\.(?:in|info|net)/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png))(?:\\'|\")").getMatch(0);
-        if (cover_url != null) {
-            final DownloadLink dl = createDownloadlink("directhttp://" + cover_url);
-            if (fpName != null) {
-                final String ext = cover_url.substring(cover_url.lastIndexOf("."));
-                String filename = encodeUnicode(fpName);
-                if ((filename.length() + ext.length()) > 255) {
-                    filename = filename.substring(0, (filename.length() - 1) - (ext.length() - 1));
+        if (libgen_url != null) {
+            final DownloadLink libgen_dl = createDownloadlink(libgen_url);
+            URLConnectionAdapter con = null;
+            final Browser br2 = br.cloneBrowser();
+            try {
+                try {
+                    con = openConnection(br2, libgen_url);
+                } catch (final BrowserException e) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                filename += ext;
-                dl.setFinalFileName(filename);
+                if (!con.getContentType().contains("html")) {
+                    libgen_server_filename = Encoding.htmlDecode(getFileNameFromHeader(con));
+                    libgen_dl.setDownloadSize(con.getLongContentLength());
+                    libgen_dl.setFinalFileName(libgen_server_filename);
+                } else {
+                    libgen_dl.setAvailable(false);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
+            decryptedLinks.add(libgen_dl);
+        }
+
+        final String cover_url = br.getRegex("(?:\\'|\")(https?://libgen\\.(?:in|info|net)/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png))(?:\\'|\")").getMatch(0);
+        if (cover_url != null && libgen_url != null) {
+            final DownloadLink dl = createDownloadlink(cover_url);
+            final String ext = cover_url.substring(cover_url.lastIndexOf("."));
+            String filename_cover = null;
+            if (libgen_server_filename != null) {
+                filename_cover = libgen_server_filename.substring(0, libgen_server_filename.lastIndexOf("."));
+            } else if (fpName != null) {
+                filename_cover = encodeUnicode(fpName);
+            }
+            filename_cover += ext;
+            dl.setFinalFileName(filename_cover);
             decryptedLinks.add(dl);
         }
 
@@ -93,12 +131,18 @@ public class LibGen extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private String forWindows(String data) {
-        /* Cut filenames for Windows systems if necessary */
-        if (CrossSystem.isWindows() && data.length() > 255) {
-            data = data.substring(0, 254);
+    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
+        URLConnectionAdapter con;
+        if (isJDStable()) {
+            con = br.openGetConnection(directlink);
+        } else {
+            con = br.openHeadConnection(directlink);
         }
-        return data;
+        return con;
+    }
+
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     /** Avoid chars which are not allowed in filenames under certain OS' */

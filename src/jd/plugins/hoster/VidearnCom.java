@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -35,9 +36,16 @@ public class VidearnCom extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public void correctDownloadLink(DownloadLink link) {
+    public void correctDownloadLink(final DownloadLink link) {
         // Links come from a decrypter
-        link.setUrlDownload(link.getDownloadURL().replace("pornxsdecrypted.com/", "pornxs.com/"));
+        String newlink;
+        final String vid = new Regex(link.getDownloadURL(), "embed\\.php\\?id=(\\d+)$").getMatch(0);
+        if (vid != null) {
+            newlink = "http://pornxs.com/teen-amateur-mature-cumshot-webcams/" + vid + "-0123456789.html";
+        } else {
+            newlink = link.getDownloadURL().replace("pornxsdecrypted.com/", "pornxs.com/");
+        }
+        link.setUrlDownload(newlink);
     }
 
     @Override

@@ -41,12 +41,19 @@ public class MountFileNetFolder extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getURL().equals("http://mountfile.net/")) {
+        if (br.getURL().equals("http://mountfile.net/") || br.containsHTML(">Folder was deleted<")) {
             logger.info("Link offline: " + parameter);
+            try {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+            }
             return decryptedLinks;
         }
         String fpName = br.getRegex("<h2 class=\"center\">Download files from folder ([^<>\"]*?)</h2>").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("<title>Download files from folder ([^<>\"]*?) \\&mdash; Upload").getMatch(0);
+        if (fpName == null) {
+            fpName = br.getRegex("<title>Download files from folder ([^<>\"]*?) \\&mdash; Upload").getMatch(0);
+        }
         final String[][] fileInfo = br.getRegex("\"(/[A-Za-z0-9]+)\" target=\"_blank\">([^<>\"]*?)</a></td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatches();
         if (fileInfo == null || fileInfo.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);

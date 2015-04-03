@@ -21,13 +21,14 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videarn.com" }, urls = { "http://(www\\.)?((videarn|pornxs)\\.com/(video\\.php\\?id=|[a-z0-9\\-]+/)|embed\\.videarn\\.com/embed\\.php\\?id=)\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videarn.com" }, urls = { "http://(www\\.)?((videarn|pornxs)\\.com/(video\\.php\\?id=|[a-z0-9\\-]+/)|embed\\.videarn\\.com/embed\\.php\\?id=)\\d+([a-z0-9\\-]+\\.html)?" }, flags = { 0 })
 public class VidEarnDecrypter extends PluginForDecrypt {
 
     public VidEarnDecrypter(PluginWrapper wrapper) {
@@ -38,8 +39,12 @@ public class VidEarnDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        final String parameter = param.toString();
-        final DownloadLink mainlink = createDownloadlink(parameter.replace("pornxs.com/", "pornxsdecrypted.com/"));
+        String parameter = param.toString();
+        final String vid = new Regex(parameter, "embed\\.php\\?id=(\\d+)$").getMatch(0);
+        if (vid != null) {
+            parameter = "http://pornxs.com/teen-amateur-mature-cumshot-webcams/" + vid + "-0123456789.html";
+        }
+        final DownloadLink mainlink = createDownloadlink(parameter.replaceAll("(pornxs|videarn)\\.com/", "pornxsdecrypted.com/"));
         try {
             br.getPage(parameter);
         } catch (final Exception e) {
@@ -53,6 +58,9 @@ public class VidEarnDecrypter extends PluginForDecrypt {
             mainlink.setProperty("offline", true);
         } else {
             fpName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            if (fpName == null) {
+                return null;
+            }
             fpName = Encoding.htmlDecode(fpName);
             fpName = fpName.trim();
             String additionalDownloadlink = br.getRegex("\"(http://(www\\.)?filearn\\.com/files/get/.*?)\"").getMatch(0);

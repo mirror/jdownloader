@@ -20,46 +20,49 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixturecloud.com" }, urls = { "https?://(www\\.)?mixturecloud\\.com/album/[A-Za-z0-9]+" }, flags = { 0 })
-public class MixtureCloudComFolder extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadable.ch" }, urls = { "http://(www\\.)?uploadable\\.ch/list/[A-Za-z0-9]+" }, flags = { 0 })
+public class UploadableChFolder extends PluginForDecrypt {
 
-    public MixtureCloudComFolder(PluginWrapper wrapper) {
+    public UploadableChFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        // required for http to https
-        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("data\\-dismiss=\"alert\"") || br.getHttpConnection().getResponseCode() == 404) {
-            logger.info("Link offline: " + parameter);
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"errorBox\"")) {
+            try {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+            }
             return decryptedLinks;
         }
-        if (br.containsHTML("<span>0 Item</span>")) {
-            logger.info("There are no items in this album: " + parameter);
-            return decryptedLinks;
-        }
-        final String[] links = br.getRegex("\"(media/(?!share)[A-Za-z0-9]+)\"").getColumn(0);
+        String fpName = br.getRegex("class=\"folder\"><span>\\&nbsp;</span>([^<>\"]*?)</div>").getMatch(0);
+        final String[] links = br.getRegex("(https?://(www\\.)?uploadable\\.ch/[^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String singleLink : links)
-            decryptedLinks.add(createDownloadlink("https://www.mixturecloud.com/" + singleLink));
+        for (final String singleLink : links) {
+            decryptedLinks.add(createDownloadlink(singleLink));
+        }
+
+        if (fpName != null) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.addLinks(decryptedLinks);
+        }
 
         return decryptedLinks;
-    }
-
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
     }
 
 }
