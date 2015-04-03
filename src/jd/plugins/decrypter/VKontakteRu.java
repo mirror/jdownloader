@@ -642,9 +642,9 @@ public class VKontakteRu extends PluginForDecrypt {
             String correctedBR = br.toString().replace("\\", "");
             String embedHash = null;
             String filename = null;
-            String embeddedVideo = br.getRegex("\"extra_data\":\"([^<>\"]*?)\"").getMatch(0);
+            String embeddedVideo = getJson("extra_data");
             if (embeddedVideo != null) {
-                embeddedVideo = Encoding.htmlDecode(embeddedVideo.replace("\\", ""));
+                embeddedVideo = Encoding.htmlDecode(embeddedVideo);
                 if (embeddedVideo.startsWith("http")) {
                     decryptedLinks.add(createDownloadlink(embeddedVideo));
                 } else {
