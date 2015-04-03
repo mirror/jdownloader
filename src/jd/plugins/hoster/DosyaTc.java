@@ -51,14 +51,30 @@ public class DosyaTc extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         // For JD2
-        if (br.containsHTML(">Dosya bulunamadı|>Dosya bulunamadi")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Dosya bulunamadı|>Dosya bulunamadi")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // For the Stable
-        if (br.containsHTML("r>Dosya bulunamadý|>Dosya bulunamadi")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.getURL().endsWith("dosya.tc")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("r>Dosya bulunamadý|>Dosya bulunamadi")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.getURL().endsWith("dosya.tc")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<td><b>Dosya Adı(/File Name)?</b></td>[\t\n\r ]+<td><b>([^<>\"]*?)</b></td>").getMatch(1);
-        if (filename == null) filename = br.getRegex("<b>Dosya Adi/File Name</b></td> <td><b>([^<>\"]*?)</b></td>").getMatch(0);
-        final String filesize = br.getRegex("<td><b>Dosya Boyutu(/File Size)?</b></td>[\t\n\r ]+<td><b>([^<>\"]*?)</b></td>").getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            filename = br.getRegex("<b>Dosya Adi/File Name</b></td> <td><b>([^<>\"]*?)</b></td>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("Dosya Adı : <span>([^<>\"]*?)</span>").getMatch(0);
+        }
+        String filesize = br.getRegex("<td><b>Dosya Boyutu(/File Size)?</b></td>[\t\n\r ]+<td><b>([^<>\"]*?)</b></td>").getMatch(1);
+        if (filesize == null) {
+            filesize = br.getRegex("Dosya Boyutu : <span>([^<>\"]*?)</span>").getMatch(0);
+        }
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -68,7 +84,9 @@ public class DosyaTc extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex("value=\"Download\" onClick=\"window\\.location=.*?(http.*?).'\">").getMatch(0);
-        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("This link seems not to be a file...");
