@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kinopoisk.ru" }, urls = { "http://(www\\.)?kinopoisk\\.ru/film/\\d+/video/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kinopoisk.ru" }, urls = { "http://(www\\.)?kinopoisk\\.ru/(film/\\d+|player/[a-z0-9]+/f/\\d+)" }, flags = { 0 })
 public class KinopoiskRu extends PluginForHost {
 
     public KinopoiskRu(PluginWrapper wrapper) {
@@ -57,8 +58,15 @@ public class KinopoiskRu extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        final String vid = new Regex(link.getDownloadURL(), "(\\d+)").getMatch(0);
+        link.setUrlDownload("http://www.kinopoisk.ru/film/" + vid + "/video/");
+    }
+
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        correctDownloadLink(downloadLink);
         DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);

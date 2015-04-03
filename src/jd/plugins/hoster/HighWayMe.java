@@ -51,6 +51,8 @@ public class HighWayMe extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap      = new HashMap<Account, HashMap<String, Long>>();
     /* Contains <host><number of max possible chunks per download> */
+    private static HashMap<String, Boolean>                hostResumeMap           = new HashMap<String, Boolean>();
+    /* Contains <host><number of max possible chunks per download> */
     private static HashMap<String, Integer>                hostMaxchunksMap        = new HashMap<String, Integer>();
     /* Contains <host><number of max possible simultan downloads> */
     private static HashMap<String, Integer>                hostMaxdlsMap           = new HashMap<String, Integer>();
@@ -60,7 +62,7 @@ public class HighWayMe extends PluginForHost {
     /* Last updated: 31.03.15 */
     private static final int                               defaultMAXDOWNLOADS     = 10;
     private static final int                               defaultMAXCHUNKS        = -4;
-    private static final boolean                           defaultRESUME           = true;
+    private static final boolean                           defaultRESUME           = false;
 
     private static Object                                  CTRLLOCK                = new Object();
     private int                                            statuscode              = 0;
@@ -144,6 +146,7 @@ public class HighWayMe extends PluginForHost {
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
+        boolean resume = defaultRESUME;
         int maxChunks = account.getIntegerProperty("account_maxchunks", defaultMAXCHUNKS);
         /* Then check if we got an individual host limit. */
         if (hostMaxchunksMap != null) {
@@ -154,12 +157,24 @@ public class HighWayMe extends PluginForHost {
                 }
             }
         }
+
+        if (hostResumeMap != null) {
+            final String thishost = link.getHost();
+            synchronized (hostResumeMap) {
+                if (hostResumeMap.containsKey(thishost)) {
+                    resume = hostResumeMap.get(thishost);
+                }
+            }
+        }
         /* Check if chunkload failed before. TODO: Remove this! */
         if (link.getBooleanProperty(NOCHUNKS, false)) {
             maxChunks = 1;
         }
+        if (!resume) {
+            maxChunks = 1;
+        }
         link.setProperty(NICE_HOSTproperty + "directlink", dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, maxChunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             // handleErrorRetries("unknowndlerror", 5, 5 * 60 * 1000l);
@@ -300,6 +315,7 @@ public class HighWayMe extends PluginForHost {
             final LinkedHashMap<String, Object> hoster_map = (LinkedHashMap<String, Object>) hoster;
             final String domain = correctHost((String) hoster_map.get("name"));
             final String active = (String) hoster_map.get("active");
+            final int resume = Integer.parseInt((String) hoster_map.get("resume"));
             final int maxchunks = Integer.parseInt((String) hoster_map.get("chunks"));
             final int maxdls = Integer.parseInt((String) hoster_map.get("downloads"));
             // final String unlimited = (String) hoster_map.get("unlimited");
@@ -307,6 +323,11 @@ public class HighWayMe extends PluginForHost {
                 supportedHosts.add(domain);
                 hostMaxchunksMap.put(domain, correctChunks(maxchunks));
                 hostMaxdlsMap.put(domain, correctMaxdls(maxdls));
+                if (resume == 0) {
+                    hostResumeMap.put(domain, false);
+                } else {
+                    hostResumeMap.put(domain, true);
+                }
             }
         }
         ai.setMultiHostSupport(this, supportedHosts);
