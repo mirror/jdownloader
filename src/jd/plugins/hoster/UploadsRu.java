@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.Property;
+import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -29,31 +31,30 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kinopoisk.ru" }, urls = { "http://(www\\.)?kinopoisk\\.ru/film/\\d+/video/" }, flags = { 0 })
-public class KinopoiskRu extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploads.ru" }, urls = { "http://(www\\.)?uploads\\.ru/(?:\\?v=)?[A-Za-z0-9]+\\.[a-z]{3,4}" }, flags = { 0 })
+public class UploadsRu extends PluginForHost {
 
-    public KinopoiskRu(PluginWrapper wrapper) {
+    public UploadsRu(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
-    // Porn_get_file_/videos/_basic Version 0.2
     // Tags:
     // protocol: no https
     // other:
 
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
+    private static final String  default_Extension = ".jpg";
     /* Connection stuff */
     private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
+    private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
 
     private String               DLLINK            = null;
 
     @Override
     public String getAGBLink() {
-        return "http://www.kinopoisk.ru/docs/usage/";
+        return "";
     }
 
     @SuppressWarnings("deprecation")
@@ -63,49 +64,43 @@ public class KinopoiskRu extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (!br.containsHTML("id=\"viewing\"") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("\"name\"[\t\n\r ]*?:[\t\n\r ]*?\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>Видео:([^<>\"]*?)</title>").getMatch(0);
-        }
-        DLLINK = br.getRegex("\"trailerFile\"[\t\n\r ]*?:[\t\n\r ]*?\"(\\d+/[^<>\"]*?)\"").getMatch(0);
+        DLLINK = br.getRegex("id=\"viewing\">Просмотр <a href=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (DLLINK == null) {
-            DLLINK = br.getRegex("\\'trailerFile\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(\\d+/[^<>\"\\']*?)\\'").getMatch(0);
+            DLLINK = br.getRegex("\"(http://(www\\.)?uploads\\.ru/i/[^<>\"]*?)\"").getMatch(0);
         }
-        if (filename == null || DLLINK == null) {
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\"(http://s\\d+\\.uploads\\.ru/[^<>\"]*?)\"").getMatch(0);
+        }
+        if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        /* Other way: http://www.kinopoisk.ru/gettrailer.php?trid=76182&film=724758&from_src=vk&tid=blablabla.mp4 */
-        DLLINK = "http://kp.cdn.yandex.net/" + Encoding.htmlDecode(DLLINK);
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
+        DLLINK = Encoding.htmlDecode(DLLINK);
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
             ext = default_Extension;
         }
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
-        downloadLink.setFinalFileName(filename);
+        final Browser br2 = br.cloneBrowser();
+        // In case the link redirects to the finallink
+        br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             try {
-                this.br.getHeaders().put("Referer", "http://yandex.st/swf/kinoplayer/13_101/v-13.101-176/kinoplayer.swf");
                 if (isJDStable()) {
                     /* @since JD2 */
-                    con = this.br.openHeadConnection(DLLINK);
+                    con = br.openHeadConnection(DLLINK);
                 } else {
                     /* Not supported in old 0.9.581 Stable */
-                    con = this.br.openGetConnection(DLLINK);
+                    con = br.openGetConnection(DLLINK);
                 }
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (!con.getContentType().contains("html")) {
+                downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -136,33 +131,33 @@ public class KinopoiskRu extends PluginForHost {
         dl.startDownload();
     }
 
-    // private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-    // String dllink = downloadLink.getStringProperty(property);
-    // if (dllink != null) {
-    // URLConnectionAdapter con = null;
-    // try {
-    // final Browser br2 = br.cloneBrowser();
-    // if (isJDStable()) {
-    // con = br2.openGetConnection(dllink);
-    // } else {
-    // con = br2.openHeadConnection(dllink);
-    // }
-    // if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-    // downloadLink.setProperty(property, Property.NULL);
-    // dllink = null;
-    // }
-    // } catch (final Exception e) {
-    // downloadLink.setProperty(property, Property.NULL);
-    // dllink = null;
-    // } finally {
-    // try {
-    // con.disconnect();
-    // } catch (final Throwable e) {
-    // }
-    // }
-    // }
-    // return dllink;
-    // }
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                if (isJDStable()) {
+                    con = br2.openGetConnection(dllink);
+                } else {
+                    con = br2.openHeadConnection(dllink);
+                }
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+            } catch (final Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
+        return dllink;
+    }
 
     /* Avoid chars which are not allowed in filenames under certain OS' */
     private static String encodeUnicode(final String input) {

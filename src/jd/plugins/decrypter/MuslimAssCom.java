@@ -78,6 +78,11 @@ public class MuslimAssCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://www.hardsextube.com/video/" + externID + "/"));
             return decryptedLinks;
         }
+        externID = br.getRegex("\"(http://embed\\.videarn\\.com/embed\\.php\\?id=\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
         // For direct hosterlinks - make sure only to grab the links of the related post
         final String pagePiece = br.getRegex("<div class=\"entry\">(.*?)>Share:\\&nbsp;</strong>").getMatch(0);
         if (pagePiece != null) {

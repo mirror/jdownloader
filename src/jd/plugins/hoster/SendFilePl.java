@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +28,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendfile.pl" }, urls = { "http://(www\\.)?sendfile\\.pl/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendfile.pl" }, urls = { "http://(www\\.)?sendfile\\.pl/\\d+/" }, flags = { 0 })
 public class SendFilePl extends PluginForHost {
 
     public SendFilePl(PluginWrapper wrapper) {
@@ -47,9 +46,13 @@ public class SendFilePl extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://sendfile.pl/download.php?id=" + new Regex(downloadLink.getDownloadURL(), "sendfile\\.pl/(\\d+)").getMatch(0), false, 1);
+        final String finallink = br.getRegex("\"(http://(www\\.)?sendfile\\.pl/pobierz/[^<>\"]*?\\.html)\"").getMatch(0);
+        if (finallink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -69,6 +72,9 @@ public class SendFilePl extends PluginForHost {
         String filename = br.getRegex("\">Nazwa pliku:</div>[\t\n\r ]+<div class=\"right\">(.*?)<font").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?) pobierz za darmo - Hosting plików</title>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         }
         String filesize = br.getRegex("\">Rozmiar pliku:</div>[\t\n\r ]+<div class=\"right\">(.*?)</div>").getMatch(0);
         if (filename == null || filesize == null) {

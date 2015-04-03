@@ -35,7 +35,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.info" }, urls = { "http://(www\\.)?libgen\\.(info|net)/view\\.php\\?id=\\d+|http://libgen\\.in/get\\.php\\?md5=[a-z0-9]{32}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.info" }, urls = { "http://(www\\.)?libgen\\.(info|net)/view\\.php\\?id=\\d+|http://libgen\\.in/get\\.php\\?md5=[a-z0-9]{32}|https?://libgen\\.(?:in|info|net)/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png)" }, flags = { 0 })
 public class LibGenInfo extends PluginForHost {
 
     public LibGenInfo(PluginWrapper wrapper) {
@@ -52,6 +52,9 @@ public class LibGenInfo extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("libgen\\.(net|info)/", "libgen.in/"));
     }
+
+    private static final String  type_picture      = "https?://libgen\\.(?:in|info|net)/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png)";
+    public static final String   type_libgen_in    = "http://libgen\\.in/get\\.php\\?md5=[a-z0-9]{32}";
 
     private static final boolean FREE_RESUME       = false;
     private static final int     FREE_MAXCHUNKS    = 1;
@@ -76,7 +79,10 @@ public class LibGenInfo extends PluginForHost {
             if (!con.getContentType().contains("html")) {
                 dllink = link.getDownloadURL();
                 link.setDownloadSize(con.getLongContentLength());
-                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                /* Final filename is sometimes set in decrypter */
+                if (link.getFinalFileName() == null) {
+                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                }
                 return AvailableStatus.TRUE;
             } else {
                 br.followConnection();

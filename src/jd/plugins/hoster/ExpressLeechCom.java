@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -38,15 +39,16 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.utils.recaptcha.api2.Recaptcha2Helper;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4upld.com", "expressleech.com" }, urls = { "https?://(www\\.)?4upld\\.com/[A-Za-z0-9]+", "fh453g94enwhgdbfrbJD1_remove_me_ghtnrtzjrj" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4upld.com" }, urls = { "https?://(www\\.)?4upld\\.com/[A-Za-z0-9]+" }, flags = { 2 })
 public class ExpressLeechCom extends PluginForHost {
 
     public ExpressLeechCom(PluginWrapper wrapper) {
@@ -55,11 +57,11 @@ public class ExpressLeechCom extends PluginForHost {
     }
 
     // For sites which use this script: http://www.yetishare.com/
-    // YetiShareBasic Version 2.0-ajax 0.0.4-psp
-    // mods: requestFileInformation[Set final filename], heavily modified, do NOT upgrade!
+    // YetiShareBasic Version 0.5.3-psp
+    // mods: heavily modified, do NOT upgrade!
     // limit-info:
     // protocol: no https
-    // captchatype: null
+    // captchatype: recaptcha
     // other:
 
     @Override
@@ -83,18 +85,17 @@ public class ExpressLeechCom extends PluginForHost {
     private final String         type                                         = "html";
     private static final int     wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
     private static final int     additional_WAIT_SECONDS                      = 3;
+    private static final int     directlinkfound_WAIT_SECONDS                 = 10;
     private static final boolean supportshttps                                = false;
     private static final boolean supportshttps_FORCED                         = false;
-    /* Prefer info page as it's more reliable in general. */
+    /* In case there is no information when accessing the main link */
     private static final boolean available_CHECK_OVER_INFO_PAGE               = true;
+    private static final boolean useOldLoginMethod                            = false;
     /* Known errors */
     private static final String  url_ERROR_SIMULTANDLSLIMIT                   = "e=You+have+reached+the+maximum+concurrent+downloads";
     private static final String  url_ERROR_SERVER                             = "e=Error%3A+Could+not+open+file+for+reading.";
     private static final String  url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT       = "e=You+must+wait+";
     private static final String  url_ERROR_PREMIUMONLY                        = "e=You+must+register+for+a+premium+account+to+download+files+of+this+size";
-
-    private static final String  captcha_RECAPTCHA                            = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
-    private static final String  captcha_SOLVEMEDIA                           = "api\\.solvemedia\\.com/papi/";
     /* Texts for the known errors */
     private static final String  errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT = "You must wait between downloads!";
     private static final String  errortext_ERROR_SERVER                       = "Server error";
@@ -114,6 +115,7 @@ public class ExpressLeechCom extends PluginForHost {
 
     private static AtomicInteger MAXPREM                                      = new AtomicInteger(1);
 
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         /* link cleanup, but respect users protocol choosing or forced protocol */
@@ -124,29 +126,28 @@ public class ExpressLeechCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        /* Old links == offline */
-        if (link.getDownloadURL().matches("https?://(www\\.)?expressleech\\.com/((vid)?embed-)?[a-z0-9]{12}")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String filename;
         String filesize;
         if (available_CHECK_OVER_INFO_PAGE) {
             br.getPage(link.getDownloadURL() + "~i");
-            if (!br.getURL().contains("~i")) {
+            if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = br.getRegex("(Filename|File Name):([\t\n\r ]+)?</td>[\t\n\r ]+<td([^<>]+)?>([^<>\"]*?)<").getMatch(3);
+            filename = br.getRegex("Filename:[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
             if (filename == null || inValidate(Encoding.htmlDecode(filename).trim()) || Encoding.htmlDecode(filename).trim().equals("  ")) {
                 /* Filename might not be available here either */
                 filename = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
             }
-            filesize = br.getRegex("(Filesize|File Size):([\t\n\r ]+)?</td>[\t\n\r ]+<td([^<>]+)?>([^<>\"]*?)<").getMatch(3);
+            filesize = br.getRegex("Filesize:[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex(">Filesize:</td>[\t\n\r ]*?<td>([^<>\"]*?)</td>").getMatch(0);
+            }
         } else {
             br.getPage(link.getDownloadURL());
-            handleErrors();
             if (br.getURL().contains(url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT)) {
                 link.setName(getFID(link));
                 link.getLinkStatus().setStatusText(errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT);
@@ -159,33 +160,21 @@ public class ExpressLeechCom extends PluginForHost {
                 link.getLinkStatus().setStatusText(errortext_ERROR_PREMIUMONLY);
                 return AvailableStatus.TRUE;
             }
-            if (br.getURL().contains("/error." + type) || br.getURL().contains("/index." + type) || (!br.containsHTML("class=\"downloadPageTable(V2)?\"") && !br.containsHTML("class=\"download\\-timer\""))) {
+            handleErrors();
+            if (br.getURL().contains("/error." + type) || br.getURL().contains("/index." + type) || (!br.containsHTML("class=\"downloadPageTable(V2)?\"") && !br.containsHTML("class=\"download\\-timer\"")) || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(,\\d+)?(\\.\\d+)? (KB|MB|GB))\\)<");
+            final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(?:,\\d+)?(?:\\.\\d+)? (?:KB|MB|GB))\\)<");
             filename = fInfo.getMatch(0);
             filesize = fInfo.getMatch(1);
-            if (filename == null || filesize == null) {
-                /* Get piece of the page which usually contains filename- and size */
-                final String page_piece = br.getRegex("(<div class=\"contentPageWrapper\">.*?class=\"link btn\\-free\")").getMatch(0);
-                if (page_piece != null) {
-                    final String endings = jd.plugins.hoster.DirectHTTP.ENDINGS;
-                    if (filename == null) {
-                        filename = new Regex(page_piece, "([^<>/\r\n\t:\\?\"]+" + endings + "[^<>/\r\n\t:\\?\"]*)").getMatch(0);
-                    }
-                    if (filesize == null) {
-                        filesize = new Regex(page_piece, "(\\d+(,\\d+)?(\\.\\d+)? (KB|MB|GB))").getMatch(0);
-                    }
-                }
+            if (filesize == null) {
+                filesize = br.getRegex("(\\d+(?:,\\d+)?(\\.\\d+)? (?:KB|MB|GB))").getMatch(0);
             }
         }
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        filename = filename.replace("&nbsp;", "");
-        filename = Encoding.htmlDecode(filename).trim();
-        /* Server sometimes returns bad filenames. */
-        link.setFinalFileName(Encoding.htmlDecode(filename).trim());
+        link.setName(Encoding.htmlDecode(filename).trim());
         link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace(",", "")).trim()));
         return AvailableStatus.TRUE;
     }
@@ -196,142 +185,150 @@ public class ExpressLeechCom extends PluginForHost {
         doFree(downloadLink, free_RESUME, free_MAXCHUNKS, "free_directlink");
     }
 
+    @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink downloadLink, final boolean resume, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        String continue_link = null;
         boolean captcha = false;
-        String continue_link = checkDirectLink(downloadLink, directlinkproperty);
-        if (continue_link != null) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, resume, maxchunks);
-        } else {
-            if (available_CHECK_OVER_INFO_PAGE) {
-                br.getPage(downloadLink.getDownloadURL());
-            }
-            if (br.getURL().contains(url_ERROR_SIMULTANDLSLIMIT)) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errortext_ERROR_SIMULTANDLSLIMIT, 1 * 60 * 1000l);
-            } else if (br.getURL().contains(url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT)) {
-                final String wait_minutes = new Regex(br.getURL(), "wait\\+(\\d+)\\+minutes?").getMatch(0);
-                if (wait_minutes != null) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT, Integer.parseInt(wait_minutes) * 60 * 1001l);
-                }
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT, wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT * 60 * 1001l);
-            } else if (br.getURL().contains(url_ERROR_SERVER)) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errortext_ERROR_SERVER, 5 * 60 * 1000l);
-            } else if (br.getURL().contains(url_ERROR_PREMIUMONLY)) {
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) {
-                        throw (PluginException) e;
-                    }
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, errortext_ERROR_PREMIUMONLY);
-            }
-
-            /* Handle up to 3 pre-download pages before the (eventually existing) captcha */
-            for (int i = 1; i <= 3; i++) {
-                logger.info("Handling pre-download page #" + i);
-                continue_link = br.getRegex("\\$\\(\\'\\.download\\-timer\\'\\)\\.html\\(\"<a class=\\'btn[a-z0-9\\-_]+\\' href=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
-                if (continue_link == null) {
-                    continue_link = getDllink();
-                }
-                if (continue_link == null) {
-                    logger.info("No continue_link available, stepping out of pre-download loop");
-                    break;
-                } else {
-                    logger.info("Found continue_link, continuing...");
-                }
-                final String waittime = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
-                if (waittime != null) {
-                    logger.info("Found waittime, waiting (seconds): " + waittime + " + " + additional_WAIT_SECONDS + " additional seconds");
-                    sleep((Integer.parseInt(waittime) + additional_WAIT_SECONDS) * 1001l, downloadLink);
-                } else {
-                    logger.info("Current pre-download page has no waittime");
+        boolean success = false;
+        final long timeBeforeDirectlinkCheck = System.currentTimeMillis();
+        try {
+            continue_link = checkDirectLink(downloadLink, directlinkproperty);
+            if (continue_link != null) {
+                /*
+                 * Let the server 'calm down' (if it was slow before) otherwise it will thing that we tried to open two connections as we
+                 * checked the directlink before and return an error.
+                 */
+                if ((System.currentTimeMillis() - timeBeforeDirectlinkCheck) > 1500) {
+                    sleep(directlinkfound_WAIT_SECONDS * 1000l, downloadLink);
                 }
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, resume, maxchunks);
-                if (dl.getConnection().isContentDisposition()) {
-                    break;
+            } else {
+                if (available_CHECK_OVER_INFO_PAGE) {
+                    br.getPage(downloadLink.getDownloadURL());
                 }
-                br.followConnection();
-                if (br.getURL().contains(url_ERROR_SERVER)) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errortext_ERROR_SERVER, 5 * 60 * 1000l);
-                }
-            }
-        }
-        if (!dl.getConnection().isContentDisposition()) {
-            /* Do not follow connection, already done above */
-            handleErrors();
-            for (int i = 1; i <= 5; i++) {
-                String postData = "submit=Submit&submitted=1&d=1";
-                final String captchaAction = br.getRegex("method=\"POST\" action=\"(https?://[^<>\"]*?)\"").getMatch(0);
-                if (captchaAction == null) {
-                    logger.warning("Failed to find captcha action");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                if (br.containsHTML(captcha_RECAPTCHA)) {
-                    logger.info("Detected captcha method \"Re Captcha\" for this host");
-                    captcha = true;
+                handleErrors();
+                /* Passwords are usually before waittime. */
+                handlePassword(downloadLink);
+                /* Handle up to 3 pre-download pages before the (eventually existing) captcha */;
+                for (int i = 1; i <= 5; i++) {
+                    logger.info("Handling pre-download page #" + i);
+                    continue_link = getContinueLink();
+                    if (continue_link == null) {
+                        logger.info("No continue_link available, stepping out of pre-download loop");
+                        break;
+                    } else {
+                        logger.info("Found continue_link, continuing...");
+                    }
+                    final String waittime = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
+                    if (waittime != null) {
+                        logger.info("Found waittime, waiting (seconds): " + waittime + " + " + additional_WAIT_SECONDS + " additional seconds");
+                        sleep((Integer.parseInt(waittime) + additional_WAIT_SECONDS) * 1001l, downloadLink);
+                    } else {
+                        logger.info("Current pre-download page has no waittime");
+                    }
                     final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
-                    if (rcID == null) {
-                        logger.warning("Failed to find reCaptchaID");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                    rc.setId(rcID);
-                    rc.load();
-                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                    postData += "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c);
-                } else if (br.containsHTML(captcha_SOLVEMEDIA)) {
-                    logger.info("Detected captcha method \"solvemedia\" for this host");
-                    captcha = true;
-                    final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                    final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
-                    File cf = null;
-                    try {
-                        cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                    } catch (final Exception e) {
-                        if (jd.plugins.decrypter.LnkCrptWs.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
-                            throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                    if (br.containsHTML("data\\-sitekey=")) {
+                        captcha = true;
+                        success = false;
+                        Recaptcha2Helper rchelp = new Recaptcha2Helper();
+                        rchelp.init(this.br);
+                        final File outputFile = rchelp.loadImageFile();
+                        final String code = getCaptchaCode("recaptcha", outputFile, downloadLink);
+                        success = rchelp.sendResponse(code);
+                        if (!success) {
+                            logger.info("reCaptcha V2: Wrong user-input!");
+                            continue;
                         }
-                        throw e;
-                    }
-                    final String code = getCaptchaCode(cf, downloadLink);
-                    final String chid = sm.getChallenge(code);
-                    postData += "&adcopy_challenge=" + chid + "&adcopy_response=" + Encoding.urlEncode(code);
-                } else {
-                    /* No captcha there --> Unknown situation */
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaAction, postData, resume, maxchunks);
-                if (!dl.getConnection().isContentDisposition() && dl.getConnection().getContentType().contains("html")) {
-                    br.followConnection();
-                    handleErrors();
-                    continue_link = getDllink();
-                    if (continue_link != null) {
+                        final String responseToken = rchelp.getResponseToken();
+                        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, "submit=Submit&submitted=1&d=1&capcode=false&g-recaptcha-response=" + responseToken, resume, maxchunks);
+                    } else if (rcID != null) {
+                        captcha = true;
+                        success = false;
+                        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        rc.setId(rcID);
+                        rc.load();
+                        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        String c = getCaptchaCode(cf, downloadLink);
+                        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
+                    } else {
+                        success = true;
                         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, resume, maxchunks);
+                    }
+                    if (dl.getConnection().isContentDisposition() || !dl.getConnection().getContentType().contains("html")) {
+                        success = true;
                         break;
                     }
-                    continue;
+                    br.followConnection();
+                    handleErrors();
+                    if (captcha && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                        logger.info("Wrong captcha");
+                        continue;
+                    }
                 }
-                break;
             }
-        }
-        final String final_downloadlink = dl.getConnection().getURL().toString();
-        logger.info("Final downloadlink: " + final_downloadlink);
-        if (!dl.getConnection().isContentDisposition() && dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (captcha && (br.containsHTML(captcha_RECAPTCHA) || br.containsHTML(captcha_SOLVEMEDIA))) {
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (!dl.getConnection().isContentDisposition() && dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                if (captcha && !success) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                handleErrors();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            handleErrors();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } catch (final BrowserException e) {
+            downloadLink.setProperty(directlinkproperty, Property.NULL);
+            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 429) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 'Too many requests'", 2 * 60 * 1000l);
+            }
+            throw e;
         }
-        downloadLink.setProperty(directlinkproperty, final_downloadlink);
+        continue_link = dl.getConnection().getURL().toString();
+        downloadLink.setProperty(directlinkproperty, continue_link);
         dl.startDownload();
     }
 
+    private String getContinueLink() {
+        String continue_link = br.getRegex("\\$\\(\\'\\.download\\-timer\\'\\)\\.html\\(\"<a href=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
+        if (continue_link == null) {
+            continue_link = br.getRegex("class=\\'btn btn\\-free\\' href=\\'(https?://[^<>\"]*?)\\'>").getMatch(0);
+        }
+        if (continue_link == null) {
+            continue_link = br.getRegex("<div class=\"captchaPageTable\">[\t\n\r ]+<form method=\"POST\" action=\"(https?://[^<>\"]*?)\"").getMatch(0);
+        }
+        if (continue_link == null) {
+            continue_link = br.getRegex("(?:\"|\\')(https?://(www\\.)?" + domains + "/[^<>\"]*?pt=[^<>\"]*?)(?:\"|\\')").getMatch(0);
+        }
+        if (continue_link == null) {
+            continue_link = getDllink();
+        }
+        return continue_link;
+    }
+
     private String getDllink() {
-        return br.getRegex("\"(https?://([A-Za-z0-9\\-\\.]+)?" + domains + "/[^<>\"\\?]*?\\?download_token=[A-Za-z0-9]+)\"").getMatch(0);
+        return br.getRegex("\"(https?://(www\\.)?(?:[A-Za-z0-9\\.]+\\.)?" + domains + "/[^<>\"\\?]*?\\?download_token=[A-Za-z0-9]+)\"").getMatch(0);
+    }
+
+    private void handlePassword(final DownloadLink dl) throws PluginException, IOException {
+        if (br.getURL().contains("/file_password.html")) {
+            logger.info("Current link is password protected");
+            String passCode = dl.getStringProperty("pass", null);
+            if (passCode == null) {
+                passCode = Plugin.getUserInput("Password?", dl);
+                if (passCode == null || passCode.equals("")) {
+                    logger.info("User has entered blank password, exiting handlePassword");
+                    dl.setProperty("pass", Property.NULL);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                }
+                dl.setProperty("pass", passCode);
+            }
+            br.postPage(br.getURL(), "submit=access+file&submitme=1&file=" + this.getFID(dl) + "&filePassword=" + Encoding.urlEncode(passCode));
+            if (br.getURL().contains("/file_password.html")) {
+                logger.info("User entered incorrect password --> Retrying");
+                dl.setProperty("pass", Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+            }
+            logger.info("User entered correct password --> Continuing");
+        }
     }
 
     private void handleErrors() throws PluginException {
@@ -341,29 +338,53 @@ public class ExpressLeechCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errortext_ERROR_SIMULTANDLSLIMIT, 1 * 60 * 1000l);
         } else if (br.getURL().contains("error.php?e=Error%3A+Could+not+open+file+for+reading")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+        } else if (br.getURL().contains(url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT)) {
+            final String wait_minutes = new Regex(br.getURL(), "wait\\+(\\d+)\\+minutes?").getMatch(0);
+            if (wait_minutes != null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT, Integer.parseInt(wait_minutes) * 60 * 1001l);
+            }
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT, wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT * 60 * 1001l);
+        } else if (br.getURL().contains(url_ERROR_PREMIUMONLY)) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, errortext_ERROR_PREMIUMONLY);
         }
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                if (isJDStable()) {
+                    con = br2.openGetConnection(dllink);
+                } else {
+                    con = br2.openHeadConnection(dllink);
+                }
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
-                con.disconnect();
             } catch (final Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
         return dllink;
     }
 
+    @SuppressWarnings("deprecation")
     private String getFID(final DownloadLink dl) {
         return new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
     }
@@ -382,6 +403,18 @@ public class ExpressLeechCom extends PluginForHost {
         } else {
             return false;
         }
+    }
+
+    private String getProtocol() {
+        if ((this.br.getURL() != null && this.br.getURL().contains("https://")) || supportshttps_FORCED) {
+            return "https://";
+        } else {
+            return "http://";
+        }
+    }
+
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override
@@ -414,18 +447,33 @@ public class ExpressLeechCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                br.postPage("http://" + this.getHost() + "/ajax/_account_login.ajax.php", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.getPage(this.getProtocol() + this.getHost() + "/");
                 final String lang = System.getProperty("user.language");
-                if (!br.containsHTML("\"login_status\":\"success\"")) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
+                if (useOldLoginMethod) {
+                    br.postPage(this.getProtocol() + this.getHost() + "/login." + type, "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
+                    if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout\\.html\">logout \\(")) {
+                        if ("de".equalsIgnoreCase(lang)) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                    }
+                } else {
+                    br.getPage(this.getProtocol() + this.getHost() + "/login." + type);
+                    final String loginpostpage = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                    br.postPage(loginpostpage, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    if (!br.containsHTML("\"login_status\":\"success\"")) {
+                        if ("de".equalsIgnoreCase(lang)) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
                 }
-                br.getPage("http://www." + this.getHost() + "/account_home." + type);
+                br.getPage(loginstart + this.getHost() + "/account_home." + type);
                 if (!br.containsHTML("class=\"badge badge\\-success\">PAID USER</span>")) {
                     account.setProperty("free", true);
                 } else {
@@ -447,6 +495,7 @@ public class ExpressLeechCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -466,9 +515,9 @@ public class ExpressLeechCom extends PluginForHost {
                 /* Not available in old 0.9.581 Stable */
             }
             MAXPREM.set(account_FREE_MAXDOWNLOADS);
-            ai.setStatus("Registered (free) user");
+            ai.setStatus("Registered (free) account");
         } else {
-            br.getPage("http://www." + this.getHost() + "/upgrade." + type);
+            br.getPage("http://" + this.getHost() + "/upgrade." + type);
             /* If the premium account is expired we'll simply accept it as a free account. */
             final String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
             if (expire == null) {
@@ -496,7 +545,7 @@ public class ExpressLeechCom extends PluginForHost {
                     /* Not available in old 0.9.581 Stable */
                 }
                 MAXPREM.set(account_PREMIUM_MAXDOWNLOADS);
-                ai.setStatus("Premium User");
+                ai.setStatus("Premium account");
             }
         }
         account.setValid(true);
@@ -504,6 +553,7 @@ public class ExpressLeechCom extends PluginForHost {
         return ai;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
@@ -521,6 +571,7 @@ public class ExpressLeechCom extends PluginForHost {
                 br.followConnection();
                 handleErrors();
                 logger.info("Found no errors, let's see if we can find the dllink now...");
+                handlePassword(link);
                 dllink = this.getDllink();
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
