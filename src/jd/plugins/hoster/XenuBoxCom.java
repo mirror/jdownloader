@@ -142,7 +142,7 @@ public class XenuBoxCom extends PluginForHost {
         br.setFollowRedirects(false);
         prepBrowser();
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) {
+        if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n|The file you were)", Pattern.CASE_INSENSITIVE)).matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (correctedBR.contains(MAINTENANCE)) {
