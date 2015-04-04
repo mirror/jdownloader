@@ -250,6 +250,10 @@ public class SrBoxCom extends PluginForDecrypt {
             return null;
         }
 
+        if (link.toLowerCase().contains("discogs") || link.toLowerCase().contains("tracklist") || link.toLowerCase().contains("all-music")) {
+            return null;
+        }
+
         if (link.contains("signup?")) {
             return null;
         }
