@@ -53,8 +53,9 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.utils.recaptcha.api2.Recaptcha2Helper;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "https?://(www\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/).*?(?=http:|$|\r|\n))" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "https?://(www\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/).*?(?=http:|$|\r|\n))" }, flags = { 32 })
 public class MediafireCom extends PluginForHost {
 
     private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
@@ -82,7 +83,8 @@ public class MediafireCom extends PluginForHost {
                 // release:
                 // ie9: "Stable release     9.0.26 (April 8, 2014;" http://en.wikipedia.org/wiki/Internet_Explorer_9
                 // ie10: "Stable release    10.0.11 (12 November 2013;" http://en.wikipedia.org/wiki/Internet_Explorer_10
-                // ie11: "Stable release 11.0.13 (v11.0.9600.17358) / 14 October 2014; 24 days ago" http://en.wikipedia.org/wiki/Internet_Explorer_11
+                // ie11: "Stable release 11.0.13 (v11.0.9600.17358) / 14 October 2014; 24 days ago"
+                // http://en.wikipedia.org/wiki/Internet_Explorer_11
                 // notes: only version 9 and 10
                 stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.0; Trident/5.0)");
                 stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; MATP; MATP)");
@@ -150,7 +152,7 @@ public class MediafireCom extends PluginForHost {
                 stringAgent.add("Mozilla/5.0 (X11; Linux x86_64; rv:35.0) Gecko/20100101 Firefox/35.0");
                 stringAgent.add("Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:35.0) Gecko/20100101 Firefox/35.0");
                 stringAgent.add("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:35.0) Gecko/20100101 Firefox/35.0");
-                
+
                 stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64; rv:36.0) Gecko/20100101 Firefox/36.0");// 18
 
                 // safari
@@ -160,7 +162,7 @@ public class MediafireCom extends PluginForHost {
                 stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_4) AppleWebKit/537.78.2 (KHTML, like Gecko) Version/7.0.6 Safari/537.78.2");
                 stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_5) AppleWebKit/537.78.2 (KHTML, like Gecko) Version/7.0.6 Safari/537.78.2");
 
-                stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/600.2.5 (KHTML, like Gecko) Version/8.0.2 Safari/600.2.5"); 
+                stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/600.2.5 (KHTML, like Gecko) Version/8.0.2 Safari/600.2.5");
                 stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/600.3.18 (KHTML, like Gecko) Version/8.0.3 Safari/600.3.18");// 4
 
                 // opera
@@ -201,10 +203,10 @@ public class MediafireCom extends PluginForHost {
         synchronized (portableAgent) {
             if (portableAgent.size() == 0) {
                 // firefox 28+
-                portableAgent.add("Mozilla/5.0 (Android; Tablet; rv:30.0) Gecko/30.0 Firefox/30.0"); 
-                portableAgent.add("Mozilla/5.0 (Android; Tablet; rv:33.0) Gecko/33.0 Firefox/33.0"); 
-                portableAgent.add("Mozilla/5.0 (Android; Tablet; rv:34.0) Gecko/34.0 Firefox/34.0"); 
-                portableAgent.add("Mozilla/5.0 (Android; Tablet; rv:35.0) Gecko/35.0 Firefox/35.0");//4 
+                portableAgent.add("Mozilla/5.0 (Android; Tablet; rv:30.0) Gecko/30.0 Firefox/30.0");
+                portableAgent.add("Mozilla/5.0 (Android; Tablet; rv:33.0) Gecko/33.0 Firefox/33.0");
+                portableAgent.add("Mozilla/5.0 (Android; Tablet; rv:34.0) Gecko/34.0 Firefox/34.0");
+                portableAgent.add("Mozilla/5.0 (Android; Tablet; rv:35.0) Gecko/35.0 Firefox/35.0");// 4
 
                 // chrome 34(andriod) 33(ios)
 
@@ -221,9 +223,9 @@ public class MediafireCom extends PluginForHost {
                 portableAgent.add("Mozilla/5.0 (Linux; Android 5.0; Nexus 7 Build/LRX21P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.93 Safari/537.36");
                 portableAgent.add("Mozilla/5.0 (iPad; CPU OS 8_1_2 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) CriOS/39.0.2171.50 Mobile/12B440 Safari/600.1.4");
                 portableAgent.add("Mozilla/5.0 (iPhone; CPU iPhone OS 7_1_2 like Mac OS X) AppleWebKit/537.51.2 (KHTML, like Gecko) CriOS/39.0.2171.50 Mobile/11D257 Safari/9537.53");
-       
+
                 portableAgent.add("Mozilla/5.0 (Linux; Android 5.0.2; Nexus 10 Build/LRX22G) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.109 Safari/537.36");
-                portableAgent.add("Mozilla/5.0 (Linux; Android 5.0.2; Nexus 10 Build/LRX22G) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.89 Safari/537.36"); //15
+                portableAgent.add("Mozilla/5.0 (Linux; Android 5.0.2; Nexus 10 Build/LRX22G) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.89 Safari/537.36"); // 15
 
                 // safari
                 portableAgent.add("Mozilla/5.0 (iPad; CPU OS 8_0_2 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Version/8.0 Mobile/12A405 Safari/600.1.4");
@@ -235,8 +237,8 @@ public class MediafireCom extends PluginForHost {
                 portableAgent.add("Mozilla/5.0 (iPhone; CPU iPhone OS 8_1_1 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Version/8.0 Mobile/12B435 Safari/600.1.4");
                 portableAgent.add("Mozilla/5.0 (iPhone; CPU iPhone OS 8_1_1 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Version/8.0 Mobile/12B436 Safari/600.1.4");
                 portableAgent.add("Mozilla/5.0 (iPhone; CPU iPhone OS 8_1 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Version/8.0 Mobile/12B410 Safari/600.1.4");
-                portableAgent.add("Mozilla/5.0 (iPhone; CPU iPhone OS 8_1 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Version/8.0 Mobile/12B411 Safari/600.1.4"); //10
-                                
+                portableAgent.add("Mozilla/5.0 (iPhone; CPU iPhone OS 8_1 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Version/8.0 Mobile/12B411 Safari/600.1.4"); // 10
+
                 // opera
                 portableAgent.add("Opera/9.80 (Android 2.3.3; Linux; Opera Mobi/ADR-1212030829) Presto/2.11.355 Version/12.10");
                 portableAgent.add("Opera/9.80 (Android 2.3.3; Linux; Opera Mobi/ADR-1301080958) Presto/2.11.355 Version/12.10"); // 2
@@ -493,6 +495,7 @@ public class MediafireCom extends PluginForHost {
         doFree(downloadLink, null);
     }
 
+    @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
         String url = null;
         int trycounter = 0;
@@ -530,7 +533,7 @@ public class MediafireCom extends PluginForHost {
                     // TODO: This errorhandling is missing for premium users!
                     captchaCorrect = false;
                     Form form = br.getFormbyProperty("name", "form_captcha");
-                    final String freeArea = br.getRegex("class=\"nonOwner nonpro_adslayout dl\\-page dlCaptchaActive\"(.*?)class=\"captiaLink\"").getMatch(0);
+                    final String freeArea = br.getRegex("class=\"nonOwner nonpro_adslayout dl\\-page dlCaptchaActive\"(.*?)class=\"captchaPromo\"").getMatch(0);
                     if (freeArea != null && freeArea.contains("solvemedia.com/papi/")) {
                         logger.info("Detected captcha method \"solvemedia\" for this host");
                         final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
@@ -587,6 +590,19 @@ public class MediafireCom extends PluginForHost {
                                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Try reconnect to avoid more captchas", 5 * 60 * 1000l);
                             }
                         }
+                    } else if (freeArea != null && freeArea.contains("g-recaptcha-response")) {
+                        Recaptcha2Helper rchelp = new Recaptcha2Helper();
+                        rchelp.init(this.br);
+                        final File outputFile = rchelp.loadImageFile();
+                        final String code = getCaptchaCode("recaptcha", outputFile, downloadLink);
+                        final boolean success = rchelp.sendResponse(code);
+                        if (!success) {
+                            logger.info("reCaptcha V2: Wrong user-input!");
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
+                        final String responseToken = rchelp.getResponseToken();
+                        form.put("g-recaptcha-response", responseToken);
+                        br.submitForm(form);
                     }
                 }
             } catch (final Exception e) {
