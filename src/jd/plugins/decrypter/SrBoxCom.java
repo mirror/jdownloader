@@ -370,7 +370,7 @@ public class SrBoxCom extends PluginForDecrypt {
         strName = strName.replaceFirst(",$", "");
 
         strName = strName.trim();
-        if (strName.endsWith("&")) {
+        if (strName.endsWith("&") || strName.endsWith("+")) {
             strName = strName.substring(0, strName.length() - 1);
         }
         if (strName.endsWith("(&)")) {
