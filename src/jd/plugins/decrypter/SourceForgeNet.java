@@ -35,8 +35,6 @@ public class SourceForgeNet extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String type_project = "https?://(www\\.)?sourceforge\\.net/projects/.+";
-
     @SuppressWarnings({ "unchecked", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
