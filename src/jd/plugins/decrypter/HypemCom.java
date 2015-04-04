@@ -27,17 +27,20 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hypem.com" }, urls = { "http://(www\\.)?hypem\\.com/(track|item)/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hypem.com" }, urls = { "http://(www\\.)?hypem\\.com/((track|item)/[a-z0-9]+|go/[a-z0-9]+/[A-Za-z0-9]+)" }, flags = { 0 })
 public class HypemCom extends PluginForDecrypt {
 
     public HypemCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    @SuppressWarnings({ "unused", "unchecked", "rawtypes" })
+    private static final String type_redirect = "http://(www\\.)?hypem\\.com/go/[a-z0-9]+/[A-Za-z0-9]+";
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             try {
@@ -47,28 +50,40 @@ public class HypemCom extends PluginForDecrypt {
             }
             return decryptedLinks;
         }
-        String js = br.getRegex("id=\"displayList\\-data\">(.*?)<script").getMatch(0);
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(js);
-        final ArrayList<Object> ressourcelist = (ArrayList) entries.get("tracks");
-        entries = (LinkedHashMap<String, Object>) ressourcelist.get(0);
-        final String fid = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
-        final String title = (String) entries.get("song");
-        final String artist = (String) entries.get("artist");
-        final String key = (String) entries.get("key");
-        if (title == null || artist == null || key == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        if (parameter.matches(type_redirect)) {
+            final String finallink = br.getRedirectLocation();
+            if (finallink == null || finallink.contains("hypem.com/")) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(finallink));
+        } else {
+            String js = br.getRegex("id=\"displayList\\-data\">(.*?)<script").getMatch(0);
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(js);
+            final ArrayList<Object> ressourcelist = (ArrayList) entries.get("tracks");
+            entries = (LinkedHashMap<String, Object>) ressourcelist.get(0);
+            final String fid = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
+            final String title = (String) entries.get("song");
+            final String artist = (String) entries.get("artist");
+            final String key = (String) entries.get("key");
+            if (title == null || artist == null || key == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            br.getPage("http://hypem.com/serve/source/" + fid + "/" + key + "?_=" + System.currentTimeMillis());
+            entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            String finallink = (String) entries.get("url");
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            if (!finallink.contains("soundcloud.com/")) {
+                finallink = "directhttp://" + finallink;
+            }
+            final DownloadLink dl = createDownloadlink(finallink);
+            dl.setFinalFileName(artist + " - " + title + ".mp3");
+            decryptedLinks.add(dl);
         }
-        br.getPage("http://hypem.com/serve/source/" + fid + "/" + key + "?_=" + System.currentTimeMillis());
-        entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-        final String finallink = (String) entries.get("url");
-        if (finallink == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
-        dl.setFinalFileName(artist + " - " + title + ".mp3");
-        decryptedLinks.add(dl);
 
         return decryptedLinks;
     }

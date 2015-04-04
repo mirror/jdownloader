@@ -171,7 +171,7 @@ public class OBoomCom extends PluginForHost {
                     infos = new HashMap<String, String>();
                     String keys[] = getKeys(response);
                     for (String key : keys) {
-                        String value = getValue(response, key);
+                        String value = getJson(response, key);
                         if (value != null) {
                             infos.put(key, value);
                         }
@@ -213,12 +213,24 @@ public class OBoomCom extends PluginForHost {
         return new Regex(response, "\"([a-zA-Z0-9\\_]+)\":").getColumn(0);
     }
 
-    private String getValue(String response, String key) {
-        String ret = new Regex(response, "\"" + key + "\":\\s*?\"(.*?)\"").getMatch(0);
-        if (ret == null) {
-            ret = new Regex(response, "\"" + key + "\":\\s*?([\\d\\-]+)").getMatch(0);
-        }
-        return ret;
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     private static String PBKDF2Key(String password) throws NoSuchAlgorithmException, InvalidKeySpecException, UnsupportedEncodingException {
@@ -288,11 +300,12 @@ public class OBoomCom extends PluginForHost {
             final String fileInfos[] = br.getRegex("\\{(.*?)\\}").getColumn(0);
             if (fileInfos != null) {
                 for (String fileInfo : fileInfos) {
-                    final String id = getValue(fileInfo, "id");
-                    final String size = getValue(fileInfo, "size");
-                    final String name = getValue(fileInfo, "name");
-                    final String state = getValue(fileInfo, "state");
-                    final String refToken = getValue(fileInfo, "ref_token");
+                    final String directdownload = getJson(fileInfo, "ddl");
+                    final String id = getJson(fileInfo, "id");
+                    final String size = getJson(fileInfo, "size");
+                    final String name = getJson(fileInfo, "name");
+                    final String state = getJson(fileInfo, "state");
+                    final String refToken = getJson(fileInfo, "ref_token");
                     DownloadLink link = idLinks.get(id);
                     if (link == null) {
                         link = idLinks.get("lower_" + id.toLowerCase(Locale.ENGLISH));
@@ -303,6 +316,7 @@ public class OBoomCom extends PluginForHost {
                     if (name != null) {
                         link.setFinalFileName(unescape(name));
                     }
+                    link.setProperty("obm_directdownload", Boolean.parseBoolean(directdownload));
                     try {
                         if (size != null) {
                             link.setDownloadSize(Long.parseLong(size));
@@ -348,10 +362,10 @@ public class OBoomCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        final String size = getValue(response, "size");
-        final String name = getValue(response, "name");
-        final String state = getValue(response, "state");
-        final String refToken = getValue(response, "ref_token");
+        final String size = getJson(response, "size");
+        final String name = getJson(response, "name");
+        final String state = getJson(response, "state");
+        final String refToken = getJson(response, "ref_token");
         if (name != null) {
             link.setFinalFileName(unescape(name));
         }
@@ -505,10 +519,10 @@ public class OBoomCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitTime) * 1000l);
         }
         if (/*
-             * HAS NOTHING TODO WITH ACCOUNT SEE http://board.jdownloader.org/showthread.php?p=317616#post317616 jdlog://6507583568141/
-             * account != null &&
-             */
-        br.getRegex("421,\"connections\",(\\d+)").getMatch(0) != null) {
+         * HAS NOTHING TODO WITH ACCOUNT SEE http://board.jdownloader.org/showthread.php?p=317616#post317616 jdlog://6507583568141/
+         * account != null &&
+         */
+                br.getRegex("421,\"connections\",(\\d+)").getMatch(0) != null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Already downloading?", 5 * 60 * 1000l);
         }
     }
@@ -609,7 +623,11 @@ public class OBoomCom extends PluginForHost {
         return true;
     }
 
-    public void handleFree(DownloadLink link, Account account) throws Exception {
+    @SuppressWarnings("deprecation")
+    public void handleFree(final DownloadLink link, final Account account) throws Exception {
+        int maxchunks = 1;
+        boolean resumable = false;
+        String dllink = null;
         AtomicBoolean freshInfos = new AtomicBoolean(false);
         final String ID = getFileID(link);
         Map<String, String> usedInfos = null;
@@ -637,58 +655,63 @@ public class OBoomCom extends PluginForHost {
         } catch (Throwable e) {
             // not in stable!
         }
-        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        for (int i = 1; i <= 5; i++) {
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            rc.setId("6LdqpO0SAAAAAJGHXo63HyalP7H4qlRs_vff0kJX");
-            rc.load();
-            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String code = getCaptchaCode("recaptcha", cf, link);
-            br.getPage("https://www.oboom.com/1.0/dl/ticket?token=" + session + "&download_id=" + ID + "&source=" + APPID + "&recaptcha_challenge_field=" + URLEncoder.encode(rc.getChallenge(), "UTF-8") + "&recaptcha_response_field=" + URLEncoder.encode(code, "UTF-8") + "&http_errors=0");
-            if (br.containsHTML("incorrect-captcha-sol") || br.containsHTML("400,\"captcha-timeout")) {
-                continue;
+        if (link.getBooleanProperty("obm_directdownload", false)) {
+            resumable = true;
+            maxchunks = 0;
+            dllink = link.getDownloadURL();
+        } else {
+            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            for (int i = 1; i <= 5; i++) {
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                rc.setId("6LdqpO0SAAAAAJGHXo63HyalP7H4qlRs_vff0kJX");
+                rc.load();
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                String code = getCaptchaCode("recaptcha", cf, link);
+                br.getPage("https://www.oboom.com/1.0/dl/ticket?token=" + session + "&download_id=" + ID + "&source=" + APPID + "&recaptcha_challenge_field=" + URLEncoder.encode(rc.getChallenge(), "UTF-8") + "&recaptcha_response_field=" + URLEncoder.encode(code, "UTF-8") + "&http_errors=0");
+                if (br.containsHTML("incorrect-captcha-sol") || br.containsHTML("400,\"captcha-timeout")) {
+                    continue;
+                }
+                if (br.containsHTML("400,\"Forbidden")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Try again later.", 5 * 60 * 1000l);
+                }
+                break;
             }
-            if (br.containsHTML("400,\"Forbidden")) {
+            if (br.containsHTML("incorrect-captcha-sol") || br.containsHTML("400,\"captcha-timeout")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            if (br.containsHTML("400,\"slot_error\"")) {
+                // country slot block. try again in 5 minutes
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Try again later.", 5 * 60 * 1000l);
             }
-            break;
-        }
-        if (br.containsHTML("incorrect-captcha-sol") || br.containsHTML("400,\"captcha-timeout")) {
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
-        if (br.containsHTML("400,\"slot_error\"")) {
-            // country slot block. try again in 5 minutes
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Try again later.", 5 * 60 * 1000l);
-        }
-        String waitTime = br.getRegex("403,(\\-?\\d+)").getMatch(0);
-        if (waitTime != null) {
-            // there is already a download running.
-            if (Integer.parseInt(waitTime) < 0) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
+            String waitTime = br.getRegex("403,(\\-?\\d+)").getMatch(0);
+            if (waitTime != null) {
+                // there is already a download running.
+                if (Integer.parseInt(waitTime) < 0) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
+                }
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitTime) * 1000l);
             }
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitTime) * 1000l);
-        }
-        downloadErrorHandling(account);
-        String urlInfos[] = br.getRegex("200,\"(.*?)\",\"(.*?)\"").getRow(0);
-        if (urlInfos == null || urlInfos[0] == null || urlInfos[1] == null) {
-            if (br.toString().length() > 200) {
+            downloadErrorHandling(account);
+            String urlInfos[] = br.getRegex("200,\"(.*?)\",\"(.*?)\"").getRow(0);
+            if (urlInfos == null || urlInfos[0] == null || urlInfos[1] == null) {
+                if (br.toString().length() > 200) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Error: " + br.toString());
+                }
+
+            }
+            sleep(30 * 1000l, link);
+            br.getPage("https://api.oboom.com/1.0/dl?token=" + urlInfos[0] + "&item=" + ID + "&auth=" + urlInfos[1] + "&http_errors=0");
+            downloadErrorHandling(account);
+            urlInfos = br.getRegex("200,\"(.*?)\",\"(.*?)\"").getRow(0);
+            if (urlInfos == null || urlInfos[0] == null || urlInfos[1] == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Error: " + br.toString());
             }
-
+            dllink = "http://" + urlInfos[0] + "/1.0/dlh?ticket=" + urlInfos[1] + "&http_errors=0";
         }
-        sleep(30 * 1000l, link);
-        br.getPage("https://api.oboom.com/1.0/dl?token=" + urlInfos[0] + "&item=" + ID + "&auth=" + urlInfos[1] + "&http_errors=0");
-        downloadErrorHandling(account);
-        urlInfos = br.getRegex("200,\"(.*?)\",\"(.*?)\"").getRow(0);
-        if (urlInfos == null || urlInfos[0] == null || urlInfos[1] == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        String url = "http://" + urlInfos[0] + "/1.0/dlh?ticket=" + urlInfos[1] + "&http_errors=0";
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, false, 1);
-
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (!dl.getConnection().isContentDisposition()) {
             if (dl.getConnection().getResponseCode() == 500) {
                 dl.getConnection().disconnect();

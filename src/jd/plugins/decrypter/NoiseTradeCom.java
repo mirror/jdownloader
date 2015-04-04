@@ -120,7 +120,7 @@ public class NoiseTradeCom extends PluginForDecrypt {
         }
 
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(null));
+        fp.setName(username + " - " + artist + " - " + album_name);
         fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
