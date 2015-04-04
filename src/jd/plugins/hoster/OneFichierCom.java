@@ -454,8 +454,8 @@ public class OneFichierCom extends PluginForHost {
                 ai.setTrafficLeft(SizeFormatter.getSize(freeCredits + " GB"));
                 try {
                     account.setType(AccountType.FREE);
-                    maxPrem.set(1);
-                    account.setMaxSimultanDownloads(1);
+                    maxPrem.set(maxdownloads_free);
+                    account.setMaxSimultanDownloads(maxdownloads_free);
                     account.setConcurrentUsePossible(false);
                 } catch (final Throwable e) {
                     /* Not available in old 0.9.581 Stable */

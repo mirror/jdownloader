@@ -156,7 +156,6 @@ public class ReverBnationCom extends PluginForDecrypt {
                     }
                     return decryptedLinks;
                 }
-                fpName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
                 artist_name_general = br.getRegex("class=\"artist_name\">By: ([^<>\"]*?)</span>").getMatch(0);
                 final String showAllSongs = br.getRegex("<a href=\"([^<>\"]+/songs)\" class=\"standard_well see_more\">All Songs</a>").getMatch(0);
                 if (showAllSongs != null) {
@@ -173,6 +172,7 @@ public class ReverBnationCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            fpName = username + " - " + artist_name_general + " - " + artistID;
             for (final String singleInfo : allInfo) {
                 artistsID = artistID;
                 songID = new Regex(singleInfo, "data\\-song\\-id=\"(\\d+)\"").getMatch(0);

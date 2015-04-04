@@ -42,11 +42,12 @@ import jd.plugins.PluginForHost;
 public class HighWayMe extends PluginForHost {
 
     /** General API information: According to admin we can 'hammer' the API every 60 seconds */
-    private static final String                            NOCHUNKS                = "NOCHUNKS";
 
     private static final String                            DOMAIN                  = "https://high-way.me/api.php";
     private static final String                            NICE_HOST               = "high-way.me";
     private static final String                            NICE_HOSTproperty       = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private static final String                            NOCHUNKS                = NICE_HOSTproperty + "NOCHUNKS";
+    private static final String                            NORESUME                = NICE_HOSTproperty + "NORESUME";
     private static final int                               ERRORHANDLING_MAXLOGINS = 2;
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap      = new HashMap<Account, HashMap<String, Long>>();
@@ -143,10 +144,11 @@ public class HighWayMe extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
+    @SuppressWarnings("deprecation")
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
-        boolean resume = defaultRESUME;
+        boolean resume = account.getBooleanProperty("resume", defaultRESUME);
         int maxChunks = account.getIntegerProperty("account_maxchunks", defaultMAXCHUNKS);
         /* Then check if we got an individual host limit. */
         if (hostMaxchunksMap != null) {
@@ -157,6 +159,10 @@ public class HighWayMe extends PluginForHost {
                 }
             }
         }
+        /* Check if chunkload failed before. TODO: Remove this! */
+        if (link.getBooleanProperty(NOCHUNKS, false)) {
+            maxChunks = 1;
+        }
 
         if (hostResumeMap != null) {
             final String thishost = link.getHost();
@@ -166,15 +172,20 @@ public class HighWayMe extends PluginForHost {
                 }
             }
         }
-        /* Check if chunkload failed before. TODO: Remove this! */
-        if (link.getBooleanProperty(NOCHUNKS, false)) {
-            maxChunks = 1;
+        if (link.getBooleanProperty(NORESUME, false)) {
+            resume = false;
         }
         if (!resume) {
             maxChunks = 1;
         }
         link.setProperty(NICE_HOSTproperty + "directlink", dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
+        if (dl.getConnection().getResponseCode() == 416) {
+            logger.info("Resume impossible, disabling it for the next try");
+            link.setChunksProgress(null);
+            link.setProperty(HighWayMe.NORESUME, Boolean.valueOf(true));
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             // handleErrorRetries("unknowndlerror", 5, 5 * 60 * 1000l);
@@ -285,6 +296,7 @@ public class HighWayMe extends PluginForHost {
         final ArrayList<Object> array_hoster = (ArrayList) entries.get("hoster");
         final int account_maxchunks = ((Number) info_account.get("max_chunks")).intValue();
         final int account_maxdls = ((Number) info_account.get("max_connection")).intValue();
+        final int account_resume = ((Number) info_account.get("resume")).intValue();
         final long free_traffic = ((Number) info_account.get("free_traffic")).longValue();
         final long premium_bis = ((Number) info_account.get("premium_bis")).longValue();
         final long premium_traffic = ((Number) info_account.get("premium_traffic")).longValue();
@@ -306,6 +318,11 @@ public class HighWayMe extends PluginForHost {
         /* Set supported hosts, limits and account limits */
         account.setProperty("account_maxchunks", this.correctChunks(account_maxchunks));
         account.setProperty("account_maxdls", this.correctMaxdls(account_maxdls));
+        if (account_resume == 1) {
+            account.setProperty("resume", true);
+        } else {
+            account.setProperty("resume", false);
+        }
 
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         hostMaxchunksMap.clear();

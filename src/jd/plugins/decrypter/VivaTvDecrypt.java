@@ -33,8 +33,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viva.tv", "mtviggy.com", "southpark.de", "southpark.cc.com", "vh1.com", "nickmom.com", "mtv.com.au", "mtv.com" }, urls = { "http://www\\.viva\\.tv/charts/16\\-viva\\-top\\-100", "http://www\\.mtviggy\\.com/videos/[a-z0-9\\-]+/|http://www\\.mtvdesi\\.com/(videos/)?[a-z0-9\\-]+|http://www\\.mtvk\\.com/videos/[a-z0-9\\-]+", "http://www\\.southpark\\.de/alle\\-episoden/s\\d{2}e\\d{2}[a-z0-9\\-]+", "http://southpark\\.cc\\.com/full\\-episodes/s\\d{2}e\\d{2}[a-z0-9\\-]+", "http://www\\.vh1.com/(shows/[a-z0-9\\-_]+/[a-z0-9\\-_]+/.+|video/play\\.jhtml\\?id=\\d+|video/[a-z0-9\\-_]+/\\d+/[a-z0-9\\-_]+\\.jhtml|events/[a-z0-9\\-_]+/videos/[a-z0-9\\-_]+/\\d+/)", "http://www\\.nickmom\\.com/videos/[a-z0-9\\-]+/", "http://www\\.mtv\\.com\\.au/[a-z0-9\\-]+/videos/[a-z0-9\\-]+",
-"http://www\\.mtv\\.com/(shows/[a-z0-9\\-_]+/[^<>\"]+|[^<>\"]*?videos/.+)" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viva.tv", "mtviggy.com", "southpark.de", "southpark.cc.com", "vh1.com", "nickmom.com", "mtv.com.au", "mtv.com", "logotv.com" }, urls = { "http://www\\.viva\\.tv/charts/16\\-viva\\-top\\-100", "http://www\\.mtviggy\\.com/videos/[a-z0-9\\-]+/|http://www\\.mtvdesi\\.com/(videos/)?[a-z0-9\\-]+|http://www\\.mtvk\\.com/videos/[a-z0-9\\-]+", "http://www\\.southpark\\.de/alle\\-episoden/s\\d{2}e\\d{2}[a-z0-9\\-]+", "http://southpark\\.cc\\.com/full\\-episodes/s\\d{2}e\\d{2}[a-z0-9\\-]+", "http://www\\.vh1.com/(shows/[a-z0-9\\-_]+/[a-z0-9\\-_]+/.+|video/play\\.jhtml\\?id=\\d+|video/[a-z0-9\\-_]+/\\d+/[a-z0-9\\-_]+\\.jhtml|events/[a-z0-9\\-_]+/videos/[a-z0-9\\-_]+/\\d+/)", "http://www\\.nickmom\\.com/videos/[a-z0-9\\-]+/", "http://www\\.mtv\\.com\\.au/[a-z0-9\\-]+/videos/[a-z0-9\\-]+",
+        "http://www\\.mtv\\.com/(shows/[a-z0-9\\-_]+/[^<>\"]+|[^<>\"]*?videos/.+)", "http://www\\.logotv.com/video/[a-z0-9\\-]+/\\d+/[a-z0-9\\-]+\\.j?html" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class VivaTvDecrypt extends PluginForDecrypt {
 
     public VivaTvDecrypt(PluginWrapper wrapper) {
@@ -63,6 +63,8 @@ public class VivaTvDecrypt extends PluginForDecrypt {
     private static final String     type_mtv_com_au           = "http://www\\.mtv\\.com\\.au/.+";
 
     private static final String     type_mtv_com              = "http://www\\.mtv\\.com/.+";
+
+    private static final String     type_logotv_com           = "http://www\\.logotv\\.com/.+";
 
     private ArrayList<DownloadLink> decryptedLinks            = new ArrayList<DownloadLink>();
     private String                  default_ext               = null;
@@ -94,6 +96,8 @@ public class VivaTvDecrypt extends PluginForDecrypt {
                 decryptMtvComAuPlaylist();
             } else if (parameter.matches(type_mtv_com)) {
                 decryptMtvCom();
+            } else if (parameter.matches(type_logotv_com)) {
+                decrypLogoTvCom();
             } else {
                 /* Probably unsupported linktype */
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -327,10 +331,42 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         }
         final String feedURL = String.format(feedURL_plain, this.mgid);
         br.getPage(feedURL);
-        fpName = getXML("title");
         decryptFeed(feedURL_plain);
         final FilePackage fp = FilePackage.getInstance();
-        fpName = Encoding.htmlDecode(fpName.trim());
+        fpName = getMainFEEDTitle();
+        fp.setName(fpName);
+        fp.addLinks(decryptedLinks);
+    }
+
+    private void decrypLogoTvCom() throws Exception {
+        /* We have no feed-url so let's use this */
+        final String feedURL_plain = "http://media.mtvnservices.com/%s";
+        br.getPage(parameter);
+        final String vevo_ID = br.getRegex("MTVN\\.Player\\.vevoVideoId = \"([A-Za-z0-9]+)\";").getMatch(0);
+        if (vevo_ID != null) {
+            logger.info("Current link is a VEVO link");
+            decryptedLinks.add(createDownloadlink("http://www.vevo.com/watch/" + vevo_ID));
+            return;
+        }
+        logger.info("Current link is NO VEVO link");
+        if (!br.containsHTML("MTVN\\.Player\\.")) {
+            try {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return;
+            } catch (final Throwable e) {
+                return;
+            }
+        }
+        this.mgid = br.getRegex("media\\.mtvnservices\\.com/(mgid[^<>\"]*?)\"").getMatch(0);
+        if (this.mgid == null) {
+            this.decryptedLinks = null;
+            return;
+        }
+        final String feedURL = "http://www.logotv.com/player/includes/rss.jhtml?uri=" + this.mgid;
+        br.getPage(feedURL);
+        decryptFeed(feedURL_plain);
+        final FilePackage fp = FilePackage.getInstance();
+        fpName = getMainFEEDTitle();
         fp.setName(fpName);
         fp.addLinks(decryptedLinks);
     }
@@ -354,10 +390,13 @@ public class VivaTvDecrypt extends PluginForDecrypt {
                 continue;
             }
             title = doFilenameEncoding(title);
+            title = title + this.default_ext;
             // feedURL_plain
             final String final_url = String.format(decrypter_url_plain, item_mgid);
             final DownloadLink dl = createDownloadlink(final_url);
-            dl.setName(title + this.default_ext);
+            dl.setProperty("decryptedfilename", title);
+            dl.setProperty("mainlink", this.parameter);
+            dl.setName(title);
             dl.setAvailable(true);
             try {
                 dl.setContentUrl(this.parameter);
@@ -367,6 +406,14 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             }
             decryptedLinks.add(dl);
         }
+    }
+
+    private String getMainFEEDTitle() {
+        String title = getXML("title");
+        if (title != null) {
+            title = doEncoding(title);
+        }
+        return title;
     }
 
     private String getXML(final String parameter) {
@@ -387,6 +434,10 @@ public class VivaTvDecrypt extends PluginForDecrypt {
 
     private String getFEEDtitle(final String source) {
         return jd.plugins.hoster.VivaTv.feedGetTitle(source);
+    }
+
+    private String doEncoding(final String data) {
+        return jd.plugins.hoster.VivaTv.doEncoding(data);
     }
 
     private String doFilenameEncoding(final String filename) {
