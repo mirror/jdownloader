@@ -68,7 +68,7 @@ public class FiveFantasticPl extends PluginForHost {
             br.getPage(downloadUrl);
         } catch (Exception e) {
             final String errorMessage = e.getCause().getMessage();
-            final String newName = "(Link uncheckable - read Comment column)";
+            final String newName = getPhrase("LINK_UNCHECKABLE");
             if (!link.getName().contains(newName)) {
                 link.setName(link.getName() + " " + newName);
             }
@@ -76,19 +76,19 @@ public class FiveFantasticPl extends PluginForHost {
 
             if (errorMessage.contains("Content-length too big")) {
                 try {
-                    link.setComment("The link seems to be folder. Folders are not supported.");
+                    link.setComment(getPhrase("FOLDERS_NOT_SUPPORTED"));
                 } catch (final Throwable t) {
                 }
                 logger.severe("FiveFantastic: the link: " + downloadUrl + " seems to be folder. Folders are not supported!");
-                throw new PluginException(LinkStatus.ERROR_FATAL, "folders are not supported!");
+                throw new PluginException(LinkStatus.ERROR_FATAL, getPhrase("FOLDERS_NOT_SUPPORTED"));
             }
             try {
-                link.setComment("FiveFantastic: trying to get page for link: " + downloadUrl + ",  got error: " + errorMessage);
+                link.setComment(getPhrase("TRYING_TO_GET_PAGE") + downloadUrl + getPhrase("GOT_ERROR") + errorMessage);
             } catch (final Throwable t) {
             }
 
             logger.severe("FiveFantastic: trying to get page for link: " + downloadUrl + ",  got error: " + errorMessage);
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Error: " + errorMessage);
+            throw new PluginException(LinkStatus.ERROR_FATAL, getPhrase("ERROR") + errorMessage);
         }
 
         if (br.containsHTML("Plik jest plikiem prywatnym.")) {
@@ -122,16 +122,16 @@ public class FiveFantasticPl extends PluginForHost {
 
             if (br.containsHTML("Plik jest plikiem prywatnym.")) {
                 try {
-                    link.setComment("This is private file - download impossible");
+                    link.setComment(getPhrase("PRIVATE_FILE"));
                 } catch (final Throwable t) {
                 }
                 logger.info("FiveFantastic: " + link.getDownloadURL() + " is private file - download impossible!");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, getPhrase("FILE_ERROR"));
             }
         }
 
         if (br.containsHTML("<title>[\t\n\r ]+5fantastic\\.pl \\- najlepszy darmowy dysk internetowy \\- pliki udostępnione przez klubowiczów[\t\n\r ]+</title>")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "File not found or private!");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, getPhrase("FILE_ERROR"));
         }
         final String filename = br.getRegex("<title>[\t\n\r ]+5fantastic\\.pl \\- ([^<>\"]*?) \\- najlepszy darmowy dysk internetowy[\t\n\r ]+</title>").getMatch(0);
         final String filesize = br.getRegex(">Rozmiar: </span><span style=\"margin\\-left:5px;line\\-height:15px;\">([^<>\"]*?)</span>").getMatch(0);
@@ -159,7 +159,7 @@ public class FiveFantasticPl extends PluginForHost {
         br.postPage(br.getURL(), "ctl00%24ScriptManager1=ctl00%24ctnMetryka%24metrykaPliku%24updLnkPobierz%7Cctl00%24ctnMetryka%24metrykaPliku%24lnkPobierz&ctl00_ScriptManager1_HiddenField=&__EVENTTARGET=ctl00%24ctnMetryka%24metrykaPliku%24lnkPobierz&__EVENTARGUMENT=&vs_key=" + vsKey + "&__VIEWSTATE=&ctl00%24hidSuwakStep=0&ctl00%24ctnMetryka%24metrykaPliku%24hidOcena=&ctl00%24ctnMetryka%24metrykaPliku%24inputPrzyjaznyLink=" + encodedLink + "&__ASYNCPOST=true&");
 
         if (br.containsHTML("Przepraszamy, plik jest chwilowo niedostepny")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Link temporary unavailable!", 60 * 1000L);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("TEMPORARY_UNAVAILABLE"), 60 * 1000L);
         }
         this.sleep(3000, downloadLink);
 
@@ -171,7 +171,7 @@ public class FiveFantasticPl extends PluginForHost {
         br.postPage(br.getURL(), "ctl00%24ScriptManager1=ctl00%24ctnMetryka%24metrykaPliku%24updPobieraniePliku%7Cctl00%24ctnMetryka%24metrykaPliku%24chkAkcepujeRegulamin&ctl00_ScriptManager1_HiddenField=&vs_key=" + vsKey + "&__VIEWSTATE=&ctl00%24hidSuwakStep=0&ctl00%24ctnMetryka%24metrykaPliku%24hidOcena=&ctl00%24ctnMetryka%24metrykaPliku%24inputPrzyjaznyLink=" + encodedLink + "&ctl00%24ctnMetryka%24metrykaPliku%24chkAkcepujeRegulamin=on&__EVENTTARGET=ctl00%24ctnMetryka%24metrykaPliku%24chkAkcepujeRegulamin&__EVENTARGUMENT=&__LASTFOCUS=&__ASYNCPOST=true&");
 
         if (br.containsHTML("Z Twojego numeru IP jest już pobierany plik. Poczekaj na zwolnienie zasobów, albo ściągnij plik za punkty")) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download in progress detected from your IP!", 5 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, getPhrase("DOWNLOAD_DETECTED"), 5 * 60 * 1000l);
         }
         final String dllink = br.getRegex("\"(https?://[a-z0-9]+\\.5fantastic\\.pl/[^<>\"]*?download\\.php\\?[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
@@ -181,7 +181,7 @@ public class FiveFantasticPl extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("jest aktualnie pobierany inny plik")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download in progress detected from your IP!", 5 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, getPhrase("DOWNLOAD_DETECTED"), 5 * 60 * 1000l);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -196,23 +196,13 @@ public class FiveFantasticPl extends PluginForHost {
         try {
             login(account, true);
         } catch (PluginException e) {
-            ai.setStatus("Login failed or not Premium");
-            UserIO.getInstance().requestMessageDialog(0, "5Fantastic Premium Error", "Login failed or not Premium!\r\nPlease check your Username and Password!");
+            ai.setStatus(getPhrase("NO_PREMIUM"));
+            UserIO.getInstance().requestMessageDialog(0, getPhrase("PREMIUM_ERROR"), getPhrase("LOGIN_FAILED"));
             account.setValid(false);
             return ai;
         }
 
-        final String[][] limits = br.getRegex("<div id=\"ctl00_updpunktyint\">[ \t\n\r]+<div style=\".*?\">[ \t\n\r]+<span id=\".*?\" style=\".*?\">[ \t\n\r]+([0-9]+)[ \t\n\r]+</span>[ \t\n\r]+</div>[ \t\n\r]+</div>[ \t\n\r]+<div style=\".*?punkty /([A-Za-z]+) transferu</div>").getMatches();
-        if (limits.length != 0) {
-            final String maxLimit = limits[0][0];
-
-            final String unit = limits[0][1];
-            // ai.setTrafficMax(SizeFormatter.getSize(maxLimit + " " + unit));
-            ai.setTrafficLeft(SizeFormatter.getSize(maxLimit + " " + unit));
-
-        } else {
-            ai.setUnlimitedTraffic();
-        }
+        checkTrafficLimits(ai);
 
         account.setValid(true);
         try {
@@ -222,7 +212,7 @@ public class FiveFantasticPl extends PluginForHost {
             // not available in old Stable 0.9.581
         }
 
-        ai.setStatus("Premium User");
+        ai.setStatus(getPhrase("PREMIUM_USER"));
         // save property for checking availability of private files
         account.setProperty("Premium", "T");
         return ai;
@@ -271,7 +261,7 @@ public class FiveFantasticPl extends PluginForHost {
                 br.getPage(HOSTER + "/Strona_glowna");
                 if (!br.containsHTML("<div id=\"ctl00_userNick\" style=\".*\">" + user + "</div>")) {
                     logger.warning("Couldn't determine premium status or account is Free not Premium!");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Premium Account is invalid or not recognized!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("PREMIUM_INVALID"), PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -289,10 +279,31 @@ public class FiveFantasticPl extends PluginForHost {
         }
     }
 
+    void checkTrafficLimits(AccountInfo ai) {
+        final String[][] limits = br.getRegex("<div id=\"ctl00_updpunktyint\">[ \t\n\r]+<div style=\".*?\">[ \t\n\r]+<span id=\".*?\" style=\".*?\">[ \t\n\r]+([0-9]+)[ \t\n\r]+</span>[ \t\n\r]+</div>[ \t\n\r]+</div>[ \t\n\r]+<div style=\".*?punkty /([A-Za-z]+) transferu</div>").getMatches();
+        if (limits.length != 0) {
+            final String maxLimit = limits[0][0];
+
+            final String unit = limits[0][1];
+            // ai.setTrafficMax(SizeFormatter.getSize(maxLimit + " " + unit));
+            ai.setTrafficLeft(SizeFormatter.getSize(maxLimit + " " + unit));
+
+        } else {
+            // ai.setUnlimitedTraffic();
+            ai.setTrafficLeft(0);
+        }
+    }
+
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         login(account, true);
+
+        AccountInfo ai = account.getAccountInfo();
+        checkTrafficLimits(ai);
+        if (ai.getTrafficLeft() <= 0) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("NO_TRAFFIC_LEFT"));
+        }
         final String encodedLink = Encoding.urlEncode(downloadLink.getDownloadURL());
         br.getPage(downloadLink.getDownloadURL());
         String vsKey = br.getRegex("type=\"hidden\" name=\"vs_key\" id=\"vs_key\" value=\"([^<>\"]*?)\"").getMatch(0);
@@ -309,7 +320,7 @@ public class FiveFantasticPl extends PluginForHost {
         br.postPage(br.getURL(), "ctl00%24ScriptManager1=ctl00%24ctnMetryka%24metrykaPliku%24updPobieraniePliku%7Cctl00%24ctnMetryka%24metrykaPliku%24lnkZgodaNaPobierzPlatna&ctl00_ScriptManager1_HiddenField=&vs_key=" + vsKey + "&__VIEWSTATE=&ctl00%24hidSuwakStep=0&ctl00%24ctnMetryka%24metrykaPliku%24hidOcena=&ctl00%24ctnMetryka%24metrykaPliku%24inputPrzyjaznyLink=" + encodedLink + "&ctl00%24ctnMetryka%24metrykaPliku%24Komentarze%24txtKomentarz=&__EVENTTARGET=ctl00%24ctnMetryka%24metrykaPliku%24lnkZgodaNaPobierzPlatna&__EVENTARGUMENT=&__ASYNCPOST=true&");
 
         if (br.containsHTML("Przepraszamy, plik jest chwilowo niedostepny")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Link temporary unavailable!", 60 * 1000L);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("TEMPORARY_UNAVAILABLE"), 60 * 1000L);
         }
         this.sleep(500, downloadLink);
 
@@ -321,7 +332,7 @@ public class FiveFantasticPl extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("jest aktualnie pobierany inny plik")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download in progress detected from your IP!", 5 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, getPhrase("DOWNLOAD_DETECTED"), 5 * 60 * 1000l);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -342,4 +353,59 @@ public class FiveFantasticPl extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
+                                                  {
+                                                      put("FOLDERS_NOT_SUPPORTED", "The link seems to be folder. Folders are not supported.");
+                                                      put("LINK_UNCHECKABLE", "(Link uncheckable - read Comment column)");
+                                                      put("TRYING_TO_GET_PAGE", "FiveFantastic: trying to get page for link:");
+                                                      put("GOT_ERROR", ",  got error: ");
+                                                      put("ERROR", "Error: ");
+                                                      put("PRIVATE_FILE", "This is private file - download impossible");
+                                                      put("FILE_ERROR", "File not found or private!");
+                                                      put("TEMPORARY_UNAVAILABLE", "Link temporary unavailable!");
+                                                      put("DOWNLOAD_DETECTED", "Download in progress detected from your IP!");
+                                                      put("PREMIUM_ERROR", "5Fantastic Premium Error");
+                                                      put("LOGIN_FAILED", "Login failed or not Premium!\r\nPlease check your Username and Password!");
+                                                      put("PREMIUM_INVALID", "Premium Account is invalid or not recognized!");
+                                                      put("NO_TRAFFIC_LEFT", "No Premium traffic left!");
+                                                      put("NO_PREMIUM", "Login failed or not Premium!");
+                                                      put("PREMIUM_USER", "Premium User");
+                                                  }
+                                              };
+
+    private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
+                                                  {
+                                                      put("FOLDERS_NOT_SUPPORTED", "Wybrany link jest folderem. Foldery nie są obsługiwane");
+                                                      put("LINK_UNCHECKABLE", "(Link nieweryfikowalny - sprawdź kolumnę Komentarz)");
+                                                      put("TRYING_TO_GET_PAGE", "FiveFantastic: próba pobrania strony dla linku:");
+                                                      put("GOT_ERROR", ",  zwrócony błąd: ");
+                                                      put("ERROR", "Błąd: ");
+                                                      put("PRIVATE_FILE", "Plik prywatny - pobieranie niemożliwe");
+                                                      put("FILE_ERROR", "Plik nie znaleziony lub plik prywatny!");
+                                                      put("TEMPORARY_UNAVAILABLE", "Link chwilowo niedostępny!");
+                                                      put("DOWNLOAD_DETECTED", "Wykryto trwające pobieranie z twojego adresu IP!");
+                                                      put("PREMIUM_ERROR", "5Fantastic: Błąd Konta Premium");
+                                                      put("LOGIN_FAILED", "Błąd logowania lub konto nie jest Premium!\r\nSprawdź dane logowania: login/hasło!");
+                                                      put("PREMIUM_INVALID", "Nieprawidłowe lub nierozpoznane konto Premium!");
+                                                      put("NO_TRAFFIC_LEFT", "Brak dostępnego transferu Premium!");
+                                                      put("NO_PREMIUM", "Błędny login lub brak Premium!");
+                                                      put("PREMIUM_USER", "Użytkownik Premium");
+                                                  }
+                                              };
+
+    /**
+     * Returns a Polish/English translation of a phrase. We don't use the JDownloader translation framework since we need only Polish and
+     * English.
+     *
+     * @param key
+     * @return
+     */
+    private String getPhrase(String key) {
+        if ("pl".equals(System.getProperty("user.language")) && phrasesPL.containsKey(key)) {
+            return phrasesPL.get(key);
+        } else if (phrasesEN.containsKey(key)) {
+            return phrasesEN.get(key);
+        }
+        return "Translation not found!";
+    }
 }
