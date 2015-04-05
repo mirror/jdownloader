@@ -35,7 +35,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.info" }, urls = { "http://(www\\.)?libgen\\.(info|net)/view\\.php\\?id=\\d+|http://libgen\\.in/get\\.php\\?md5=[A-Za-z0-9]{32}|https?://libgen\\.(?:in|info|net)/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.info" }, urls = { "http://(www\\.)?libgen\\.(info|net)/view\\.php\\?id=\\d+|http://libgen\\.in/get\\.php\\?md5=[A-Za-z0-9]{32}|https?://libgen\\.(?:in|info|net)/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png|gif)" }, flags = { 0 })
 public class LibGenInfo extends PluginForHost {
 
     public LibGenInfo(PluginWrapper wrapper) {
