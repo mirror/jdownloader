@@ -28,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sourceforge.net" }, urls = { "https?://(www\\.)?sourceforge\\.net/projects/([^/]+/files/.+/download|[^/]+/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sourceforge.net" }, urls = { "https?://(www\\.)?sourceforge\\.net/projects/[^/]+/files/[^\\?<>\"]{0,}" }, flags = { 0 })
 public class SourceForgeNet extends PluginForDecrypt {
 
     public SourceForgeNet(PluginWrapper wrapper) {
@@ -38,52 +38,86 @@ public class SourceForgeNet extends PluginForDecrypt {
     @SuppressWarnings({ "unchecked", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String target_filename = null;
+        final String list_url;
         String parameter = param.toString().replace("https://", "http://");
         // We get downloadlinks depending on our useragent
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:14.0) Gecko/20100101 Firefox/14.0.1");
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        final Regex info = new Regex(parameter, "projects/([^/]+)/files/([^/]+)/([^/]+)");
+        final Regex info = new Regex(parameter, "projects/([^/]+)/files/([^/]+)/([^/]+)/download");
         final String project_name = new Regex(parameter, "projects/([^/]+)").getMatch(0);
-        String project_version = info.getMatch(1);
-        if (project_version == null) {
-            project_version = br.getRegex("class=\"actions\"><a href=\"/projects/[/]+/rss\\?path=/([^<>\"/]*?)\"").getMatch(0);
+        final String project_version = info.getMatch(1);
+        target_filename = info.getMatch(2);
+        if (project_name != null && project_version != null) {
+            list_url = "http://sourceforge.net/projects/" + project_name + "/files/" + project_version + "//list";
+        } else {
+            list_url = parameter + "/list";
         }
-        final String target_filename = info.getMatch(2);
-        if (project_version == null) {
-            logger.warning("Decrypter broken, link: " + parameter);
-            return null;
-        }
-        br.getPage("http://sourceforge.net/projects/" + project_name + "/files/" + project_version + "//list");
+        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getPage(list_url);
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
         for (Entry<String, Object> entry : entries.entrySet()) {
+            final DownloadLink dl;
             final LinkedHashMap<String, Object> data = (LinkedHashMap<String, Object>) entries.get(entry.getKey());
             final String filename = (String) data.get("name");
             final String sha1 = (String) data.get("sha1");
             final String md5 = (String) data.get("md5");
+            String url = (String) data.get("url");
             final String dloadlink = (String) data.get("download_url");
-            if (filename == null || sha1 == null || md5 == null || dloadlink == null) {
+            final boolean downloadable = ((Boolean) data.get("downloadable")).booleanValue();
+            if (filename == null || url == null || sha1 == null || md5 == null || dloadlink == null) {
                 logger.warning("Decrypter broken, link: " + parameter);
                 return null;
+            }
+            if (url.startsWith("/")) {
+                url = "http://sourceforge.net" + url;
             }
             /* Only decrypt the version wished by the user */
             if (target_filename != null && !filename.equals(target_filename)) {
                 continue;
             }
-            final DownloadLink dl = createDownloadlink(dloadlink.replace("sourceforge.net/", "sourceforgedecrypted.net/"));
-            try {
-                dl.setContentUrl(dloadlink);
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-                dl.setBrowserUrl(dloadlink);
+            if (downloadable) {
+                /* Downloadable filelink --> Goes into the host plugin */
+                dl = createDownloadlink(dloadlink.replace("sourceforge.net/", "sourceforgedecrypted.net/"));
+                try {
+                    dl.setContentUrl(url);
+                } catch (final Throwable e) {
+                    /* Not available in old 0.9.581 Stable */
+                    dl.setBrowserUrl(url);
+                }
+                if (!inValidate(sha1)) {
+                    dl.setSha1Hash(sha1);
+                }
+
+                if (!inValidate(md5)) {
+                    dl.setMD5Hash(md5);
+                }
+                dl.setFinalFileName(filename);
+            } else {
+                /* Folderlink - goes back into the decrypter */
+                dl = createDownloadlink(url);
             }
-            dl.setSha1Hash(sha1);
-            dl.setMD5Hash(md5);
-            dl.setFinalFileName(filename);
             decryptedLinks.add(dl);
-            System.out.println(entry.getKey() + "/" + entry.getValue());
         }
         return decryptedLinks;
+    }
+
+    /**
+     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
+     *
+     * @param s
+     *            Imported String to match against.
+     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
+     * @author raztoki
+     * */
+    private boolean inValidate(final String s) {
+        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /* NO OVERRIDE!! */
