@@ -425,6 +425,10 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                             logger.warning("Possible plugin error within cloudflare handling");
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
+                        // if it works, there should be a redirect.
+                        if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
+                            ibr.getPage(ibr.getRedirectLocation());
+                        }
                     }
                 } else if (responseCode == 503 && cloudflare != null) {
                     // 503 response code with javascript math section && with 5 second pause
