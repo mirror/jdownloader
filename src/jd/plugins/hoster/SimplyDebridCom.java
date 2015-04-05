@@ -80,6 +80,7 @@ public class SimplyDebridCom extends PluginForHost {
         return 10;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ac = new AccountInfo();
@@ -120,7 +121,7 @@ public class SimplyDebridCom extends PluginForHost {
             supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
         }
         account.setValid(true);
-        ac.setStatus("Premium Account");
+        ac.setStatus("Premium account");
         ac.setMultiHostSupport(this, supportedHosts);
         return ac;
     }

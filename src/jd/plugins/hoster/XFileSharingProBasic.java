@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -80,6 +81,11 @@ public class XFileSharingProBasic extends PluginForHost {
     private static final boolean           SUPPORTS_ALT_AVAILABLECHECK  = true;
     private final boolean                  ENABLE_RANDOM_UA             = false;
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
+    /* Waittime stuff */
+    private static final boolean           WAITFORCED                   = false;
+    private static final int               WAITSECONDSMIN               = 3;
+    private static final int               WAITSECONDSMAX               = 100;
+    private static final int               WAITSECONDSFORCED            = 5;
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = true;
     private static final int               FREE_MAXCHUNKS               = 0;
@@ -99,7 +105,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private String                         fuid                         = null;
 
     /* DEV NOTES */
-    // XfileSharingProBasic Version 2.6.7.1
+    // XfileSharingProBasic Version 2.6.7.2
     // Tags: Script, template
     // mods:
     // limit-info:
@@ -682,19 +688,28 @@ public class XFileSharingProBasic extends PluginForHost {
         correctBR();
     }
 
+    /** Handles pre download (pre-captcha) waittime. If WAITFORCED it ensures to always wait long enough even if the waittime RegEx fails. */
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
+        int wait = 0;
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
-        /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        /* Ticket Time */
+        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(0);
         if (ttt != null) {
-            int wait = Integer.parseInt(ttt);
-            wait -= passedTime;
-            logger.info("[Seconds] Waittime on the page: " + ttt);
-            logger.info("[Seconds] Passed time: " + passedTime);
-            logger.info("[Seconds] Total time to wait: " + wait);
-            if (wait > 0) {
-                sleep(wait * 1000l, downloadLink);
+            wait = Integer.parseInt(ttt);
+            if (WAITFORCED && (wait >= WAITSECONDSMAX || wait <= WAITSECONDSMIN)) {
+                logger.warning("Wait exceeds max/min, using forced wait!");
+                wait = WAITSECONDSFORCED;
             }
+        } else if (WAITFORCED) {
+            int i = 0;
+            while (i <= WAITSECONDSMIN) {
+                i += new Random().nextInt(WAITSECONDSMIN);
+            }
+            wait = i;
+        }
+        wait -= passedTime;
+        if (wait > 0) {
+            sleep(wait * 1000l, downloadLink);
         }
     }
 

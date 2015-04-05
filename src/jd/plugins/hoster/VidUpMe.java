@@ -44,7 +44,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidup.me" }, urls = { "https?://(www\\.)?vidup\\.me/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidup.me" }, urls = { "https?://(?:www\\.|beta\\.)?vidup\\.me/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
 public class VidUpMe extends PluginForHost {
 
     private String               correctedBR                  = "";
@@ -52,7 +52,7 @@ public class VidUpMe extends PluginForHost {
     private static final boolean VIDEOHOSTER                  = false;
     private static final boolean VIDEOHOSTER_2                = true;
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String         COOKIE_HOST                  = "http://vidup.me";
+    private final String         COOKIE_HOST                  = "http://beta.vidup.me";
     private static final String  MAINTENANCE                  = "We will be back soon";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -79,6 +79,7 @@ public class VidUpMe extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
         // strip video hosting url's to reduce possible duped links.
         link.setUrlDownload(link.getDownloadURL().replaceAll("/(vid)?embed-", "/"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("http://(?:www\\.|beta\\.)vidup\\.me/", "http://beta.vidup.me/"));
     }
 
     @Override
@@ -107,11 +108,12 @@ public class VidUpMe extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         fuid = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         prepBrowser();
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)").matches()) {
@@ -149,7 +151,7 @@ public class VidUpMe extends PluginForHost {
             link.setMD5Hash(fileInfo[2].trim());
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
-        link.setFinalFileName(fileInfo[0].trim());
+        link.setFinalFileName(fileInfo[0].trim() + ".mp4");
         if (fileInfo[1] != null && !fileInfo[1].equals("")) {
             link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         }
@@ -181,6 +183,9 @@ public class VidUpMe extends PluginForHost {
                 }
             }
         }
+        if (fileInfo[0] == null) {
+            fileInfo[0] = new Regex(correctedBR, "roperty=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
             if (fileInfo[1] == null) {
@@ -199,7 +204,7 @@ public class VidUpMe extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, false, 1, "freelink");
+        doFree(downloadLink, true, -2, "freelink");
     }
 
     @SuppressWarnings("unused")
@@ -231,13 +236,6 @@ public class VidUpMe extends PluginForHost {
             try {
                 logger.info("Trying to get link via embed");
                 br.getPage("/embed-" + fuid + ".html");
-                // there is a wait, but from what I can tell not enforced.
-                Form e = br.getFormbyKey("play");
-                if (e == null) {
-                    // this allows us to break
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                sendForm(e);
                 dllink = getDllink();
                 if (dllink == null) {
                     logger.info("Failed to get link via embed");
@@ -610,7 +608,16 @@ public class VidUpMe extends PluginForHost {
 
         String finallink = null;
         if (decoded != null) {
-            finallink = new Regex(decoded, "name=\"src\"value=\"(.*?)\"").getMatch(0);
+            final String[] qualities = { "1080p", "720p", "480p", "360p", "240p", "180p" };
+            for (final String quality : qualities) {
+                finallink = new Regex(decoded, "label:\\'" + quality + "\\',file:\\'(http://[^<>\"]*?)\\'").getMatch(0);
+                if (finallink != null) {
+                    break;
+                }
+            }
+            if (finallink == null) {
+                finallink = new Regex(decoded, "name=\"src\"value=\"(.*?)\"").getMatch(0);
+            }
             if (finallink == null) {
                 finallink = new Regex(decoded, "type=\"video/divx\"src=\"(.*?)\"").getMatch(0);
                 if (finallink == null) {
