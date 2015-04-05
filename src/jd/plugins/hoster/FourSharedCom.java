@@ -703,6 +703,10 @@ public class FourSharedCom extends PluginForHost {
                 if (filename == null) {
                     filename = br.getRegex("filename:\\'([^<>\"]*?)\\'\\}\\);").getMatch(0);
                 }
+                /* Here, extension might be missing */
+                if (filename == null) {
+                    filename = br.getRegex("<h1 class=\"fileName light\\-blue lucida f24\">([^<>\"]*?)</h1>").getMatch(0);
+                }
                 /* Get filename out of forum img code - seems like the best way so far */
                 if (filename == null) {
                     filename = br.getRegex("value=\"\\[URL=https?://(www\\.)?4shared(\\-china)?\\.com/[^<>\"]*?\\.html\\]\\[IMG\\]http://dc\\d+\\.4shared(\\-china)?\\.com/img/[A-Za-z0-9]+/[A-Za-z0-9]+/([^<>\"]*?)\\[/IMG\\]\\[/URL\\]\" readonly=\"readonly\"").getMatch(3);
@@ -722,10 +726,6 @@ public class FourSharedCom extends PluginForHost {
                 /* Here, extension might be missing */
                 if (filename == null) {
                     filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-                }
-                /* Here, extension might be missing */
-                if (filename == null) {
-                    filename = br.getRegex("<h1 class=\"fileName light\\-blue lucida f24\">([^<>\"]*?)</h1>").getMatch(0);
                 }
                 if (filename == null) {
                     filename = br.getRegex(Pattern.compile("id=\"fileNameTextSpan\">(.*?)</span>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
