@@ -441,6 +441,14 @@ public class PremiumizeMe extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
                 throw new PluginException(LinkStatus.ERROR_RETRY, "DB connection problem");
+            case 2:
+                /* E.g. Error: file_get_contents[...] */
+                logger.info("Errorcode 2: Strange error");
+                if (downloadLink.getLinkStatus().getRetryCount() >= 5) {
+                    /* Retried enough times --> Temporarily disable host! */
+                    tempUnavailableHoster(account, downloadLink, 5 * 60 * 1000);
+                }
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Errorcode 2");
             case 200:
                 /* all okay */
                 return;
