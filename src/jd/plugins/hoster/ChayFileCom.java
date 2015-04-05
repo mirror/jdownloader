@@ -75,7 +75,7 @@ public class ChayFileCom extends PluginForHost {
     private static final boolean           VIDEOHOSTER                  = false;
     private static final boolean           VIDEOHOSTER_2                = false;
     private static final boolean           SUPPORTSHTTPS                = false;
-    private final boolean                  ENABLE_RANDOM_UA             = false;
+    private final boolean                  ENABLE_RANDOM_UA             = true;
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = true;
@@ -97,7 +97,7 @@ public class ChayFileCom extends PluginForHost {
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.1
-    // mods: scanInfo[Removed filesize regexes, no filesize given], login[/login.html --> /login]
+    // mods: scanInfo[Removed filesize regexes, no filesize given], login[/login.html --> /login], heavily modified, do NOT upgrade!
     // limit-info: premium untested, set FREE account limits
     // protocol: no https
     // captchatype: 4dignum
@@ -131,7 +131,7 @@ public class ChayFileCom extends PluginForHost {
         correctDownloadLink(link);
         prepBrowser(br);
         setFUID(link);
-        getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL() + ".html");
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
