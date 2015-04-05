@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -96,11 +97,13 @@ public class Uploadedto extends PluginForHost {
     private static AtomicBoolean           hasAttemptedDownloadstart                 = new AtomicBoolean(false);
     private static AtomicLong              timeBefore                                = new AtomicLong(0);
     private static AtomicReference<String> lastIP                                    = new AtomicReference<String>();
+    private static AtomicReference<String> currentIP                                 = new AtomicReference<String>();
+    private static HashMap<String, Long>   blockedIPsMap                             = new HashMap<String, Long>();
     private static AtomicBoolean           usePremiumAPI                             = new AtomicBoolean(true);
     private static final String            NOCHUNKS                                  = "NOCHUNKS";
     private static final String            NORESUME                                  = "NORESUME";
     private String                         PROPERTY_LASTIP                           = "UPLOADEDNET_PROPERTY_LASTIP";
-    private static final String            PROPERTY_LASTDOWNLOAD_TIMESTAMP           = "uploadednet_lastdownload_timestamp";
+    private static final String            PROPERTY_LASTDOWNLOAD                     = "uploadednet_lastdownload_timestamp";
     private static final String            SSL_CONNECTION                            = "SSL_CONNECTION";
     private static final String            PREFER_PREMIUM_DOWNLOAD_API               = "PREFER_PREMIUM_DOWNLOAD_API_V2";
     private static final String            DOWNLOAD_ABUSED                           = "DOWNLOAD_ABUSED";
@@ -686,16 +689,21 @@ public class Uploadedto extends PluginForHost {
         doFree(downloadLink, null);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({ "deprecation", "unchecked" })
     public void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
+        currentIP.set(this.getIP());
         if (account == null) {
             logger.info("Free, WEB download method in use!");
+            /* Load list of saved IPs + timestamp of last download */
+            final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
+            if (lastdownloadmap != null && lastdownloadmap instanceof HashMap) {
+                blockedIPsMap = (HashMap<String, Long>) lastdownloadmap;
+            }
         } else {
             // good to know account been used.
             logger.info("Free account, WEB download method in use!");
         }
         String baseURL = getProtocol() + "uploaded.net/";
-        String currentIP = getIP();
         try {
             SubConfiguration config = null;
             try {
@@ -727,13 +735,10 @@ public class Uploadedto extends PluginForHost {
              * Free-Account Errorhandling: This allows users to switch between free accounts instead of reconnecting when a limit is reached
              */
             long lastdownload = timeBefore.get();
-            if (lastdownload == 0) {
-                lastdownload = getPluginSavedLastDownloadTimestamp();
-            }
             long passedTimeSinceLastDl = 0;
-            logger.info("New Download: currentIP = " + currentIP);
+            logger.info("New Download: currentIP = " + currentIP.get());
             if (account != null && this.getPluginConfig().getBooleanProperty(ACTIVATEACCOUNTERRORHANDLING, default_aaeh)) {
-                lastdownload = getLongProperty(account, PROPERTY_LASTDOWNLOAD_TIMESTAMP, 0);
+                lastdownload = getLongProperty(account, PROPERTY_LASTDOWNLOAD, 0);
                 passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
                 if (passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
                     /**
@@ -748,11 +753,10 @@ public class Uploadedto extends PluginForHost {
                 /**
                  * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
                  */
-                if (ipChanged(currentIP, downloadLink) == false) {
-                    passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
-                    if (passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
-                    }
+                lastdownload = getPluginSavedLastDownloadTimestamp();
+                passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
+                if (passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
                 }
             }
 
@@ -900,17 +904,18 @@ public class Uploadedto extends PluginForHost {
             }
             dl.startDownload();
         } finally {
-            /* Remember time of the last download */
+            /* Remember time of the last download if download was attempted */
             if (hasAttemptedDownloadstart.get() == true) {
                 logger.info("Downloadstart was attempted --> Setting timestamps in plugin config/account");
-                this.getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD_TIMESTAMP, timeBefore.get());
                 if (account != null) {
-                    account.setProperty(PROPERTY_LASTDOWNLOAD_TIMESTAMP, timeBefore.get());
+                    account.setProperty(PROPERTY_LASTDOWNLOAD, timeBefore.get());
+                } else {
+                    blockedIPsMap.put(currentIP.get(), timeBefore.get());
                 }
             } else {
                 logger.info("Downloadstart was NOT attempted --> NOT setting timestamps");
             }
-            setIP(currentIP, downloadLink, account);
+            setIP(downloadLink, account);
         }
     }
 
@@ -947,7 +952,7 @@ public class Uploadedto extends PluginForHost {
                 freeDownloadlimitReached(null);
             } else {
                 logger.info("Limit reached, disabling free account to use the next one!");
-                account.setProperty(PROPERTY_LASTDOWNLOAD_TIMESTAMP, System.currentTimeMillis());
+                account.setProperty(PROPERTY_LASTDOWNLOAD, System.currentTimeMillis());
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
         }
@@ -1717,17 +1722,17 @@ public class Uploadedto extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    private boolean setIP(String IP, final DownloadLink link, final Account account) throws PluginException {
+    private boolean setIP(final DownloadLink link, final Account account) throws PluginException {
         synchronized (IPCHECK) {
-            if (IP != null && !new Regex(IP, IPREGEX).matches()) {
+            if (currentIP.get() != null && !new Regex(currentIP.get(), IPREGEX).matches()) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (ipChanged(IP, link) == false) {
+            if (ipChanged(link) == false) {
                 // Static IP or failure to reconnect! We don't change lastIP
                 logger.warning("Your IP hasn't changed since last download");
                 return false;
             } else {
-                String lastIP = IP;
+                String lastIP = currentIP.get();
                 link.setProperty(PROPERTY_LASTIP, lastIP);
                 Uploadedto.lastIP.set(lastIP);
                 getPluginConfig().setProperty(PROPERTY_LASTIP, lastIP);
@@ -1737,14 +1742,14 @@ public class Uploadedto extends PluginForHost {
         }
     }
 
-    private boolean ipChanged(String IP, DownloadLink link) throws PluginException {
-        String currentIP = null;
-        if (IP != null && new Regex(IP, IPREGEX).matches()) {
-            currentIP = IP;
+    private boolean ipChanged(final DownloadLink link) throws PluginException {
+        String currIP = null;
+        if (currentIP.get() != null && new Regex(currentIP.get(), IPREGEX).matches()) {
+            currIP = currentIP.get();
         } else {
-            currentIP = getIP();
+            currIP = getIP();
         }
-        if (currentIP == null) {
+        if (currIP == null) {
             return false;
         }
         String lastIP = link.getStringProperty(PROPERTY_LASTIP, null);
@@ -1754,7 +1759,7 @@ public class Uploadedto extends PluginForHost {
         if (lastIP == null) {
             lastIP = this.getPluginConfig().getStringProperty(PROPERTY_LASTIP, null);
         }
-        return !currentIP.equals(lastIP);
+        return !currIP.equals(lastIP);
     }
 
     private void freeDownloadlimitReached(final String message) throws PluginException {
@@ -1762,7 +1767,6 @@ public class Uploadedto extends PluginForHost {
         if (timestamp_last_download_started == 0) {
             timestamp_last_download_started = getPluginSavedLastDownloadTimestamp();
         }
-        logger.info("Limit reached: ");
         final long timePassed = System.currentTimeMillis() - timestamp_last_download_started;
         if (timePassed >= FREE_RECONNECTWAIT) {
             logger.info("According to saved waittime we passed the waittime which is impossible as uploaded has shown reconnect errormessage --> Throwing IP_BLOCKED exception with full reconnect time");
@@ -1775,7 +1779,21 @@ public class Uploadedto extends PluginForHost {
     }
 
     private long getPluginSavedLastDownloadTimestamp() {
-        return getLongProperty(getPluginConfig(), PROPERTY_LASTDOWNLOAD_TIMESTAMP, 0);
+        long lastdownload = 0;
+        synchronized (blockedIPsMap) {
+            for (Entry<String, Long> ipentry : blockedIPsMap.entrySet()) {
+                final String ip = ipentry.getKey();
+                final long timestamp = ipentry.getValue();
+                if (System.currentTimeMillis() - timestamp >= FREE_RECONNECTWAIT) {
+                    /* Remove old entries */
+                    blockedIPsMap.remove(ip);
+                }
+                if (ip.equals(currentIP.get())) {
+                    lastdownload = timestamp;
+                }
+            }
+        }
+        return lastdownload;
     }
 
     private static long getLongProperty(final Property link, final String key, final long def) {
