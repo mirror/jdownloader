@@ -153,10 +153,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             parameter = "http://www.mtviggy.com/videos/" + new Regex(parameter, "([a-z0-9\\-]+)$").getMatch(0) + "/";
         }
         br.getPage(parameter);
-        final String vevo = br.getRegex("(http://videoplayer\\.vevo\\.com/embed/embedded\\?videoId=[A-Za-z0-9]+)").getMatch(0);
-        if (vevo != null) {
-            logger.info("Current link is a VEVO link");
-            decryptedLinks.add(createDownloadlink(vevo));
+        if (decryptVevo()) {
             return;
         }
         logger.info("Current link is NO VEVO link");
@@ -183,12 +180,13 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         final String feedURL = String.format(getFEEDURL("southpark.de"), this.mgid);
         br.getPage(feedURL);
         fpName = getXML("title");
-        decryptFeed(getEMBEDURL("ALL_OTHERS"));
+        if (fpName == null) {
+            this.decryptedLinks = null;
+            return;
+        }
         fpName = new Regex(parameter, "episoden/(s\\d{2}e\\d{2})").getMatch(0) + " - " + fpName;
-        final FilePackage fp = FilePackage.getInstance();
         fpName = Encoding.htmlDecode(fpName.trim());
-        fp.setName(fpName);
-        fp.addLinks(decryptedLinks);
+        decryptFeed(getEMBEDURL("ALL_OTHERS"));
     }
 
     private void decryptSouthparkCc() throws IOException, DecrypterException {
@@ -200,20 +198,18 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         final String feedURL = String.format(getFEEDURL("southpark.cc.com"), this.mgid);
         br.getPage(feedURL);
         fpName = getFEEDtitle(br.toString());
-        decryptFeed(getEMBEDURL("ALL_OTHERS"));
+        if (fpName == null) {
+            this.decryptedLinks = null;
+            return;
+        }
         fpName = new Regex(parameter, "episodes/(s\\d{2}e\\d{2})").getMatch(0) + " - " + fpName;
-        final FilePackage fp = FilePackage.getInstance();
         fpName = Encoding.htmlDecode(fpName.trim());
-        fp.setName(fpName);
-        fp.addLinks(decryptedLinks);
+        decryptFeed(getEMBEDURL("ALL_OTHERS"));
     }
 
     private void decryptVh1() throws DecrypterException, IOException {
         br.getPage(parameter);
-        final String vevo_ID = br.getRegex("MTVN\\.Player\\.vevoVideoId = \"([A-Za-z0-9]+)\";").getMatch(0);
-        if (vevo_ID != null) {
-            logger.info("Current link is a VEVO link");
-            decryptedLinks.add(createDownloadlink("http://www.vevo.com/watch/" + vevo_ID));
+        if (decryptVevo()) {
             return;
         }
         logger.info("Current link is NO VEVO link");
@@ -309,10 +305,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
     private void decryptMtvCom() throws Exception {
         final String feedURL_plain = this.getFEEDURL("mtv.com");
         br.getPage(parameter);
-        final String vevo_ID = br.getRegex("MTVN\\.Player\\.vevoVideoId = \"([A-Za-z0-9]+)\";").getMatch(0);
-        if (vevo_ID != null) {
-            logger.info("Current link is a VEVO link");
-            decryptedLinks.add(createDownloadlink("http://www.vevo.com/watch/" + vevo_ID));
+        if (decryptVevo()) {
             return;
         }
         logger.info("Current link is NO VEVO link");
@@ -332,20 +325,13 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         final String feedURL = String.format(feedURL_plain, this.mgid);
         br.getPage(feedURL);
         decryptFeed(feedURL_plain);
-        final FilePackage fp = FilePackage.getInstance();
-        fpName = getMainFEEDTitle();
-        fp.setName(fpName);
-        fp.addLinks(decryptedLinks);
     }
 
     private void decrypLogoTvCom() throws Exception {
         /* We have no feed-url so let's use this */
         final String feedURL_plain = "http://media.mtvnservices.com/%s";
         br.getPage(parameter);
-        final String vevo_ID = br.getRegex("MTVN\\.Player\\.vevoVideoId = \"([A-Za-z0-9]+)\";").getMatch(0);
-        if (vevo_ID != null) {
-            logger.info("Current link is a VEVO link");
-            decryptedLinks.add(createDownloadlink("http://www.vevo.com/watch/" + vevo_ID));
+        if (decryptVevo()) {
             return;
         }
         logger.info("Current link is NO VEVO link");
@@ -365,19 +351,30 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         final String feedURL = "http://www.logotv.com/player/includes/rss.jhtml?uri=" + this.mgid;
         br.getPage(feedURL);
         decryptFeed(feedURL_plain);
-        final FilePackage fp = FilePackage.getInstance();
-        fpName = getMainFEEDTitle();
-        fp.setName(fpName);
-        fp.addLinks(decryptedLinks);
+    }
+
+    private boolean decryptVevo() {
+        final String vevo_ID = br.getRegex("MTVN\\.Player\\.vevoVideoId = \"([A-Za-z0-9]+)\";").getMatch(0);
+        if (vevo_ID != null) {
+            logger.info("Current link is a VEVO link");
+            decryptedLinks.add(createDownloadlink("http://www.vevo.com/watch/" + vevo_ID));
+            return true;
+        }
+        return false;
     }
 
     /** General function to decrypt viacom RSS feeds, especially with multiple segments of a single video no matter what their source is. */
     @SuppressWarnings("deprecation")
     private void decryptFeed(final String decrypter_url_plain) throws DecrypterException {
         final String[] items = br.getRegex("<item>(.*?)</item>").getColumn(0);
+        if (fpName == null) {
+            fpName = getMainFEEDTitle();
+        }
         if (items == null || items.length == 0 || fpName == null) {
             throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(fpName);
         int counter = 0;
         for (final String item : items) {
             String title = getFEEDtitle(item);
