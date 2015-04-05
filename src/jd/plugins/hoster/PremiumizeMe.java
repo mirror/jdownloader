@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.GZIPOutputStream;
 
 import javax.swing.JComponent;
@@ -421,6 +422,8 @@ public class PremiumizeMe extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
+    private final AtomicLong globalDB = new AtomicLong(0);
+
     private void handleAPIErrors(Browser br, Account account, DownloadLink downloadLink) throws PluginException {
         String statusCode = br.getRegex("\"status\":(\\d+)").getMatch(0);
         if (statusCode == null) {
@@ -432,8 +435,9 @@ public class PremiumizeMe extends PluginForHost {
             switch (status) {
             case 0:
                 /* DB cnnection problem */
-                if (downloadLink.getLinkStatus().getRetryCount() >= 5) {
+                if (downloadLink.getLinkStatus().getRetryCount() >= 5 || globalDB.incrementAndGet() > 5) {
                     /* Retried enough times --> Temporarily disable account! */
+                    globalDB.compareAndSet(5, 0);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
                 throw new PluginException(LinkStatus.ERROR_RETRY, "DB connection problem");
