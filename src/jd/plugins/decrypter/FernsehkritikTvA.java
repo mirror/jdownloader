@@ -79,7 +79,7 @@ public class FernsehkritikTvA extends PluginForDecrypt {
         br.setCustomCharset("utf-8");
         br.getPage(parameter);
 
-        DATE = br.getRegex("vom (\\d{1,2}\\. [A-Za-z]+ \\d{4})</h3>").getMatch(0);
+        DATE = br.getRegex("vom ([^<>\"]+)</h3>").getMatch(0);
         if (DATE == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -160,11 +160,6 @@ public class FernsehkritikTvA extends PluginForDecrypt {
     private ArrayList<DownloadLink> getParts(final String parameter, final String episode) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.getPage(parameter + "/play/");
-        final String finallink = br.getRegex("type=\"video/mp4\" src=\"(http://[^<>\"]*?\\.mp4)\"").getMatch(0);
-        if (finallink == null) {
-            return null;
-        }
-        final String formattedpackagename = getFormattedPackagename(EPISODENUMBER, DATE);
         final DownloadLink dlLink = createDownloadlink("http://fernsehkritik.tv/jdownloaderfolgeneu" + System.currentTimeMillis() + new Random().nextInt(1000000));
         try {
             dlLink.setContentUrl(parameter);
@@ -175,7 +170,16 @@ public class FernsehkritikTvA extends PluginForDecrypt {
         dlLink.setProperty("directdate", DATE);
         dlLink.setProperty("directepisodenumber", EPISODENUMBER);
         dlLink.setProperty("directtype", ".mp4");
-        dlLink.setProperty("directlink", finallink);
+        if (br.containsHTML(">Clip nicht kostenlos verfügbar")) {
+            dlLink.setProperty("PREMIUMONLY", true);
+        } else {
+            final String finallink = br.getRegex("type=\"video/mp4\" src=\"(http://[^<>\"]*?\\.mp4)\"").getMatch(0);
+            if (finallink == null) {
+                return null;
+            }
+            dlLink.setProperty("PREMIUMONLY", false);
+            dlLink.setProperty("directlink", finallink);
+        }
         final String formattedFilename = ((jd.plugins.hoster.FernsehkritikTv) HOSTPLUGIN).getFKTVFormattedFilename(dlLink);
         dlLink.setFinalFileName(formattedFilename);
         if (FASTCHECKENABLED) {

@@ -76,6 +76,7 @@ public class FernsehkritikTv extends PluginForHost {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
     }
@@ -112,7 +113,7 @@ public class FernsehkritikTv extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink, Account account) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink, final Account account) throws Exception {
         DLLINK = null;
         String final_filename = null;
         if (downloadLink.getDownloadURL().matches(TYPE_COUCHSTREAM)) {
@@ -164,9 +165,6 @@ public class FernsehkritikTv extends PluginForHost {
             final_filename = "Fernsehkritik-TV Folge " + episodenumber + " vom " + date + "." + extension;
         } else if (downloadLink.getDownloadURL().matches(TYPE_FOLGE_NEW)) {
             DLLINK = downloadLink.getStringProperty("directlink", null);
-            if (DLLINK == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
             final_filename = getFKTVFormattedFilename(downloadLink);
         } else if (downloadLink.getDownloadURL().matches(TYPE_MASSENGESCHMACK_GENERAL)) {
             br.getPage(downloadLink.getDownloadURL());
@@ -212,29 +210,35 @@ public class FernsehkritikTv extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText("Unknown linkformat");
             return AvailableStatus.UNCHECKABLE;
         }
-
-        br.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            try {
-                /* @since JD2 */
-                con = br.openHeadConnection(DLLINK);
-            } catch (final Throwable t) {
-                /* Not supported in old 0.9.581 Stable */
-                con = br.openGetConnection(DLLINK);
+        if (isPremiumonly(downloadLink) && account == null) {
+            downloadLink.getLinkStatus().setStatusText("Nur für Massengeschmack Abonenten herunterladbar");
+        } else {
+            if (DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-                downloadLink.setFinalFileName(final_filename);
-            } else {
+            br.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
+            try {
+                try {
+                    /* @since JD2 */
+                    con = br.openHeadConnection(DLLINK);
+                } catch (final Throwable t) {
+                    /* Not supported in old 0.9.581 Stable */
+                    con = br.openGetConnection(DLLINK);
+                }
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                    downloadLink.setFinalFileName(final_filename);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } catch (final Throwable e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        } catch (final Throwable e) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
         }
 
@@ -283,7 +287,7 @@ public class FernsehkritikTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         final AvailableStatus availStatus = requestFileInformation(downloadLink);
-        if (AvailableStatus.UNCHECKABLE.equals(availStatus)) {
+        if (AvailableStatus.UNCHECKABLE.equals(availStatus) || this.isPremiumonly(downloadLink)) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
@@ -402,6 +406,10 @@ public class FernsehkritikTv extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
+    }
+
+    private boolean isPremiumonly(final DownloadLink dl) {
+        return dl.getBooleanProperty("PREMIUMONLY", false);
     }
 
     public String getFKTVFormattedFilename(final DownloadLink downloadLink) throws ParseException {

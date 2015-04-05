@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
@@ -54,6 +55,7 @@ public class DrssTvDecrypter extends PluginForDecrypt {
     private ArrayList<DownloadLink> DECRYPTEDLINKS      = new ArrayList<DownloadLink>();
     private String[]                ALLVIDEOS           = null;
     private String                  TITLE               = null;
+    private String                  DESCRIPTION         = null;
 
     /*
      * TODO: Add support for profile links & galleries: http://www.drss.tv/profil/xxx/ , Add plugin settings, download trailer/pictures and
@@ -85,7 +87,17 @@ public class DrssTvDecrypter extends PluginForDecrypt {
             DECRYPTEDLINKS.add(MAIN);
             return DECRYPTEDLINKS;
         }
+        DESCRIPTION = br.getRegex("<div class=\"row profile-container-text margin-bottom\">(.*?)<div class=\"row\">").getMatch(0);
         ALLVIDEOS = br.getRegex("data\\-src=\"(https?://(www\\.)?(youtube|dailymotion)\\.com/[^<>\"]*?)\"").getColumn(0);
+
+        try {
+            if (DESCRIPTION != null) {
+                MAIN.setComment(DESCRIPTION);
+            }
+        } catch (final Throwable e) {
+            /* Not available in old 0.9.581 Stable */
+        }
+
         if (PARAMETER.matches(type_video)) {
             /* This is just a single video. */
             if (ALLVIDEOS == null || ALLVIDEOS.length == 0) {
@@ -111,7 +123,7 @@ public class DrssTvDecrypter extends PluginForDecrypt {
     }
 
     @SuppressWarnings("deprecation")
-    private void decryptEpisode() throws DecrypterException {
+    private void decryptEpisode() throws DecrypterException, IOException {
         final SubConfiguration cfg = SubConfiguration.getConfig("drss.tv");
         final boolean allow_gallery = cfg.getBooleanProperty(ALLOW_GALLERY, false);
 
@@ -226,7 +238,7 @@ public class DrssTvDecrypter extends PluginForDecrypt {
         }
     }
 
-    private void decryptOther() throws DecrypterException {
+    private void decryptOther() throws DecrypterException, IOException {
         TITLE = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (TITLE == null) {
             logger.warning("Decrypter broken for link: " + PARAMETER);
@@ -242,9 +254,10 @@ public class DrssTvDecrypter extends PluginForDecrypt {
      * @param force_others
      *            : Force the decryption of uncategorized (video) material. If true, this overrides the users' setting. Only important for
      *            uncategorized linktypes.
+     * @throws IOException
      */
     @SuppressWarnings("deprecation")
-    private void decryptVideolistStuff(final boolean force_others) throws DecrypterException {
+    private void decryptVideolistStuff(final boolean force_others) throws DecrypterException, IOException {
         final SubConfiguration cfg = SubConfiguration.getConfig("drss.tv");
         final boolean allow_teaser_pic = cfg.getBooleanProperty(ALLOW_TEASER_PIC, false);
         final boolean allow_trailer = cfg.getBooleanProperty(ALLOW_TRAILER, false);
@@ -276,9 +289,10 @@ public class DrssTvDecrypter extends PluginForDecrypt {
                 }
                 if (subtitle.equals("Titelbild")) {
                     if (allow_teaser_pic) {
+                        br.getPage(PARAMETER + "?video=" + real_counter);
                         String teaser_picture = br.getRegex("property=\"og:image\" content=\"(/images/[^<>\"]*?\\.jpg)\"").getMatch(0);
                         if (teaser_picture == null) {
-                            teaser_picture = br.getRegex("player\\-" + real_counter + "\">[\t\n\r ]+<img height=\"\\d+\" class=\"img\\-responsive\" src=\"(/images/[^<>\"]*?\\.jpg)\"").getMatch(0);
+                            teaser_picture = br.getRegex("player\\-" + real_counter + "\">[\t\n\r ]+<img [^>]+ src=\"(/images/[^<>\"]*?\\.jpg)\"").getMatch(0);
                         }
                         if (teaser_picture == null) {
                             logger.warning("Failed to find teaser picture!");
@@ -295,7 +309,11 @@ public class DrssTvDecrypter extends PluginForDecrypt {
                      * Trailer exists and user wants to download it --> Find it. Trailers are usually hosted externally.
                      */
                     if (allow_trailer) {
-                        final String trailer_externlink = br.getRegex("player\\-" + real_counter + "\">[\t\n\r ]+<iframe[^<>]+(?:data\\-)?src=\"(http[^<>\"]*?)\"").getMatch(0);
+                        br.getPage(PARAMETER + "?video=" + real_counter);
+                        String trailer_externlink = br.getRegex("player\\-" + real_counter + "\">[\t\n\r ]+<iframe[^<>]+(?:data\\-)?src=\"(http[^<>\"]*?)\"").getMatch(0);
+                        if (trailer_externlink == null) {
+                            trailer_externlink = br.getRegex("player\\-" + real_counter + "\">[\t\n\r ]+<div class=\"jp\\-video jp\\-video\\-wide\"[^<>]+data\\-url=\"(http[^<>\"]*?)\"").getMatch(0);
+                        }
                         if (trailer_externlink == null) {
                             logger.warning("Failed to find trailer!");
                             throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
@@ -307,6 +325,7 @@ public class DrssTvDecrypter extends PluginForDecrypt {
                      * Now we should have a video which is neither trailer nor any other undefined video type.
                      */
                     if (allow_others) {
+                        br.getPage(PARAMETER + "?video=" + real_counter);
                         final String video_externlink = br.getRegex("player\\-" + real_counter + "\">[\t\n\r ]+<iframe[^<>]+(?:data\\-)?src=\"(http[^<>\"]*?)\"").getMatch(0);
                         if (video_externlink == null) {
                             logger.warning("Failed to find trailer!");

@@ -108,7 +108,7 @@ public class LibGen extends PluginForDecrypt {
             decryptedLinks.add(libgen_dl);
         }
 
-        final String cover_url = br.getRegex("(?:\\'|\")(https?://libgen\\.(?:in|info|net)/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png))(?:\\'|\")").getMatch(0);
+        final String cover_url = br.getRegex("(?:\\'|\")(https?://libgen\\.(?:in|info|net)/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png|gif))(?:\\'|\")").getMatch(0);
         if (cover_url != null && libgen_url != null) {
             final DownloadLink dl = createDownloadlink(cover_url);
             final String ext = cover_url.substring(cover_url.lastIndexOf("."));
