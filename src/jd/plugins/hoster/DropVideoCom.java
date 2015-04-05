@@ -40,20 +40,32 @@ public class DropVideoCom extends PluginForHost {
         return "http://dropvideo.com/terms/";
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/video/", "/embed/"));
+        link.setUrlDownload(link.getDownloadURL().replace("/embed/", "/video/"));
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         correctDownloadLink(link);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("video_notfound2\\.png\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.getPage("/embed/" + getFUID(link));
+        if (br.containsHTML("video_notfound2\\.png\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("var vtitle = \"([^<>\"]*?)\";").getMatch(0);
-        if (filename == null) filename = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            filename = br.getRegex("target=\"_blank\">([^<>\"]*?)</a>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = getFUID(link);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
         return AvailableStatus.TRUE;
     }
@@ -61,14 +73,23 @@ public class DropVideoCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String dllink = br.getRegex("var vurl = \"(http://[^<>\"]*?)\";").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String dllink = br.getRegex("var vurl2? = \"(http://[^<>\"]*?)\";").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://fs\\d+\\.dropvideo\\.com/v/[^<>\"]*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getFUID(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
