@@ -224,6 +224,18 @@ public class HighWayMe extends PluginForHost {
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         this.setConstants(account, link);
         this.br = newBrowser();
+
+        /*
+         * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it is
+         * needed to get the individual host limits.
+         */
+        synchronized (CTRLLOCK) {
+            if (hostMaxchunksMap.isEmpty() || hostMaxdlsMap.isEmpty()) {
+                logger.info("Performing full login to set individual host limits");
+                this.fetchAccountInfo(account);
+            }
+        }
+
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
             /* request creation of downloadlink */
