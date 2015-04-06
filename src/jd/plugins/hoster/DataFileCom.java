@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -79,33 +80,35 @@ public class DataFileCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean           FREE_RESUME                     = false;
-    private static final int               FREE_MAXCHUNKS                  = 1;
-    private static final int               FREE_MAXDOWNLOADS               = 20;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS       = 20;
-    private static final boolean           ACCOUNT_PREMIUM_RESUME          = true;
-    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS       = 0;
-    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS    = 20;
+    private static final boolean           FREE_RESUME                  = false;
+    private static final int               FREE_MAXCHUNKS               = 1;
+    private static final int               FREE_MAXDOWNLOADS            = 20;
+    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
-    private final String                   PREMIUMONLY                     = "(\"Sorry\\. Only premium users can download this file\"|>This file can be downloaded only by users with<br />Premium account\\!<|>You can download files up to)";
-    private final boolean                  SKIPRECONNECTWAITTIME           = true;
-    private final boolean                  SKIPWAITTIME                    = true;
+    private final String                   PREMIUMONLY                  = "(\"Sorry\\. Only premium users can download this file\"|>This file can be downloaded only by users with<br />Premium account\\!<|>You can download files up to)";
+    private final boolean                  SKIPRECONNECTWAITTIME        = true;
+    private final boolean                  SKIPWAITTIME                 = true;
 
-    private final String[]                 IPCHECK                         = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
-    private static AtomicBoolean           hasAttemptedDownloadstart       = new AtomicBoolean(false);
-    private static AtomicLong              timeBefore                      = new AtomicLong(0);
-    private static final String            PROPERTY_LASTDOWNLOAD_TIMESTAMP = "datafilecom_lastdownload_timestamp";
-    private final String                   LASTIP                          = "LASTIP";
-    private static AtomicReference<String> lastIP                          = new AtomicReference<String>();
-    private final Pattern                  IPREGEX                         = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-    private static final long              RECONNECTWAIT                   = 3610000L;
+    private final String[]                 IPCHECK                      = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
+    private static AtomicBoolean           hasAttemptedDownloadstart    = new AtomicBoolean(false);
+    private static AtomicLong              timeBefore                   = new AtomicLong(0);
+    private static final String            PROPERTY_LASTDOWNLOAD        = "datafilecom_lastdownload_timestamp";
+    private final String                   PROPERTY_LASTIP              = "PROPERTY_LASTIP";
+    private static AtomicReference<String> lastIP                       = new AtomicReference<String>();
+    private static AtomicReference<String> currentIP                    = new AtomicReference<String>();
+    private static HashMap<String, Long>   blockedIPsMap                = new HashMap<String, Long>();
+    private final Pattern                  IPREGEX                      = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private static final long              FREE_RECONNECTWAIT           = 3610000L;
 
-    private Account                        currAcc                         = null;
-    private DownloadLink                   currDownloadLink                = null;
+    private Account                        currAcc                      = null;
+    private DownloadLink                   currDownloadLink             = null;
 
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static final AtomicInteger     totalMaxSimultanFreeDownload    = new AtomicInteger(FREE_MAXDOWNLOADS);
+    private static final AtomicInteger     totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
 
     @SuppressWarnings({ "deprecation" })
     public void correctDownloadLink(final DownloadLink link) {
@@ -263,8 +266,14 @@ public class DataFileCom extends PluginForHost {
         doFree(downloadLink, null);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({ "deprecation", "unchecked" })
     private void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
+        currentIP.set(this.getIP());
+        /* Load list of saved IPs + timestamp of last download */
+        final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
+        if (lastdownloadmap != null && lastdownloadmap instanceof HashMap) {
+            blockedIPsMap = (HashMap<String, Long>) lastdownloadmap;
+        }
         boolean captchaSuccess = false;
         if (br.containsHTML(PREMIUMONLY)) {
             // not possible to download under handleFree!
@@ -278,21 +287,17 @@ public class DataFileCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
         }
         String dllink = checkDirectLink(downloadLink, "directlink");
-        final String currentIP = this.getIP();
         try {
             if (dllink == null) {
                 if (this.getPluginConfig().getBooleanProperty(ENABLE_FREE_STORED_WAITTIME, defaultENABLE_fREE_PARALLEL_DOWNLOADS)) {
-                    long lastdownload = timeBefore.get();
-                    if (lastdownload == 0) {
-                        lastdownload = getPluginSavedLastDownloadTimestamp();
-                    }
+                    final long lastdownload = getPluginSavedLastDownloadTimestamp();
                     /**
                      * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
                      */
-                    if (ipChanged(currentIP, downloadLink) == false) {
+                    if (ipChanged(downloadLink) == false) {
                         final long passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
-                        if (passedTimeSinceLastDl < RECONNECTWAIT) {
-                            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, RECONNECTWAIT - passedTimeSinceLastDl);
+                        if (passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
+                            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
                         }
                     }
                 }
@@ -404,13 +409,14 @@ public class DataFileCom extends PluginForHost {
             try {
                 if (DataFileCom.hasAttemptedDownloadstart.get() == true) {
                     logger.info("Downloadstart was attempted --> Setting timestamps in plugin config/account");
-                    this.getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD_TIMESTAMP, timeBefore.get());
+                    blockedIPsMap.put(currentIP.get(), timeBefore.get());
+                    this.getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, blockedIPsMap);
                     if (account != null) {
                         /* Storing on account is not (yet) needed but let's do it anyways - it might be useful in the future! */
-                        account.setProperty(PROPERTY_LASTDOWNLOAD_TIMESTAMP, timeBefore.get());
+                        account.setProperty(PROPERTY_LASTDOWNLOAD, timeBefore.get());
                     }
                 }
-                this.setIP(currentIP, downloadLink);
+                this.setIP(downloadLink, account);
             } catch (final Throwable e) {
             }
         }
@@ -661,7 +667,7 @@ public class DataFileCom extends PluginForHost {
             this.currAcc.setError(AccountError.TEMP_DISABLED, "You are downloading another file at this moment. Please wait for it to complete and then try again.");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "You are downloading another file at this moment. Please wait for it to complete and then try again.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         } else {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You are downloading another file at this moment. Please wait for it to complete and then try again.", RECONNECTWAIT);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You are downloading another file at this moment. Please wait for it to complete and then try again.", FREE_RECONNECTWAIT);
         }
     }
 
@@ -674,7 +680,7 @@ public class DataFileCom extends PluginForHost {
      * */
     private void errorDailyDownloadlimitReached() throws PluginException {
         if (this.currAcc == null) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily downloadlimit reached", RECONNECTWAIT);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily downloadlimit reached", FREE_RECONNECTWAIT);
         } else if (this.currAcc != null && this.currAcc.getBooleanProperty("free", false)) {
             // reached daily download quota
             logger.info("You've reached daily download quota for " + this.currAcc.getUser() + " account");
@@ -957,44 +963,60 @@ public class DataFileCom extends PluginForHost {
         return currentIP;
     }
 
-    private boolean ipChanged(final String IP, final DownloadLink link) throws PluginException {
-        String currentIP = null;
-        if (IP != null && new Regex(IP, this.IPREGEX).matches()) {
-            currentIP = IP;
+    private boolean ipChanged(final DownloadLink link) throws PluginException {
+        String currIP = null;
+        if (currentIP.get() != null && new Regex(currentIP.get(), this.IPREGEX).matches()) {
+            currIP = currentIP.get();
         } else {
-            currentIP = this.getIP();
+            currIP = this.getIP();
         }
-        if (currentIP == null) {
+        if (currIP == null) {
             return false;
         }
-        String lastIP = link.getStringProperty(this.LASTIP, null);
+        String lastIP = link.getStringProperty(PROPERTY_LASTIP, null);
         if (lastIP == null) {
             lastIP = DataFileCom.lastIP.get();
         }
-        return !currentIP.equals(lastIP);
+        return !currIP.equals(lastIP);
     }
 
-    private boolean setIP(final String IP, final DownloadLink link) throws PluginException {
-        synchronized (this.IPCHECK) {
-            if (IP != null && !new Regex(IP, this.IPREGEX).matches()) {
+    @SuppressWarnings("deprecation")
+    private boolean setIP(final DownloadLink link, final Account account) throws PluginException {
+        synchronized (IPCHECK) {
+            if (currentIP.get() != null && !new Regex(currentIP.get(), IPREGEX).matches()) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (this.ipChanged(IP, link) == false) {
+            if (ipChanged(link) == false) {
                 // Static IP or failure to reconnect! We don't change lastIP
-                this.logger.warning("Your IP hasn't changed since last download");
+                logger.warning("Your IP hasn't changed since last download");
                 return false;
             } else {
-                final String lastIP = IP;
-                link.setProperty(this.LASTIP, lastIP);
+                String lastIP = currentIP.get();
+                link.setProperty(PROPERTY_LASTIP, lastIP);
                 DataFileCom.lastIP.set(lastIP);
-                this.logger.info("LastIP = " + lastIP);
+                getPluginConfig().setProperty(PROPERTY_LASTIP, lastIP);
+                logger.info("LastIP = " + lastIP);
                 return true;
             }
         }
     }
 
     private long getPluginSavedLastDownloadTimestamp() {
-        return getLongProperty(getPluginConfig(), PROPERTY_LASTDOWNLOAD_TIMESTAMP, 0);
+        long lastdownload = 0;
+        synchronized (blockedIPsMap) {
+            for (Entry<String, Long> ipentry : blockedIPsMap.entrySet()) {
+                final String ip = ipentry.getKey();
+                final long timestamp = ipentry.getValue();
+                if (System.currentTimeMillis() - timestamp >= FREE_RECONNECTWAIT) {
+                    /* Remove old entries */
+                    blockedIPsMap.remove(ip);
+                }
+                if (ip.equals(currentIP.get())) {
+                    lastdownload = timestamp;
+                }
+            }
+        }
+        return lastdownload;
     }
 
     private static long getLongProperty(final Property link, final String key, final long def) {

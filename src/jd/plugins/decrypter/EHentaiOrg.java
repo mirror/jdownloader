@@ -40,6 +40,7 @@ public class EHentaiOrg extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> allPages = new ArrayList<String>();
@@ -70,7 +71,15 @@ public class EHentaiOrg extends PluginForDecrypt {
         final DecimalFormat df = new DecimalFormat("0000");
         int counter = 1;
         for (final String currentPage : allPages) {
-            Browser br2 = br.cloneBrowser();
+            try {
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted by user: " + parameter);
+                    return decryptedLinks;
+                }
+            } catch (final Throwable e) {
+                // Not available in old 0.9.581 Stable
+            }
+            final Browser br2 = br.cloneBrowser();
             if (!currentPage.equals("0")) {
                 br2.getPage(parameter + "/?p=" + currentPage);
             }
@@ -80,36 +89,28 @@ public class EHentaiOrg extends PluginForDecrypt {
                 return null;
             }
             for (final String singleLink : links) {
-                try {
-                    if (this.isAbort()) {
-                        logger.info("Decryption aborted by user: " + parameter);
-                        return decryptedLinks;
-                    }
-                } catch (final Throwable e) {
-                    // Not available in old 0.9.581 Stable
-                }
-                br2.getPage(singleLink);
-                String finallink = br2.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+(:\\d+)?/h/[^<>\"]*?)\"").getMatch(0);
-                if (finallink == null) {
-                    finallink = br.getRegex("src=\"(http://[^<>\"]*?image\\.php\\?[^<>\"]*?)\"").getMatch(0);
-                }
-                if (finallink == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    logger.warning("Current link is: " + singleLink);
-                    return null;
-                }
-                final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
-                dl.setFinalFileName(fpName + "_" + df.format(counter) + finallink.substring(finallink.lastIndexOf(".")));
+                final DownloadLink dl = createDownloadlink("http://ehentaidecrypted.org/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
+                final String namepart = fpName + "_" + df.format(counter);
+                dl.setProperty("mainlink", parameter);
+                dl.setProperty("individual_link", singleLink);
+                dl.setProperty("namepart", namepart);
+                dl.setName(namepart + new Regex(singleLink, "([A-Za-z0-9]+)/?$").getMatch(0) + ".jpg");
                 dl.setAvailable(true);
+                try {
+                    dl.setContentUrl(singleLink);
+                } catch (final Throwable e) {
+                    /* Not available in old 0.9.581 Stable */
+                    dl.setBrowserUrl(singleLink);
+                }
                 decryptedLinks.add(dl);
                 try {
                     distribute(dl);
                 } catch (final Throwable e) {
                     // No available in old Stable
                 }
-                sleep(new Random().nextInt(5000), param);
                 counter++;
             }
+            sleep(new Random().nextInt(5000), param);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
@@ -119,6 +120,7 @@ public class EHentaiOrg extends PluginForDecrypt {
 
     /* NOTE: no override to keep compatible to old stable */
     public int getMaxConcurrentProcessingInstances() {
+        /* Too many processes = server hates us */
         return 1;
     }
 
