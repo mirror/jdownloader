@@ -620,13 +620,30 @@ public class DataFileCom extends PluginForHost {
             if (errorCode == null) {
                 errorCode = new Regex(redirect, "error\\.html\\?code=(\\d+)").getMatch(0);
             }
-            if ("6".endsWith(errorCode) || "9".endsWith(errorCode)) {
-                errorFreeTooManySimultanDownloads();
-            } else if ("7".endsWith(errorCode)) {
-                errorDailyDownloadlimitReached();
+            if (errorCode != null) {
+                freeErrorcodeErrorhandling(errorCode);
             }
             logger.warning("Unknown error");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unknown error", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
+    }
+
+    /** Handles errors based on errorcode inside URL */
+    private void handleURLErrors(final String url) throws PluginException {
+        final String code = new Regex(url, "code=(\\d+)").getMatch(0);
+        if (code != null) {
+            freeErrorcodeErrorhandling(code);
+        }
+    }
+
+    private void freeErrorcodeErrorhandling(final String errorcode) throws PluginException {
+        if (errorcode.equals("6") || errorcode.equals("9")) {
+            errorFreeTooManySimultanDownloads();
+        } else if (errorcode.equals("7")) {
+            errorDailyDownloadlimitReached();
+        } else {
+            logger.warning("Unknown error");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 
@@ -674,13 +691,6 @@ public class DataFileCom extends PluginForHost {
             this.currAcc.setAccountInfo(ac);
             this.currAcc.setError(AccountError.TEMP_DISABLED, "Daily downloadlimit reached");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Trafficlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-        }
-    }
-
-    /** Handles errors based on errorcode inside URL */
-    private void handleURLErrors(final String url) throws PluginException {
-        if (url.contains("code=9")) {
-            errorFreeTooManySimultanDownloads();
         }
     }
 
