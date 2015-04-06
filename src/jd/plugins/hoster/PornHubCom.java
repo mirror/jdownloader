@@ -1,5 +1,6 @@
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.net.URL;
 import java.security.InvalidKeyException;
 import java.util.Arrays;
@@ -14,6 +15,8 @@ import javax.crypto.spec.SecretKeySpec;
 
 import jd.PluginWrapper;
 import jd.gui.UserIO;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.nativeintegration.LocalBrowser;
@@ -25,9 +28,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhub.com" }, urls = { "https?://(www\\.)?([a-z]{2}\\.)?pornhub\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhub.com" }, urls = { "https?://(www\\.|[a-z]{2}\\.)?pornhub\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|photo/\\d+)" }, flags = { 0 })
 public class PornHubCom extends PluginForHost {
 
+    private static final String type_photo        = "https?://(www\\.|[a-z]{2}\\.)?pornhub\\.com/photo/\\d+";
     private static final String html_privatevideo = "id=\"iconLocked\"";
     private String              dlUrl             = null;
 
@@ -38,7 +42,7 @@ public class PornHubCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("https://", "http://"));
-        link.setUrlDownload(link.getDownloadURL().replaceAll("://(www\\.)?([a-z]{2}\\.)?", "://"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("^http://(www\\.)?([a-z]{2}\\.)?", "http://www."));
         link.setUrlDownload(link.getDownloadURL().replaceAll("/embed/", "/view_video.php?viewkey="));
     }
 
@@ -52,17 +56,34 @@ public class PornHubCom extends PluginForHost {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        /* Offline links should also have nice filenames */
-        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9\\-_]+)$").getMatch(0));
-        requestVideo(downloadLink);
+        dlUrl = null;
+        final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9\\-_]+)$").getMatch(0);
+        if (downloadLink.getDownloadURL().matches(type_photo)) {
+            /* Offline links should also have nice filenames */
+            downloadLink.setName(fid + ".jpg");
+            br.getPage(downloadLink.getDownloadURL());
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            dlUrl = br.getRegex("name=\"twitter:image:src\" content=\"(http[^<>\"]*?\\.[A-Za-z]{3,5})\"").getMatch(0);
+            if (dlUrl == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            downloadLink.setFinalFileName(fid + dlUrl.substring(dlUrl.lastIndexOf(".")));
+        } else {
+            /* Offline links should also have nice filenames */
+            downloadLink.setName(fid + ".mp4");
+            requestVideo(downloadLink);
+        }
         setBrowserExclusive();
         br.setFollowRedirects(true);
         /* E.g. for private videos, we do not get a downloadlink here. */
         if (dlUrl != null) {
             try {
-                if (!br.openGetConnection(dlUrl).getContentType().contains("html")) {
+                if (!openConnection(this.br, dlUrl).getContentType().contains("html")) {
                     downloadLink.setDownloadSize(br.getHttpConnection().getLongContentLength());
                     br.getHttpConnection().disconnect();
                     return AvailableStatus.TRUE;
@@ -77,17 +98,34 @@ public class PornHubCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestVideo(link);
-        if (br.containsHTML(html_privatevideo)) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "You're not authorized to watch/download this private video");
+        final boolean resume;
+        final int maxchunks;
+        if (link.getDownloadURL().matches(type_photo)) {
+            resume = true;
+            /* We only have small pictures --> No chunkload needed */
+            maxchunks = 1;
+            requestFileInformation(link);
+        } else {
+            resume = true;
+            maxchunks = 0;
+            requestVideo(link);
+            if (br.containsHTML(html_privatevideo)) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "You're not authorized to watch/download this private video");
+            }
+            if (dlUrl == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
-        if (dlUrl == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlUrl, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlUrl, resume, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -309,6 +347,20 @@ public class PornHubCom extends PluginForHost {
                 return;
             }
         }
+    }
+
+    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
+        URLConnectionAdapter con;
+        if (isJDStable()) {
+            con = br.openGetConnection(directlink);
+        } else {
+            con = br.openHeadConnection(directlink);
+        }
+        return con;
+    }
+
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */

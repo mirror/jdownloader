@@ -258,7 +258,7 @@ public class HighWayMe extends PluginForHost {
             try {
                 final Browser br2 = br.cloneBrowser();
                 URLConnectionAdapter con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (con.getContentType().contains("html") || con.getResponseCode() == 404 || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
