@@ -474,153 +474,74 @@ public class ChoMikujPl extends PluginForDecrypt {
             } else {
                 accessPage(postdata, tempBr, pageCount);
             }
-            final String[] v2list = tempBr.getRegex("<div class=\"fileinfo tab\">(.*?)<div class=\"clear\">").getColumn(0);
+            String[] v2list = tempBr.getRegex("<li class=\"fileItemContainer\"(.*?)href=\"javascript:;\"").getColumn(0);
+            // if (v2list == null || v2list.length == 0) {
+            // v2list = tempBr.getRegex("<div class=\"filerow fileItemContainer\">(.*?)visibility: hidden").getColumn(0);
+            // }
             final String folderTable = tempBr.getRegex("<div id=\"foldersList\">[\t\n\r ]+<table>(.*?)</table>[\t\n\r ]+</div>").getMatch(0);
             if (folderTable != null) {
                 allFolders = new Regex(folderTable, "<a href=\"(/[^<>\"]*?)\" rel=\"\\d+\" title=\"([^<>\"]*?)\"").getMatches();
             }
-            if ((v2list != null && v2list.length != 0) || FORCEV2) {
-                if (v2list == null || v2list.length == 0) {
+            if ((v2list == null || v2list.length == 0) && (allFolders == null || allFolders.length == 0)) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (final String entry : v2list) {
+                final DownloadLink dl = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
+                String filesize = new Regex(entry, "<li><span>(\\d+(,\\d+)? [A-Za-z]{1,5})</span>").getMatch(0);
+                if (filesize == null) {
+                    filesize = new Regex(entry, "<li>[\t\n\r ]*?(\\d+(,\\d{1,2})? [A-Za-z]{1,5})[\t\n\r ]*?</li>").getMatch(0);
+                }
+                final Regex finfo = new Regex(entry, "<span class=\"bold\">(.*?)</span>(\\.[^<>\"/]*?)</a>");
+                String filename = new Regex(entry, "style=\"[^<>\"]*?\" title=\"([^<>\"]*?)\"").getMatch(0);
+                if (filename == null) {
+                    filename = finfo.getMatch(0);
+                }
+                /* This is usually only for filenames without ext */
+                if (filename == null) {
+                    filename = new Regex(entry, "data\\-title=\"([^<>\"]*?)\"").getMatch(0);
+                }
+                final String fid = new Regex(entry, "rel=\"(\\d+)\"").getMatch(0);
+                String ext = finfo.getMatch(1);
+                if (filename == null || filesize == null || fid == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                for (final String entry : v2list) {
-                    final DownloadLink dl = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
-                    final String filesize = new Regex(entry, "<li><span>(\\d+(,\\d+)? [A-Za-z]{1,5})</span>").getMatch(0);
-                    final Regex finfo = new Regex(entry, "<span class=\"bold\">(.*?)</span>(\\.[^<>\"/]*?)</a>");
-                    String filename = finfo.getMatch(0);
-                    /* This is usually only for filenames without ext */
-                    if (filename == null) {
-                        filename = new Regex(entry, "data\\-title=\"([^<>\"]*?)\"").getMatch(0);
-                    }
-                    final String fid = new Regex(entry, "rel=\"(\\d+)\"").getMatch(0);
-                    String ext = finfo.getMatch(1);
-                    if (filename == null || filesize == null || fid == null) {
-                        logger.warning("Decrypter broken for link: " + parameter);
-                        return null;
-                    }
-                    filename = correctFilename(Encoding.htmlDecode(filename).trim());
-                    filename = filename.replace("<span class=\"e\"> </span>", "");
-                    if (ext != null) {
-                        ext = Encoding.htmlDecode(ext.trim());
-                        filename += ext;
-                    }
-
-                    dl.setProperty("fileid", fid);
-                    dl.setProperty("__RequestVerificationToken_Lw__", br.getCookie(parameter, "__RequestVerificationToken_Lw__"));
-                    dl.setProperty("plain_filename", filename);
-                    dl.setName(filename);
-
-                    dl.setDownloadSize(SizeFormatter.getSize(filesize));
-                    dl.setAvailable(true);
-                    /**
-                     * If the link is a video it needs other download handling
-                     */
-                    if (ext != null && ext.matches(VIDEOENDINGS)) {
-                        dl.setProperty("video", true);
-                    }
-                    if (saveLink != null && savePost != null && FOLDERPASSWORD != null) {
-                        dl.setProperty("savedlink", saveLink);
-                        dl.setProperty("savedpost", savePost);
-                        // password for the folder, must be sent as a cookie when requesting file
-                        dl.setProperty("chomikID", chomikID);
-                        dl.setProperty("password", FOLDERPASSWORD);
-                    }
-                    dl.setProperty("requestverificationtoken", REQUESTVERIFICATIONTOKEN);
-                    fp.add(dl);
-                    try {
-                        distribute(dl);
-                    } catch (final Throwable e) {
-                        /* does not exist in 09581 */
-                    }
-                    decryptedLinks.add(dl);
+                filename = correctFilename(Encoding.htmlDecode(filename).trim());
+                filename = filename.replace("<span class=\"e\"> </span>", "");
+                if (ext != null) {
+                    ext = Encoding.htmlDecode(ext.trim());
+                    filename += ext;
                 }
-            } else {
-                // Every full page has 30 links
-                /** For photos */
-                String[][] fileIds = tempBr.getRegex("<div class=\"left\">[\t\n\r ]+<p class=\"filename\">[\t\n\r ]+<a class=\"downloadAction\" href=\"[^<>\"\\']+\"> +<span class=\"bold\">(.{1,300})</span>(\\..{1,20})</a>[\t\n\r ]+</p>[\t\n\r ]+<div class=\"thumbnail\">.*?title=\"([^<>\"]*?)\".*?</div>[\t\n\r ]+<div class=\"smallTab\">[\t\n\r ]+<ul class=\"tabGradientBg borderRadius\">[\t\n\r ]+<li>([^<>\"\\'/]+)</li>.*?class=\"galeryActionButtons visibleOpt fileIdContainer\" rel=\"(\\d+)\"").getMatches();
-                addRegexInt(0, 1, 3, 4, 2);
-                if (fileIds == null || fileIds.length == 0) {
-                    /**
-                     * Specified for videos (also works for mp3s, maybe also for other types)
-                     */
-                    // this will also handle the table data with ratings, also
-                    // removed
-                    // <span class=\"e\"> </span> from Regex, this is removed at the
-                    // later stage of parsing
-                    fileIds = tempBr.getRegex("<ul class=\"borderRadius tabGradientBg\">([\t\n\r ]+<li>[\t\n\r ]+<span class=\"rating_info\">[\t\n\r ]+<span style=\"display: none\" class=\"ratingTooltip\">.+?</span>[\t\n\r ]+<img src=\".+[\t\n\r ]+</span>[\t\n\r ]+</li>)*?[\t\n\r ]+<li><span>([^<>\"\\']+)</span></li>[\t\n\r ]+<li><span class=\"date\">[^<>\"\\']+</span></li>[\t\n\r ]+</ul>[\t\n\r ]+</div>[\t\n\r ]+<div class=\"fileActionsButtons clear visibleButtons  fileIdContainer\" rel=\"(\\d+)\" style=\"visibility: hidden;\">.*?class=\"expanderHeader downloadAction\" href=\"[^<>\"\\']+\" title=\"[^<>\"\\']+\">[\t\n\r ]+<span class=\"bold\">(.*?)</span>([^<>\"\\']+)</a>[\t\n\r ]+<img alt=\"pobierz\" class=\"downloadArrow visibleArrow\" src=\"").getMatches();
-                    addRegexInt(3, 4, 1, 2, 3);
-                    // old - without ratings
-                    // fileIds =
-                    // tempBr.getRegex("<ul class=\"borderRadius tabGradientBg\">[\t\n\r ]+<li><span>([^<>\"\\']+)</span></li>[\t\n\r ]+<li><span class=\"date\">[^<>\"\\']+</span></li>[\t\n\r ]+</ul>[\t\n\r ]+</div>[\t\n\r ]+<div class=\"fileActionsButtons clear visibleButtons  fileIdContainer\" rel=\"(\\d+)\" style=\"visibility: hidden;\">.*?class=\"expanderHeader downloadAction\" href=\"[^<>\"\\']+\" title=\"[^<>\"\\']+\">[\t\n\r ]+<span class=\"bold\">([^<>\"\\']*?(<span class=\"e\"> </span>[^<>\"\\']*?)?)</span>([^<>\"\\']+)</a>[\t\n\r ]+<img alt=\"pobierz\" class=\"downloadArrow visibleArrow\" src=\"").getMatches();
 
-                    // addRegexInt(2, 4, 0, 1, 0);
-                    /**
-                     * Last attempt, only get IDs (no pre-available-check possible)
-                     */
-                    if (fileIds == null || fileIds.length == 0) {
-                        fileIds = tempBr.getRegex("fileIdContainer\" rel=\"(\\d+)\"").getMatches();
-                        addRegexInt(0, 0, 0, 0, 0);
-                    }
-                }
-                if ((fileIds == null || fileIds.length == 0) && (allFolders == null || allFolders.length == 0)) {
-                    if (tempBr.containsHTML("class=\"noFile\">Nie ma plik\\&#243;w w tym folderze</p>")) {
-                        logger.info("The following link is offline: " + parameter);
-                        return decryptedLinks;
-                    }
-                    logger.warning(ERROR);
-                    return null;
-                }
-                if (fileIds != null && fileIds.length != 0) {
-                    for (String[] id : fileIds) {
-                        final DownloadLink dl = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
-                        dl.setProperty("fileid", id[REGEXSORT.get(3)]);
-                        if (id.length > 1) {
-                            if (id.length == 6) {
-                                dl.setName(correctFilename(Encoding.htmlDecode(id[REGEXSORT.get(4)].trim())));
-                            } else {
-                                String fname = Encoding.htmlDecode(id[REGEXSORT.get(0)].trim());
-                                // Workaround for cut filenames
-                                if (fname.endsWith("...")) {
-                                    final String tempname = fname.substring(0, fname.length() - 3);
-                                    final String completeName = Encoding.htmlDecode(id[2].trim());
-                                    if (completeName.contains(tempname)) {
-                                        fname = completeName;
-                                    }
-                                } else {
-                                    fname += Encoding.htmlDecode(id[REGEXSORT.get(1)].trim());
-                                }
-                                fname = correctFilename(fname.replace("<span class=\"e\"> </span>", ""));
-                                dl.setName(fname);
-                            }
+                dl.setProperty("fileid", fid);
+                dl.setProperty("__RequestVerificationToken_Lw__", br.getCookie(parameter, "__RequestVerificationToken_Lw__"));
+                dl.setProperty("plain_filename", filename);
+                dl.setName(filename);
 
-                            dl.setDownloadSize(SizeFormatter.getSize(id[REGEXSORT.get(2)].replace(",", ".")));
-                            dl.setAvailable(true);
-                            /**
-                             * If the link is a video it needs other download handling
-                             */
-                            if (id[REGEXSORT.get(1)].trim().matches(VIDEOENDINGS)) {
-                                dl.setProperty("video", true);
-                            }
-                        } else {
-                            dl.setName(String.valueOf(new Random().nextInt(1000000)));
-                        }
-                        if (saveLink != null && savePost != null && FOLDERPASSWORD != null) {
-                            dl.setProperty("savedlink", saveLink);
-                            dl.setProperty("savedpost", savePost);
-                            // Not needed yet but might me useful in the future
-                            dl.setProperty("password", FOLDERPASSWORD);
-                        }
-                        dl.setProperty("requestverificationtoken", REQUESTVERIFICATIONTOKEN);
-                        fp.add(dl);
-                        try {
-                            distribute(dl);
-                        } catch (final Throwable e) {
-                            /* does not exist in 09581 */
-                        }
-                        decryptedLinks.add(dl);
-                    }
+                dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                dl.setAvailable(true);
+                /**
+                 * If the link is a video it needs other download handling
+                 */
+                if (ext != null && ext.matches(VIDEOENDINGS)) {
+                    dl.setProperty("video", true);
                 }
+                if (saveLink != null && savePost != null && FOLDERPASSWORD != null) {
+                    dl.setProperty("savedlink", saveLink);
+                    dl.setProperty("savedpost", savePost);
+                    // password for the folder, must be sent as a cookie when requesting file
+                    dl.setProperty("chomikID", chomikID);
+                    dl.setProperty("password", FOLDERPASSWORD);
+                }
+                dl.setProperty("requestverificationtoken", REQUESTVERIFICATIONTOKEN);
+                fp.add(dl);
+                try {
+                    distribute(dl);
+                } catch (final Throwable e) {
+                    /* does not exist in 09581 */
+                }
+                decryptedLinks.add(dl);
             }
         }
         if (decryptFolders && allFolders != null && allFolders.length != 0) {
