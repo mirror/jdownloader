@@ -512,7 +512,7 @@ public class LineStorageCom extends PluginForHost {
 
         /* generic cleanup */
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
-        regexStuff.add("(display: ?none;\">.*?</div>)");
+        regexStuff.add("(display: none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
 
         for (String aRegex : regexStuff) {

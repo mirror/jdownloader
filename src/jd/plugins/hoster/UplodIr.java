@@ -89,12 +89,13 @@ public class UplodIr extends PluginForHost {
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.2
-    // mods:
+    // mods: waitTime
     // limit-info:
     // protocol: no https
     // captchatype: null
     // other:
 
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         /* link cleanup, but respect users protocol choosing or forced protocol */
@@ -600,7 +601,10 @@ public class UplodIr extends PluginForHost {
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        if (ttt == null) {
+            ttt = new Regex(correctedBR, ">(\\d+)</span> seconds").getMatch(0);
+        }
         if (ttt != null) {
             int wait = Integer.parseInt(ttt);
             wait -= passedTime;
