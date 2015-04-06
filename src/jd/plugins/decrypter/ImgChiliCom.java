@@ -48,18 +48,20 @@ public class ImgChiliCom extends PluginForDecrypt {
             br.getPage(parameter);
             br.setFollowRedirects(false);
 
-            final DownloadLink offline = createDownloadlink("directhttp://http://imgchili.net/" + System.currentTimeMillis() + "/" + System.currentTimeMillis() + ".png");
-            offline.setFinalFileName(new Regex(parameter, "([a-z0-9]+)$").getMatch(0));
-            offline.setAvailable(false);
+            {
+                final DownloadLink offline = createDownloadlink("directhttp://http://imgchili.net/" + System.currentTimeMillis() + "/" + System.currentTimeMillis() + ".png");
+                offline.setFinalFileName(new Regex(parameter, "([a-z0-9]+)$").getMatch(0));
+                offline.setAvailable(false);
 
-            if (br.containsHTML("The album does not exist")) {
-                logger.info("Link offline: " + parameter);
-                decryptedLinks.add(offline);
-                return decryptedLinks;
-            } else if (br.containsHTML("This album is empty\\. <br/>")) {
-                logger.info("Link offline (empty album): " + parameter);
-                decryptedLinks.add(offline);
-                return decryptedLinks;
+                if (br.containsHTML("The album does not exist")) {
+                    logger.info("Link offline: " + parameter);
+                    decryptedLinks.add(offline);
+                    return decryptedLinks;
+                } else if (br.containsHTML("This album is empty\\. <br/>")) {
+                    logger.info("Link offline (empty album): " + parameter);
+                    decryptedLinks.add(offline);
+                    return decryptedLinks;
+                }
             }
 
             final String fpName = br.getRegex("<title>imgChili \\&raquo; ([^<>\"]*?)</title>").getMatch(0);
@@ -71,8 +73,6 @@ public class ImgChiliCom extends PluginForDecrypt {
             for (String singleLink : thumbs) {
                 singleLink = "directhttp://" + singleLink.replace("http://t", "http://i");
                 final DownloadLink dl = createDownloadlink(singleLink);
-                final String finalfilename = new Regex(singleLink, "imgchili\\.net/\\d+/\\d+_(.+)").getMatch(0);
-                if (finalfilename != null) dl.setFinalFileName(finalfilename);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
@@ -83,9 +83,7 @@ public class ImgChiliCom extends PluginForDecrypt {
             }
         } else if (parameter.matches(SINGLEFINALLINK)) {
             final String finallink = parameter.replace("http://t", "http://i");
-            final String finalfilename = new Regex(finallink, "imgchili\\.net/\\d+/\\d+_(.+)").getMatch(0);
             final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
-            dl.setFinalFileName(finalfilename);
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         } else {
@@ -105,9 +103,7 @@ public class ImgChiliCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            final String finalfilename = new Regex(parameter, "imgchili\\.(com|net)/show/\\d+/(.+)").getMatch(1);
             final DownloadLink dl = createDownloadlink(finallink);
-            dl.setFinalFileName(finalfilename);
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
