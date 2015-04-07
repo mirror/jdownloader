@@ -51,23 +51,13 @@ public class PornYeahCom extends PluginForHost {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("pornyeah.com/404.php") || br.containsHTML("(>The file you have requested was not found on this server|<title>404: File Not Found at Porn Yeah</title>)")) {
+        if (br.getURL().contains("/404.php") || br.containsHTML("(>The file you have requested was not found on this server|<title>404: File Not Found at Porn Yeah</title>)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML(">Video removed<")) {
@@ -77,7 +67,7 @@ public class PornYeahCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>(.*?) at Porn Yeah</title>").getMatch(0);
         }
-        DLLINK = br.getRegex("(http://(www\\.)?pornyeah\\.com/playerConfig\\.php\\?[%a-z0-9\\.\\-_]+\\|\\d+)").getMatch(0);
+        DLLINK = br.getRegex("(http://(www\\.)?[a-z0-9\\.]+/playerConfig\\.php\\?[%a-z0-9\\.\\-_]+\\|\\d+)").getMatch(0);
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -95,7 +85,7 @@ public class PornYeahCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = openConnection(br2, DLLINK);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -108,6 +98,31 @@ public class PornYeahCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
+        URLConnectionAdapter con;
+        if (isJDStable()) {
+            con = br.openGetConnection(directlink);
+        } else {
+            con = br.openHeadConnection(directlink);
+        }
+        return con;
+    }
+
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override

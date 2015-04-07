@@ -29,18 +29,26 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "heavy-r.com" }, urls = { "http://(www\\.)?heavy\\-r\\.com/video/\\d+/.{1}" }, flags = { 0 })
-public class HeavyRCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "luxuretv.com" }, urls = { "http://(www\\.)?luxuretv\\.com/videos/.*?\\-\\d+\\.html" }, flags = { 0 })
+public class LuxureTvCom extends PluginForHost {
 
-    public HeavyRCom(PluginWrapper wrapper) {
-        super(wrapper);
-    }
+    /* Using playerConfig script */
+    /* Tags: playerConfig.php */
 
     private String DLLINK = null;
 
+    public LuxureTvCom(PluginWrapper wrapper) {
+        super(wrapper);
+    }
+
     @Override
     public String getAGBLink() {
-        return "http://www.heavy-r.com/index.php?page=terms";
+        return "http://luxuretv.com/termesetconditions.php";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @SuppressWarnings("deprecation")
@@ -49,25 +57,30 @@ public class HeavyRCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("class=\"errorBox\"")) {
+        if (br.getURL().contains("/404.php") || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(>The file you have requested was not found on this server|<title>404: File Not Found at Porn Yeah</title>)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("id=\"videotitle\">[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        if (br.containsHTML(">Video removed<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        DLLINK = br.getRegex("file: \\'(http://[^<>\"]*?)\\'").getMatch(0);
+        String filename = br.getRegex("<h1 class=\"porn\\-movies big\">(.*?)</h1>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        }
+        DLLINK = br.getRegex("(http://(www\\.)?[a-z0-9\\.]+/playerConfig\\.php\\?[^<>\"]+)").getMatch(0);
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".mp4";
+        br.getPage(Encoding.htmlDecode(DLLINK));
+        DLLINK = br.getRegex("defaultVideo:(http://.*?);").getMatch(0);
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        final Browser br2 = br.cloneBrowser();
+        DLLINK = Encoding.htmlDecode(DLLINK);
+        // if (!DLLINK.contains("?start=0")) DLLINK += "?start=0";
+        filename = filename.trim();
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + DLLINK.subSequence(DLLINK.length() - 4, DLLINK.length()));
+        Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
@@ -88,9 +101,10 @@ public class HeavyRCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
+    public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        /* Chunks possible but not stable */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -113,19 +127,14 @@ public class HeavyRCom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

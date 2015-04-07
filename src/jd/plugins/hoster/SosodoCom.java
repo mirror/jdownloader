@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sosodo.com" }, urls = { "http://(www\\.)?(sosodo|mvpdj)\\.com/home/music/track/\\d+/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mvpdj.com", "sosodo.com" }, urls = { "http://(www\\.)?mvpdj\\.com/song/player/\\d+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 0, 0 })
 public class SosodoCom extends PluginForHost {
 
     public SosodoCom(PluginWrapper wrapper) {
@@ -43,19 +43,20 @@ public class SosodoCom extends PluginForHost {
         return "http://mvpdj.com/about";
     }
 
-    @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("sosodo.com/", "mvpdj.com/"));
-    }
-
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        /* Very old links --> Offline */
+        if (downloadLink.getDownloadURL().matches("http://(www\\.)?(sosodo|mvpdj)\\.com/home/music/track/\\d+/\\d+")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         br.getPage(downloadLink.getDownloadURL());
         if (!br.containsHTML("<title>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        this.br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
         String filename = br.getRegex("\"name\":\"([^<>\"]*?)\"").getMatch(0);
         DLLINK = br.getRegex("\"url\":\"(/[^<>\"]*?)\"").getMatch(0);
         if (filename == null || DLLINK == null) {
@@ -77,7 +78,7 @@ public class SosodoCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = openConnection(br2, DLLINK);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -101,6 +102,20 @@ public class SosodoCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
+        URLConnectionAdapter con;
+        if (isJDStable()) {
+            con = br.openGetConnection(directlink);
+        } else {
+            con = br.openHeadConnection(directlink);
+        }
+        return con;
+    }
+
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override
