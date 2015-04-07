@@ -202,7 +202,7 @@ public class FiveFantasticPl extends PluginForHost {
             return ai;
         }
 
-        checkTrafficLimits(ai);
+        String[][] trafficLimit = checkTrafficLimits(ai);
 
         account.setValid(true);
         try {
@@ -212,7 +212,7 @@ public class FiveFantasticPl extends PluginForHost {
             // not available in old Stable 0.9.581
         }
 
-        ai.setStatus(getPhrase("PREMIUM_USER"));
+        setAccountInfoStatusWithTraffic(ai, trafficLimit);
         // save property for checking availability of private files
         account.setProperty("Premium", "T");
         return ai;
@@ -279,18 +279,32 @@ public class FiveFantasticPl extends PluginForHost {
         }
     }
 
-    void checkTrafficLimits(AccountInfo ai) {
+    String[][] checkTrafficLimits(AccountInfo ai) {
         final String[][] limits = br.getRegex("<div id=\"ctl00_updpunktyint\">[ \t\n\r]+<div style=\".*?\">[ \t\n\r]+<span id=\".*?\" style=\".*?\">[ \t\n\r]+([0-9]+)[ \t\n\r]+</span>[ \t\n\r]+</div>[ \t\n\r]+</div>[ \t\n\r]+<div style=\".*?punkty /([A-Za-z]+) transferu</div>").getMatches();
-        if (limits.length != 0) {
-            final String maxLimit = limits[0][0];
+        // we can't set traffic left, because private files are downloaded without decreasing the traffic.
+        // Setting traffic left also decreases traffic for these files (incorrectly).
+        // Also low traffic left value prevents from downloading large files from user's own account - core check downloadlink length with
+        // traffic left and
+        // switches to Free if the file is larger than traffic left, but should use Premium without decreasing traffic
+        // Moved info about traffic left into account status, "no traffic left" is handled in handlePremium
+        /*
+         * if (limits.length != 0) { final String maxLimit = limits[0][0];
+         *
+         * final String unit = limits[0][1]; // ai.setTrafficMax(SizeFormatter.getSize(maxLimit + " " + unit));
+         * ai.setTrafficLeft(SizeFormatter.getSize(maxLimit + " " + unit));
+         *
+         * } else { ai.setTrafficLeft(0); }
+         */
 
-            final String unit = limits[0][1];
-            // ai.setTrafficMax(SizeFormatter.getSize(maxLimit + " " + unit));
-            ai.setTrafficLeft(SizeFormatter.getSize(maxLimit + " " + unit));
+        ai.setUnlimitedTraffic();
+        return limits;
+    }
 
+    void setAccountInfoStatusWithTraffic(AccountInfo ai, String[][] trafficLimit) {
+        if (trafficLimit.length != 0) {
+            ai.setStatus(getPhrase("PREMIUM_USER") + " " + trafficLimit[0][0] + trafficLimit[0][1]);
         } else {
-            // ai.setUnlimitedTraffic();
-            ai.setTrafficLeft(0);
+            ai.setStatus(getPhrase("PREMIUM_USER") + " 0MB");
         }
     }
 
@@ -300,10 +314,8 @@ public class FiveFantasticPl extends PluginForHost {
         login(account, true);
 
         AccountInfo ai = account.getAccountInfo();
-        checkTrafficLimits(ai);
-        if (ai.getTrafficLeft() <= 0) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("NO_TRAFFIC_LEFT"));
-        }
+        String[][] trafficLimit = checkTrafficLimits(ai);
+        setAccountInfoStatusWithTraffic(ai, trafficLimit);
         final String encodedLink = Encoding.urlEncode(downloadLink.getDownloadURL());
         br.getPage(downloadLink.getDownloadURL());
         String vsKey = br.getRegex("type=\"hidden\" name=\"vs_key\" id=\"vs_key\" value=\"([^<>\"]*?)\"").getMatch(0);
@@ -321,6 +333,9 @@ public class FiveFantasticPl extends PluginForHost {
 
         if (br.containsHTML("Przepraszamy, plik jest chwilowo niedostepny")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("TEMPORARY_UNAVAILABLE"), 60 * 1000L);
+        } else if (br.containsHTML("ZA MAŁO AKTYWNYCH PUNKTÓW.")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("NO_TRAFFIC_LEFT"), 5 * 60 * 1000l);
+
         }
         this.sleep(500, downloadLink);
 
@@ -328,6 +343,7 @@ public class FiveFantasticPl extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -338,6 +354,8 @@ public class FiveFantasticPl extends PluginForHost {
             }
         }
         dl.startDownload();
+        trafficLimit = checkTrafficLimits(ai);
+        setAccountInfoStatusWithTraffic(ai, trafficLimit);
     }
 
     @Override
@@ -354,44 +372,44 @@ public class FiveFantasticPl extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("FOLDERS_NOT_SUPPORTED", "The link seems to be folder. Folders are not supported.");
-                                                      put("LINK_UNCHECKABLE", "(Link uncheckable - read Comment column)");
-                                                      put("TRYING_TO_GET_PAGE", "FiveFantastic: trying to get page for link:");
-                                                      put("GOT_ERROR", ",  got error: ");
-                                                      put("ERROR", "Error: ");
-                                                      put("PRIVATE_FILE", "This is private file - download impossible");
-                                                      put("FILE_ERROR", "File not found or private!");
-                                                      put("TEMPORARY_UNAVAILABLE", "Link temporary unavailable!");
-                                                      put("DOWNLOAD_DETECTED", "Download in progress detected from your IP!");
-                                                      put("PREMIUM_ERROR", "5Fantastic Premium Error");
-                                                      put("LOGIN_FAILED", "Login failed or not Premium!\r\nPlease check your Username and Password!");
-                                                      put("PREMIUM_INVALID", "Premium Account is invalid or not recognized!");
-                                                      put("NO_TRAFFIC_LEFT", "No Premium traffic left!");
-                                                      put("NO_PREMIUM", "Login failed or not Premium!");
-                                                      put("PREMIUM_USER", "Premium User");
-                                                  }
-                                              };
+        {
+            put("FOLDERS_NOT_SUPPORTED", "The link seems to be folder. Folders are not supported.");
+            put("LINK_UNCHECKABLE", "(Link uncheckable - read Comment column)");
+            put("TRYING_TO_GET_PAGE", "FiveFantastic: trying to get page for link:");
+            put("GOT_ERROR", ",  got error: ");
+            put("ERROR", "Error: ");
+            put("PRIVATE_FILE", "This is private file - download impossible");
+            put("FILE_ERROR", "File not found or private!");
+            put("TEMPORARY_UNAVAILABLE", "Link temporary unavailable!");
+            put("DOWNLOAD_DETECTED", "Download in progress detected from your IP!");
+            put("PREMIUM_ERROR", "5Fantastic Premium Error");
+            put("LOGIN_FAILED", "Login failed or not Premium!\r\nPlease check your Username and Password!");
+            put("PREMIUM_INVALID", "Premium Account is invalid or not recognized!");
+            put("NO_TRAFFIC_LEFT", "No Premium traffic left!");
+            put("NO_PREMIUM", "Login failed or not Premium!");
+            put("PREMIUM_USER", "Premium User with traffic limit: ");
+        }
+    };
 
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
                                                   {
-                                                      put("FOLDERS_NOT_SUPPORTED", "Wybrany link jest folderem. Foldery nie są obsługiwane");
-                                                      put("LINK_UNCHECKABLE", "(Link nieweryfikowalny - sprawdź kolumnę Komentarz)");
-                                                      put("TRYING_TO_GET_PAGE", "FiveFantastic: próba pobrania strony dla linku:");
-                                                      put("GOT_ERROR", ",  zwrócony błąd: ");
-                                                      put("ERROR", "Błąd: ");
-                                                      put("PRIVATE_FILE", "Plik prywatny - pobieranie niemożliwe");
-                                                      put("FILE_ERROR", "Plik nie znaleziony lub plik prywatny!");
-                                                      put("TEMPORARY_UNAVAILABLE", "Link chwilowo niedostępny!");
-                                                      put("DOWNLOAD_DETECTED", "Wykryto trwające pobieranie z twojego adresu IP!");
-                                                      put("PREMIUM_ERROR", "5Fantastic: Błąd Konta Premium");
-                                                      put("LOGIN_FAILED", "Błąd logowania lub konto nie jest Premium!\r\nSprawdź dane logowania: login/hasło!");
-                                                      put("PREMIUM_INVALID", "Nieprawidłowe lub nierozpoznane konto Premium!");
-                                                      put("NO_TRAFFIC_LEFT", "Brak dostępnego transferu Premium!");
-                                                      put("NO_PREMIUM", "Błędny login lub brak Premium!");
-                                                      put("PREMIUM_USER", "Użytkownik Premium");
-                                                  }
-                                              };
+            put("FOLDERS_NOT_SUPPORTED", "Wybrany link jest folderem. Foldery nie są obsługiwane");
+            put("LINK_UNCHECKABLE", "(Link nieweryfikowalny - sprawdź kolumnę Komentarz)");
+            put("TRYING_TO_GET_PAGE", "FiveFantastic: próba pobrania strony dla linku:");
+            put("GOT_ERROR", ",  zwrócony błąd: ");
+            put("ERROR", "Błąd: ");
+            put("PRIVATE_FILE", "Plik prywatny - pobieranie niemożliwe");
+            put("FILE_ERROR", "Plik nie znaleziony lub plik prywatny!");
+            put("TEMPORARY_UNAVAILABLE", "Link chwilowo niedostępny!");
+            put("DOWNLOAD_DETECTED", "Wykryto trwające pobieranie z twojego adresu IP!");
+            put("PREMIUM_ERROR", "5Fantastic: Błąd Konta Premium");
+            put("LOGIN_FAILED", "Błąd logowania lub konto nie jest Premium!\r\nSprawdź dane logowania: login/hasło!");
+            put("PREMIUM_INVALID", "Nieprawidłowe lub nierozpoznane konto Premium!");
+            put("NO_TRAFFIC_LEFT", "Brak dostępnego transferu Premium!");
+            put("NO_PREMIUM", "Błędny login lub brak Premium!");
+            put("PREMIUM_USER", "Użytkownik Premium z limitem: ");
+        }
+    };
 
     /**
      * Returns a Polish/English translation of a phrase. We don't use the JDownloader translation framework since we need only Polish and
