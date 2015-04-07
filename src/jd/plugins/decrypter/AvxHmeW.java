@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 /**
  * @author typek_pb
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avaxhome.ws" }, urls = { "http://(www\\.)?(avaxhome\\.(ws|bz|cc)|avaxho\\.me|avaxhm\\.com)/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics)/.+|http://(www\\.)?(avaxhome\\.pro)/[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avaxhome.ws" }, urls = { "http://(www\\.)?(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avxhome\\.se)/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics)/.+|http://(www\\.)?(avaxhome\\.pro)/[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
 public class AvxHmeW extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
@@ -38,7 +38,7 @@ public class AvxHmeW extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final String notThis = "https?://(?!(www\\.imdb\\.com|(avaxhome\\.(ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avaxhome\\.pro)))[\\S&]+";
+    private final String notThis = "https?://(?!(www\\.imdb\\.com|(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avaxhome\\.pro)))[\\S&]+";
 
     @SuppressWarnings("deprecation")
     @Override
@@ -47,7 +47,7 @@ public class AvxHmeW extends PluginForDecrypt {
         // for when you're testing
         br.clearCookies(getHost());
         // two differnet sites, do not rename, avaxhome.pro doesn't belong to the following template.
-        String parameter = cryptedLink.toString().replaceAll("(avaxhome\\.(ws|bz|cc)|avaxho\\.me|avaxhm\\.com)", "avaxhm.com");
+        String parameter = cryptedLink.toString().replaceAll("(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com)", "avxhome.se");
         br.setFollowRedirects(true);
         try {
             br.getPage(parameter);
@@ -55,7 +55,7 @@ public class AvxHmeW extends PluginForDecrypt {
             logger.info("Link offline (server error): " + parameter);
             return decryptedLinks;
         }
-        if (parameter.contains("avaxhm.com")) {
+        if (!parameter.contains("avaxhome.pro/")) {
             // 1.st try: <a href="LINK" target="_blank" rel="nofollow"> but ignore
             // images/self site refs + imdb refs
             String[] links = br.getRegex("<a href=\"(" + notThis + ")\" target=\"_blank\" rel=\"nofollow\">(?!<img)").getColumn(0);
@@ -83,11 +83,11 @@ public class AvxHmeW extends PluginForDecrypt {
                     decryptedLinks.add(createDownloadlink(coverlink));
                 }
             }
-           	String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+            String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
             if (fpName == null) {
                 fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
             }
-            if (fpName != null && false) {
+            if (fpName != null) {
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName(fpName.trim());
                 fp.addLinks(decryptedLinks);
