@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -31,6 +32,7 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sourceforge.net" }, urls = { "https?://(www\\.)?sourceforge\\.net/projects/[^/]+/files/[^\\?<>\"]{0,}" }, flags = { 0 })
 public class SourceForgeNet extends PluginForDecrypt {
 
+    @SuppressWarnings("deprecation")
     public SourceForgeNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -41,24 +43,33 @@ public class SourceForgeNet extends PluginForDecrypt {
         String target_filename = null;
         final String list_url;
         String parameter = param.toString().replace("https://", "http://");
-        // We get downloadlinks depending on our useragent
+        /* We get downloadlinks depending on our useragent Update 07.04.2015: Really? Do we? Who added this comment? Me? */
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:14.0) Gecko/20100101 Firefox/14.0.1");
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        final Regex info = new Regex(parameter, "projects/([^/]+)/files/([^/]+)/([^/]+)/download");
+        /*
+         * RegEx the current url as redirects might happen, especially if users add links to single files, the "/download" which is needed
+         * below might be missing in the added CryptedLink (source url) but is then available inside the URL which it redirects to.
+         */
+        final Regex info = new Regex(br.getURL(), "projects/([^/]+)/files/([^/]+)/([^/]+)/download");
         final String project_name = new Regex(parameter, "projects/([^/]+)").getMatch(0);
         final String project_version = info.getMatch(1);
         target_filename = info.getMatch(2);
         if (project_name != null && project_version != null) {
             list_url = "http://sourceforge.net/projects/" + project_name + "/files/" + project_version + "//list";
         } else {
-            list_url = parameter + "/list";
+            /*
+             * Remove "latest" and "download" from our source url because if we keep it, we won't get any ajax response which is needed to
+             * continue the crawl process.
+             */
+            list_url = parameter.replaceAll("/download/?", "").replaceAll("/latest/?", "") + "/list";
         }
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getPage(list_url);
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-        for (Entry<String, Object> entry : entries.entrySet()) {
+        final Set<Entry<String, Object>> entryset = entries.entrySet();
+        for (Entry<String, Object> entry : entryset) {
             final DownloadLink dl;
             final LinkedHashMap<String, Object> data = (LinkedHashMap<String, Object>) entries.get(entry.getKey());
             final String filename = (String) data.get("name");
@@ -78,6 +89,10 @@ public class SourceForgeNet extends PluginForDecrypt {
             if (target_filename != null && !filename.equals(target_filename)) {
                 continue;
             }
+            /*
+             * Decide whether we got a folder that contains more files (=goes into the decrypter again) of we got single downloadable files
+             * (goes into host plugin).
+             */
             if (downloadable) {
                 /* Downloadable filelink --> Goes into the host plugin */
                 dl = createDownloadlink(dloadlink.replace("sourceforge.net/", "sourceforgedecrypted.net/"));
@@ -87,12 +102,20 @@ public class SourceForgeNet extends PluginForDecrypt {
                     /* Not available in old 0.9.581 Stable */
                     dl.setBrowserUrl(url);
                 }
+                /* Hashes should actually always be available! */
                 if (!inValidate(sha1)) {
                     dl.setSha1Hash(sha1);
                 }
 
                 if (!inValidate(md5)) {
                     dl.setMD5Hash(md5);
+                }
+                /*
+                 * If the user adds a lot of links they should be available very quickly in the linkgrabber (without filesize). If he only
+                 * adds a single file it should be checked so he can see the filesize.
+                 */
+                if (target_filename == null && entryset.size() > 1) {
+                    dl.setAvailable(true);
                 }
                 dl.setFinalFileName(filename);
             } else {
