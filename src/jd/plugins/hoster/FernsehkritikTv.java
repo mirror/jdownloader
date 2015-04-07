@@ -307,7 +307,10 @@ public class FernsehkritikTv extends PluginForHost {
             final long timestamp_released = TimeFormatter.getMilliSeconds(date, inputDateformat, Locale.GERMANY);
             final long timePassed = System.currentTimeMillis() - timestamp_released;
             if (timePassed > 14 * 24 * 60 * 60 * 1000l) {
-                /* This should never happen - even if the Fernsehkritiker is very late! */
+                /*
+                 * This should never happen - even if the Fernsehkritiker is VERY late but in case the current episode is not available for
+                 * free after 14 days we have to assume that it is only available for Massengeschmack members.!
+                 */
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
@@ -320,8 +323,17 @@ public class FernsehkritikTv extends PluginForHost {
                 /* Less than 14 days after the release of the episode --> Wait for free release */
                 final long waitUntilFreeRelease;
                 if (timePassed < 8 * 24 * 60 * 60 * 1000l) {
+                    /*
+                     * The Fernsehkritiker usually releases new episodes for free 7 days after the release for Massengeschmack members.
+                     * Let's assume he is late and use 8 days.
+                     */
                     waitUntilFreeRelease = (timestamp_released + 8 * 24 * 60 * 60 * 1000l) - System.currentTimeMillis();
                 } else {
+                    /*
+                     * It's more than 8 days but still less than 14...okay let's ait 3 hours and try again - the new episode should be out
+                     * soon and if we pass 14 days without the release, users will see the PREMIUMONLY message (actually this should never
+                     * happen for Fernsehkritik episodes as all of them get released free after some time.).
+                     */
                     waitUntilFreeRelease = 3 * 60 * 60 * 1000l;
                 }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Die kostenlose Version dieser Episode wurde noch nicht freigegeben", waitUntilFreeRelease);
@@ -347,12 +359,12 @@ public class FernsehkritikTv extends PluginForHost {
             }
         }
         br.setFollowRedirects(false);
-        // More chunks work but download will stop at random point then
+        /* More chunks work but download will stop at random point then */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unbekannter Serverfehler", 30 * 60 * 1000l);
         }
         dl.startDownload();
     }
@@ -452,6 +464,7 @@ public class FernsehkritikTv extends PluginForHost {
         return dl.getBooleanProperty("PREMIUMONLY", false);
     }
 
+    @SuppressWarnings("deprecation")
     public String getFKTVFormattedFilename(final DownloadLink downloadLink) throws ParseException {
         final SubConfiguration cfg = SubConfiguration.getConfig("fernsehkritik.tv");
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME_FKTV, defaultCustomFilename);
@@ -501,6 +514,7 @@ public class FernsehkritikTv extends PluginForHost {
         return encodeUnicode(formattedFilename);
     }
 
+    @SuppressWarnings("deprecation")
     public String getMassengeschmack_other_FormattedFilename(final DownloadLink downloadLink) throws ParseException {
         final SubConfiguration cfg = SubConfiguration.getConfig("fernsehkritik.tv");
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME_MASSENGESCHMACK_OTHER, defaultCustomFilename_massengeschmack_other);
@@ -572,7 +586,7 @@ public class FernsehkritikTv extends PluginForHost {
 
     @Override
     public String getDescription() {
-        return "JDownloader's Fernsehkritik Plugin helps downloading videoclips from fernsehkritik.tv. Fernsehkritik provides different video formats and other settings to chose from.";
+        return "JDownloader's Fernsehkritik Plugin kann Videos von fernsehkritik.tv und massengeschmack.tv herunterladen. Hier kann man eigene Dateinamen definieren und (als Massengeschmack Abonnent) die herunterzuladenden Videoformate wählen.";
     }
 
     private final static String defaultCustomFilename                       = "Fernsehkritik-TV Folge *episodenumber* vom *date**ext*";
