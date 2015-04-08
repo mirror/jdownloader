@@ -1,5 +1,9 @@
+ExampleMenuEntry=@%s1: %s2
 NONE=無し
 ON_ARCHIVE_EXTRACTED=圧縮ファイル解凍完了時
+ON_DOWNLOADS_PAUSE=ダウンロードコントローラー一時停止
+ON_DOWNLOADS_RUNNING=ダウンロードコントローラー開始
+ON_DOWNLOADS_STOPPED=ダウンロードコントローラー停止
 ON_DOWNLOAD_CONTROLLER_START=ダウンロード開始時
 ON_DOWNLOAD_CONTROLLER_STOPPED=ダウンロード停止時
 ON_GENERIC_EXTRACTION=全ての解凍イベント時
@@ -10,6 +14,7 @@ ON_OUTGOING_REMOTE_API_EVENT=遠隔APIイベント実行時
 ON_PACKAGE_FINISHED=パッケージ完了時
 ON_PACKAGIZER=パッケージャのフック時
 allow=許可
+btnExampleScripts=スクリプト例
 classes=/* ===== classes ===== */
 deny=拒否
 description=JDownloaderの内部イベントを監視し、独自スクリプト(JavaScript)の実行を許可します
@@ -21,6 +26,8 @@ editor_testcompile=ﾃｽﾄｺﾝﾊﾟｲﾙ
 editor_testrun=試行
 emptyScript=// ここに独自のスクリプトを記述します。APIのプロパティやメソッドを自由に利用可能です
 event_trigger=引金(トリガー)
+example_infoFile=ダウンロードフォルダに詳細情報をinfoファイルとして記録する
+example_play_sound=WAVファイルを再生する
 example_script_name=例
 filepackage=// ファイルパッケージ
 loading_editor_title=エディタを読込中...
