@@ -52,40 +52,44 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     }
 
     /* Settings stuff */
-    private final SubConfiguration cfg                      = SubConfiguration.getConfig("save.tv");
-    private final String           USEAPI                   = "USEAPI";
-    private final String           CRAWLER_ENABLE_FASTER    = "CRAWLER_ENABLE_FASTER_2";
-    private final boolean          FAST_LINKCHECK           = cfg.getBooleanProperty(CRAWLER_ENABLE_FASTER, false);
-    private final String           CRAWLER_ACTIVATE         = "CRAWLER_ACTIVATE";
-    private final String           CRAWLER_DISABLE_DIALOGS  = "CRAWLER_DISABLE_DIALOGS";
-    private final String           CRAWLER_LASTHOURS_COUNT  = "CRAWLER_LASTHOURS_COUNT";
+    @SuppressWarnings("deprecation")
+    private final SubConfiguration cfg                        = SubConfiguration.getConfig("save.tv");
+    private static final String    ACTIVATE_BETA_FEATURES     = "ACTIVATE_BETA_FEATURES";
+    private final String           USEAPI                     = "USEAPI";
+    private final String           CRAWLER_ENABLE_FASTER      = "CRAWLER_ENABLE_FASTER_2";
+    private final boolean          FAST_LINKCHECK             = cfg.getBooleanProperty(CRAWLER_ENABLE_FASTER, false);
+    private final String           CRAWLER_ACTIVATE           = "CRAWLER_ACTIVATE";
+    private final String           CRAWLER_DISABLE_DIALOGS    = "CRAWLER_DISABLE_DIALOGS";
+    private final String           CRAWLER_LASTHOURS_COUNT    = "CRAWLER_LASTHOURS_COUNT";
 
-    private boolean                crawler_DialogsDisabled  = false;
+    private static final String    CRAWLER_PROPERTY_LASTCRAWL = "time_lastcrawl";
+
+    private boolean                crawler_DialogsDisabled    = false;
 
     /* Decrypter constants */
-    private static final int       ENTRIES_PER_REQUEST      = 1000;
+    private static final int       ENTRIES_PER_REQUEST        = 1000;
 
     /* Property / Filename constants */
-    public static final String     QUALITY_PARAM            = "quality";
-    public static final String     QUALITY_LQ               = "LQ";
-    public static final String     QUALITY_HQ               = "HQ";
-    public static final String     QUALITY_HD               = "HD";
-    public static final String     EXTENSION                = ".mp4";
+    public static final String     QUALITY_PARAM              = "quality";
+    public static final String     QUALITY_LQ                 = "LQ";
+    public static final String     QUALITY_HQ                 = "HQ";
+    public static final String     QUALITY_HD                 = "HD";
+    public static final String     EXTENSION                  = ".mp4";
 
     /* Decrypter variables */
-    final ArrayList<DownloadLink>  decryptedLinks           = new ArrayList<DownloadLink>();
-    private long                   grab_last_hours_num      = 0;
-    private long                   tdifference_milliseconds = 0;
+    final ArrayList<DownloadLink>  decryptedLinks             = new ArrayList<DownloadLink>();
+    private long                   grab_last_hours_num        = 0;
+    private long                   tdifference_milliseconds   = 0;
 
-    private int                    totalLinksNum            = 0;
-    private int                    requestCount             = 1;
-    private long                   time_crawl_started       = 0;
-    private boolean                decryptAborted           = false;
-    private Account                acc                      = null;
+    private int                    totalLinksNum              = 0;
+    private int                    requestCount               = 1;
+    private long                   time_crawl_started         = 0;
+    private boolean                decryptAborted             = false;
+    private Account                acc                        = null;
 
     /* If this != null, API can be used */
-    private boolean                api_enabled              = false;
-    private String                 parameter                = null;
+    private boolean                api_enabled                = false;
+    private String                 parameter                  = null;
 
     /**
      * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
@@ -110,7 +114,14 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         }
         crawler_DialogsDisabled = cfg.getBooleanProperty(CRAWLER_DISABLE_DIALOGS, false);
         grab_last_hours_num = getLongProperty(cfg, CRAWLER_LASTHOURS_COUNT, 0);
-        tdifference_milliseconds = grab_last_hours_num * 60 * 60 * 1000;
+        if (cfg.getBooleanProperty(ACTIVATE_BETA_FEATURES, false)) {
+            final long time_lastcrawl = getLongProperty(this.getPluginConfig(), CRAWLER_PROPERTY_LASTCRAWL, 0);
+            if (time_lastcrawl > 0) {
+                tdifference_milliseconds = System.currentTimeMillis() - time_lastcrawl;
+            }
+        } else {
+            tdifference_milliseconds = grab_last_hours_num * 60 * 60 * 1000;
+        }
 
         try {
             try {
@@ -119,6 +130,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                 } else {
                     site_decrypt_All();
                 }
+                this.getPluginConfig().setProperty(CRAWLER_PROPERTY_LASTCRAWL, System.currentTimeMillis());
             } catch (final DecrypterException edec) {
                 logger.info("Decrypt process aborted by user: " + parameter);
                 if (!crawler_DialogsDisabled) {

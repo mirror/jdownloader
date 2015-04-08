@@ -36,7 +36,11 @@ public class HeavyRCom extends PluginForHost {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private static final String NICE_HOST         = "reavy-r.com";
+    private static final String NICE_HOSTproperty = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private static final String NORESUME          = NICE_HOSTproperty + "NORESUME";
+
+    private String              DLLINK            = null;
 
     @Override
     public String getAGBLink() {
@@ -46,6 +50,7 @@ public class HeavyRCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -87,10 +92,25 @@ public class HeavyRCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        boolean resume = true;
+        int maxchunks = 0;
+        if (downloadLink.getBooleanProperty(HeavyRCom.NORESUME, false)) {
+            resume = false;
+        }
+        if (!resume) {
+            maxchunks = 1;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resume, maxchunks);
+        if (dl.getConnection().getResponseCode() == 416) {
+            logger.info("Resume impossible, disabling it for the next try");
+            downloadLink.setChunksProgress(null);
+            downloadLink.setProperty(HeavyRCom.NORESUME, Boolean.valueOf(true));
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

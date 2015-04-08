@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitcasa.com" }, urls = { "https://drive\\.bitcasa\\.com/send/[A-Za-z0-9]+|https?://l\\.bitcasa\\.com/[A-Za-z0-9\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitcasa.com" }, urls = { "https://drive\\.bitcasa\\.com/send/[A-Za-z0-9\\-]+|https?://l\\.bitcasa\\.com/[A-Za-z0-9\\-]+" }, flags = { 0 })
 public class BitCasaCom extends PluginForHost {
 
     public BitCasaCom(PluginWrapper wrapper) {
@@ -42,9 +42,10 @@ public class BitCasaCom extends PluginForHost {
         return "https://www.bitcasa.com/legal";
     }
 
-    private static final String TYPE_NORMAL = "https://drive\\.bitcasa\\.com/send/[A-Za-z0-9]+";
+    private static final String TYPE_NORMAL = "https://drive\\.bitcasa\\.com/send/[A-Za-z0-9\\-]+";
     private static final String TYPE_SHORT  = "https?://l\\.bitcasa\\.com/[A-Za-z0-9\\-]+";
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
