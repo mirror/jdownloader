@@ -63,7 +63,7 @@ public class UploadableCh extends PluginForHost {
     }
 
     private static AtomicInteger maxPrem                 = new AtomicInteger(1);
-    private static final long    FREE_SIZELIMIT          = 1073741824;
+    private static final long    FREE_SIZELIMIT          = 2 * 1073741824l;
     private static final String  PREMIUM_UNLIMITEDCHUNKS = "PREMIUM_UNLIMITEDCHUNKS";
 
     @Override
