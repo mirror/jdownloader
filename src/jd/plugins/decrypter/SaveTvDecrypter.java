@@ -109,12 +109,13 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         }
         time_crawl_started = System.currentTimeMillis();
         if (!getUserLogin(false)) {
-            logger.info("Failed to decrypt link because account is missing: " + parameter);
+            logger.info("Failed to decrypt link because no account is available: " + parameter);
             return decryptedLinks;
         }
         crawler_DialogsDisabled = cfg.getBooleanProperty(CRAWLER_DISABLE_DIALOGS, false);
         grab_last_hours_num = getLongProperty(cfg, CRAWLER_LASTHOURS_COUNT, 0);
         if (cfg.getBooleanProperty(ACTIVATE_BETA_FEATURES, false)) {
+            /* TODO: Optimize this feature! */
             final long time_lastcrawl = getLongProperty(this.getPluginConfig(), CRAWLER_PROPERTY_LASTCRAWL, 0);
             if (time_lastcrawl > 0) {
                 tdifference_milliseconds = System.currentTimeMillis() - time_lastcrawl;
