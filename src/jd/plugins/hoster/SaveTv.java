@@ -99,6 +99,7 @@ public class SaveTv extends PluginForHost {
     /* The list of server values displayed to the user */
     private final String[]       formats                                   = new String[] { "HD", "H.264 HQ", "H.264 MOBILE" };
 
+    private static final String  ACTIVATE_BETA_FEATURES                    = "ACTIVATE_BETA_FEATURES";
     private static final String  USEAPI                                    = "USEAPI";
     private static final String  CRAWLER_ACTIVATE                          = "CRAWLER_ACTIVATE";
     private static final String  CRAWLER_ENABLE_FASTER                     = "CRAWLER_ENABLE_FASTER_2";
@@ -169,13 +170,13 @@ public class SaveTv extends PluginForHost {
         }
     }
 
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
+    }
+
     @Override
     public String getAGBLink() {
         return "http://free.save.tv/STV/S/misc/miscShowTermsConditionsInMainFrame.cfm";
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @SuppressWarnings("deprecation")
@@ -1826,6 +1827,8 @@ public class SaveTv extends PluginForHost {
         /* Advanced settings */
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Erweiterte Einstellungen:\r\n<html><p style=\"color:#F62817\"><b>Warnung: Ändere diese Einstellungen nur, wenn du weißt was du tust!</b></p></html>"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.ACTIVATE_BETA_FEATURES, JDL.L("plugins.hoster.SaveTv.ActivateBETAFeatures", "Aktiviere BETA-Features?\r\nINFO: Was diese Features sind und ob es aktuell welche gibt steht im Support Forum.")));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEAPI, JDL.L("plugins.hoster.SaveTv.UseAPI", "API verwenden?\r\nINFO: Aktiviert man die API, sind einige Features wie folgt betroffen:\r\n-ENTFÄLLT: Option 'Nur Aufnahmen mit angewandter Schnittliste laden'\r\n-ENTFÄLLT: Anzeigen der Account Details in der Account-Verwaltung (Account Typ, Ablaufdatum, ...)\r\n-EINGESCHRÄNKT NUTZBAR: Benutzerdefinierte Dateinamen")));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));

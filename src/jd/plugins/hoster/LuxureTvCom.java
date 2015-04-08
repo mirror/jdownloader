@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "luxuretv.com" }, urls = { "http://(www\\.)?luxuretv\\.com/videos/.*?\\-\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "luxuretv.com" }, urls = { "http://(www\\.|[a-z]{2}\\.)?luxuretv\\.com/videos/.*?\\-\\d+\\.html" }, flags = { 0 })
 public class LuxureTvCom extends PluginForHost {
 
     /* Using playerConfig script */
@@ -49,6 +50,12 @@ public class LuxureTvCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        final String linkpart = new Regex(link.getDownloadURL(), "luxuretv\\.com/(videos/.+)").getMatch(0);
+        link.setUrlDownload("http://luxuretv.com/" + linkpart);
     }
 
     @SuppressWarnings("deprecation")

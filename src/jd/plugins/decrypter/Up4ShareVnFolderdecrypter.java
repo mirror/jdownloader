@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -34,6 +35,7 @@ public class Up4ShareVnFolderdecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<String> dupelist = new ArrayList<String>();
         String parameter = param.toString().replace("up.4share.vn/", "4share.vn/");
         br.getPage(parameter);
         if ((br.containsHTML(">Error: Not valid ID") && !br.containsHTML("up\\.4share\\.vn/f/")) || br.containsHTML("\\[Empty Folder\\]")) {
@@ -52,7 +54,11 @@ public class Up4ShareVnFolderdecrypter extends PluginForDecrypt {
             if (!dl.startsWith("http://")) {
                 dl = "http://up.4share.vn" + dl;
             }
-            decryptedLinks.add(createDownloadlink(dl));
+            final String fid = new Regex(dl, "f/([a-z0-9]+)/").getMatch(0);
+            if (fid != null && !dupelist.contains(fid)) {
+                decryptedLinks.add(createDownloadlink(dl));
+                dupelist.add(fid);
+            }
         }
 
         return decryptedLinks;
