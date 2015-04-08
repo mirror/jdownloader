@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.gui.UserIO;
@@ -36,22 +38,31 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "5fantastic.pl" }, urls = { "http://(www\\.)?5fantastic\\.pl/plikosfera/\\d+/[A-Za-z]+/\\d+" }, flags = { 0 })
 public class FiveFantasticPl extends PluginForHost {
-    private static Object LOCK   = new Object();
-    private String        HOSTER = "http://www.5fantastic.pl";
+    private static Object LOCK           = new Object();
+    private String        HOSTER         = "http://www.5fantastic.pl";
+    private final String  FINAL_FILENAME = "FINAL_FILENAME";
 
     public FiveFantasticPl(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(HOSTER + "/index.aspx");
+        this.setConfigElements();
     }
 
     @Override
     public String getAGBLink() {
         return HOSTER + "/strona.aspx?gidart=4558";
+    }
+
+    private boolean default_final_filename = true;
+
+    private void setConfigElements() {
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FINAL_FILENAME, JDL.L("plugins.hoster.rapidunet.finalfilename", getPhrase("FINAL_FILENAME"))).setDefaultValue(default_final_filename));
     }
 
     @Override
@@ -140,6 +151,10 @@ public class FiveFantasticPl extends PluginForHost {
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
+        final boolean preferFinalFilename = this.getPluginConfig().getBooleanProperty("FINAL_FILENAME", true);
+        if (!preferFinalFilename) {
+            link.setFinalFileName(filename);
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -388,6 +403,7 @@ public class FiveFantasticPl extends PluginForHost {
             put("NO_TRAFFIC_LEFT", "No Premium traffic left!");
             put("NO_PREMIUM", "Login failed or not Premium!");
             put("PREMIUM_USER", "Premium User with traffic limit: ");
+            put("FINAL_FILENAME", "Use default final filename (ON) or use final filename from the web page (off)");
         }
     };
 
@@ -408,6 +424,7 @@ public class FiveFantasticPl extends PluginForHost {
             put("NO_TRAFFIC_LEFT", "Brak dostępnego transferu Premium!");
             put("NO_PREMIUM", "Błędny login lub brak Premium!");
             put("PREMIUM_USER", "Użytkownik Premium z limitem: ");
+            put("FINAL_FILENAME", "Użyj domyślnej finalnej nazwy pliku (WŁ) lub ustaw finalną nazwę pliku na podstawie nazwy ze strony www (WYŁ)");
         }
     };
 
