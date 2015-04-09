@@ -45,10 +45,12 @@ public class PCloudCom extends PluginForHost {
         return "https://my.pcloud.com/#page=policies&tab=terms-of-service";
     }
 
-    private static final String TYPE_OLD     = "https?://(www\\.)?(my\\.pcloud\\.com/#page=publink\\&code=|pc\\.cd/)[A-Za-z0-9]+";
+    private static final String TYPE_OLD          = "https?://(www\\.)?(my\\.pcloud\\.com/#page=publink\\&code=|pc\\.cd/)[A-Za-z0-9]+";
 
-    private static final String DOWNLOAD_ZIP = "DOWNLOAD_ZIP_2";
+    private static final String DOWNLOAD_ZIP      = "DOWNLOAD_ZIP_2";
+    private static final String ERROR_PREMIUMONLY = "7005";
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         /* Links before big change */
@@ -78,6 +80,9 @@ public class PCloudCom extends PluginForHost {
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (ERROR_PREMIUMONLY.equals(this.getJson("result"))) {
+            link.getLinkStatus().setStatusText("Only downloadable for registered/premium users");
+        }
         link.setFinalFileName(filename);
         link.setDownloadSize(Long.parseLong(filesize));
         return AvailableStatus.TRUE;
@@ -88,6 +93,15 @@ public class PCloudCom extends PluginForHost {
         requestFileInformation(downloadLink);
         if ("5002".equals(getJson("result"))) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 'Internal error, no servers available. Try again later.'", 5 * 60 * 1000l);
+        } else if (ERROR_PREMIUMONLY.equals(this.getJson("result"))) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered/premium users");
         }
         final String dllink = getdllink(downloadLink);
         boolean resume = true;

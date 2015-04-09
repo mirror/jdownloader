@@ -64,8 +64,10 @@ public class AlotPornCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        DLLINK = null;
         setBrowserExclusive();
         br.setFollowRedirects(true);
         String dURL = null;
@@ -78,18 +80,37 @@ public class AlotPornCom extends PluginForHost {
         } else {
             dURL = downloadLink.getDownloadURL();
         }
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String[] values = new Regex(dURL, "http://.*?/(\\d+)/([\\w-]+)").getRow(0);
         String filename = values[1].replaceAll("-", "_");
-        br.getPage("http://alotporn.com/modules/video/player/nuevo/maconfig.php?id=" + values[0]);
-        if (!br.containsHTML("<provider>http</provider>")) {
-            // http://svn.jdownloader.org/issues/57727
-            if ("c3d9e3b8e0d79af5c48fc18a28b02c0e".equals(JDHash.getMD5(br.toString()))) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Plugin update needed!");
+        DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
         }
-        DLLINK = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
-        if (filename == null || DLLINK == null) {
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
+        }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (DLLINK == null) {
+            br.getPage("http://alotporn.com/modules/video/player/nuevo/maconfig.php?id=" + values[0]);
+            if (!br.containsHTML("<provider>http</provider>")) {
+                // http://svn.jdownloader.org/issues/57727
+                if ("c3d9e3b8e0d79af5c48fc18a28b02c0e".equals(JDHash.getMD5(br.toString()))) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Plugin update needed!");
+            }
+            DLLINK = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
+        }
+        if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
@@ -98,13 +119,14 @@ public class AlotPornCom extends PluginForHost {
         if (ext == null || ext.length() > 5) {
             ext = ".mp4";
         }
+        ext = ext.replace("/", "");
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = openConnection(br2, DLLINK);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -117,6 +139,20 @@ public class AlotPornCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
+    }
+
+    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
+        URLConnectionAdapter con;
+        if (isJDStable()) {
+            con = br.openGetConnection(directlink);
+        } else {
+            con = br.openHeadConnection(directlink);
+        }
+        return con;
+    }
+
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override
