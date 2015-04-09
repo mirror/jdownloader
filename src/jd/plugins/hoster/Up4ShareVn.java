@@ -53,6 +53,7 @@ public class Up4ShareVn extends PluginForHost {
         this.enablePremium("http://up.4share.vn/?act=gold");
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("up.4share.vn/", "4share.vn/"));
     }
@@ -62,9 +63,11 @@ public class Up4ShareVn extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         correctDownloadLink(link);
         prepBR();
+        /* Offline links should also have nice filenames. */
+        link.setName(new Regex(link.getDownloadURL(), "4share\\.vn/f/([a-z0-9]+)/").getMatch(0));
         this.setBrowserExclusive();
         getPage(link.getDownloadURL());
-        if (br.containsHTML(">FID Không hợp lệ\\!|file not found|File đã bị xóa\\?|File không tồn tại?")) {
+        if (br.containsHTML(">FID Không hợp lệ\\!|file not found|File đã bị xóa\\?|File không tồn tại?| Error: FileLink da bi xoa")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Regex fInfo = br.getRegex(">Filename:  <strong>([^<>\"]*?)</strong>   \\(<strong>([^<>\"]*?)</strong> \\)<");
