@@ -81,7 +81,9 @@ public class SaveTv extends PluginForHost {
     public static final double   QUALITY_H264_MOBILE_MB_PER_MINUTE         = 4.64;
     private final static String  COOKIE_HOST                               = "http://save.tv";
     private static final String  NICE_HOST                                 = "save.tv";
+    /* Properties */
     private static final String  NICE_HOSTproperty                         = "savetv";
+    private static final String  CRAWLER_PROPERTY_LASTCRAWL                = "CRAWLER_PROPERTY_LASTCRAWL";
 
     /* Settings stuff */
     private static final String  USEORIGINALFILENAME                       = "USEORIGINALFILENAME";
@@ -90,15 +92,17 @@ public class SaveTv extends PluginForHost {
     private static final String  FORCE_WITH_ADS_ON_ERROR_HOURS             = "FORCE_WITH_ADS_ON_ERROR_HOURS_2";
     private static final String  FORCE_WITH_ADS_ON_ERROR_MAXRETRIES        = "FORCE_WITH_ADS_ON_ERROR_HOURS_MAXRETRIES_3";
     private static final String  ADS_FREE_UNAVAILABLE_HOURS                = "DOWNLOADONLYADSFREE_RETRY_HOURS";
-    private final String         ADSFREEAVAILABLETEXT                      = JDL.L("plugins.hoster.SaveTv.AdsFreeAvailable", "Video ist werbefrei verfügbar");
-    private final String         ADSFREEANOTVAILABLE                       = JDL.L("plugins.hoster.SaveTv.AdsFreeNotAvailable", "Video ist nicht werbefrei verfügbar");
-    private static final String  PREFERREDFORMATNOTAVAILABLETEXT           = JDL.L("plugins.hoster.SaveTv.Format_unavailable", "Das bevorzugte Format ist (noch) nicht verfügbar. Warte oder ändere die Einstellung!");
-    private final String         NOCUTAVAILABLETEXT                        = JDL.L("plugins.hoster.SaveTv.noCutAvailable", "Für diese Sendung steht (noch) keine Schnittliste zur Verfügung");
+    private final String         ADSFREEAVAILABLETEXT                      = "Video ist werbefrei verfügbar";
+    private final String         ADSFREEANOTVAILABLE                       = "Video ist nicht werbefrei verfügbar";
+    private static final String  PREFERREDFORMATNOTAVAILABLETEXT           = "Das bevorzugte Format ist (noch) nicht verfügbar. Warte oder ändere die Einstellung!";
+    private final String         NOCUTAVAILABLETEXT                        = "Für diese Sendung steht (noch) keine Schnittliste zur Verfügung";
     private final static String  selected_video_format                     = "selected_video_format";
 
     /* The list of server values displayed to the user */
     private final String[]       formats                                   = new String[] { "HD", "H.264 HQ", "H.264 MOBILE" };
 
+    /* Crawler settings */
+    private final static String  CRAWLER_ONLY_ADD_NEW_IDS                  = "CRAWLER_ONLY_ADD_NEW_IDS";
     private static final String  ACTIVATE_BETA_FEATURES                    = "ACTIVATE_BETA_FEATURES";
     private static final String  USEAPI                                    = "USEAPI";
     private static final String  CRAWLER_ACTIVATE                          = "CRAWLER_ACTIVATE";
@@ -165,9 +169,9 @@ public class SaveTv extends PluginForHost {
     public SaveTv(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.save.tv/stv/s/obj/registration/RegPage1.cfm");
-        if (!isJDStable()) {
-            setConfigElements();
-        }
+        // if (!isJDStable()) {
+        setConfigElements();
+        // }
     }
 
     private boolean isJDStable() {
@@ -339,10 +343,6 @@ public class SaveTv extends PluginForHost {
     }
 
     public static void parseFilenameInformation_site(final DownloadLink dl, final String source) throws PluginException {
-        /*
-         * #NEVERHAPPEN1 site_title should never be null but in some very very rare cases this might happen but usually this happens with
-         * series - their episode-titles should be available then!
-         */
         final String site_title = getJson(source, "STITLE");
         long datemilliseconds = 0;
 
@@ -373,11 +373,6 @@ public class SaveTv extends PluginForHost {
         datemilliseconds = TimeFormatter.getMilliSeconds(runtime_start, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN);
         final long site_runtime_minutes = (TimeFormatter.getMilliSeconds(runtime_end, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN) - datemilliseconds) / 1000 / 60;
         final String tv_station = getJson(source, "STVSTATIONNAME");
-
-        /* #NEVERHAPPEN1 This should NEVER happen */
-        if (site_title == null && episodename == null && episodenumber == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
 
         /* TODO: Add more/all numbers here, improve this! */
         if (category.equals("2")) {
@@ -435,10 +430,6 @@ public class SaveTv extends PluginForHost {
     }
 
     public static void parseFilenameInformation_api(final DownloadLink dl, final String source) throws PluginException {
-        /*
-         * #NEVERHAPPEN1 site_title should never be null but in some very very rare cases this might happen but usually this happens with
-         * series - their episode-titles should be available then!
-         */
         final String site_title = new Regex(source, "<a:T>([^<>]*?)</a:T>").getMatch(0);
         long datemilliseconds = 0;
 
@@ -465,11 +456,6 @@ public class SaveTv extends PluginForHost {
         datemilliseconds = TimeFormatter.getMilliSeconds(runtime_start, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN);
         final long site_runtime_minutes = (TimeFormatter.getMilliSeconds(runtime_end, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN) - datemilliseconds) / 1000 / 60;
         final String tv_station = getJson(source, "STVSTATIONNAME");
-
-        /* #NEVERHAPPEN1 This should NEVER happen */
-        if (site_title == null && episodename == null && episodenumber == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
 
         /* TODO: Add more/all numbers here, improve this! */
         if (category.equals("2")) {
@@ -1725,6 +1711,7 @@ public class SaveTv extends PluginForHost {
     private static final boolean defaultDisableLinkcheck                    = false;
     private static final boolean defaultCrawlerActivate                     = false;
     private static final boolean defaultCrawlerFastLinkcheck                = true;
+    private static final boolean defaultCrawlerAddNew                       = false;
     private static final boolean defaultInfoDialogsDisable                  = false;
     private static final boolean defaultPreferAdsFree                       = true;
     private static final boolean defaultUseOriginalFilename                 = false;
@@ -1737,6 +1724,7 @@ public class SaveTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Archiv-Crawler Einstellungen:"));
         final ConfigEntry activateCrawler = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_ACTIVATE, JDL.L("plugins.hoster.SaveTv.activateCrawler", "Archiv-Crawler aktivieren?\r\nINFO: Fügt das komplette Archiv oder Teile davon beim Einfügen dieses Links ein:\r\n'https://www.save.tv/STV/M/obj/archive/VideoArchive.cfm\r\n")).setDefaultValue(defaultCrawlerActivate);
         getConfig().addEntry(activateCrawler);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_ONLY_ADD_NEW_IDS, JDL.L("plugins.hoster.SaveTv.crawlerOnlyAddNewIDs", "Nur neue Aufnahmen hinzufügen?\r\nJDownloader gleicht dein save.tv Archiv ab mit den Einträgen, die du bereits eingefügt hast und zeigt immer nur neue Einträge an!\r\n<html><p style=\"color:#F62817\"><b>Information:</b>Dieses Feature ist noch nicht fertig, kommt aber bald!!</p></html>")).setDefaultValue(defaultCrawlerAddNew).setEnabled(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SaveTv.CRAWLER_LASTHOURS_COUNT, JDL.L("plugins.hoster.SaveTv.grabArchive.lastHours", "Nur Aufnahmen der letzten X Stunden crawlen??\r\nAnzahl der Stunden, die gecrawlt werden sollen [0 = komplettes Archiv]:"), 0, 1000, 24).setDefaultValue(defaultCrawlLasthours).setEnabledCondidtion(activateCrawler, true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_ENABLE_FASTER, JDL.L("plugins.hoster.SaveTv.grabArchiveFaster", "Aktiviere schnellen Linkcheck für Archiv-Crawler?\r\nVorteil: Über den Archiv-Crawler hinzugefügte Links landen viel schneller im Linkgrabber\r\nNachteil: Es sind nicht alle Informationen (z.B. Kategorie) verfügbar - erst beim Download oder späterem Linkcheck\r\n")).setDefaultValue(defaultCrawlerFastLinkcheck).setEnabledCondidtion(activateCrawler, true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_DISABLE_DIALOGS, JDL.L("plugins.hoster.SaveTv.crawlerDisableDialogs", "Info Dialoge des Archiv-Crawlers (nach dem Crawlen oder im Fehlerfall) deaktivieren?")).setDefaultValue(defaultInfoDialogsDisable).setEnabledCondidtion(activateCrawler, true));
@@ -2045,6 +2033,16 @@ public class SaveTv extends PluginForHost {
             final String acc_count_archive_entries = account.getStringProperty("acc_count_archive_entries", "?");
             final String acc_count_telecast_ids = account.getStringProperty("acc_count_telecast_ids", "?");
 
+            final String user_lastcrawl_date;
+            final long time_last_crawl_ended = getLongProperty(this.getPluginConfig(), CRAWLER_PROPERTY_LASTCRAWL, 0);
+
+            if (time_last_crawl_ended > 0) {
+                final SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy 'um' HH:mm 'Uhr'");
+                user_lastcrawl_date = formatter.format(time_last_crawl_ended);
+            } else {
+                user_lastcrawl_date = "Nie";
+            }
+
             /* it manages new panel */
             final PanelGenerator panelGenerator = new PanelGenerator();
 
@@ -2070,6 +2068,7 @@ public class SaveTv extends PluginForHost {
             panelGenerator.addEntry("Preis:", acc_price);
             panelGenerator.addEntry("Sendungen im Archiv:", acc_count_archive_entries);
             panelGenerator.addEntry("Ladbare Sendungen im Archiv (telecast-IDs):", acc_count_telecast_ids);
+            panelGenerator.addEntry("Datum des letzten erfolgreichen Crawlvorganges: ", user_lastcrawl_date);
 
             panelGenerator.addCategory("Download");
             panelGenerator.addEntry("Max. Anzahl gleichzeitiger Downloads:", "20");

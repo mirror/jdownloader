@@ -35,7 +35,6 @@ public class Up4ShareVnFolderdecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        ArrayList<String> dupelist = new ArrayList<String>();
         String parameter = param.toString().replace("up.4share.vn/", "4share.vn/");
         br.getPage(parameter);
         if ((br.containsHTML(">Error: Not valid ID") && !br.containsHTML("up\\.4share\\.vn/f/")) || br.containsHTML("\\[Empty Folder\\]")) {
@@ -55,9 +54,15 @@ public class Up4ShareVnFolderdecrypter extends PluginForDecrypt {
                 dl = "http://up.4share.vn" + dl;
             }
             final String fid = new Regex(dl, "f/([a-z0-9]+)/").getMatch(0);
-            if (fid != null && !dupelist.contains(fid)) {
-                decryptedLinks.add(createDownloadlink(dl));
-                dupelist.add(fid);
+            if (fid != null) {
+                final DownloadLink dll = createDownloadlink(dl);
+                try {
+                    dll.setLinkID(fid);
+                } catch (Throwable e) {
+                    /* Not available in old 0.9.581 Stable */
+                    dll.setProperty("LINKDUPEID", fid);
+                }
+                decryptedLinks.add(dll);
             }
         }
 
