@@ -81,23 +81,28 @@ public class SaveTv extends PluginForHost {
     public static final double   QUALITY_H264_MOBILE_MB_PER_MINUTE         = 4.64;
     private final static String  COOKIE_HOST                               = "http://save.tv";
     private static final String  NICE_HOST                                 = "save.tv";
+
     /* Properties */
     private static final String  NICE_HOSTproperty                         = "savetv";
     private static final String  CRAWLER_PROPERTY_LASTCRAWL                = "CRAWLER_PROPERTY_LASTCRAWL";
+    /* Frequently used internal plugin properties */
+    public static final String   PROPERTY_ACCOUNT_API_SESSIONID            = "sessionid";
+    private static final String  PROPERTY_DOWNLOADLINK_NORESUME            = "NORESUME";
+    private static final String  PROPERTY_DOWNLOADLINK_NOCHUNKS            = "NOCHUNKS";
 
-    /* Settings stuff */
+    /* Host plugin settings stuff */
     private static final String  USEORIGINALFILENAME                       = "USEORIGINALFILENAME";
     private static final String  PREFERADSFREE                             = "PREFERADSFREE";
     private static final String  ADS_FREE_UNAVAILABLE_MAXRETRIES           = "ADS_FREE_UNAVAILABLE_MAXRETRIES";
     private static final String  FORCE_WITH_ADS_ON_ERROR_HOURS             = "FORCE_WITH_ADS_ON_ERROR_HOURS_2";
     private static final String  FORCE_WITH_ADS_ON_ERROR_MAXRETRIES        = "FORCE_WITH_ADS_ON_ERROR_HOURS_MAXRETRIES_3";
     private static final String  ADS_FREE_UNAVAILABLE_HOURS                = "DOWNLOADONLYADSFREE_RETRY_HOURS";
-    private final String         ADSFREEAVAILABLETEXT                      = "Video ist werbefrei verfügbar";
-    private final String         ADSFREEANOTVAILABLE                       = "Video ist nicht werbefrei verfügbar";
-    private static final String  PREFERREDFORMATNOTAVAILABLETEXT           = "Das bevorzugte Format ist (noch) nicht verfügbar. Warte oder ändere die Einstellung!";
-    private final String         NOCUTAVAILABLETEXT                        = "Für diese Sendung steht (noch) keine Schnittliste zur Verfügung";
-    private final static String  selected_video_format                     = "selected_video_format";
-
+    private final static String  SELECTED_VIDEO_FORMAT                     = "selected_video_format";
+    private static final String  USERTEXT_PREFERREDFORMATNOTAVAILABLE      = "Das bevorzugte Format ist (noch) nicht verfügbar. Warte oder ändere die Einstellung!";
+    /* Text strings displayed to the user in various cases */
+    private final String         USERTEXT_ADSFREEAVAILABLE                 = "Video ist werbefrei verfügbar";
+    private final String         USERTEXT_ADSFREEANOTVAILABLE              = "Video ist nicht werbefrei verfügbar";
+    private final String         USERTEXT_NOCUTAVAILABLE                   = "Für diese Sendung steht (noch) keine Schnittliste zur Verfügung";
     /* The list of server values displayed to the user */
     private final String[]       formats                                   = new String[] { "HD", "H.264 HQ", "H.264 MOBILE" };
 
@@ -125,14 +130,8 @@ public class SaveTv extends PluginForHost {
     /* Variables */
     private boolean              FORCE_LINKCHECK                           = false;
     private boolean              ISADSFREEAVAILABLE                        = false;
-
     /* If this != null, API can be used */
     private String               API_SESSIONID                             = null;
-
-    /* Other */
-    private static Object        LOCK                                      = new Object();
-    private static final int     MAX_RETRIES_LOGIN                         = 10;
-    private static final int     MAX_RETRIES_SAFE_REQUEST                  = 3;
 
     /* Download connections constants */
     private static final boolean ACCOUNT_PREMIUM_RESUME                    = true;
@@ -151,27 +150,27 @@ public class SaveTv extends PluginForHost {
     public static final String   QUALITY_HD                                = "HD";
     public static final String   EXTENSION                                 = ".mp4";
 
-    /* Save.tv internal quality/format constants for the API */
+    /* Save.tv internal quality/format constants (IDs) for the API */
     private static final String  API_FORMAT_HD                             = "6";
     private static final String  API_FORMAT_HQ                             = "5";
     private static final String  API_FORMAT_LQ                             = "4";
-    /* Save.tv internal quality/format constants for the website */
+    /* Save.tv internal quality/format constants (IDs) for the website */
     private static final String  SITE_FORMAT_HD                            = "2";
     private static final String  SITE_FORMAT_HQ                            = "0";
     private static final String  SITE_FORMAT_LQ                            = "1";
 
-    /* Frequently used internal plugin properties */
-    public static final String   PROPERTY_ACCOUNT_API_SESSIONID            = "sessionid";
-    private static final String  PROPERTY_DOWNLOADLINK_NORESUME            = "NORESUME";
-    private static final String  PROPERTY_DOWNLOADLINK_NOCHUNKS            = "NOCHUNKS";
+    /* Other */
+    private static Object        LOCK                                      = new Object();
+    private static final int     MAX_RETRIES_LOGIN                         = 10;
+    private static final int     MAX_RETRIES_SAFE_REQUEST                  = 3;
 
     @SuppressWarnings("deprecation")
     public SaveTv(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.save.tv/stv/s/obj/registration/RegPage1.cfm");
-        // if (!isJDStable()) {
-        setConfigElements();
-        // }
+        if (!isJDStable()) {
+            setConfigElements();
+        }
     }
 
     private boolean isJDStable() {
@@ -582,10 +581,10 @@ public class SaveTv extends PluginForHost {
             /* Check if ads-free version is available */
             api_doSoapRequestSafe(this.br, account, "http://tempuri.org/IVideoArchive/GetAdFreeState", "<telecastId i:type=\"d:int\">" + getTelecastId(downloadLink) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified>");
             if (br.containsHTML("<a:IsAdFreeAvailable>false</a:IsAdFreeAvailable>")) {
-                downloadLink.getLinkStatus().setStatusText(ADSFREEANOTVAILABLE);
+                downloadLink.getLinkStatus().setStatusText(USERTEXT_ADSFREEANOTVAILABLE);
                 ISADSFREEAVAILABLE = false;
             } else {
-                downloadLink.getLinkStatus().setStatusText(ADSFREEAVAILABLETEXT);
+                downloadLink.getLinkStatus().setStatusText(USERTEXT_ADSFREEAVAILABLE);
                 ISADSFREEAVAILABLE = true;
             }
         } else {
@@ -598,13 +597,13 @@ public class SaveTv extends PluginForHost {
             /* TODO: Enhance ad-free check - check if selected format is available and if it is available in ad-free */
             final String ad_Free_availability = getJson(br.toString(), "BADFREEAVAILABLE");
             if (ad_Free_availability.equals("3")) {
-                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SaveTv.NoCutListAvailable", NOCUTAVAILABLETEXT));
+                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SaveTv.NoCutListAvailable", USERTEXT_NOCUTAVAILABLE));
             } else if (ad_Free_availability.equals("1")) {
-                downloadLink.getLinkStatus().setStatusText(ADSFREEAVAILABLETEXT);
+                downloadLink.getLinkStatus().setStatusText(USERTEXT_ADSFREEAVAILABLE);
                 ISADSFREEAVAILABLE = true;
             } else {
                 /* ad_Free_availability == "2" */
-                downloadLink.getLinkStatus().setStatusText(ADSFREEANOTVAILABLE);
+                downloadLink.getLinkStatus().setStatusText(USERTEXT_ADSFREEANOTVAILABLE);
                 ISADSFREEAVAILABLE = false;
             }
         }
@@ -626,7 +625,7 @@ public class SaveTv extends PluginForHost {
                 downloadLink.setProperty("curren_no_ads_free_available_retries", currentTryCount);
                 logger.info("--> Throw Exception_no_ads_free_1 | Try " + currentTryCount + "/" + maxRetries);
                 final long userDefinedWaitHours = getLongProperty(cfg, ADS_FREE_UNAVAILABLE_HOURS, SaveTv.defaultADS_FREE_UNAVAILABLE_HOURS);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NOCUTAVAILABLETEXT, userDefinedWaitHours * 60 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, USERTEXT_NOCUTAVAILABLE, userDefinedWaitHours * 60 * 60 * 1000l);
             } else {
                 logger.info("Ad-free version is unavailable --> Downloading version with ads");
                 downloadWithoutAds_request_value = "false";
@@ -647,7 +646,7 @@ public class SaveTv extends PluginForHost {
             site_GetDownloadPage(downloadLink, stv_request_selected_format_value, downloadWithoutAds_request_value);
             /* TODO: Check if their new system still has this errormessage */
             if (br.containsHTML("Die Aufnahme liegt nicht im gewünschten Format vor")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, PREFERREDFORMATNOTAVAILABLETEXT, 4 * 60 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, USERTEXT_PREFERREDFORMATNOTAVAILABLE, 4 * 60 * 60 * 1000l);
             }
             /* Ads-Free version not available - handle it */
             if (br.containsHTML("\"Leider enthält Ihre Aufnahme nur Werbung")) {
@@ -1230,7 +1229,7 @@ public class SaveTv extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public static int getConfiguredVideoFormat() {
-        switch (SubConfiguration.getConfig("save.tv").getIntegerProperty(selected_video_format, -1)) {
+        switch (SubConfiguration.getConfig("save.tv").getIntegerProperty(SELECTED_VIDEO_FORMAT, -1)) {
         case 0:
             return 0;
         case 1:
@@ -1733,7 +1732,7 @@ public class SaveTv extends PluginForHost {
 
         /* Format & Quality settings */
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Format & Qualitäts-Einstellungen:"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), selected_video_format, formats, JDL.L("plugins.hoster.SaveTv.prefer_format", "Bevorzugtes Format")).setDefaultValue(0));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SELECTED_VIDEO_FORMAT, formats, JDL.L("plugins.hoster.SaveTv.prefer_format", "Bevorzugtes Format")).setDefaultValue(0));
         final ConfigEntry preferAdsFree = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.PREFERADSFREE, JDL.L("plugins.hoster.SaveTv.PreferAdFreeVideos", "Aufnahmen mit angewandter Schnittliste bevorzugen?")).setDefaultValue(defaultPreferAdsFree);
         getConfig().addEntry(preferAdsFree);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SaveTv.ADS_FREE_UNAVAILABLE_HOURS, JDL.L("plugins.hoster.SaveTv.downloadOnlyAdsFreeRetryHours", "Zeit [in stunden] bis zum Neuversuch für Aufnahmen, die (noch) keine Schnittliste haben.\r\nINFO: Der Standardwert beträgt 12 Stunden, um die Server nicht unnötig zu belasten.\r\n"), 1, 24, 1).setDefaultValue(defaultADS_FREE_UNAVAILABLE_HOURS).setEnabledCondidtion(preferAdsFree, true));
