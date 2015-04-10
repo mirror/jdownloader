@@ -1,5 +1,6 @@
 package jd.controlling.reconnect.pluginsinc.upnp.cling;
 
+import java.net.InetAddress;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -7,9 +8,12 @@ import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 
+import jd.controlling.reconnect.RouterUtils;
 import jd.controlling.reconnect.pluginsinc.upnp.translate.T;
+import jd.http.Browser;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.fourthline.cling.DefaultUpnpServiceConfiguration;
 import org.fourthline.cling.UpnpServiceImpl;
@@ -33,7 +37,6 @@ public class UPNPDeviceScanner {
 
     public List<UpnpRouterDevice> scan() throws InterruptedException {
         logger.info("Starting Cling...");
-        final UDAServiceType serviceType = new UDAServiceType("WANIPConnection", 1);
         final HashSet<UpnpRouterDevice> ret = new HashSet<UpnpRouterDevice>();
         final AtomicLong lastreceive = new AtomicLong(System.currentTimeMillis());
 
@@ -79,7 +82,9 @@ public class UPNPDeviceScanner {
                             d.setFriendlyname(device.getDetails().getFriendlyName());
                             d.setManufactor(device.getDetails().getManufacturerDetails().getManufacturer());
                             logger.info("Found " + JSonStorage.serializeToJson(d));
-                            ret.add(d);
+                            synchronized (ret) {
+                                ret.add(d);
+                            }
                             lastreceive.set(System.currentTimeMillis());
 
                         }
@@ -100,7 +105,9 @@ public class UPNPDeviceScanner {
                                 d.setFriendlyname(device.getDetails().getFriendlyName());
                                 d.setManufactor(device.getDetails().getManufacturerDetails().getManufacturer());
                                 logger.info("Found " + JSonStorage.serializeToJson(d));
-                                ret.add(d);
+                                synchronized (ret) {
+                                    ret.add(d);
+                                }
                                 lastreceive.set(System.currentTimeMillis());
 
                             }
@@ -150,8 +157,41 @@ public class UPNPDeviceScanner {
             // logger.info("Wait another 1 sec");
             // Thread.sleep(1000);
             // }
-
-            return new ArrayList<UpnpRouterDevice>(ret);
+            final ArrayList<UpnpRouterDevice> devices;
+            synchronized (ret) {
+                devices = new ArrayList<UpnpRouterDevice>(ret);
+            }
+            if (devices.size() > 1) {
+                InetAddress gateWay = null;
+                try {
+                    gateWay = RouterUtils.getIPFormNetStat();
+                } catch (Throwable e) {
+                    logger.log(e);
+                }
+                if (gateWay == null) {
+                    try {
+                        gateWay = RouterUtils.getIPFromRouteCommand();
+                    } catch (Throwable e) {
+                        logger.log(e);
+                    }
+                }
+                if (gateWay != null) {
+                    final String gateWayAddress = gateWay.getHostAddress();
+                    UpnpRouterDevice tryFirst = null;
+                    for (UpnpRouterDevice device : devices) {
+                        final String host = Browser.getHost(device.getControlURL(), false);
+                        if (StringUtils.equals(host, gateWayAddress)) {
+                            tryFirst = device;
+                            break;
+                        }
+                    }
+                    if (tryFirst != null) {
+                        devices.remove(tryFirst);
+                        devices.add(0, tryFirst);
+                    }
+                }
+            }
+            return devices;
         } finally {
             for (int i = 0; i < 4; i++) {
                 // SEVERE: Router error on shutdown: org.fourthline.cling.transport.RouterException: Router wasn't available exclusively

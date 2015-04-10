@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.settings.panels;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import javax.swing.Box;
 import javax.swing.Icon;
 import javax.swing.JCheckBox;
@@ -73,7 +75,7 @@ public class GeneralSettingsConfigPanel extends AbstractConfigPanel {
 
         /*
          * Override default implementation of MigLayout layout manager and use one more suitable to this panel
-         * 
+         *
          * Useful resources: http://www.migcalendar.com/miglayout/mavensite/apidocs/index.html
          * http://www.migcalendar.com/miglayout/mavensite/docs/cheatsheet.pdf
          */
@@ -217,18 +219,23 @@ public class GeneralSettingsConfigPanel extends AbstractConfigPanel {
         return NewTheme.I().getIcon("home", 32);
     }
 
+    private final AtomicBoolean saveAllowed = new AtomicBoolean(false);
+
     @Override
     public void save() {
-        GeneralSettings st = JsonConfig.create(GeneralSettings.class);
-        st.setDefaultDownloadFolder(downloadFolder.getText());
-        st.setHashCheckEnabled(autoCRC.isSelected());
-        st.setAutoOpenContainerAfterDownload(simpleContainer.isSelected());
-        config.setCleanupAfterDownloadAction(remove.getValue());
-        config.setIfFileExistsAction(this.ifFileExists.getValue());
+        if (saveAllowed.get()) {
+            GeneralSettings st = JsonConfig.create(GeneralSettings.class);
+            st.setDefaultDownloadFolder(downloadFolder.getText());
+            st.setHashCheckEnabled(autoCRC.isSelected());
+            st.setAutoOpenContainerAfterDownload(simpleContainer.isSelected());
+            config.setCleanupAfterDownloadAction(remove.getValue());
+            config.setIfFileExistsAction(this.ifFileExists.getValue());
+        }
     }
 
     @Override
     public void updateContents() {
+        saveAllowed.set(true);
         GeneralSettings st = JsonConfig.create(GeneralSettings.class);
         downloadFolder.setText(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
         autoCRC.setSelected(st.isHashCheckEnabled());

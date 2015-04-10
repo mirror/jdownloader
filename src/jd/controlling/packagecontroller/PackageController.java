@@ -35,11 +35,30 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         return structureChanged.get();
     }
 
-    public java.util.List<ChildType> getAllChildren() {
-        final java.util.List<ChildType> ret = new ArrayList<ChildType>();
+    public List<ChildType> getAllChildren() {
+        final List<ChildType> ret = new ArrayList<ChildType>();
         final boolean readL = readLock();
         try {
             for (final PackageType fp : getPackages()) {
+                final boolean readL2 = fp.getModifyLock().readLock();
+                try {
+                    ret.addAll(fp.getChildren());
+                } finally {
+                    fp.getModifyLock().readUnlock(readL2);
+                }
+            }
+        } finally {
+            readUnlock(readL);
+        }
+        return ret;
+    }
+
+    public List<AbstractNode> getCopy() {
+        final List<AbstractNode> ret = new ArrayList<AbstractNode>();
+        final boolean readL = readLock();
+        try {
+            for (final PackageType fp : getPackages()) {
+                ret.add(fp);
                 final boolean readL2 = fp.getModifyLock().readLock();
                 try {
                     ret.addAll(fp.getChildren());
@@ -71,15 +90,15 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
     protected final Queue QUEUE = new Queue(getClass().getName()) {
 
-        @Override
-        public void killQueue() {
-            Log.exception(new Throwable("YOU CANNOT KILL ME!"));
-            /*
-             * this queue can't be killed
-             */
-        }
+                                    @Override
+                                    public void killQueue() {
+                                        Log.exception(new Throwable("YOU CANNOT KILL ME!"));
+                                        /*
+                                         * this queue can't be killed
+                                         */
+                                    }
 
-    };
+                                };
 
     /**
      * add a Package at given position position in this PackageController. in case the Package is already controlled by this

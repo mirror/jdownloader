@@ -46,7 +46,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
 
     /**
      * get the only existing instance of HostPluginController. This is a singleton
-     * 
+     *
      * @return
      */
     public static HostPluginController getInstance() {
@@ -395,8 +395,8 @@ public class HostPluginController extends PluginController<PluginForHost> {
         final File cache = Application.getTempResource(getCache());
         try {
             LazyHostPluginCache.write(save, cache, lastFolderModification);
-        } catch (final IOException e) {
-            e.printStackTrace();
+        } catch (final Throwable e) {
+            LogController.CL(false).log(e);
             cache.delete();
         } finally {
             lock.writeUnlock();
