@@ -168,9 +168,10 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             }
             /* Save telecastID map so later we know what is new and what we crawled before ;) */
             cfg.setProperty(CRAWLER_PROPERTY_TELECASTIDS_ADDED, crawledTelecastIDsMap);
-            if (decryptedLinks.size() > 0 && foundLinksNum > 0) {
+            if (decryptedLinks.size() > 0 && (foundLinksNum >= totalLinksNum)) {
                 cfg.setProperty(CRAWLER_PROPERTY_LASTCRAWL, System.currentTimeMillis());
             }
+            logger.info("save.tv: total links found: " + decryptedLinks.size() + " of " + totalLinksNum);
         } catch (final Throwable e) {
             logger.info("save.tv: total links found: " + decryptedLinks.size() + " of " + totalLinksNum);
             if (decryptedLinks.size() >= totalLinksNum) {
