@@ -71,6 +71,7 @@ public class ToutBoxFr extends PluginForHost {
     // captchatype: null solvemedia recaptcha
     // other: similar plugins: AbelhasPt, LolaBitsEs, CopiapopEs, MinhatecaComBr
     // TODO: Add correct stream handling - will also need fixFilename
+    /* ChomikujPlScript */
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {

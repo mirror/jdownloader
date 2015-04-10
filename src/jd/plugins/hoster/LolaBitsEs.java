@@ -39,7 +39,8 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-/*Same script for AbelhasPt, LolaBitsEs, CopiapopEs, MinhatecaComBr*/
+/*Same script for AbelhasPt, LolaBitsEs, CopiapopEs, MinhatecaComBr, ChomikujPl*/
+/* ChomikujPlScript */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lolabits.es" }, urls = { "http://(www\\.)?lolabitsdecrypted\\.es/\\d+" }, flags = { 2 })
 public class LolaBitsEs extends PluginForHost {
 

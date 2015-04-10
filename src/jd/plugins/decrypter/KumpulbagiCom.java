@@ -25,28 +25,28 @@ import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "minhateca.com.br" }, urls = { "http://([a-z0-9]+\\.)?minhateca\\.com\\.br/.+" }, flags = { 0 })
-public class MinhatecaComBr extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kumpulbagi.com" }, urls = { "http://kumpulbagi\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+" }, flags = { 0 })
+public class KumpulbagiCom extends PluginForDecrypt {
 
-    public MinhatecaComBr(PluginWrapper wrapper) {
+    @SuppressWarnings("deprecation")
+    public KumpulbagiCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* ChomikujPlScript */
 
     private DownloadLink getDecryptedDownloadlink() {
-        return createDownloadlink("http://minhatecadecrypted.com.br/" + System.currentTimeMillis() + new Random().nextInt(1000000));
+        return createDownloadlink("http://kumpulbagidecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(1000000));
     }
 
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String passCode = null;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -74,48 +74,31 @@ public class MinhatecaComBr extends PluginForDecrypt {
         final String chomikid = br.getRegex("type=\"hidden\" name=\"ChomikId\" value=\"(\\d+)\"").getMatch(0);
         final String folderid = br.getRegex("name=\"FolderId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
         final String reqtoken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
-        if (br.containsHTML("class=\"LoginToFolderForm\"")) {
-            final String foldername = br.getRegex("id=\"FolderName\" name=\"FolderName\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
-            if (reqtoken == null || chomikid == null || folderid == null || foldername == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            for (int i = 1; i <= 3; i++) {
-                passCode = Plugin.getUserInput("Password?", param);
-                br.postPageRaw("http://minhateca.com.br/action/Files/LoginToFolder", "Remember=true&Remember=false&ChomikId=" + chomikid + "&FolderId=" + folderid + "&FolderName=" + Encoding.urlEncode(foldername) + "&Password=" + Encoding.urlEncode(passCode) + "&__RequestVerificationToken=" + Encoding.urlEncode(reqtoken));
-                if (br.containsHTML("\"IsSuccess\":false")) {
-                    continue;
-                }
-                break;
-            }
-            if (br.containsHTML("\"IsSuccess\":false")) {
-                throw new DecrypterException(DecrypterException.PASSWORD);
-            }
-            /* We don't want to work with the encoded json bla html response */
-            br.getPage(parameter);
-        }
-        final String server = new Regex(parameter, "(http://[a-z0-9]+\\.minhateca\\.com\\.br/)").getMatch(0);
-        if (server != null) {
-            /* Find normal links of online viewable doc links */
-            parameter = br.getRegex("\"(http://minhateca\\.com\\.br/[^<>\"]*?)\" id=\"dnLink\"").getMatch(0);
-            if (parameter == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            br.getPage(parameter);
-        }
+        // if (br.containsHTML("class=\"LoginToFolderForm\"")) {
+        // final String foldername = br.getRegex("id=\"FolderName\" name=\"FolderName\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
+        // if (reqtoken == null || chomikid == null || folderid == null || foldername == null) {
+        // logger.warning("Decrypter broken for link: " + parameter);
+        // return null;
+        // }
+        // for (int i = 1; i <= 3; i++) {
+        // passCode = Plugin.getUserInput("Password?", param);
+        // br.postPageRaw("http://minhateca.com.br/action/Files/LoginToFolder", "Remember=true&Remember=false&ChomikId=" + chomikid +
+        // "&FolderId=" + folderid + "&FolderName=" + Encoding.urlEncode(foldername) + "&Password=" + Encoding.urlEncode(passCode) +
+        // "&__RequestVerificationToken=" + Encoding.urlEncode(reqtoken));
+        // if (br.containsHTML("\"IsSuccess\":false")) {
+        // continue;
+        // }
+        // break;
+        // }
+        // if (br.containsHTML("\"IsSuccess\":false")) {
+        // throw new DecrypterException(DecrypterException.PASSWORD);
+        // }
+        // /* We don't want to work with the encoded json bla html response */
+        // br.getPage(parameter);
+        // }
 
         /* empty folder | no folder */
-        if (br.containsHTML("class=\"noFile\"") || !br.containsHTML("name=\"FolderId\"|id=\"fileDetails\"")) {
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable ethr) {
-                /* Not available in 0.9.581 Stable */
-            }
-            return decryptedLinks;
-        }
-        /* Password protected link --> Not yet supported */
-        if (br.containsHTML(">Digite senha:</label>")) {
+        if (!br.containsHTML("id=\"fileId\"")) {
             try {
                 decryptedLinks.add(this.createOfflinelink(parameter));
             } catch (final Throwable ethr) {
@@ -155,7 +138,7 @@ public class MinhatecaComBr extends PluginForDecrypt {
 
             decryptedLinks.add(dl);
         } else {
-            final String fpName = br.getRegex("class=\"T_selected\">([^<>\"]*?)<").getMatch(0);
+            final String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
             int startnumber = 1;
             int lastpage = 1;
             /* First check if maybe user wants only a specific page */
@@ -179,7 +162,7 @@ public class MinhatecaComBr extends PluginForDecrypt {
                 }
                 logger.info("Decrypting page " + i + " of " + lastpage);
                 if (i > 1) {
-                    br.postPage("http://minhateca.com.br/action/Files/FilesList", "chomikId=" + chomikid + "&folderId=" + folderid + "&fileListSortType=Date&fileListAscending=False&gallerySortType=Name&galleryAscending=False&pageNr=" + i + "&isGallery=False&requestedFolderMode=&folderChanged=false&__RequestVerificationToken=" + Encoding.urlEncode(reqtoken));
+                    br.postPage("http://" + this.getHost() + "/action/Files/FilesList", "chomikId=" + chomikid + "&folderId=" + folderid + "&fileListSortType=Date&fileListAscending=False&gallerySortType=Name&galleryAscending=False&pageNr=" + i + "&isGallery=False&requestedFolderMode=&folderChanged=false&__RequestVerificationToken=" + Encoding.urlEncode(reqtoken));
                 }
                 String[] linkinfo = br.getRegex("<div class=\"fileinfo tab\">(.*?)<span class=\"filedescription\"").getColumn(0);
                 if (linkinfo == null || linkinfo.length == 0) {
@@ -191,22 +174,28 @@ public class MinhatecaComBr extends PluginForDecrypt {
                 if (linkinfo == null || linkinfo.length == 0) {
                     linkinfo = br.getRegex("class=\"filename\"(.*?)class=\"showSharedOptions\"").getColumn(0);
                 }
+                if (linkinfo == null || linkinfo.length == 0) {
+                    linkinfo = br.getRegex("(<li data-file-id=.*?)</li>").getColumn(0);
+                }
                 if (linkinfo == null || linkinfo.length == 0 || fpName == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
                 for (final String lnkinfo : linkinfo) {
-                    String content_url = new Regex(lnkinfo, "\"(/[^<>\"]*?)\"").getMatch(0);
+                    String content_url = new Regex(lnkinfo, "class=\"name\"><a href=\"(/[^<>\"]*?)\"").getMatch(0);
                     if (content_url != null) {
-                        content_url = "http://minhateca.com.br" + content_url;
+                        content_url = "http://" + this.getHost() + content_url;
                     } else {
                         content_url = parameter;
                     }
-                    final String fid = new Regex(lnkinfo, "rel=\"(\\d+)\"").getMatch(0);
+                    final String fid = new Regex(lnkinfo, "data\\-file\\-id=\"(\\d+)\"").getMatch(0);
                     final Regex finfo = new Regex(lnkinfo, "<span class=\"bold\">([^<>\"]*?)</span>([^<>\"]*?)</a>");
                     String filesize = new Regex(lnkinfo, "<li><span>([^<>\"]*?)</span></li>").getMatch(0);
                     if (filesize == null) {
                         filesize = new Regex(lnkinfo, "<li>([^<>\"]*?)</li>[\t\n\r ]+<li><span class=\"date\"").getMatch(0);
+                    }
+                    if (filesize == null) {
+                        filesize = new Regex(lnkinfo, "class=\"file_size\">([^<>\"]*?)<").getMatch(0);
                     }
                     if (fid == null || filesize == null) {
                         logger.warning("Decrypter broken for link: " + parameter);
@@ -216,6 +205,9 @@ public class MinhatecaComBr extends PluginForDecrypt {
                     String filename = new Regex(lnkinfo, "/([^<>\"/]*?)\" class=\"downloadAction\"").getMatch(0);
                     if (filename == null) {
                         filename = new Regex(lnkinfo, "title=\"([^<>\"]*?)\">").getMatch(0);
+                    }
+                    if (filename == null) {
+                        filename = new Regex(content_url, "/([^<>\"/]+)$").getMatch(0);
                     }
                     if (filename != null) {
                         filename = filename.replace("," + fid, "");
