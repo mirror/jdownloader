@@ -48,6 +48,8 @@ public class ChoMikujPl extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /* ChomikujPlScript */
+
     private final String         PASSWORDTEXT             = "Ten folder jest (<b>)?zabezpieczony oddzielnym hasłem";
     private String               FOLDERPASSWORD           = null;
     private ArrayList<Integer>   REGEXSORT                = new ArrayList<Integer>();
