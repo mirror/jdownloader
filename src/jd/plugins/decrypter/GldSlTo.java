@@ -32,7 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "goldesel.to" }, urls = { "http://(www\\.)?goldesel\\.to/[a-z0-9]+/\\d+.{2}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "goldesel.to" }, urls = { "http://(www\\.)?goldesel\\.to/[a-z0-9]+(/[a-z0-9]+)?/\\d+.{2,}" }, flags = { 0 })
 public class GldSlTo extends PluginForDecrypt {
 
     public GldSlTo(PluginWrapper wrapper) {
@@ -51,7 +51,10 @@ public class GldSlTo extends PluginForDecrypt {
 
         String fpName = br.getRegex("<title>([^<>\"]*?) \\&raquo; goldesel\\.to</title>").getMatch(0);
         if (fpName == null) {
-            fpName = new Regex(br.getURL(), "goldesel\\.to/(.+)").getMatch(0);
+            fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        }
+        if (fpName == null) {
+            fpName = new Regex(br.getURL(), "goldesel\\.to/.*/(.+)").getMatch(0);
         }
         fpName = Encoding.htmlDecode(fpName).trim();
         final FilePackage fp = FilePackage.getInstance();
