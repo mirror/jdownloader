@@ -669,7 +669,7 @@ public class VKontakteRuHoster extends PluginForHost {
         /* Set english language */
         br.setCookie("http://vk.com/", "remixlang", "3");
         br.setReadTimeout(1 * 60 * 1000);
-        br.setConnectTimeout(1 * 60 * 1000);
+        br.setConnectTimeout(2 * 60 * 1000);
     }
 
     /**

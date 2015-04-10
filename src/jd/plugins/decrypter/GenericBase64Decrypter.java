@@ -32,7 +32,7 @@ import jd.plugins.PluginForDecrypt;
 
 urls = { "http://(www\\.)?re-direcciona\\.me/(I|r)/[A-Za-z0-9=]+", "http://asianspankee\\.com/\\?goto=[A-Za-z0-9=%]+", "http://(www\\.)?mediaboom\\.org/engine/go\\.php\\?url=[A-Za-z0-9=%]+", "http://(www\\.)?bookgn\\.com/engine/go\\.php\\?url=[A-Za-z0-9=%]+", "http://(www\\.)?vip\\-files\\.net/download\\.php\\?e=[A-Za-z0-9=%]+", "http://www\\.url4u\\.org/[A-Za-z0-9=%]+", "https?://(www\\.)?tunesies\\.com/go/[a-zA-Z0-9_/\\+\\=\\-]+", "https?://(www\\.)?xtragfx\\.com/engine/go\\.php\\?url=[A-Za-z0-9=%]+", "https?://(www\\.)?psdkeys\\.com/engine/go\\.php\\?url=[A-Za-z0-9=%]+" },
 
-flags = { 0, 0, 0, 0, 0, 0, 0, 0 })
+flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class GenericBase64Decrypter extends PluginForDecrypt {
 
     public GenericBase64Decrypter(final PluginWrapper wrapper) {
