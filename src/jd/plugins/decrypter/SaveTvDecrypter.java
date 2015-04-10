@@ -68,8 +68,6 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     private static final String          CRAWLER_PROPERTY_TELECASTIDS_ADDED = "CRAWLER_PROPERTY_TELECASTIDS_ADDED";
     private static final String          CRAWLER_PROPERTY_LASTCRAWL         = "CRAWLER_PROPERTY_LASTCRAWL";
 
-    private boolean                      crawler_DialogsDisabled            = false;
-
     /* Decrypter constants */
     private static final int             ENTRIES_PER_REQUEST                = 1000;
     private static final long            TELECAST_ID_EXPIRE_TIME            = 32 * 24 * 60 * 60 * 1000l;
@@ -95,10 +93,12 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     private boolean                      decryptAborted                     = false;
     private Account                      acc                                = null;
 
-    /* If this != null, API can be used */
-    private final boolean                fast_linkcheck                     = cfg.getBooleanProperty(CRAWLER_ENABLE_FASTER, false);
+    /* Settings */
+    private boolean                      crawler_DialogsDisabled            = false;
     private boolean                      api_enabled                        = false;
     private boolean                      only_grab_new_entries              = false;
+    /* If this != null, API can be used */
+    private boolean                      fast_linkcheck                     = false;
     private String                       parameter                          = null;
 
     /**
@@ -118,9 +118,10 @@ public class SaveTvDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        time_crawl_started = System.currentTimeMillis();
         parameter = param.toString();
         api_enabled = cfg.getBooleanProperty(USEAPI, false);
-        time_crawl_started = System.currentTimeMillis();
+        fast_linkcheck = cfg.getBooleanProperty(CRAWLER_ENABLE_FASTER, false);
         crawler_DialogsDisabled = cfg.getBooleanProperty(CRAWLER_DISABLE_DIALOGS, false);
         only_grab_new_entries = cfg.getBooleanProperty(ACTIVATE_BETA_FEATURES, false);
         grab_last_hours_num = getLongProperty(cfg, CRAWLER_LASTHOURS_COUNT, 0);
