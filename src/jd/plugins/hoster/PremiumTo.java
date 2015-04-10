@@ -295,6 +295,10 @@ public class PremiumTo extends PluginForHost {
                     // jiaz new handling to dump to next download candidate.
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 }
+                if (br.toString().matches("File hosting service not supported")) {
+                    tempUnavailableHoster(acc, link, 60 * 60 * 1000);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
                 /*
                  * after x retries we disable this host and retry with normal plugin
                  */
