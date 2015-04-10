@@ -46,7 +46,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
 
     /**
      * get the only existing instance of HostPluginController. This is a singleton
-     * 
+     *
      * @return
      */
     public static CrawlerPluginController getInstance() {
@@ -81,7 +81,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     /**
      * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using
      * {@link #getInstance()}.
-     * 
+     *
      */
     private CrawlerPluginController() {
         list = null;
@@ -262,8 +262,8 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
             final File cache = Application.getTempResource(getCache());
             try {
                 LazyCrawlerPluginCache.write(save, cache, lastFolderModification);
-            } catch (final IOException e) {
-                e.printStackTrace();
+            } catch (final Throwable e) {
+                LogController.CL(false).log(e);
                 cache.delete();
             } finally {
                 lock.writeUnlock();
@@ -278,7 +278,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
 
     /*
      * returns the list of available plugins
-     * 
+     *
      * can return null if controller is not initiated yet and ensureLoaded is false
      */
     public static List<LazyCrawlerPlugin> list(boolean ensureLoaded) {

@@ -228,15 +228,19 @@ public class RouterUtils {
         try {
             try {
                 address = RouterUtils.getIPFormNetStat();
+                if (address != null) {
+                    return address;
+                }
             } catch (Exception e) {
                 LOGGER.log(e);
             }
-            if (address != null) {
-                return address;
-            }
-            address = RouterUtils.getIPFromRouteCommand();
-            if (address != null) {
-                return address;
+            try {
+                address = RouterUtils.getIPFromRouteCommand();
+                if (address != null) {
+                    return address;
+                }
+            } catch (Exception e) {
+                LOGGER.log(e);
             }
             address = RouterUtils.getIpFormHostTable();
             return address;
@@ -339,75 +343,73 @@ public class RouterUtils {
      * @return
      */
     public static InetAddress getIPFromRouteCommand() {
-        if (new File("/sbin/route").exists()) {
-
-            if (CrossSystem.isMac()) {
-                /* TODO: needs to get checked by a mac user */
-                final Executer exec = new Executer("/sbin/route");
-                exec.addParameters(new String[] { "-n", "get", "default" });
-                exec.setRunin("/");
-                exec.setWaitTimeout(5);
-                exec.start();
-                exec.waitTimeout();
-                final String routingt = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
-                final Pattern pattern = Pattern.compile("gateway: (\\S*)", Pattern.CASE_INSENSITIVE);
-                final Matcher matcher = pattern.matcher(routingt);
-                while (matcher.find()) {
-                    final String hostname = matcher.group(1).trim();
-                    if (!hostname.matches("[\\s]*\\*[\\s]*")) {
-                        try {
-                            final InetAddress ia = InetAddress.getByName(hostname);
-                            /* first we try to connect to http */
-                            if (RouterUtils.checkPort(hostname)) {
-                                return ia;
+        if (CrossSystem.isLinux() || CrossSystem.isMac()) {
+            if (new File("/sbin/route").exists()) {
+                if (CrossSystem.isMac()) {
+                    /* TODO: needs to get checked by a mac user */
+                    final Executer exec = new Executer("/sbin/route");
+                    exec.addParameters(new String[] { "-n", "get", "default" });
+                    exec.setRunin("/");
+                    exec.setWaitTimeout(5);
+                    exec.start();
+                    exec.waitTimeout();
+                    final String routingt = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
+                    final Pattern pattern = Pattern.compile("gateway: (\\S*)", Pattern.CASE_INSENSITIVE);
+                    final Matcher matcher = pattern.matcher(routingt);
+                    while (matcher.find()) {
+                        final String hostname = matcher.group(1).trim();
+                        if (!hostname.matches("[\\s]*\\*[\\s]*")) {
+                            try {
+                                final InetAddress ia = InetAddress.getByName(hostname);
+                                /* first we try to connect to http */
+                                if (RouterUtils.checkPort(hostname)) {
+                                    return ia;
+                                }
+                                /* then lets try https */
+                                if (RouterUtils.checkPort(hostname)) {
+                                    return ia;
+                                }
+                            } catch (final Exception e) {
+                                LogController.CL().log(e);
                             }
-                            /* then lets try https */
-                            if (RouterUtils.checkPort(hostname)) {
-                                return ia;
-                            }
-                        } catch (final Exception e) {
-                            LogController.CL().log(e);
                         }
                     }
+                } else {
+                    /*
+                     * we use route command to find gateway routes and test them for port 80,443
+                     */
+                    final Executer exec = new Executer("/sbin/route");
+                    exec.addParameters(new String[] { "-n" });
+                    exec.setRunin("/");
+                    exec.setWaitTimeout(5);
+                    exec.start();
+                    exec.waitTimeout();
+                    String routingt = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
+                    routingt = routingt.replaceFirst(".*\n.*", "");
 
-                }
-            } else {
-                /*
-                 * we use route command to find gateway routes and test them for port 80,443
-                 */
-                final Executer exec = new Executer("/sbin/route");
-                exec.addParameters(new String[] { "-n" });
-                exec.setRunin("/");
-                exec.setWaitTimeout(5);
-                exec.start();
-                exec.waitTimeout();
-                String routingt = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
-                routingt = routingt.replaceFirst(".*\n.*", "");
+                    final Pattern pattern = Pattern.compile("\\d+\\.\\d+\\.\\d+\\.\\d+.*?(\\d+\\.\\d+\\.\\d+\\.\\d+).*?G", Pattern.CASE_INSENSITIVE);
+                    final Matcher matcher = pattern.matcher(routingt);
+                    while (matcher.find()) {
+                        final String hostname = matcher.group(1).trim();
+                        if (!hostname.matches("[\\s]*\\*[\\s]*")) {
+                            try {
+                                final InetAddress ia = InetAddress.getByName(hostname);
+                                /* first we try to connect to http */
+                                if (RouterUtils.checkPort(hostname)) {
+                                    return ia;
+                                }
+                                /* then lets try https */
+                                if (RouterUtils.checkPort(hostname)) {
+                                    return ia;
+                                }
 
-                final Pattern pattern = Pattern.compile("\\d+\\.\\d+\\.\\d+\\.\\d+.*?(\\d+\\.\\d+\\.\\d+\\.\\d+).*?G", Pattern.CASE_INSENSITIVE);
-                final Matcher matcher = pattern.matcher(routingt);
-                while (matcher.find()) {
-                    final String hostname = matcher.group(1).trim();
-                    if (!hostname.matches("[\\s]*\\*[\\s]*")) {
-                        try {
-                            final InetAddress ia = InetAddress.getByName(hostname);
-                            /* first we try to connect to http */
-                            if (RouterUtils.checkPort(hostname)) {
-                                return ia;
+                            } catch (final Exception e) {
+                                LogController.CL().log(e);
                             }
-                            /* then lets try https */
-                            if (RouterUtils.checkPort(hostname)) {
-                                return ia;
-                            }
-
-                        } catch (final Exception e) {
-                            LogController.CL().log(e);
                         }
                     }
-
                 }
             }
-
         }
         return null;
     }

@@ -628,7 +628,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     private boolean onNewArchive(Object caller, Archive archive) {
         if (archive == null) {
-            logger.info("Archive seems not supported!");
             return false;
         }
         if (archive.getArchiveFiles().size() < 1) {

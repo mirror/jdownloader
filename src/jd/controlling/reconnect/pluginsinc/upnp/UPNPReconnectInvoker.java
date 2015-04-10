@@ -36,7 +36,7 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
         // old code did NOT work:
 
         /*
-         * 
+         *
          * final String data = "<?xml version=\"1.0\"?>\n" +
          * "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
          * + " <s:Body>\n  <m:" + command + " xmlns:m=\"" + serviceType + "\"></m:" + command + ">\n </s:Body>\n</s:Envelope>"; try { final
@@ -133,10 +133,33 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
                 throw new InterruptedException();
             }
             runCommand(getLogger(), serviceType, controlURL, "ForceTermination");
-            try {
-                Thread.sleep(2000);
-            } finally {
-                runCommand(getLogger(), serviceType, controlURL, "RequestConnection");
+            Throwable throwable = null;
+            for (int requestTry = 0; requestTry < 10; requestTry++) {
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException ie) {
+                    try {
+                        final String result = runCommand(getLogger(), serviceType, controlURL, "RequestConnection");
+                        if (!StringUtils.containsIgnoreCase(result, "UPnPError")) {
+                            return;
+                        }
+                    } catch (final Throwable e) {
+                        logger.log(e);
+                    }
+                    throw ie;
+                }
+                try {
+                    final String result = runCommand(getLogger(), serviceType, controlURL, "RequestConnection");
+                    if (!StringUtils.containsIgnoreCase(result, "UPnPError")) {
+                        return;
+                    }
+                } catch (final Throwable e) {
+                    throwable = e;
+                    logger.log(e);
+                }
+            }
+            if (throwable != null) {
+                throw throwable;
             }
         } catch (MalformedURLException e) {
             throw new ReconnectException(T._.malformedurl());
