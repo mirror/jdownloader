@@ -41,15 +41,26 @@ public class UploaderJp extends PluginForHost {
         return "http://www.uploader.jp/rule.html";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("404 File Not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex(">オリジナル</span><span class=\"right\">([^<>\"]*?)</span>").getMatch(0);
-        final String filesize = br.getRegex(">ファイル</span><span class=\"right\">download \\(([^<>\"]*?)\\)</span>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML("404 File Not found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex(">オリジナル</span><span class=\"right\">([^<>\"]*?)</span>").getMatch(0);
+        String filesize = br.getRegex(">ファイル</span><span class=\"right\">download \\(([^<>\"]*?)\\)</span>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<th>オリジナル</th>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
+        }
+        if (filesize == null) {
+            filesize = br.getRegex("<th>容量</th>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
+        }
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -59,14 +70,26 @@ public class UploaderJp extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         final String token = br.getRegex("name=\"token\" value=\"([^<>\"]*?)\"").getMatch(0);
-        if (token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (token == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.postPage(br.getURL(), "token=" + token);
         final String md5 = br.getRegex("MD5 \\| ([a-z0-9]+)").getMatch(0);
-        if (md5 != null) downloadLink.setMD5Hash(md5);
-        final String dllink = br.getRegex("\"(http://download\\d+\\.getuploader\\.com/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (md5 != null) {
+            downloadLink.setMD5Hash(md5);
+        }
+        String dllink = br.getRegex("\"(http://download\\d+\\.getuploader\\.com/[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dllink = Encoding.htmlDecode(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

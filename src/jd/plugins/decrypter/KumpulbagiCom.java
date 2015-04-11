@@ -139,19 +139,9 @@ public class KumpulbagiCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
         } else {
             final String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-            int startnumber = 1;
             int lastpage = 1;
-            /* First check if maybe user wants only a specific page */
-            String maxpage = new Regex(parameter, ",(\\d+)$").getMatch(0);
-            if (maxpage != null) {
-                startnumber = Integer.parseInt(maxpage);
-            } else {
-                maxpage = br.getRegex("title=\"\\d+\">(\\d+)</a></li></ul><div").getMatch(0);
-            }
-            if (maxpage != null) {
-                lastpage = Integer.parseInt(maxpage);
-            }
-            for (int i = startnumber; i <= lastpage; i++) {
+            int tempmaxpage = 0;
+            do {
                 try {
                     if (this.isAbort()) {
                         logger.info("Decryption aborted by user: " + parameter);
@@ -160,9 +150,10 @@ public class KumpulbagiCom extends PluginForDecrypt {
                 } catch (final Throwable e) {
                     // Not available in old 0.9.581 Stable
                 }
-                logger.info("Decrypting page " + i + " of " + lastpage);
-                if (i > 1) {
-                    br.postPage("http://" + this.getHost() + "/action/Files/FilesList", "chomikId=" + chomikid + "&folderId=" + folderid + "&fileListSortType=Date&fileListAscending=False&gallerySortType=Name&galleryAscending=False&pageNr=" + i + "&isGallery=False&requestedFolderMode=&folderChanged=false&__RequestVerificationToken=" + Encoding.urlEncode(reqtoken));
+                lastpage = tempmaxpage;
+                logger.info("Decrypting page " + lastpage + " of ??");
+                if (lastpage > 1) {
+                    br.getPage(parameter + "/gallery,1," + lastpage);
                 }
                 String[] linkinfo = br.getRegex("<div class=\"fileinfo tab\">(.*?)<span class=\"filedescription\"").getColumn(0);
                 if (linkinfo == null || linkinfo.length == 0) {
@@ -245,7 +236,15 @@ public class KumpulbagiCom extends PluginForDecrypt {
 
                     decryptedLinks.add(dl);
                 }
-            }
+                final String[] pagenumbers = br.getRegex("lass=\"pageSplitter\"><a href=\"/[^<>\"]*?\">(\\d+)</a>").getColumn(0);
+                for (final String pge : pagenumbers) {
+                    final int pageint = Integer.parseInt(pge);
+                    if (pageint > lastpage) {
+                        tempmaxpage = pageint;
+                        break;
+                    }
+                }
+            } while (tempmaxpage > lastpage);
 
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
