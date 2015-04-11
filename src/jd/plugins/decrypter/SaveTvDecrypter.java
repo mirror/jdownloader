@@ -56,50 +56,51 @@ public class SaveTvDecrypter extends PluginForDecrypt {
 
     /* Settings stuff */
     @SuppressWarnings("deprecation")
-    private final SubConfiguration       cfg                                = SubConfiguration.getConfig("save.tv");
-    private static final String          ACTIVATE_BETA_FEATURES             = "ACTIVATE_BETA_FEATURES";
-    private final String                 USEAPI                             = "USEAPI";
-    private final String                 CRAWLER_ONLY_ADD_NEW_IDS           = "CRAWLER_ONLY_ADD_NEW_IDS";
-    private final String                 CRAWLER_ENABLE_FASTER              = "CRAWLER_ENABLE_FASTER_2";
-    private final String                 CRAWLER_ACTIVATE                   = "CRAWLER_ACTIVATE";
-    private final String                 CRAWLER_DISABLE_DIALOGS            = "CRAWLER_DISABLE_DIALOGS";
-    private final String                 CRAWLER_LASTHOURS_COUNT            = "CRAWLER_LASTHOURS_COUNT";
+    private final SubConfiguration       cfg                                 = SubConfiguration.getConfig("save.tv");
+    private static final String          ACTIVATE_BETA_FEATURES              = "ACTIVATE_BETA_FEATURES";
+    private final String                 USEAPI                              = "USEAPI";
+    private final String                 CRAWLER_ONLY_ADD_NEW_IDS            = "CRAWLER_ONLY_ADD_NEW_IDS";
+    private final String                 CRAWLER_ENABLE_FASTER               = "CRAWLER_ENABLE_FASTER_2";
+    private final String                 CRAWLER_ACTIVATE                    = "CRAWLER_ACTIVATE";
+    private final String                 CRAWLER_DISABLE_DIALOGS             = "CRAWLER_DISABLE_DIALOGS";
+    private final String                 CRAWLER_LASTHOURS_COUNT             = "CRAWLER_LASTHOURS_COUNT";
 
-    private static final String          CRAWLER_PROPERTY_TELECASTIDS_ADDED = "CRAWLER_PROPERTY_TELECASTIDS_ADDED";
-    private static final String          CRAWLER_PROPERTY_LASTCRAWL         = "CRAWLER_PROPERTY_LASTCRAWL";
+    private static final String          CRAWLER_PROPERTY_TELECASTIDS_ADDED  = "CRAWLER_PROPERTY_TELECASTIDS_ADDED";
+    private static final String          CRAWLER_PROPERTY_LASTCRAWL_NEWLINKS = "CRAWLER_PROPERTY_LASTCRAWL_NEWLINKS";
+    private static final String          CRAWLER_PROPERTY_LASTCRAWL          = "CRAWLER_PROPERTY_LASTCRAWL";
 
     /* Decrypter constants */
-    private static final int             ENTRIES_PER_REQUEST                = 1000;
-    private static final long            TELECAST_ID_EXPIRE_TIME            = 32 * 24 * 60 * 60 * 1000l;
+    private static final int             ENTRIES_PER_REQUEST                 = 1000;
+    private static final long            TELECAST_ID_EXPIRE_TIME             = 32 * 24 * 60 * 60 * 1000l;
 
     /* Property / Filename constants */
-    public static final String           QUALITY_PARAM                      = "quality";
-    public static final String           QUALITY_LQ                         = "LQ";
-    public static final String           QUALITY_HQ                         = "HQ";
-    public static final String           QUALITY_HD                         = "HD";
-    public static final String           EXTENSION                          = ".mp4";
+    public static final String           QUALITY_PARAM                       = "quality";
+    public static final String           QUALITY_LQ                          = "LQ";
+    public static final String           QUALITY_HQ                          = "HQ";
+    public static final String           QUALITY_HD                          = "HD";
+    public static final String           EXTENSION                           = ".mp4";
 
     /* Decrypter variables */
-    final ArrayList<DownloadLink>        decryptedLinks                     = new ArrayList<DownloadLink>();
-    private static HashMap<String, Long> crawledTelecastIDsMap              = new HashMap<String, Long>();
-    private long                         grab_last_hours_num                = 0;
-    private long                         tdifference_milliseconds           = 0;
+    final ArrayList<DownloadLink>        decryptedLinks                      = new ArrayList<DownloadLink>();
+    private static HashMap<String, Long> crawledTelecastIDsMap               = new HashMap<String, Long>();
+    private long                         grab_last_hours_num                 = 0;
+    private long                         tdifference_milliseconds            = 0;
 
-    private int                          totalLinksNum                      = 0;
-    private int                          foundLinksNum                      = 0;
-    private int                          requestCount                       = 1;
-    private long                         time_crawl_started                 = 0;
-    private long                         time_last_crawl_ended              = 0;
-    private boolean                      decryptAborted                     = false;
-    private Account                      acc                                = null;
+    private int                          totalLinksNum                       = 0;
+    private int                          foundLinksNum                       = 0;
+    private int                          requestCount                        = 1;
+    private long                         time_crawl_started                  = 0;
+    private long                         time_last_crawl_ended               = 0;
+    private boolean                      decryptAborted                      = false;
+    private Account                      acc                                 = null;
 
     /* Settings */
-    private boolean                      crawler_DialogsDisabled            = false;
-    private boolean                      api_enabled                        = false;
-    private boolean                      only_grab_new_entries              = false;
+    private boolean                      crawler_DialogsDisabled             = false;
+    private boolean                      api_enabled                         = false;
+    private boolean                      only_grab_new_entries               = false;
     /* If this != null, API can be used */
-    private boolean                      fast_linkcheck                     = false;
-    private String                       parameter                          = null;
+    private boolean                      fast_linkcheck                      = false;
+    private String                       parameter                           = null;
 
     /**
      * JD2 CODE: DO NOIT USE OVERRIDE FOR COMPATIBILITY REASONS!!!!!
@@ -123,9 +124,9 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         api_enabled = cfg.getBooleanProperty(USEAPI, false);
         fast_linkcheck = cfg.getBooleanProperty(CRAWLER_ENABLE_FASTER, false);
         crawler_DialogsDisabled = cfg.getBooleanProperty(CRAWLER_DISABLE_DIALOGS, false);
-        only_grab_new_entries = cfg.getBooleanProperty(ACTIVATE_BETA_FEATURES, false);
+        only_grab_new_entries = cfg.getBooleanProperty(CRAWLER_ONLY_ADD_NEW_IDS, false);
         grab_last_hours_num = getLongProperty(cfg, CRAWLER_LASTHOURS_COUNT, 0);
-        time_last_crawl_ended = getLongProperty(cfg, CRAWLER_PROPERTY_LASTCRAWL, 0);
+        time_last_crawl_ended = getLongProperty(cfg, CRAWLER_PROPERTY_LASTCRAWL_NEWLINKS, 0);
         this.br.setFollowRedirects(true);
         this.br.setLoadLimit(this.br.getLoadLimit() * 3);
         if (!cfg.getBooleanProperty(CRAWLER_ACTIVATE, false)) {
@@ -169,7 +170,10 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             }
             /* Save telecastID map so later we know what is new and what we crawled before ;) */
             cfg.setProperty(CRAWLER_PROPERTY_TELECASTIDS_ADDED, crawledTelecastIDsMap);
-            if (decryptedLinks.size() > 0 && (foundLinksNum >= totalLinksNum)) {
+            if (foundLinksNum >= totalLinksNum) {
+                if (decryptedLinks.size() > 0) {
+                    cfg.setProperty(CRAWLER_PROPERTY_LASTCRAWL_NEWLINKS, System.currentTimeMillis());
+                }
                 cfg.setProperty(CRAWLER_PROPERTY_LASTCRAWL, System.currentTimeMillis());
             }
             logger.info("save.tv: total links found: " + decryptedLinks.size() + " of " + totalLinksNum);
@@ -451,17 +455,17 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     }
 
     private boolean id_IS_Allowed(final DownloadLink dl) {
-        final boolean onlyAddNewIDs = cfg.getBooleanProperty(ACTIVATE_BETA_FEATURES, false);
         final long datemilliseconds = getLongProperty(dl, "originaldate", 0);
-        final long current_tdifference = System.currentTimeMillis() - datemilliseconds;
+        final long current_tdifference = time_crawl_started - datemilliseconds;
         final String telecastID = dl.getStringProperty("LINKDUPEID", null);
-        if ((!onlyAddNewIDs && tdifference_milliseconds == 0 || current_tdifference <= tdifference_milliseconds) || (onlyAddNewIDs && !crawledTelecastIDsMap.containsKey(telecastID))) {
-            /* TODO: Fix that! */
+        boolean isAllowed = false;
+        if (only_grab_new_entries && !crawledTelecastIDsMap.containsKey(telecastID)) {
             crawledTelecastIDsMap.put(telecastID, datemilliseconds);
-            return true;
-        } else {
-            return false;
+            isAllowed = true;
+        } else if (!only_grab_new_entries && (tdifference_milliseconds == 0 || current_tdifference <= tdifference_milliseconds)) {
+            isAllowed = true;
         }
+        return isAllowed;
     }
 
     @SuppressWarnings("unused")
