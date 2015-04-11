@@ -58,8 +58,13 @@ public class NicoVideoJp extends PluginForHost {
     private static final String  NOCHUNKS                             = "NOCHUNKS";
     private static final String  AVOID_ECONOMY_MODE                   = "AVOID_ECONOMY_MODE";
 
+    private static final boolean FREE_RESUME                          = true;
+    private static final int     FREE_MAXCHUNKS                       = 0;
     private static final int     FREE_MAXDOWNLOADS                    = 2;
+    private static final boolean ACCOUNT_FREE_RESUME                  = true;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS               = 0;
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS            = 2;
+
     private static final int     economy_active_wait_minutes          = 30;
     private static final String  html_account_needed                  = "account\\.nicovideo\\.jp/register\\?from=watch\\&mode=landing\\&sec=not_login_watch";
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
@@ -154,7 +159,7 @@ public class NicoVideoJp extends PluginForHost {
         }
         ai.setUnlimitedTraffic();
         /* TODO: Implement premium support */
-        ai.setStatus("Registered User");
+        ai.setStatus("Registered account");
         return ai;
     }
 
@@ -209,12 +214,12 @@ public class NicoVideoJp extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
-        int maxChunks = 0;
+        int maxChunks = FREE_MAXCHUNKS;
         if (link.getBooleanProperty(NOCHUNKS, false)) {
             maxChunks = 1;
         }
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -306,12 +311,12 @@ public class NicoVideoJp extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
-        int maxChunks = 0;
+        int maxChunks = ACCOUNT_FREE_MAXCHUNKS;
         if (link.getBooleanProperty(NOCHUNKS, false)) {
             maxChunks = 1;
         }
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_FREE_RESUME, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();

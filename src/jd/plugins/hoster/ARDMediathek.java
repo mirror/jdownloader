@@ -250,7 +250,7 @@ public class ARDMediathek extends PluginForHost {
         final String xmlContent = xml.toString();
         /* They got two different subtitle formats */
         if (xmlContent.contains("<ebuttm:documentEbuttVersion>")) {
-            success = jd.plugins.hoster.BrOnlineDe.convertSubtitleBrOnlineDe(downloadlink, xmlContent, 0);
+            success = jd.plugins.hoster.BrOnlineDe.convertSubtitleBrOnlineDe(downloadlink, xmlContent, 10);
         } else {
             BufferedWriter dest;
             try {

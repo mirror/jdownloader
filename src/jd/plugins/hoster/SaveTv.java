@@ -84,6 +84,7 @@ public class SaveTv extends PluginForHost {
 
     /* Properties */
     private static final String  NICE_HOSTproperty                         = "savetv";
+    private static final String  CRAWLER_PROPERTY_LASTCRAWL_NEWLINKS       = "CRAWLER_PROPERTY_LASTCRAWL_NEWLINKS";
     private static final String  CRAWLER_PROPERTY_LASTCRAWL                = "CRAWLER_PROPERTY_LASTCRAWL";
     /* Frequently used internal plugin properties */
     public static final String   PROPERTY_ACCOUNT_API_SESSIONID            = "sessionid";
@@ -168,9 +169,9 @@ public class SaveTv extends PluginForHost {
     public SaveTv(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.save.tv/stv/s/obj/registration/RegPage1.cfm");
-        if (!isJDStable()) {
-            setConfigElements();
-        }
+        // if (!isJDStable()) {
+        setConfigElements();
+        // }
     }
 
     private boolean isJDStable() {
@@ -570,6 +571,8 @@ public class SaveTv extends PluginForHost {
         synchronized (LOCK) {
             checkFeatureDialogAll();
             checkFeatureDialogCrawler();
+            /* TODO: Remove this after june 2015 */
+            checkFeatureDialogNew();
         }
         final SubConfiguration cfg = SubConfiguration.getConfig("save.tv");
         final boolean preferAdsFree = cfg.getBooleanProperty(PREFERADSFREE, false);
@@ -1721,12 +1724,13 @@ public class SaveTv extends PluginForHost {
     private void setConfigElements() {
         /* Crawler settings */
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Archiv-Crawler Einstellungen:"));
-        final ConfigEntry activateCrawler = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_ACTIVATE, JDL.L("plugins.hoster.SaveTv.activateCrawler", "Archiv-Crawler aktivieren?\r\nINFO: Fügt das komplette Archiv oder Teile davon beim Einfügen dieses Links ein:\r\n'https://www.save.tv/STV/M/obj/archive/VideoArchive.cfm\r\n")).setDefaultValue(defaultCrawlerActivate);
-        getConfig().addEntry(activateCrawler);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_ONLY_ADD_NEW_IDS, JDL.L("plugins.hoster.SaveTv.crawlerOnlyAddNewIDs", "Nur neue Aufnahmen hinzufügen?\r\nJDownloader gleicht dein save.tv Archiv ab mit den Einträgen, die du bereits eingefügt hast und zeigt immer nur neue Einträge an!\r\n<html><p style=\"color:#F62817\"><b>Information:</b>Dieses Feature ist noch nicht fertig, kommt aber bald!!</p></html>")).setDefaultValue(defaultCrawlerAddNew).setEnabled(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SaveTv.CRAWLER_LASTHOURS_COUNT, JDL.L("plugins.hoster.SaveTv.grabArchive.lastHours", "Nur Aufnahmen der letzten X Stunden crawlen??\r\nAnzahl der Stunden, die gecrawlt werden sollen [0 = komplettes Archiv]:"), 0, 1000, 24).setDefaultValue(defaultCrawlLasthours).setEnabledCondidtion(activateCrawler, true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_ENABLE_FASTER, JDL.L("plugins.hoster.SaveTv.grabArchiveFaster", "Aktiviere schnellen Linkcheck für Archiv-Crawler?\r\nVorteil: Über den Archiv-Crawler hinzugefügte Links landen viel schneller im Linkgrabber\r\nNachteil: Es sind nicht alle Informationen (z.B. Kategorie) verfügbar - erst beim Download oder späterem Linkcheck\r\n")).setDefaultValue(defaultCrawlerFastLinkcheck).setEnabledCondidtion(activateCrawler, true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_DISABLE_DIALOGS, JDL.L("plugins.hoster.SaveTv.crawlerDisableDialogs", "Info Dialoge des Archiv-Crawlers (nach dem Crawlen oder im Fehlerfall) deaktivieren?")).setDefaultValue(defaultInfoDialogsDisable).setEnabledCondidtion(activateCrawler, true));
+        final ConfigEntry crawlerActivate = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_ACTIVATE, JDL.L("plugins.hoster.SaveTv.activateCrawler", "Archiv-Crawler aktivieren?\r\nINFO: Fügt das komplette Archiv oder Teile davon beim Einfügen dieses Links ein:\r\n'https://www.save.tv/STV/M/obj/archive/VideoArchive.cfm\r\n")).setDefaultValue(defaultCrawlerActivate);
+        getConfig().addEntry(crawlerActivate);
+        final ConfigEntry crawlerAddNew = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_ONLY_ADD_NEW_IDS, JDL.L("plugins.hoster.SaveTv.crawlerOnlyAddNewIDs", "Nur neue abgeschlossene Aufnahmen crawlen?\r\nJDownloader gleicht dein save.tv Archiv ab mit den Einträgen, die du bereits eingefügt hast und zeigt immer nur neue Einträge an!\r\n<html><b>Wichtig:</b> JDownloader kann nicht wissen, welche Sendungen du bereits geladen hast - nur, welche bereits in JDownloader eingefügt wurden!</html>")).setDefaultValue(defaultCrawlerAddNew).setEnabledCondidtion(crawlerActivate, true);
+        getConfig().addEntry(crawlerAddNew);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SaveTv.CRAWLER_LASTHOURS_COUNT, JDL.L("plugins.hoster.SaveTv.grabArchive.lastHours", "Nur Aufnahmen der letzten X Stunden crawlen??\r\nAnzahl der Stunden, die gecrawlt werden sollen [0 = komplettes Archiv]:"), 0, 1000, 24).setDefaultValue(defaultCrawlLasthours).setEnabledCondidtion(crawlerAddNew, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_ENABLE_FASTER, JDL.L("plugins.hoster.SaveTv.grabArchiveFaster", "Aktiviere schnellen Linkcheck für Archiv-Crawler?\r\nVorteil: Über den Archiv-Crawler hinzugefügte Links landen viel schneller im Linkgrabber\r\nNachteil: Es sind nicht alle Informationen (z.B. Kategorie) verfügbar - erst beim Download oder späterem Linkcheck\r\n")).setDefaultValue(defaultCrawlerFastLinkcheck).setEnabledCondidtion(crawlerActivate, true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_DISABLE_DIALOGS, JDL.L("plugins.hoster.SaveTv.crawlerDisableDialogs", "Info Dialoge des Archiv-Crawlers (nach dem Crawlen oder im Fehlerfall) deaktivieren?")).setDefaultValue(defaultInfoDialogsDisable).setEnabledCondidtion(crawlerActivate, true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
 
@@ -1815,7 +1819,7 @@ public class SaveTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Erweiterte Einstellungen:\r\n<html><p style=\"color:#F62817\"><b>Warnung: Ändere diese Einstellungen nur, wenn du weißt was du tust!</b></p></html>"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.ACTIVATE_BETA_FEATURES, JDL.L("plugins.hoster.SaveTv.ActivateBETAFeatures", "Aktiviere BETA-Features?\r\nINFO: Was diese Features sind und ob es aktuell welche gibt steht im Support Forum.")));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.ACTIVATE_BETA_FEATURES, JDL.L("plugins.hoster.SaveTv.ActivateBETAFeatures", "Aktiviere BETA-Features?\r\nINFO: Was diese Features sind und ob es aktuell welche gibt steht im Support Forum.")).setEnabled(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEAPI, JDL.L("plugins.hoster.SaveTv.UseAPI", "API verwenden?\r\nINFO: Aktiviert man die API, sind einige Features wie folgt betroffen:\r\n-ENTFÄLLT: Option 'Nur Aufnahmen mit angewandter Schnittliste laden'\r\n-ENTFÄLLT: Anzeigen der Account Details in der Account-Verwaltung (Account Typ, Ablaufdatum, ...)\r\n-EINGESCHRÄNKT NUTZBAR: Benutzerdefinierte Dateinamen")));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
@@ -2004,9 +2008,64 @@ public class SaveTv extends PluginForHost {
                         message += "- Info-Dialoge\r\n";
                         message += "- Viele Dateiinfos trotz aktiviertem schnellen Linkcheck\r\n";
                         message += "- Eigene Dateinamen auch bei aktiviertem schnellen Linkcheck (eingeschränkt)\r\n";
+                        message += "- Die Möglichkeit, immer nur neue abgeschlossene Aufnahmen zu crawlen\r\n";
                         message += "- Die Möglichkeit, wahlweise alle oder nur Aufnahmen der letzten X Stunden zu crawlen\r\n";
                         message += "\r\n";
                         message += "Um den Crawler nutzen zu können, musst du ihn erst in den Plugin Einstellungen aktivieren.\r\n";
+                        message += "\r\n";
+                        message += "Die Crawler Einstellungen sind nur in der Version JDownloader 2 BETA verfügbar unter:\r\nEinstellungen -> Plugin Einstellungen -> save.tv";
+                        message += getMessageEnd();
+                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
+                    } catch (Throwable e) {
+                    }
+                }
+            });
+        } catch (Throwable e) {
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private void checkFeatureDialogNew() {
+        SubConfiguration config = null;
+        try {
+            config = getPluginConfig();
+            if (config.getBooleanProperty("featuredialog_new11042015_Shown", Boolean.FALSE) == false) {
+                if (config.getProperty("featuredialog_new11042015_Shown2") == null) {
+                    showFeatureDialogNew();
+                } else {
+                    config = null;
+                }
+            } else {
+                config = null;
+            }
+        } catch (final Throwable e) {
+        } finally {
+            if (config != null) {
+                config.setProperty("featuredialog_new11042015_Shown", Boolean.TRUE);
+                config.setProperty("featuredialog_new11042015_Shown2", "shown");
+                config.save();
+            }
+        }
+    }
+
+    private static void showFeatureDialogNew() {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        String message = "";
+                        String title = null;
+                        title = "11.04.2015 - Save.tv Plugin - Neues Feature";
+                        message += "Hallo lieber save.tv Nutzer/liebe save.tv NutzerIn\r\n";
+                        message += "Das save.tv Crawler Plugin bietet neben Fehlerbehebungen seit dem 11.04.2015 folgendes neues Feature:\r\n";
+                        message += "- Nur neue abgeschlossene Aufnahmen hinzufügen\r\n";
+                        message += "Ist das Feature aktiviert, werden statt der eingestellten letzten X Stunden bzw. komplettes Archiv immer nur die Aufnahmen hinzugefügt, die du noch nicht in JDownloader eingefügt hast.\r\n";
+                        message += "Bei der ersten Verwendung dieses Features wird das komplette Archiv eingefügt.\r\n";
+                        message += "Danach bei jedem Crawlvorgang nur Aufnahmen, die noch nicht eingefügt wurden.\r\n";
+                        message += "Das Feature kann jederzeit wieder deaktiviert werden um das 'bekannte Crawlverhalten' zurückzubekommen.\r\n";
+                        message += "Außerdem kann man die Daten der letzten erfolgreichen Crawlvorgänge ab sofort in den Account Details einsehen.\r\n";
                         message += "\r\n";
                         message += "Die Crawler Einstellungen sind nur in der Version JDownloader 2 BETA verfügbar unter:\r\nEinstellungen -> Plugin Einstellungen -> save.tv";
                         message += getMessageEnd();
@@ -2025,21 +2084,29 @@ public class SaveTv extends PluginForHost {
             final String windowTitleLangText = "Account Zusatzinformationen";
             final String accType = account.getStringProperty("acc_type", "Premium Account");
             final String accUsername = account.getStringProperty("acc_username", "?");
-            final String acc_expire = account.getStringProperty("acc_expire", "?");
+            String acc_expire = "Niemals";
             final String acc_package = account.getStringProperty("acc_package", "?");
             final String acc_price = account.getStringProperty("acc_price", "?");
             final String acc_runtime = account.getStringProperty("acc_runtime", "?");
             final String acc_count_archive_entries = account.getStringProperty("acc_count_archive_entries", "?");
             final String acc_count_telecast_ids = account.getStringProperty("acc_count_telecast_ids", "?");
 
+            final String user_lastcrawl_newlinks_date;
             final String user_lastcrawl_date;
+            final long time_last_crawl_ended_newlinks = getLongProperty(this.getPluginConfig(), CRAWLER_PROPERTY_LASTCRAWL_NEWLINKS, 0);
             final long time_last_crawl_ended = getLongProperty(this.getPluginConfig(), CRAWLER_PROPERTY_LASTCRAWL, 0);
 
-            if (time_last_crawl_ended > 0) {
-                final SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy 'um' HH:mm 'Uhr'");
+            final SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy 'um' HH:mm 'Uhr'");
+
+            if (time_last_crawl_ended_newlinks > 0 && time_last_crawl_ended > 0) {
                 user_lastcrawl_date = formatter.format(time_last_crawl_ended);
+                user_lastcrawl_newlinks_date = formatter.format(time_last_crawl_ended_newlinks);
             } else {
                 user_lastcrawl_date = "Nie";
+                user_lastcrawl_newlinks_date = "Nie";
+            }
+            if (account.getAccountInfo().getValidUntil() > 0) {
+                acc_expire = formatter.format(account.getAccountInfo().getValidUntil());
             }
 
             /* it manages new panel */
@@ -2068,6 +2135,7 @@ public class SaveTv extends PluginForHost {
             panelGenerator.addEntry("Sendungen im Archiv:", acc_count_archive_entries);
             panelGenerator.addEntry("Ladbare Sendungen im Archiv (telecast-IDs):", acc_count_telecast_ids);
             panelGenerator.addEntry("Datum des letzten erfolgreichen Crawlvorganges: ", user_lastcrawl_date);
+            panelGenerator.addEntry("Zuletzt neue Sendungen (siehe Plugin Einstellung) gefunden:", user_lastcrawl_newlinks_date);
 
             panelGenerator.addCategory("Download");
             panelGenerator.addEntry("Max. Anzahl gleichzeitiger Downloads:", "20");
