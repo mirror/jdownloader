@@ -237,6 +237,10 @@ public abstract class abstractSafeLinking extends PluginForDecrypt {
         return "\"https?://[^/]+" + regexSupportedDomains() + "/simplecaptcha/captcha\\.php\"";
     }
 
+    protected String regexCaptchaCatAndDog() {
+        return "\"(https?://[^/]+" + regexSupportedDomains() + "/includes/captcha_factory/catsdogs/catdogcaptcha\\.php\\?";
+    }
+
     protected void handleCaptcha(final CryptedLink param) throws Exception {
         br.setFollowRedirects(true);
         LinkedHashMap<String, String> captchaRegex = new LinkedHashMap<String, String>();
@@ -247,6 +251,7 @@ public abstract class abstractSafeLinking extends PluginForDecrypt {
         captchaRegex.put("fancy", regexCaptchaFancy());
         captchaRegex.put("qaptcha", regexCaptchaQaptcha());
         captchaRegex.put("simplecaptcha", regexCaptchaSimplecaptcha());
+        captchaRegex.put("cats", regexCaptchaCatAndDog());
 
         /* search for protected form */
         Form protectedForm = formProtected();
@@ -276,6 +281,9 @@ public abstract class abstractSafeLinking extends PluginForDecrypt {
                             wait = 1272 * new Random().nextInt(6);
                         }
                         Thread.sleep(wait);
+                        while (protectedForm.hasInputFieldByName("%5C")) {
+                            protectedForm.remove("%5C");
+                        }
                         protectedForm.put("captchatype", "Simple");
                         protectedForm.put("used_captcha", "SolveMedia");
                         protectedForm.put("adcopy_challenge", "null");
@@ -333,15 +341,18 @@ public abstract class abstractSafeLinking extends PluginForDecrypt {
                     break;
                 }
                 case 7:
-                    break;
                 case 8:
-                    break;
                 case 9:
-                    break;
                 case 10:
-                    break;
-                case 11:
-                    break;
+                case 11: {
+                    // unsupported types
+                    // short wait to prevent hammering
+                    Thread.sleep(2500);
+                    br.getPage(br.getURL());
+                    protectedForm = formProtected();
+                    prepareCaptchaAdress(protectedForm.getHtmlCode(), captchaRegex);
+                    continue;
+                }
                 case 12: {
                     final String result = getCaptchaCode("/simplecaptcha/captcha.php", param);
                     protectedForm.put("captchatype", "Simple");
@@ -427,6 +438,9 @@ public abstract class abstractSafeLinking extends PluginForDecrypt {
 
     private void prepareCaptchaAdress(String captcha, LinkedHashMap<String, String> captchaRegex) {
         br.getRequest().setHtmlCode(captcha);
+
+        // nullify cType, this is so feedback is correct on retries etc.
+        cType = null;
 
         for (Entry<String, String> next : captchaRegex.entrySet()) {
             if (br.containsHTML(next.getValue())) {
