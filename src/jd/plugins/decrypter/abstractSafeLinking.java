@@ -238,7 +238,7 @@ public abstract class abstractSafeLinking extends PluginForDecrypt {
     }
 
     protected String regexCaptchaCatAndDog() {
-        return "\"(https?://[^/]+" + regexSupportedDomains() + "/includes/captcha_factory/catsdogs/catdogcaptcha\\.php\\?";
+        return "\"https?://[^/]+" + regexSupportedDomains() + "/includes/captcha_factory/catsdogs/catdogcaptcha\\.php\\?";
     }
 
     protected void handleCaptcha(final CryptedLink param) throws Exception {
