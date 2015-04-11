@@ -40,13 +40,13 @@ public class Paste2Org extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(parameter);
-        /* Error handling */
-        if (br.containsHTML("Page Not Found")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
-        final String plaintxt = br.getRegex("<ol class=\\'highlight code\\'>(.*?)</div></li></ol>").getMatch(0);
+        final String plaintxt = br.getRegex("<ol class='highlight code'>(.*?)</div></li></ol>").getMatch(0);
         if (plaintxt == null) {
+            /* Error handling */
+            if (br.containsHTML("Page Not Found")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             logger.info("Paste2 Decrypter: Could not find textfield: " + parameter);
             logger.info("Paste2 Decrypter: Please report this to JDownloader' Development Team.");
             return null;
