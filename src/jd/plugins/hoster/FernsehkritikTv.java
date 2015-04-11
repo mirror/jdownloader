@@ -322,19 +322,18 @@ public class FernsehkritikTv extends PluginForHost {
             } else {
                 /* Less than 14 days after the release of the episode --> Wait for free release */
                 final long waitUntilFreeRelease;
-                if (timePassed < 8 * 24 * 60 * 60 * 1000l) {
+                if (timePassed < 7 * 24 * 60 * 60 * 1000l) {
                     /*
                      * The Fernsehkritiker usually releases new episodes for free 7 days after the release for Massengeschmack members.
-                     * Let's assume he is late and use 8 days.
                      */
-                    waitUntilFreeRelease = (timestamp_released + 8 * 24 * 60 * 60 * 1000l) - System.currentTimeMillis();
+                    waitUntilFreeRelease = (timestamp_released + 7 * 24 * 60 * 60 * 1000l) - System.currentTimeMillis();
                 } else {
                     /*
-                     * It's more than 8 days but still less than 14...okay let's ait 3 hours and try again - the new episode should be out
+                     * It's more than 7 days but still less than 14...okay let's ait 3 hours and try again - the new episode should be out
                      * soon and if we pass 14 days without the release, users will see the PREMIUMONLY message (actually this should never
                      * happen for Fernsehkritik episodes as all of them get released free after some time.).
                      */
-                    waitUntilFreeRelease = 3 * 60 * 60 * 1000l;
+                    waitUntilFreeRelease = 1 * 60 * 60 * 1000l;
                 }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Die kostenlose Version dieser Episode wurde noch nicht freigegeben", waitUntilFreeRelease);
             }

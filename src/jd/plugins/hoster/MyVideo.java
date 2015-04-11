@@ -192,7 +192,16 @@ public class MyVideo extends PluginForHost {
                 filename = br.getRegex("name=\\'title\\' content=\\'(.*?)(Video)? \\-? (Film|Musik|TV Serie|MyVideo)").getMatch(0);
             }
         } else {
-            filename = br.getRegex("<title>([^<>\"]*?)\\– Musikvideo kostenlos auf MyVideo ansehen\\!</title>").getMatch(0);
+            /* Maybe musicvideo */
+            filename = br.getRegex("<title>([^<>\"]*?) \\- Kostenlos in voller L\\&auml;nge \\- MyVideo</title>").getMatch(0);
+            /* Maybe movie */
+            if (filename == null) {
+                filename = br.getRegex("<title>([^<>\"]*?)\\– Musikvideo kostenlos auf MyVideo ansehen\\!</title>").getMatch(0);
+            }
+            /* Maybe series */
+            if (filename == null) {
+                filename = br.getRegex("<title>([^<>\"]*?)\\- kostenlos auf MyVideo ansehen\\!</title>").getMatch(0);
+            }
         }
         if (filename == null) {
             filename = br.getURL();
