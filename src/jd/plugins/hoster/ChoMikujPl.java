@@ -64,6 +64,14 @@ public class ChoMikujPl extends PluginForHost {
     private static boolean      pluginloaded                = false;
     private Browser             cbr                         = null;
 
+    private int                 free_maxchunks              = 1;
+    private boolean             free_resume                 = false;
+    private int                 free_maxdls                 = -1;
+
+    private int                 account_maxchunks           = 0;
+    private boolean             account_resume              = true;
+    private int                 account_maxdls              = -1;
+
     /* ChomikujPlScript */
     public ChoMikujPl(PluginWrapper wrapper) {
         super(wrapper);
@@ -348,6 +356,8 @@ public class ChoMikujPl extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = unescape(dllink);
+        free_resume = false;
+        account_resume = false;
         return dllink;
     }
 
@@ -357,12 +367,12 @@ public class ChoMikujPl extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return free_maxdls;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return account_maxdls;
     }
 
     @Override
@@ -393,7 +403,10 @@ public class ChoMikujPl extends PluginForHost {
         if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
+        if (!free_resume) {
+            free_maxchunks = 1;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -444,7 +457,10 @@ public class ChoMikujPl extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         sleep(2 * 1000l, link);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
+        if (!account_resume) {
+            account_maxchunks = 1;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, account_resume, account_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
