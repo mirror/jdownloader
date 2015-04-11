@@ -169,9 +169,9 @@ public class SaveTv extends PluginForHost {
     public SaveTv(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.save.tv/stv/s/obj/registration/RegPage1.cfm");
-        // if (!isJDStable()) {
-        setConfigElements();
-        // }
+        if (!isJDStable()) {
+            setConfigElements();
+        }
     }
 
     private boolean isJDStable() {
