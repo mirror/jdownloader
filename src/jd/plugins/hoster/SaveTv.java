@@ -1697,7 +1697,7 @@ public class SaveTv extends PluginForHost {
 
     @Override
     public String getDescription() {
-        return "JDownloader's Save.tv Plugin helps downloading videoclips from Save.tv. Save.tv provides different settings for its downloads.";
+        return "JDownloader's Save.tv Plugin vereinfacht das Downloaden aufgenommener Sendungen von save.tv. Es bietet viele Plugin Einstellungen.";
     }
 
     private final static String  defaultCustomFilenameMovies                = "*quality* ¦ *videotitel* ¦ *produktionsjahr* ¦ *telecastid**endung*";
@@ -2130,7 +2130,7 @@ public class SaveTv extends PluginForHost {
             panelGenerator.addEntry("Account Typ:", accType);
             panelGenerator.addEntry("Paket:", acc_package);
             panelGenerator.addEntry("Laufzeit:", acc_runtime);
-            panelGenerator.addEntry("Ablaufdatum:", acc_expire + " Uhr");
+            panelGenerator.addEntry("Ablaufdatum:", acc_expire);
             panelGenerator.addEntry("Preis:", acc_price);
             panelGenerator.addEntry("Sendungen im Archiv:", acc_count_archive_entries);
             panelGenerator.addEntry("Ladbare Sendungen im Archiv (telecast-IDs):", acc_count_telecast_ids);
