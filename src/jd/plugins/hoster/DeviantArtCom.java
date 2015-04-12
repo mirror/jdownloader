@@ -429,9 +429,13 @@ public class DeviantArtCom extends PluginForHost {
             String dllink = null;
             // Check if it's a video
             dllink = br.getRegex("\"src\":\"(http:[^<>\"]*?mp4)\"").getMatch(0);
-            // First try to get downloadlink, if that doesn't exist, try to get the link to the picture which is displayed in browser
+            /* First try to get downloadlink, if that doesn't exist, try to get the link to the picture which is displayed in browser */
+            /*
+             * NEVER open up this RegEx as sometimes users link downloadlinks in the description --> Open RegEx will lead to plugin errors
+             * in some rare cases
+             */
             if (dllink == null) {
-                dllink = br.getRegex("\"(http://(www\\.)?deviantart\\.com/download/[^<>\"]*?)\"").getMatch(0);
+                dllink = br.getRegex("dev-page-download\"[\t\n\r ]*?href=\"(http://(www\\.)?deviantart\\.com/download/[^<>\"]*?)\"").getMatch(0);
             }
             if (dllink == null) {
                 if (br.containsHTML(">Mature Content</span>")) {

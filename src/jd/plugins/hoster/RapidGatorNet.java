@@ -97,7 +97,7 @@ public class RapidGatorNet extends PluginForHost {
     private static AtomicReference<String> lastIP                          = new AtomicReference<String>();
     private final Pattern                  IPREGEX                         = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
 
-    private static final long              FREE_RECONNECTWAIT              = 2100000L;
+    private static final long              FREE_RECONNECTWAIT              = 2 * 60 * 60 * 1000L;
 
     @Override
     public String getAGBLink() {
@@ -370,12 +370,12 @@ public class RapidGatorNet extends PluginForHost {
         try {
             // end of experiment
             if (this.br.containsHTML("You have reached your daily downloads limit\\. Please try")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your daily downloads limit", 60 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your daily downloads limit", FREE_RECONNECTWAIT);
             } else if (br.containsHTML(">[\\r\n ]+You have reached your hourly downloads limit\\.")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your hourly downloads limit", FREE_RECONNECTWAIT);
             }
             if (this.br.containsHTML("(You can`t download not more than 1 file at a time in free mode\\.<|>Wish to remove the restrictions\\?)")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You can't download more than one file within a certain time period in free mode", 60 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You can't download more than one file within a certain time period in free mode", FREE_RECONNECTWAIT);
             }
             final String freedlsizelimit = this.br.getRegex("'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode<").getMatch(0);
             if (freedlsizelimit != null) {
@@ -459,7 +459,7 @@ public class RapidGatorNet extends PluginForHost {
                     con1.disconnect();
                 } catch (final Throwable e) {
                 }
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Downloading is not possible at the moment", 10 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Downloading is not possible at the moment", FREE_RECONNECTWAIT);
             }
             // wasn't needed for raz, but psp said something about a redirect)
             this.br.followConnection();
@@ -567,9 +567,9 @@ public class RapidGatorNet extends PluginForHost {
                 }
                 this.br.followConnection();
                 if (this.br.containsHTML("<div class=\"error\">[\r\n ]+Error\\. Link expired. You have reached your daily limit of downloads\\.")) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Link expired, or You've reached your daily limit ", 60 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Link expired, or You've reached your daily limit ", FREE_RECONNECTWAIT);
                 } else if (this.br.containsHTML("<div class=\"error\">[\r\n ]+File is already downloading</div>")) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download session in progress", 20 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download session in progress", FREE_RECONNECTWAIT);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -1140,9 +1140,9 @@ public class RapidGatorNet extends PluginForHost {
             /*
              * This can happen if links go offline in the moment when the user is trying to download them - I (psp) was not able to
              * reproduce this so this is just a bad workaround! Correct server response would be:
-             *
+             * 
              * {"response":null,"response_status":404,"response_details":"Error: File not found"}
-             *
+             * 
              * TODO: Maybe move this info handleErrors_api
              */
             if (br.containsHTML("\"response_details\":null")) {

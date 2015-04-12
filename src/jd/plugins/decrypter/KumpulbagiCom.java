@@ -124,10 +124,10 @@ public class KumpulbagiCom extends PluginForDecrypt {
             dl.setProperty("plain_fid", fid);
             dl.setProperty("mainlink", parameter);
             dl.setProperty("pass", passCode);
-            dl.setProperty("LINKDUPEID", fid + filename);
 
             try {
                 dl.setContentUrl(parameter);
+                dl.setLinkID(fid);
             } catch (final Throwable e) {
                 dl.setBrowserUrl(parameter);
             }
@@ -222,10 +222,10 @@ public class KumpulbagiCom extends PluginForDecrypt {
                     dl.setProperty("plain_fid", fid);
                     dl.setProperty("mainlink", parameter);
                     dl.setProperty("pass", passCode);
-                    dl.setProperty("LINKDUPEID", fid + filename);
 
                     try {
                         dl.setContentUrl(content_url);
+                        dl.setLinkID(fid);
                     } catch (final Throwable e) {
                         dl.setBrowserUrl(content_url);
                     }

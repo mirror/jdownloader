@@ -43,6 +43,7 @@ public class TwitterCom extends PluginForDecrypt {
     private static final String TYPE_USER_ALL  = "https?://(www\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/media";
     private static final String TYPE_USER_POST = "https?://(www\\.)?twitter\\.com/status/\\d+/photo/\\d+";
 
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("http://", "https://");
@@ -179,7 +180,6 @@ public class TwitterCom extends PluginForDecrypt {
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost("twitter.com");
         final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
         if (aa == null) {
-            logger.warning("There is no account available, stopping...");
             return false;
         }
         try {

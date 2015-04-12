@@ -291,14 +291,12 @@ public class DataFileCom extends PluginForHost {
             if (dllink == null) {
                 if (this.getPluginConfig().getBooleanProperty(ENABLE_FREE_STORED_WAITTIME, defaultENABLE_fREE_PARALLEL_DOWNLOADS)) {
                     final long lastdownload = getPluginSavedLastDownloadTimestamp();
+                    final long passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
                     /**
                      * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
                      */
-                    if (ipChanged(downloadLink) == false) {
-                        final long passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
-                        if (passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
-                            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
-                        }
+                    if (ipChanged(downloadLink) == false && passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
                     }
                 }
                 handleURLErrors(this.br.getURL());
