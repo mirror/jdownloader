@@ -35,6 +35,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -149,12 +150,6 @@ public class SoundcloudCom extends PluginForHost {
             DLLINK = unescape(DLLINK);
             DLLINK = Encoding.htmlDecode(DLLINK);
         } else {
-            final String secret_token = br.getRegex("secret_token=([A-Za-z0-9\\-_]+)</uri>").getMatch(0);
-            String api_access = "https://api.soundcloud.com/tracks/" + sid + "?format=json&client_id=" + SoundcloudCom.CLIENTID + "&app_version=" + SoundcloudCom.APP_VERSION;
-            if (secret_token != null) {
-                api_access += "&secret_token=" + secret_token;
-            }
-            br.getPage(api_access);
             DLLINK = getDirectlink(this.br.toString());
             if (DLLINK == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -308,12 +303,15 @@ public class SoundcloudCom extends PluginForHost {
     public static final String TYPE_API_TOKEN    = "https?://api\\.soundcloud\\.com/tracks/\\d+/stream\\?secret_token=[A-Za-z0-9\\-_]+";
 
     public static String getDirectlink(final String input) {
+        final Browser br2 = new Browser();
         String finallink = null;
         try {
             Map<String, Object> json = DummyScriptEnginePlugin.jsonToJavaMap(input);
             final long track_id = ((Number) json.get("id")).longValue();
             final boolean downloadable = ((Boolean) json.get("downloadable")).booleanValue();
+            final String secret_token = new Regex(input, "secret_token=([A-Za-z0-9\\-_]+)").getMatch(0);
             if (downloadable) {
+                /* Track is officially downloadable (download version = higher quality than stream version) */
                 /* Downloadable version = highest quality! */
                 finallink = toString(json.get("download_url"));
                 if (finallink != null) {
@@ -321,17 +319,13 @@ public class SoundcloudCom extends PluginForHost {
                     finallink += "?client_id=" + SoundcloudCom.CLIENTID + "&app_version=" + SoundcloudCom.APP_VERSION;
                 }
             } else {
-                // final String track_id = new Regex(input, "tracks/(\\d+)").getMatch(0);
-                // final String token = new Regex(input, "secret_token=([A-Za-z0-9\\-_]+)").getMatch(0);
-                // String hybridlink = "https://api.soundcloud.com/tracks/%s/%s?format=json&client_id=%s&app_version=" +
-                // SoundcloudCom.APP_VERSION;
-                // if (token != null) {
-                // hybridlink += "&secret_token=" + token;
-                // }
-                // final String apilink = String.format(hybridlink, track_id, "streams", SoundcloudCom.CLIENTID);
-                // br2.getPage(apilink);
-                final Browser br2 = new Browser();
-                br2.getPage("https://api.soundcloud.com/tracks/" + track_id + "/streams" + "?format=json&client_id=" + SoundcloudCom.CLIENTID + "&app_version=" + SoundcloudCom.APP_VERSION);
+                /* Normal- or hls stream */
+                if (secret_token != null) {
+                    /* Special rare case */
+                    br2.getPage("https://api.soundcloud.com/i1/tracks/" + track_id + "/streams?secret_token=" + secret_token + "&client_id=" + SoundcloudCom.CLIENTID + "&app_version=" + SoundcloudCom.APP_VERSION);
+                } else {
+                    br2.getPage("https://api.soundcloud.com/tracks/" + track_id + "/streams" + "?format=json&client_id=" + SoundcloudCom.CLIENTID + "&app_version=" + SoundcloudCom.APP_VERSION);
+                }
                 json = DummyScriptEnginePlugin.jsonToJavaMap(br2.toString());
                 for (final String quality : stream_qualities) {
                     finallink = (String) json.get(quality);

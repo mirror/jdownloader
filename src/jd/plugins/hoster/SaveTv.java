@@ -191,7 +191,7 @@ public class SaveTv extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
+        return 0;
     }
 
     @Override
@@ -370,8 +370,9 @@ public class SaveTv extends PluginForHost {
         if (runtime_end == null) {
             runtime_end = getJson(source, "DENDDATE");
         }
+        final long runtime_end_long = TimeFormatter.getMilliSeconds(runtime_end, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN);
         datemilliseconds = TimeFormatter.getMilliSeconds(runtime_start, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN);
-        final long site_runtime_minutes = (TimeFormatter.getMilliSeconds(runtime_end, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN) - datemilliseconds) / 1000 / 60;
+        final long site_runtime_minutes = (runtime_end_long - datemilliseconds) / 1000 / 60;
         final String tv_station = getJson(source, "STVSTATIONNAME");
 
         /* TODO: Add more/all numbers here, improve this! */
@@ -426,6 +427,7 @@ public class SaveTv extends PluginForHost {
             dl.setProperty("plainfilename", correctData(site_title));
         }
         dl.setProperty("originaldate", datemilliseconds);
+        dl.setProperty("originaldate_end", runtime_end_long);
         dl.setProperty("site_runtime_minutes", site_runtime_minutes);
     }
 
@@ -453,8 +455,9 @@ public class SaveTv extends PluginForHost {
         String runtime_end = new Regex(source, "<a:EndDate>([^<>\"]*?)</a:EndDate>").getMatch(0);
         runtime_start = runtime_start.replace("T", " ");
         runtime_end = runtime_end.replace("T", " ");
+        final long runtime_end_long = TimeFormatter.getMilliSeconds(runtime_end, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN);
         datemilliseconds = TimeFormatter.getMilliSeconds(runtime_start, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN);
-        final long site_runtime_minutes = (TimeFormatter.getMilliSeconds(runtime_end, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN) - datemilliseconds) / 1000 / 60;
+        final long site_runtime_minutes = (runtime_end_long - datemilliseconds) / 1000 / 60;
         final String tv_station = getJson(source, "STVSTATIONNAME");
 
         /* TODO: Add more/all numbers here, improve this! */
@@ -499,6 +502,7 @@ public class SaveTv extends PluginForHost {
             dl.setProperty("plainfilename", correctData(site_title));
         }
         dl.setProperty("originaldate", datemilliseconds);
+        dl.setProperty("originaldate_end", runtime_end_long);
         dl.setProperty("site_runtime_minutes", site_runtime_minutes);
     }
 
@@ -580,6 +584,17 @@ public class SaveTv extends PluginForHost {
         FORCE_LINKCHECK = true;
         requestFileInformation(downloadLink);
 
+        /* Check if the content has been recorded already! */
+        final long runtime_end = getLongProperty(downloadLink, "originaldate_end", System.currentTimeMillis() + 1);
+        final long released_since = System.currentTimeMillis() - runtime_end;
+        if (released_since < 0) {
+            /*
+             * Content not yet recorded --> Show errormessage with waittime. Waittime = END of the content + 10 minutes! Most times Stv
+             * needs between 10 and 60 minutes to get the downloads ready.
+             */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Diese Sendung wurde noch nicht aufgenommen/ausgestrahlt! Bitte warten.", released_since * (-1) + 10 * 60 * 60 * 1000l);
+        }
+
         if (apiActive()) {
             /* Check if ads-free version is available */
             api_doSoapRequestSafe(this.br, account, "http://tempuri.org/IVideoArchive/GetAdFreeState", "<telecastId i:type=\"d:int\">" + getTelecastId(downloadLink) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified>");
@@ -639,7 +654,17 @@ public class SaveTv extends PluginForHost {
         String stv_request_selected_format_value = null;
         if (apiActive()) {
             stv_request_selected_format_value = api_get_format_request_value();
-            api_postDownloadPage(downloadLink, stv_request_selected_format_value, downloadWithoutAds_request_value);
+            /* Small workaround to prevent incorrect errormessages */
+            final String[] formats = { stv_request_selected_format_value, API_FORMAT_HQ, API_FORMAT_LQ };
+            for (final String format : formats) {
+                api_postDownloadPage(downloadLink, format, downloadWithoutAds_request_value);
+                /* TODO: Decide whether we want to throw an error here or try until we find an existing format. */
+                if (br.containsHTML(API_DL_IMPOSSIBLE) && stv_request_selected_format_value == API_FORMAT_HD) {
+                    // continue;
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, USERTEXT_PREFERREDFORMATNOTAVAILABLE, 4 * 60 * 60 * 1000l);
+                }
+                break;
+            }
             if (br.containsHTML(API_DL_IMPOSSIBLE)) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, DL_IMPOSSIBLE_USER_TEXT, 30 * 60 * 1000l);
             }
@@ -647,7 +672,7 @@ public class SaveTv extends PluginForHost {
         } else {
             stv_request_selected_format_value = site_get_format_request_value();
             site_GetDownloadPage(downloadLink, stv_request_selected_format_value, downloadWithoutAds_request_value);
-            /* TODO: Check if their new system still has this errormessage */
+            /* TODO: Check if their new system still has this particular errormessage */
             if (br.containsHTML("Die Aufnahme liegt nicht im gewünschten Format vor")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, USERTEXT_PREFERREDFORMATNOTAVAILABLE, 4 * 60 * 60 * 1000l);
             }

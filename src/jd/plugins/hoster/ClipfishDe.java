@@ -37,7 +37,11 @@ public class ClipfishDe extends PluginForHost {
     }
 
     /* Tags: rtl-interactive.de */
+    /* HbbTV also available */
 
+    private String dllink = null;
+
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         if (link.getDownloadURL().startsWith("clipfish2")) {
@@ -52,14 +56,13 @@ public class ClipfishDe extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
-
-    private String dllink = null;
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        dllink = null;
         dllink = downloadLink.getStringProperty("dlURL", "");
         if ("".equals(dllink)) {
             dllink = downloadLink.getDownloadURL();

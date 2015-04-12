@@ -54,10 +54,11 @@ public class ChoMikujPl extends PluginForHost {
 
     private static final String PREMIUMONLY                 = "(Aby pobrać ten plik, musisz być zalogowany lub wysłać jeden SMS\\.|Właściciel tego chomika udostępnia swój transfer, ale nie ma go już w wystarczającej|wymaga opłacenia kosztów transferu z serwerów Chomikuj\\.pl)";
     private static final String PREMIUMONLYUSERTEXT         = "Download is only available for registered/premium users!";
-    private static final String ACCESSDENIED                = "Nie masz w tej chwili uprawnień do tego pliku lub dostęp do niego nie jest w tej chwili możliwy z innych powodów.";
+    private static final String ACCESSDENIED                = "Nie masz w tej chwili uprawnień do tego pliku lub dostęp do niego nie jest w tej chwili możliwy z innych powodów\\.";
+    private final String        VIDEOENDINGS                = "\\.(avi|flv|mp4|mpg|rmvb|divx|wmv|mkv)";
     private static final String MAINPAGE                    = "http://chomikuj.pl/";
-    private boolean             videolink                   = false;
     private static Object       LOCK                        = new Object();
+    /* Pluging settings */
     public static final String  DECRYPTFOLDERS              = "DECRYPTFOLDERS";
     private static final String AVOIDPREMIUMMP3TRAFFICUSAGE = "AVOIDPREMIUMMP3TRAFFICUSAGE";
 
@@ -171,6 +172,7 @@ public class ChoMikujPl extends PluginForHost {
         return "http://chomikuj.pl/Regulamin.aspx";
     }
 
+    @SuppressWarnings("deprecation")
     public boolean getDllink(final DownloadLink theLink, final Browser br, final boolean premium) throws Exception {
         final boolean redirectsSetting = br.isFollowingRedirects();
         br.setFollowRedirects(false);
@@ -182,10 +184,9 @@ public class ChoMikujPl extends PluginForHost {
             br.postPage(savedLink, savedPost);
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        // Premium users can always download the original file
-        if (theLink.getBooleanProperty("video") && !premium) {
+        /* Premium users can always download the original file */
+        if (isVideo(theLink) && !premium) {
             br.setFollowRedirects(true);
-            videolink = true;
             getPage(br, "http://chomikuj.pl/ShowVideo.aspx?id=" + fid);
             if (br.getURL().contains("chomikuj.pl/Error404.aspx") || cbr.containsHTML("(Nie znaleziono|Strona, której szukasz nie została odnaleziona w portalu\\.<|>Sprawdź czy na pewno posługujesz się dobrym adresem)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -258,6 +259,20 @@ public class ChoMikujPl extends PluginForHost {
         }
         br.setFollowRedirects(redirectsSetting);
         return true;
+    }
+
+    private boolean isVideo(final DownloadLink dl) {
+        String filename = dl.getFinalFileName();
+        if (filename == null) {
+            filename = dl.getName();
+        }
+        if (filename.contains(".")) {
+            final String ext = filename.substring(filename.lastIndexOf("."));
+            if (ext.matches(VIDEOENDINGS)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @SuppressWarnings("deprecation")
@@ -376,7 +391,7 @@ public class ChoMikujPl extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (cbr.containsHTML(PREMIUMONLY)) {
             try {
@@ -388,7 +403,7 @@ public class ChoMikujPl extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
         }
-        if (!videolink) {
+        if (!isVideo(downloadLink)) {
             if (!getDllink(downloadLink, br, false)) {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);

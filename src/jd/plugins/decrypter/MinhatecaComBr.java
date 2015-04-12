@@ -47,6 +47,7 @@ public class MinhatecaComBr extends PluginForDecrypt {
         return createDownloadlink("http://minhatecadecrypted.com.br/" + System.currentTimeMillis() + new Random().nextInt(1000000));
     }
 
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String passCode = null;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -141,10 +142,10 @@ public class MinhatecaComBr extends PluginForDecrypt {
             dl.setProperty("plain_fid", fid);
             dl.setProperty("mainlink", parameter);
             dl.setProperty("pass", passCode);
-            dl.setProperty("LINKDUPEID", fid + filename);
 
             try {
                 dl.setContentUrl(parameter);
+                dl.setLinkID(fid);
             } catch (final Throwable e) {
                 dl.setBrowserUrl(parameter);
             }
@@ -239,12 +240,12 @@ public class MinhatecaComBr extends PluginForDecrypt {
                     dl.setProperty("plain_fid", fid);
                     dl.setProperty("mainlink", parameter);
                     dl.setProperty("pass", passCode);
-                    dl.setProperty("LINKDUPEID", fid + filename);
 
                     try {
                         dl.setContentUrl(content_url);
+                        dl.setLinkID(fid);
                     } catch (final Throwable e) {
-                        dl.setBrowserUrl(content_url);
+                        dl.setBrowserUrl(parameter);
                     }
 
                     dl.setName(filename);
