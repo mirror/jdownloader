@@ -1,4 +1,4 @@
-AutoDetectAction_run_failed=Találhatóak UPnP-készülékeket, de nem hajtható velük végre újracsatlakozás.\nPróbálja ki az helyette a Live Header újracsatlakoztatást!
+AutoDetectAction_run_failed2=Nem működő UPNP újracsatlakoztatási módszer található.\nPróbáld ki az Élőfejes újracsatlakoztatást helyette!
 AutoDetectUpnpAction_AutoDetectUpnpAction_=Megpróbálja megtalálni az összes UPNP újracsatlakoztatható eszközt a hálózatban.\nA legtöbb FritzBox router ezzel a módszerrel újracsatlakoztatható.
 UPNPReconnectInvoker_getName_=UPNP router újracsatlakozik
 UPNPRouterPlugin_run_error=Nem találhatóak UPnP-készülékek. Próbálja inkább a Live Header újracsatlakoztatást!

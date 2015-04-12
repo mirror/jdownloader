@@ -307,4 +307,5 @@ system_download_doCRC2_waiting=Várakozás a Hash ellenőrzésre
 system_download_errors_couldnotdelete=Nem lehet törölni a meglévő fájlrészletet
 system_download_errors_couldnotrename=Részfájl átnevezése sikertelen
 system_download_errors_linkisBlocked=Tükör %s1 betöltése
+update_dialog_msg_x_updates_available=A frissítések készen állnak a telepítésre. Szeretné futtatni a frissítést?
 video_description=Videó fájlok: mp4, avi, mov,...
