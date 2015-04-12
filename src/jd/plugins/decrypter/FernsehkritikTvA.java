@@ -182,9 +182,6 @@ public class FernsehkritikTvA extends PluginForDecrypt {
         dlLink.setProperty("directepisodenumber", EPISODENUMBER);
         dlLink.setProperty("directtype", ".mp4");
         dlLink.setProperty("mainlink", playurl);
-        if (br.containsHTML(">Clip nicht kostenlos verfügbar")) {
-            dlLink.setProperty("PREMIUMONLY", true);
-        }
         final String finallink = br.getRegex("type=\"video/mp4\" src=\"(http://[^<>\"]*?\\.mp4)\"").getMatch(0);
         if (finallink != null) {
             dlLink.setProperty("directlink", finallink);
