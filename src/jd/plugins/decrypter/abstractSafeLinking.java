@@ -179,29 +179,29 @@ public abstract class abstractSafeLinking extends PluginForDecrypt {
     }
 
     public int getCaptchaTypeNumber() {
-        if (cType.equals("solvemedia")) {
+        if ("solvemedia".equals(cType)) {
             return 1;
-        } else if (cType.equals("recaptcha")) {
+        } else if ("recaptcha".equals(cType)) {
             return 2;
-        } else if (cType.equals("basic")) {
+        } else if ("basic".equals(cType)) {
             return 3;
-        } else if (cType.equals("threeD")) {
+        } else if ("threeD".equals(cType)) {
             return 4;
-        } else if (cType.equals("fancy")) {
+        } else if ("fancy".equals(cType)) {
             return 5;
-        } else if (cType.equals("qaptcha")) {
+        } else if ("qaptcha".equals(cType)) {
             return 6;
-        } else if (cType.equals("simple")) {
+        } else if ("simple".equals(cType)) {
             return 7;
-        } else if (cType.equals("dotty")) {
+        } else if ("dotty".equals(cType)) {
             return 8;
-        } else if (cType.equals("cool")) {
+        } else if ("cool".equals(cType)) {
             return 9;
-        } else if (cType.equals("standard")) {
+        } else if ("standard".equals(cType)) {
             return 10;
-        } else if (cType.equals("cats")) {
+        } else if ("cats".equals(cType)) {
             return 11;
-        } else if (cType.equals("simplecaptcha")) {
+        } else if ("simplecaptcha".equals(cType)) {
             return 12;
         } else {
             // Not detected or other case
