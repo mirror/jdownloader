@@ -322,10 +322,10 @@ public class Grab8Com extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         login(true);
         br.getPage("/member/index.php");
-        final String expire = br.getRegex(">Your account will expire on <[^>]+>([^<>\"]*?)</span>").getMatch(0);
+        final String expire = br.getRegex(">Your account will expire on[^\r\n]+(\\d{2}-\\d{2}-\\d{4})</span>").getMatch(0);
         if (expire != null) {
             account.setType(AccountType.PREMIUM);
-            ai.setStatus("Premium account");
+            ai.setStatus("Premium Account");
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd-MM-yyyy", Locale.ENGLISH));
             final String traffic_used = br.getRegex("Traffic use: <font color=#[A-F0-9]+>(\\d+)(\\.\\d{1,20})? MB</font>").getMatch(0);
             final String traffic_max = br.getRegex("Max Traffic: <font color=#[A-F0-9]+>(\\d+) MB</font>").getMatch(0);
@@ -343,7 +343,7 @@ public class Grab8Com extends PluginForHost {
             ai.setTrafficMax(traffic_max_long);
         } else {
             account.setType(AccountType.FREE);
-            ai.setStatus("Registered (free) account");
+            ai.setStatus("Free Account");
             /* Free users cannot download anything! */
             ai.setTrafficLeft(0);
         }
