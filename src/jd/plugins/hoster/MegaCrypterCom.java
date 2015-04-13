@@ -75,7 +75,7 @@ public class MegaCrypterCom extends PluginForHost {
 
     private void setUrl(final DownloadLink downloadLink) {
         if (downloadLink.getDownloadURL().contains("encrypterme.ga/")) {
-            // https seems to some soccor sports page
+            // https seems to some soccer sports page
             supportsHTTPS = false;
             enforcesHTTPS = false;
         } else if (downloadLink.getDownloadURL().contains("megacrypter.noestasinvitado.com/") || downloadLink.getDownloadURL().contains("linkcrypter.net/")) {
@@ -88,10 +88,10 @@ public class MegaCrypterCom extends PluginForHost {
             enforcesHTTPS = false;
         }
         boolean useHTTPS = enforcesHTTPS;
-        if (supportsHTTPS && !enforcesHTTPS) {
+        if (supportsHTTPS && !enforcesHTTPS && this.getPluginConfig().getBooleanProperty(preferHTTPS, preferHTTPS_default)) {
             useHTTPS = true;
         }
-        mcUrl = (useHTTPS && this.getPluginConfig().getBooleanProperty(preferHTTPS, preferHTTPS_default) ? "https" : "http") + "://" + new Regex(downloadLink.getDownloadURL(), "://([^/]+)").getMatch(0) + "/api";
+        mcUrl = (useHTTPS ? "https" : "http") + "://" + new Regex(downloadLink.getDownloadURL(), "://([^/]+)").getMatch(0) + "/api";
     }
 
     private String mcUrl = null;
