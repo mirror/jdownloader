@@ -960,10 +960,10 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
         /* this cookie makes html5 available and skip controversy check */
 
-        this.br.setCookie("youtube.com", "PREF", "f2=40100000&hl=en-GB");
+        this.br.setCookie("youtube.com", "PREF", "f1=50000000&hl=en");
         this.br.getHeaders().put("User-Agent", "Wget/1.12");
 
-        getAbsolute(base + "/watch?v=" + vid.videoID, null, br);
+        getAbsolute(base + "/watch?v=" + vid.videoID + "&gl=US&hl=en&has_verified=1&bpctr=9999999999", null, br);
 
         handleRentalVideos(vid);
 
@@ -982,13 +982,18 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
         if (apiRequired) {
             apiBrowser = this.br.cloneBrowser();
-            apiBrowser.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&hl=en&gl=US&el=detailpage&ps=default&eurl=&gl=US&hl=en");
+            apiBrowser.getPage(this.base + "/embed/" + vid.videoID);
+            apiBrowser.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&eurl=" + Encoding.urlEncode("https://youtube.googleapis.com/v/" + vid.videoID) + "&sts=16511");
             if (!apiBrowser.containsHTML("url_encoded_fmt_stream_map")) {
-                // example https://www.youtube.com/v/p7S_u5TzI-I
-                // age protected
-                apiBrowser.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&hl=en&gl=US&el=embedded&ps=default&eurl=&gl=US&hl=en");
+                StatsManager.I().track("youtube/vInfo1");
+                apiBrowser.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&hl=en&gl=US&el=detailpage&ps=default&eurl=&gl=US&hl=en");
+                if (!apiBrowser.containsHTML("url_encoded_fmt_stream_map")) {
+                    StatsManager.I().track("youtube/vInfo2");
+                    // example https://www.youtube.com/v/p7S_u5TzI-I
+                    // age protected
+                    apiBrowser.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&hl=en&gl=US&el=embedded&ps=default&eurl=&gl=US&hl=en");
+                }
             }
-
             if (apiBrowser.containsHTML("requires_purchase=1")) {
                 logger.warning("Download not possible: You have to pay to watch this video");
                 throw new Exception("Paid Video");
@@ -1079,7 +1084,6 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             dashFmt = apiBrowser.getRegex("adaptive_fmts\\s*=\\s*(.*?)(&|$)").getMatch(0);
             dashFmt = Encoding.htmlDecode(dashFmt);
 
-            // just guessing
             dashmpd = apiBrowser.getRegex("dashmpd\\s*=\\s*(.*?)(&|$)").getMatch(0);
             dashmpd = Encoding.htmlDecode(dashmpd);
 
