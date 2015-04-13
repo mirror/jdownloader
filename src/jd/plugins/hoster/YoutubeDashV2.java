@@ -6,6 +6,7 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -2040,7 +2041,7 @@ public class YoutubeDashV2 extends PluginForHost {
     }
 
     @Override
-    public void extendLinkgrabberContextMenu(final JComponent parent, final PluginView<CrawledLink> pv, List<PluginView<CrawledLink>> allPvs) {
+    public void extendLinkgrabberContextMenu(final JComponent parent, final PluginView<CrawledLink> pv, Collection<PluginView<CrawledLink>> allPvs) {
         final JMenu setVariants = new JScrollMenu(_GUI._.YoutubeDashV2_extendLinkgrabberContextMenu_context_menu());
         setVariants.setIcon(DomainInfo.getInstance(getHost()).getFavIcon());
         setVariants.setEnabled(false);
