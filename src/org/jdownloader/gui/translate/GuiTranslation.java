@@ -1592,6 +1592,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Failed Downloads" })
     String downloadview_failed();
 
+    @Default(lngs = { "en" }, values = { "File exists" })
+    String downloadview_exists();
+
     @Default(lngs = { "en" }, values = { "Successful Downloads" })
     String downloadview_successful();
 

@@ -24,6 +24,7 @@ import org.jdownloader.gui.views.downloads.View;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
@@ -77,7 +78,7 @@ public class QuickFilterMenuItem extends MenuItemData implements MenuLink {
         }
 
         private FilterCombo() {
-            super(new View[] { View.ALL, View.RUNNING, View.FAILED, View.OFFLINE, View.SKIPPED, View.SUCCESSFUL, View.TODO });
+            super(new View[] { View.ALL, View.RUNNING, View.FAILED, View.EXISTS, View.OFFLINE, View.SKIPPED, View.SUCCESSFUL, View.TODO });
             this.setToolTipText(_GUI._.PseudoCombo_PseudoCombo_tt_());
             this.table = (DownloadsTable) DownloadsTableModel.getInstance().getTable();
             View view = (View) CFG_GUI.DOWNLOAD_VIEW.getValue();
@@ -152,6 +153,34 @@ public class QuickFilterMenuItem extends MenuItemData implements MenuLink {
                     @Override
                     public boolean isFiltered(DownloadLink v) {
                         return !(FinalLinkState.CheckFailed(v.getFinalLinkState()));
+                    }
+
+                    @Override
+                    public boolean isFiltered(FilePackage e) {
+                        return false;
+                    }
+
+                    @Override
+                    public int getComplexity() {
+                        return 0;
+                    }
+                };
+            case EXISTS:
+                return new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
+
+                    @Override
+                    public boolean isFilteringPackageNodes() {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean isFilteringChildrenNodes() {
+                        return true;
+                    }
+
+                    @Override
+                    public boolean isFiltered(DownloadLink v) {
+                        return !FinalLinkState.FAILED_EXISTS.equals(v.getFinalLinkState()) && !SkipReason.FILE_EXISTS.equals(v.getSkipReason());
                     }
 
                     @Override

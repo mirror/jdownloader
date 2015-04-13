@@ -189,29 +189,31 @@ public class AddLinksProgress extends AbstractDialog<Object> {
                                         @Override
                                         public List<CrawledLink> deepInspect(LinkCrawler lc, Browser br, URLConnectionAdapter urlConnection, CrawledLink link) throws Exception {
                                             if (urlConnection.getRequest().getLocation() == null && urlConnection.getResponseCode() == 200) {
-                                                final String url = urlConnection.getRequest().getUrl();
-                                                final String fileName = Plugin.extractFileNameFromURL(url);
-                                                final String fileExtension = Files.getExtension(fileName);
-                                                if (StringUtils.isNotEmpty(fileExtension) && !autoExtensionLearnBlackList.contains(fileExtension)) {
-                                                    boolean add = true;
-                                                    for (LinkCrawlerRule rule : LinkCrawler.listLinkCrawlerRules()) {
-                                                        if (RULE.DIRECTHTTP.equals(rule.getRule()) && rule.matches(url)) {
-                                                            add = false;
-                                                            break;
+                                                if (!StringUtils.containsIgnoreCase(urlConnection.getContentType(), "text")) {
+                                                    final String url = urlConnection.getRequest().getUrl();
+                                                    final String fileName = Plugin.extractFileNameFromURL(url);
+                                                    final String fileExtension = Files.getExtension(fileName);
+                                                    if (StringUtils.isNotEmpty(fileExtension) && !autoExtensionLearnBlackList.contains(fileExtension)) {
+                                                        boolean add = true;
+                                                        for (LinkCrawlerRule rule : LinkCrawler.listLinkCrawlerRules()) {
+                                                            if (RULE.DIRECTHTTP.equals(rule.getRule()) && rule.matches(url)) {
+                                                                add = false;
+                                                                break;
+                                                            }
                                                         }
+                                                        if (add) {
+                                                            final LinkCrawlerRule rule = new LinkCrawlerRule();
+                                                            rule.setName("Learned file extension:" + fileExtension);
+                                                            rule.setPattern("(?i).*\\." + fileExtension + "($|\\?.*$)");
+                                                            rule.setRule(RULE.DIRECTHTTP);
+                                                            LinkCrawler.addLinkCrawlerRule(rule);
+                                                        }
+                                                        try {
+                                                            urlConnection.disconnect();
+                                                        } catch (Throwable e) {
+                                                        }
+                                                        return lc.find("directhttp://" + url, null, false);
                                                     }
-                                                    if (add) {
-                                                        final LinkCrawlerRule rule = new LinkCrawlerRule();
-                                                        rule.setName("Learned file extension:" + fileExtension);
-                                                        rule.setPattern("(?i).*\\." + fileExtension + "($|\\?.*$)");
-                                                        rule.setRule(RULE.DIRECTHTTP);
-                                                        LinkCrawler.addLinkCrawlerRule(rule);
-                                                    }
-                                                    try {
-                                                        urlConnection.disconnect();
-                                                    } catch (Throwable e) {
-                                                    }
-                                                    return lc.find("directhttp://" + url, null, false);
                                                 }
                                             }
                                             return defaultDeepInspector.deepInspect(lc, br, urlConnection, link);
